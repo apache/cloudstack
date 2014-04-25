@@ -108,6 +108,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
+import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.OvsProviderDao;
@@ -140,13 +141,13 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
-import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
@@ -156,7 +157,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -1391,10 +1391,14 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         String trafficType = cmd.getTrafficType();
         Boolean isSystem = cmd.getIsSystem();
         String aclType = cmd.getAclType();
+        Long projectId = cmd.getProjectId();
+        List<Long> permittedAccounts = new ArrayList<Long>();
+        String path = null;
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
         List<String> supportedServicesStr = cmd.getSupportedServices();
         Boolean restartRequired = cmd.getRestartRequired();
         boolean listAll = cmd.listAll();
+        boolean isRecursive = cmd.isRecursive();
         Boolean specifyIpRanges = cmd.getSpecifyIpRanges();
         Long vpcId = cmd.getVpcId();
         Boolean canUseForDeploy = cmd.canUseForDeploy();
@@ -1413,16 +1417,66 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new InvalidParameterValueException("System network belongs to system, account and domainId parameters can't be specified");
         }
 
-        List<Long> permittedDomains = new ArrayList<Long>();
-        List<Long> permittedAccounts = new ArrayList<Long>();
-        List<Long> permittedResources = new ArrayList<Long>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-                cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
-                domainIdRecursiveListProject, cmd.listAll(), false, "listNetworks");
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        if (domainId != null) {
+            DomainVO domain = _domainDao.findById(domainId);
+            if (domain == null) {
+                // see DomainVO.java
+                throw new InvalidParameterValueException("Specified domain id doesn't exist in the system");
+            }
 
+            _accountMgr.checkAccess(caller, domain);
+            if (accountName != null) {
+                Account owner = _accountMgr.getActiveAccountByName(accountName, domainId);
+                if (owner == null) {
+                    // see DomainVO.java
+                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in specified domain");
+                }
+
+                _accountMgr.checkAccess(caller, null, true, owner);
+                permittedAccounts.add(owner.getId());
+            }
+        }
+
+        if (!_accountMgr.isAdmin(caller.getId()) || (projectId != null && projectId.longValue() != -1 && domainId == null)) {
+            permittedAccounts.add(caller.getId());
+            domainId = caller.getDomainId();
+        }
+
+        // set project information
+        boolean skipProjectNetworks = true;
+        if (projectId != null) {
+            if (projectId.longValue() == -1) {
+                if (!_accountMgr.isAdmin(caller.getId())) {
+                    permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+                }
+            } else {
+                permittedAccounts.clear();
+                Project project = _projectMgr.getProject(projectId);
+                if (project == null) {
+                    throw new InvalidParameterValueException("Unable to find project by specified id");
+                }
+                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                    // getProject() returns type ProjectVO.
+                    InvalidParameterValueException ex = new InvalidParameterValueException("Account " + caller + " cannot access specified project id");
+                    ex.addProxyObject(project.getUuid(), "projectId");
+                    throw ex;
+                }
+
+                //add project account
+                permittedAccounts.add(project.getProjectAccountId());
+                //add caller account (if admin)
+                if (_accountMgr.isAdmin(caller.getId())) {
+                    permittedAccounts.add(caller.getId());
+                }
+            }
+            skipProjectNetworks = false;
+        }
+
+        if (domainId != null) {
+            path = _domainDao.findById(domainId).getPath();
+        } else {
+        path = _domainDao.findById(caller.getDomainId()).getPath();
+        }
 
         if (listAll && domainId == null) {
             isRecursive = true;
@@ -1430,7 +1484,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         Filter searchFilter = new Filter(NetworkVO.class, "id", false, null, null);
         SearchBuilder<NetworkVO> sb = _networksDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (forVpc != null) {
             if (forVpc) {
@@ -1465,9 +1518,122 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
 
-        // build network search criteria
+        if (permittedAccounts.isEmpty()) {
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
+            SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
+        accountSearch.and("typeNEQ", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
+        accountSearch.and("typeEQ", accountSearch.entity().getType(), SearchCriteria.Op.EQ);
+
+            sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+
+        List<NetworkVO> networksToReturn = new ArrayList<NetworkVO>();
+
+        if (isSystem == null || !isSystem) {
+            if (!permittedAccounts.isEmpty()) {
+                //get account level networks
+                networksToReturn.addAll(listAccountSpecificNetworks(
+                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired,
+                                specifyIpRanges, vpcId, tags, display), searchFilter, permittedAccounts));
+                //get domain level networks
+                if (domainId != null) {
+                    networksToReturn.addAll(listDomainLevelNetworks(
+                            buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, true, restartRequired,
+                                    specifyIpRanges, vpcId, tags, display), searchFilter, domainId, false));
+                }
+            } else {
+                //add account specific networks
+                networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(
+                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired,
+                                specifyIpRanges, vpcId, tags, display), searchFilter, path, isRecursive));
+                //add domain specific networks of domain + parent domains
+                networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(
+                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired,
+                                specifyIpRanges, vpcId, tags, display), searchFilter, path, isRecursive));
+                //add networks of subdomains
+                if (domainId == null) {
+                    networksToReturn.addAll(listDomainLevelNetworks(
+                            buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, true, restartRequired,
+                                    specifyIpRanges, vpcId, tags, display), searchFilter, caller.getDomainId(), true));
+                }
+            }
+        } else {
+            networksToReturn = _networksDao.search(
+                    buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired,
+                            specifyIpRanges, vpcId, tags, display), searchFilter);
+        }
+
+        if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !networksToReturn.isEmpty()) {
+            List<NetworkVO> supportedNetworks = new ArrayList<NetworkVO>();
+            Service[] suppportedServices = new Service[supportedServicesStr.size()];
+            int i = 0;
+            for (String supportedServiceStr : supportedServicesStr) {
+                Service service = Service.getService(supportedServiceStr);
+                if (service == null) {
+                    throw new InvalidParameterValueException("Invalid service specified " + supportedServiceStr);
+                } else {
+                    suppportedServices[i] = service;
+                }
+                i++;
+            }
+
+            for (NetworkVO network : networksToReturn) {
+                if (areServicesSupportedInNetwork(network.getId(), suppportedServices)) {
+                    supportedNetworks.add(network);
+                }
+            }
+
+            networksToReturn = supportedNetworks;
+        }
+
+        if (canUseForDeploy != null) {
+            List<NetworkVO> networksForDeploy = new ArrayList<NetworkVO>();
+            for (NetworkVO network : networksToReturn) {
+                if (_networkModel.canUseForDeploy(network) == canUseForDeploy) {
+                    networksForDeploy.add(network);
+                }
+            }
+
+            networksToReturn = networksForDeploy;
+        }
+
+        //Now apply pagination
+        //Most likely pageSize will never exceed int value, and we need integer to partition the listToReturn
+        boolean notNull = cmd.getStartIndex() != null && cmd.getPageSizeVal() != null;
+        if (notNull && cmd.getStartIndex() <= Integer.MAX_VALUE && cmd.getStartIndex() >= Integer.MIN_VALUE && cmd.getPageSizeVal() <= Integer.MAX_VALUE
+                && cmd.getPageSizeVal() >= Integer.MIN_VALUE) {
+            int index = cmd.getStartIndex().intValue() == 0 ? 0 : cmd.getStartIndex().intValue() / cmd.getPageSizeVal().intValue();
+            List<NetworkVO> wPagination = new ArrayList<NetworkVO>();
+            List<List<NetworkVO>> partitions = partitionNetworks(networksToReturn, cmd.getPageSizeVal().intValue());
+            if (index < partitions.size()) {
+                wPagination = partitions.get(index);
+            }
+            return new Pair<List<? extends Network>, Integer>(wPagination, networksToReturn.size());
+        }
+
+        return new Pair<List<? extends Network>, Integer>(networksToReturn, networksToReturn.size());
+    }
+
+    private static List<List<NetworkVO>> partitionNetworks(List<NetworkVO> originalList, int chunkSize) {
+        List<List<NetworkVO>> listOfChunks = new ArrayList<List<NetworkVO>>();
+        for (int i = 0; i < originalList.size() / chunkSize; i++) {
+            listOfChunks.add(originalList.subList(i * chunkSize, i * chunkSize + chunkSize));
+        }
+        if (originalList.size() % chunkSize != 0) {
+            listOfChunks.add(originalList.subList(originalList.size() - originalList.size() % chunkSize, originalList.size()));
+        }
+        return listOfChunks;
+    }
+
+    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType,
+            String trafficType, Long physicalNetworkId, String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges, Long vpcId,
+            Map<String, String> tags, Boolean display) {
+
         SearchCriteria<NetworkVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+
         if (isSystem != null) {
             sc.setJoinParameters("networkOfferingSearch", "systemOnly", isSystem);
         }
@@ -1506,6 +1672,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             sc.addAnd("physicalNetworkId", SearchCriteria.Op.EQ, physicalNetworkId);
         }
 
+        if (skipProjectNetworks) {
+            sc.setJoinParameters("accountSearch", "typeNEQ", Account.ACCOUNT_TYPE_PROJECT);
+        } else {
+            sc.setJoinParameters("accountSearch", "typeEQ", Account.ACCOUNT_TYPE_PROJECT);
+        }
+
         if (restartRequired != null) {
             sc.addAnd("restartRequired", SearchCriteria.Op.EQ, restartRequired);
         }
@@ -1528,70 +1700,94 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
         }
 
-        List<NetworkVO> networksToReturn = _networksDao.search(sc, searchFilter);
-
-        // filter by supported services
-        if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !networksToReturn.isEmpty()) {
-            List<NetworkVO> supportedNetworks = new ArrayList<NetworkVO>();
-            Service[] suppportedServices = new Service[supportedServicesStr.size()];
-            int i = 0;
-            for (String supportedServiceStr : supportedServicesStr) {
-                Service service = Service.getService(supportedServiceStr);
-                if (service == null) {
-                    throw new InvalidParameterValueException("Invalid service specified " + supportedServiceStr);
-                } else {
-                    suppportedServices[i] = service;
-                }
-                i++;
-            }
-
-            for (NetworkVO network : networksToReturn) {
-                if (areServicesSupportedInNetwork(network.getId(), suppportedServices)) {
-                    supportedNetworks.add(network);
-                }
-            }
-
-            networksToReturn = supportedNetworks;
-        }
-
-        // filter by usability to deploy
-        if (canUseForDeploy != null) {
-            List<NetworkVO> networksForDeploy = new ArrayList<NetworkVO>();
-            for (NetworkVO network : networksToReturn) {
-                if (_networkModel.canUseForDeploy(network) == canUseForDeploy) {
-                    networksForDeploy.add(network);
-                }
-            }
-
-            networksToReturn = networksForDeploy;
-        }
-
-        //Now apply pagination
-        //Most likely pageSize will never exceed int value, and we need integer to partition the listToReturn
-        boolean notNull = cmd.getStartIndex() != null && cmd.getPageSizeVal() != null;
-        if (notNull && cmd.getStartIndex() <= Integer.MAX_VALUE && cmd.getStartIndex() >= Integer.MIN_VALUE && cmd.getPageSizeVal() <= Integer.MAX_VALUE
-                && cmd.getPageSizeVal() >= Integer.MIN_VALUE) {
-            int index = cmd.getStartIndex().intValue() == 0 ? 0 : cmd.getStartIndex().intValue() / cmd.getPageSizeVal().intValue();
-            List<NetworkVO> wPagination = new ArrayList<NetworkVO>();
-            List<List<NetworkVO>> partitions = partitionNetworks(networksToReturn, cmd.getPageSizeVal().intValue());
-            if (index < partitions.size()) {
-                wPagination = partitions.get(index);
-            }
-            return new Pair<List<? extends Network>, Integer>(wPagination, networksToReturn.size());
-        }
-
-        return new Pair<List<? extends Network>, Integer>(networksToReturn, networksToReturn.size());
+        return sc;
     }
 
-    private static List<List<NetworkVO>> partitionNetworks(List<NetworkVO> originalList, int chunkSize) {
-        List<List<NetworkVO>> listOfChunks = new ArrayList<List<NetworkVO>>();
-        for (int i = 0; i < originalList.size() / chunkSize; i++) {
-            listOfChunks.add(originalList.subList(i * chunkSize, i * chunkSize + chunkSize));
+    private List<NetworkVO> listDomainLevelNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, long domainId, boolean parentDomainsOnly) {
+        List<Long> networkIds = new ArrayList<Long>();
+        Set<Long> allowedDomains = _domainMgr.getDomainParentIds(domainId);
+        List<NetworkDomainVO> maps = _networkDomainDao.listDomainNetworkMapByDomain(allowedDomains.toArray());
+
+        for (NetworkDomainVO map : maps) {
+            if (map.getDomainId() == domainId && parentDomainsOnly) {
+                continue;
+            }
+            boolean subdomainAccess = (map.isSubdomainAccess() != null) ? map.isSubdomainAccess() : getAllowSubdomainAccessGlobal();
+            if (map.getDomainId() == domainId || subdomainAccess) {
+                networkIds.add(map.getNetworkId());
+            }
         }
-        if (originalList.size() % chunkSize != 0) {
-            listOfChunks.add(originalList.subList(originalList.size() - originalList.size() % chunkSize, originalList.size()));
+
+        if (!networkIds.isEmpty()) {
+            SearchCriteria<NetworkVO> domainSC = _networksDao.createSearchCriteria();
+            domainSC.addAnd("id", SearchCriteria.Op.IN, networkIds.toArray());
+            domainSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Domain.toString());
+
+            sc.addAnd("id", SearchCriteria.Op.SC, domainSC);
+            return _networksDao.search(sc, searchFilter);
+        } else {
+            return new ArrayList<NetworkVO>();
         }
-        return listOfChunks;
+    }
+
+    private List<NetworkVO> listAccountSpecificNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, List<Long> permittedAccounts) {
+        SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
+        if (!permittedAccounts.isEmpty()) {
+            accountSC.addAnd("accountId", SearchCriteria.Op.IN, permittedAccounts.toArray());
+        }
+
+        accountSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Account.toString());
+
+        sc.addAnd("id", SearchCriteria.Op.SC, accountSC);
+        return _networksDao.search(sc, searchFilter);
+    }
+
+    private List<NetworkVO> listAccountSpecificNetworksByDomainPath(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path, boolean isRecursive) {
+        SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
+        accountSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Account.toString());
+
+        if (path != null) {
+            if (isRecursive) {
+                sc.setJoinParameters("domainSearch", "path", path + "%");
+            } else {
+                sc.setJoinParameters("domainSearch", "path", path);
+            }
+        }
+
+        sc.addAnd("id", SearchCriteria.Op.SC, accountSC);
+        return _networksDao.search(sc, searchFilter);
+    }
+
+    private List<NetworkVO> listDomainSpecificNetworksByDomainPath(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path, boolean isRecursive) {
+
+        Set<Long> allowedDomains = new HashSet<Long>();
+        if (path != null) {
+            if (isRecursive) {
+                allowedDomains = _domainMgr.getDomainChildrenIds(path);
+            } else {
+                Domain domain = _domainDao.findDomainByPath(path);
+                allowedDomains.add(domain.getId());
+            }
+        }
+
+        List<Long> networkIds = new ArrayList<Long>();
+
+        List<NetworkDomainVO> maps = _networkDomainDao.listDomainNetworkMapByDomain(allowedDomains.toArray());
+
+        for (NetworkDomainVO map : maps) {
+            networkIds.add(map.getNetworkId());
+        }
+
+        if (!networkIds.isEmpty()) {
+            SearchCriteria<NetworkVO> domainSC = _networksDao.createSearchCriteria();
+            domainSC.addAnd("id", SearchCriteria.Op.IN, networkIds.toArray());
+            domainSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Domain.toString());
+
+            sc.addAnd("id", SearchCriteria.Op.SC, domainSC);
+        return _networksDao.search(sc, searchFilter);
+        } else {
+            return new ArrayList<NetworkVO>();
+        }
     }
 
     @Override
