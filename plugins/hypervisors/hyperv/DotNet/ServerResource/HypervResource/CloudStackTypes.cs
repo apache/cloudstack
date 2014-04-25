@@ -302,7 +302,7 @@ namespace HypervResource
                 path = Utils.NormalizePath(path);
                 if (Directory.Exists(path))
                 {
-                    string[] choices = choices = Directory.GetFiles(path, volInfo.uuid + ".vhd*");
+                    string[] choices = Directory.GetFiles(path, volInfo.uuid + ".vhd*");
                     if (choices.Length != 1)
                     {
                         String errMsg = "Tried to guess file extension, but cannot find file corresponding to " +
@@ -609,6 +609,7 @@ namespace HypervResource
 
     public struct VolumeInfo
     {
+#pragma warning disable 0414
         public long id;
         public string type;
         public string storagePoolType;
@@ -618,6 +619,7 @@ namespace HypervResource
         public string path;
         long size;
         string chainInfo;
+#pragma warning restore 0414
 
         public VolumeInfo(long id, string type, string poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo)
         {
@@ -635,10 +637,12 @@ namespace HypervResource
 
     public class VmState
     {
+#pragma warning disable 0414
         [JsonProperty("state")]
         public String state;
         [JsonProperty("host")]
         String host;
+#pragma warning restore 0414
         public VmState() { }
         public VmState(String vmState, String host)
         {
@@ -649,6 +653,7 @@ namespace HypervResource
 
     public struct StoragePoolInfo
     {
+#pragma warning disable 0414
         [JsonProperty("uuid")]
         public String uuid;
         [JsonProperty("host")]
@@ -667,6 +672,7 @@ namespace HypervResource
         long availableBytes;
         [JsonProperty("details")]
         Dictionary<String, String> details;
+#pragma warning restore 0414
 
         public StoragePoolInfo(String uuid, String host, String hostPath,
                 String localPath, string poolType, long capacityBytes,

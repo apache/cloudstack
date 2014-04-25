@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -88,7 +88,7 @@ namespace HypervResource
             {
                 IntPtr token = IntPtr.Zero;
 
-                bool isSuccess = LogonUser(cifsShareDetails.User, cifsShareDetails.Domain, cifsShareDetails.Password, LOGON32_LOGON_NEW_CREDENTIALS, LOGON32_PROVIDER_DEFAULT, ref token);
+                LogonUser(cifsShareDetails.User, cifsShareDetails.Domain, cifsShareDetails.Password, LOGON32_LOGON_NEW_CREDENTIALS, LOGON32_PROVIDER_DEFAULT, ref token);
                 using (WindowsImpersonationContext remoteIdentity = new WindowsIdentity(token).Impersonate())
                 {
                     String dest = "";

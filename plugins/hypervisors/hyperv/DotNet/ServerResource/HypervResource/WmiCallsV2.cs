@@ -333,6 +333,7 @@ namespace HypervResource
                 else if (templateInfo != null && templateInfo.nfsDataStoreTO != null)
                 {
                     NFSTO share = templateInfo.nfsDataStoreTO;
+                    Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
                     // The share is mapped, now attach the iso
                     isoPath = Utils.NormalizePath(Path.Combine(share.UncPath, templateInfo.path));
                 }
@@ -377,10 +378,7 @@ namespace HypervResource
                 }
             }
 
-            String publicIpAddress = "";
             int nicCount = 0;
-            int enableState = 2;
-
             // Add the Nics to the VM in the deviceId order.
             foreach (var nc in nicInfo)
             {
@@ -419,16 +417,13 @@ namespace HypervResource
                             throw ex;
                         }
                     }
+                    if(nicIp.Equals("0.0.0.0") && nicNetmask.Equals("255.255.255.255") ) {
+                        // this is the extra nic added to VR.
+                        vlan = defaultvlan;
+                    }
 
                     if (nicid == nicCount)
                     {
-                        if (nicIp.Equals("0.0.0.0") && nicNetmask.Equals("255.255.255.255"))
-                        {
-                            // this is the extra nic added to VR.
-                            vlan = null;
-                            enableState = 3;
-                        }
-
                         // Create network adapter
                         var newAdapter = CreateNICforVm(newVm, mac);
                         String switchName ="";
@@ -436,11 +431,10 @@ namespace HypervResource
                         {
                             switchName =  nic.name;
                         }
-                        EthernetPortAllocationSettingData portSettings = null;
+
                         // connection to vswitch
-                        portSettings = AttachNicToPort(newVm, newAdapter, switchName, enableState);
-                        //reset the flag for other nics
-                        enableState = 2;
+                        var portSettings = AttachNicToPort(newVm, newAdapter, switchName);
+
                         // set vlan
                         if (vlan != null)
                         {
@@ -486,6 +480,433 @@ namespace HypervResource
             SetState(newVm, RequiredState.Enabled);
             // Mark the VM as created by cloudstack tag
             TagVm(newVm);
+
+            // we need to reboot to get the hv kvp daemon get started vr gets configured.
+            if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
+            {
+                System.Threading.Thread.Sleep(90000);
+            }
+            logger.InfoFormat("Started VM {0}", vmName);
+            return newVm;
+        }
+
+        public static Boolean pingResource(String ip)
+        {
+            PingOptions pingOptions = null;
+            PingReply pingReply = null;
+            IPAddress ipAddress = null;
+            Ping pingSender = new Ping();
+            int numberOfPings = 6;
+            int pingTimeout = 1000;
+            int byteSize = 32;
+            byte[] buffer = new byte[byteSize];
+            ipAddress = IPAddress.Parse(ip);
+            pingOptions = new PingOptions();
+            for (int i = 0; i < numberOfPings; i++)
+            {
+                pingReply = pingSender.Send(ipAddress, pingTimeout, buffer, pingOptions);
+                if (pingReply.Status == IPStatus.Success)
+                {
+                    System.Threading.Thread.Sleep(30000);
+                    return true;
+                }
+                else
+                {
+                    // wait for the second boot and then return with suces
+                    System.Threading.Thread.Sleep(30000);
+                }
+            }
+            return false;
+        }
+
+        private EthernetPortAllocationSettingData AttachNicToPort(ComputerSystem newVm, SyntheticEthernetPortSettingData newAdapter, String vSwitchName)
+        {
+            // Get the virtual switch
+            VirtualEthernetSwitch vSwitch = GetExternalVirtSwitch(vSwitchName);
+            //check the the recevied vSwitch is the same as vSwitchName.
+            if (!vSwitchName.Equals("")  && !vSwitch.ElementName.Equals(vSwitchName))
+            {
+               var errMsg = string.Format("Internal error, coudl not find Virtual Switch with the name : " +vSwitchName);
+               var ex = new WmiException(errMsg);
+               logger.Error(errMsg, ex);
+               throw ex;
+            }
+
+            // Create port for adapter
+            var defaultEthernetPortSettings = EthernetPortAllocationSettingData.GetInstances(vSwitch.Scope, "InstanceID LIKE \"%Default\"");
+
+            // assert
+            if (defaultEthernetPortSettings.Count != 1)
+            {
+                var errMsg = string.Format("Internal error, coudl not find default EthernetPortAllocationSettingData instance");
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+
+            var defaultEthernetPortSettingsObj = defaultEthernetPortSettings.OfType<EthernetPortAllocationSettingData>().First();
+            var newEthernetPortSettings = new EthernetPortAllocationSettingData((ManagementBaseObject)defaultEthernetPortSettingsObj.LateBoundObject.Clone());
+            newEthernetPortSettings.LateBoundObject["Parent"] = newAdapter.Path.Path;
+            newEthernetPortSettings.LateBoundObject["HostResource"] = new string[] { vSwitch.Path.Path };
+
+            // Insert NIC into vm
+            string[] newResources = new string[] { newEthernetPortSettings.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20) };
+            ManagementPath[] newResourcePaths = AddVirtualResource(newResources, newVm);
+
+            // assert
+            if (newResourcePaths.Length != 1)
+            {
+                var errMsg = string.Format(
+                    "Failed to properly insert a single NIC on VM {0} (GUID {1}): number of resource created {2}",
+                    newVm.ElementName,
+                    newVm.Name,
+                    newResourcePaths.Length);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+
+            return new EthernetPortAllocationSettingData(newResourcePaths[0]);
+        }
+
+        /// this method is to add a dvd drive and attach the systemvm iso.
+        /// 
+        public void patchSystemVmIso(String vmName, String systemVmIso)
+        {
+            ComputerSystem vmObject = GetComputerSystem(vmName);
+            AddDiskDriveToIdeController(vmObject, "", "1", ISO_DRIVE);
+            AttachIso(vmName, systemVmIso);
+        }
+
+        public void AttachDisk(string vmName, string diskPath, string addressOnController)
+        {
+            logger.DebugFormat("Got request to attach disk {0} to vm {1}", diskPath, vmName);
+
+            ComputerSystem vm = GetComputerSystem(vmName);
+            if (vm == null)
+            {
+                logger.DebugFormat("VM {0} not found", vmName);
+                return;
+            }
+            else
+            {
+                ManagementPath newDrivePath = GetDiskDriveOnScsiController(vm, addressOnController);
+                if (newDrivePath == null)
+                {
+                    newDrivePath = AttachDiskDriveToScsiController(vm, addressOnController);
+                }
+                InsertDiskImage(vm, diskPath, HARDDISK_DISK, newDrivePath);
+            }
+        }
+
+        /// </summary>
+        /// <param name="vm"></param>
+        /// <param name="cntrllerAddr"></param>
+        /// <param name="driveResourceType">IDE_HARDDISK_DRIVE or IDE_ISO_DRIVE</param>
+        public ManagementPath AddDiskDriveToIdeController(ComputerSystem vm, string vhdfile, string cntrllerAddr, string driveResourceType)
+        {
+            logger.DebugFormat("Creating DISK for VM {0} (GUID {1}) by attaching {2}", 
+                        vm.ElementName,
+                        vm.Name,
+                        vhdfile);
+
+            // Determine disk type for drive and assert drive type valid
+            string diskResourceSubType = null;
+            switch(driveResourceType) {
+                case HARDDISK_DRIVE:
+                    diskResourceSubType = HARDDISK_DISK;
+                    break;
+                case ISO_DRIVE: 
+                    diskResourceSubType = ISO_DISK;
+                    break;
+                default:
+                    var errMsg = string.Format(
+                        "Unrecognised disk drive type {0} for VM {1} (GUID {2})",
+                        string.IsNullOrEmpty(driveResourceType) ? "NULL": driveResourceType, 
+                        vm.ElementName,
+                        vm.Name);
+                    var ex = new WmiException(errMsg);
+                    logger.Error(errMsg, ex);
+                    throw ex;
+            }
+
+            ManagementPath newDrivePath = AttachNewDrive(vm, cntrllerAddr, driveResourceType);
+
+            // If there's not disk to insert, we are done.
+            if (String.IsNullOrEmpty(vhdfile))
+            {
+                logger.DebugFormat("No disk to be added to drive, disk drive {0} is complete", newDrivePath.Path);
+            }
+            else
+            {
+                InsertDiskImage(vm, vhdfile, diskResourceSubType, newDrivePath);
+            }
+            return newDrivePath;
+        }
+
+
+        public void DetachDisk(string displayName, string diskFileName)
+        {
+            logger.DebugFormat("Got request to detach virtual disk {0} from vm {1}", diskFileName, displayName);
+
+            ComputerSystem vm = GetComputerSystem(displayName);
+            if (vm == null)
+            {
+                logger.DebugFormat("VM {0} not found", displayName);
+                return;
+            }
+            else
+            {
+                RemoveStorageImage(vm, diskFileName);
+            }
+        }
+
+        /// <summary>
+        /// Removes a disk image from a drive, but does not remove the drive itself.
+        /// </summary>
+        /// <param name="vm"></param>
+        /// <param name="diskFileName"></param>
+        private void RemoveStorageImage(ComputerSystem vm, string diskFileName)
+        {
+            // Obtain StorageAllocationSettingData for disk
+            StorageAllocationSettingData.StorageAllocationSettingDataCollection storageSettingsObjs = StorageAllocationSettingData.GetInstances();
+
+            StorageAllocationSettingData imageToRemove = null;
+            foreach (StorageAllocationSettingData item in storageSettingsObjs)
+            {
+                if (item.HostResource == null || item.HostResource.Length != 1)
+                {
+                    continue;
+                }
+
+                string hostResource = item.HostResource[0];
+                if (Path.Equals(hostResource, diskFileName))
+                {
+                    imageToRemove = item;
+                    break;
+                }
+            }
+
+            // assert
+            if (imageToRemove  == null)
+            {
+                var errMsg = string.Format(
+                    "Failed to remove disk image {0} from VM {1} (GUID {2}): the disk image is not attached.",
+                    diskFileName,
+                    vm.ElementName,
+                    vm.Name);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+
+            RemoveStorageResource(imageToRemove.Path, vm);
+
+            logger.InfoFormat("Removed disk image {0} from VM {1} (GUID {2}): the disk image is not attached.",
+                    diskFileName,
+                    vm.ElementName,
+                    vm.Name);
+        }
+
+        private ManagementPath AttachNewDrive(ComputerSystem vm, string cntrllerAddr, string driveType)
+        {
+            // Disk drives are attached to a 'Parent' IDE controller.  We IDE Controller's settings for the 'Path', which our new Disk drive will use to reference it.
+            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
+            var ctrller = GetIDEControllerSettings(vmSettings, cntrllerAddr);
+
+            // A description of the drive is created by modifying a clone of the default ResourceAllocationSettingData for that drive type
+            string defaultDriveQuery = String.Format("ResourceSubType LIKE \"{0}\" AND InstanceID LIKE \"%Default\"", driveType);
+            var newDiskDriveSettings = CloneResourceAllocationSetting(defaultDriveQuery);
+
+            // Set IDE controller and address on the controller for the new drive
+            newDiskDriveSettings.LateBoundObject["Parent"] = ctrller.Path.ToString();
+            newDiskDriveSettings.LateBoundObject["AddressOnParent"] = "0";
+            newDiskDriveSettings.CommitObject();
+
+            // Add this new disk drive to the VM
+            logger.DebugFormat("Creating disk drive type {0}, parent IDE controller is {1} and address on controller is {2}",
+                newDiskDriveSettings.ResourceSubType,
+                newDiskDriveSettings.Parent,
+                newDiskDriveSettings.AddressOnParent);
+            string[] newDriveResource = new string[] { newDiskDriveSettings.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20) };
+            ManagementPath[] newDrivePaths = AddVirtualResource(newDriveResource, vm);
+
+            // assert
+            if (newDrivePaths.Length != 1)
+            {
+                var errMsg = string.Format(
+                    "Failed to add disk drive type {3} to VM {0} (GUID {1}): number of resource created {2}",
+                    vm.ElementName,
+                    vm.Name,
+                    newDrivePaths.Length,
+                    driveType);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+            logger.DebugFormat("New disk drive type {0} WMI path is {1}s",
+                newDiskDriveSettings.ResourceSubType,
+                newDrivePaths[0].Path);
+            return newDrivePaths[0];
+        }
+
+        private ManagementPath AddScsiController(ComputerSystem vm)
+        {
+            // A description of the controller is created by modifying a clone of the default ResourceAllocationSettingData for scsi controller
+            string scsiQuery = String.Format("ResourceSubType LIKE \"{0}\" AND InstanceID LIKE \"%Default\"", SCSI_CONTROLLER);
+            var scsiSettings = CloneResourceAllocationSetting(scsiQuery);
+
+            scsiSettings.LateBoundObject["ElementName"] = "SCSI Controller";
+            scsiSettings.CommitObject();
+
+            // Insert SCSI controller into vm
+            string[] newResources = new string[] { scsiSettings.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20) };
+            ManagementPath[] newResourcePaths = AddVirtualResource(newResources, vm);
+
+            // assert
+            if (newResourcePaths.Length != 1)
+            {
+                var errMsg = string.Format(
+                    "Failed to add scsi controller to VM {0} (GUID {1}): number of resource created {2}",
+                    vm.ElementName,
+                    vm.Name,
+                    newResourcePaths.Length);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+
+            logger.DebugFormat("New controller type {0} WMI path is {1}s",
+                scsiSettings.ResourceSubType,
+                newResourcePaths[0].Path);
+            return newResourcePaths[0];
+        }
+
+        private ManagementPath GetDiskDriveOnScsiController(ComputerSystem vm, string addrOnController)
+        {
+            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
+            var wmiObjCollection = GetResourceAllocationSettings(vmSettings);
+            foreach (ResourceAllocationSettingData wmiObj in wmiObjCollection)
+            {
+                if (wmiObj.ResourceSubType == HARDDISK_DRIVE)
+                {
+                    ResourceAllocationSettingData parent = new ResourceAllocationSettingData(new ManagementObject(wmiObj.Parent));
+                    if (parent.ResourceSubType == SCSI_CONTROLLER && wmiObj.AddressOnParent == addrOnController)
+                    {
+                        return wmiObj.Path;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private ManagementPath AttachDiskDriveToScsiController(ComputerSystem vm, string addrOnController)
+        {
+            // Disk drives are attached to a 'Parent' Scsi controller.
+            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
+            var ctrller = GetScsiControllerSettings(vmSettings);
+
+            // A description of the drive is created by modifying a clone of the default ResourceAllocationSettingData for that drive type
+            string defaultDriveQuery = String.Format("ResourceSubType LIKE \"{0}\" AND InstanceID LIKE \"%Default\"", HARDDISK_DRIVE);
+            var newDiskDriveSettings = CloneResourceAllocationSetting(defaultDriveQuery);
+
+            // Set IDE controller and address on the controller for the new drive
+            newDiskDriveSettings.LateBoundObject["Parent"] = ctrller.Path.ToString();
+            newDiskDriveSettings.LateBoundObject["AddressOnParent"] = addrOnController;
+            newDiskDriveSettings.CommitObject();
+
+            // Add this new disk drive to the VM
+            logger.DebugFormat("Creating disk drive type {0}, parent IDE controller is {1} and address on controller is {2}",
+                newDiskDriveSettings.ResourceSubType,
+                newDiskDriveSettings.Parent,
+                newDiskDriveSettings.AddressOnParent);
+            string[] newDriveResource = new string[] { newDiskDriveSettings.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20) };
+            ManagementPath[] newDrivePaths = AddVirtualResource(newDriveResource, vm);
+
+            // assert
+            if (newDrivePaths.Length != 1)
+            {
+                var errMsg = string.Format(
+                    "Failed to add disk drive type {3} to VM {0} (GUID {1}): number of resource created {2}",
+                    vm.ElementName,
+                    vm.Name,
+                    newDrivePaths.Length,
+                    HARDDISK_DRIVE);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+            logger.DebugFormat("New disk drive type {0} WMI path is {1}s",
+                newDiskDriveSettings.ResourceSubType,
+                newDrivePaths[0].Path);
+            return newDrivePaths[0];
+        }
+
+
+        private void InsertDiskImage(ComputerSystem vm, string diskImagePath, string diskResourceSubType, ManagementPath drivePath)
+        {
+            // A description of the disk is created by modifying a clone of the default ResourceAllocationSettingData for that disk type
+            string defaultDiskQuery = String.Format("ResourceSubType LIKE \"{0}\" AND InstanceID LIKE \"%Default\"", diskResourceSubType);
+            var newDiskSettings = CloneStorageAllocationSetting(defaultDiskQuery);
+
+            // Set file containing the disk image
+            newDiskSettings.LateBoundObject["Parent"] = drivePath.Path;
+
+            // V2 API uses HostResource to specify image, see http://msdn.microsoft.com/en-us/library/hh859775(v=vs.85).aspx
+            newDiskSettings.LateBoundObject["HostResource"] = new string[] { diskImagePath };
+            newDiskSettings.CommitObject();
+
+            // Add the new Msvm_StorageAllocationSettingData object as a virtual hard disk to the vm.
+            string[] newDiskResource = new string[] { newDiskSettings.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20) };
+            ManagementPath[] newDiskPaths = AddStorageResource(newDiskResource, vm);
+            // assert
+            if (newDiskPaths.Length != 1)
+            {
+                var errMsg = string.Format(
+                    "Failed to add disk image type {3} to VM {0} (GUID {1}): number of resource created {2}",
+                    vm.ElementName,
+                    vm.Name,
+                    newDiskPaths.Length,
+                    diskResourceSubType);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+            logger.InfoFormat("Created disk {2} for VM {0} (GUID {1}), image {3} ",
+                    vm.ElementName,
+                    vm.Name,
+                    newDiskPaths[0].Path,
+                    diskImagePath);
+        }
+
+        /// <summary>
+        /// Create Msvm_StorageAllocationSettingData corresponding to the ISO image, and 
+        /// associate this with the VM's DVD drive.
+        /// </summary>
+        private void AttachIso(ComputerSystem vm, string isoPath)
+        {
+            // Disk drives are attached to a 'Parent' IDE controller.  We IDE Controller's settings for the 'Path', which our new Disk drive will use to reference it.
+            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
+            var driveWmiObj = GetDvdDriveSettings(vmSettings);
+            InsertDiskImage(vm, isoPath, ISO_DISK, driveWmiObj.Path);
+        }
+
+        private static ResourceAllocationSettingData CloneResourceAllocationSetting(string wmiQuery)
+        {
+            var defaultDiskDriveSettingsObjs = ResourceAllocationSettingData.GetInstances(wmiQuery);
+
+            // assert
+            if (defaultDiskDriveSettingsObjs.Count != 1)
+            {
+                var errMsg = string.Format("Failed to find Msvm_ResourceAllocationSettingData for the query {0}", wmiQuery);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+
+            ResourceAllocationSettingData defaultDiskDriveSettings = defaultDiskDriveSettingsObjs.OfType<ResourceAllocationSettingData>().First();
+            return new ResourceAllocationSettingData((ManagementBaseObject)defaultDiskDriveSettings.LateBoundObject.Clone());
+        }
 
             // we need to reboot to get the hv kvp daemon get started vr gets configured.
             if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
@@ -2024,13 +2445,9 @@ namespace HypervResource
 
         public VirtualEthernetSwitchManagementService GetVirtualSwitchManagementService()
         {
-            // VirtualSwitchManagementService is a singleton, most anonymous way of lookup is by asking for the set
-            // of local instances, which should be size 1.
-            var virtSwtichSvcCollection = VirtualEthernetSwitchManagementService.GetInstances();
-            foreach (VirtualEthernetSwitchManagementService item in virtSwtichSvcCollection)
-            {
-                return item;
-            }
+            ComputerSystem vm = GetComputerSystem(vmName);
+            // Obtain controller for Hyper-V virtualisation subsystem
+            VirtualSystemManagementService vmMgmtSvc = GetVirtualisationSystemManagementService();
 
             var errMsg = string.Format("No Hyper-V subsystem on server");
             var ex = new WmiException(errMsg);
@@ -2221,157 +2638,221 @@ namespace HypervResource
             }
         }
 
-        public void GetProcessorResources(out uint sockets, out uint cores, out uint mhz)
+        /// <summary>
+        /// Migrates a vm to the given destination host
+        /// </summary>
+        /// <param name="desplayName"></param>
+        /// <param name="destination host"></param>
+        public void MigrateVm(string vmName, string destination)
         {
-            //  Processor processors
-            cores = 0;
-            mhz = 0;
-            sockets = 0;
-            Processor.ProcessorCollection procCol = Processor.GetInstances();
-            foreach (Processor procInfo in procCol)
+            ComputerSystem vm = GetComputerSystem(vmName);
+            VirtualSystemMigrationSettingData migrationSettingData = VirtualSystemMigrationSettingData.CreateInstance();
+            VirtualSystemMigrationService service = GetVirtualisationSystemMigrationService();
+
+            IPAddress addr = IPAddress.Parse(destination);
+            IPHostEntry entry = Dns.GetHostEntry(addr);
+            string[] destinationHost = new string[] { destination };
+
+            migrationSettingData.LateBoundObject["MigrationType"] = MigrationType.VirtualSystem;
+            migrationSettingData.LateBoundObject["TransportType"] = TransportType.TCP;
+            migrationSettingData.LateBoundObject["DestinationIPAddressList"] = destinationHost;
+            string migrationSettings = migrationSettingData.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
+
+            ManagementPath jobPath;
+            var ret_val = service.MigrateVirtualSystemToHost(vm.Path, entry.HostName, migrationSettings, null, null, out jobPath);
+            if (ret_val == ReturnCode.Started)
             {
-                cores += procInfo.NumberOfCores;
-                mhz = procInfo.MaxClockSpeed;
-                sockets++;
-           }
-        }
-        
-        public void GetProcessorUsageInfo(out double cpuUtilization)
-        {
-            PerfFormattedData_Counters_ProcessorInformation.PerfFormattedData_Counters_ProcessorInformationCollection coll = 
-                            PerfFormattedData_Counters_ProcessorInformation.GetInstances("Name=\"_Total\"");
-            cpuUtilization = 100;
-            // Use the first one
-            foreach (PerfFormattedData_Counters_ProcessorInformation procInfo in coll)
+                MigrationJobCompleted(jobPath);
+            }
+            else if (ret_val != ReturnCode.Completed)
             {
-                // Idle during a given internal 
-                // See http://library.wmifun.net/cimv2/win32_perfformatteddata_counters_processorinformation.html
-                cpuUtilization = 100.0 - (double)procInfo.PercentIdleTime;            
+                var errMsg = string.Format(
+                    "Failed migrating VM {0} (GUID {1}) due to {2}",
+                    vm.ElementName,
+                    vm.Name,
+                    ReturnCode.ToString(ret_val));
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
             }
         }
 
-
-        public void GetMemoryResources(out ulong physicalRamKBs, out ulong freeMemoryKBs)
+        /// <summary>
+        /// Migrates the volume of a vm to a given destination storage
+        /// </summary>
+        /// <param name="displayName"></param>
+        /// <param name="volume"></param>
+        /// <param name="destination storage pool"></param>
+        public void MigrateVolume(string vmName, string volume, string destination)
         {
-            OperatingSystem0 os = new OperatingSystem0();
-            physicalRamKBs = os.TotalVisibleMemorySize;
-            freeMemoryKBs = os.FreePhysicalMemory;
+            ComputerSystem vm = GetComputerSystem(vmName);
+            VirtualSystemMigrationSettingData migrationSettingData = VirtualSystemMigrationSettingData.CreateInstance();
+            VirtualSystemMigrationService service = GetVirtualisationSystemMigrationService();
+            StorageAllocationSettingData[] sasd = GetStorageSettings(vm);
+
+            string[] rasds = null;
+            if (sasd != null)
+            {
+                rasds = new string[1];
+                foreach (StorageAllocationSettingData item in sasd)
+                {
+                    string vhdFileName = Path.GetFileNameWithoutExtension(item.HostResource[0]);
+                    if (!String.IsNullOrEmpty(vhdFileName) && vhdFileName.Equals(volume))
+                    {
+                        string newVhdPath = Path.Combine(destination, Path.GetFileName(item.HostResource[0]));
+                        item.LateBoundObject["HostResource"] = new string[] { newVhdPath };
+                        item.LateBoundObject["PoolId"] = "";
+                        rasds[0] = item.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
+                        break;
+                    }
+                }
+            }
+
+            migrationSettingData.LateBoundObject["MigrationType"] = MigrationType.Storage;
+            migrationSettingData.LateBoundObject["TransportType"] = TransportType.TCP;
+            string migrationSettings = migrationSettingData.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
+
+            ManagementPath jobPath;
+            var ret_val = service.MigrateVirtualSystemToHost(vm.Path, null, migrationSettings, rasds, null, out jobPath);
+            if (ret_val == ReturnCode.Started)
+            {
+                MigrationJobCompleted(jobPath);
+            }
+            else if (ret_val != ReturnCode.Completed)
+            {
+                var errMsg = string.Format(
+                    "Failed migrating volume {0} of VM {1} (GUID {2}) due to {3}",
+                    volume,
+                    vm.ElementName,
+                    vm.Name,
+                    ReturnCode.ToString(ret_val));
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
         }
 
-        public string GetDefaultVirtualDiskFolder()
+        /// <summary>
+        /// Migrates the volume of a vm to a given destination storage
+        /// </summary>
+        /// <param name="displayName"></param>
+        /// <param name="destination host"></param>
+        /// <param name="volumeToPool"> volume to me migrated to which pool</param>
+        public void MigrateVmWithVolume(string vmName, string destination, Dictionary<string, string> volumeToPool)
         {
-            VirtualSystemManagementServiceSettingData.VirtualSystemManagementServiceSettingDataCollection coll = VirtualSystemManagementServiceSettingData.GetInstances();
-            string defaultVirtualHardDiskPath = null;
-            foreach (VirtualSystemManagementServiceSettingData settings in coll)
+            ComputerSystem vm = GetComputerSystem(vmName);
+            VirtualSystemMigrationSettingData migrationSettingData = VirtualSystemMigrationSettingData.CreateInstance();
+            VirtualSystemMigrationService service = GetVirtualisationSystemMigrationService();
+            StorageAllocationSettingData[] sasd = GetStorageSettings(vm);
+
+            string[] rasds = null;
+            if (sasd != null)
             {
-                defaultVirtualHardDiskPath = settings.DefaultVirtualHardDiskPath;
+                rasds = new string[sasd.Length];
+                uint index = 0;
+                foreach (StorageAllocationSettingData item in sasd)
+                {
+                    string vhdFileName = Path.GetFileNameWithoutExtension(item.HostResource[0]);
+                    if (!String.IsNullOrEmpty(vhdFileName) && volumeToPool.ContainsKey(vhdFileName))
+                    {
+                        string newVhdPath = Path.Combine(volumeToPool[vhdFileName], Path.GetFileName(item.HostResource[0]));
+                        item.LateBoundObject["HostResource"] = new string[] { newVhdPath };
+                        item.LateBoundObject["PoolId"] = "";
+                    }
+
+                    rasds[index++] = item.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
+                }
             }
+
+            IPAddress addr = IPAddress.Parse(destination);
+            IPHostEntry entry = Dns.GetHostEntry(addr);
+            string[] destinationHost = new string[] { destination };
+
+            migrationSettingData.LateBoundObject["MigrationType"] = MigrationType.VirtualSystemAndStorage;
+            migrationSettingData.LateBoundObject["TransportType"] = TransportType.TCP;
+            migrationSettingData.LateBoundObject["DestinationIPAddressList"] = destinationHost;
+            string migrationSettings = migrationSettingData.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
+
+            ManagementPath jobPath;
+            var ret_val = service.MigrateVirtualSystemToHost(vm.Path, entry.HostName, migrationSettings, rasds, null, out jobPath);
+            if (ret_val == ReturnCode.Started)
+            {
+                MigrationJobCompleted(jobPath);
+            }
+            else if (ret_val != ReturnCode.Completed)
+            {
+                var errMsg = string.Format(
+                    "Failed migrating VM {0} and its volumes to destination {1} (GUID {2}) due to {3}",
+                    vm.ElementName,
+                    destination,
+                    vm.Name,
+                    ReturnCode.ToString(ret_val));
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// Create new storage media resources, e.g. hard disk images and ISO disk images
+        /// see http://msdn.microsoft.com/en-us/library/hh859775(v=vs.85).aspx
+        /// </summary>
+        /// <param name="wmiQuery"></param>
+        /// <returns></returns>
+        private static StorageAllocationSettingData CloneStorageAllocationSetting(string wmiQuery)
+        {
+            var defaultDiskImageSettingsObjs = StorageAllocationSettingData.GetInstances(wmiQuery);
 
             // assert
-            if (!System.IO.Directory.Exists(defaultVirtualHardDiskPath) ){
+            if (defaultDiskImageSettingsObjs.Count != 1)
+            {
+                var errMsg = string.Format("Failed to find Msvm_StorageAllocationSettingData for the query {0}", wmiQuery);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+
+            StorageAllocationSettingData defaultDiskDriveSettings = defaultDiskImageSettingsObjs.OfType<StorageAllocationSettingData>().First();
+            return new StorageAllocationSettingData((ManagementBaseObject)defaultDiskDriveSettings.LateBoundObject.Clone());
+        }
+
+        /// < summary>
+        /// Removes a storage resource from a computer system.
+        /// </summary>
+        /// <param name="storageSettings">Path that uniquely identifies the resource.</param>
+        /// <param name="vm">VM to which the disk image will be attached.</param>
+        // Add new 
+        private void RemoveNetworkResource(ManagementPath resourcePath)
+        {
+            var virtSwitchMgmtSvc = GetVirtualSwitchManagementService();
+            ManagementPath jobPath;
+            var ret_val = virtSwitchMgmtSvc.RemoveResourceSettings(
+                new ManagementPath[] { resourcePath },
+                out jobPath);
+
+            // If the Job is done asynchronously
+            if (ret_val == ReturnCode.Started)
+            {
+                JobCompleted(jobPath);
+            }
+            else if (ret_val != ReturnCode.Completed)
+            {
                 var errMsg = string.Format(
-                    "Hyper-V DefaultVirtualHardDiskPath is invalid!");
-                logger.Error(errMsg);
-                return null;
+                    "Failed to remove network resources {0} from switch due to {1}",
+                    resourcePath.Path,
+                    ReturnCode.ToString(ret_val));
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
             }
-            
-            return defaultVirtualHardDiskPath;
         }
 
-        public ComputerSystem GetComputerSystem(string displayName)
-        {
-            var wmiQuery = String.Format("ElementName=\"{0}\"", displayName);
-            ComputerSystem.ComputerSystemCollection vmCollection = ComputerSystem.GetInstances(wmiQuery);
-
-            // Return the first one
-            foreach (ComputerSystem vm in vmCollection)
-            {
-                return vm;
-            }
-            return null;
-        }
-
-        public ComputerSystem.ComputerSystemCollection GetComputerSystemCollection()
-        {
-            var wmiQuery = String.Format("Caption=\"Virtual Machine\"");
-            return ComputerSystem.GetInstances(wmiQuery);
-        }
-
-        public Dictionary<String, VmState> GetVmSync(String privateIpAddress)
-        {
-            List<String> vms = GetVmElementNames();
-            Dictionary<String, VmState> vmSyncStates = new Dictionary<string, VmState>();
-            String vmState;
-            foreach (String vm in vms)
-            {
-                 vmState = EnabledState.ToCloudStackState(GetComputerSystem(vm).EnabledState);
-                 vmSyncStates.Add(vm, new VmState(vmState, privateIpAddress));
-            }
-            return vmSyncStates;
-        }
-
-        public List<string> GetVmElementNames()
-        {
-            List<string> result = new List<string>();
-            ComputerSystem.ComputerSystemCollection vmCollection = ComputerSystem.GetInstances();
-
-            // Return the first one
-            foreach (ComputerSystem vm in vmCollection)
-            {
-                if (vm.Caption.StartsWith("Hosting Computer System") )
-                {
-                    continue;
-                }
-                result.Add(vm.ElementName);
-            }
-            return result;
-        }
-
-        public ProcessorSettingData GetProcSettings(VirtualSystemSettingData vmSettings)
-        {
-            // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the 
-            // ProcessorSettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
-            // Instead, we use the System.Management to code the equivalant of 
-            //  string query = string.Format( "ASSOCIATORS OF {{{0}}} WHERE ResultClass = {1}", vmSettings.path, resultclassName);
-            //
-            var wmiObjQuery = new RelatedObjectQuery(vmSettings.Path.Path, ProcessorSettingData.CreatedClassName);
-
-            // NB: default scope of ManagementObjectSearcher is '\\.\root\cimv2', which does not contain
-            // the virtualisation objects.
-            var wmiObjectSearch = new ManagementObjectSearcher(vmSettings.Scope, wmiObjQuery);
-            var wmiObjCollection = new ProcessorSettingData.ProcessorSettingDataCollection(wmiObjectSearch.Get());
-
-            foreach (ProcessorSettingData wmiObj in wmiObjCollection)
-            {
-                return wmiObj;
-            }
-
-            var errMsg = string.Format("No ProcessorSettingData in VirtualSystemSettingData {0}", vmSettings.Path.Path);
-            var ex = new WmiException(errMsg);
-            logger.Error(errMsg, ex);
-            throw ex;
-        }
-
-        public MemorySettingData GetMemSettings(VirtualSystemSettingData vmSettings)
-        {
-            // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the 
-            // MemorySettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
-            // Instead, we use the System.Management to code the equivalant of 
-            //  string query = string.Format( "ASSOCIATORS OF {{{0}}} WHERE ResultClass = {1}", vmSettings.path, resultclassName);
-            //
-            var wmiObjQuery = new RelatedObjectQuery(vmSettings.Path.Path, MemorySettingData.CreatedClassName);
-
-            EthernetPortAllocationSettingData[] ethernetConnections = GetEthernetConnections(vm);
-            EthernetSwitchPortVlanSettingData vlanSettings = GetVlanSettings(ethernetConnections[pos]);
-
-            //Assign configuration to new NIC
-            vlanSettings.LateBoundObject["AccessVlanId"] = vlanid;
-            vlanSettings.LateBoundObject["OperationMode"] = 1;
-            ModifyFeatureVmResources(vmMgmtSvc, vm, new String[] {
-                vlanSettings.LateBoundObject.GetText(TextFormat.CimDtd20)});
-        }
-
-        public void AttachIso(string displayName, string iso)
+        /// < summary>
+        /// Removes a storage resource from a computer system.
+        /// </summary>
+        /// <param name="storageSettings">Path that uniquely identifies the resource.</param>
+        /// <param name="vm">VM to which the disk image will be attached.</param>
+        private void RemoveStorageResource(ManagementPath resourcePath, ComputerSystem vm)
         {
             logger.DebugFormat("Got request to attach iso {0} to vm {1}", iso, displayName);
 
