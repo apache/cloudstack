@@ -1179,7 +1179,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             result = result.substring(0, result.length() - (fileType).length());
         }
 
-        String[] str = result.split("-");
+        final String token = "-";
+
+        String[] str = result.split(token);
         int length = str.length;
 
         if (length == 1 || length == 2) {
@@ -1187,7 +1189,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
 
         if (length > 2) {
-            return str[0] + "-" + str[1];
+            return str[0] + token + str[1];
         }
 
         return result;
