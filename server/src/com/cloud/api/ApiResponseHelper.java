@@ -2969,7 +2969,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         usageRecResponse.setUsageType(usageRecord.getUsageType());
         if (usageRecord.getVmInstanceId() != null) {
             VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, usageRecord.getVmInstanceId());
-            usageRecResponse.setVirtualMachineId(vm.getUuid());
+            if (vm != null) {
+                usageRecResponse.setVirtualMachineId(vm.getUuid());
+            }
         }
         usageRecResponse.setVmName(usageRecord.getVmName());
         if (usageRecord.getTemplateId() != null) {
@@ -2985,7 +2987,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             usageRecResponse.setOfferingId(svcOffering.getUuid());
             //VM Instance ID
             VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(vm.getUuid());
+            if (vm != null) {
+                usageRecResponse.setUsageId(vm.getUuid());
+            }
             //Hypervisor Type
             usageRecResponse.setType(usageRecord.getType());
 
@@ -2996,7 +3000,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             usageRecResponse.setSystem((usageRecord.getSize() == 1) ? true : false);
             //IP Address ID
             IPAddressVO ip = _entityMgr.findById(IPAddressVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(ip.getUuid());
+            if (ip != null) {
+                usageRecResponse.setUsageId(ip.getUuid());
+            }
 
         } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT || usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED) {
             //Device Type
@@ -3004,15 +3010,21 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (usageRecord.getType().equals("DomainRouter")) {
                 //Domain Router Id
                 VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, usageRecord.getUsageId().toString());
-                usageRecResponse.setUsageId(vm.getUuid());
+                if (vm != null) {
+                    usageRecResponse.setUsageId(vm.getUuid());
+                }
             } else {
                 //External Device Host Id
                 HostVO host = _entityMgr.findById(HostVO.class, usageRecord.getUsageId().toString());
-                usageRecResponse.setUsageId(host.getUuid());
+                if (host != null) {
+                    usageRecResponse.setUsageId(host.getUuid());
+                }
             }
             //Network ID
             NetworkVO network = _entityMgr.findById(NetworkVO.class, usageRecord.getNetworkId().toString());
-            usageRecResponse.setNetworkId(network.getUuid());
+            if (network != null) {
+                usageRecResponse.setNetworkId(network.getUuid());
+            }
 
         } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE
                 || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
@@ -3020,15 +3032,21 @@ public class ApiResponseHelper implements ResponseGenerator {
             usageRecResponse.setType(usageRecord.getType());
             //VM Instance Id
             VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, usageRecord.getVmInstanceId().toString());
-            usageRecResponse.setVirtualMachineId(vm.getUuid());
+            if (vm != null) {
+                usageRecResponse.setVirtualMachineId(vm.getUuid());
+            }
             //Volume ID
             VolumeVO volume = _entityMgr.findById(VolumeVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(volume.getUuid());
+            if (volume != null) {
+                usageRecResponse.setUsageId(volume.getUuid());
+            }
 
         } else if (usageRecord.getUsageType() == UsageTypes.VOLUME) {
             //Volume ID
             VolumeVO volume = _entityMgr.findById(VolumeVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(volume.getUuid());
+            if (volume != null) {
+                usageRecResponse.setUsageId(volume.getUuid());
+            }
             //Volume Size
             usageRecResponse.setSize(usageRecord.getSize());
             //Disk Offering Id
@@ -3041,6 +3059,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             //Template/ISO ID
             VMTemplateVO tmpl = _entityMgr.findById(VMTemplateVO.class, usageRecord.getUsageId().toString());
             usageRecResponse.setUsageId(tmpl.getUuid());
+            if (tmpl != null) {
+                usageRecResponse.setUsageId(tmpl.getUuid());
+            }
             //Template/ISO Size
             usageRecResponse.setSize(usageRecord.getSize());
             if (usageRecord.getUsageType() == UsageTypes.ISO) {
@@ -3052,7 +3073,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if (usageRecord.getUsageType() == UsageTypes.SNAPSHOT) {
             //Snapshot ID
             SnapshotVO snap = _entityMgr.findById(SnapshotVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(snap.getUuid());
+            if (snap != null) {
+                usageRecResponse.setUsageId(snap.getUuid());
+            }
             //Snapshot Size
             usageRecResponse.setSize(usageRecord.getSize());
 
@@ -3086,11 +3109,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if (usageRecord.getUsageType() == UsageTypes.SECURITY_GROUP) {
             //Security Group Id
             SecurityGroupVO sg = _entityMgr.findById(SecurityGroupVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(sg.getUuid());
+            if (sg != null) {
+                usageRecResponse.setUsageId(sg.getUuid());
+            }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
             VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, usageRecord.getVmInstanceId().toString());
-            usageRecResponse.setVmName(vm.getInstanceName());
-            usageRecResponse.setUsageId(vm.getUuid());
+            if (vm != null) {
+                usageRecResponse.setVmName(vm.getInstanceName());
+                usageRecResponse.setUsageId(vm.getUuid());
+            }
             usageRecResponse.setSize(usageRecord.getSize());
             if (usageRecord.getOfferingId() != null) {
                 usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
