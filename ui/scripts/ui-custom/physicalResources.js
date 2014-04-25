@@ -117,8 +117,8 @@
                             type: "POST",
                             url: createURL('uploadCustomCertificate'),
                             data: {
-                                certificate: encodeURIComponent(args.data.certificate),
-                                privatekey: encodeURIComponent(args.data.privatekey),
+                                certificate: args.data.certificate,
+                                privatekey: args.data.privatekey,
                                 domainsuffix: args.data.domainsuffix
                             },
                             dataType: 'json',

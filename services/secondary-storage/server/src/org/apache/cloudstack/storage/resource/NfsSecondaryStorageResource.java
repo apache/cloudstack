@@ -1188,6 +1188,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         } else {
             String prvKey = certs.getPrivKey();
             String pubCert = certs.getPrivCert();
+            String certChain = certs.getCertChain();
+            String rootCACert = certs.getRootCACert();
 
             try {
                 File prvKeyFile = File.createTempFile("prvkey", null);
@@ -1203,10 +1205,34 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 out.write(pubCert);
                 out.close();
 
-                configureSSL(prvkeyPath, pubCertFilePath, null);
+                String certChainFilePath = null, rootCACertFilePath = null;
+                File certChainFile = null, rootCACertFile = null;
+                if(certChain != null){
+                    certChainFile = File.createTempFile("certchain", null);
+                    certChainFilePath = certChainFile.getAbsolutePath();
+                    out = new BufferedWriter(new FileWriter(certChainFile));
+                    out.write(certChain);
+                    out.close();
+                }
+
+                if(rootCACert != null){
+                    rootCACertFile = File.createTempFile("rootcert", null);
+                    rootCACertFilePath = rootCACertFile.getAbsolutePath();
+                    out = new BufferedWriter(new FileWriter(rootCACertFile));
+                    out.write(rootCACert);
+                    out.close();
+                }
+
+                configureSSL(prvkeyPath, pubCertFilePath, certChainFilePath, rootCACertFilePath);
 
                 prvKeyFile.delete();
                 pubCertFile.delete();
+                if(certChainFile != null){
+                    certChainFile.delete();
+                }
+                if(rootCACertFile != null){
+                    rootCACertFile.delete();
+                }
 
             } catch (IOException e) {
                 s_logger.debug("Failed to config ssl: " + e.toString());
@@ -2064,7 +2090,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
-    private void configureSSL(String prvkeyPath, String prvCertPath, String certChainPath) {
+    private void configureSSL(String prvkeyPath, String prvCertPath, String certChainPath, String rootCACert) {
         if (!_inSystemVM) {
             return;
         }
@@ -2075,6 +2101,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         command.add("-p", prvCertPath);
         if (certChainPath != null) {
             command.add("-t", certChainPath);
+        }
+        if (rootCACert != null) {
+            command.add("-u", rootCACert);
         }
         String result = command.execute();
         if (result != null) {
