@@ -198,10 +198,10 @@
             array1.push("&domainid=" + args.data.domainid);
 
             var account = args.data.account;
-            if (account === null || account.length === 0) {
-                account = args.username;
+
+            if (account !== null && account.length > 0) {
+                array1.push("&account=" + account);
             }
-            array1.push("&account=" + account);
 
             var accountType = args.data.accounttype;
             if (args.data.accounttype == "1" && args.data.domainid != rootDomainId) { //if account type is admin, but domain is not Root domain

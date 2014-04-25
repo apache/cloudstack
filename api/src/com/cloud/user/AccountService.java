@@ -114,4 +114,12 @@ public interface AccountService {
     void checkAccess(Account caller, AccessType accessType, boolean sameOwner, PartOf... entities) throws PermissionDeniedException;
 
     Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
+
+    /**
+     * returns the user account object for a given user id
+     * @param userId user id
+     * @return useraccount object if it exists else null
+     */
+    UserAccount getUserAccountById(Long userId);
+
 }
