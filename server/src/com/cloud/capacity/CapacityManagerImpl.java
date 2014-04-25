@@ -548,7 +548,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         // if the storage pool is managed, the used bytes can be larger than the sum of the sizes of all of the non-destroyed volumes
         // in this case, call getUsedBytes(StoragePoolVO)
         if (pool.isManaged()) {
-            totalAllocatedSize = getUsedBytes(pool);
+            return getUsedBytes(pool);
         }
         else {
             // Get size for all the non-destroyed volumes
