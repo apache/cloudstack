@@ -51,7 +51,7 @@ class TestCreateVolume(cloudstackTestCase):
                                     cls.services["disk_offering"]
                                     )
         cls.sparse_disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["sparse_disk_offering"]
                                     )
         cls.custom_disk_offering = DiskOffering.create(
