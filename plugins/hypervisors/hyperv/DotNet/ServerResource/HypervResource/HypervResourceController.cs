@@ -304,7 +304,6 @@ namespace HypervResource
                     else if (disk.type.Equals("DATADISK"))
                     {
                         VolumeObjectTO volume = disk.volumeObjectTO;
-                        PrimaryDataStoreTO primary = volume.primaryDataStore;
                         string diskPath = Utils.NormalizePath(volume.FullFileName);
                         wmiCallsV2.DetachDisk(vmName, diskPath);
                         result = true;
@@ -625,7 +624,6 @@ namespace HypervResource
                 string newCopyFileName = null;
 
                 string poolLocalPath = cmd.localPath;
-                string poolUuid = cmd.poolUuid;
                 if (!Directory.Exists(poolLocalPath))
                 {
                     details = "None existent local path " + poolLocalPath;
@@ -1173,7 +1171,7 @@ namespace HypervResource
                                 string defaultDataPath = wmiCallsV2.GetDefaultDataRoot();
 
                                 string secondaryPath = Utils.NormalizePath(Path.Combine(share.UncPath, "systemvm"));
-                                string[] choices = choices = Directory.GetFiles(secondaryPath, "systemvm*.iso");
+                                string[] choices = Directory.GetFiles(secondaryPath, "systemvm*.iso");
                                 if (choices.Length != 1)
                                 {
                                     String errMsg = "Couldn't locate the systemvm iso on " + secondaryPath;
@@ -1537,8 +1535,6 @@ namespace HypervResource
 
                 try
                 {
-                    dynamic timeout = cmd.wait;  // TODO: Useful?
-
                     srcTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.srcTO);
                     destTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.destTO);
                     srcVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.srcTO);
@@ -1931,7 +1927,6 @@ namespace HypervResource
                 try
                 {
                     StoragePoolType poolType;
-                    string poolId = (string)cmd.id;
                     string hostPath = null;
                     if (!Enum.TryParse<StoragePoolType>((string)cmd.pooltype, out poolType))
                     {

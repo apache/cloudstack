@@ -379,7 +379,6 @@ namespace HypervResource
                 }
             }
 
-            String publicIpAddress = "";
             int nicCount = 0;
             // Add the Nics to the VM in the deviceId order.
             foreach (var nc in nicInfo)
@@ -422,11 +421,6 @@ namespace HypervResource
                     if(nicIp.Equals("0.0.0.0") && nicNetmask.Equals("255.255.255.255") ) {
                         // this is the extra nic added to VR.
                         vlan = defaultvlan;
-                    }
-
-                    if (nicCount == 2)
-                    {
-                         publicIpAddress = nic.ip;
                     }
 
                     if (nicid == nicCount)
@@ -496,16 +490,6 @@ namespace HypervResource
             if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
             {
                 System.Threading.Thread.Sleep(90000);
-                // wait for the second boot and then return with sucesss
-                //if publicIPAddress is empty or null don't ping the ip
-              /*if (publicIpAddress.Equals("") == true)
-                {
-                    System.Threading.Thread.Sleep(90000);
-                }
-                else
-                {
-                    pingResource(publicIpAddress);
-                }*/
             }
             logger.InfoFormat("Started VM {0}", vmName);
             return newVm;
@@ -963,7 +947,6 @@ namespace HypervResource
         public void ModifyVmVLan(string vmName, uint vlanid, uint pos)
         {
             ComputerSystem vm = GetComputerSystem(vmName);
-            SyntheticEthernetPortSettingData[] nicSettingsViaVm = GetEthernetPortSettings(vm);
             // Obtain controller for Hyper-V virtualisation subsystem
             VirtualSystemManagementService vmMgmtSvc = GetVirtualisationSystemManagementService();
 
@@ -1133,7 +1116,6 @@ namespace HypervResource
         public void MigrateVolume(string vmName, string volume, string destination)
         {
             ComputerSystem vm = GetComputerSystem(vmName);
-            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
             VirtualSystemMigrationSettingData migrationSettingData = VirtualSystemMigrationSettingData.CreateInstance();
             VirtualSystemMigrationService service = GetVirtualisationSystemMigrationService();
             StorageAllocationSettingData[] sasd = GetStorageSettings(vm);
@@ -1189,7 +1171,6 @@ namespace HypervResource
         public void MigrateVmWithVolume(string vmName, string destination, Dictionary<string, string> volumeToPool)
         {
             ComputerSystem vm = GetComputerSystem(vmName);
-            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
             VirtualSystemMigrationSettingData migrationSettingData = VirtualSystemMigrationSettingData.CreateInstance();
             VirtualSystemMigrationService service = GetVirtualisationSystemMigrationService();
             StorageAllocationSettingData[] sasd = GetStorageSettings(vm);
