@@ -102,4 +102,12 @@ public interface AccountService {
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;
 
+
+    /**
+     * returns the user account object for a given user id
+     * @param userId user id
+     * @return useraccount object if it exists else null
+     */
+    UserAccount getUserAccountById(Long userId);
+
 }

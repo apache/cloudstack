@@ -107,6 +107,12 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public UserAccount getUserAccountById(Long userId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public String[] createApiKeyAndSecretKey(RegisterCmd arg0) {
         // TODO Auto-generated method stub
         return null;

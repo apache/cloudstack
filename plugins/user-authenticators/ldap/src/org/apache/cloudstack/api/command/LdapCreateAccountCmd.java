@@ -23,6 +23,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.NamingException;
 
+import com.cloud.domain.DomainVO;
+import com.cloud.user.User;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -88,22 +90,46 @@ public class LdapCreateAccountCmd extends BaseCmd {
 		_accountService = accountService;
 	}
 
-	UserAccount createCloudstackUserAccount(final LdapUser user) {
-		return _accountService.createUserAccount(username, generatePassword(),
-				user.getFirstname(), user.getLastname(), user.getEmail(),
-				timezone, accountName, accountType, domainId, networkDomain,
-				details, accountUUID, userUUID);
-	}
+    UserAccount createCloudstackUserAccount(final LdapUser user, String accountName, Long domainId ) {
+        Account account = _accountService.getActiveAccountByName(accountName, domainId);
+        if (account == null) {
+            return _accountService.createUserAccount(username, generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName,
+                    accountType, domainId, networkDomain, details, accountUUID, userUUID);
+        } else {
+            User newUser = _accountService.createUser(username, generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName,
+                                                      domainId, userUUID);
+            return _accountService.getUserAccountById(newUser.getId());
+        }
+    }
+
+    private String getAccountName() {
+        String name = accountName;
+        if (accountName == null) {
+            name = username;
+        }
+        return name;
+    }
+
+    private Long getDomainId() {
+        Long id = domainId;
+        if (id == null) {
+            id = DomainVO.ROOT_DOMAIN;
+        }
+        return id;
+    }
+
 
 	@Override
 	public void execute() throws ServerApiException {
 		final CallContext callContext = getCurrentContext();
-		callContext.setEventDetails("Account Name: " + accountName
-				+ ", Domain Id:" + domainId);
+        String finalAccountName = getAccountName();
+        Long finalDomainId = getDomainId();
+		callContext.setEventDetails("Account Name: " + finalAccountName
+				+ ", Domain Id:" + finalDomainId);
 		try {
 			final LdapUser user = _ldapManager.getUser(username);
 			validateUser(user);
-			final UserAccount userAccount = createCloudstackUserAccount(user);
+			final UserAccount userAccount = createCloudstackUserAccount(user, finalAccountName, finalDomainId);
 			if (userAccount != null) {
 				final AccountResponse response = _responseGenerator
 						.createUserAccountResponse(userAccount);

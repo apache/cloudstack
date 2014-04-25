@@ -2321,4 +2321,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public UserAccount getUserByApiKey(String apiKey) {
         return _userAccountDao.getUserByApiKey(apiKey);
     }
+
+    @Override
+    public UserAccount getUserAccountById(Long userId) {
+        return _userAccountDao.findById(userId);
+    }
 }
