@@ -28,4 +28,6 @@ public interface KeystoreDao extends GenericDao<KeystoreVO, Long> {
     void save(String alias, String certificate, Integer index, String domainSuffix);
 
     List<KeystoreVO> findCertChain();
+
+    List<KeystoreVO> findCertChain(String domainSuffix);
 }

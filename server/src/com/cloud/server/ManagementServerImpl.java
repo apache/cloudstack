@@ -16,9 +16,7 @@
 // under the License.
 package com.cloud.server;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -3450,16 +3448,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         String certificate = cmd.getCertificate();
         String key = cmd.getPrivateKey();
-        try {
-            if (certificate != null) {
-                certificate = URLDecoder.decode(certificate, "UTF-8");
-            }
-            if (key != null) {
-                key = URLDecoder.decode(key, "UTF-8");
-            }
-        } catch (UnsupportedEncodingException e) {
-        } finally {
-        }
 
         if (cmd.getPrivateKey() != null && !_ksMgr.validateCertificate(certificate, key, cmd.getDomainSuffix())) {
             throw new InvalidParameterValueException("Failed to pass certificate validation check");
@@ -3467,16 +3455,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (cmd.getPrivateKey() != null) {
             _ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, certificate, key, cmd.getDomainSuffix());
+
+            // Reboot ssvm here since private key is present - meaning server cert being passed
+            List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(null, State.Running, State.Migrating, State.Starting);
+            for (SecondaryStorageVmVO ssVmVm : alreadyRunning) {
+                _secStorageVmMgr.rebootSecStorageVm(ssVmVm.getId());
+            }
         } else {
             _ksMgr.saveCertificate(cmd.getAlias(), certificate, cmd.getCertIndex(), cmd.getDomainSuffix());
         }
 
         _consoleProxyMgr.setManagementState(ConsoleProxyManagementState.ResetSuspending);
-        List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(null, State.Running, State.Migrating, State.Starting);
-        for (SecondaryStorageVmVO ssVmVm : alreadyRunning) {
-            _secStorageVmMgr.rebootSecStorageVm(ssVmVm.getId());
-        }
-        return "Certificate has been updated, we will stop all running console proxy VMs and secondary storage VMs to propagate the new certificate, please give a few minutes for console access service to be up again";
+        return "Certificate has been successfully updated, if its the server certificate we would reboot all " +
+                "running console proxy VMs and secondary storage VMs to propagate the new certificate, " +
+                "please give a few minutes for console access and storage services service to be up and working again";
     }
 
     @Override
