@@ -2028,7 +2028,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Unable to find the guest OS by name or UUID");
         }
         //check for duplicates
-        GuestOSHypervisorVO duplicate = _guestOSHypervisorDao.findByOsIdAndHypervisor(osTypeId.longValue(), hypervisorType.toString(), hypervisorVersion);
+        GuestOSHypervisorVO duplicate = _guestOSHypervisorDao.findByOsIdAndHypervisor(guestOs.getId(), hypervisorType.toString(), hypervisorVersion);
 
         if (duplicate != null) {
             throw new InvalidParameterValueException("Mapping from hypervisor : " + hypervisorType.toString() + ", version : " + hypervisorVersion + " and guest OS : "
@@ -2039,6 +2039,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         guestOsMapping.setGuestOsName(osNameForHypervisor);
         guestOsMapping.setHypervisorType(hypervisorType.toString());
         guestOsMapping.setHypervisorVersion(hypervisorVersion);
+        guestOsMapping.setIsUserDefined(true);
         return _guestOSHypervisorDao.persist(guestOsMapping);
 
     }
@@ -2071,6 +2072,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         guestOsVo.setCategoryId(categoryId.longValue());
         guestOsVo.setDisplayName(displayName);
         guestOsVo.setName(name);
+        guestOsVo.setIsUserDefined(true);
         return _guestOSDao.persist(guestOsVo);
     }
 
