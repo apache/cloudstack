@@ -15,8 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# A simple script for enabling and disabling per-vif rules for explicitly
-# allowing broadcast/multicast traffic on the port where the VIF is attached
+# A simple script for enabling and disabling per-vif and tunnel interface rules for explicitly
+# allowing broadcast/multicast traffic from the tunnel ports and on the port where the VIF is attached
 
 import copy
 import os
@@ -28,9 +28,11 @@ import cloudstack_pluginlib as pluginlib
 pluginlib.setup_logging("/var/log/cloud/ovstunnel.log")
 
 def clear_flows(bridge, this_vif_ofport, vif_ofports):
+    action = "".join("output:%s," %ofport
+                for ofport in vif_ofports)[:-1]
     # Remove flow entries originating from given ofport
     pluginlib.del_flows(bridge, in_port=this_vif_ofport)
-	# The following will remove the port being delete from actions
+    # The following will remove the port being delete from actions
     pluginlib.add_flow(bridge, priority=1100,
                        dl_dst='ff:ff:ff:ff:ff:ff', actions=action)
     pluginlib.add_flow(bridge, priority=1100,
@@ -40,7 +42,7 @@ def clear_flows(bridge, this_vif_ofport, vif_ofports):
 def apply_flows(bridge, this_vif_ofport, vif_ofports):
     action = "".join("output:%s," %ofport
                 for ofport in vif_ofports)[:-1]
-	# Ensure {b|m}casts sent from VIF ports are always allowed
+    # Ensure {b|m}casts sent from VIF ports are always allowed
     pluginlib.add_flow(bridge, priority=1200,
 					   in_port=this_vif_ofport,
 					   dl_dst='ff:ff:ff:ff:ff:ff',
@@ -49,7 +51,7 @@ def apply_flows(bridge, this_vif_ofport, vif_ofports):
 					   in_port=this_vif_ofport,
 					   nw_dst='224.0.0.0/24',
 					   actions='NORMAL')
-	# Ensure {b|m}casts are always propagated to VIF ports
+    # Ensure {b|m}casts are always propagated to VIF ports
     pluginlib.add_flow(bridge, priority=1100,
                        dl_dst='ff:ff:ff:ff:ff:ff', actions=action)
     pluginlib.add_flow(bridge, priority=1100,
@@ -116,6 +118,7 @@ def main(command, vif_raw):
                                          'list-ports', bridge])
         vifs = vsctl_output.split('\n')
         vif_ofports = []
+        vif_other_ofports = []
         for vif in vifs:
             vif_ofport = pluginlib.do_cmd([pluginlib.VSCTL_PATH, 'get',
                                            'Interface', vif, 'ofport'])
@@ -125,7 +128,9 @@ def main(command, vif_raw):
                 vif_ofports.append(vif_ofport)
 
         if command == 'offline':
-            clear_flows(bridge,  this_vif_ofport, vif_ofports)
+            vif_other_ofports = copy.copy(vif_ofports)
+            vif_other_ofports.remove(this_vif_ofport)
+            clear_flows(bridge,  this_vif_ofport, vif_other_ofports)
 
         if command == 'online':
             apply_flows(bridge,  this_vif_ofport, vif_ofports)
@@ -138,69 +143,8 @@ def main(command, vif_raw):
                 # We need the REAL bridge name
                 bridge = pluginlib.do_cmd([pluginlib.VSCTL_PATH,
                                            'br-to-parent', bridge])
-        vsctl_output = pluginlib.do_cmd([pluginlib.VSCTL_PATH,
-                                         'list-ports', bridge])
         vif_network_id = pluginlib.get_network_id_for_vif(this_vif)
-        vnet_vif_ofports = []
-        vnet_tunnelif_ofports = []
-        vnet_all_ofports = []
-
-        ports = vsctl_output.split('\n')
-        for port in ports:
-            if_ofport = pluginlib.do_cmd([pluginlib.VSCTL_PATH, 'get', 'Interface', port, 'ofport'])
-            if port.startswith('vif'):
-                # check VIF is in same network as that of plugged vif
-                if vif_network_id != pluginlib.get_network_id_for_vif(port):
-                    continue
-                vnet_vif_ofports.append(if_ofport)
-                vnet_all_ofports.append(if_ofport)
-
-            if port.startswith('t'):
-                # check tunnel port is in same network as that of plugged vif
-                if vif_network_id != pluginlib.get_network_id_for_tunnel_port(port)[1:-1]:
-                    continue
-                vnet_tunnelif_ofports.append(if_ofport)
-                vnet_all_ofports.append(if_ofport)
-
-        if command == 'online':
-            for port in vnet_all_ofports:
-                pluginlib.clear_flooding_rules_for_port(bridge, port)
-
-            # for a packet arrived from tunnel port, flood only on VIF ports
-            for port in vnet_tunnelif_ofports:
-                pluginlib.add_flooding_rules_for_port(bridge, port, vnet_vif_ofports)
-
-            # for a packet arrived from VIF port send on all VIF and tunnel port excluding the port
-            # on which packet arrived
-            for port in vnet_vif_ofports:
-                vnet_all_ofports_copy = copy.copy(vnet_all_ofports)
-                vnet_all_ofports_copy.remove(port)
-                pluginlib.add_flooding_rules_for_port(bridge, port, vnet_all_ofports_copy)
-
-            #learn that MAC is reachable through the VIF port
-            mac = pluginlib.get_macaddress_of_vif(this_vif)
-            this_vif_ofport = pluginlib.do_cmd([pluginlib.VSCTL_PATH, 'get', 'Interface', this_vif, 'ofport'])
-            pluginlib.add_mac_lookup_table_entry(bridge, mac, this_vif_ofport)
-
-        if command == 'offline':
-            for port in vnet_all_ofports:
-                pluginlib.clear_flooding_rules_for_port(bridge, port)
-            vnet_all_ofports.remove(this_vif_ofport)
-            vnet_vif_ofports.remove(this_vif_ofport)
-
-            # for a packet arrived from tunnel port, flood only on VIF ports
-            for port in vnet_tunnelif_ofports:
-                pluginlib.add_flooding_rules_for_port(bridge, port, vnet_vif_ofports)
-
-            # for a packet from VIF port send on all VIF's and tunnel ports excluding the port on which packet arrived
-            for port in vnet_vif_ofports:
-                vnet_all_ofports_copy = copy.copy(vnet_all_ofports)
-                vnet_all_ofports_copy.remove(port)
-                pluginlib.add_flooding_rules_for_port(bridge, port, vnet_all_ofports_copy)
-
-            #un-learn that MAC is reachable through the VIF port
-            mac = pluginlib.get_macaddress_of_vif(this_vif)
-            pluginlib.delete_mac_lookup_table_entry(bridge, mac)
+        pluginlib.update_flooding_rules_on_port_plug_unplug(bridge, this_vif, command, vif_network_id)
 
     return
 

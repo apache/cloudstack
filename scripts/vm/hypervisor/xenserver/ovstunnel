@@ -165,9 +165,12 @@ def setup_ovs_bridge_for_distributed_routing(session, args):
         lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
                    "other-config:ovs-host-setup=%s" % conf_hosts])
 
+        # first clear the default rule (i.e rule for NORMAL processing)
+        lib.del_flows(bridge, table=0)
+
         # add a default flow rule to send broadcast and multi-cast packets to L2 flooding table
-        lib.add_flow(bridge, priority=1000, dl_dst='ff:ff:ff:ff:ff:ff', table=0, actions='resubmit(,2)')
-        lib.add_flow(bridge, priority=1000, nw_dst='224.0.0.0/24', table=0, actions='resubmit(,2)')
+        lib.add_flow(bridge, priority=1200, dl_dst='ff:ff:ff:ff:ff:ff', table=0, actions='resubmit(,2)')
+        lib.add_flow(bridge, priority=1200, nw_dst='224.0.0.0/24', table=0, actions='resubmit(,2)')
 
         # add a default flow rule to send uni-cast traffic to L2 lookup table
         lib.add_flow(bridge, priority=0, table=0, actions='resubmit(,1)')
@@ -178,7 +181,7 @@ def setup_ovs_bridge_for_distributed_routing(session, args):
         # add a default rule in L2 flood table to drop packet
         lib.add_flow(bridge, priority=0, table=2, actions='drop')
 
-        # add a default rule in egress table to forward packet to L3 lookup table
+        # add a default rule in egress ACL table to forward packet to L3 lookup table
         lib.add_flow(bridge, priority=0, table=3, actions='resubmit(,4)')
 
         # add a default rule in L3 lookup table to forward packet to L2 lookup table
@@ -186,6 +189,9 @@ def setup_ovs_bridge_for_distributed_routing(session, args):
 
         # add a default rule in ingress table to drop in bound packets
         lib.add_flow(bridge, priority=0, table=5, actions='drop')
+
+        # initialize the sequence number for the bridge
+        lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other-config:sequence-number=0"])
 
         result = "SUCCESS: successfully setup bridge with flow rules"
 
@@ -326,8 +332,11 @@ def create_tunnel(session, args):
                      nw_dst='224.0.0.0/24', actions='drop')
 
             # add flow rule to send the traffic from tunnel ports to L2 switching table only
-            lib.add_flow(bridge, priority=1000, in_port=tun_ofport, table=0, actions='resubmit(,1)')
+            lib.add_flow(bridge, priority=1100, in_port=tun_ofport, table=0, actions='resubmit(,1)')
+
+            # mark tunnel interface with network id for which this tunnel was created
             lib.do_cmd([lib.VSCTL_PATH, "set", "interface", name, "options:cloudstack-network-id=%s" % network_uuid])
+            lib.update_flooding_rules_on_port_plug_unplug(bridge, name, 'online', network_uuid)
 
         return "SUCCESS:%s" % name
     except:
@@ -402,15 +411,29 @@ def configure_ovs_bridge_for_network_topology(session, args):
     this_host_id = args.pop("host-id")
     sequence_no = args.pop("seq-no")
 
-    return lib.configure_bridge_for_network_topology(bridge, this_host_id, json_config, sequence_no)
+    # get the last update sequence number
+    last_seq_no = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge", bridge, "other-config:sequence-number"])
+    last_seq_no = last_seq_no[1:-1]
+    if sequence_no > last_seq_no:
+        lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other-config:sequence-number=%s"%sequence_no])
+        return lib.configure_bridge_for_network_topology(bridge, this_host_id, json_config, sequence_no)
+    else:
+        return "SUCCESS: Ignoring the update as there is already recent update received and applied"
+
 
 @echo
 def configure_ovs_bridge_for_routing_policies(session, args):
     bridge = args.pop("bridge")
     json_config = args.pop("config")
     sequence_no = args.pop("seq-no")
-
-    return lib.configure_ovs_bridge_for_routing_policies(bridge, json_config, sequence_no)
+    # get the last update sequence number
+    last_seq_no = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge", bridge, "other-config:sequence-number"])
+    last_seq_no = last_seq_no[1:-1]
+    if sequence_no > last_seq_no:
+        lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other-config:sequence-number=%s"%sequence_no])
+        return lib.configure_ovs_bridge_for_routing_policies(bridge, json_config, sequence_no)
+    else:
+        return "SUCCESS: Ignoring the update as there is already recent update received and applied"
 
 if __name__ == "__main__":
     XenAPIPlugin.dispatch({"create_tunnel": create_tunnel,

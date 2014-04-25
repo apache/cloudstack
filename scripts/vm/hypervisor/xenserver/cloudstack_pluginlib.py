@@ -22,6 +22,7 @@ import logging
 import os
 import subprocess
 import simplejson as json
+import copy
 
 from time import localtime, asctime
 
@@ -349,7 +350,6 @@ def configure_bridge_for_network_topology(bridge, this_host_id, json_config, seq
                 action_str = "table=0, in_port=%s," % of_port + " ip, dl_dst=%s," %network.gatewaymac +\
                              "nw_dst=%s," %vpconfig.cidr + "actions=resubmit(,3)"
                 addflow = [OFCTL_PATH, "add-flow", bridge, action_str]
-
                 do_cmd(addflow)
 
         # get the list of hosts on which VPC spans from the JSON config
@@ -510,4 +510,83 @@ def configure_ovs_bridge_for_routing_policies(bridge, json_config, sequence_no):
 
     except:
         logging.debug("An unexpected error occurred while configuring bridge as per VPC's routing policies.")
+        raise
+
+def update_flooding_rules_on_port_plug_unplug(bridge, interface, command, if_network_id):
+
+    vnet_vif_ofports = []
+    vnet_tunnelif_ofports = []
+    vnet_all_ofports = []
+
+    logging.debug("Updating the flooding rules as interface  %s" %interface + " is %s"%command + " now.")
+    try:
+        vsctl_output = do_cmd([VSCTL_PATH, 'list-ports', bridge])
+        ports = vsctl_output.split('\n')
+
+        for port in ports:
+            if_ofport = do_cmd([VSCTL_PATH, 'get', 'Interface', port, 'ofport'])
+            if port.startswith('vif'):
+                # check VIF is in same network as that of plugged vif
+                if if_network_id != get_network_id_for_vif(port):
+                    continue
+                vnet_vif_ofports.append(if_ofport)
+                vnet_all_ofports.append(if_ofport)
+
+            if port.startswith('t'):
+                # check tunnel port is in same network as that of plugged vif
+                if if_network_id != get_network_id_for_tunnel_port(port)[1:-1]:
+                    continue
+                vnet_tunnelif_ofports.append(if_ofport)
+                vnet_all_ofports.append(if_ofport)
+
+        if command == 'online':
+
+            if len(vnet_all_ofports) == 1 :
+                return
+
+            for port in vnet_all_ofports:
+                clear_flooding_rules_for_port(bridge, port)
+
+            # for a packet arrived from tunnel port, flood only on VIF ports
+            for port in vnet_tunnelif_ofports:
+                add_flooding_rules_for_port(bridge, port, vnet_vif_ofports)
+
+            # for a packet arrived from VIF port send on all VIF and tunnel port excluding the port
+            # on which packet arrived
+            for port in vnet_vif_ofports:
+                vnet_all_ofports_copy = copy.copy(vnet_all_ofports)
+                vnet_all_ofports_copy.remove(port)
+                add_flooding_rules_for_port(bridge, port, vnet_all_ofports_copy)
+
+            this_if_ofport = do_cmd([VSCTL_PATH, 'get', 'Interface', interface, 'ofport'])
+
+            #learn that MAC is reachable through the VIF port
+            if interface.startswith('vif'):
+                mac = get_macaddress_of_vif(interface)
+                add_mac_lookup_table_entry(bridge, mac, this_if_ofport)
+
+        if command == 'offline':
+            for port in vnet_all_ofports:
+                clear_flooding_rules_for_port(bridge, port)
+
+            vnet_all_ofports.remove(this_if_ofport)
+            vnet_vif_ofports.remove(this_if_ofport)
+
+            # for a packet arrived from tunnel port, flood only on VIF ports
+            for port in vnet_tunnelif_ofports:
+                add_flooding_rules_for_port(bridge, port, vnet_vif_ofports)
+
+            # for a packet from VIF port send on all VIF's and tunnel ports excluding the port on which packet arrived
+            for port in vnet_vif_ofports:
+                vnet_all_ofports_copy = copy.copy(vnet_all_ofports)
+                vnet_all_ofports_copy.remove(port)
+                add_flooding_rules_for_port(bridge, port, vnet_all_ofports_copy)
+
+            #un-learn that MAC is reachable through the VIF port
+            if interface.startswith('vif'):
+                mac = get_macaddress_of_vif(interface)
+                delete_mac_lookup_table_entry(bridge, mac)
+    except:
+        logging.debug("An unexpected error occurred while updating the flooding rules when interface "
+                    + " %s" %interface + " is %s"%command)
         raise

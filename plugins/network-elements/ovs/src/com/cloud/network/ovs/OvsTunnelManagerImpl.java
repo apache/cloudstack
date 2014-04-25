@@ -912,7 +912,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                         seqVo = new VpcDistributedRouterSeqNoVO(vpcId);
                         _vpcDrSeqNoDao.persist(seqVo);
                     }
-                    _vpcDrSeqNoDao.lockRow(seqVo.getId(), true);
+                    seqVo = _vpcDrSeqNoDao.lockRow(seqVo.getId(), true);
                     seqVo.incrSequenceNo();
                     _vpcDrSeqNoDao.update(seqVo.getId(), seqVo);
                     return seqVo.getSequenceNo();
