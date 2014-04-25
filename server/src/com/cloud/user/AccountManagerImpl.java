@@ -2630,4 +2630,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         return null;
     }
+
+    @Override
+    public UserAccount getUserAccountById(Long userId) {
+        return _userAccountDao.findById(userId);
+    }
 }

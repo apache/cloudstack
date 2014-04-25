@@ -227,6 +227,12 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
+    public UserAccount getUserAccountById(Long userId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public void logoutUser(long userId) {
         // TODO Auto-generated method stub
     }
