@@ -60,6 +60,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResource;
+import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 
@@ -110,13 +111,15 @@ public class XenServer610Resource extends XenServer602Resource {
             }
 
             for (DiskTO volumeTo : volumes) {
-                VolumeObjectTO vol = (VolumeObjectTO)volumeTo.getData();
-                Long deviceId = volumeTo.getDiskSeq();
-                VDI vdi = deviceIdToVdiMap.get(deviceId.toString());
-                VolumeObjectTO newVol = new VolumeObjectTO();
-                newVol.setPath(vdi.getUuid(connection));
-                newVol.setId(vol.getId());
-                volumeToList.add(newVol);
+                if (volumeTo.getType() != Volume.Type.ISO) {
+                    VolumeObjectTO vol = (VolumeObjectTO)volumeTo.getData();
+                    Long deviceId = volumeTo.getDiskSeq();
+                    VDI vdi = deviceIdToVdiMap.get(deviceId.toString());
+                    VolumeObjectTO newVol = new VolumeObjectTO();
+                    newVol.setPath(vdi.getUuid(connection));
+                    newVol.setId(vol.getId());
+                    volumeToList.add(newVol);
+                }
             }
         } catch (Exception e) {
             s_logger.error("Unable to get the updated VDI paths of the migrated vm " + e.toString(), e);
