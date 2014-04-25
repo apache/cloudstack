@@ -73,8 +73,8 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
                             domainId = p.getScopeId();
                             //domainIds.add(p.getScopeId());
                         }
-                        domainIds.add(domainId);
-                        // add all the domain children from this domain. Like RoleBasedEntityAccessChecker, we made an assumption, if DOMAIN scope is granted, it means that
+                        //domainIds.add(domainId);
+                        // add all the domain children from this domain (including this domain itself). Like RoleBasedEntityAccessChecker, we made an assumption, if DOMAIN scope is granted, it means that
                         // the whole domain tree is granted access.
                         DomainVO domain = _domainDao.findById(domainId);
                         List<Long> childDomains = _domainDao.getDomainChildrenIds(domain.getPath());
