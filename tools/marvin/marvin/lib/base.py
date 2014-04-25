@@ -3937,7 +3937,7 @@ class IAMGroup:
     def list(cls, apiclient, **kwargs):
         cmd = listIAMGroups.listIAMGroupsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return apiclient.listIAMGroupsCmd(cmd)  
+        return apiclient.listIAMGroups(cmd)  
     
     def addAccount(self, apiclient, accts):
         """Add accounts to iam group"""
@@ -3998,7 +3998,7 @@ class IAMPolicy:
     def list(cls, apiclient, **kwargs):
         cmd = listIAMPolicies.listIAMPoliciesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return apiclient.listIAMPoliciesCmd(cmd)  
+        return apiclient.listIAMPolicies(cmd)  
 
     def addPermission(self, apiclient, permission):
         """Add permission to iam policy"""
