@@ -42,12 +42,21 @@ public abstract class VifDriverBase implements VifDriver {
     }
 
     @Override
-    public abstract LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType) throws InternalErrorException, LibvirtException;
+    public abstract LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType, String nicAdapter) throws InternalErrorException, LibvirtException;
 
     @Override
     public abstract void unplug(LibvirtVMDef.InterfaceDef iface);
 
-    protected LibvirtVMDef.InterfaceDef.nicModel getGuestNicModel(String guestOSType) {
+    protected LibvirtVMDef.InterfaceDef.nicModel getGuestNicModel(String guestOSType, String nicAdapter) {
+        // if nicAdapter is found in ENUM, use it. Otherwise, match guest OS type as before
+        if (nicAdapter != null && !nicAdapter.isEmpty()) {
+            for (LibvirtVMDef.InterfaceDef.nicModel model : LibvirtVMDef.InterfaceDef.nicModel.values()) {
+                if (model.toString().equalsIgnoreCase(nicAdapter)) {
+                    return model;
+                }
+            }
+        }
+
         if (_libvirtComputingResource.isGuestPVEnabled(guestOSType)) {
             return LibvirtVMDef.InterfaceDef.nicModel.VIRTIO;
         } else {

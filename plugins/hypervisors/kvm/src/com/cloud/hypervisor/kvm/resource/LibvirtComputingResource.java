@@ -2007,7 +2007,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         Domain vm = getDomain(conn, vmName);
-        vm.attachDevice(getVifDriver(nicTO.getType()).plug(nicTO, "Other PV (32-bit)").toString());
+        vm.attachDevice(getVifDriver(nicTO.getType()).plug(nicTO, "Other PV (32-bit)", "").toString());
     }
 
 
@@ -2044,7 +2044,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
                 nicnum++;
             }
-            vm.attachDevice(getVifDriver(nic.getType()).plug(nic, "Other PV (32-bit)").toString());
+            vm.attachDevice(getVifDriver(nic.getType()).plug(nic, "Other PV (32-bit)", "").toString());
             return new PlugNicAnswer(cmd, true, "success");
         } catch (LibvirtException e) {
             String msg = " Plug Nic failed due to " + e.toString();
@@ -3211,7 +3211,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(vm.getName());
             for (NicTO nic : nics) {
-                getVifDriver(nic.getType()).plug(nic, null);
+                getVifDriver(nic.getType()).plug(nic, null, "");
             }
 
             /* setup disks, e.g for iso */
@@ -3758,10 +3758,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected void createVifs(VirtualMachineTO vmSpec, LibvirtVMDef vm) throws InternalErrorException, LibvirtException {
         NicTO[] nics = vmSpec.getNics();
+        Map <String, String> params = vmSpec.getDetails();
+        String nicAdapter = "";
+        if (params != null && params.get("nicAdapter") != null && !params.get("nicAdapter").isEmpty()) {
+            nicAdapter = params.get("nicAdapter");
+        }
         for (int i = 0; i < nics.length; i++) {
             for (NicTO nic : vmSpec.getNics()) {
                 if (nic.getDeviceId() == i) {
-                    createVif(vm, nic);
+                    createVif(vm, nic, nicAdapter);
                 }
             }
         }
@@ -3925,7 +3930,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 volPath = physicalDisk.getPath();
             }
 
-            DiskDef.diskBus diskBusType = getGuestDiskModel(vmSpec.getOs());
+            // if params contains a rootDiskController key, use its value (this is what other HVs are doing)
+            DiskDef.diskBus diskBusType = null;
+            Map <String, String> params = vmSpec.getDetails();
+            if (params != null && params.get("rootDiskController") != null && !params.get("rootDiskController").isEmpty()) {
+                String rootDiskController = params.get("rootDiskController");
+                s_logger.debug("Passed custom disk bus " + rootDiskController);
+                for (DiskDef.diskBus bus : DiskDef.diskBus.values()) {
+                    if (bus.toString().equalsIgnoreCase(rootDiskController)) {
+                        s_logger.debug("Found matching enum for disk bus " + rootDiskController);
+                        diskBusType = bus;
+                        break;
+                    }
+                }
+            }
+
+            if (diskBusType == null) {
+                diskBusType = getGuestDiskModel(vmSpec.getOs());
+            }
+
             DiskDef disk = new DiskDef();
             if (volume.getType() == Volume.Type.ISO) {
                 if (volPath == null) {
@@ -4004,8 +4027,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     }
 
-    private void createVif(LibvirtVMDef vm, NicTO nic) throws InternalErrorException, LibvirtException {
-        vm.getDevices().addDevice(getVifDriver(nic.getType()).plug(nic, vm.getGuestOSType()).toString());
+    private void createVif(LibvirtVMDef vm, NicTO nic, String nicAdapter) throws InternalErrorException, LibvirtException {
+        vm.getDevices().addDevice(getVifDriver(nic.getType()).plug(nic, vm.getGuestOSType(), nicAdapter).toString());
     }
 
     protected CheckSshAnswer execute(CheckSshCommand cmd) {
