@@ -134,6 +134,11 @@ public class XenServer620SP1Resource extends XenServer620Resource {
 
     @Override
     protected void createVGPU(Connection conn, StartCommand cmd, VM vm, GPUDeviceTO gpuDevice) throws XenAPIException, XmlRpcException {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating VGPU of VGPU type [ " + gpuDevice.getVgpuType() + " ] in gpu group" + gpuDevice.getGpuGroup()
+                    + " for VM " + cmd.getVirtualMachine().getName());
+        }
+
         Set<GPUGroup> groups = GPUGroup.getByNameLabel(conn, gpuDevice.getGpuGroup());
         assert groups.size() == 1 : "Should only have 1 group but found " + groups.size();
         GPUGroup gpuGroup = groups.iterator().next();
