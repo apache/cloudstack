@@ -40,6 +40,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
@@ -142,6 +143,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         Connection conn = hypervisorResource.getConnection();
         SR srcSr = null;
         Task task = null;
+
         try {
             if ((srcStore instanceof NfsTO) && (srcData.getObjectType() == DataObjectType.TEMPLATE)) {
                 NfsTO srcImageStore = (NfsTO)srcStore;
@@ -149,81 +151,148 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 String storeUrl = srcImageStore.getUrl();
                 URI uri = new URI(storeUrl);
                 String volumePath = srcData.getPath();
+
                 volumePath = StringUtils.stripEnd(volumePath, "/");
+
                 String[] splits = volumePath.split("/");
                 String volumeDirectory = volumePath;
+
                 if (splits.length > 4) {
                     //"template/tmpl/dcid/templateId/templatename"
                     int index = volumePath.lastIndexOf("/");
+
                     volumeDirectory = volumePath.substring(0, index);
                 }
+
                 srcSr = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), volumeDirectory);
-                Set<VDI> vdis = srcSr.getVDIs(conn);
-                if (vdis.size() != 1) {
+
+                Set<VDI> setVdis = srcSr.getVDIs(conn);
+
+                if (setVdis.size() != 1) {
                     return new CopyCmdAnswer("Can't find template VDI under: " + uri.getHost() + ":" + uri.getPath() + "/" + volumeDirectory);
                 }
 
-                VDI srcVdi = vdis.iterator().next();
+                VDI srcVdi = setVdis.iterator().next();
+
+                boolean managed = false;
+                String storageHost = null;
+                String managedStoragePoolName = null;
+                String managedStoragePoolRootVolumeName = null;
+                String managedStoragePoolRootVolumeSize = null;
+                String chapInitiatorUsername = null;
+                String chapInitiatorSecret = null;
 
                 PrimaryDataStoreTO destStore = (PrimaryDataStoreTO)destData.getDataStore();
-                String poolName = destStore.getUuid();
 
+                Map<String, String> details = destStore.getDetails();
 
-                SR poolsr = null;
-                Set<SR> srs = SR.getByNameLabel(conn, poolName);
-                if (srs.size() != 1) {
-                    String msg = "There are " + srs.size() + " SRs with same name: " + poolName;
-                    s_logger.warn(msg);
-                    return new CopyCmdAnswer(msg);
-                } else {
-                    poolsr = srs.iterator().next();
+                if (details != null) {
+                    managed = Boolean.parseBoolean(details.get(PrimaryDataStoreTO.MANAGED));
+
+                    if (managed) {
+                        storageHost = details.get(PrimaryDataStoreTO.STORAGE_HOST);
+                        managedStoragePoolName = details.get(PrimaryDataStoreTO.MANAGED_STORE_TARGET);
+                        managedStoragePoolRootVolumeName = details.get(PrimaryDataStoreTO.MANAGED_STORE_TARGET_ROOT_VOLUME);
+                        managedStoragePoolRootVolumeSize = details.get(PrimaryDataStoreTO.VOLUME_SIZE);
+                        chapInitiatorUsername = details.get(PrimaryDataStoreTO.CHAP_INITIATOR_USERNAME);
+                        chapInitiatorSecret = details.get(PrimaryDataStoreTO.CHAP_INITIATOR_SECRET);
+                    }
                 }
-                String pUuid = poolsr.getUuid(conn);
-                boolean isISCSI = IsISCSI(poolsr.getType(conn));
-                task = srcVdi.copyAsync(conn, poolsr, null, null);
+
+                final SR destSr;
+
+                if (managed) {
+                    details = new HashMap<String, String>();
+
+                    details.put(DiskTO.STORAGE_HOST, storageHost);
+                    details.put(DiskTO.IQN, managedStoragePoolName);
+                    details.put(DiskTO.VOLUME_SIZE, managedStoragePoolRootVolumeSize);
+                    details.put(DiskTO.CHAP_INITIATOR_USERNAME, chapInitiatorUsername);
+                    details.put(DiskTO.CHAP_INITIATOR_SECRET, chapInitiatorSecret);
+
+                    destSr = hypervisorResource.prepareManagedSr(conn, details);
+                }
+                else {
+                    String srName = destStore.getUuid();
+                    Set<SR> srs = SR.getByNameLabel(conn, srName);
+
+                    if (srs.size() != 1) {
+                        String msg = "There are " + srs.size() + " SRs with same name: " + srName;
+
+                        s_logger.warn(msg);
+
+                        return new CopyCmdAnswer(msg);
+                    } else {
+                        destSr = srs.iterator().next();
+                    }
+                }
+
+                task = srcVdi.copyAsync(conn, destSr, null, null);
+
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
-                VDI tmpl = Types.toVDI(task, conn);
-                VDI snapshotvdi = tmpl.snapshot(conn, new HashMap<String, String>());
-                snapshotvdi.setNameLabel(conn, "Template " + srcTemplate.getName());
-                tmpl.destroy(conn);
-                poolsr.scan(conn);
+
+                VDI tmplVdi = Types.toVDI(task, conn);
+
+                final String uuidToReturn;
+
+                if (managed) {
+                    uuidToReturn = tmplVdi.getUuid(conn);
+
+                    tmplVdi.setNameLabel(conn, managedStoragePoolRootVolumeName);
+                } else {
+                    VDI snapshotVdi = tmplVdi.snapshot(conn, new HashMap<String, String>());
+
+                    uuidToReturn = snapshotVdi.getUuid(conn);
+
+                    snapshotVdi.setNameLabel(conn, "Template " + srcTemplate.getName());
+
+                    tmplVdi.destroy(conn);
+                }
+
+                destSr.scan(conn);
+
                 try{
                     Thread.sleep(5000);
                 } catch (Exception e) {
                 }
 
                 TemplateObjectTO newVol = new TemplateObjectTO();
-                newVol.setUuid(snapshotvdi.getUuid(conn));
-                newVol.setPath(newVol.getUuid());
+
+                newVol.setUuid(uuidToReturn);
+                newVol.setPath(uuidToReturn);
                 newVol.setFormat(Storage.ImageFormat.VHD);
+
                 return new CopyCmdAnswer(newVol);
             }
-        }catch (Exception e) {
-            String msg = "Catch Exception " + e.getClass().getName() + " for template + " + " due to " + e.toString();
+        } catch (Exception e) {
+            String msg = "Catch Exception " + e.getClass().getName() + " for template due to " + e.toString();
+
             s_logger.warn(msg, e);
+
             return new CopyCmdAnswer(msg);
         } finally {
-            if ( task != null ) {
+            if (task != null) {
                 try {
                     task.destroy(conn);
                 } catch (Exception e) {
-                    s_logger.debug("unable to destroy task(" + task.toWireString() + ") due to " + e.toString());
+                    s_logger.debug("unable to destroy task (" + task.toWireString() + ") due to " + e.toString());
                 }
             }
+
             if (srcSr != null) {
                 hypervisorResource.removeSR(conn, srcSr);
             }
         }
+
         return new CopyCmdAnswer("not implemented yet");
     }
 
     protected String backupSnapshot(Connection conn, String primaryStorageSRUuid, String localMountPoint, String path, String secondaryStorageMountPath, String snapshotUuid, String prevBackupUuid, String prevSnapshotUuid, Boolean isISCSI, int wait) {
-        String errMsg = null;
-        boolean mounted = false;
         boolean filesrcreated = false;
-        boolean copied = false;
+        // boolean copied = false;
+
         if (prevBackupUuid == null) {
             prevBackupUuid = "";
         }
@@ -250,7 +319,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
                 dvdi = Types.toVDI(task, conn);
-                copied = true;
+                // copied = true;
             } finally {
                 if (task != null) {
                     try {
@@ -328,7 +397,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             if (primaryStorageSR == null) {
                 throw new InternalErrorException("Could not backup snapshot because the primary Storage SR could not be created from the name label: " + primaryStorageNameLabel);
             }
-            String psUuid = primaryStorageSR.getUuid(conn);
+            // String psUuid = primaryStorageSR.getUuid(conn);
             Boolean isISCSI = IsISCSI(primaryStorageSR.getType(conn));
 
             VDI snapshotVdi = getVDIbyUuid(conn, snapshotUuid);
