@@ -2085,8 +2085,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         List<ServiceOfferingDetailsVO> detailsVO = null;
         if (details != null) {
-            // Check if the user has passed the gpu-type before passing the VGPU type
-            if (!details.containsKey(GPU.Keys.pciDevice.toString()) || !details.containsKey(GPU.Keys.vgpuType.toString())) {
+            // To have correct input, either both gpu card name and VGPU type should be passed or nothing should be passed.
+            // Use XOR condition to verify that.
+            boolean entry1 = details.containsKey(GPU.Keys.pciDevice.toString());
+            boolean entry2 = details.containsKey(GPU.Keys.vgpuType.toString());
+            if ((entry1 || entry2) && !(entry1 && entry2)) {
                 throw new InvalidParameterValueException("Please specify the pciDevice and vgpuType correctly.");
             }
             detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
