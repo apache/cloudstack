@@ -47,17 +47,20 @@ class dbServer(object):
 
 
 class configuration(object):
+
     def __init__(self):
         self.name = None
         self.value = None
 
 
 class logger(object):
+
     def __init__(self):
         self.LogFolderPath = None
 
 
 class cloudstackConfiguration(object):
+
     def __init__(self):
         self.zones = []
         self.mgtSvr = []
@@ -68,6 +71,7 @@ class cloudstackConfiguration(object):
 
 
 class zone(object):
+
     def __init__(self):
         self.dns1 = None
         self.internaldns1 = None
@@ -845,8 +849,8 @@ def descSetupInAdvancedsgMode():
                     memory = 8 * 1024 * 1024 * 1024
                     localstorage = 1 * 1024 * 1024 * 1024 * 1024
                     # h.url = "http://sim/%d%d%d%d/cpucore=1&cpuspeed=8000&\
-                        # memory=%d&localstorage=%d" % (l, i, j, k, memory,
-                        # localstorage)
+                    # memory=%d&localstorage=%d" % (l, i, j, k, memory,
+                    # localstorage)
                     h.url = "http://sim/%d%d%d%d" % (l, i, j, k)
                     c.hosts.append(h)
 
@@ -855,8 +859,6 @@ def descSetupInAdvancedsgMode():
                     primary = primaryStorage()
                     primary.name = "primary" + \
                         str(l) + str(i) + str(j) + str(m)
-                    # primary.url = "nfs://localhost/path%s/size=%d" % \
-                        #(str(l) + str(i) + str(j) + str(m), size)
                     primary.url = "nfs://localhost/path%s" % \
                         (str(l) + str(i) + str(j) + str(m))
                     c.primaryStorages.append(primary)
