@@ -23,31 +23,10 @@
     Feature Specifications: https://cwiki.apache.org/confluence/display/CLOUDSTACK/FS+-+IP+Range+Reservation+within+a+Network
 """
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.utils import (cleanup_resources,
-                                          validateList,
-                                          verifyRouterState)
-from marvin.integration.lib.base import (Network,
-                                         Account,
-                                         ServiceOffering,
-                                         VirtualMachine,
-                                         Router,
-                                         NetworkOffering,
-                                         VpcOffering,
-                                         VPC)
-from marvin.integration.lib.common import (get_domain,
-                                            get_zone,
-                                            get_template,
-                                            createEnabledNetworkOffering,
-                                            get_free_vlan,
-                                            wait_for_cleanup,
-                                            createNetworkRulesForVM)
-from marvin.codes import (PASS,
-                          NAT_RULE,
-                          STATIC_NAT_RULE,
-                          FAIL,
-                          UNKNOWN,
-                          FAULT,
-                          MASTER)
+from marvin.cloudstackException import CloudstackAPIException
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 import netaddr
 
 import random
@@ -101,18 +80,22 @@ class TestIpReservation(cloudstackTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestIpReservation, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        # Fill test data from the external config file
-        cls.testData = cloudstackTestClient.getConfigParser().parsedDict
+        cls.testClient = super(TestIpReservation, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        # Fill services from the external config file
+        cls.testData = cls.testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.testData)
-        cls.zone = get_zone(cls.api_client, cls.testData)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.testData["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.testData["ostype"]
         cls.testData["domainid"] = cls.domain.id
         cls.testData["zoneid"] = cls.zone.id
         cls.testData["virtual_machine"]["zoneid"] = cls.zone.id
@@ -545,18 +528,22 @@ class TestRestartNetwork(cloudstackTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestRestartNetwork, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        # Fill test data from the external config file
-        cls.testData = cloudstackTestClient.getConfigParser().parsedDict
+        cls.testClient = super(TestRestartNetwork, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        # Fill services from the external config file
+        cls.testData = cls.testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.testData)
-        cls.zone = get_zone(cls.api_client, cls.testData)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.testData["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.testData["ostype"]
         cls.testData["domainid"] = cls.domain.id
         cls.testData["zoneid"] = cls.zone.id
         cls.testData["virtual_machine"]["zoneid"] = cls.zone.id
@@ -666,18 +653,22 @@ class TestUpdateIPReservation(cloudstackTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestUpdateIPReservation, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        # Fill test data from the external config file
-        cls.testData = cloudstackTestClient.getConfigParser().parsedDict
+        cls.testClient = super(TestUpdateIPReservation, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        # Fill services from the external config file
+        cls.testData = cls.testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.testData)
-        cls.zone = get_zone(cls.api_client, cls.testData)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.testData["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.testData["ostype"]
         cls.testData["domainid"] = cls.domain.id
         cls.testData["zoneid"] = cls.zone.id
         cls.testData["virtual_machine"]["zoneid"] = cls.zone.id
@@ -812,18 +803,22 @@ class TestRouterOperations(cloudstackTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestRouterOperations, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        # Fill test data from the external config file
-        cls.testData = cloudstackTestClient.getConfigParser().parsedDict
+        cls.testClient = super(TestRouterOperations, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        # Fill services from the external config file
+        cls.testData = cls.testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.testData)
-        cls.zone = get_zone(cls.api_client, cls.testData)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.testData["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.testData["ostype"]
         cls.testData["domainid"] = cls.domain.id
         cls.testData["zoneid"] = cls.zone.id
         cls.testData["virtual_machine"]["zoneid"] = cls.zone.id
@@ -978,18 +973,22 @@ class TestFailureScnarios(cloudstackTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestFailureScnarios, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        # Fill test data from the external config file
-        cls.testData = cloudstackTestClient.getConfigParser().parsedDict
+        cls.testClient = super(TestFailureScnarios, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        # Fill services from the external config file
+        cls.testData = cls.testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.testData)
-        cls.zone = get_zone(cls.api_client, cls.testData)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.testData["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.testData["ostype"]
         cls.testData["domainid"] = cls.domain.id
         cls.testData["zoneid"] = cls.zone.id
         cls.testData["virtual_machine"]["zoneid"] = cls.zone.id

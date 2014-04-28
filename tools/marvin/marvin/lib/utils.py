@@ -29,12 +29,17 @@ import socket
 import urlparse
 import datetime
 from marvin.cloudstackAPI import cloudstackAPIClient, listHosts, listRouters
+from platform import system
+from marvin.cloudstackException import GetDetailExceptionInfo
 from marvin.sshClient import SshClient
-from marvin.codes import (FAIL,
+from marvin.codes import (
+                          SUCCESS,
+                          FAIL,
                           PASS,
                           MATCH_NOT_FOUND,
                           INVALID_INPUT,
-                          EMPTY_LIST)
+                          EMPTY_LIST,
+                          FAILED)
 
 def restart_mgmt_server(server):
     """Restarts the management server"""
@@ -267,7 +272,8 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     # snapshot extension to be appended to the snapshot path obtained from db
     snapshot_extensions = {"vmware": ".ovf",
                             "kvm": "",
-                            "xenserver": ".vhd"}
+                            "xenserver": ".vhd",
+                            "simulator":""}
 
     qresultset = dbconn.execute(
                         "select id from snapshots where uuid = '%s';" \
@@ -429,6 +435,44 @@ def verifyElementInList(inp, toverify, responsevar=None,  pos=0):
     else:
         return [FAIL, MATCH_NOT_FOUND]
 
+def checkVolumeSize(ssh_handle=None,
+                    volume_name="/dev/sda",
+                    cmd_inp="/sbin/fdisk -l | grep Disk",
+                    size_to_verify=0):
+    '''
+    @Name : getDiskUsage
+    @Desc : provides facility to verify the volume size against the size to verify
+    @Input: 1. ssh_handle : machine against which to execute the disk size cmd
+            2. volume_name : The name of the volume against which to verify the size
+            3. cmd_inp : Input command used to veify the size
+            4. size_to_verify: size against which to compare.
+    @Output: Returns FAILED in case of an issue, else SUCCESS
+    '''
+    try:
+        if ssh_handle is None or cmd_inp is None or volume_name is None:
+            return INVALID_INPUT
+
+        cmd = cmd_inp
+        '''
+        Retrieve the cmd output
+        '''
+        if system().lower() != "windows":
+            fdisk_output = ssh_handle.runCommand(cmd_inp)
+            if fdisk_output["status"] != SUCCESS:
+                return FAILED
+            temp_out = fdisk_output["stdout"]
+            for line in temp_out.split("\n"):
+                if volume_name in line:
+                    parts = line.split()
+                    if str(parts[-2]) == str(size_to_verify):
+                        return [SUCCESS,str(parts[-2])]
+            return [FAILED,"Volume Not Found"]
+    except Exception, e:
+        print "\n Exception Occurred under getDiskUsage: " \
+              "%s" %GetDetailExceptionInfo(e)
+        return [FAILED,GetDetailExceptionInfo(e)]
+
+        
 def verifyRouterState(apiclient, routerid, allowedstates):
     """List the router and verify that its state is in allowed states
     @output: List, containing [Result, Reason]
@@ -451,3 +495,4 @@ def verifyRouterState(apiclient, routerid, allowedstates):
         return [FAIL, "Redundant state of the router should be in %s but is %s" %
             (allowedstates, routers[0].redundantstate)]
     return [PASS, None]
+        

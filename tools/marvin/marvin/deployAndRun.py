@@ -15,13 +15,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from tcExecuteEngine import TestCaseExecuteEngine
+from .tcExecuteEngine import TestCaseExecuteEngine
 import sys
 import os
 import traceback
 import time
 from argparse import ArgumentParser
-from marvinInit import MarvinInit
+from .marvinInit import MarvinInit
 from marvin.codes import (SUCCESS,
                           FAILED,
                           EXCEPTION,
@@ -96,7 +96,7 @@ def startMarvin(cfg_file, load_flag):
         else:
             print "\nMarvin Initialization Failed"
             exit(1)
-    except Exception, e:
+    except Exception as e:
             print "\n Exception occurred while starting Marvin %s" % str(e)
             exit(1)
 

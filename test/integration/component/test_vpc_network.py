@@ -21,8 +21,8 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import startVirtualMachine, stopVirtualMachine
-from marvin.integration.lib.utils import cleanup_resources, validateList
-from marvin.integration.lib.base import (VirtualMachine,
+from marvin.lib.utils import cleanup_resources, validateList
+from marvin.lib.base import (VirtualMachine,
                                          ServiceOffering,
                                          Account,
                                          NATRule,
@@ -35,7 +35,7 @@ from marvin.integration.lib.base import (VirtualMachine,
                                          StaticNATRule,
                                          NetworkACL,
                                          PublicIPAddress)
-from marvin.integration.lib.common import (get_zone,
+from marvin.lib.common import (get_zone,
                                            get_domain,
                                            get_template,
                                            wait_for_cleanup,
@@ -239,17 +239,17 @@ class TestVPCNetwork(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVPCNetwork,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPCNetwork, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
+
         # Added an attribute to track if Netscaler addition was successful.
         # Value is checked in tests and if not configured, Netscaler tests will be skipped
         cls.ns_configured = False
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1003,17 +1003,17 @@ class TestVPCNetworkRanges(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVPCNetworkRanges,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPCNetworkRanges, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
+
         # Added an attribute to track if Netscaler addition was successful.
         # Value is checked in tests and if not configured, Netscaler tests will be skipped
         cls.ns_configured = False
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1541,14 +1541,14 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVPCNetworkUpgrade,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPCNetworkUpgrade, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -2123,14 +2123,14 @@ class TestVPCNetworkGc(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVPCNetworkGc,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPCNetworkGc, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,

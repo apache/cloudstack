@@ -22,9 +22,9 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from marvin.sshClient import SshClient
 import datetime
 
@@ -150,14 +150,13 @@ class TestLbSourceNat(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(
-                               TestLbSourceNat,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestLbSourceNat, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -359,14 +358,13 @@ class TestLbOnIpWithPf(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(
-                               TestLbOnIpWithPf,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestLbOnIpWithPf, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -572,14 +570,13 @@ class TestPfOnIpWithLb(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(
-                               TestPfOnIpWithLb,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestPfOnIpWithLb, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -786,14 +783,13 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(
-                               TestLbOnNonSourceNat,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestLbOnNonSourceNat, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1003,14 +999,13 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(
-                               TestAddMultipleVmsLb,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAddMultipleVmsLb, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1282,14 +1277,13 @@ class TestMultipleLbRules(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(
-                               TestMultipleLbRules,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestMultipleLbRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1601,14 +1595,13 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(
-                               TestMultipleLbRulesSameIp,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestMultipleLbRulesSameIp, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1926,14 +1919,13 @@ class TestLoadBalancingRule(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(
-                               TestLoadBalancingRule,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestLoadBalancingRule, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -2140,14 +2132,13 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(
-                               TestDeleteCreateLBRule,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeleteCreateLBRule, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -2269,14 +2260,13 @@ class TestVmWithLb(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(
-                               TestVmWithLb,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVmWithLb, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,

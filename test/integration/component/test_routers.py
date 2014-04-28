@@ -21,9 +21,9 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 
 #Import System modules
 import time
@@ -98,11 +98,13 @@ class TestRouterServices(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestRouterServices, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRouterServices, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -641,11 +643,13 @@ class TestRouterStopCreatePF(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestRouterStopCreatePF, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRouterStopCreatePF, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
@@ -853,11 +857,13 @@ class TestRouterStopCreateLB(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestRouterStopCreateLB, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRouterStopCreateLB, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
@@ -1065,11 +1071,13 @@ class TestRouterStopCreateFW(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestRouterStopCreateFW, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRouterStopCreateFW, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
@@ -1122,6 +1130,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.cleanup = []
         return
 
@@ -1255,8 +1264,8 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                     "Check end port of firewall rule"
                     )
         # For DNS and DHCP check 'dnsmasq' process status
-        if (self.apiclient.hypervisor.lower() == 'vmware'
-                         or self.apiclient.hypervisor.lower() == 'hyperv'):
+        if (self.hypervisor.lower() == 'vmware'
+                         or self.hypervisor.lower() == 'hyperv'):
             result = get_process_status(
                                self.apiclient.connection.mgtSvr,
                                22,
@@ -1264,7 +1273,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                                self.apiclient.connection.passwd,
                                router.linklocalip,
                                'iptables -t nat -L',
-                                hypervisor=self.apiclient.hypervisor
+                                hypervisor=self.hypervisor
                                )
         else:
             hosts = list_hosts(

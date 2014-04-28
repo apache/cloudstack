@@ -20,11 +20,11 @@
 #Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
-from marvin.cloudstackException import cloudstackAPIException
+from marvin.cloudstackException import CloudstackAPIException
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 
 
 class Services:
@@ -175,14 +175,13 @@ class TestVPC(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVPC,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPC, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1934,10 +1933,10 @@ class TestVPC(cloudstackTestCase):
         self.debug("creating a VPC network in the account: %s" %
                                                     user.name)
 
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=user.name,
                                         DomainName=user.domain,
-                                        acctType=0)
+                                        type=0)
 
 
         vpc = VPC.create(
@@ -2017,8 +2016,8 @@ class TestVPC(cloudstackTestCase):
 
         #0 - User, 1 - Root Admin, 2 - Domain Admin
         userapiclient = self.testClient.getUserApiClient(
-                                account=user.name,
-                                domain=self.services["domain"]["name"],
+                                UserName=user.name,
+                                DomainName=self.services["domain"]["name"],
                                 type=2)
 
         vpc = VPC.create(
@@ -2092,8 +2091,8 @@ class TestVPC(cloudstackTestCase):
                                                     user.name)
 
         userapiclient = self.testClient.getUserApiClient(
-                                        account=user.name,
-                                        domain=user.domain,
+                                        UserName=user.name,
+                                        DomainName=user.domain,
                                         type=0)
 
         vpc = VPC.create(
@@ -2171,8 +2170,8 @@ class TestVPC(cloudstackTestCase):
         self.debug("Created account: %s" % domain_admin.name)
         self.cleanup.append(domain_admin)
         da_apiclient = self.testClient.getUserApiClient(
-                                        account=domain_admin.name,
-                                        domain=domain_admin.domain,
+                                        UserName=domain_admin.name,
+                                        DomainName=domain_admin.domain,
                                         type=2)
 
         user = Account.create(
@@ -2188,11 +2187,11 @@ class TestVPC(cloudstackTestCase):
 
         #0 - User, 1 - Root Admin, 2 - Domain Admin
         userapiclient = self.testClient.getUserApiClient(
-                                        account=user.name,
-                                        domain=user.domain,
+                                        UserName=user.name,
+                                        DomainName=user.domain,
                                         type=0)
 
-        with self.assertRaises(cloudstackAPIException):
+        with self.assertRaises(CloudstackAPIException):
             vpc = VPC.create(
                              da_apiclient,
                              self.services["vpc"],
@@ -2222,8 +2221,8 @@ class TestVPC(cloudstackTestCase):
         self.debug("Created account: %s" % domain_admin.name)
         self.cleanup.append(domain_admin)
         da_apiclient = self.testClient.getUserApiClient(
-                                        account=domain_admin.name,
-                                        domain=self.services["domain"]["name"],
+                                        UserName=domain_admin.name,
+                                        DomainName=self.services["domain"]["name"],
                                         type=2)
 
         user = Account.create(
@@ -2239,8 +2238,8 @@ class TestVPC(cloudstackTestCase):
 
         #0 - User, 1 - Root Admin, 2 - Domain Admin
         userapiclient = self.testClient.getUserApiClient(
-                                        account=user.name,
-                                        domain=user.domain,
+                                        UserName=user.name,
+                                        DomainName=user.domain,
                                         type=0)
 
         vpc = VPC.create(

@@ -20,9 +20,9 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 #Import System modules
 import time
 
@@ -88,13 +88,14 @@ class TestAttachVolume(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestAttachVolume, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cls.testClient = super(TestAttachVolume, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.pod = get_pod(cls.api_client, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -378,13 +379,14 @@ class TestAttachDetachVolume(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestAttachDetachVolume, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cls.testClient = super(TestAttachDetachVolume, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.pod = get_pod(cls.api_client, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -641,13 +643,14 @@ class TestAttachVolumeISO(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestAttachVolumeISO, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cls.testClient = super(TestAttachVolumeISO, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.pod = get_pod(cls.api_client, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -852,11 +855,13 @@ class TestVolumes(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestVolumes, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVolumes, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -1105,7 +1110,7 @@ class TestVolumes(cloudstackTestCase):
         )
         self.assertTrue(domuser is not None)
 
-        domapiclient = self.testClient.getUserApiClient(account=domuser.name, domain=dom.name)
+        domapiclient = self.testClient.getUserApiClient(UserName=domuser.name, DomainName=dom.name)
 
         diskoffering = DiskOffering.list(self.apiclient)
         self.assertTrue(isinstance(diskoffering, list), msg="DiskOffering list is not a list?")
@@ -1133,15 +1138,12 @@ class TestDeployVmWithCustomDisk(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestDeployVmWithCustomDisk,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeployVmWithCustomDisk, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
         cls.services = Services().services
-
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,

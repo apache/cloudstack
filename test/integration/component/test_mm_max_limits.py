@@ -19,7 +19,7 @@
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.base import (
+from marvin.lib.base import (
                                         Account,
                                         ServiceOffering,
                                         VirtualMachine,
@@ -27,11 +27,11 @@ from marvin.integration.lib.base import (
                                         Domain,
                                         Project
                                         )
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template
                                         )
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 
 class Services:
     """Test memory resource limit services
@@ -88,12 +88,13 @@ class TestMaxMemoryLimits(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestMaxMemoryLimits,
-                               cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestMaxMemoryLimits, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
 
         cls.template = get_template(
@@ -253,7 +254,7 @@ class TestMaxMemoryLimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=8, domain_limit=4)
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
                             UserName=self.child_do_admin.name,
                             DomainName=self.child_do_admin.domain)
 
@@ -280,7 +281,7 @@ class TestMaxMemoryLimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=7, domain_limit=14)
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
                             UserName=self.child_do_admin.name,
                             DomainName=self.child_do_admin.domain)
 
@@ -310,7 +311,7 @@ class TestMaxMemoryLimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=8,domain_limit=8, project_limit=4)
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
                             UserName=self.child_do_admin.name,
                             DomainName=self.child_do_admin.domain)
 
@@ -334,7 +335,7 @@ class TestMaxMemoryLimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=6, project_limit=12, domain_limit=12)
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
                             UserName=self.child_do_admin.name,
                             DomainName=self.child_do_admin.domain)
 

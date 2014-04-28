@@ -18,10 +18,10 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-from marvin.integration.lib.utils import is_snapshot_on_nfs
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
+from marvin.lib.utils import is_snapshot_on_nfs
 
 
 class Services:
@@ -122,11 +122,13 @@ class TestAccountSnapshotClean(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestAccountSnapshotClean, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAccountSnapshotClean, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(

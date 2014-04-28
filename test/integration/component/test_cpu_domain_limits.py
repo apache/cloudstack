@@ -19,21 +19,21 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.base import (
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.base import (
                                         Account,
                                         ServiceOffering,
                                         VirtualMachine,
                                         Resources,
                                         Domain
                                         )
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         findSuitableHostForMigration,
                                         get_resource_type
                                         )
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 from marvin.codes import ERROR_NO_HOST_FOR_MIGRATION
 
 class Services:
@@ -91,12 +91,13 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestDomainCPULimitsUpdateResources,
-                               cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDomainCPULimitsUpdateResources, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -237,7 +238,7 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                 UserName=self.account.name,
                 DomainName=self.account.domain)
 
@@ -310,7 +311,7 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                 UserName=self.account.name,
                 DomainName=self.account.domain)
 
@@ -371,7 +372,7 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                 UserName=self.account.name,
                 DomainName=self.account.domain)
 
@@ -435,7 +436,7 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                 UserName=self.account.name,
                 DomainName=self.account.domain)
 
@@ -505,12 +506,13 @@ class TestMultipleChildDomains(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestMultipleChildDomains,
-                               cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestMultipleChildDomains, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -689,11 +691,11 @@ class TestMultipleChildDomains(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()
 
-        api_client_cadmin_1 = self.testClient.createUserApiClient(
+        api_client_cadmin_1 = self.testClient.getUserApiClient(
             UserName=self.cadmin_1.name,
             DomainName=self.cadmin_1.domain)
 
-        api_client_cadmin_2 = self.testClient.createUserApiClient(
+        api_client_cadmin_2 = self.testClient.getUserApiClient(
             UserName=self.cadmin_2.name,
             DomainName=self.cadmin_2.domain)
 

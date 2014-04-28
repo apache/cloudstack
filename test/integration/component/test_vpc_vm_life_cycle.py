@@ -20,8 +20,8 @@
 #Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.utils import cleanup_resources, validateList
-from marvin.integration.lib.base import (VirtualMachine,
+from marvin.lib.utils import cleanup_resources, validateList
+from marvin.lib.base import (VirtualMachine,
                                          NATRule,
                                          LoadBalancerRule,
                                          StaticNATRule,
@@ -35,7 +35,7 @@ from marvin.integration.lib.base import (VirtualMachine,
                                          Account,
                                          ServiceOffering,
                                          Host)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            get_free_vlan,
@@ -212,14 +212,13 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVMLifeCycleVPC,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVMLifeCycleVPC, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -873,14 +872,13 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVMLifeCycleSharedNwVPC,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVMLifeCycleSharedNwVPC, cls).getClsTestClient()
+	cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1660,14 +1658,13 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVMLifeCycleBothIsolated,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVMLifeCycleBothIsolated, cls).getClsTestClient()
+	cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1995,14 +1992,13 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVMLifeCycleStoppedVPCVR,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVMLifeCycleStoppedVPCVR, cls).getClsTestClient()
+	cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -2681,14 +2677,13 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
     def setUpClass(cls):
         try:
 
-            cls.api_client = super(
-                               TestVMLifeCycleDiffHosts,
-                               cls
-                               ).getClsTestClient().getApiClient()
+            cls.testClient = super(TestVMLifeCycleDiffHosts, cls).getClsTestClient()
+	    cls.api_client = cls.testClient.getApiClient()
+
             cls.services = Services().services
             # Get Zone, Domain and templates
-            cls.domain = get_domain(cls.api_client, cls.services)
-            cls.zone = get_zone(cls.api_client, cls.services)
+            cls.domain = get_domain(cls.api_client)
+            cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
             cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
