@@ -26,6 +26,7 @@
 
 #Import Local Modules
 from marvin.codes import (PASS,
+                          FAIL,
                           RECURRING)
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -649,9 +650,13 @@ class TestBaseImageUpdate(cloudstackTestCase):
                    Here we are passing root disk id of vm before reboot which does not exist hence\
                    listing should fail")
 
-        with self.assertRaises(Exception):
-            list_snapshots_policy = SnapshotPolicy.list(
-                                                     self.apiclient,
-                                                     volumeid=vm_with_reset_root_disk_id
-                                                     )
+        try:
+            listSnapshotPolicies = SnapshotPolicy.list(
+                                        self.apiclient,
+                                        volumeid=vm_with_reset_root_disk_id)
+        except Exception as e:
+            self.fail("Failed to list snapshot policies: %s" % e)
+
+        self.assertEqual(validateList(listSnapshotPolicies)[0], FAIL,\
+                "Snapshot policies list should be empty")
         return
