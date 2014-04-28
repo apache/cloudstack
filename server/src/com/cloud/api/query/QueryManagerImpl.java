@@ -777,7 +777,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object keyword = cmd.getKeyword();
         boolean isAdmin = false;
         boolean isRootAdmin = false;
-        if (_accountMgr.isAdmin(caller.getType())) {
+        if (_accountMgr.isAdmin(caller.getId())) {
             isAdmin = true;
         }
         if (_accountMgr.isRootAdmin(caller.getId())) {
@@ -1279,7 +1279,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
         // ids
 
-        if (_accountMgr.isAdmin(caller.getType())) {
+        if (_accountMgr.isAdmin(caller.getId())) {
             if (domainId != null) {
                 DomainVO domain = _domainDao.findById(domainId);
                 if (domain == null) {
@@ -1483,7 +1483,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         // verify permissions - only accounts belonging to the project can list
         // project's account
-        if (!_accountMgr.isAdmin(caller.getType()) && _projectAccountDao.findByProjectIdAccountId(projectId, caller.getAccountId()) == null) {
+        if (!_accountMgr.isAdmin(caller.getId()) && _projectAccountDao.findByProjectIdAccountId(projectId, caller.getAccountId()) == null) {
             throw new PermissionDeniedException("Account " + caller + " is not authorized to list users of the project id=" + projectId);
         }
 

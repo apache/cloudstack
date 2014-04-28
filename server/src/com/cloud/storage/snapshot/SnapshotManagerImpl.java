@@ -769,7 +769,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         if (account != null) {
             long volAcctId = volume.getAccountId();
-            if (_accountMgr.isAdmin(account.getType())) {
+            if (_accountMgr.isAdmin(account.getId())) {
                 Account userAccount = _accountDao.findById(Long.valueOf(volAcctId));
                 if (!_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
                     throw new PermissionDeniedException("Unable to list snapshot schedule for volume " + volumeId + ", permission denied.");

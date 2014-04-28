@@ -74,7 +74,7 @@ public interface AccountService {
         User
         createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID);
 
-    boolean isAdmin(short accountType);
+    boolean isAdmin(Long accountId);
 
     Account finalizeOwner(Account caller, String accountName, Long domainId, Long projectId);
 

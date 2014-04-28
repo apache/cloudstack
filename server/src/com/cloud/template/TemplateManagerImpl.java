@@ -1218,7 +1218,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("unable to update permissions for " + mediaType + " with id " + id);
         }
 
-        boolean isAdmin = _accountMgr.isAdmin(caller.getType());
+        boolean isAdmin = _accountMgr.isAdmin(caller.getId());
         // check configuration parameter(allow.public.user.templates) value for
         // the template owner
         boolean allowPublicUserTemplates = AllowPublicUserTemplates.valueIn(template.getAccountId());
@@ -1485,7 +1485,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Long userId = CallContext.current().getCallingUserId();
 
         Account caller = CallContext.current().getCallingAccount();
-        boolean isAdmin = (_accountMgr.isAdmin(caller.getType()));
+        boolean isAdmin = (_accountMgr.isAdmin(caller.getId()));
 
         _accountMgr.checkAccess(caller, null, templateOwner);
 

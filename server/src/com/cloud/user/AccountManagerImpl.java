@@ -353,9 +353,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
-            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+    public boolean isAdmin(Long accountId) {
+        if (accountId != null) {
+            AccountVO acct = _accountDao.findById(accountId);
+            if ((isRootAdmin(accountId)) || (isDomainAdmin(accountId)) || (isResourceDomainAdmin(accountId))) {
+                return true;
+            } else if (acct.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
+                return true;
+            }
+
+        }
+        return false;
     }
 
     @Override
@@ -386,7 +394,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 try {
                     if (checker.checkAccess(acct, null, null, "DomainCapability")) {
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Root Access granted to " + acct + " by " + checker.getName());
+                            s_logger.debug("DomainAdmin Access granted to " + acct + " by " + checker.getName());
                         }
                         return true;
                     }
@@ -407,8 +415,23 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return false;
     }
 
-    public boolean isResourceDomainAdmin(short accountType) {
-        return (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN);
+    public boolean isResourceDomainAdmin(Long accountId) {
+        if (accountId != null) {
+            AccountVO acct = _accountDao.findById(accountId);
+            for (SecurityChecker checker : _securityCheckers) {
+                try {
+                    if (checker.checkAccess(acct, null, null, "DomainResourceCapability")) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("ResourceDomainAdmin Access granted to " + acct + " by " + checker.getName());
+                        }
+                        return true;
+                    }
+                } catch (PermissionDeniedException ex) {
+                    return false;
+                }
+            }
+        }
+        return false;
     }
 
     public boolean isInternalAccount(long accountId) {
@@ -476,7 +499,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId) {
         // We just care for resource domain admin for now. He should be permitted to see only his zone.
-        if (isResourceDomainAdmin(caller.getType())) {
+        if (isResourceDomainAdmin(caller.getAccountId())) {
             if (zoneId == null)
                 return getZoneIdForAccount(caller);
             else if (zoneId.compareTo(getZoneIdForAccount(caller)) != 0)
@@ -1661,7 +1684,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             return getAccount(project.getProjectAccountId());
         }
 
-        if (isAdmin(caller.getType()) && accountName != null && domainId != null) {
+        if (isAdmin(caller.getId()) && accountName != null && domainId != null) {
             Domain domain = _domainMgr.getDomain(domainId);
             if (domain == null) {
                 throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
@@ -1674,7 +1697,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             checkAccess(caller, domain);
 
             return owner;
-        } else if (!isAdmin(caller.getType()) && accountName != null && domainId != null) {
+        } else if (!isAdmin(caller.getId()) && accountName != null && domainId != null) {
             if (!accountName.equals(caller.getAccountName()) || domainId.longValue() != caller.getDomainId()) {
                 throw new PermissionDeniedException("Can't create/list resources for account " + accountName + " in domain " + domainId + ", permission denied");
             } else {

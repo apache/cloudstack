@@ -1829,7 +1829,7 @@ public class ApiDBUtils {
     }
 
     public static boolean isAdmin(Account account) {
-        return s_accountService.isAdmin(account.getType());
+        return s_accountService.isAdmin(account.getId());
     }
 
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {

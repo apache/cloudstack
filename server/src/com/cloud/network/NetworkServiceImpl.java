@@ -1085,14 +1085,14 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         // Only Admin can create Shared networks
-        if (ntwkOff.getGuestType() == GuestType.Shared && !_accountMgr.isAdmin(caller.getType())) {
+        if (ntwkOff.getGuestType() == GuestType.Shared && !_accountMgr.isAdmin(caller.getId())) {
             throw new InvalidParameterValueException("Only Admins can create network with guest type " + GuestType.Shared);
         }
 
         // Check if the network is domain specific
         if (aclType == ACLType.Domain) {
             // only Admin can create domain with aclType=Domain
-            if (!_accountMgr.isAdmin(caller.getType())) {
+            if (!_accountMgr.isAdmin(caller.getId())) {
                 throw new PermissionDeniedException("Only admin can create networks with aclType=Domain");
             }
 
