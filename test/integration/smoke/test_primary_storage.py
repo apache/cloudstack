@@ -20,43 +20,24 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 
 #Import System modules
 import time
 _multiprocess_shared_ = True
 
-class Services:
-    """Test Primary storage Services
-    """
-
-    def __init__(self):
-        self.services = {
-                        "nfs":
-                             {
-                                "url": "nfs://10.147.28.7/export/home/talluri/testprimary",
-                                # Format: File_System_Type/Location/Path
-                                "name": "Primary XEN"
-                            },
-                        "iscsi": {
-                                "url": "iscsi://192.168.100.21/iqn.2012-01.localdomain.clo-cstack-cos6:iser/1",
-                                # Format : iscsi://IP Address/IQN number/LUN#
-                                "name": "Primary iSCSI"
-                            }
-                 }
-
 class TestPrimaryStorageServices(cloudstackTestCase):
 
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
-        self.services = Services().services
+        self.services = self.testClient.getParsedTestDataConfig()
         self.cleanup = []
         # Get Zone and pod
-        self.zone = get_zone(self.apiclient, self.services)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
 
         return
@@ -218,7 +199,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
 
             self.assertEqual(
                 storage.type,
-                'NetworkFilesystem',
+                'IscsiLUN',
                 "Check storage pool type "
                 )
 

@@ -22,9 +22,9 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from marvin.sshClient import SshClient
 
 #Import System modules
@@ -117,12 +117,13 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestDefaultSecurityGroup, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDefaultSecurityGroup, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -390,12 +391,13 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestAuthorizeIngressRule, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAuthorizeIngressRule, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -526,12 +528,13 @@ class TestRevokeIngressRule(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestRevokeIngressRule, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRevokeIngressRule, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -684,12 +687,13 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestDhcpOnlyRouter, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDhcpOnlyRouter, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -821,12 +825,13 @@ class TestdeployVMWithUserData(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestdeployVMWithUserData, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestdeployVMWithUserData, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -985,8 +990,8 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         self.services = Services().services
 
         # Get Zone, Domain and templates
-        self.domain = get_domain(self.apiclient, self.services)
-        self.zone = get_zone(self.apiclient, self.services)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.services['mode'] = self.zone.networktype
 
         template = get_template(
@@ -1232,8 +1237,8 @@ class TestIngressRule(cloudstackTestCase):
         self.services = Services().services
 
         # Get Zone, Domain and templates
-        self.domain = get_domain(self.apiclient, self.services)
-        self.zone = get_zone(self.apiclient, self.services)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.services['mode'] = self.zone.networktype
 
         template = get_template(

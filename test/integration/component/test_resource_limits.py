@@ -19,7 +19,7 @@
 #Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import (VirtualMachine,
+from marvin.lib.base import (VirtualMachine,
                                          Snapshot,
                                          Template,
                                          PublicIPAddress,
@@ -31,14 +31,14 @@ from marvin.integration.lib.base import (VirtualMachine,
                                          NetworkOffering,
                                          ServiceOffering,
                                          Configurations)
-from marvin.integration.lib.common import (list_volumes,
+from marvin.lib.common import (list_volumes,
                                            get_domain,
                                            get_zone,
                                            get_template,
                                            update_resource_limit,
                                            list_configurations,
                                            wait_for_cleanup)
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 import time
 
 
@@ -127,11 +127,13 @@ class TestResourceLimitsAccount(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestResourceLimitsAccount, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestResourceLimitsAccount, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
@@ -897,10 +899,11 @@ class TestResourceLimitsDomain(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestResourceLimitsDomain, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestResourceLimitsDomain, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
@@ -1354,14 +1357,12 @@ class TestMaxAccountNetworks(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestMaxAccountNetworks,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestMaxAccountNetworks, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,

@@ -19,21 +19,21 @@
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.base import (
+from marvin.lib.base import (
                                         Account,
                                         ServiceOffering,
                                         VirtualMachine,
                                         Resources,
                                         Domain
                                         )
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         wait_for_cleanup,
                                         findSuitableHostForMigration,
                                         get_resource_type
                                         )
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 from marvin.codes import ERROR_NO_HOST_FOR_MIGRATION
 
 class Services:
@@ -91,12 +91,13 @@ class TestMemoryLimits(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestMemoryLimits,
-                               cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestMemoryLimits, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.services["mode"] = cls.zone.networktype
 
@@ -370,12 +371,13 @@ class TestDomainMemoryLimitsConfiguration(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestDomainMemoryLimitsConfiguration,
-                               cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDomainMemoryLimitsConfiguration, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
 
         cls.template = get_template(
@@ -498,7 +500,7 @@ class TestDomainMemoryLimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                              UserName=self.account.name,
                              DomainName=self.account.domain)
 
@@ -570,7 +572,7 @@ class TestDomainMemoryLimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                              UserName=self.account.name,
                              DomainName=self.account.domain)
 
@@ -630,7 +632,7 @@ class TestDomainMemoryLimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                              UserName=self.account.name,
                              DomainName=self.account.domain)
 
@@ -703,7 +705,7 @@ class TestDomainMemoryLimitsConfiguration(cloudstackTestCase):
             if memory_account_gc[0].max != 8192:
                 self.skipTest("This test case requires configuration value max.account.memory to be 8192")
 
-	        api_client = self.testClient.createUserApiClient(
+	        api_client = self.testClient.getUserApiClient(
                              UserName=self.account.name,
                              DomainName=self.account.domain)
 

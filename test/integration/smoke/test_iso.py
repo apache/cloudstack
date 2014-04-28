@@ -20,9 +20,9 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 import urllib
 from random import random
@@ -31,70 +31,19 @@ import time
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test ISO Services
-    """
-
-    def __init__(self):
-        self.services = {
-            "account": {
-                        "email": "test@test.com",
-                        "firstname": "Test",
-                        "lastname": "User",
-                        "username": "test",
-                        # Random characters are appended in create account to 
-                        # ensure unique username generated each time
-                        "password": "password",
-                },
-            "iso_1":
-                    {
-                        "displaytext": "Test ISO 1",
-                        "name": "ISO 1",
-                        "url": "http://people.apache.org/~tsp/dummy.iso",
-                        # Source URL where ISO is located
-                        "isextractable": True,
-                        "isfeatured": True,
-                        "ispublic": True,
-                        "ostype": "CentOS 5.3 (64-bit)",
-                    },
-            "iso_2":
-                    {
-                        "displaytext": "Test ISO 2",
-                        "name": "ISO 2",
-                        "url": "http://people.apache.org/~tsp/dummy.iso",
-                        # Source URL where ISO is located
-                        "isextractable": True,
-                        "isfeatured": True,
-                        "ispublic": True,
-                        "ostype": "CentOS 5.3 (64-bit)",
-                        "mode": 'HTTP_DOWNLOAD',
-                        # Used in Extract template, value must be HTTP_DOWNLOAD
-                    },
-            "isfeatured": True,
-            "ispublic": True,
-            "isextractable": True,
-            "bootable": True, # For edit template
-            "passwordenabled": True,
-            "sleep": 60,
-            "timeout": 10,
-            "ostype": "CentOS 5.3 (64-bit)",
-            # CentOS 5.3 (64 bit)
-        }
-
-
 class TestCreateIso(cloudstackTestCase):
 #TODO: SIMENH: check the existence of registered of ISO in secondary deploy a VM with registered ISO. can be added \
 # as another test
     def setUp(self):
-        self.services = Services().services
+        self.services = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         # Get Zone, Domain and templates
-        self.domain = get_domain(self.apiclient, self.services)
-        self.zone = get_zone(self.apiclient, self.services)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.services['mode'] = self.zone.networktype
         self.services["domainid"] = self.domain.id
-        self.services["iso_2"]["zoneid"] = self.zone.id
+        self.services["iso2"]["zoneid"] = self.zone.id
         
         self.account = Account.create(
                             self.apiclient,
@@ -109,8 +58,8 @@ class TestCreateIso(cloudstackTestCase):
         if not isinstance(ostypes, list):
             raise unittest.SkipTest("OSTypeId for given description not found")
 
-        self.services["iso_1"]["ostypeid"] = ostypes[0].id
-        self.services["iso_2"]["ostypeid"] = ostypes[0].id
+        self.services["iso1"]["ostypeid"] = ostypes[0].id
+        self.services["iso2"]["ostypeid"] = ostypes[0].id
         self.services["ostypeid"] = ostypes[0].id
 
         self.cleanup = [self.account]
@@ -139,7 +88,7 @@ class TestCreateIso(cloudstackTestCase):
 
         iso = Iso.create(
                          self.apiclient, 
-                         self.services["iso_2"],
+                         self.services["iso2"],
                          account=self.account.name,
                          domainid=self.account.domainid
                          )
@@ -170,17 +119,17 @@ class TestCreateIso(cloudstackTestCase):
         
         self.assertEqual(
                             iso_response.displaytext,
-                            self.services["iso_2"]["displaytext"],
+                            self.services["iso2"]["displaytext"],
                             "Check display text of newly created ISO"
                         )
         self.assertEqual(
                             iso_response.name,
-                            self.services["iso_2"]["name"],
+                            self.services["iso2"]["name"],
                             "Check name of newly created ISO"
                         )
         self.assertEqual(
                             iso_response.zoneid,
-                            self.services["iso_2"]["zoneid"],
+                            self.services["iso2"]["zoneid"],
                             "Check zone ID of newly created ISO"
                         )
         return
@@ -191,62 +140,62 @@ class TestISO(cloudstackTestCase):
     @classmethod
     @attr(BugId="CLOUDSTACK-6769, CLOUDSTACK-6774")
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestISO, cls).getClsTestClient().getApiClient()
+        testClient = super(TestISO, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         
         cls.services["domainid"] = cls.domain.id
-        cls.services["iso_1"]["zoneid"] = cls.zone.id
-        cls.services["iso_2"]["zoneid"] = cls.zone.id
+        cls.services["iso1"]["zoneid"] = cls.zone.id
+        cls.services["iso2"]["zoneid"] = cls.zone.id
         cls.services["sourcezoneid"] = cls.zone.id
         #populate second zone id for iso copy
         cmd = listZones.listZonesCmd()
-        cls.zones = cls.api_client.listZones(cmd)
+        cls.zones = cls.apiclient.listZones(cmd)
         if not isinstance(cls.zones, list):
             raise Exception("Failed to find zones.")
 
         #Create an account, ISOs etc.
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.name
         # Finding the OsTypeId from Ostype
         ostypes = list_os_types(
-                    cls.api_client,
+                    cls.apiclient,
                     description=cls.services["ostype"]
                     )
         if not isinstance(ostypes, list):
             raise unittest.SkipTest("OSTypeId for given description not found")
 
-        cls.services["iso_1"]["ostypeid"] = ostypes[0].id
-        cls.services["iso_2"]["ostypeid"] = ostypes[0].id
+        cls.services["iso1"]["ostypeid"] = ostypes[0].id
+        cls.services["iso2"]["ostypeid"] = ostypes[0].id
         cls.services["ostypeid"] = ostypes[0].id
 
         cls.iso_1 = Iso.create(
-                               cls.api_client, 
-                               cls.services["iso_1"],
+                               cls.apiclient, 
+                               cls.services["iso1"],
                                account=cls.account.name,
                                domainid=cls.account.domainid
                                )
         try:
-            cls.iso_1.download(cls.api_client)
+            cls.iso_1.download(cls.apiclient)
         except Exception as e:
             raise Exception("Exception while downloading ISO %s: %s"\
                       % (cls.iso_1.id, e))
             
         cls.iso_2 = Iso.create(
-                               cls.api_client, 
-                               cls.services["iso_2"],
+                               cls.apiclient, 
+                               cls.services["iso2"],
                                account=cls.account.name,
                                domainid=cls.account.domainid
                                )
         try:
-            cls.iso_2.download(cls.api_client)
+            cls.iso_2.download(cls.apiclient)
         except Exception as e:
             raise Exception("Exception while downloading ISO %s: %s"\
                       % (cls.iso_2.id, e))
@@ -257,9 +206,9 @@ class TestISO(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestISO, cls).getClsTestClient().getApiClient()
+            cls.apiclient = super(TestISO, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -388,8 +337,8 @@ class TestISO(cloudstackTestCase):
         
         cmd = extractIso.extractIsoCmd()
         cmd.id = self.iso_2.id
-        cmd.mode = self.services["iso_2"]["mode"]
-        cmd.zoneid = self.services["iso_2"]["zoneid"]
+        cmd.mode = self.services["iso2"]["mode"]
+        cmd.zoneid = self.services["iso2"]["zoneid"]
         list_extract_response = self.apiclient.extractIso(cmd)
 
         try:
@@ -410,12 +359,12 @@ class TestISO(cloudstackTestCase):
                         )
         self.assertEqual(
                             list_extract_response.extractMode,
-                            self.services["iso_2"]["mode"],
+                            self.services["iso2"]["mode"],
                             "Check mode of extraction"
                         )
         self.assertEqual(
                             list_extract_response.zoneid,
-                            self.services["iso_2"]["zoneid"],
+                            self.services["iso2"]["zoneid"],
                             "Check zone ID of extraction"
                         )
         self.assertEqual(

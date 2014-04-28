@@ -17,9 +17,9 @@
 
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 from random import choice
 
@@ -41,7 +41,7 @@ class TestRegions(cloudstackTestCase):
     def setUpClass(cls):
         cls.api_client = super(TestRegions, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
-        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
         cls.cleanup = []
         return
 

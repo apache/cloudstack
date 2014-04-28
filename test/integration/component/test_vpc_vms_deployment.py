@@ -20,7 +20,7 @@
 #Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.base import (VirtualMachine,
+from marvin.lib.base import (VirtualMachine,
                                          NetworkOffering,
                                          VpcOffering,
                                          VPC,
@@ -36,13 +36,13 @@ from marvin.integration.lib.base import (VirtualMachine,
                                          StaticNATRule,
                                          Configurations)
 
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            wait_for_cleanup,
                                            get_free_vlan)
 
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 from marvin.cloudstackAPI import rebootRouter
 
 
@@ -166,14 +166,13 @@ class TestVMDeployVPC(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVMDeployVPC,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVMDeployVPC, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,

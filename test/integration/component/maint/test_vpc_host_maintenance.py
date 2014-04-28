@@ -22,11 +22,9 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-from marvin.sshClient import SshClient
-import datetime
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 
 
 class Services:
@@ -190,14 +188,13 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVMLifeCycleHostmaintenance,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVMLifeCycleHostmaintenance, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,

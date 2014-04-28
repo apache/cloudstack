@@ -16,15 +16,29 @@
 # under the License.
 """ Tests for Blocker bugs
 """
-import marvin
 from nose.plugins.attrib import attr
-from marvin.integration.lib.base import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.common import *
+from marvin.lib.base import (Snapshot,
+                             Template,
+                             Domain,
+                             Account,
+                             ServiceOffering,
+                             Network,
+                             VirtualMachine,
+                             PublicIPAddress,
+                             StaticNATRule,
+                             FireWallRule,
+                             Volume)
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               list_routers,
+                               get_builtin_template_info)
 
 #Import Local Modules
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackAPI import restartNetwork
+import time
 
 
 class Services:
@@ -95,8 +109,8 @@ class Services:
 class TestTemplate(cloudstackTestCase):
 
     def setUp(self):
-
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         return
@@ -110,12 +124,13 @@ class TestTemplate(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestTemplate, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestTemplate, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["template"]["zoneid"] = cls.zone.id
@@ -173,7 +188,8 @@ class TestTemplate(cloudstackTestCase):
                                         self.services["template"],
                                         zoneid=self.zone.id,
                                         account=self.account.name,
-                                        domainid=self.account.domainid
+                                        domainid=self.account.domainid,
+                                        hypervisor=self.hypervisor
                                         )
         self.debug(
                 "Registered a template of format: %s with ID: %s" % (
@@ -242,12 +258,14 @@ class TestNATRules(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestNATRules, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cls.testClient = super(TestNATRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
@@ -448,10 +466,12 @@ class TestRouters(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestRouters, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRouters, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -573,11 +593,13 @@ class TestRouterRestart(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestRouterRestart, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRouterRestart, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
@@ -706,12 +728,14 @@ class TestTemplates(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.services = Services().services
-        cls.api_client = super(TestTemplates, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestTemplates, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        # Get Zone, templates etc
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
+
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(

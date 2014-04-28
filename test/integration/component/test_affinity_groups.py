@@ -15,12 +15,20 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-from marvin.sshClient import SshClient
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import deleteAffinityGroup
+from marvin.lib.utils import (cleanup_resources,
+                              random_gen)
+from marvin.lib.base import (Account,
+                             ServiceOffering,
+                             VirtualMachine,
+                             AffinityGroup,
+                             Domain)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               list_virtual_machines,
+                               wait_for_cleanup)
 from nose.plugins.attrib import attr
 
 class Services:
@@ -89,12 +97,12 @@ class TestCreateAffinityGroup(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-
-        cls.api_client = super(TestCreateAffinityGroup, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestCreateAffinityGroup, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -197,7 +205,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         self.cleanup.append(self.do_admin)
         self.cleanup.append(self.new_domain)
 
-        domainapiclient = self.testClient.createUserApiClient(self.do_admin.name, self.new_domain.name, 2)
+        domainapiclient = self.testClient.getUserApiClient(self.do_admin.name, self.new_domain.name, 2)
 
         aff_grp = self.create_aff_grp(api_client=domainapiclient, aff_grp=self.services["host_anti_affinity"],
                                             acc=self.do_admin.name, domainid=self.new_domain.id)
@@ -214,7 +222,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         self.user = Account.create(self.api_client, self.services["new_account"],
                                   domainid=self.domain.id)
 
-        userapiclient = self.testClient.createUserApiClient(self.user.name, self.domain.name)
+        userapiclient = self.testClient.getUserApiClient(self.user.name, self.domain.name)
 
         self.cleanup.append(self.user)
         aff_grp = self.create_aff_grp(api_client=userapiclient, aff_grp=self.services["host_anti_affinity"],
@@ -283,12 +291,14 @@ class TestListAffinityGroups(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.testClient = super(TestListAffinityGroups, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        cls.api_client = super(TestListAffinityGroups, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -530,11 +540,14 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestDeleteAffinityGroups, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeleteAffinityGroups, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -704,10 +717,10 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         self.user2 = Account.create(self.apiclient, self.services["new_account1"])
         self.cleanup.append(self.user2)
 
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user2.name,
                                         DomainName=self.user2.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_1 = self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -740,10 +753,10 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         self.user2 = Account.create(self.apiclient, self.services["new_account1"])
         self.cleanup.append(self.user2)
 
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user2.name,
                                         DomainName=self.user2.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_1 = self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -781,10 +794,10 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
                                        self.services["new_account"])
 
         self.cleanup.append(self.user1)
-        user1apiclient = self.testClient.createUserApiClient(
+        user1apiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_grp = self.create_aff_grp(api_client=user1apiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -800,11 +813,14 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestUpdateVMAffinityGroups, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestUpdateVMAffinityGroups, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -1084,11 +1100,14 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestDeployVMAffinityGroups, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeployVMAffinityGroups, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -1294,10 +1313,10 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         self.user2 = Account.create(self.apiclient, self.services["new_account1"])
         self.cleanup.append(self.user2)
 
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user2.name,
                                         DomainName=self.user2.domain,
-                                        acctType=0)
+                                        type=0)
 
         self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -1327,10 +1346,10 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         self.user2 = Account.create(self.apiclient, self.services["new_account1"])
         self.cleanup.append(self.user2)
 
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user2.name,
                                         DomainName=self.user2.domain,
-                                        acctType=0)
+                                        type=0)
 
         self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -1432,11 +1451,13 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestAffinityGroupsAdminUser, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAffinityGroupsAdminUser, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -1549,10 +1570,10 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
                                        self.services["new_account"])
 
         self.cleanup.append(self.user1)
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_grp = self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -1588,10 +1609,10 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
                                        self.services["new_account"])
 
         self.cleanup.append(self.user1)
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_grp = self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -1638,10 +1659,10 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
                                        self.services["new_account"])
 
         self.cleanup.append(self.user1)
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_grp1 = self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -1674,10 +1695,10 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
                                        self.services["new_account"])
 
         self.cleanup.append(self.user1)
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_grp = self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -1706,10 +1727,10 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
                                        self.services["new_account"])
 
         self.cleanup.append(self.user1)
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_grp = self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])

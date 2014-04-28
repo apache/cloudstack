@@ -29,7 +29,7 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from ddt import ddt, data
-from marvin.integration.lib.base import (
+from marvin.lib.base import (
                                         Account,
                                         Domain,
                                         ServiceOffering,
@@ -39,7 +39,7 @@ from marvin.integration.lib.base import (
                                         VpcOffering,
                                         VPC
                                         )
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         list_virtual_machines,
@@ -49,7 +49,7 @@ from marvin.integration.lib.common import (get_domain,
                                         update_resource_limit
                                         )
 
-from marvin.integration.lib.utils import (validateList,
+from marvin.lib.utils import (validateList,
 					                      random_gen,
                                           get_hypervisor_type,
                                           cleanup_resources)
@@ -60,6 +60,7 @@ from marvin.cloudstackAPI import (addNicToVirtualMachine,
 
 from marvin.codes import PASS
 import random
+import time
 
 class Services:
     """Test Add Remove Network Services
@@ -67,7 +68,7 @@ class Services:
 
     def __init__(self):
         self.services = {
-
+            "sleep": 60,
             "ostype": "CentOS 5.3 (64-bit)",
             # Cent OS 5.3 (64 bit)
 
@@ -173,7 +174,10 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestAddNetworkToVirtualMachine, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAddNetworkToVirtualMachine, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
 
         hypervisor = get_hypervisor_type(cls.api_client)
         if hypervisor.lower() not in ["xenserver","kvm"]:
@@ -181,8 +185,8 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         template = get_template(cls.api_client, cls.zone.id, cls.services["ostype"])
         # Set Zones and disk offerings
@@ -394,8 +398,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
         # Trying to add same network to vm for the second time
         with self.assertRaises(Exception) as e:
             self.addNetworkToVm(network, self.virtual_machine)
-
-        self.debug("Adding same network again failed with exception: %s" % e.exception)
+            self.debug("Adding same network again failed with exception: %s" % e.exception)
 
         return
 
@@ -517,7 +520,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
         with self.assertRaises(Exception) as e:
             self.addNetworkToVm(self.shared_network, self.virtual_machine,
                 ipaddress = ipaddress)
-        self.debug("API failed with exception: %s" % e.exception)
+            self.debug("API failed with exception: %s" % e.exception)
 
         return
 
@@ -554,9 +557,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         with self.assertRaises(Exception) as e:
             self.virtual_machine.add_nic(self.apiclient, network.id)
-            network.delete(self.apiclient)
-
-        self.debug("Operation failed with exception %s" % e.exception)
+            self.debug("Operation failed with exception %s" % e.exception)
 
         return
 
@@ -608,15 +609,13 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
                                                     domainid=self.child_do_admin_2.domainid, serviceofferingid=self.service_offering.id,
                                                     mode=self.zone.networktype)
 
+        time.sleep(self.services["sleep"])
         self.debug("Trying to %s network in domain %s to a vm in domain %s, This should fail" %
                    (network.type, self.child_domain_1.name, self.child_domain_2.name))
 
         with self.assertRaises(Exception) as e:
             virtual_machine.add_nic(self.apiclient, network.id)
-        self.debug("Operation failed with exception %s" % e.exception)
-
-        network.delete(self.apiclient)
-
+            self.debug("Operation failed with exception %s" % e.exception)
         return
 
     @attr(tags = ["advanced"])
@@ -688,7 +687,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         with self.assertRaises(Exception) as e:
             virtual_machine.add_nic(self.apiclient, network_2.id)
-        self.debug("Operation failed with exception %s" % e.exception)
+            self.debug("Operation failed with exception %s" % e.exception)
 
         return
 
@@ -696,16 +695,18 @@ class TestRemoveNetworkFromVirtualMachine(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestRemoveNetworkFromVirtualMachine, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRemoveNetworkFromVirtualMachine, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
 
         hypervisor = get_hypervisor_type(cls.api_client)
         if hypervisor.lower() not in ["xenserver","kvm"]:
             raise unittest.SkipTest("This feature is supported only on XenServer and KVM")
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
         # Set Zones and disk offerings
@@ -838,7 +839,7 @@ class TestRemoveNetworkFromVirtualMachine(cloudstackTestCase):
                     self.virtual_machine.id)
         with self.assertRaises(Exception):
             self.virtual_machine.remove_nic(self.apiclient, vm_list[0].nic[0].id)
-        self.debug("Removing default nic of vm failed")
+            self.debug("Removing default nic of vm failed")
         return
 
     @attr(tags = ["advanced"])
@@ -869,23 +870,25 @@ class TestRemoveNetworkFromVirtualMachine(cloudstackTestCase):
                     operation should fail")
         with self.assertRaises(Exception) as e:
             self.virtual_machine.remove_nic(self.apiclient, virtual_machine.nic[0].id)
-        self.debug("Operation failed with exception: %s" % e.exception)
+            self.debug("Operation failed with exception: %s" % e.exception)
         return
 
 class TestUpdateVirtualMachineNIC(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestUpdateVirtualMachineNIC, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestUpdateVirtualMachineNIC, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
 
         hypervisor = get_hypervisor_type(cls.api_client)
         if hypervisor.lower() not in ["xenserver","kvm"]:
             raise unittest.SkipTest("This feature is supported only on XenServer and KVM")
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
         # Set Zones and disk offerings
@@ -1047,7 +1050,7 @@ class TestUpdateVirtualMachineNIC(cloudstackTestCase):
         self.debug("Trying to set default nic again as default nic, This should fail")
         with self.assertRaises(Exception) as e:
             self.virtual_machine.update_default_nic(self.apiclient, nicId = defaultNicId)
-        self.debug("updateDefaultNic operation failed as expected with exception: %s" %
+            self.debug("updateDefaultNic operation failed as expected with exception: %s" %
                     e.exception)
 
         return
@@ -1072,15 +1075,16 @@ class TestUpdateVirtualMachineNIC(cloudstackTestCase):
         virtual_machine = VirtualMachine.create(self.apiclient,self.services["virtual_machine"],
                 accountid=account.name,domainid=account.domainid,
                 serviceofferingid=self.service_offering.id,mode=self.zone.networktype)
+        time.sleep(self.services["sleep"])
         self.debug("Deployed virtual machine: %s" % virtual_machine.id)
-
+     
         foreignNicId = virtual_machine.nic[0].id
 
         self.debug("Trying to set nic of new virtual machine as default nic of existing virtual machine, This \
                     operation should fail")
         with self.assertRaises(Exception) as e:
             self.virtual_machine.update_default_nic(self.apiclient, nicId = foreignNicId)
-        self.debug("updateDefaultNic operation failed as expected with exception: %s" %
+            self.debug("updateDefaultNic operation failed as expected with exception: %s" %
                     e.exception)
 
         return
@@ -1089,16 +1093,18 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestFailureScenariosAddNetworkToVM, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestFailureScenariosAddNetworkToVM, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
 
         hypervisor = get_hypervisor_type(cls.api_client)
         if hypervisor.lower() not in ["xenserver","kvm"]:
             raise unittest.SkipTest("This feature is supported only on XenServer and KVM")
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
         # Set Zones and disk offerings
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -1226,6 +1232,7 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
         cmd.networkid = isolated_network.id
 
         with self.assertRaises(Exception) as e:
+            time.sleep(5) 
             self.apiclient.addNicToVirtualMachine(cmd)
 	    self.debug("addNicToVirtualMachine API failed with exception: %s" % e.exception)
 
@@ -1267,6 +1274,7 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
         virtual_machine = VirtualMachine.create(self.apiclient,self.services["virtual_machine"],
                                                 serviceofferingid=self.service_offering.id,
                                                 mode=basicZone.networktype)
+        time.sleep(self.services["sleep"])
         self.debug("Deployed virtual machine %s: " % virtual_machine.id)
 
         cmd = addNicToVirtualMachine.addNicToVirtualMachineCmd()
@@ -1276,6 +1284,7 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
         self.dedbug("Trying to add isolated network to VM (both in basic zone,\
                     this operation should fail")
         with self.assertRaises(Exception) as e:
+            time.sleep(5) 
             self.apiclient.addNicToVirtualMachine(cmd)
 	    self.debug("addNicToVirtualMachine API failed with exception: %s" % e.exception)
 
@@ -1302,12 +1311,13 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
         self.debug("Created account %s" % account.name)
 
         self.debug("creating user api client for account: %s" % account.name)
-        api_client = self.testClient.createUserApiClient(UserName=account.name, DomainName=self.account.domain)
+        api_client = self.testClient.getUserApiClient(UserName=account.name, DomainName=self.account.domain)
 
         self.debug("Trying to add network to vm with this api client, this should fail due to \
                     insufficient permission")
 
         with self.assertRaises(Exception) as e:
+            time.sleep(5) 
             api_client.addNicToVirtualMachine(cmd)
 	    self.debug("addNicToVirtualMachine API failed with exception: %s" % e.exception)
 
@@ -1317,16 +1327,18 @@ class TestFailureScenariosRemoveNicFromVM(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestFailureScenariosRemoveNicFromVM, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestFailureScenariosRemoveNicFromVM, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
 
         hypervisor = get_hypervisor_type(cls.api_client)
         if hypervisor.lower() not in ["xenserver","kvm"]:
             raise unittest.SkipTest("This feature is supported only on XenServer and KVM")
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
         # Set Zones and disk offerings
@@ -1374,7 +1386,7 @@ class TestFailureScenariosRemoveNicFromVM(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Disable Network Offerings
-            #cls.isolated_network_offering.update(cls.api_client, state='Disabled')
+            cls.isolated_network_offering.update(cls.api_client, state='Disabled')
             # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
 
@@ -1480,7 +1492,7 @@ class TestFailureScenariosRemoveNicFromVM(cloudstackTestCase):
         self.debug("Created account %s" % account.name)
 
         self.debug("creating user api client for account: %s" % account.name)
-        api_client = self.testClient.createUserApiClient(UserName=account.name, DomainName=self.account.domain)
+        api_client = self.testClient.getUserApiClient(UserName=account.name, DomainName=self.account.domain)
 
         self.debug("Trying to add network to vm with this api client, this should fail due to \
                     insufficient permission")
@@ -1495,16 +1507,18 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestFailureScenariosUpdateVirtualMachineNIC, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestFailureScenariosUpdateVirtualMachineNIC, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
 
         hypervisor = get_hypervisor_type(cls.api_client)
         if hypervisor.lower() not in ["xenserver","kvm"]:
             raise unittest.SkipTest("This feature is supported only on XenServer and KVM")
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         template = get_template(cls.api_client, cls.zone.id, cls.services["ostype"])
         # Set Zones and disk offerings
@@ -1603,7 +1617,7 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
 
         with self.assertRaises(Exception) as e:
             self.apiclient.updateDefaultNicForVirtualMachine(cmd)
-        self.debug("updateDefaultNicForVirtualMachine API failed with exception: %s" %
+            self.debug("updateDefaultNicForVirtualMachine API failed with exception: %s" %
                     e.exception)
 
         return
@@ -1649,7 +1663,7 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
 
         with self.assertRaises(Exception) as e:
             self.apiclient.updateDefaultNicForVirtualMachine(cmd)
-        self.debug("updateDefaultNicForVirtualMachine API failed with exception: %s" %
+            self.debug("updateDefaultNicForVirtualMachine API failed with exception: %s" %
                     e.exception)
 
         return
@@ -1678,7 +1692,7 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
                                                 accountid=account.name,domainid=account.domainid,
                                                 serviceofferingid=self.service_offering.id,
                                                 mode=self.zone.networktype)
-
+        time.sleep(self.services["sleep"])
         self.debug("Created virtual machine %s" % virtual_machine.id)
 
         self.debug("Creating isolated network in account %s" % account.name)
@@ -1731,7 +1745,7 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
 
         with self.assertRaises(Exception) as e:
             self.apiclient.updateDefaultNicForVirtualMachine(cmd)
-        self.debug("updateDefaultNicForVirtualMachine API failed with exception: %s" %
+            self.debug("updateDefaultNicForVirtualMachine API failed with exception: %s" %
                     e.exception)
 
         return
@@ -1751,7 +1765,7 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
         self.debug("Created account %s" % account.name)
 
         self.debug("creating user api client for account: %s" % account.name)
-        api_client = self.testClient.createUserApiClient(UserName=account.name, DomainName=self.account.domain)
+        api_client = self.testClient.getUserApiClient(UserName=account.name, DomainName=self.account.domain)
 
         self.debug("Listing virtual machine so that to retrive the list of non-default and default nic")
         vm_list = list_virtual_machines(self.apiclient, id=self.virtual_machine.id)
@@ -1781,7 +1795,7 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
 
         with self.assertRaises(Exception) as e:
             api_client.updateDefaultNicForVirtualMachine(cmd)
-        self.debug("updateDefaultNicForVirtualMachine API failed with exception: %s" %
+            self.debug("updateDefaultNicForVirtualMachine API failed with exception: %s" %
                     e.exception)
 
         return

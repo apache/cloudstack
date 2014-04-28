@@ -19,7 +19,7 @@
 """
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from ddt import ddt, data
-from marvin.integration.lib.base import (Zone,
+from marvin.lib.base import (Zone,
                                          ServiceOffering,
                                          Account,
                                          NetworkOffering,
@@ -31,14 +31,14 @@ from marvin.integration.lib.base import (Zone,
                                          SecurityGroup,
                                          Host)
 
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            get_free_vlan,
                                            list_virtual_machines,
                                            wait_for_cleanup)
 
-from marvin.integration.lib.utils import (cleanup_resources,
+from marvin.lib.utils import (cleanup_resources,
                                           random_gen,
                                           validateList)
 from marvin.cloudstackAPI import (authorizeSecurityGroupIngress,
@@ -54,14 +54,12 @@ class TestCreateZoneSG(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestCreateZoneSG,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestCreateZoneSG, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
-
+        cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
 
         cls._cleanup = []
         return
@@ -154,14 +152,13 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestNetworksInAdvancedSG,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestNetworksInAdvancedSG, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
-
+        cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(cls.api_client, cls.zone.id,
                                     cls.services["ostype"])
 
@@ -1102,14 +1099,13 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestNetworksInAdvancedSG_VmOperations,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.testClient = super(TestNetworksInAdvancedSG_VmOperations, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -2086,14 +2082,13 @@ class TestSecurityGroups_BasicSanity(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestSecurityGroups_BasicSanity,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.testClient = super(TestSecurityGroups_BasicSanity, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -2548,14 +2543,13 @@ class TestSharedNetworkOperations(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestSharedNetworkOperations,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.testClient = super(TestSharedNetworkOperations, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -2815,14 +2809,13 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestAccountBasedIngressRules,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.testClient = super(TestAccountBasedIngressRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id

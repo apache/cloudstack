@@ -20,7 +20,7 @@
 #Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.base import (stopRouter,
+from marvin.lib.base import (stopRouter,
                                         startRouter,
                                         Account,
                                         VpcOffering,
@@ -34,11 +34,11 @@ from marvin.integration.lib.base import (stopRouter,
                                         VirtualMachine,
                                         LoadBalancerRule,
                                         StaticNATRule)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         list_routers)
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 import socket
 import time
 
@@ -181,14 +181,13 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # We want to fail quicker if it's failure
         socket.setdefaulttimeout(60)
 
-        cls.api_client = super(
-                            TestVPCNetworkLBRules,
-                            cls
-                            ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPCNetworkLBRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,

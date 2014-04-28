@@ -18,8 +18,8 @@
 from marvin import cloudstackTestCase
 from marvin.cloudstackAPI import *
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import Account
-from marvin.integration.lib.base import PhysicalNetwork
+from marvin.lib.base import Account
+from marvin.lib.base import PhysicalNetwork
 from nose.plugins.attrib import attr
 
 class Services():
