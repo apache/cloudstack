@@ -3768,45 +3768,45 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             return Transaction.execute(new TransactionCallbackWithException<Network, Exception>() {
                 @Override
                 public Network doInTransaction(TransactionStatus status) throws ResourceAllocationException, InsufficientCapacityException {
-        //lock datacenter as we need to get mac address seq from there
-        DataCenterVO dc = _dcDao.lockRow(pNtwk.getDataCenterId(), true);
+                    //lock datacenter as we need to get mac address seq from there
+                    DataCenterVO dc = _dcDao.lockRow(pNtwk.getDataCenterId(), true);
 
-        //check if we need to create guest network
+                    //check if we need to create guest network
                     Network privateNetwork = _networksDao.getPrivateNetwork(uriString, cidr, networkOwnerId, pNtwk.getDataCenterId(), networkOfferingId);
-        if (privateNetwork == null) {
-            //create Guest network
+                    if (privateNetwork == null) {
+                        //create Guest network
                         privateNetwork = _networkMgr.createGuestNetwork(ntwkOffFinal.getId(), networkName, displayText, gateway, cidr, uriString, null, owner, null, pNtwk,
                                 pNtwk.getDataCenterId(), ACLType.Account, null, vpcId, null, null, true, null);
-            s_logger.debug("Created private network " + privateNetwork);
-        } else {
-            s_logger.debug("Private network already exists: " + privateNetwork);
-            //Do not allow multiple private gateways with same Vlan within a VPC
-            if (vpcId != null && vpcId.equals(privateNetwork.getVpcId())) {
-                throw new InvalidParameterValueException("Private network for the vlan: " + uriString + " and cidr  " + cidr + "  already exists " + "for Vpc " + vpcId
-                        + " in zone " + _entityMgr.findById(DataCenter.class, pNtwk.getDataCenterId()).getName());
-            }
-        }
+                        s_logger.debug("Created private network " + privateNetwork);
+                    } else {
+                        s_logger.debug("Private network already exists: " + privateNetwork);
+                        //Do not allow multiple private gateways with same Vlan within a VPC
+                        if (vpcId != null && vpcId.equals(privateNetwork.getVpcId())) {
+                            throw new InvalidParameterValueException("Private network for the vlan: " + uriString + " and cidr  " + cidr + "  already exists " + "for Vpc " + vpcId
+                                    + " in zone " + _entityMgr.findById(DataCenter.class, pNtwk.getDataCenterId()).getName());
+                        }
+                    }
 
-        //add entry to private_ip_address table
-        PrivateIpVO privateIp = _privateIpDao.findByIpAndSourceNetworkIdAndVpcId(privateNetwork.getId(), startIp, vpcId);
-        if (privateIp != null) {
+                    //add entry to private_ip_address table
+                    PrivateIpVO privateIp = _privateIpDao.findByIpAndSourceNetworkIdAndVpcId(privateNetwork.getId(), startIp, vpcId);
+                    if (privateIp != null) {
                         throw new InvalidParameterValueException("Private ip address " + startIp + " already used for private gateway" + " in zone "
                                 + _entityMgr.findById(DataCenter.class, pNtwk.getDataCenterId()).getName());
-        }
+                    }
 
-        Long mac = dc.getMacAddress();
-        Long nextMac = mac + 1;
-        dc.setMacAddress(nextMac);
+                    Long mac = dc.getMacAddress();
+                    Long nextMac = mac + 1;
+                    dc.setMacAddress(nextMac);
 
-        privateIp = new PrivateIpVO(startIp, privateNetwork.getId(), nextMac, vpcId, sourceNat);
-        _privateIpDao.persist(privateIp);
+                    privateIp = new PrivateIpVO(startIp, privateNetwork.getId(), nextMac, vpcId, sourceNat);
+                    _privateIpDao.persist(privateIp);
 
-        _dcDao.update(dc.getId(), dc);
+                    _dcDao.update(dc.getId(), dc);
 
-        s_logger.debug("Private network " + privateNetwork + " is created");
+                    s_logger.debug("Private network " + privateNetwork + " is created");
 
-        return privateNetwork;
-    }
+                    return privateNetwork;
+                }
             });
         } catch (Exception e) {
             ExceptionUtil.rethrowRuntime(e);
