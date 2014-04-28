@@ -780,8 +780,14 @@ public class VirtualRoutingResource {
 
         String dev = "eth" + nic.getDeviceId();
         String netmask = NetUtils.getSubNet(routerGIP, nic.getNetmask());
-
-        String args = " -C";
+        String args = "";
+        if(cmd.isAdd() == false) {
+            //pass the argument to script to delete the network
+            args +=" -D ";
+        } else {
+            // pass create option argument if the ip needs to be added to eth device
+            args +=" -C ";
+        }
         args += " -M " + nic.getMac();
         args += " -d " + dev;
         args += " -i " + routerGIP;
