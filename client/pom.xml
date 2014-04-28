@@ -705,6 +705,11 @@
                         <include name="**/*" />
                       </fileset>
                     </copy>
+                    <copy todir="./target/python-site-packages">
+                      <fileset dir="../python/lib">
+                        <include name="**/*" />
+                      </fileset>
+                    </copy>
                    </target>
                   </configuration>
                  </execution>
@@ -779,6 +784,21 @@
                     <goal>heat</goal>
                   </goals>
                 </execution>
+                <execution>
+                  <id>python-site-packages</id>
+                  <configuration>
+                    <vars>-var wix.PythonSitePackagesDir</vars>
+                    <workingDirectory>${basedir}/target</workingDirectory>
+                    <dir>python-site-packages</dir>
+                    <template>fragment</template>
+                    <directoryName>INSTALLDIR</directoryName>
+                    <outputFile>target/python-site-packages.wxs</outputFile>
+                    <componentGroup>PythonSitePackagesPath</componentGroup>
+                  </configuration>
+                  <goals>
+                    <goal>heat</goal>
+                  </goals>
+                </execution>
             </executions>
           </plugin>
           <plugin>
@@ -791,7 +811,7 @@
               <extension>WixFirewallExtension</extension>
               <extension>WixUIExtension</extension>
             </extensions>
-            <arguments>-dSourceClient=SourceDir\client -dSetupPathDir=SourceDir\setup -dUtilitiesPathDir=SourceDir\scripts</arguments>
+            <arguments>-dSourceClient=SourceDir\client -dSetupPathDir=SourceDir\setup -dUtilitiesPathDir=SourceDir\scripts -dPythonSitePackagesDir=SourceDir\python-site-packages</arguments>
             <sourceFiles>
               <sourceFile>../scripts/installer/windows/acs.wxs</sourceFile>
               <sourceFile>../scripts/installer/windows/WixInstallerDialog.wxs</sourceFile>
@@ -799,6 +819,7 @@
               <sourceFile>target/client.wxs</sourceFile>
               <sourceFile>target/setupdb.wxs</sourceFile>
               <sourceFile>target/utilities.wxs</sourceFile>
+              <sourceFile>target/python-site-packages.wxs</sourceFile>
             </sourceFiles>
             <outputDirectory>target</outputDirectory>
             <objectFiles>
@@ -808,6 +829,7 @@
               <objectFile>target/utilities.wixobj</objectFile>
               <objectFile>target/WixInstallerDialog.wixobj</objectFile>
               <objectFile>target/Setup_Databases.wixobj</objectFile>
+              <objectFile>target/python-site-packages.wixobj</objectFile>
             </objectFiles>
             <outputFile>target/acs.msi</outputFile>
             </configuration>

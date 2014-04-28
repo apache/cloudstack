@@ -226,17 +226,23 @@
     <CustomAction Id="UpdateTomcatClassPath"
       ExeCommand='//US//Tomcat6 --Classpath="[TOMCATDIRECTORY]\bin\bootstrap.jar";"[TOMCATDIRECTORY]\bin\tomcat-juli.jar";[CSMANAGEMENT]\conf;[CSMANAGEMENT]\lib;[CSMANAGEMENT]\setup'
       Property="TOMCATDIRECTORY1" Execute="commit" Return="check" />
+    <CustomAction Id="CopySitePackages" Directory='INSTALLDIR'
+      ExeCommand='[SystemFolder]cmd.exe /c xcopy /S "[INSTALLDIR]\python-site-packages" [PYTHON_HOME]\Lib\site-packages'
+      Execute="commit" Return="check" />
+    <CustomAction Id="DeleteDirectory" Directory='INSTALLDIR'
+      ExeCommand='[SystemFolder]cmd.exe /c RD /S /Q "[INSTALLDIR]\python-site-packages"'
+      Execute="commit" Return="check" />
     <CustomAction Id="DeleteFiles" Directory='CSMANAGEMENT'
-      ExeCommand="[SystemFolder]cmd.exe /c del [CSMANAGEMENT]\webapps\client\WEB-INF\classes\db.properties [CSMANAGEMENT]\webapps\client\WEB-INF\classes\log4j*.xml"
+      ExeCommand='[SystemFolder]cmd.exe /c del "[CSMANAGEMENT]\webapps\client\WEB-INF\classes\db.properties" "[CSMANAGEMENT]\webapps\client\WEB-INF\classes\log4j*.xml"'
       Execute="commit" Return="check" />
     <CustomAction Id="GenerateSSLKey" Directory='CSMANAGEMENT'
-      ExeCommand="[PYTHON_HOME]\python [CSMANAGEMENT]\webapps\client\WEB-INF\classes\scripts\common\keys\ssl-keys.py [CSMANAGEMENT]\lib"
+      ExeCommand='[PYTHON_HOME]\python "[CSMANAGEMENT]\webapps\client\WEB-INF\classes\scripts\common\keys\ssl-keys.py" "[CSMANAGEMENT]\lib"'
       Execute="commit" Return="check" />
     <CustomAction Id="DeployDB" Directory='CSMANAGEMENT'
-      ExeCommand="[PYTHON_HOME]\python [INSTALLDIR]\scripts\cloud-setup-databases [DB_USERNAME]:[DB_PASSWORD]@[DB_HOSTNAME] --deploy-as=root:[DB_ROOT_PASSWORD] -c [CSMANAGEMENT]\lib -f [CSMANAGEMENT]\setup -j [CSMANAGEMENT]\webapps\client\WEB-INF\lib\jasypt-1.9.0.jar -n [CSMANAGEMENT]\lib\key"
+      ExeCommand='[PYTHON_HOME]\python "[INSTALLDIR]\scripts\cloud-setup-databases" [DB_USERNAME]:[DB_PASSWORD]@[DB_HOSTNAME] --deploy-as=root:[DB_ROOT_PASSWORD] -c "[CSMANAGEMENT]\lib" -f "[CSMANAGEMENT]\setup" -j "[CSMANAGEMENT]\webapps\client\WEB-INF\lib\jasypt-1.9.0.jar" -n "[CSMANAGEMENT]\lib\key"'
       Execute="commit" Return="check" />
     <CustomAction Id="SetupDatabases" Directory='CSMANAGEMENT'
-      ExeCommand="[PYTHON_HOME]\python [INSTALLDIR]\scripts\cloud-setup-databases [DB_USERNAME]:[DB_PASSWORD]@[DB_HOSTNAME] -c [CSMANAGEMENT]\lib -f [CSMANAGEMENT]\setup -j [CSMANAGEMENT]\webapps\client\WEB-INF\lib\jasypt-1.9.0.jar -n [CSMANAGEMENT]\lib\key"
+      ExeCommand='[PYTHON_HOME]\python "[INSTALLDIR]\scripts\cloud-setup-databases" [DB_USERNAME]:[DB_PASSWORD]@[DB_HOSTNAME] -c "[CSMANAGEMENT]\lib" -f "[CSMANAGEMENT]\setup" -j "[CSMANAGEMENT]\webapps\client\WEB-INF\lib\jasypt-1.9.0.jar" -n "[CSMANAGEMENT]\lib\key"'
       Execute="commit" Return="check" />
 
     <InstallExecuteSequence>
@@ -244,9 +250,11 @@
       <Custom Action="TomcatPath" Before="UpdateTomcatClassPath">NOT Installed</Custom>
       <Custom Action="UpdateTomcatClassPath" Before="UpdateTomcatCatalinaBase">NOT Installed
       </Custom>
-      <Custom Action="UpdateTomcatCatalinaBase" Before="DeleteFiles">NOT
+      <Custom Action="UpdateTomcatCatalinaBase" Before="CopySitePackages">NOT
         Installed</Custom>
-      <Custom Action="DeleteFiles" Before="GenerateSSLKey">NOT Installed</Custom>
+      <Custom Action="CopySitePackages" Before="DeleteFiles">NOT Installed</Custom>
+      <Custom Action="DeleteFiles" Before="DeleteDirectory">NOT Installed</Custom>
+      <Custom Action="DeleteDirectory" Before="GenerateSSLKey">NOT Installed</Custom>
       <Custom Action="GenerateSSLKey" Before="InstallFinalize">NOT Installed
       </Custom>
       <Custom Action="DeployDB" Before="InstallFinalize">(NOT Installed) AND (CREATE_DATABASE = "1")
@@ -262,6 +270,7 @@
         <ComponentGroupRef Id='ClientPath' />
         <ComponentGroupRef Id='SetupPath' />
         <ComponentGroupRef Id='UtilitiesPath' />
+        <ComponentGroupRef Id='PythonSitePackagesPath' />
         <ComponentRef Id='ProgramMenuDir' />
         <ComponentRef Id='confFolder' />
         <ComponentRef Id='libFolder' />
