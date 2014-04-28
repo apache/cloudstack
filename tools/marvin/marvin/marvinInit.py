@@ -134,11 +134,11 @@ class MarvinInit:
         '''
         try:
             if ((self.__parseConfig() != FAILED) and
-                (self.__setHypervisorAndZoneInfo())and
-               (self.__setTestDataPath() != FAILED) and
-               (self.__initLogging() != FAILED) and
-               (self.__createTestClient() != FAILED) and
-               (self.__deployDC() != FAILED)):
+                    (self.__setHypervisorAndZoneInfo())and
+                    (self.__setTestDataPath() != FAILED) and
+                    (self.__initLogging() != FAILED) and
+                    (self.__createTestClient() != FAILED) and
+                    (self.__deployDC() != FAILED)):
                 return SUCCESS
             return FAILED
         except Exception as e:
@@ -187,7 +187,8 @@ class MarvinInit:
         try:
             mgt_details = self.__parsedConfig.mgtSvr[0]
             dbsvr_details = self.__parsedConfig.dbSvr
-            self.__testClient = CSTestClient(mgt_details, dbsvr_details,
+            self.__testClient = CSTestClient(mgt_details,
+                                             dbsvr_details,
                                              logger=self.__tcRunLogger,
                                              test_data_filepath=
                                              self.__testDataFilePath,
