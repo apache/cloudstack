@@ -118,7 +118,7 @@ public class UpgradeVMCmd extends BaseCmd {
     }
 
     @Override
-    public boolean isDisplayResourceEnabled(){
+    public boolean isDisplay(){
         return _userVmService.isDisplayResourceEnabled(getId());
     }
 

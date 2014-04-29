@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -31,7 +32,7 @@ import com.cloud.utils.fsm.StateObject;
  * VirtualMachine describes the properties held by a virtual machine
  *
  */
-public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, InternalIdentity, StateObject<VirtualMachine.State> {
+public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, InternalIdentity, Displayable, StateObject<VirtualMachine.State> {
 
     public enum PowerState {
         PowerUnknown,
@@ -321,6 +322,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
 
     long getUpdated();
 
+    @Override
     boolean isDisplay();
 
 }

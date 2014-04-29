@@ -316,6 +316,17 @@ public class CallContext {
         isEventDisplayEnabled = eventDisplayEnabled;
     }
 
+    public Map<Object, Object> getContextParameters() {
+        return context;
+    }
+
+    public void putContextParameters(Map<Object, Object> details){
+        if (details == null) return;
+        for(Object key : details.keySet()){
+            putContextParameter(key, details.get(key));
+        }
+    }
+
     public static void setActionEventInfo(String eventType, String description) {
         CallContext context = CallContext.current();
         if (context != null) {

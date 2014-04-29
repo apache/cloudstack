@@ -250,6 +250,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         return displayVm;
     }
 
+    @Override
+    public boolean isDisplay() {
+        if(displayVm == null)
+            return true;
+        else
+            return displayVm;
+    }
+
     public List<Long> getSecurityGroupIdList() {
         if (securityGroupNameList != null && securityGroupIdList != null) {
             throw new InvalidParameterValueException("securitygroupids parameter is mutually exclusive with securitygroupnames parameter");
@@ -406,16 +414,6 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         }
 
         return accountId;
-    }
-
-    @Override
-    public boolean isDisplayResourceEnabled(){
-        Boolean display = getDisplayVm();
-        if(display == null){
-            return true;
-        } else {
-            return display;
-        }
     }
 
     @Override

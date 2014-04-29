@@ -80,7 +80,7 @@ public class DeleteVolumeCmd extends BaseCmd {
     }
 
     @Override
-    public boolean isDisplayResourceEnabled(){
+    public boolean isDisplay(){
         return _volumeService.isDisplayResourceEnabled(getId());
     }
 

@@ -75,6 +75,9 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             // whenever we deserialize, the UserContext needs to be updated
             String userIdStr = params.get("ctxUserId");
             String acctIdStr = params.get("ctxAccountId");
+            String contextDetails = params.get("ctxDetails");
+
+
             Long userId = null;
             Account accountObject = null;
 
@@ -94,7 +97,12 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 accountObject = _entityMgr.findById(Account.class, Long.parseLong(acctIdStr));
             }
 
-            CallContext.register(user, accountObject);
+            CallContext ctx = CallContext.register(user, accountObject);
+            if(contextDetails != null){
+                Type objectMapType = new TypeToken<Map<Object, Object>>() {}.getType();
+                ctx.putContextParameters((Map<Object, Object>) gson.fromJson(contextDetails, objectMapType));
+            }
+
             try {
                 // dispatch could ultimately queue the job
                 _dispatcher.dispatch(cmdObj, params, true);

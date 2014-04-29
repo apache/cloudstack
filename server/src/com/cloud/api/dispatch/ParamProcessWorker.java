@@ -464,6 +464,11 @@ public class ParamProcessWorker implements DispatchWorker {
         // Enforce that it's uuid for newly added apis from version 3.x
         if (!isPre3x && !isUuid)
             return null;
+
+        // There may be multiple entities defined on the @EntityReference of a Response.class
+        // UUID CommandType would expect only one entityType, so use the first entityType
+        final Class<?>[] entities = annotation.entityType()[0].getAnnotation(EntityReference.class).value();
+
         // Allow both uuid and internal id for pre3x apis
         if (isPre3x && !isUuid) {
             try {
@@ -471,12 +476,15 @@ public class ParamProcessWorker implements DispatchWorker {
             } catch (final NumberFormatException e) {
                 internalId = null;
             }
-            if (internalId != null)
+            if (internalId != null){
+                // Populate CallContext for each of the entity.
+                for (final Class<?> entity : entities) {
+                    CallContext.current().putContextParameter(entity.getName(), internalId);
+                }
                 return internalId;
+            }
         }
-        // There may be multiple entities defined on the @EntityReference of a Response.class
-        // UUID CommandType would expect only one entityType, so use the first entityType
-        final Class<?>[] entities = annotation.entityType()[0].getAnnotation(EntityReference.class).value();
+
         // Go through each entity which is an interface to a VO class and get a VO object
         // Try to getId() for the object using reflection, break on first non-null value
         for (final Class<?> entity : entities) {
@@ -487,15 +495,17 @@ public class ParamProcessWorker implements DispatchWorker {
                 continue;
             }
             // Invoke the getId method, get the internal long ID
-            // If that fails hide exceptions as the uuid may not exist
+            // If that fails hide exceptions as the uuid may not exist                                         s
             try {
                 internalId = ((InternalIdentity)objVO).getId();
             } catch (final IllegalArgumentException e) {
             } catch (final NullPointerException e) {
             }
             // Return on first non-null Id for the uuid entity
-            if (internalId != null)
+            if (internalId != null){
+                CallContext.current().putContextParameter(entity.getName(), internalId);
                 break;
+            }
         }
         if (internalId == null) {
             if (s_logger.isDebugEnabled())

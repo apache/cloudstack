@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 
 import com.cloud.exception.ResourceAllocationException;
+import org.apache.cloudstack.context.CallContext;
 
 
 /**
@@ -42,6 +43,7 @@ public class CommandCreationWorker implements DispatchWorker {
 
         if (cmd instanceof BaseAsyncCreateCmd) {
             try {
+                CallContext.current().setEventDisplayEnabled(cmd.isDisplay());
                 ((BaseAsyncCreateCmd)cmd).create();
             } catch (final ResourceAllocationException e) {
                 throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,

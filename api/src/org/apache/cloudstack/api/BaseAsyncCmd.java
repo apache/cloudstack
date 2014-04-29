@@ -17,6 +17,10 @@
 package org.apache.cloudstack.api;
 
 
+import com.cloud.event.EventTypes;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
+
 /**
  * queryAsyncJobResult API command.
  */
@@ -27,6 +31,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public static final String vpcSyncObject = "vpc";
     public static final String snapshotHostSyncObject = "snapshothost";
     public static final String gslbSyncObject = "globalserverloadbalacner";
+    private static final Logger s_logger = Logger.getLogger(BaseAsyncCmd.class.getName());
 
     private Object job;
 
@@ -89,4 +94,27 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public Object getJob() {
         return job;
     }
+
+    @Override
+    public boolean isDisplay(){
+
+        // Get entity Class from the event name. Eg. - Volume.class
+        final CallContext ctx = CallContext.current();
+        Class entityClass = EventTypes.getEntityClassForEvent(getEventType());
+        boolean isDisplay = true;
+
+        try{
+            // If the entity Class implements Displayable interface then see the flag from VO
+            if (entityClass != null && Displayable.class.isAssignableFrom(entityClass)){
+                Object objVO =_entityMgr.findById(entityClass, (Long)ctx.getContextParameter(entityClass.getName()));
+                isDisplay = ((Displayable)objVO).isDisplay();
+                ctx.setEventDisplayEnabled(isDisplay);
+            }
+        }catch (Exception e){
+           s_logger.trace("Caught exception while finding the display property, defaulting to true and moving on " +e);
+        }
+
+        return isDisplay;
+    }
+
 }
