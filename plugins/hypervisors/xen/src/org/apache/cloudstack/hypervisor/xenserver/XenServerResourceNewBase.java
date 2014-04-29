@@ -31,11 +31,12 @@ import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VM;
 
 import com.xensource.xenapi.Event;
+/*
 import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
-import org.apache.xmlrpc.XmlRpcException;
 import java.util.concurrent.TimeoutException;
-
+*/
+import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ClusterSyncAnswer;
@@ -101,7 +102,7 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
         return cmds;
     }
 
-
+/*
     protected void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
         long beginTime = System.currentTimeMillis();
         if (s_logger.isTraceEnabled()) {
@@ -154,7 +155,7 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
         }
     }
 
-
+*/
 
     @Override
     protected Answer execute(final ClusterSyncCommand cmd) {
