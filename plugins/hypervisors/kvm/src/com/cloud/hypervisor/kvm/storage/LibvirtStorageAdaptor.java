@@ -733,7 +733,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
          * For that reason we use the native RBD bindings to create the
          * RBD image until libvirt creates RBD format 2 by default
          */
-        format = PhysicalDiskFormat.RAW;
 
         try {
             s_logger.info("Creating RBD image " + pool.getSourceDir() + "/" + name + " with size " + size);
@@ -758,7 +757,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         volPath = pool.getSourceDir() + "/" + name;
         KVMPhysicalDisk disk = new KVMPhysicalDisk(volPath, name, pool);
-        disk.setFormat(format);
+        disk.setFormat(PhysicalDiskFormat.RAW);
         disk.setSize(size);
         disk.setVirtualSize(size);
         return disk;

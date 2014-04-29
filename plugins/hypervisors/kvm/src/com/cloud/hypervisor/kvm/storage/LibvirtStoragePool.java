@@ -106,7 +106,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public PhysicalDiskFormat getDefaultFormat() {
-        if (getStoragePoolType() == StoragePoolType.CLVM) {
+        if (getStoragePoolType() == StoragePoolType.CLVM || getStoragePoolType() == StoragePoolType.RBD) {
             return PhysicalDiskFormat.RAW;
         } else {
             return PhysicalDiskFormat.QCOW2;

@@ -1054,19 +1054,13 @@ public class KVMStorageProcessor implements StorageProcessor {
             primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
             disksize = volume.getSize();
 
-            vol = primaryPool.createPhysicalDisk(volume.getUuid(), volume.getProvisioningType(), disksize);
+            vol = primaryPool.createPhysicalDisk(volume.getUuid(), PhysicalDiskFormat.valueOf(volume.getFormat().toString().toUpperCase()),
+                                                 volume.getProvisioningType(), disksize);
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(vol.getName());
             newVol.setSize(volume.getSize());
-
-            /**
-             * Volumes on RBD are always in RAW format
-             * Hardcode this to RAW since there is no other way right now
-             */
-            if (primaryPool.getType() == StoragePoolType.RBD) {
-                newVol.setFormat(ImageFormat.RAW);
-            }
+            newVol.setFormat(ImageFormat.valueOf(vol.getFormat().toString().toUpperCase()));
 
             return new CreateObjectAnswer(newVol);
         } catch (Exception e) {
