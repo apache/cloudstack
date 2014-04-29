@@ -32,6 +32,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.db.EntityManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -280,6 +281,11 @@ public class AffinityApiUnitTest {
         @Bean
         public AffinityGroupDomainMapDao affinityGroupDomainMapDao() {
             return Mockito.mock(AffinityGroupDomainMapDao.class);
+        }
+
+        @Bean
+        public EntityManager entityManager() {
+            return Mockito.mock(EntityManager.class);
         }
 
         @Bean

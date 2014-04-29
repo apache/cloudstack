@@ -148,7 +148,6 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserVO;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -159,7 +158,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
-import com.cloud.vm.VirtualMachine;
 
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService {
@@ -511,7 +509,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         final CallContext ctx = CallContext.current();
         final Long callerUserId = ctx.getCallingUserId();
         final Account caller = ctx.getCallingAccount();
-        String vmUUID = params.get(ApiConstants.VIRTUAL_MACHINE_ID);
 
         // Queue command based on Cmd super class:
         // BaseCmd: cmd is dispatched to ApiDispatcher, executed, serialized and returned.
@@ -526,6 +523,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 objectId = createCmd.getEntityId();
                 objectUuid = createCmd.getEntityUuid();
                 params.put("id", objectId.toString());
+                Class entityClass = EventTypes.getEntityClassForEvent(createCmd.getEventType());
+                if(entityClass != null)
+                    ctx.putContextParameter(entityClass.getName(), objectId);
             } else {
                 // Extract the uuid before params are processed and id reflects internal db id
                 objectUuid = params.get(ApiConstants.ID);
@@ -552,14 +552,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if(EventTypes.getEntityForEvent(asyncCmd.getEventType()) != null){
                 ctx.putContextParameter(EventTypes.getEntityForEvent(asyncCmd.getEventType()), objectUuid);
             }
-            if(vmUUID != null){
-                ctx.putContextParameter(ReflectUtil.getEntityName(VirtualMachine.class), vmUUID);
-            }
 
             // save the scheduled event
             final Long eventId =
                 ActionEventUtils.onScheduledActionEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(),
-                    asyncCmd.getEventDescription(), asyncCmd.isDisplayResourceEnabled(), startEventId);
+                    asyncCmd.getEventDescription(), asyncCmd.isDisplay(), startEventId);
             if (startEventId == 0) {
                 // There was no create event before, set current event id as start eventId
                 startEventId = eventId;
@@ -567,6 +564,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             params.put("ctxStartEventId", String.valueOf(startEventId));
             params.put("cmdEventType", asyncCmd.getEventType().toString());
+            params.put("ctxDetails", ApiGsonHelper.getBuilder().create().toJson(ctx.getContextParameters()));
 
             Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
             AsyncJobVO job = new AsyncJobVO("", callerUserId, caller.getId(), cmdObj.getClass().getName(),
