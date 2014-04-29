@@ -335,7 +335,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             if (storagePool == null) {
                 storagePool = new MockStoragePoolVO();
                 storagePool.setUuid(sf.getUuid());
-                storagePool.setMountPoint("/mnt/" + sf.getUuid() + File.separator);
+                storagePool.setMountPoint("/mnt/" + sf.getUuid());
 
                 Long size = DEFAULT_HOST_STORAGE_SIZE;
                 String path = sf.getPath();
@@ -376,7 +376,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             if (storagePool == null) {
                 storagePool = new MockStoragePoolVO();
                 storagePool.setUuid(sf.getUuid());
-                storagePool.setMountPoint("/mnt/" + sf.getUuid() + File.separator);
+                storagePool.setMountPoint("/mnt/" + sf.getUuid());
 
                 Long size = DEFAULT_HOST_STORAGE_SIZE;
                 String path = sf.getPath();
@@ -945,7 +945,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             String uuid = UUID.randomUUID().toString();
             storagePool = new MockStoragePoolVO();
             storagePool.setUuid(uuid);
-            storagePool.setMountPoint("/mnt/" + uuid + File.separator);
+            storagePool.setMountPoint("/mnt/" + uuid);
             storagePool.setCapacity(DEFAULT_HOST_STORAGE_SIZE);
             storagePool.setHostGuid(hostGuid);
             storagePool.setStorageType(StoragePoolType.Filesystem);
@@ -1004,7 +1004,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             String uuid = UUID.randomUUID().toString();
             storagePool = new MockStoragePoolVO();
             storagePool.setUuid(uuid);
-            storagePool.setMountPoint("/mnt/" + uuid + File.separator);
+            storagePool.setMountPoint("/mnt/" + uuid);
             storagePool.setCapacity(storageSize);
             storagePool.setHostGuid(hostGuid);
             storagePool.setStorageType(StoragePoolType.Filesystem);
