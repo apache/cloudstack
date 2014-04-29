@@ -105,25 +105,7 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.assertIsNotNone(createNetworkResponse.id, "Network failed to create")
         self.networkId = createNetworkResponse.id
 
-    def deployVm(self):
-        deployVirtualMachineCmd = deployVirtualMachine.deployVirtualMachineCmd()
-        deployVirtualMachineCmd.networkids = self.networkId
-        deployVirtualMachineCmd.serviceofferingid = self.serviceOfferingId
-        deployVirtualMachineCmd.zoneid = self.zoneId
-        deployVirtualMachineCmd.templateid = self.templateId
-        deployVirtualMachineCmd.hypervisor = "XenServer"
-        deployVMResponse = self.apiClient.deployVirtualMachine(deployVirtualMachineCmd)
 
-    def deployVm(self):
-        deployVirtualMachineCmd = deployVirtualMachine.deployVirtualMachineCmd()
-        deployVirtualMachineCmd.networkids = TestNetworkACL.networkId
-        deployVirtualMachineCmd.serviceofferingid = TestNetworkACL.serviceOfferingId
-        deployVirtualMachineCmd.zoneid = TestNetworkACL.zoneId
-        deployVirtualMachineCmd.templateid = TestNetworkACL.templateId
-        deployVirtualMachineCmd.hypervisor = "XenServer"
-        deployVMResponse = self.apiClient.deployVirtualMachine(deployVirtualMachineCmd)
-        TestNetworkACL.vmId = deployVMResponse.id
-        self.vmId = deployVMResponse.id
 
     def createPvtGw(self):
         createPrivateGatewayCmd = createPrivateGateway.createPrivateGatewayCmd()
@@ -146,7 +128,4 @@ class TestPrivateGwACL(cloudstackTestCase):
 
     def tearDown(self):
         #destroy the vm
-        if self.vmId is not None:
-            destroyVirtualMachineCmd = destroyVirtualMachine.destroyVirtualMachineCmd()
-            destroyVirtualMachineCmd.id = self.vmId
-            destroyVirtualMachineResponse = self.apiClient.destroyVirtualMachine(destroyVirtualMachineCmd)
+        return
