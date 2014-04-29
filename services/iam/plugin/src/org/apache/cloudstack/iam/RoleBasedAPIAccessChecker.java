@@ -132,6 +132,8 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
         // add permissions for public templates
         List<VMTemplateVO> pTmplts = _templateDao.listByPublic();
         for (VMTemplateVO tmpl : pTmplts){
+            _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_ADMIN + 1), VirtualMachineTemplate.class.getSimpleName(),
+                    PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
             _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), VirtualMachineTemplate.class.getSimpleName(),
                     PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
             _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), VirtualMachineTemplate.class.getSimpleName(),

@@ -257,7 +257,10 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
                 Long templateId = (Long)obj;
                 if (templateId != null) {
-                    s_logger.debug("MessageBus message: new public template registered: " + templateId + ", grant permission to domain admin and normal user policies");
+                    s_logger.debug("MessageBus message: new public template registered: " + templateId
+                            + ", grant permission to default root admin, domain admin and normal user policies");
+                    _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_ADMIN + 1), VirtualMachineTemplate.class.getSimpleName(),
+                            PermissionScope.RESOURCE.toString(), templateId, "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
                     _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), VirtualMachineTemplate.class.getSimpleName(),
                             PermissionScope.RESOURCE.toString(), templateId, "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
                     _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), VirtualMachineTemplate.class.getSimpleName(),
