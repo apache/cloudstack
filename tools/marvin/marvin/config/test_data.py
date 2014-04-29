@@ -230,6 +230,20 @@ test_data = {
         "acltype": "Domain",
         "scope": "all"
     },
+    "shared_network_offering": {
+        "name": "MySharedOffering-shared",
+        "displaytext": "MySharedOffering",
+        "guestiptype": "Shared",
+        "supportedservices": "Dhcp,Dns,UserData",
+        "specifyVlan": "False",
+        "specifyIpRanges": "False",
+        "traffictype": "GUEST",
+        "serviceProviderList": {
+                "Dhcp": "VirtualRouter",
+            "Dns": "VirtualRouter",
+            "UserData": "VirtualRouter"
+            }
+    },
     "shared_network_offering_sg": {
         "name": "MySharedOffering-sg",
         "displaytext": "MySharedOffering-sg",
@@ -625,5 +639,9 @@ test_data = {
         "name": "Sparse",
         "provisioningtype": "sparse",
         "disksize": 1
-    }
+    },
+    "host_anti_affinity": {
+                    "name": "hostantiaffinity",
+                    "type": "host anti-affinity",
+                },
 }
