@@ -1034,12 +1034,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             if (disk.getFormat() == PhysicalDiskFormat.TAR) {
                 newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, disk.getVirtualSize());
             } else {
-                /* If the source device is on a RBD storage pool force the new disk to the same format (RAW) */
-                if (srcPool.getType() != StoragePoolType.RBD) {
-                    newDisk = destPool.createPhysicalDisk(name, disk.getVirtualSize());
-                } else {
-                    newDisk = destPool.createPhysicalDisk(name, sourceFormat, disk.getVirtualSize());
-                }
+                newDisk = destPool.createPhysicalDisk(name, disk.getVirtualSize());
             }
         } else {
             newDisk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + name, name, destPool);
@@ -1089,10 +1084,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
         } else if ((srcPool.getType() != StoragePoolType.RBD) && (destPool.getType() == StoragePoolType.RBD)) {
             /**
-             * Qemu doesn't support writing to RBD format 2 directly, so we have to write to a temporary RAW file first
-             * which we then convert to RBD format 2.
-             *
-             * A HUGE performance gain can be achieved here if QCOW2 -> RBD format 2 can be done in one step
+             * Using qemu-img we copy the QCOW2 disk to RAW (on RBD) directly.
+             * To do so it's mandatory that librbd on the system is at least 0.67.7 (Ceph Dumpling)
              */
             s_logger.debug("The source image is not RBD, but the destination is. We will convert into RBD format 2");
             String sourceFile;
