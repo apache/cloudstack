@@ -343,7 +343,7 @@ class CodeGenerator(object):
             paramProperty.desc = response['description']
         if 'type' in response:
             if response['type'] in ['list', 'map', 'set']:
-            # Here list becomes a subproperty
+                # Here list becomes a subproperty
                 if 'response' in response:
                     for innerResponse in response['response']:
                         subProperty =\
@@ -359,9 +359,9 @@ class CodeGenerator(object):
         jsonOut = apiStream.readlines()
         assert len(jsonOut) > 0
         apiDict = json.loads(jsonOut[0])
-        if not 'listapisresponse' in apiDict:
+        if 'listapisresponse' not in apiDict:
             raise Exception("API discovery plugin response failed")
-        if not 'count' in apiDict['listapisresponse']:
+        if 'count' not in apiDict['listapisresponse']:
             raise Exception("Malformed api response")
 
         apilist = apiDict['listapisresponse']['api']
@@ -397,7 +397,8 @@ class CodeGenerator(object):
                 csCmd.request.append(paramProperty)
 
             for response in cmd['response']:
-            # FIXME: ExtractImage related APIs return empty dicts in response
+                # FIXME: ExtractImage related APIs return empty dicts in
+                # response
                 if len(response) > 0:
                     paramProperty = self.constructResponseFromJSON(response)
                     csCmd.response.append(paramProperty)
@@ -412,11 +413,11 @@ class CodeGenerator(object):
         @return: The classes in cloudstackAPI/ formed from api discovery json
         """
         if endpointUrl.find('response=json') >= 0:
-                apiStream = urllib2.urlopen(endpointUrl)
-                cmds = self.loadCmdFromJSON(apiStream)
-                for cmd in cmds:
-                    self.generate(cmd)
-                self.finalize()
+            apiStream = urllib2.urlopen(endpointUrl)
+            cmds = self.loadCmdFromJSON(apiStream)
+            for cmd in cmds:
+                self.generate(cmd)
+            self.finalize()
 
 
 def getText(elements):

@@ -149,7 +149,7 @@ class CSConnection(object):
                 [str.lower(r[0]),
                  str.lower(
                      urllib.quote_plus(str(r[1]))
-                 ).replace("+", "%20")]
+                ).replace("+", "%20")]
             ) for r in params]
         )
         signature = base64.encodestring(hmac.new(

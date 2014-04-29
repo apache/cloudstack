@@ -204,9 +204,9 @@ class SshClient(object):
         self.close()
 
     def close(self):
-            if self.ssh is not None:
-                self.ssh.close()
-                self.ssh = None
+        if self.ssh is not None:
+            self.ssh.close()
+            self.ssh = None
 
 
 if __name__ == "__main__":
