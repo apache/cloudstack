@@ -195,16 +195,6 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     }
 
     @Override
-    public boolean isDisplayResourceEnabled(){
-        Boolean display = getDisplayVolume();
-        if(display == null){
-            return true;
-        } else {
-            return display;
-        }
-    }
-
-    @Override
     public String getEventDescription() {
         return  "creating volume: " + getVolumeName() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId());
     }

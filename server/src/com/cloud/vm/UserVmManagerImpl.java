@@ -1862,15 +1862,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return updateVirtualMachine(id, displayName, group, ha, isDisplayVm, osTypeId, userData, isDynamicallyScalable, cmd.getHttpMethod(), cmd.getCustomId(), hostName);
     }
 
-    private void usage(VirtualMachine vm){
-        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
-        for (NicVO nic : nics) {
-            NetworkVO network = _networkDao.findById(nic.getNetworkId());
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                    Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 0L, vm.getClass().getName(), vm.getUuid(), vm.isDisplay());
-        }
-    }
-
     private void saveUsageEvent(UserVmVO vm) {
 
         // If vm not destroyed

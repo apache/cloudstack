@@ -360,7 +360,7 @@ public abstract class BaseCmd {
      * display flag is used to control the display of the resource only to the end user. It doesnt affect Root Admin.
      * @return display flag
      */
-    public boolean isDisplayResourceEnabled(){
+    public boolean isDisplay(){
         return true;
     }
 }

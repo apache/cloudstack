@@ -131,11 +131,6 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
     }
 
     @Override
-    public boolean isDisplayResourceEnabled(){
-        return _volumeService.isDisplayResourceEnabled(getId());
-    }
-
-    @Override
     public String getEventType() {
         return EventTypes.EVENT_VOLUME_UPDATE;
     }

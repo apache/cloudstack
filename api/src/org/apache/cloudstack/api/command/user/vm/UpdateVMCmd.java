@@ -151,7 +151,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
     }
 
     @Override
-    public boolean isDisplayResourceEnabled(){
+    public boolean isDisplay(){
         UserVm userVm = _entityMgr.findById(UserVm.class, getId());
         if (userVm != null) {
             return userVm.isDisplayVm();

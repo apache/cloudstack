@@ -36,10 +36,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import com.cloud.api.dispatch.DispatchChain;
 import com.cloud.api.dispatch.DispatchChainFactory;
 import com.cloud.api.dispatch.DispatchTask;
-import com.cloud.event.EventTypes;
 import com.cloud.user.AccountManager;
-import com.cloud.utils.ReflectUtil;
-import com.cloud.vm.VirtualMachine;
 
 public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
@@ -75,7 +72,6 @@ public class ApiDispatcher {
 
     public void dispatchCreateCmd(final BaseAsyncCreateCmd cmd, final Map<String, String> params) throws Exception {
         asyncCreationDispatchChain.dispatch(new DispatchTask(cmd, params));
-        CallContext.current().setEventDisplayEnabled(cmd.isDisplayResourceEnabled());
     }
 
     public void dispatch(final BaseCmd cmd, final Map<String, String> params, final boolean execute) throws Exception {
@@ -83,25 +79,14 @@ public class ApiDispatcher {
         standardDispatchChain.dispatch(new DispatchTask(cmd, params));
 
         final CallContext ctx = CallContext.current();
-        ctx.setEventDisplayEnabled(cmd.isDisplayResourceEnabled());
+        ctx.setEventDisplayEnabled(cmd.isDisplay());
 
         // TODO This if shouldn't be here. Use polymorphism and move it to validateSpecificParameters
         if (cmd instanceof BaseAsyncCmd) {
 
             final BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmd;
             final String startEventId = params.get(ApiConstants.CTX_START_EVENT_ID);
-            String uuid = params.get(ApiConstants.UUID);
             ctx.setStartEventId(Long.valueOf(startEventId));
-
-            // Fow now use the key from EventTypes.java rather than getInstanceType bcz the later doesn't refer to the interfaces
-            // Add the resource id in the call context, also add some other first class object ids (for now vm) if available.
-            // TODO - this should be done for all the uuids passed in the cmd - so should be moved where uuid to id conversion happens.
-            if(EventTypes.getEntityForEvent(asyncCmd.getEventType()) != null){
-                ctx.putContextParameter(EventTypes.getEntityForEvent(asyncCmd.getEventType()), uuid);
-            }
-            if(params.get(ApiConstants.VIRTUAL_MACHINE_ID) != null){
-                ctx.putContextParameter(ReflectUtil.getEntityName(VirtualMachine.class), params.get(ApiConstants.VIRTUAL_MACHINE_ID));
-            }
 
             // Synchronise job on the object if needed
             if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {
