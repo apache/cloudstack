@@ -709,7 +709,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     srcFile.setFormat(PhysicalDiskFormat.RAW);
 
                     QemuImgFile destFile = new QemuImgFile(snapshotFile);
-                    destFile.setFormat(srcFile.getFormat());
+                    destFile.setFormat(snapshotDisk.getFormat());
 
                     s_logger.debug("Backing up RBD snapshot " + rbdSnapshot + " to " + snapshotFile);
                     QemuImg q = new QemuImg(cmd.getWaitInMillSeconds());
@@ -1225,13 +1225,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(disk.getName());
             newVol.setSize(disk.getVirtualSize());
-
-            /**
-             * We have to force the format of RBD volumes to RAW
-             */
-            if (primaryPool.getType() == StoragePoolType.RBD) {
-                newVol.setFormat(ImageFormat.RAW);
-            }
+            newVol.setFormat(ImageFormat.valueOf(disk.getFormat().toString().toUpperCase()));
 
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
