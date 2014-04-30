@@ -119,7 +119,7 @@ class TestNic(cloudstackTestCase):
         except Exception as ex:
             self.debug("Exception during NIC test SETUP!: " + str(ex))
 
-    @attr(tags = ["devcloud",  "smoke", "basic", "sg", "provisioning"])
+    @attr(tags = ["devcloud",  "smoke", "advanced", "advancedns", "provisioning"])
     def test_01_nic(self):
         #TODO: SIMENH: add validation
         """Test to add and update added nic to a virtual machine"""
