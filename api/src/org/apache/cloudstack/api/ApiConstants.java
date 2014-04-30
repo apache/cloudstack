@@ -177,6 +177,7 @@ public class ApiConstants {
     public static final String OS_NAME_FOR_HYPERVISOR = "osnameforhypervisor";
     public static final String PARAMS = "params";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
+    public static final String PARENT_TEMPLATE_ID = "parenttemplateid";
     public static final String PASSWORD = "password";
     public static final String NEW_PASSWORD = "new_password";
     public static final String PASSWORD_ENABLED = "passwordenabled";

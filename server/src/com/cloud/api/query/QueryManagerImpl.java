@@ -2812,6 +2812,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Long id = cmd.getId();
         Map<String, String> tags = cmd.getTags();
         boolean showRemovedTmpl = cmd.getShowRemoved();
+        Long parentTemplateId = cmd.getParentTemplateId();
         Account caller = CallContext.current().getCallingAccount();
 
         // TODO: listAll flag has some conflicts with TemplateFilter parameter
@@ -2841,7 +2842,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         return searchForTemplatesInternalIAM(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null,
                 cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, showDomr,
-                cmd.listInReadyState(), permittedDomains, permittedAccounts, permittedResources, isRecursive, caller, listProjectResourcesCriteria, tags, showRemovedTmpl);
+                cmd.listInReadyState(), permittedDomains, permittedAccounts, permittedResources, isRecursive, caller, listProjectResourcesCriteria, tags, showRemovedTmpl, parentTemplateId);
     }
 
     // Temporarily disable this method which used IAM model to do template list
@@ -2850,7 +2851,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady,
             List<Long> permittedDomains, List<Long> permittedAccounts, List<Long> permittedResources, boolean isRecursive, Account caller,
             ListProjectResourcesCriteria listProjectResourcesCriteria,
-            Map<String, String> tags, boolean showRemovedTmpl) {
+            Map<String, String> tags, boolean showRemovedTmpl, Long parentTemplateId) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
@@ -3045,6 +3046,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             isoPerhostSc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.PERHOST);
             zoneSc.addOr("templateType", SearchCriteria.Op.SC, isoPerhostSc);
             sc.addAnd("dataCenterId", SearchCriteria.Op.SC, zoneSc);
+        }
+
+        if (parentTemplateId != null) {
+            sc.addAnd("parentTemplateId", SearchCriteria.Op.EQ, parentTemplateId);
         }
 
         // don't return removed template, this should not be needed since we
@@ -3546,7 +3551,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         return searchForTemplatesInternalIAM(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true,
                 cmd.isBootable(), cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, true,
-                cmd.listInReadyState(), permittedDomains, permittedAccounts, permittedResources, isRecursive, caller, listProjectResourcesCriteria, tags, showRemovedISO);
+                cmd.listInReadyState(), permittedDomains, permittedAccounts, permittedResources, isRecursive, caller, listProjectResourcesCriteria, tags, showRemovedISO, null);
     }
 
     @Override
