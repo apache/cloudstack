@@ -122,7 +122,8 @@ class TestDeployVM(cloudstackTestCase):
                 domainid=self.account.domainid,
                 serviceofferingid=self.service_offering.id,
                 templateid=self.template.id,
-                rootdisksize=newrootsize
+                rootdisksize=newrootsize,
+                hypervisor=self.hypervisor
             )
 
             list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
@@ -192,7 +193,8 @@ class TestDeployVM(cloudstackTestCase):
                     domainid=self.account.domainid,
                     serviceofferingid=self.service_offering.id,
                     templateid=self.template.id,
-                    rootdisksize=newrootsize
+                    rootdisksize=newrootsize,
+                    hypervisor=self.hypervisor
                 )
             except Exception as ex:
                 if "Hypervisor XenServer does not support rootdisksize override" in str(ex):
@@ -218,7 +220,8 @@ class TestDeployVM(cloudstackTestCase):
                     domainid=self.account.domainid,
                     serviceofferingid=self.service_offering.id,
                     templateid=self.template.id,
-                    rootdisksize=newrootsize
+                    rootdisksize=newrootsize,
+                    hypervisor=self.hypervisor
                 )
             except Exception as ex:
                 if "rootdisk size should be a non zero number" in str(ex):
@@ -249,7 +252,8 @@ class TestDeployVM(cloudstackTestCase):
                     domainid=self.account.domainid,
                     serviceofferingid=self.service_offering.id,
                     templateid=self.template.id,
-                    rootdisksize=newrootsize
+                    rootdisksize=newrootsize,
+                    hypervisor=self.hypervisor
                 )
             except Exception as ex:
                 if "rootdisksize override is smaller than template size" in str(ex):

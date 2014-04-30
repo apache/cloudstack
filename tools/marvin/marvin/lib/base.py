@@ -339,7 +339,7 @@ class VirtualMachine:
                projectid=None, startvm=None, diskofferingid=None,
                affinitygroupnames=None, affinitygroupids=None, group=None,
                hostid=None, keypair=None, ipaddress=None, mode='default',
-               method='GET', hypervisor=None, customcpunumber=None,
+               method='GET', hypervisor="XenServer", customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None):
         """Create the instance"""
 

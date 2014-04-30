@@ -159,7 +159,8 @@ class TestDeployVM(cloudstackTestCase):
         3. Has a linklocalip, publicip and a guestip
         @return:
         """
-        routers = list_routers(self.apiclient, account=self.account.name)
+        routers = list_routers(self.apiclient, account=self.account.name,
+                                listall=True)
         self.assertTrue(len(routers) > 0, msg = "No virtual router found")
         router = routers[0]
 
@@ -181,7 +182,8 @@ class TestDeployVM(cloudstackTestCase):
         2. is in the account the VM was deployed in
         @return:
         """
-        routers = list_routers(self.apiclient, account=self.account.name)
+        routers = list_routers(self.apiclient, account=self.account.name,
+                                listall=True)
         self.assertTrue(len(routers) > 0, msg = "No virtual router found")
         router = routers[0]
 
