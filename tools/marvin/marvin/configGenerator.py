@@ -381,7 +381,7 @@ class ConfigManager(object):
                 config_dict = test_data
             else:
                 configLines = []
-                with open(file, 'r') as fp:
+                with open(self.__filePath, 'r') as fp:
                     for line in fp:
                         ws = line.strip()
                         if not ws.startswith("#"):
