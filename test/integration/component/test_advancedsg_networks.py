@@ -1307,11 +1307,11 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
                                                   zoneid=self.zone.id)
 
         # Creaint user API client of account 1
-        api_client_account_1 = self.testClient.createUserApiClient(UserName=account_1.name,
+        api_client_account_1 = self.testClient.getUserApiClient(UserName=account_1.name,
                                                          DomainName=account_1.domain)
 
         # Creaint user API client of account 2
-        api_client_account_2 = self.testClient.createUserApiClient(UserName=account_2.name,
+        api_client_account_2 = self.testClient.getUserApiClient(UserName=account_2.name,
                                                          DomainName=account_2.domain)
 
         self.debug("Creating virtual machine in account %s with account specific shared network %s" %
@@ -1419,11 +1419,11 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         self.cleanup_networks.append(shared_network_domain_2)
 
         # Creaint user API client of account 1
-        api_client_domain_1 = self.testClient.createUserApiClient(UserName=account_1.name,
+        api_client_domain_1 = self.testClient.getUserApiClient(UserName=account_1.name,
                                                          DomainName=account_1.domain)
 
         # Creaint user API client of account 2
-        api_client_domain_2 = self.testClient.createUserApiClient(UserName=account_2.name,
+        api_client_domain_2 = self.testClient.getUserApiClient(UserName=account_2.name,
                                                          DomainName=account_2.domain)
 
         self.debug("Creating virtual machine in domain %s with domain wide shared network %s" %

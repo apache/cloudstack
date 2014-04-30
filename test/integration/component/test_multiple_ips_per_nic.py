@@ -149,7 +149,7 @@ class TestBasicOperations(cloudstackTestCase):
         cls.shared_network_offering = CreateEnabledNetworkOffering(cls.api_client,
                                                                       cls.services["shared_network_offering"])
         cls._cleanup.append(cls.shared_network_offering)
-
+        cls.mode = cls.zone.networktype
         if cls.mode == "advanced":
             cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client,
                                                                       cls.services["isolated_network_offering"])
@@ -426,7 +426,7 @@ class TestBasicOperations(cloudstackTestCase):
         self.cleanup.append(self.account)
         self.cleanup.append(child_domain)
 
-        apiclient = self.testClient.createUserApiClient(UserName=self.account.name, DomainName=self.account.domain)
+        apiclient = self.testClient.getUserApiClient(UserName=self.account.name, DomainName=self.account.domain)
 
         if(shouldTestBeSkipped(networkType=value, zoneType=self.mode)):
             self.skipTest("Skipping test as %s network is not supported in basic zone" % value)
@@ -499,7 +499,7 @@ class TestNetworkRules(cloudstackTestCase):
 
         cls.shared_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["shared_network_offering"])
         cls._cleanup.append(cls.shared_network_offering)
-
+        cls.mode = cls.zone.networktype
         if cls.mode == "advanced":
             cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
             cls._cleanup.append(cls.isolated_network_offering)
@@ -873,7 +873,7 @@ class TestVmNetworkOperations(cloudstackTestCase):
 
         cls.shared_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["shared_network_offering"])
         cls._cleanup.append(cls.shared_network_offering)
-
+        cls.mode = cls.zone.networktype
         if cls.mode == "advanced":
             cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
             cls._cleanup.append(cls.isolated_network_offering)

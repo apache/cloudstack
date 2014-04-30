@@ -225,7 +225,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
 
         # Create Account
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -287,7 +287,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
 
         # Create Account and its api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -354,7 +354,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
 
         # Create Account and api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -502,7 +502,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Create Account
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -567,7 +567,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Create Account and api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -651,7 +651,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Create account and api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -719,7 +719,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Create Account
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -795,7 +795,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Create Account and api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -855,7 +855,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Crate account and api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -930,7 +930,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Create account and api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -995,7 +995,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Create account and api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
