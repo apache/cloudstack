@@ -85,7 +85,6 @@ class TestCreateServiceOffering(cloudstackTestCase):
             0,
             "Check Service offering is created"
         )
-        service_response = list_service_response[0]
 
         self.assertEqual(
             list_service_response[0].cpunumber,
@@ -293,23 +292,10 @@ class TestServiceOfferings(cloudstackTestCase):
         # 2. Using  listVM command verify that this Vm
         #    has Small service offering Id.
 
-        self.debug("Stopping VM - ID: %s" % self.medium_virtual_machine.id)
-        self.medium_virtual_machine.stop(self.apiclient)
-        # Ensure that VM is in stopped state
-        list_vm_response = list_virtual_machines(
-            self.apiclient,
-            id=self.medium_virtual_machine.id
-        )
-        if isinstance(list_vm_response, list):
-            vm = list_vm_response[0]
-            if vm.state == 'Stopped':
-                self.debug("VM state: %s" % vm.state)
-            else:
-                raise Exception(
-                    "Failed to stop VM (ID: %s) in change service offering" % vm.id)
-
-        self.debug("Change Service offering VM - ID: %s" %
-                   self.medium_virtual_machine.id)
+        try:
+            self.medium_virtual_machine.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop VM: %s" % e)
 
         cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
         cmd.id = self.medium_virtual_machine.id

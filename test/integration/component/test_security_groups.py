@@ -18,13 +18,21 @@
 """ P1 for Security groups
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Account,
+                             ServiceOffering,
+                             VirtualMachine,
+                             SecurityGroup,
+                             Router,
+                             Host,
+                             Configurations)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               get_process_status)
 from marvin.sshClient import SshClient
 
 #Import System modules
@@ -186,7 +194,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         self.debug("Deployed VM with ID: %s" % self.virtual_machine.id)
         self.cleanup.append(self.virtual_machine)
 
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -225,7 +233,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
                    "Verify list routers response for account: %s" \
                    % self.account.name
                    )
-        routers = list_routers(
+        routers = Router.list(
                                self.apiclient,
                                zoneid=self.zone.id,
                                listall=True
@@ -300,7 +308,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         self.debug("Deployed VM with ID: %s" % self.virtual_machine.id)
         self.cleanup.append(self.virtual_machine)
 
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -362,12 +370,12 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         # SSH Attempt to VM should fail
         with self.assertRaises(Exception):
             self.debug("SSH into VM: %s" % self.virtual_machine.ssh_ip)
-            ssh = SshClient(
-                                    self.virtual_machine.ssh_ip,
-                                    self.virtual_machine.ssh_port,
-                                    self.virtual_machine.username,
-                                    self.virtual_machine.password
-                                    )
+            SshClient(
+                      self.virtual_machine.ssh_ip,
+                      self.virtual_machine.ssh_port,
+                      self.virtual_machine.username,
+                      self.virtual_machine.password
+                      )
         return
 
 
@@ -651,7 +659,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
         self.debug("Revoking ingress rule for sec group ID: %s for ssh access"
                                                             % security_group.id)
         # Revoke Security group to SSH to VM
-        result = security_group.revoke(
+        security_group.revoke(
                                 self.apiclient,
                                 id=ssh_rule["ruleid"]
                                 )
@@ -752,7 +760,7 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
         #2. The only service supported by this router should be dhcp
 
         # Find router associated with user account
-        list_router_response = list_routers(
+        list_router_response = Router.list(
                                     self.apiclient,
                                     zoneid=self.zone.id,
                                     listall=True
@@ -764,7 +772,7 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
                         )
         router = list_router_response[0]
 
-        hosts = list_hosts(
+        hosts = Host.list(
                            self.apiclient,
                            zoneid=router.zoneid,
                            type='Routing',
@@ -886,7 +894,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
         #    router for this VM
 
         # Find router associated with user account
-        list_router_response = list_routers(
+        list_router_response = Router.list(
                                     self.apiclient,
                                     zoneid=self.zone.id,
                                     listall=True
@@ -1201,7 +1209,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         # Destroy the VM
         self.virtual_machine.delete(self.apiclient)
 
-        config = list_configurations(
+        config = Configurations.list(
                                      self.apiclient,
                                      name='expunge.delay'
                                      )
@@ -1220,8 +1228,8 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
             self.debug("Deleting Security Group: %s" % security_group.id)
             security_group.delete(self.apiclient)
         except Exception as e:
-            self.fail("Failed to delete security group - ID: %s" \
-                      % security_group.id
+            self.fail("Failed to delete security group - ID: %s: %s" \
+                      % (security_group.id, e)
                       )
         return
 
@@ -1639,15 +1647,13 @@ class TestIngressRule(cloudstackTestCase):
                       % ingress_rule["id"]
                       )
 
-        self.virtual_machine.stop(self.apiclient)
-
-        # Sleep to ensure that VM is in stopped state
-        time.sleep(self.services["sleep"])
-
-        self.virtual_machine.start(self.apiclient)
-
-        # Sleep to ensure that VM is in running state
-        time.sleep(self.services["sleep"])
+        try:
+            self.virtual_machine.stop(self.apiclient)
+            self.virtual_machine.start(self.apiclient)
+            # Sleep to ensure that VM is in running state
+            time.sleep(self.services["sleep"])
+        except Exception as e:
+            self.fail("Exception occured: %s" % e)
 
         # SSH should be allowed on 22 port after restart
         try:

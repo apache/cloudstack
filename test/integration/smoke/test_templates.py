@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,19 +17,28 @@
 """ BVT tests for Templates ISO
 """
 #Import Local Modules
-import marvin
 from marvin.codes import FAILED
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.sshClient import SshClient
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import (updateTemplate,
+                                  extractTemplate,
+                                  listZones,
+                                  updateTemplatePermissions,
+                                  deleteTemplate,
+                                  copyTemplate)
+from marvin.lib.utils import random_gen, cleanup_resources
+from marvin.lib.base import (Account,
+                             ServiceOffering,
+                             VirtualMachine,
+                             DiskOffering,
+                             Template,
+                             Volume)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template)
 from nose.plugins.attrib import attr
 import urllib
-from random import random
 #Import System modules
-import datetime
+import time
 
 _multiprocess_shared_ = True
 
@@ -62,38 +71,43 @@ class TestCreateTemplate(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        cls.disk_offering = DiskOffering.create(
+
+        cls._cleanup = []
+        try:
+            cls.disk_offering = DiskOffering.create(
                                     cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
-        template = get_template(
+            cls._cleanup.append(cls.disk_offering)
+            template = get_template(
                             cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
-        if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            if template == FAILED:
+                assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
-        cls.services["template"]["ostypeid"] = template.ostypeid
-        cls.services["template_2"]["ostypeid"] = template.ostypeid
-        cls.services["ostypeid"] = template.ostypeid
+            cls.services["template"]["ostypeid"] = template.ostypeid
+            cls.services["template_2"]["ostypeid"] = template.ostypeid
+            cls.services["ostypeid"] = template.ostypeid
 
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["volume"]["diskoffering"] = cls.disk_offering.id
-        cls.services["volume"]["zoneid"] = cls.zone.id
-        cls.services["sourcezoneid"] = cls.zone.id
-
-        cls.account = Account.create(
+            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+            cls.services["volume"]["diskoffering"] = cls.disk_offering.id
+            cls.services["volume"]["zoneid"] = cls.zone.id
+            cls.services["sourcezoneid"] = cls.zone.id
+            cls.account = Account.create(
                             cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.service_offering = ServiceOffering.create(
+            cls._cleanup.append(cls.account)
+            cls.service_offering = ServiceOffering.create(
                                             cls.apiclient,
                                             cls.services["service_offerings"]
                                             )
-        #create virtual machine
-        cls.virtual_machine = VirtualMachine.create(
+            cls._cleanup.append(cls.service_offering)
+            #create virtual machine
+            cls.virtual_machine = VirtualMachine.create(
                                     cls.apiclient,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
@@ -102,47 +116,20 @@ class TestCreateTemplate(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                     )
+            #Stop virtual machine
+            cls.virtual_machine.stop(cls.apiclient)
 
-        #Stop virtual machine
-        cls.virtual_machine.stop(cls.apiclient)
-
-        # Poll listVM to ensure VM is stopped properly
-        timeout = cls.services["timeout"]
-        while True:
-            time.sleep(cls.services["sleep"])
-
-            # Ensure that VM is in stopped state
-            list_vm_response = list_virtual_machines(
-                                            cls.apiclient,
-                                            id=cls.virtual_machine.id
-                                            )
-
-            if isinstance(list_vm_response, list):
-
-                vm = list_vm_response[0]
-                if vm.state == 'Stopped':
-                    break
-
-            if timeout == 0:
-                    raise Exception(
-                        "Failed to stop VM (ID: %s) in change service offering" %
-                                                                        vm.id)
-
-            timeout = timeout - 1
-
-        list_volume = list_volumes(
+            list_volume = Volume.list(
                                    cls.apiclient,
                                    virtualmachineid=cls.virtual_machine.id,
                                    type='ROOT',
                                    listall=True
                                    )
 
-        cls.volume = list_volume[0]
-        cls._cleanup = [
-                        cls.account,
-                        cls.service_offering,
-                        cls.disk_offering,
-                        ]
+            cls.volume = list_volume[0]
+        except Exception as e:
+            cls.tearDownClass()
+            raise unittest.SkipTest("Exception in setUpClass: %s" % e)
         return
 
     @classmethod
@@ -180,7 +167,7 @@ class TestCreateTemplate(cloudstackTestCase):
 
         self.debug("Created template with ID: %s" % template.id)
 
-        list_template_response = list_templates(
+        list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter=\
                                     self.services["templatefilter"],
@@ -289,31 +276,7 @@ class TestTemplates(cloudstackTestCase):
         #Stop virtual machine
         cls.virtual_machine.stop(cls.apiclient)
 
-        # Poll listVM to ensure VM is stopped properly
-        timeout = cls.services["timeout"]
-        while True:
-            time.sleep(cls.services["sleep"])
-
-            # Ensure that VM is in stopped state
-            list_vm_response = list_virtual_machines(
-                                            cls.apiclient,
-                                            id=cls.virtual_machine.id
-                                            )
-
-            if isinstance(list_vm_response, list):
-
-                vm = list_vm_response[0]
-                if vm.state == 'Stopped':
-                    break
-
-            if timeout == 0:
-                    raise Exception(
-                        "Failed to stop VM (ID: %s) in change service offering" %
-                                                                        vm.id)
-
-            timeout = timeout - 1
-
-        list_volume = list_volumes(
+        list_volume = Volume.list(
                                    cls.apiclient,
                                    virtualmachineid=cls.virtual_machine.id,
                                    type='ROOT',
@@ -323,8 +286,8 @@ class TestTemplates(cloudstackTestCase):
             cls.volume = list_volume[0]
         except Exception as e:
             raise Exception(
-                "Exception: Unable to find root volume foe VM: %s" %
-                                                    cls.virtual_machine.id)
+                "Exception: Unable to find root volume foe VM: %s - %s" %
+                 (cls.virtual_machine.id, e))
 
         #Create templates for Edit, Delete & update permissions testcases
         cls.template_1 = Template.create(
@@ -407,7 +370,7 @@ class TestTemplates(cloudstackTestCase):
         timeout = self.services["timeout"]
         while True:
             # Verify template response for updated attributes
-            list_template_response = list_templates(
+            list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter=\
                                     self.services["templatefilter"],
@@ -473,7 +436,7 @@ class TestTemplates(cloudstackTestCase):
 
         self.template_1.delete(self.apiclient)
 
-        list_template_response = list_templates(
+        list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter=\
                                     self.services["templatefilter"],
@@ -560,7 +523,7 @@ class TestTemplates(cloudstackTestCase):
         cmd.isextractable = self.services["isextractable"]
         self.apiclient.updateTemplatePermissions(cmd)
 
-        list_template_response = list_templates(
+        list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter='featured',
                                     id=self.template_2.id,
@@ -617,7 +580,7 @@ class TestTemplates(cloudstackTestCase):
         self.apiclient.copyTemplate(cmd)
 
         # Verify template is copied to another zone using ListTemplates
-        list_template_response = list_templates(
+        list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter=\
                                     self.services["templatefilter"],
@@ -651,7 +614,7 @@ class TestTemplates(cloudstackTestCase):
         timeout = self.services["timeout"]
         while True:
             time.sleep(self.services["sleep"])
-            list_template_response = list_templates(
+            list_template_response = Template.list(
                                         self.apiclient,
                                         templatefilter=\
                                         self.services["templatefilter"],
@@ -691,7 +654,7 @@ class TestTemplates(cloudstackTestCase):
         # Validate the following
         # 1. ListTemplates should show only 'public' templates for normal user
 
-        list_template_response = list_templates(
+        list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter='featured',
                                     account=self.user.name,
@@ -723,7 +686,7 @@ class TestTemplates(cloudstackTestCase):
         # Validate the following
         # 1. ListTemplates should not show 'SYSTEM' templates for normal user
 
-        list_template_response = list_templates(
+        list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter='featured',
                                     account=self.user.name,

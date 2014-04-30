@@ -18,14 +18,23 @@
 """ P1 tests for network offering
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-import datetime
+from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import (cleanup_resources)
+from marvin.lib.base import (VirtualMachine,
+                             Account,
+                             Network,
+                             LoadBalancerRule,
+                             PublicIPAddress,
+                             FireWallRule,
+                             NATRule,
+                             Vpn,
+                             ServiceOffering,
+                             NetworkOffering)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template)
 
 
 class Services:
@@ -700,7 +709,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
         # User should be able to enable VPN on source NAT
         self.debug("Created VPN with source NAT IP: %s" % src_nat.ipaddress)
         # Assign VPN to source NAT
-        vpn = Vpn.create(
+        Vpn.create(
                         self.apiclient,
                         src_nat.id,
                         account=self.account.name,
@@ -942,7 +951,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
 
         # Assign VPN to source NAT
         self.debug("Enabling VPN on source NAT")
-        vpn = Vpn.create(
+        Vpn.create(
                         self.apiclient,
                         src_nat.id,
                         account=self.account.name,
@@ -1142,7 +1151,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
 
         # Assign VPN to source NAT
         self.debug("Enabling VPN on source NAT")
-        vpn = Vpn.create(
+        Vpn.create(
                         self.apiclient,
                         src_nat.id,
                         account=self.account.name,
@@ -1262,7 +1271,7 @@ class TestNOWithOnlySourceNAT(cloudstackTestCase):
 
         self.debug("Deploying VM in account: %s on the network %s" % (self.account.name, self.network.id))
         # Spawn an instance in that network
-        virtual_machine = VirtualMachine.create(
+        VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
             accountid=self.account.name,

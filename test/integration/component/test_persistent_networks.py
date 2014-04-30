@@ -15,31 +15,31 @@
 # specific language governing permissions and limitations
 # under the License.
 """ Tests for Persistent Networks without running VMs feature"""
-from marvin.lib.utils import (validateList,
-                              cleanup_resources,
+from marvin.lib.utils import (cleanup_resources,
+                              validateList,
                               get_hypervisor_type)
-from marvin.lib.base import (NATRule,
-                             StaticNATRule,
+from marvin.lib.base import (Account,
+                             VPC,
                              VirtualMachine,
                              LoadBalancerRule,
-                             VPC,
-                             Account,
                              Network,
-                             Router,
-                             ServiceOffering,
-                             NetworkACL,
-                             VpcOffering,
                              Domain,
+                             Router,
+                             NetworkACL,
                              PublicIPAddress,
+                             VpcOffering,
+                             ServiceOffering,
+                             Project,
+                             NetworkOffering,
+                             NATRule,
                              FireWallRule,
                              Host,
-                             NetworkOffering,
-                             Project)
-from marvin.lib.common import (get_zone,
+                             StaticNATRule)
+from marvin.lib.common import (get_domain,
+                               get_zone,
                                get_template,
-                               get_domain,
-                               add_netscaler,
                                verifyNetworkState,
+                               add_netscaler,
                                wait_for_cleanup)
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, FAIL, FAILED
@@ -1132,24 +1132,20 @@ class TestAssignVirtualMachine(cloudstackTestCase):
                                                     networkids=[network.id],
                                                     serviceofferingid=self.service_offering.id,
                                                     accountid=account_1.name,domainid=self.domain.id)
+
+            virtual_machine.stop(self.apiclient)
+
+            # Assign virtual machine to different account
+            virtual_machine.assign_virtual_machine(self.apiclient, account=account_2.name, domainid=self.domain.id)
+
+            # Start VM
+            virtual_machine.start(self.apiclient)
+
+            # Verify that new network is created in other account
+            networks = Network.list(self.apiclient, account=account_2.name, domainid = account_2.domainid)
+            self.assertEqual(validateList(networks)[0], PASS, "networks list validation failed, list is %s" % networks)
         except Exception as e:
-            self.fail("vm creation failed: %s" % e)
-
-        virtual_machine.stop(self.apiclient)
-
-        vms = VirtualMachine.list(self.apiclient, id=virtual_machine.id)
-        self.assertEqual(validateList(vms)[0], PASS, "vm list validation failed, vm list is %s" % vms)
-        self.assertEqual(str(vms[0].state).lower(), "stopped", "vm state should be stopped, it is %s" % vms[0].state)
-
-        # Assign virtual machine to different account
-        virtual_machine.assign_virtual_machine(self.apiclient, account=account_2.name, domainid=self.domain.id)
-
-        # Start VM
-        virtual_machine.start(self.apiclient)
-
-        # Verify that new network is created in other account
-        networks = Network.list(self.apiclient, account=account_2.name, domainid = account_2.domainid)
-        self.assertEqual(validateList(networks)[0], PASS, "networks list validation failed, list is %s" % networks)
+            self.fail("Exception occured: %s" % e)
         return
 
 @ddt
