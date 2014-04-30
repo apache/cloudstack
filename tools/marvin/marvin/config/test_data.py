@@ -149,6 +149,26 @@ test_data = {
             "PortForwarding": 'VirtualRouter',
         },
     },
+    "nw_off_isolated_netscaler": {
+        "name": "Network offering-ns services",
+        "displaytext": "Network offering-ns services",
+        "guestiptype": "Isolated",
+        "supportedservices":
+        "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat",
+        "traffictype": "GUEST",
+        "availability": "Optional'",
+        "serviceProviderList": {
+            "Dhcp": "VirtualRouter",
+            "Dns": "VirtualRouter",
+            "SourceNat": "VirtualRouter",
+            "PortForwarding": "VirtualRouter",
+            "Vpn": "VirtualRouter",
+            "Firewall": "VirtualRouter",
+            "Lb": "NetScaler",
+            "UserData": "VirtualRouter",
+            "StaticNat": "VirtualRouter"
+        }
+    },
     "nw_off_isolated_persistent": {
         "name": 'Test Nw off isolated persistent',
         "displaytext": 'Test Nw off isolated persistent',
