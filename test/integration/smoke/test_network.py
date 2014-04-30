@@ -633,7 +633,8 @@ class TestRebootRouter(cloudstackTestCase):
         routers = list_routers(
                                 self.apiclient,
                                 account=self.account.name,
-                                domainid=self.account.domainid
+                                domainid=self.account.domainid,
+                                listall=True
                                )
         self.assertEqual(
                             isinstance(routers, list),
@@ -949,7 +950,8 @@ class TestDeleteAccount(cloudstackTestCase):
             routers = list_routers(
                           self.apiclient,
                           account=self.account.name,
-                          domainid=self.account.domainid
+                          domainid=self.account.domainid,
+                          listall=True
                         )
             self.assertEqual(
                              routers,

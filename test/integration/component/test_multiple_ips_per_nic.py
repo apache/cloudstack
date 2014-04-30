@@ -150,7 +150,7 @@ class TestBasicOperations(cloudstackTestCase):
                                                                       cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
         cls.mode = cls.zone.networktype
-        if cls.mode == "advanced":
+        if cls.mode.lower() == "advanced":
             cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client,
                                                                       cls.services["isolated_network_offering"])
             cls._cleanup.append(cls.isolated_network_offering)
@@ -501,7 +501,7 @@ class TestNetworkRules(cloudstackTestCase):
                                         cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
         cls.mode = cls.zone.networktype
-        if cls.mode == "advanced":
+        if cls.mode.lower() == "advanced":
             cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
             cls._cleanup.append(cls.isolated_network_offering)
             cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client, cls.services["nw_offering_isolated_vpc"])
@@ -876,7 +876,7 @@ class TestVmNetworkOperations(cloudstackTestCase):
                                         cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
         cls.mode = cls.zone.networktype
-        if cls.mode == "advanced":
+        if cls.mode.lower() == "advanced":
             cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
             cls._cleanup.append(cls.isolated_network_offering)
             cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client, cls.services["nw_offering_isolated_vpc"])

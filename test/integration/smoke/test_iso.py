@@ -340,18 +340,6 @@ class TestISO(cloudstackTestCase):
         cmd.mode = self.services["iso2"]["mode"]
         cmd.zoneid = self.services["iso2"]["zoneid"]
         list_extract_response = self.apiclient.extractIso(cmd)
-
-        try:
-            #Format URL to ASCII to retrieve response code
-            formatted_url = urllib.unquote_plus(list_extract_response.url)
-            url_response = urllib.urlopen(formatted_url)
-            response_code = url_response.getcode()
-        except Exception:
-            self.fail(
-                "Extract ISO Failed with invalid URL %s (ISO id: %s)" \
-                % (formatted_url, self.iso_2.id)
-            )
-
         self.assertEqual(
                             list_extract_response.id,
                             self.iso_2.id,
@@ -367,6 +355,18 @@ class TestISO(cloudstackTestCase):
                             self.services["iso2"]["zoneid"],
                             "Check zone ID of extraction"
                         )
+
+        try:
+            #Format URL to ASCII to retrieve response code
+            formatted_url = urllib.unquote_plus(list_extract_response.url)
+            url_response = urllib.urlopen(formatted_url)
+            response_code = url_response.getcode()
+        except Exception:
+            self.fail(
+                "Extract ISO Failed with invalid URL %s (ISO id: %s)" \
+                % (formatted_url, self.iso_2.id)
+            )
+
         self.assertEqual(
                          response_code,
                          200,

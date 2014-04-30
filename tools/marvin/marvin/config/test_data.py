@@ -27,6 +27,7 @@ test_data = {
     "vdomain": {
             "name": "domain"
     },
+    "domain": { "name": "domain" },
     "email": "test@test.com",
     "gateway": "172.1.1.1",
     "netmask": "255.255.255.0",
