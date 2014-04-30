@@ -81,7 +81,7 @@ class TestDeployVM(cloudstackTestCase):
         self.testdata["mode"] = self.zone.networktype
         self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
         if self.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % self.services["ostype"]
+            assert False, "get_template() failed to return template "
 #       for testing with specific template
 #        self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"], templatetype='USER', services = {"template":'31f52a4d-5681-43f7-8651-ad4aaf823618'})
         
