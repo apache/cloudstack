@@ -347,14 +347,10 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
         # Validate the following:
         # 1. New nic is generated for the added network
 
-        self.debug("Stopping Virtual Machine: %s" % self.virtual_machine.id)
-        self.virtual_machine.stop(self.apiclient)
-
-        vm_list = list_virtual_machines(self.apiclient,id=self.virtual_machine.id)
-        vm_list_validation_result = validateList(vm_list)
-        self.assertEqual(vm_list_validation_result[0], PASS, "vm list validation failed due to %s" %
-			 vm_list_validation_result[2])
-        self.assertTrue(vm_list[0].state == 'Stopped', "Failed to stop VM, the state is %s" % vm_list[0].state)
+        try:
+            self.virtual_machine.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop VM: %s" % e)
 
         network = None #The network which we are adding to the vm
         if value == "isolated":
@@ -451,16 +447,10 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
         # Validate the following:
         # 1. Adding VPC to vm should fail
 
-        self.debug("Stopping Virtual Machine: %s" % self.virtual_machine.id)
-        self.virtual_machine.stop(self.apiclient)
-
-        vm_list = list_virtual_machines(self.apiclient,id=self.virtual_machine.id)
-        #validation vm list
-        vm_list_validation_result = validateList(vm_list)
-        self.assertEqual(vm_list_validation_result[0], PASS, "vm list validation failed due to %s" %
-			 vm_list_validation_result[2])
-
-        self.assertTrue(vm_list[0].state == 'Stopped', "Failed to stop VM, the state is %s" % vm_list[0].state)
+        try:
+            self.virtual_machine.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop virtual machine: %s" % e)
 
         self.addNetworkToVm(self.isolated_network, self.virtual_machine)
 

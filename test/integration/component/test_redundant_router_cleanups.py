@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,13 +16,22 @@
 # under the License.
 
 from nose.plugins.attrib import attr
-from marvin.lib.base import *
-from marvin.lib.utils import *
-from marvin.lib.common import *
+from marvin.lib.base import (Account,
+                             Network,
+                             ServiceOffering,
+                             NetworkOffering,
+                             VirtualMachine,
+                             Router,
+                             Configurations)
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template)
 
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import *
+from marvin.cloudstackAPI import startRouter
+import time
 
 class Services:
     """Test Services for customer defects
@@ -304,13 +313,6 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
                     "Length of the list router should be 2 (Backup & master)"
                     )
 
-        if routers[0].redundantstate == 'MASTER':
-            master_router = routers[0]
-            backup_router = routers[1]
-        else:
-            master_router = routers[1]
-            backup_router = routers[0]
-
         self.debug("restarting network with cleanup=False")
         try:
             network.restart(self.apiclient, cleanup=False)
@@ -444,13 +446,6 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
                     2,
                     "Length of the list router should be 2 (Backup & master)"
                     )
-
-        if routers[0].redundantstate == 'MASTER':
-            master_router = routers[0]
-            backup_router = routers[1]
-        else:
-            master_router = routers[1]
-            backup_router = routers[0]
 
         self.debug("restarting network with cleanup=True")
         try:
@@ -597,12 +592,12 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
             self.fail("Failed to stop guest Vm: %s - %s" %
                                             (virtual_machine.name, e))
 
-        interval = list_configurations(
+        interval = Configurations(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
         delay = int(interval[0].value)
-        interval = list_configurations(
+        interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )

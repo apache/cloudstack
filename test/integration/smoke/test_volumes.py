@@ -17,15 +17,25 @@
 """ BVT tests for Volumes
 """
 #Import Local Modules
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackException import *
-from marvin.cloudstackAPI import *
-from marvin.sshClient import SshClient
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackException import *
+from marvin.cloudstackAPI import (deleteVolume,
+                                  extractVolume,
+                                  resizeVolume)
+#from marvin.sshClient import SshClient
+from marvin.lib.utils import (cleanup_resources,
+                              format_volume_to_ext3)
+from marvin.lib.base import (ServiceOffering,
+                             VirtualMachine,
+                             Account,
+                             Volume,
+                             Host,
+                             DiskOffering)
+from marvin.lib.common import (get_domain,
+                                get_zone,
+                                get_template)
 from marvin.lib.utils import checkVolumeSize
-from marvin.codes import SUCCESS
+from marvin.codes import SUCCESS, FAILED
 from nose.plugins.attrib import attr
 #Import System modules
 import os
@@ -149,10 +159,9 @@ class TestCreateVolume(cloudstackTestCase):
         #Attach a volume with different disk offerings
         #and check the memory allocated to each of them
         for volume in self.volumes:
-            list_volume_response = list_volumes(
-                                                self.apiClient,
-                                                id=volume.id
-                                                )
+            list_volume_response = Volume.list(
+                                               self.apiClient,
+                                               id=volume.id)
             self.assertEqual(
                             isinstance(list_volume_response, list),
                             True,
@@ -186,7 +195,7 @@ class TestCreateVolume(cloudstackTestCase):
                 time.sleep(self.services["sleep"])
 
                 # Ensure that VM is in running state
-                list_vm_response = list_virtual_machines(
+                list_vm_response = VirtualMachine.list(
                                             self.apiClient,
                                             id=self.virtual_machine.id
                                             )
@@ -337,7 +346,7 @@ class TestVolumes(cloudstackTestCase):
                                                     ))
         self.virtual_machine.attach_volume(self.apiClient, self.volume)
         self.attached = True
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                                 self.apiClient,
                                                 id=self.volume.id
                                                 )
@@ -429,7 +438,7 @@ class TestVolumes(cloudstackTestCase):
         self.attached = False
         #Sleep to ensure the current state will reflected in other calls
         time.sleep(self.services["sleep"])
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                                 self.apiClient,
                                                 id=self.volume.id
                                                 )
@@ -501,7 +510,7 @@ class TestVolumes(cloudstackTestCase):
         cmd.diskofferingid = self.services['resizeddiskofferingid']
         success            = False
         try:
-            response = self.apiClient.resizeVolume(cmd)
+            self.apiClient.resizeVolume(cmd)
         except Exception as ex:
             #print str(ex)
             if "invalid" in str(ex):
@@ -516,7 +525,7 @@ class TestVolumes(cloudstackTestCase):
         cmd.diskofferingid = "invalid id"
         success            = False
         try:
-            response = self.apiClient.resizeVolume(cmd)
+            self.apiClient.resizeVolume(cmd)
         except Exception as ex:
             if "invalid" in str(ex):
                 success = True
@@ -527,7 +536,7 @@ class TestVolumes(cloudstackTestCase):
 
         # try to resize a root disk with a disk offering, root can only be resized by size=
         # get root vol from created vm
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                             self.apiClient,
                                             virtualmachineid=self.virtual_machine.id,
                                             type='ROOT',
@@ -540,7 +549,7 @@ class TestVolumes(cloudstackTestCase):
         cmd.diskofferingid = self.services['diskofferingid']
         success            = False
         try:
-            response = self.apiClient.resizeVolume(cmd)
+            self.apiClient.resizeVolume(cmd)
         except Exception as ex:
             if "Can only resize Data volumes" in str(ex):
                 success = True
@@ -548,7 +557,7 @@ class TestVolumes(cloudstackTestCase):
                 success,
                 True,
                 "ResizeVolume - verify root disks cannot be resized by disk offering id")
-            
+
         # Ok, now let's try and resize a volume that is not custom.
         cmd.id             = self.volume.id
         cmd.diskofferingid = self.services['diskofferingid']
@@ -578,7 +587,7 @@ class TestVolumes(cloudstackTestCase):
         count = 0
         success = True
         while count < 10:
-            list_volume_response = list_volumes(
+            list_volume_response = Volume.list(
                                                 self.apiClient,
                                                 id=self.volume.id,
                                                 type='DATADISK'
@@ -637,7 +646,7 @@ class TestVolumes(cloudstackTestCase):
         count = 0
         success = False
         while count < 3:
-            list_volume_response = list_volumes(
+            list_volume_response = Volume.list(
                                                 self.apiClient,
                                                 id=self.volume.id,
                                                 type='DATADISK'
@@ -661,7 +670,7 @@ class TestVolumes(cloudstackTestCase):
         self.debug("Resize Root for : %s" % self.virtual_machine.id)
 
         # get root vol from created vm
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                             self.apiClient,
                                             virtualmachineid=self.virtual_machine.id,
                                             type='ROOT',
@@ -679,7 +688,7 @@ class TestVolumes(cloudstackTestCase):
         count = 0
         success = False
         while count < 3:
-            list_volume_response = list_volumes(
+            list_volume_response = Volume.list(
                                                 self.apiClient,
                                                 id=rootvolume.id
                                                 )
@@ -732,7 +741,7 @@ class TestVolumes(cloudstackTestCase):
         cmd.id = self.volume_1.id
         self.apiClient.deleteVolume(cmd)
 
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                             self.apiClient,
                                             id=self.volume_1.id,
                                             type='DATADISK'

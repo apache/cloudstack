@@ -28,7 +28,7 @@ from marvin.lib.base import (Snapshot,
                              StaticNATRule,
                              FireWallRule,
                              Volume)
-from marvin.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.common import (get_zone,
                                get_domain,
                                get_template,
@@ -36,8 +36,9 @@ from marvin.lib.common import (get_zone,
                                get_builtin_template_info)
 
 #Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import restartNetwork
+from marvin.codes import PASS
 import time
 
 
@@ -744,20 +745,24 @@ class TestTemplates(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.account = Account.create(
+        cls._cleanup = []
+        try:
+            cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
+            cls._cleanup.append(cls.account)
 
-        cls.services["account"] = cls.account.name
-        cls.service_offering = ServiceOffering.create(
+            cls.services["account"] = cls.account.name
+            cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"],
                                         )
+            cls._cleanup.append(cls.service_offering)
 
-        # create virtual machine
-        cls.virtual_machine = VirtualMachine.create(
+            # create virtual machine
+            cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
@@ -765,27 +770,20 @@ class TestTemplates(cloudstackTestCase):
                                     domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     )
-        #Stop virtual machine
-        cls.virtual_machine.stop(cls.api_client)
+            #Stop virtual machine
+            cls.virtual_machine.stop(cls.api_client)
 
-        #Wait before server has be successfully stopped
-        time.sleep(30)
-        list_volume = Volume.list(
+            listvolumes = Volume.list(
                                    cls.api_client,
                                    virtualmachineid=cls.virtual_machine.id,
                                    type='ROOT',
                                    listall=True
                                    )
-        try:
-            if isinstance(list_volume, list):
-                cls.volume = list_volume[0]
+            assert validateList(listvolumes)[0] == PASS, "volumes list is empty"
+            cls.volume = listvolumes[0]
         except Exception as e:
-            raise Exception("Warning: Exception during setup : %s" % e)
-
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.account,
-                        ]
+            cls.tearDownClass()
+            raise unittest.SkipTest("Exception in setUpClass: %s" % e)
 
     @classmethod
     def tearDownClass(cls):

@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -747,11 +747,12 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         # 3. Try to create 2 templates in account 2. Verify account 2 should be
         #    able to create template without any error
 
-        self.debug(
-            "Updating template resource limit for account: %s" %
+        try:
+            self.debug(
+                       "Updating template resource limit for account: %s" %
                                                 self.account_1.name)
-        # Set usage_vm=1 for Account 1
-        update_resource_limit(
+            # Set usage_vm=1 for Account 1
+            update_resource_limit(
                               self.apiclient,
                               4, # Template
                               account=self.account_1.name,
@@ -759,10 +760,10 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                               max=1
                               )
 
-        self.debug(
-            "Updating volume resource limit for account: %s" %
+            self.debug(
+                "Updating volume resource limit for account: %s" %
                                                 self.account_1.name)
-        virtual_machine_1 = VirtualMachine.create(
+            virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
@@ -770,19 +771,19 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 domainid=self.account_1.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
-        self.cleanup.append(virtual_machine_1)
-        # Verify VM state
-        self.assertEqual(
+            self.cleanup.append(virtual_machine_1)
+            # Verify VM state
+            self.assertEqual(
                             virtual_machine_1.state,
                             'Running',
                             "Check VM state is Running or not"
                         )
 
-        self.debug(
-            "Deploying virtual machine for account: %s" %
+            self.debug(
+                "Deploying virtual machine for account: %s" %
                                                 self.account_2.name)
-        # Create VM for second account
-        virtual_machine_2 = VirtualMachine.create(
+            # Create VM for second account
+            virtual_machine_2 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
@@ -790,33 +791,33 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 domainid=self.account_2.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
-        self.cleanup.append(virtual_machine_2)
-        # Verify VM state
-        self.assertEqual(
+            self.cleanup.append(virtual_machine_2)
+            # Verify VM state
+            self.assertEqual(
                             virtual_machine_2.state,
                             'Running',
                             "Check VM state is Running or not"
                         )
 
-        virtual_machine_1.stop(self.apiclient)
-        # Get the Root disk of VM
-        volumes = list_volumes(
+            virtual_machine_1.stop(self.apiclient)
+            # Get the Root disk of VM
+            volumes = list_volumes(
                             self.apiclient,
                             virtualmachineid=virtual_machine_1.id,
                             type='ROOT',
                             listall=True
                             )
-        self.assertEqual(
+            self.assertEqual(
                         isinstance(volumes, list),
                         True,
                         "Check for list volume response return valid data"
                         )
-        volume = volumes[0]
+            volume = volumes[0]
 
-        self.debug(
-            "Creating template from volume: %s" % volume.id)
-        # Create a template from the ROOTDISK (Account 1)
-        template_1 = Template.create(
+            self.debug(
+                "Creating template from volume: %s" % volume.id)
+            # Create a template from the ROOTDISK (Account 1)
+            template_1 = Template.create(
                             self.apiclient,
                             self.services["template"],
                             volumeid=volume.id,
@@ -824,14 +825,15 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             domainid=self.account_1.domainid,
                             )
 
-        self.cleanup.append(template_1)
-        # Verify Template state
-        self.assertEqual(
+            self.cleanup.append(template_1)
+            # Verify Template state
+            self.assertEqual(
                             template_1.isready,
                             True,
                             "Check Template is in ready state or not"
                         )
-
+        except Exception as e:
+            self.fail("Exception occured: %s" % e)
         # Exception should be raised for second snapshot (account_1)
         with self.assertRaises(Exception):
             Template.create(
@@ -841,25 +843,27 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             account=self.account_1.name,
                             domainid=self.account_1.domainid,
                             )
-        virtual_machine_2.stop(self.apiclient)
-        # Get the Root disk of VM
-        volumes = list_volumes(
+
+        try:
+            virtual_machine_2.stop(self.apiclient)
+            # Get the Root disk of VM
+            volumes = list_volumes(
                             self.apiclient,
                             virtualmachineid=virtual_machine_2.id,
                             type='ROOT',
                             listall=True
                             )
-        self.assertEqual(
+            self.assertEqual(
                         isinstance(volumes, list),
                         True,
                         "Check for list volume response return valid data"
                         )
-        volume = volumes[0]
+            volume = volumes[0]
 
-        self.debug(
-            "Creating template from volume: %s" % volume.id)
-        # Create a snapshot from the ROOTDISK (Account 1)
-        template_2 = Template.create(
+            self.debug(
+                "Creating template from volume: %s" % volume.id)
+            # Create a snapshot from the ROOTDISK (Account 1)
+            template_2 = Template.create(
                             self.apiclient,
                             self.services["template"],
                             volumeid=volume.id,
@@ -867,17 +871,17 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             domainid=self.account_2.domainid,
                             )
 
-        self.cleanup.append(template_2)
-        # Verify Template state
-        self.assertEqual(
+            self.cleanup.append(template_2)
+            # Verify Template state
+            self.assertEqual(
                             template_2.isready,
                             True,
                             "Check Template is in ready state or not"
-                        )
-        self.debug(
-            "Creating template from volume: %s" % volume.id)
-        # Create a second volume from the ROOTDISK (Account 2)
-        template_3 = Template.create(
+                            )
+            self.debug(
+                "Creating template from volume: %s" % volume.id)
+            # Create a second volume from the ROOTDISK (Account 2)
+            template_3 = Template.create(
                             self.apiclient,
                             self.services["template"],
                             volumeid=volume.id,
@@ -885,13 +889,15 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             domainid=self.account_2.domainid,
                             )
 
-        self.cleanup.append(template_3)
-        # Verify Template state
-        self.assertEqual(
+            self.cleanup.append(template_3)
+            # Verify Template state
+            self.assertEqual(
                             template_3.isready,
                             True,
                             "Check Template is in ready state or not"
                         )
+        except Exception as e:
+            self.fail("Exception occured: %s" % e)
         return
 
 
@@ -1256,27 +1262,23 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         # 4. Try create 3rd template in the domain. It should give the user an
         #    appropriate error and an alert should be generated.
 
-        # Set usage_vm=1 for Account 1
-        update_resource_limit(
+        try:
+            # Set usage_vm=1 for Account 1
+            update_resource_limit(
                               self.apiclient,
                               2, # Volume
                               domainid=self.account.domainid,
                               max=5
                               )
 
-        self.debug(
-            "Updating template resource limits for domain: %s" %
-                                        self.account.domainid)
-        # Set usage_vm=1 for Account 1
-        update_resource_limit(
+            # Set usage_vm=1 for Account 1
+            update_resource_limit(
                               self.apiclient,
                               4, # Template
                               domainid=self.account.domainid,
                               max=2
                               )
-
-        self.debug("Deploying VM for account: %s" % self.account.name)
-        virtual_machine_1 = VirtualMachine.create(
+            virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
@@ -1284,31 +1286,31 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                                 domainid=self.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
-        self.cleanup.append(virtual_machine_1)
-        # Verify VM state
-        self.assertEqual(
+            self.cleanup.append(virtual_machine_1)
+            # Verify VM state
+            self.assertEqual(
                             virtual_machine_1.state,
                             'Running',
                             "Check VM state is Running or not"
                         )
-        virtual_machine_1.stop(self.apiclient)
-        # Get the Root disk of VM
-        volumes = list_volumes(
+            virtual_machine_1.stop(self.apiclient)
+            # Get the Root disk of VM
+            volumes = list_volumes(
                             self.apiclient,
                             virtualmachineid=virtual_machine_1.id,
                             type='ROOT',
                             listall=True
                             )
-        self.assertEqual(
+            self.assertEqual(
                         isinstance(volumes, list),
                         True,
                         "Check for list volume response return valid data"
                         )
-        volume = volumes[0]
+            volume = volumes[0]
 
-        self.debug("Creating template from volume: %s" % volume.id)
-        # Create a template from the ROOTDISK
-        template_1 = Template.create(
+            self.debug("Creating template from volume: %s" % volume.id)
+            # Create a template from the ROOTDISK
+            template_1 = Template.create(
                             self.apiclient,
                             self.services["template"],
                             volumeid=volume.id,
@@ -1316,16 +1318,16 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             domainid=self.account.domainid,
                             )
 
-        self.cleanup.append(template_1)
-        # Verify Template state
-        self.assertEqual(
+            self.cleanup.append(template_1)
+            # Verify Template state
+            self.assertEqual(
                             template_1.isready,
                             True,
                             "Check Template is in ready state or not"
                         )
-        self.debug("Creating template from volume: %s" % volume.id)
-        # Create a template from the ROOTDISK
-        template_2 = Template.create(
+            self.debug("Creating template from volume: %s" % volume.id)
+            # Create a template from the ROOTDISK
+            template_2 = Template.create(
                             self.apiclient,
                             self.services["template"],
                             volumeid=volume.id,
@@ -1333,13 +1335,15 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             domainid=self.account.domainid,
                             )
 
-        self.cleanup.append(template_2)
-        # Verify Template state
-        self.assertEqual(
+            self.cleanup.append(template_2)
+            # Verify Template state
+            self.assertEqual(
                             template_2.isready,
                             True,
                             "Check Template is in ready state or not"
                         )
+        except Exception as e:
+            self.fail("Exception occured: %s" % e)
 
         # Exception should be raised for second template
         with self.assertRaises(Exception):

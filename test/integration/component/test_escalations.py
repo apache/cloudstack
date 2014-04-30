@@ -16,23 +16,44 @@
 # under the License.
 
 #Import Local Modules
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackException import *
-from marvin.cloudstackAPI import *
-from marvin.sshClient import SshClient
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-from marvin.lib.utils import checkVolumeSize
-from marvin.codes import SUCCESS
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackAPI import (createVolume,
+                                  createTemplate)
+from marvin.lib.base import (Volume,
+                             Iso,
+                             VirtualMachine,
+                             Template,
+                             Snapshot,
+                             SecurityGroup,
+                             Account,
+                             Zone,
+                             Network,
+                             NetworkOffering,
+                             DiskOffering,
+                             ServiceOffering,
+                             VmSnapshot,
+                             SnapshotPolicy,
+                             SSHKeyPair,
+                             Resources,
+                             Configurations,
+                             VpnCustomerGateway,
+                             Hypervisor)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               list_os_types)
+from marvin.lib.utils import (validateList,
+                              cleanup_resources,
+                              random_gen)
+from marvin.codes import (PASS, EMPTY_LIST)
 from nose.plugins.attrib import attr
-from time import sleep
+import time
 
 class TestVolumes(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-       
+
         cls.testClient = super(TestVolumes, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
         cls.services = cls.testClient.getParsedTestDataConfig()
@@ -112,9 +133,9 @@ class TestVolumes(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
-   
+
     def __verify_values(self, expected_vals, actual_vals):
-        """  
+        """
         @summary: Function to verify expected and actual values
         Step1: Initializing return flag to True
         Step1: Verifying length of expected and actual dictionaries is matching.
@@ -2142,7 +2163,7 @@ class TestListInstances(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "selfservice"])
     def test_04_list_Destroyed_vm(self):
-        """  
+        """
         @Desc: Test List Destroyed VM's
         @Steps:
         Step1: Listing all the Destroyed VMs for a user
@@ -2250,7 +2271,7 @@ class TestListInstances(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "selfservice"])
     def test_05_list_vm_by_id(self):
-        """  
+        """
         @Desc: Test List VM by Id
         @Steps:
         Step1: Listing all the VMs for a user
@@ -2352,7 +2373,7 @@ class TestListInstances(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "selfservice"])
     def test_06_list_vm_by_name(self):
-        """  
+        """
         @Desc: Test List VM's by Name
         @Steps:
         Step1: Listing all the VMs for a user
@@ -2394,7 +2415,7 @@ class TestListInstances(cloudstackTestCase):
                                  )
             self.cleanup.append(vm_created)
             vms.update({i: vm_created})
-  
+
         # Listing all the VM's for a User
         list_vms_after = VirtualMachine.list(
                                              self.userapiclient,
@@ -3198,22 +3219,6 @@ class TestListInstances(cloudstackTestCase):
                         self.userapiclient,
                         forced=True
                         )
-        # Listing VM details
-        list_vm = VirtualMachine.list(
-                                      self.userapiclient,
-                                      id=vm_created.id
-                                     )
-        status = validateList(list_vm)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Listing of VM failed"
-                          )
-        self.assertEquals(
-                          "Stopped",
-                          list_vm[0].state,
-                          "Stopped VM is not in stopped state"
-                          )
         # Listing all the SSH Key pairs
         list_keypairs_before = SSHKeyPair.list(
                                                self.userapiclient
@@ -3284,7 +3289,7 @@ class TestListInstances(cloudstackTestCase):
 
     @attr(tags=["advanced", "provisioning"])
     def test_12_vm_nics(self):
-        """  
+        """
         @Desc: Test to verify Nics for a VM
         @Steps:
         Step1: Deploying a VM
@@ -3293,7 +3298,7 @@ class TestListInstances(cloudstackTestCase):
         Step4: Creating 1 network
         Step5: Listing all the networks again
         Step6: Verifying that the list size is 2
-        Step7: Verifying that VM deployed in step1 has only 1 nic 
+        Step7: Verifying that VM deployed in step1 has only 1 nic
                 and it is same as network listed in step3
         Step8: Adding the networks created in step4 to VM deployed in step1
         Step9: Verifying that VM deployed in step1 has 2 nics
@@ -3465,7 +3470,6 @@ class TestListInstances(cloudstackTestCase):
                 default_nic = vm_nics_after[i]
             else:
                 non_default_nic = vm_nics_after[i]
-     
         self.assertEquals(
                           1,
                           default_count,
@@ -3513,7 +3517,7 @@ class TestListInstances(cloudstackTestCase):
                 default_nic = vm_nics_after[i]
             else:
                 non_default_nic = vm_nics_after[i]
-     
+
         self.assertEquals(
                           1,
                           default_count,
@@ -3566,7 +3570,7 @@ class TestInstances(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            cls._cleanup = []        
+            cls._cleanup = []
             cls.testClient = super(TestInstances, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
@@ -3587,13 +3591,13 @@ class TestInstances(cloudstackTestCase):
                 cls.storagetype = 'shared'
                 cls.services["service_offerings"]["tiny"]["storagetype"] = 'shared'
                 cls.services["disk_offering"]["storagetype"] = 'shared'
-   
+
             cls.services['mode'] = cls.zone.networktype
             cls.services["virtual_machine"]["hypervisor"] = cls.testClient.getHypervisorInfo()
             cls.services["virtual_machine"]["zoneid"] = cls.zone.id
             cls.services["virtual_machine"]["template"] = cls.template.id
             cls.services["custom_volume"]["zoneid"] = cls.zone.id
-   
+
             # Creating Disk offering, Service Offering and Account
             cls.disk_offering = DiskOffering.create(
                                                     cls.api_client,
@@ -3648,7 +3652,7 @@ class TestInstances(cloudstackTestCase):
         return
 
     def __verify_values(self, expected_vals, actual_vals):
-        """  
+        """
         @Desc: Function to verify expected and actual values
         @Steps:
         Step1: Initializing return flag to True
@@ -3660,10 +3664,10 @@ class TestInstances(cloudstackTestCase):
         Step4: returning the return flag after all the values are verified
         """
         return_flag = True
-   
+
         if len(expected_vals) != len(actual_vals):
             return False
-   
+
         keys = expected_vals.keys()
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
@@ -3680,8 +3684,8 @@ class TestInstances(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_13_attach_detach_iso(self):
-        """  
-        @Desc: Test Attach ISO to VM and Detach ISO from VM. 
+        """
+        @Desc: Test Attach ISO to VM and Detach ISO from VM.
         @Steps:
         Step1: Listing all the VMs for a user
         Step2: Verifying that the size of the list is 0
@@ -3808,15 +3812,15 @@ class TestInstances(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_14_vm_snapshot_pagination(self):
-        """  
-        @Desc: Test VM Snapshots pagination. 
+        """
+        @Desc: Test VM Snapshots pagination.
         @Steps:
         Step1: Deploying a VM
         Step2: Listing all the Snapshots of the VM deployed in Step 1
         Step3: Verifying that the list size is 0
         Step4: Creating (pagesize + 1) number of Snapshots for the VM
         Step5: Listing all the Snapshots of the VM deployed in Step 1
-        Step6: Verifying that the list size is (pagesize + 1) 
+        Step6: Verifying that the list size is (pagesize + 1)
         Step7: Listing all the VM snapshots in Page 1 with page size
         Step8: Verifying that size of the list is same as page size
         Step9: Listing all the VM snapshots in Page 2 with page size
@@ -3965,8 +3969,8 @@ class TestInstances(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_15_revert_vm_to_snapshot(self):
-        """  
-        @Desc: Test Revert VM to Snapshot functionality. 
+        """
+        @Desc: Test Revert VM to Snapshot functionality.
         @Steps:
         Step1: Deploying a VM
         Step2: Listing all the Snapshots of the VM deployed in Step 1
@@ -4064,14 +4068,14 @@ class TestInstances(cloudstackTestCase):
                           len(list_snapshots_after),
                           "Count of VM Snapshots is not matching"
                           )
-        # Verifying that only 1 snapshot is having current flag set to true 
+        # Verifying that only 1 snapshot is having current flag set to true
         # and that snapshot is the latest snapshot created (snapshot2)
         current_count = 0
         for i in range(0, len(list_snapshots_after)):
             if(list_snapshots_after[i].current is True):
                 current_count = current_count + 1
                 current_snapshot = list_snapshots_after[i]
-  
+
         self.assertEquals(
                           1,
                           current_count,
@@ -4104,7 +4108,7 @@ class TestInstances(cloudstackTestCase):
                           len(list_snapshots_after),
                           "Count of VM Snapshots is not matching"
                           )
-        # Verifying that only 1 snapshot is having current flag set to true 
+        # Verifying that only 1 snapshot is having current flag set to true
         # and that snapshot is snapshot1
         current_count = 0
         for i in range(0, len(list_snapshots_after)):
@@ -4125,7 +4129,7 @@ class TestInstances(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "selfservice"])
     def test_16_list_vm_volumes_pagination(self):
-        """  
+        """
         @Desc: Test to verify pagination of Volumes for a VM
         @Steps:
         Step1: Deploying a VM
@@ -4218,7 +4222,7 @@ class TestInstances(cloudstackTestCase):
                                      self.userapiclient,
                                      volume_created
                                      )
-  
+
         # List all the volumes for the VM again
         list_volumes_after = Volume.list(
                                           self.userapiclient,
@@ -4299,7 +4303,7 @@ class TestInstances(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_17_running_vm_scaleup(self):
-        """  
+        """
         @Desc: Test to verify change service for Running VM
         @Steps:
         Step1: Checking if dynamic scaling of virtual machines is enabled in zone and template.
@@ -4437,7 +4441,7 @@ class TestInstances(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_18_stopped_vm_change_service(self):
-        """  
+        """
         @Desc: Test to verify change service for Stopped VM
         @Steps:
         Step1: Deploying a VM
@@ -4504,22 +4508,6 @@ class TestInstances(cloudstackTestCase):
                         self.userapiclient,
                         forced=True
                         )
-        # Listing VM details
-        list_vm = VirtualMachine.list(
-                                      self.userapiclient,
-                                      id=vm_created.id
-                                     )
-        status = validateList(list_vms_after)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Listing of VM failed"
-                          )
-        self.assertEquals(
-                          "Stopped",
-                          list_vm[0].state,
-                          "Stopped VM is not in stopped state"
-                          )
         # Listing all the service offerings
         service_offerings_list = ServiceOffering.list(
                                                       self.userapiclient,
@@ -4573,7 +4561,7 @@ class TestInstances(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_19_create_reset_vm_sshkey(self):
-        """  
+        """
         @Desc: Test to verify creation and reset of SSH Key for VM
         @Steps:
         Step1: Deploying a VM
@@ -4629,22 +4617,6 @@ class TestInstances(cloudstackTestCase):
                         self.userapiclient,
                         forced=True
                         )
-        # Listing VM details
-        list_vm = VirtualMachine.list(
-                                      self.userapiclient,
-                                      id=vm_created.id
-                                     )
-        status = validateList(list_vm)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Listing of VM failed"
-                          )
-        self.assertEquals(
-                          "Stopped",
-                          list_vm[0].state,
-                          "Stopped VM is not in stopped state"
-                          )
         # Listing all the SSH Key pairs
         list_keypairs_before = SSHKeyPair.list(
                                                self.userapiclient
@@ -4652,7 +4624,7 @@ class TestInstances(cloudstackTestCase):
         list_keypairs_before_size = 0
         if list_keypairs_before is not None:
             list_keypairs_before_size = len(list_keypairs_before)
-  
+
         # Creating a new Key pair
         new_keypair = SSHKeyPair.create(
                                         self.userapiclient,
@@ -4716,7 +4688,7 @@ class TestInstances(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "selfservice"])
     def test_20_update_vm_displayname_group(self):
-        """  
+        """
         @Desc: Test to verify Update VM details
         @Steps:
         Step1: List all the VM's for a user
@@ -4817,7 +4789,7 @@ class TestInstances(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_21_restore_vm(self):
-        """  
+        """
         @Desc: Test to verify Restore VM
         @Steps:
         Step1: List all the VM's for a user
@@ -4904,7 +4876,7 @@ class TestInstances(cloudstackTestCase):
 
     @attr(tags=["advanced", "selfservice"])
     def test_22_deploy_vm_multiple_networks(self):
-        """  
+        """
         @Desc: Test to verify deploy VM with multiple networks
         @Steps:
         Step1: List all the networks for user
@@ -4924,7 +4896,7 @@ class TestInstances(cloudstackTestCase):
         networks_list_size = 0
         if networks_list_before is not None:
             networks_list_size = len(networks_list_before)
-     
+
         # Listing Network Offerings
         network_offerings_list = NetworkOffering.list(
                                                       self.apiClient,
@@ -4956,7 +4928,7 @@ class TestInstances(cloudstackTestCase):
                                  )
             self.cleanup.append(network)
             networks_list_size = networks_list_size + 1
- 
+
         # Listing the networks again
         networks_list_after = Network.list(
                                            self.userapiclient,
@@ -5036,7 +5008,7 @@ class TestInstances(cloudstackTestCase):
 
     @attr(tags=["basic", "provisioning"])
     def test_23_deploy_vm_multiple_securitygroups(self):
-        """  
+        """
         @Desc: Test to verify deploy VM with multiple Security Groups
         @Steps:
         Step1: List all the security groups for user
@@ -5057,7 +5029,7 @@ class TestInstances(cloudstackTestCase):
         security_groups_list_size = 0
         if security_groups_list is not None:
             security_groups_list_size = len(security_groups_list)
-     
+
         while security_groups_list_size < 2:
             # Creating a security group
             security_group = SecurityGroup.create(
@@ -5072,7 +5044,7 @@ class TestInstances(cloudstackTestCase):
                                  )
             self.cleanup.append(security_group)
             security_groups_list_size = security_groups_list_size + 1
-     
+
         # Listing the networks again
         security_groups_list = SecurityGroup.list(
                                                   self.userapiclient,
@@ -5142,7 +5114,7 @@ class TestInstances(cloudstackTestCase):
                 (vm_securitygroups[i].id != security_groups_list[1].id)):
                 vm_securitygroups_flag = False
                 break
-     
+
         self.assertEquals(
                           True,
                           vm_securitygroups_flag,
@@ -5155,7 +5127,7 @@ class TestSnapshots(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            cls._cleanup = []        
+            cls._cleanup = []
             cls.testClient = super(TestSnapshots, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
@@ -5175,7 +5147,7 @@ class TestSnapshots(cloudstackTestCase):
                 cls.storagetype = 'shared'
                 cls.services["service_offerings"]["tiny"]["storagetype"] = 'shared'
                 cls.services["disk_offering"]["storagetype"] = 'shared'
-    
+
             cls.services['mode'] = cls.zone.networktype
             cls.services["virtual_machine"]["hypervisor"] = cls.testClient.getHypervisorInfo()
             cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -5235,7 +5207,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     def __verify_values(self, expected_vals, actual_vals):
-        """  
+        """
         @Desc: Function to verify expected and actual values
         @Steps:
         Step1: Initializing return flag to True
@@ -5267,7 +5239,7 @@ class TestSnapshots(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_01_list_volume_snapshots_pagination(self):
-        """  
+        """
         @Desc: Test to List Volume Snapshots pagination
         @steps:
         Step1: Listing all the volume snapshots for a user
@@ -5399,7 +5371,7 @@ class TestSnapshots(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_02_list_volume_snapshots_byid(self):
-        """  
+        """
         @Desc: Test to List Volume Snapshots by Id
         @Steps:
         Step1: Listing all the volume snapshots for a user
@@ -5517,7 +5489,7 @@ class TestSnapshots(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_03_list_vm_snapshots_pagination(self):
-        """  
+        """
         @Desc: Test to List VM Snapshots pagination
         @Steps:
         Step1: Listing all the VM snapshots for a user
@@ -5653,7 +5625,7 @@ class TestSnapshots(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_04_list_vm_snapshots_byid(self):
-        """  
+        """
         @summary: Test to List VM Snapshots by Id
 
         Step1: Listing all the VM snapshots for a user
@@ -5749,7 +5721,7 @@ class TestSecurityGroups(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            cls._cleanup = []        
+            cls._cleanup = []
             cls.testClient = super(TestSecurityGroups, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
@@ -5796,7 +5768,7 @@ class TestSecurityGroups(cloudstackTestCase):
         return
 
     def __verify_values(self, expected_vals, actual_vals):
-        """  
+        """
         @Desc: Function to verify expected and actual values
         @Steps:
         Step1: Initializing return flag to True
@@ -5828,11 +5800,11 @@ class TestSecurityGroups(cloudstackTestCase):
 
     @attr(tags=["basic", "provisioning"])
     def test_01_list_securitygroups_pagination(self):
-        """  
+        """
         @Desc: Test to List Security Groups pagination
         @steps:
         Step1: Listing all the Security Groups for a user
-        Step2: Verifying that list size is 1 
+        Step2: Verifying that list size is 1
         Step3: Creating (page size) number of Security Groups
         Step4: Listing all the Security Groups again for a user
         Step5: Verifying that list size is (page size + 1)
@@ -5953,11 +5925,11 @@ class TestSecurityGroups(cloudstackTestCase):
 
     @attr(tags=["basic", "provisioning"])
     def test_02_securitygroups_authorize_revoke_ingress(self):
-        """  
+        """
         @Desc: Test to Authorize and Revoke Ingress for Security Group
         @steps:
         Step1: Listing all the Security Groups for a user
-        Step2: Verifying that list size is 1 
+        Step2: Verifying that list size is 1
         Step3: Creating a Security Groups
         Step4: Listing all the Security Groups again for a user
         Step5: Verifying that list size is 2
@@ -6117,11 +6089,11 @@ class TestSecurityGroups(cloudstackTestCase):
 
     @attr(tags=["basic", "provisioning"])
     def test_03_securitygroups_authorize_revoke_egress(self):
-        """  
+        """
         @Desc: Test to Authorize and Revoke Egress for Security Group
         @steps:
         Step1: Listing all the Security Groups for a user
-        Step2: Verifying that list size is 1 
+        Step2: Verifying that list size is 1
         Step3: Creating a Security Groups
         Step4: Listing all the Security Groups again for a user
         Step5: Verifying that list size is 2
@@ -6284,7 +6256,7 @@ class TestVpnCustomerGateways(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            cls._cleanup = []        
+            cls._cleanup = []
             cls.testClient = super(TestVpnCustomerGateways, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
@@ -6331,7 +6303,7 @@ class TestVpnCustomerGateways(cloudstackTestCase):
         return
 
     def __verify_values(self, expected_vals, actual_vals):
-        """  
+        """
         @Desc: Function to verify expected and actual values
         @Steps:
         Step1: Initializing return flag to True
@@ -6363,7 +6335,7 @@ class TestVpnCustomerGateways(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_01_list_vpncustomergateways_pagination(self):
-        """  
+        """
         @Desc: Test to List VPN Customer Gateways pagination
         @steps:
         Step1: Listing all the VPN Customer Gateways for a user
@@ -6483,7 +6455,7 @@ class TestVpnCustomerGateways(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_02_update_vpncustomergateways(self):
-        """  
+        """
         @Desc: Test to update VPN Customer Gateways pagination
         @steps:
         Step1: Listing all the VPN Customer Gateways for a user
@@ -6613,7 +6585,7 @@ class TestTemplates(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            cls._cleanup = []        
+            cls._cleanup = []
             cls.testClient = super(TestTemplates, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
@@ -6661,7 +6633,7 @@ class TestTemplates(cloudstackTestCase):
         return
 
     def __verify_values(self, expected_vals, actual_vals):
-        """  
+        """
         @Desc: Function to verify expected and actual values
         @Steps:
         Step1: Initializing return flag to True
@@ -6693,7 +6665,7 @@ class TestTemplates(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_01_list_templates_pagination(self):
-        """  
+        """
         @Desc: Test to List Templates pagination
         @steps:
         Step1: Listing all the Templates for a user
@@ -6706,8 +6678,8 @@ class TestTemplates(cloudstackTestCase):
         Step8: Listing all the Templates in page2
         Step9: Verifying that list size is 1
         Step10: Listing the template by Id
-        Step11: Verifying if the template is downloaded and ready. 
-                If yes the continuing 
+        Step11: Verifying if the template is downloaded and ready.
+                If yes the continuing
                 If not waiting and checking for template to be ready till timeout
         Step12: Deleting the Template present in page 2
         Step13: Listing all the Templates in page2
@@ -6853,7 +6825,7 @@ class TestTemplates(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_02_download_template(self):
-        """  
+        """
         @Desc: Test to Download Template
         @steps:
         Step1: Listing all the Templates for a user
@@ -6861,8 +6833,8 @@ class TestTemplates(cloudstackTestCase):
         Step3: Creating a Templates
         Step4: Listing all the Templates again for a user
         Step5: Verifying that list size is 1
-        Step6: Verifying if the template is in ready state. 
-                If yes the continuing 
+        Step6: Verifying if the template is in ready state.
+                If yes the continuing
                 If not waiting and checking for template to be ready till timeout
         Step7: Downloading the template (Extract)
         Step8: Verifying that Template is downloaded
@@ -6974,7 +6946,7 @@ class TestTemplates(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_03_edit_template_details(self):
-        """  
+        """
         @Desc: Test to Edit Template name, displaytext, OSType
         @steps:
         Step1: Listing all the Templates for a user
@@ -6982,8 +6954,8 @@ class TestTemplates(cloudstackTestCase):
         Step3: Creating a Templates
         Step4: Listing all the Templates again for a user
         Step5: Verifying that list size is 1
-        Step6: Verifying if the template is in ready state. 
-                If yes the continuing 
+        Step6: Verifying if the template is in ready state.
+                If yes the continuing
                 If not waiting and checking for template to be ready till timeout
         Step7: Editing the template name
         Step8: Verifying that Template name is edited
@@ -7160,7 +7132,7 @@ class TestTemplates(cloudstackTestCase):
             if ostype_list[i].id != template_created.ostypeid:
                 newostypeid = ostype_list[i].id
                 break
- 
+
         edited_template = Template.update(
                                           template_created,
                                           self.userapiclient,
@@ -7290,7 +7262,7 @@ class TestTemplates(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_04_copy_template(self):
-        """  
+        """
         @Desc: Test to copy Template from one zone to another
         @steps:
         Step1: Listing Zones available for a user
@@ -7504,7 +7476,7 @@ class TestIsos(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            cls._cleanup = []        
+            cls._cleanup = []
             cls.testClient = super(TestIsos, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
@@ -7552,7 +7524,7 @@ class TestIsos(cloudstackTestCase):
         return
 
     def __verify_values(self, expected_vals, actual_vals):
-        """  
+        """
         @Desc: Function to verify expected and actual values
         @Steps:
         Step1: Initializing return flag to True
@@ -7584,7 +7556,7 @@ class TestIsos(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_01_list_isos_pagination(self):
-        """  
+        """
         @Desc: Test to List ISO's pagination
         @steps:
         Step1: Listing all the ISO's for a user
@@ -7597,8 +7569,8 @@ class TestIsos(cloudstackTestCase):
         Step8: Listing all the ISO's in page2
         Step9: Verifying that list size is 1
         Step10: Listing the ISO's by Id
-        Step11: Verifying if the ISO is downloaded and ready. 
-                If yes the continuing 
+        Step11: Verifying if the ISO is downloaded and ready.
+                If yes the continuing
                 If not waiting and checking for iso to be ready till timeout
         Step12: Deleting the ISO present in page 2
         Step13: Listing all the ISO's in page2
@@ -7738,7 +7710,7 @@ class TestIsos(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_02_download_iso(self):
-        """  
+        """
         @Desc: Test to Download ISO
         @steps:
         Step1: Listing all the ISO's for a user
@@ -7746,8 +7718,8 @@ class TestIsos(cloudstackTestCase):
         Step3: Creating an ISO
         Step4: Listing all the ISO's again for a user
         Step5: Verifying that list size is 1
-        Step6: Verifying if the ISO is in ready state. 
-                If yes the continuing 
+        Step6: Verifying if the ISO is in ready state.
+                If yes the continuing
                 If not waiting and checking for template to be ready till timeout
         Step7: Downloading the ISO (Extract)
         Step8: Verifying the details of downloaded ISO
@@ -7853,7 +7825,7 @@ class TestIsos(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_03_edit_iso_details(self):
-        """  
+        """
         @Desc: Test to Edit ISO name, displaytext, OSType
         @steps:
         Step1: Listing all the ISO's for a user
@@ -7861,8 +7833,8 @@ class TestIsos(cloudstackTestCase):
         Step3: Creating an ISO
         Step4: Listing all the ISO's again for a user
         Step5: Verifying that list size is 1
-        Step6: Verifying if the ISO is in ready state. 
-                If yes the continuing 
+        Step6: Verifying if the ISO is in ready state.
+                If yes the continuing
                 If not waiting and checking for template to be ready till timeout
         Step7: Editing the ISO's name, displaytext
         Step8: Verifying that ISO name and displaytext are edited
@@ -7990,7 +7962,7 @@ class TestIsos(cloudstackTestCase):
             if ostype_list[i].id != iso_created.ostypeid:
                 newostypeid = ostype_list[i].id
                 break
-   
+
         edited_iso = Iso.update(
                                 iso_created,
                                 self.userapiclient,
@@ -8037,7 +8009,7 @@ class TestIsos(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "provisioning"])
     def test_04_copy_iso(self):
-        """  
+        """
         @Desc: Test to copy ISO from one zone to another
         @steps:
         Step1: Listing Zones available for a user

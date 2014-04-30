@@ -18,15 +18,28 @@
 """ P1 tests for netscaler configurations
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import (cleanup_resources,
+                              random_gen)
+from marvin.lib.base import (VirtualMachine,
+                             NetworkServiceProvider,
+                             PublicIPAddress,
+                             Account,
+                             Network,
+                             NetScaler,
+                             LoadBalancerRule,
+                             NetworkOffering,
+                             ServiceOffering,
+                             PhysicalNetwork,
+                             Configurations)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               add_netscaler)
 from marvin.sshClient import SshClient
-import datetime
+import time
 
 
 class Services:
@@ -559,7 +572,7 @@ class TestNetScalerDedicated(cloudstackTestCase):
             netscaler_provider = nw_service_providers[0]
 
         if netscaler_provider.state != 'Enabled':
-            response = NetworkServiceProvider.update(
+            NetworkServiceProvider.update(
                                           cls.api_client,
                                           id=netscaler_provider.id,
                                           state='Enabled'
@@ -621,11 +634,11 @@ class TestNetScalerDedicated(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
+            interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-            wait = list_configurations(
+            wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -781,7 +794,7 @@ class TestNetScalerShared(cloudstackTestCase):
             netscaler_provider = nw_service_providers[0]
 
         if netscaler_provider.state != 'Enabled':
-            response = NetworkServiceProvider.update(
+            NetworkServiceProvider.update(
                                           cls.api_client,
                                           id=netscaler_provider.id,
                                           state='Enabled'
@@ -839,11 +852,11 @@ class TestNetScalerShared(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
+            interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-            wait = list_configurations(
+            wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -1023,7 +1036,7 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
             netscaler_provider = nw_service_providers[0]
 
         if netscaler_provider.state != 'Enabled':
-            response = NetworkServiceProvider.update(
+            NetworkServiceProvider.update(
                                           cls.api_client,
                                           id=netscaler_provider.id,
                                           state='Enabled'
@@ -1087,11 +1100,11 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
+            interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-            wait = list_configurations(
+            wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -1244,7 +1257,7 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
         self.debug("Deploying VM in account: %s" % self.account_3.name)
         with self.assertRaises(Exception):
             # Spawn an instance in that network
-            virtual_machine_3 = VirtualMachine.create(
+            VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account_3.name,
@@ -1295,7 +1308,7 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
             netscaler_provider = nw_service_providers[0]
 
         if netscaler_provider.state != 'Enabled':
-            response = NetworkServiceProvider.update(
+            NetworkServiceProvider.update(
                                           cls.api_client,
                                           id=netscaler_provider.id,
                                           state='Enabled'
@@ -1359,11 +1372,11 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
+            interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-            wait = list_configurations(
+            wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -1517,7 +1530,7 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
         self.debug("Deploying VM in account: %s" % self.account_3.name)
         with self.assertRaises(Exception):
             # Spawn an instance in that network
-            virtual_machine_3 = VirtualMachine.create(
+            VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account_3.name,
@@ -1568,7 +1581,7 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
             netscaler_provider = nw_service_providers[0]
 
         if netscaler_provider.state != 'Enabled':
-            response = NetworkServiceProvider.update(
+            NetworkServiceProvider.update(
                                           cls.api_client,
                                           id=netscaler_provider.id,
                                           state='Enabled'
@@ -1626,11 +1639,11 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
+            interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-            wait = list_configurations(
+            wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -2030,11 +2043,11 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
         self.debug("Account: %s is deleted!" % self.account_1.name)
 
         self.debug("Waiting for network.gc.interval & network.gc.wait..")
-        interval = list_configurations(
+        interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-        wait = list_configurations(
+        wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -2223,15 +2236,18 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
             "Stopping all the VM instances for the account: %s" %
                                                     self.account.name)
 
-        self.vm_1.stop(self.apiclient)
-        self.vm_2.stop(self.apiclient)
+        try:
+            self.vm_1.stop(self.apiclient)
+            self.vm_2.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop instance: %s" % e)
 
         self.debug("Sleep for network.gc.interval + network.gc.wait")
-        interval = list_configurations(
+        interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-        wait = list_configurations(
+        wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -2529,7 +2545,7 @@ class TestServiceProvider(cloudstackTestCase):
             cls.netscaler_provider = nw_service_providers[0]
 
         if cls.netscaler_provider.state != 'Enabled':
-            response = NetworkServiceProvider.update(
+            NetworkServiceProvider.update(
                                           cls.api_client,
                                           id=cls.netscaler_provider.id,
                                           state='Enabled'
@@ -2586,11 +2602,11 @@ class TestServiceProvider(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
+            interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-            wait = list_configurations(
+            wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -2843,7 +2859,7 @@ class TestDeleteNetscaler(cloudstackTestCase):
             netscaler_provider = nw_service_providers[0]
 
         if netscaler_provider.state != 'Enabled':
-            response = NetworkServiceProvider.update(
+            NetworkServiceProvider.update(
                                           cls.api_client,
                                           id=netscaler_provider.id,
                                           state='Enabled'
@@ -2901,11 +2917,11 @@ class TestDeleteNetscaler(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
+            interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-            wait = list_configurations(
+            wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
