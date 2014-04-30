@@ -3937,15 +3937,15 @@ class IAMGroup:
     def list(cls, apiclient, **kwargs):
         cmd = listIAMGroups.listIAMGroupsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return apiclient.listIAMGroups(cmd)  
-    
+        return apiclient.listIAMGroups(cmd)
+
     def addAccount(self, apiclient, accts):
         """Add accounts to iam group"""
         cmd = addAccountToIAMGroup.addAccountToIAMGroupCmd()
         cmd.id = self.id
         cmd.accounts = [str(acct.id) for acct in accts]
         apiclient.addAccountToIAMGroup(cmd)
-        return  
+        return
 
     def removeAccount(self, apiclient, accts):
         """ Remove accounts from iam group"""
@@ -3953,24 +3953,24 @@ class IAMGroup:
         cmd.id = self.id
         cmd.accounts = [str(acct.id) for acct in accts]
         apiclient.removeAccountFromIAMGroup(cmd)
-        return  
-    
+        return
+
     def attachPolicy(self, apiclient, policies):
         """Add policies to iam group"""
         cmd = attachIAMPolicyToIAMGroup.attachIAMPolicyToIAMGroupCmd()
         cmd.id = self.id
         cmd.policies = [str(policy.id) for policy in policies]
         apiclient.attachIAMPolicyToIAMGroup(cmd)
-        return   
-    
+        return
+
     def detachPolicy(self, apiclient, policies):
         """Remove policies from iam group"""
         cmd = removeIAMPolicyFromIAMGroup.removeIAMPolicyFromIAMGroupCmd()
         cmd.id = self.id
         cmd.policies = [str(policy.id) for policy in policies]
         apiclient.removeIAMPolicyFromIAMGroup(cmd)
-        return         
-    
+        return
+
 class IAMPolicy:
     def __init__(self, items):
         self.__dict__.update(items)
@@ -3998,7 +3998,7 @@ class IAMPolicy:
     def list(cls, apiclient, **kwargs):
         cmd = listIAMPolicies.listIAMPoliciesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return apiclient.listIAMPolicies(cmd)  
+        return apiclient.listIAMPolicies(cmd)
 
     def addPermission(self, apiclient, permission):
         """Add permission to iam policy"""
@@ -4009,7 +4009,7 @@ class IAMPolicy:
         cmd.scope = permission['scope']
         cmd.scopeid = permission['scopeid']
         apiclient.addIAMPermissionToIAMPolicy(cmd)
-        return       
+        return
 
     def removePermission(self, apiclient, permission):
         """Remove permission from iam policy"""
@@ -4020,16 +4020,16 @@ class IAMPolicy:
         cmd.scope = permission['scope']
         cmd.scopeid = permission['scopeid']
         apiclient.removeIAMPermissionFromIAMPolicy(cmd)
-        return  
-    
+        return
+
     def attachAccount(self, apiclient, accts):
         """Attach iam policy to accounts"""
         cmd = attachIAMPolicyToAccount.attachIAMPolicyToAccountCmd()
         cmd.id = self.id
         cmd.accounts = [str(acct.id) for acct in accts]
         apiclient.attachIAMPolicyToAccount(cmd)
-        return  
-    
+        return
+
     def detachAccount(self, apiclient, accts):
         """Detach iam policy from accounts"""
         cmd = removeIAMPolicyFromAccount.removeIAMPolicyFromAccountCmd()
