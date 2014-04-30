@@ -674,7 +674,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         if (content == null || content.isEmpty())
             return content;
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < content.length(); i++) {
             char c = content.charAt(i);
             switch (c) {
