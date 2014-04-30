@@ -3346,10 +3346,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                     sc.addAnd("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
                 }
             } else if (templateFilter == TemplateFilter.sharedexecutable || templateFilter == TemplateFilter.shared) {
-                SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
-                scc.addOr("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
-                scc.addOr("sharedAccountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
-                sc.addAnd("accountId", SearchCriteria.Op.SC, scc);
+                sc.addAnd("sharedAccountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
+//                SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
+//                scc.addOr("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
+//                scc.addOr("sharedAccountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
+//                sc.addAnd("accountId", SearchCriteria.Op.SC, scc);
             } else if (templateFilter == TemplateFilter.executable) {
                 SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
                 scc.addOr("publicTemplate", SearchCriteria.Op.EQ, true);
