@@ -107,22 +107,14 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
                 permissions = _iamSrv.listPolicyPermissionByActionAndEntity(policy.getId(), action, entityType);
                 if (permissions.isEmpty()) {
                     if (accessType != null) {
-                        for (AccessType type : AccessType.values()) {
-                            if (type.ordinal() >= accessType.ordinal()) {
-                                permissions.addAll(_iamSrv.listPolicyPermissionByAccessAndEntity(policy.getId(),
-                                        type.toString(), entityType));
-                            }
-                        }
+                        permissions.addAll(_iamSrv.listPolicyPermissionByAccessAndEntity(policy.getId(),
+                                accessType.toString(), entityType));
                     }
                 }
             } else {
                 if (accessType != null) {
-                    for (AccessType type : AccessType.values()) {
-                        if (type.ordinal() >= accessType.ordinal()) {
-                            permissions.addAll(_iamSrv.listPolicyPermissionByAccessAndEntity(policy.getId(),
-                                    type.toString(), entityType));
-                        }
-                    }
+                    permissions.addAll(_iamSrv.listPolicyPermissionByAccessAndEntity(policy.getId(),
+                            accessType.toString(), entityType));
                 }
             }
             for (IAMPolicyPermission permission : permissions) {

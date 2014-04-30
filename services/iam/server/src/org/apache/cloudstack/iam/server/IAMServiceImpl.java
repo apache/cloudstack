@@ -25,7 +25,6 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.PermissionScope;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.iam.api.IAMGroup;
 import org.apache.cloudstack.iam.api.IAMPolicy;
 import org.apache.cloudstack.iam.api.IAMPolicyPermission;
@@ -632,7 +631,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         }
 
         // add entry in acl_policy_permission table
-        IAMPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(iamPolicyId, entityType, scope, scopeId, action, perm);
+        IAMPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(iamPolicyId, entityType, scope,
+                scopeId, action, perm, accessType);
         if (permit == null) {
             // not there already
             permit = new IAMPolicyPermissionVO(iamPolicyId, action, entityType, accessType, scope, scopeId, perm,
@@ -654,7 +654,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                     + "; failed to revoke permission from policy.");
         }
         // remove entry from acl_entity_permission table
-        IAMPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(iamPolicyId, entityType, scope, scopeId, action, Permission.Allow);
+        IAMPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(iamPolicyId, entityType, scope,
+                scopeId, action, Permission.Allow, null);
         if (permit != null) {
             // not removed yet
             _policyPermissionDao.remove(permit.getId());
@@ -766,9 +767,10 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<IAMPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope, AccessType accessType) {
+    public List<IAMPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope,
+            String accessType) {
         @SuppressWarnings("rawtypes")
-        List pp = _policyPermissionDao.listByPolicyActionAndScope(policyId, action, scope, accessType.toString());
+        List pp = _policyPermissionDao.listByPolicyActionAndScope(policyId, action, scope, accessType);
         return pp;
     }
 

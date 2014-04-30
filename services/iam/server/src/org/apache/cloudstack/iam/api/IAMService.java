@@ -18,7 +18,7 @@ package org.apache.cloudstack.iam.api;
 
 import java.util.List;
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+
 import org.apache.cloudstack.iam.api.IAMPolicyPermission.Permission;
 
 import com.cloud.utils.Pair;
@@ -73,7 +73,7 @@ public interface IAMService {
 
     List<IAMPolicyPermission> listPolicyPermissions(long policyId);
 
-    List<IAMPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope, AccessType accessType);
+    List<IAMPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope, String accessType);
 
     List<IAMPolicyPermission> listPolicyPermissionByActionAndEntity(long policyId, String action, String entityType);
 

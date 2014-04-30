@@ -70,7 +70,7 @@ public class IAMPolicyPermissionDaoImpl extends GenericDaoBase<IAMPolicyPermissi
 
     @Override
     public IAMPolicyPermissionVO findByPolicyAndEntity(long policyId, String entityType, String scope, Long scopeId,
-            String action, Permission perm) {
+            String action, Permission perm, String accessType) {
         SearchCriteria<IAMPolicyPermissionVO> sc = fullSearch.create();
         sc.setParameters("policyId", policyId);
         sc.setParameters("entityType", entityType);
@@ -78,6 +78,11 @@ public class IAMPolicyPermissionDaoImpl extends GenericDaoBase<IAMPolicyPermissi
         sc.setParameters("scopeId", scopeId);
         sc.setParameters("action", action);
         sc.setParameters("permission", perm);
+        if (accessType != null) {
+            // accessType can be optional, used mainly in list apis with
+            // ListEntry and UseEntry distinction
+            sc.setParameters("accessType", accessType);
+        }
         return findOneBy(sc);
     }
 
