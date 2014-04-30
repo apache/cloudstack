@@ -39,6 +39,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -4326,7 +4327,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("Can't update system networks");
             }
 
-            _accountMgr.checkAccess(caller, null, network);
+            _accountMgr.checkAccess(caller, AccessType.ListEntry, network);
 
             List<Long> offeringIds = _networkModel.listNetworkOfferingsForUpgrade(networkId);
 

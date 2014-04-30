@@ -46,6 +46,7 @@ import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
@@ -89,6 +90,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Network;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
@@ -123,6 +125,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account.State;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
@@ -484,13 +487,67 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         entityBuf.append("}");
         String entityStr = entityBuf.toString();
-        for (SecurityChecker checker : _securityCheckers) {
-            if (checker.checkAccess(caller, accessType, apiName, entities)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access to " + entityStr + " granted to " + caller + " by " + checker.getName());
+
+        boolean isRootAdmin = isRootAdmin(caller.getAccountId());
+        boolean isDomainAdmin = isDomainAdmin(caller.getAccountId());
+        boolean isResourceDomainAdmin = isResourceDomainAdmin(caller.getAccountId());
+
+        if ((isRootAdmin || isDomainAdmin || isResourceDomainAdmin || caller.getId() == Account.ACCOUNT_ID_SYSTEM)
+                && (accessType == null || accessType == AccessType.UseEntry)) {
+
+            for (ControlledEntity entity : entities) {
+                if (entity instanceof VirtualMachineTemplate || entity instanceof Network
+                        || entity instanceof AffinityGroup) {
+                    for (SecurityChecker checker : _securityCheckers) {
+                        if (checker.checkAccess(caller, accessType, apiName, entity)) {
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Access to " + entityStr + " granted to " + caller + " by "
+                                        + checker.getName());
+                            }
+                            granted = true;
+                            break;
+                        }
+                    }
+                } else {
+                    if (isRootAdmin || caller.getId() == Account.ACCOUNT_ID_SYSTEM) {
+                        // no need to make permission checks if the system/root
+                        // admin makes the call
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("No need to make permission check for System/RootAdmin account, returning true");
+                        }
+                        granted = true;
+                    } else if (isDomainAdmin || isResourceDomainAdmin) {
+                        Domain entityDomain = getEntityDomain(entity);
+                        if (entityDomain != null) {
+                            try {
+                                checkAccess(caller, entityDomain);
+                                granted = true;
+                            } catch (PermissionDeniedException e) {
+                                List<ControlledEntity> entityList = new ArrayList<ControlledEntity>();
+                                entityList.add(entity);
+                                e.addDetails(caller, entityList);
+                                throw e;
+                            }
+                        }
+                    }
                 }
-                granted = true;
-                break;
+
+                if (!granted) {
+                    assert false : "How can all of the security checkers pass on checking this check: " + entityStr;
+                    throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to "
+                            + entityStr);
+                }
+
+            }
+        } else {
+            for (SecurityChecker checker : _securityCheckers) {
+                if (checker.checkAccess(caller, accessType, apiName, entities)) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Access to " + entityStr + " granted to " + caller + " by " + checker.getName());
+                    }
+                    granted = true;
+                    break;
+                }
             }
         }
 
@@ -498,6 +555,27 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             assert false : "How can all of the security checkers pass on checking this check: " + entityStr;
             throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + entityStr);
         }
+    }
+
+    private Domain getEntityDomain(ControlledEntity entity) {
+        Domain entityDomain = null;
+        long domainId = entity.getDomainId();
+
+        if (domainId != -1) {
+            entityDomain = _domainMgr.getDomain(domainId);
+        } else {
+            if (entity.getAccountId() != -1) {
+                // If account exists domainId should too so
+                // calculate
+                // it. This condition might be hit for templates or
+                // entities which miss domainId in their tables
+                Account account = getAccount(entity.getAccountId());
+                domainId = account != null ? account.getDomainId() : -1;
+                entityDomain = _domainMgr.getDomain(domainId);
+            }
+        }
+
+        return entityDomain;
     }
 
     @Override
