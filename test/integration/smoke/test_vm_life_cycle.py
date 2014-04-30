@@ -18,12 +18,24 @@
 """
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.codes import FAILED
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackAPI import (recoverVirtualMachine,
+                                  destroyVirtualMachine,
+                                  attachIso,
+                                  detachIso)
+from marvin.lib.utils import (cleanup_resources,
+                              validateList,
+                              get_hypervisor_type)
+from marvin.lib.base import (Account,
+                             ServiceOffering,
+                             VirtualMachine,
+                             Host,
+                             Iso,
+                             Router,
+                             Configurations)
+from marvin.lib.common import (get_domain,
+                                get_zone,
+                                get_template)
+from marvin.codes import FAILED, PASS
 from nose.plugins.attrib import attr
 #Import System modules
 import time
@@ -110,7 +122,7 @@ class TestDeployVM(cloudstackTestCase):
         # Validate the following:
         # 1. Virtual Machine is accessible via SSH
         # 2. listVirtualMachines returns accurate information
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -159,7 +171,7 @@ class TestDeployVM(cloudstackTestCase):
         3. Has a linklocalip, publicip and a guestip
         @return:
         """
-        routers = list_routers(self.apiclient, account=self.account.name)
+        routers = Router.list(self.apiclient, account=self.account.name)
         self.assertTrue(len(routers) > 0, msg = "No virtual router found")
         router = routers[0]
 
@@ -181,7 +193,7 @@ class TestDeployVM(cloudstackTestCase):
         2. is in the account the VM was deployed in
         @return:
         """
-        routers = list_routers(self.apiclient, account=self.account.name)
+        routers = Router.list(self.apiclient, account=self.account.name)
         self.assertTrue(len(routers) > 0, msg = "No virtual router found")
         router = routers[0]
 
@@ -301,31 +313,10 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 1. Should Not be able to login to the VM.
         # 2. listVM command should return
         #    this VM.State of this VM should be ""Stopped"".
-
-        self.debug("Stopping VM - ID: %s" % self.virtual_machine.id)
-        self.small_virtual_machine.stop(self.apiclient)
-
-        list_vm_response = list_virtual_machines(
-                                            self.apiclient,
-                                            id=self.small_virtual_machine.id
-                                            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        self.assertNotEqual(
-                            len(list_vm_response),
-                            0,
-                            "Check VM available in List Virtual Machines"
-                        )
-
-        self.assertEqual(
-                            list_vm_response[0].state,
-                            "Stopped",
-                            "Check virtual machine is in stopped state"
-                        )
+        try:
+            self.small_virtual_machine.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop VM: %s" % e)
         return
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
@@ -339,7 +330,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.debug("Starting VM - ID: %s" % self.virtual_machine.id)
         self.small_virtual_machine.start(self.apiclient)
 
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                             self.apiclient,
                                             id=self.small_virtual_machine.id
                                             )
@@ -379,7 +370,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.debug("Rebooting VM - ID: %s" % self.virtual_machine.id)
         self.small_virtual_machine.reboot(self.apiclient)
 
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                             self.apiclient,
                                             id=self.small_virtual_machine.id
                                             )
@@ -416,7 +407,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.debug("Destroy VM - ID: %s" % self.small_virtual_machine.id)
         self.small_virtual_machine.delete(self.apiclient)
 
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                             self.apiclient,
                                             id=self.small_virtual_machine.id
                                             )
@@ -456,7 +447,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         cmd.id = self.small_virtual_machine.id
         self.apiclient.recoverVirtualMachine(cmd)
 
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                             self.apiclient,
                                             id=self.small_virtual_machine.id
                                             )
@@ -540,7 +531,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         self.vm_to_migrate.migrate(self.apiclient, migrate_host.id)
 
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                             self.apiclient,
                                             id=self.vm_to_migrate.id
                                             )
@@ -580,7 +571,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         cmd.id = self.small_virtual_machine.id
         self.apiclient.destroyVirtualMachine(cmd)
 
-        config = list_configurations(
+        config = Configurations.list(
                                      self.apiclient,
                                      name='expunge.delay'
                                      )
@@ -590,14 +581,14 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         #VM should be destroyed unless expunge thread hasn't run
         #Wait for two cycles of the expunge thread
-        config = list_configurations(
+        config = Configurations.list(
                                      self.apiclient,
                                      name='expunge.interval'
                                      )
         expunge_cycle = int(config[0].value)
         wait_time = expunge_cycle * 2
         while wait_time >= 0:
-            list_vm_response = list_virtual_machines(
+            list_vm_response = VirtualMachine.list(
                                                 self.apiclient,
                                                 id=self.small_virtual_machine.id
                                                 )
@@ -657,7 +648,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
                                 (self.virtual_machine.ipaddress, e))
-        
+
         mount_dir = "/mnt/tmp"
         cmds = "mkdir -p %s" % mount_dir
         self.assert_(ssh_client.execute(cmds) == [], "mkdir failed within guest")
@@ -676,7 +667,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.debug("Found a mount point at %s with size %s" % (res, size))
 
         # Get ISO size
-        iso_response = list_isos(
+        iso_response = Iso.list(
                                  self.apiclient,
                                  id=iso.id
                                  )

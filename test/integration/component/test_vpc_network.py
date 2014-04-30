@@ -1933,8 +1933,6 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop VMs, %s" % e)
 
-        wait_for_cleanup(self.apiclient, ["expunge.interval", "expunge.delay"])
-
         # When all Vms ain network are stopped, network state changes from Implemented --> Shutdown --> Allocated
         # We can't update the network when it is in Shutodown state, hence we should wait for the state to change to
         # Allocated and then update the network
@@ -2107,8 +2105,6 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
             vm_1.stop(self.apiclient)
         except Exception as e:
             self.fail("Failed to stop VMs, %s" % e)
-
-        wait_for_cleanup(self.apiclient, ["expunge.interval", "expunge.delay"])
 
         self.debug("Upgrading network offering to support PF services")
         with self.assertRaises(Exception):

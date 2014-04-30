@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -1901,27 +1901,11 @@ class TestStartStopVMWithEgressRule(cloudstackTestCase):
                           "Check egress rule created properly"
                     )
 
-        # Stop virtual machine
-        self.debug("Stopping virtual machine: %s" % self.virtual_machine.id)
-        self.virtual_machine.stop(self.apiclient)
-
-        vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  id=self.virtual_machine.id,
-                                  listall=True
-                                  )
-        self.assertEqual(
-                         isinstance(vms, list),
-                         True,
-                         "List VM should return a valid list"
-                         )
-        vm = vms[0]
-        self.assertEqual(
-                         vm.state,
-                         "Stopped",
-                         "VM state should be stopped"
-                         )
-        self.debug("VM: %s state: %s" % (vm.id, vm.state))
+        try:
+            # Stop virtual machine
+            self.virtual_machine.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop instance: %s" % e)
 
         # Start virtual machine
         self.debug("Starting virtual machine: %s" % self.virtual_machine.id)

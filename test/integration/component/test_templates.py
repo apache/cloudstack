@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,15 +17,20 @@
 """ P1 tests for Templates
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-import urllib
-from random import random
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import listZones
+from marvin.lib.utils import (cleanup_resources)
+from marvin.lib.base import (Account,
+                             Template,
+                             ServiceOffering,
+                             VirtualMachine,
+                             Snapshot,
+                             Volume)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               get_builtin_template_info)
 #Import System modules
 import time
 
@@ -201,14 +206,13 @@ class TestCreateTemplate(cloudstackTestCase):
         time.sleep(self.services["sleep"])
         timeout = self.services["timeout"]
         while True:
-            list_template_response = list_templates(
-                                    self.apiclient,
-                                    templatefilter='all',
-                                    id=template.id,
-                                    zoneid=self.zone.id,
-                                    account=self.account.name,
-                                    domainid=self.account.domainid
-                                    )
+            list_template_response = Template.list(
+                                            self.apiclient,
+                                            templatefilter='all',
+                                            id=template.id,
+                                            zoneid=self.zone.id,
+                                            account=self.account.name,
+                                            domainid=self.account.domainid)
             if isinstance(list_template_response, list):
                 break
             elif timeout == 0:
@@ -247,12 +251,10 @@ class TestCreateTemplate(cloudstackTestCase):
                                     mode=self.services["mode"]
                                     )
         self.debug("creating an instance with template ID: %s" % template.id)
-        vm_response = list_virtual_machines(
-                                        self.apiclient,
-                                        id=virtual_machine.id,
-                                        account=self.account.name,
-                                        domainid=self.account.domainid
-                                        )
+        vm_response = VirtualMachine.list(self.apiclient,
+                                          id=virtual_machine.id,
+                                          account=self.account.name,
+                                          domainid=self.account.domainid)
         self.assertEqual(
                              isinstance(vm_response, list),
                              True,
@@ -300,20 +302,24 @@ class TestTemplates(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.account = Account.create(
+        cls._cleanup = []
+        try:
+            cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
+            cls._cleanup.append(cls.account)
 
-        cls.services["account"] = cls.account.name
-        cls.service_offering = ServiceOffering.create(
+            cls.services["account"] = cls.account.name
+            cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                         )
+            cls._cleanup.append(cls.service_offering)
 
-        # create virtual machine
-        cls.virtual_machine = VirtualMachine.create(
+            # create virtual machine
+            cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
@@ -321,40 +327,36 @@ class TestTemplates(cloudstackTestCase):
                                     domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     )
-        #Stop virtual machine
-        cls.virtual_machine.stop(cls.api_client)
+            #Stop virtual machine
+            cls.virtual_machine.stop(cls.api_client)
 
-        timeout = cls.services["timeout"]
-        #Wait before server has be successfully stopped
-        time.sleep(cls.services["sleep"])
+            timeout = cls.services["timeout"]
 
-        while True:
-            list_volume = list_volumes(
-                                   cls.api_client,
-                                   virtualmachineid=cls.virtual_machine.id,
-                                   type='ROOT',
-                                   listall=True
-                                   )
-            if isinstance(list_volume, list):
-                break
-            elif timeout == 0:
-                raise Exception("List volumes failed.")
+            while True:
+                list_volume = Volume.list(
+                                cls.api_client,
+                                virtualmachineid=cls.virtual_machine.id,
+                                type='ROOT',
+                                listall=True)
+                if isinstance(list_volume, list):
+                    break
+                elif timeout == 0:
+                    raise Exception("List volumes failed.")
 
-            time.sleep(5)
-            timeout = timeout - 1
+                time.sleep(5)
+                timeout = timeout - 1
 
-        cls.volume = list_volume[0]
+            cls.volume = list_volume[0]
 
-        #Create template from volume
-        cls.template = Template.create(
+            #Create template from volume
+            cls.template = Template.create(
                                          cls.api_client,
                                          cls.services["template"],
                                          cls.volume.id
                                          )
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.account,
-                        ]
+        except Exception as e:
+            cls.tearDownClass()
+            raise unittest.SkipTest("Failure in setUpClass: %s" % e)
 
     @classmethod
     def tearDownClass(cls):
@@ -405,12 +407,11 @@ class TestTemplates(cloudstackTestCase):
 
         self.debug("creating an instance with template ID: %s" % self.template.id)
         self.cleanup.append(virtual_machine)
-        vm_response = list_virtual_machines(
-                                        self.apiclient,
-                                        id=virtual_machine.id,
-                                        account=self.account.name,
-                                        domainid=self.account.domainid
-                                        )
+        vm_response = VirtualMachine.list(
+                            self.apiclient,
+                            id=virtual_machine.id,
+                            account=self.account.name,
+                            domainid=self.account.domainid)
         #Verify VM response to check whether VM deployment was successful
         self.assertNotEqual(
                             len(vm_response),
@@ -435,13 +436,12 @@ class TestTemplates(cloudstackTestCase):
         # 2. Delete the created template and again verify list template response
 
         # Verify template response for updated attributes
-        list_template_response = list_templates(
+        list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter=\
                                     self.services["template"]["templatefilter"],
                                     id=self.template.id,
-                                    zoneid=self.zone.id
-                                    )
+                                    zoneid=self.zone.id)
         self.assertEqual(
                         isinstance(list_template_response, list),
                         True,
@@ -467,7 +467,7 @@ class TestTemplates(cloudstackTestCase):
         self.template.delete(self.apiclient)
         self.debug("Delete template: %s successful" % self.template)
 
-        list_template_response = list_templates(
+        list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter=\
                                     self.services["template"]["templatefilter"],
@@ -493,7 +493,7 @@ class TestTemplates(cloudstackTestCase):
         # 4. Deploy Virtual machine using this template
         # 5. VM should be in running state
 
-        volumes = list_volumes(
+        volumes = Volume.list(
                         self.apiclient,
                         virtualmachineid=self.virtual_machine.id,
                         type='ROOT',
@@ -518,7 +518,7 @@ class TestTemplates(cloudstackTestCase):
                                     )
         self.cleanup.append(template)
         # Verify created template
-        templates = list_templates(
+        templates = Template.list(
                                 self.apiclient,
                                 templatefilter=\
                                 self.services["template"]["templatefilter"],
@@ -547,7 +547,7 @@ class TestTemplates(cloudstackTestCase):
                                     )
         self.cleanup.append(virtual_machine)
 
-        vm_response = list_virtual_machines(
+        vm_response = VirtualMachine.list(
                                         self.apiclient,
                                         id=virtual_machine.id,
                                         account=self.account.name,

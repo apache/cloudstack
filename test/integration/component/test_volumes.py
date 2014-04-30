@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,11 +18,24 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackAPI import (listHypervisorCapabilities,
+                                  attachIso,
+                                  deleteVolume)
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Account,
+                             ServiceOffering,
+                             VirtualMachine,
+                             Volume,
+                             Host,
+                             Iso,
+                             Configurations,
+                             DiskOffering,
+                             Domain)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               get_pod)
 #Import System modules
 import time
 
@@ -186,9 +199,9 @@ class TestAttachVolume(cloudstackTestCase):
         # 5. Start The VM. Start VM should be successful
 
         # Create 5 volumes and attach to VM
-        for i in range(self.max_data_volumes):
-            self.debug(i)
-            volume = Volume.create(
+        try:
+            for i in range(self.max_data_volumes):
+                volume = Volume.create(
                                    self.apiclient,
                                    self.services["volume"],
                                    zoneid=self.zone.id,
@@ -196,134 +209,99 @@ class TestAttachVolume(cloudstackTestCase):
                                    domainid=self.account.domainid,
                                    diskofferingid=self.disk_offering.id
                                    )
-            self.debug("Created volume: %s for account: %s" % (
-                                                volume.id,
-                                                self.account.name
-                                                ))
-            # Check List Volume response for newly created volume
-            list_volume_response = list_volumes(
+                # Check List Volume response for newly created volume
+                list_volume_response = Volume.list(
                                                 self.apiclient,
                                                 id=volume.id
                                                 )
-            self.assertNotEqual(
+                self.assertNotEqual(
                                 list_volume_response,
                                 None,
                                 "Check if volume exists in ListVolumes"
                                 )
-            # Attach volume to VM
-            self.virtual_machine.attach_volume(
+                # Attach volume to VM
+                self.virtual_machine.attach_volume(
                                                 self.apiclient,
                                                 volume
                                                 )
-            self.debug("Attach volume: %s to VM: %s" % (
-                                                volume.id,
-                                                self.virtual_machine.id
-                                                ))
-        # Check all volumes attached to same VM
-        list_volume_response = list_volumes(
+            # Check all volumes attached to same VM
+            list_volume_response = Volume.list(
                                     self.apiclient,
                                     virtualmachineid=self.virtual_machine.id,
                                     type='DATADISK',
                                     listall=True
                                     )
-        self.assertNotEqual(
-            list_volume_response,
-            None,
-            "Check if volume exists in ListVolumes"
-        )
-        self.assertEqual(
-            isinstance(list_volume_response, list),
-            True,
-            "Check list volumes response for valid list"
-        )
-        self.assertEqual(
-            len(list_volume_response),
-            self.max_data_volumes,
-            "Volumes attached to the VM %s. Expected %s" % (len(list_volume_response), self.max_data_volumes)
-        )
-        self.debug("Rebooting the VM: %s" % self.virtual_machine.id)
-        # Reboot VM
-        self.virtual_machine.reboot(self.apiclient)
+            self.assertNotEqual(
+                list_volume_response,
+                None,
+                "Check if volume exists in ListVolumes")
+            self.assertEqual(
+                isinstance(list_volume_response, list),
+                True,
+                "Check list volumes response for valid list")
+            self.assertEqual(
+                len(list_volume_response),
+                self.max_data_volumes,
+                "Volumes attached to the VM %s. Expected %s" % (len(list_volume_response), self.max_data_volumes))
+            self.debug("Rebooting the VM: %s" % self.virtual_machine.id)
+            # Reboot VM
+            self.virtual_machine.reboot(self.apiclient)
 
-        vm_response = list_virtual_machines(
+            vm_response = VirtualMachine.list(
                                         self.apiclient,
                                         id=self.virtual_machine.id,
                                         )
-        #Verify VM response to check whether VM deployment was successful
-        self.assertNotEqual(
+            #Verify VM response to check whether VM deployment was successful
+            self.assertNotEqual(
                             len(vm_response),
                             0,
                             "Check VMs available in List VMs response"
                         )
-        self.assertEqual(
+            self.assertEqual(
                                 isinstance(vm_response, list),
                                 True,
                                 "Check list VM response for valid list"
                         )
-        vm = vm_response[0]
-        self.assertEqual(
+            vm = vm_response[0]
+            self.assertEqual(
                             vm.state,
                             'Running',
                             "Check the state of VM"
                         )
 
-        self.debug("Stopping the VM: %s" % self.virtual_machine.id)
-        # Stop VM
-        self.virtual_machine.stop(self.apiclient)
+            # Stop VM
+            self.virtual_machine.stop(self.apiclient)
 
-        vm_response = list_virtual_machines(
+            # Start VM
+            self.virtual_machine.start(self.apiclient)
+            # Sleep to ensure that VM is in ready state
+            time.sleep(self.services["sleep"])
+
+            vm_response = VirtualMachine.list(
                                         self.apiclient,
                                         id=self.virtual_machine.id,
                                         )
-        self.assertEqual(
+            self.assertEqual(
                                 isinstance(vm_response, list),
                                 True,
                                 "Check list VM response for valid list"
                         )
 
-        #Verify VM response to check whether VM deployment was successful
-        self.assertNotEqual(
+            #Verify VM response to check whether VM deployment was successful
+            self.assertNotEqual(
                             len(vm_response),
                             0,
                             "Check VMs available in List VMs response"
                         )
 
-        vm = vm_response[0]
-        self.assertEqual(
-                            vm.state,
-                            'Stopped',
-                            "Check the state of VM"
-                        )
-
-        self.debug("Starting the VM: %s" % self.virtual_machine.id)
-        # Start VM
-        self.virtual_machine.start(self.apiclient)
-        # Sleep to ensure that VM is in ready state
-        time.sleep(self.services["sleep"])
-
-        vm_response = list_virtual_machines(
-                                        self.apiclient,
-                                        id=self.virtual_machine.id,
-                                        )
-        self.assertEqual(
-                                isinstance(vm_response, list),
-                                True,
-                                "Check list VM response for valid list"
-                        )
-
-        #Verify VM response to check whether VM deployment was successful
-        self.assertNotEqual(
-                            len(vm_response),
-                            0,
-                            "Check VMs available in List VMs response"
-                        )
-
-        vm = vm_response[0]
-        self.assertEqual(
+            vm = vm_response[0]
+            self.assertEqual(
                             vm.state,
                             'Running',
                             "Check the state of VM"
                         )
+        except Exception as e:
+            self.fail("Exception occured: %s" % e)
         return
 
     @attr(tags = ["advanced", "advancedns"])
@@ -349,7 +327,7 @@ class TestAttachVolume(cloudstackTestCase):
                                                 self.account.name
                                                 ))
         # Check List Volume response for newly created volume
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                             self.apiclient,
                                             id=volume.id
                                             )
@@ -476,10 +454,11 @@ class TestAttachDetachVolume(cloudstackTestCase):
         # 5. Stop the VM. Stop VM should be successful
         # 6. Start The VM. Start VM should be successful
 
-        volumes = []
-        # Create 5 volumes and attach to VM
-        for i in range(self.max_data_volumes):
-            volume = Volume.create(
+        try:
+            volumes = []
+            # Create 5 volumes and attach to VM
+            for i in range(self.max_data_volumes):
+                volume = Volume.create(
                                    self.apiclient,
                                    self.services["volume"],
                                    zoneid=self.zone.id,
@@ -487,155 +466,117 @@ class TestAttachDetachVolume(cloudstackTestCase):
                                    domainid=self.account.domainid,
                                    diskofferingid=self.disk_offering.id
                                    )
-            self.debug("Created volume: %s for account: %s" % (
-                                                volume.id,
-                                                self.account.name
-                                                ))
-            self.cleanup.append(volume)
-            volumes.append(volume)
+                self.cleanup.append(volume)
+                volumes.append(volume)
 
-            # Check List Volume response for newly created volume
-            list_volume_response = list_volumes(
+                # Check List Volume response for newly created volume
+                list_volume_response = Volume.list(
                                                 self.apiclient,
                                                 id=volume.id
                                                 )
-            self.assertNotEqual(
-                list_volume_response,
-                None,
-                "Check if volume exists in ListVolumes"
-            )
-            self.assertEqual(
-                isinstance(list_volume_response, list),
-                True,
-                "Check list volumes response for valid list"
-            )
-            self.debug("Attach volume: %s to VM: %s" % (
-                                                volume.id,
-                                                self.virtual_machine.id
-                                                ))
-            # Attach volume to VM
-            self.virtual_machine.attach_volume(
+                self.assertNotEqual(
+                    list_volume_response,
+                    None,
+                    "Check if volume exists in ListVolumes")
+                self.assertEqual(
+                    isinstance(list_volume_response, list),
+                    True,
+                    "Check list volumes response for valid list")
+                # Attach volume to VM
+                self.virtual_machine.attach_volume(
                                                 self.apiclient,
                                                 volume
                                                 )
 
-        # Check all volumes attached to same VM
-        list_volume_response = list_volumes(
+            # Check all volumes attached to same VM
+            list_volume_response = Volume.list(
                                     self.apiclient,
                                     virtualmachineid=self.virtual_machine.id,
                                     type='DATADISK',
                                     listall=True
                                     )
-        self.assertNotEqual(
+            self.assertNotEqual(
                                 list_volume_response,
                                 None,
                                 "Check if volume exists in ListVolumes"
                                 )
-        self.assertEqual(
+            self.assertEqual(
                                 isinstance(list_volume_response, list),
                                 True,
                                 "Check list volumes response for valid list"
                         )
-        self.assertEqual(
-            len(list_volume_response),
-            self.max_data_volumes,
-            "Volumes attached to the VM %s. Expected %s" % (len(list_volume_response), self.max_data_volumes)
-        )
+            self.assertEqual(
+                len(list_volume_response),
+                self.max_data_volumes,
+                "Volumes attached to the VM %s. Expected %s" % (len(list_volume_response), self.max_data_volumes)
+            )
 
-        # Detach all volumes from VM
-        for volume in volumes:
-            self.debug("Detach volume: %s to VM: %s" % (
-                                                volume.id,
-                                                self.virtual_machine.id
-                                                ))
-            self.virtual_machine.detach_volume(
+            # Detach all volumes from VM
+            for volume in volumes:
+                self.virtual_machine.detach_volume(
                                                 self.apiclient,
                                                 volume
                                             )
-        # Reboot VM
-        self.debug("Rebooting the VM: %s" % self.virtual_machine.id)
-        self.virtual_machine.reboot(self.apiclient)
-        # Sleep to ensure that VM is in ready state
-        time.sleep(self.services["sleep"])
+            # Reboot VM
+            self.debug("Rebooting the VM: %s" % self.virtual_machine.id)
+            self.virtual_machine.reboot(self.apiclient)
+            # Sleep to ensure that VM is in ready state
+            time.sleep(self.services["sleep"])
 
-        vm_response = list_virtual_machines(
+            vm_response = VirtualMachine.list(
                                         self.apiclient,
                                         id=self.virtual_machine.id,
                                         )
-        #Verify VM response to check whether VM deployment was successful
-        self.assertEqual(
+            #Verify VM response to check whether VM deployment was successful
+            self.assertEqual(
                                 isinstance(vm_response, list),
                                 True,
                                 "Check list VM response for valid list"
                         )
 
-        self.assertNotEqual(
+            self.assertNotEqual(
                             len(vm_response),
                             0,
                             "Check VMs available in List VMs response"
                         )
-        vm = vm_response[0]
-        self.assertEqual(
+            vm = vm_response[0]
+            self.assertEqual(
                             vm.state,
                             'Running',
                             "Check the state of VM"
                         )
 
-        # Stop VM
-        self.debug("Stopping the VM: %s" % self.virtual_machine.id)
-        self.virtual_machine.stop(self.apiclient)
-        # Sleep to ensure that VM is in ready state
-        time.sleep(self.services["sleep"])
+            # Stop VM
+            self.virtual_machine.stop(self.apiclient)
 
-        vm_response = list_virtual_machines(
+            # Start VM
+            self.virtual_machine.start(self.apiclient)
+            # Sleep to ensure that VM is in ready state
+            time.sleep(self.services["sleep"])
+
+            vm_response = VirtualMachine.list(
                                         self.apiclient,
                                         id=self.virtual_machine.id,
                                         )
-        #Verify VM response to check whether VM deployment was successful
-        self.assertEqual(
+            #Verify VM response to check whether VM deployment was successful
+            self.assertEqual(
                                 isinstance(vm_response, list),
                                 True,
                                 "Check list VM response for valid list"
                         )
-        self.assertNotEqual(
+            self.assertNotEqual(
                             len(vm_response),
                             0,
                             "Check VMs available in List VMs response"
                         )
-        vm = vm_response[0]
-        self.assertEqual(
-                            vm.state,
-                            'Stopped',
-                            "Check the state of VM"
-                        )
-
-        # Start VM
-        self.debug("Starting the VM: %s" % self.virtual_machine.id)
-        self.virtual_machine.start(self.apiclient)
-        # Sleep to ensure that VM is in ready state
-        time.sleep(self.services["sleep"])
-
-        vm_response = list_virtual_machines(
-                                        self.apiclient,
-                                        id=self.virtual_machine.id,
-                                        )
-        #Verify VM response to check whether VM deployment was successful
-        self.assertEqual(
-                                isinstance(vm_response, list),
-                                True,
-                                "Check list VM response for valid list"
-                        )
-        self.assertNotEqual(
-                            len(vm_response),
-                            0,
-                            "Check VMs available in List VMs response"
-                        )
-        vm = vm_response[0]
-        self.assertEqual(
+            vm = vm_response[0]
+            self.assertEqual(
                             vm.state,
                             'Running',
                             "Check the state of VM"
                         )
+        except Exception as e:
+            self.fail("Exception occuered: %s" % e)
         return
 
 
@@ -754,7 +695,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
                                                 self.account.name
                                                 ))
             # Check List Volume response for newly created volume
-            list_volume_response = list_volumes(
+            list_volume_response = Volume.list(
                                                 self.apiclient,
                                                 id=volume.id
                                                 )
@@ -775,7 +716,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
                                                 )
 
         # Check all volumes attached to same VM
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                     self.apiclient,
                                     virtualmachineid=self.virtual_machine.id,
                                     type='DATADISK',
@@ -826,7 +767,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
         self.apiclient.attachIso(cmd)
 
         # Verify ISO is attached to VM
-        vm_response = list_virtual_machines(
+        vm_response = VirtualMachine.list(
                                         self.apiclient,
                                         id=self.virtual_machine.id,
                                         )
@@ -941,7 +882,7 @@ class TestVolumes(cloudstackTestCase):
         #    response before volume attach (to VM)
 
         # Check the list volumes response for vmname and virtualmachineid
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                                 self.apiclient,
                                                 id=self.volume.id
                                                 )
@@ -982,7 +923,7 @@ class TestVolumes(cloudstackTestCase):
         self.virtual_machine.attach_volume(self.apiclient, self.volume)
 
         # Check all volumes attached to same VM
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                     self.apiclient,
                                     virtualmachineid=self.virtual_machine.id,
                                     type='DATADISK',
@@ -1030,7 +971,7 @@ class TestVolumes(cloudstackTestCase):
         #Sleep to ensure the current state will reflected in other calls
         time.sleep(self.services["sleep"])
 
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                             self.apiclient,
                                             id=self.volume.id
                                             )
@@ -1074,7 +1015,7 @@ class TestVolumes(cloudstackTestCase):
         #Sleep to ensure the current state will reflected in other calls
         time.sleep(self.services["sleep"])
 
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                             self.apiclient,
                                             id=self.volume.id,
                                             )

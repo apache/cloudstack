@@ -19,7 +19,7 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.base import (VirtualMachine,
                                          NATRule,
@@ -1255,24 +1255,6 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
             self.vm_2.stop(self.apiclient)
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
-
-        self.debug("Check if the instance is in stopped state?")
-        vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  id=self.vm_2.id,
-                                  listall=True
-                                  )
-        self.assertEqual(
-                         isinstance(vms, list),
-                         True,
-                         "List virtual machines should return a valid list"
-                         )
-        vm = vms[0]
-        self.assertEqual(
-                         vm.state,
-                         "Stopped",
-                         "Virtual machine should be in stopped state"
-                         )
 
         self.debug("Validating if network rules are coonfigured properly?")
         self.validate_network_rules()
@@ -3099,35 +3081,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                                                 self.account.name)
         try:
             self.vm_1.stop(self.apiclient)
-
-            list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.vm_1.id
-                                                 )
-
-            vm_response = list_vm_response[0]
-
-            self.assertEqual(
-                    vm_response.state,
-                    'Stopped',
-                    "VM state should be stopped"
-                    )
-
             self.vm_2.stop(self.apiclient)
-
-            list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.vm_2.id
-                                                 )
-
-            vm_response = list_vm_response[0]
-
-            self.assertEqual(
-                    vm_response.state,
-                    'Stopped',
-                    "VM state should be stopped"
-                    )
-
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
 
