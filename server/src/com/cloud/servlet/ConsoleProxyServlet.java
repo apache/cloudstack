@@ -237,9 +237,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         try {
             resp.sendRedirect(composeThumbnailUrl(rootUrl, vm, host, w, h));
         } catch (IOException e) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Client may already close the connection");
-            }
+            s_logger.info("Client may already close the connection", e);
         }
     }
 
@@ -501,9 +499,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             resp.setContentType("text/html");
             resp.getWriter().print(content);
         } catch (IOException e) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Client may already close the connection");
-            }
+            s_logger.info("Client may already close the connection", e);
         }
     }
 
