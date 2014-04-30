@@ -102,11 +102,6 @@ public interface AccountManager extends AccountService {
             List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria);
 
 
-    // deprecated methods that should only be used in listTemplates due to backwards compatibility of templateFilter.
-    void buildACLSearchParameters(Account caller, Long id,
-            String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll,
-            boolean forProjectInvitation);
-
     /**
      * Deletes a user by userId
      *

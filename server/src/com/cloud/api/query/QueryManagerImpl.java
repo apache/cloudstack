@@ -3081,6 +3081,92 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     }
 
+    // This method should only be used for keeping old listTemplates and listAffinityGroups behavior, PLEASE DON'T USE IT FOR USE LIST APIs
+    private void buildTemplateAffinityGroupSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long>
+            permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
+            boolean listAll, boolean forProjectInvitation) {
+        Long domainId = domainIdRecursiveListProject.first();
+        if (domainId != null) {
+            Domain domain = _domainDao.findById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
+            }
+            // check permissions
+            _accountMgr.checkAccess(caller, domain);
+        }
+
+        if (accountName != null) {
+            if (projectId != null) {
+                throw new InvalidParameterValueException("Account and projectId can't be specified together");
+            }
+
+            Account userAccount = null;
+            Domain domain = null;
+            if (domainId != null) {
+                userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                domain = _domainDao.findById(domainId);
+            } else {
+                userAccount = _accountDao.findActiveAccount(accountName, caller.getDomainId());
+                domain = _domainDao.findById(caller.getDomainId());
+            }
+
+            if (userAccount != null) {
+                _accountMgr.checkAccess(caller, null, false, userAccount);
+                // check permissions
+                permittedAccounts.add(userAccount.getId());
+            } else {
+                throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domain.getUuid());
+            }
+        }
+
+        // set project information
+        if (projectId != null) {
+            if (!forProjectInvitation) {
+                if (projectId.longValue() == -1) {
+                    if (_accountMgr.isNormalUser(caller.getId())) {
+                        permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+                    } else {
+                        domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
+                    }
+                } else {
+                    Project project = _projectMgr.getProject(projectId);
+                    if (project == null) {
+                        throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                    }
+                    if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                        throw new PermissionDeniedException("Account " + caller + " can't access project id=" + projectId);
+                    }
+                    permittedAccounts.add(project.getProjectAccountId());
+                }
+            }
+        } else {
+            if (id == null) {
+                domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
+            }
+            if (permittedAccounts.isEmpty() && domainId == null) {
+                if (_accountMgr.isNormalUser(caller.getId())) {
+                    permittedAccounts.add(caller.getId());
+                } else if (!listAll) {
+                    if (id == null) {
+                        permittedAccounts.add(caller.getId());
+                    } else if (!_accountMgr.isRootAdmin(caller.getId())) {
+                        domainIdRecursiveListProject.first(caller.getDomainId());
+                        domainIdRecursiveListProject.second(true);
+                    }
+                } else if (domainId == null) {
+                    if (_accountMgr.isDomainAdmin(caller.getId())) {
+                        domainIdRecursiveListProject.first(caller.getDomainId());
+                        domainIdRecursiveListProject.second(true);
+                    }
+                }
+            } else if (domainId != null) {
+                if (_accountMgr.isNormalUser(caller.getId())) {
+                    permittedAccounts.add(caller.getId());
+                }
+            }
+        }
+    }
+
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(ListTemplatesCmd cmd) {
         TemplateFilter templateFilter = TemplateFilter.valueOf(cmd.getTemplateFilter());
         Long id = cmd.getId();
@@ -3100,7 +3186,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         List<Long> permittedAccountIds = new ArrayList<Long>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds,
+        buildTemplateAffinityGroupSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds,
                 domainIdRecursiveListProject, listAll, false);
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         List<Account> permittedAccounts = new ArrayList<Account>();
@@ -3412,7 +3498,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         List<Long> permittedAccountIds = new ArrayList<Long>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds,
+        buildTemplateAffinityGroupSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds,
                 domainIdRecursiveListProject, listAll, false);
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         List<Account> permittedAccounts = new ArrayList<Account>();
@@ -3499,7 +3585,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         List<Long> permittedAccounts = new ArrayList<Long>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 domainId, isRecursive, null);
-        _accountMgr.buildACLSearchParameters(caller, affinityGroupId, accountName, null, permittedAccounts,
+        buildTemplateAffinityGroupSearchParameters(caller, affinityGroupId, accountName, null, permittedAccounts,
                 domainIdRecursiveListProject, listAll, true);
         domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
