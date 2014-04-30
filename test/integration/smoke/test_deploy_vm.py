@@ -201,7 +201,7 @@ class TestDeployVMVolumeCreationFailure(cloudstackTestCase):
     """
 
     def setUp(self):
-        self.testdata = TestData().testdata
+        self.testdata =  self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
 
         # Get Zone, Domain and Default Built-in template
@@ -312,7 +312,7 @@ class TestDeployVMStartFailure(cloudstackTestCase):
     """
 
     def setUp(self):
-        self.testdata = TestData().testdata
+        self.testdata = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
 
         # Get Zone, Domain and Default Built-in template
