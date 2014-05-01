@@ -497,7 +497,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 && (accessType == null || accessType == AccessType.UseEntry)) {
 
             for (ControlledEntity entity : entities) {
-                if (entity instanceof VirtualMachineTemplate || entity instanceof Network
+                if (entity instanceof VirtualMachineTemplate || (entity instanceof Network && accessType != null && (isDomainAdmin || isResourceDomainAdmin))
                         || entity instanceof AffinityGroup || entity instanceof SecurityGroup) {
                     // Go through IAM (SecurityCheckers)
                     for (SecurityChecker checker : _securityCheckers) {

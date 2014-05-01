@@ -1133,7 +1133,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (!template.isPublicTemplate()) {
-            _accountMgr.checkAccess(caller, null, template);
+            _accountMgr.checkAccess(caller, AccessType.ListEntry, template);
         }
 
         List<String> accountNames = new ArrayList<String>();
