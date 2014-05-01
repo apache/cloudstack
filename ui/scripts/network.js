@@ -3380,6 +3380,28 @@
                                                                         return item.id == instance.id;
                                                                     }).length;
 
+                                                                    // Check if there are any remaining IPs
+                                                                    if (!notExisting) {
+                                                                        $.ajax({
+                                                                            url: createURL('listNics'),
+                                                                            async: false,
+                                                                            data: {
+                                                                                virtualmachineid: instance.id
+                                                                            },
+                                                                            success: function(json) {
+                                                                                var nics = json.listnicsresponse.nic;
+
+                                                                                $(nics).map(function (index, nic) {
+                                                                                    if (nic.secondaryip) {
+                                                                                        notExisting = true;
+
+                                                                                        return false;
+                                                                                    }
+                                                                                });
+                                                                            }
+                                                                        })
+                                                                    }
+
                                                                     return nonAutoScale && isActiveState && notExisting;
                                                                 }
                                                             );
