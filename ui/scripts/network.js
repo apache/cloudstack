@@ -179,19 +179,26 @@
                     var primaryIp = nic.ipaddress;
                     var secondaryIps = nic.secondaryip ? nic.secondaryip : [];
                     var ipSelection = [];
+                    var existingIps = $(args.context.subItemData).map(
+                        function(index, item) { return item.itemIp; }
+                    );
 
                     // Add primary IP as default
-                    ipSelection.push({
-                        id: primaryIp,
-                        description: primaryIp + ' (Primary)'
-                    });
+                    if ($.inArray(primaryIp, existingIps) == -1) {
+                        ipSelection.push({
+                            id: primaryIp,
+                            description: primaryIp + ' (Primary)'
+                        });
+                    }
 
                     // Add secondary IPs
                     $(secondaryIps).map(function(index, secondaryIp) {
-                        ipSelection.push({
-                            id: secondaryIp.ipaddress,
-                            description: secondaryIp.ipaddress
-                        });
+                        if ($.inArray(secondaryIp.ipaddress, existingIps) == -1) {
+                            ipSelection.push({
+                                id: secondaryIp.ipaddress,
+                                description: secondaryIp.ipaddress
+                            });
+                        }
                     });
 
                     args.response.success({

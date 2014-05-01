@@ -196,11 +196,21 @@
                     } else if (field.addButton && !options.noSelect) {
                         if (options.multipleAdd) {
                             $addButton.click(function() {
+                                var context = $.extend(true, {}, options.context);
+
                                 if ($td.hasClass('disabled')) return false;
+
+                                var $subItems = $td.closest('.data-item').find('.expandable-listing tr');
+
+                                if ($subItems.size()) {
+                                    context.subItemData = $subItems.map(function() {
+                                        return $(this).data('json-obj');
+                                    });
+                                }
 
                                 _medit.vmList($multi,
                                     options.listView,
-                                    options.context,
+                                    context,
                                     options.multipleAdd, _l('label.add.vms'),
                                     addItemAction, {
                                         multiRule: multiRule
@@ -819,6 +829,8 @@
                 $(data).each(function() {
                     var field = this;
                     var $tr = _medit.multiItem.itemRow(field, itemActions, multiRule, $tbody).appendTo($tbody);
+
+                    $tr.data('json-obj', field);
 
                     cloudStack.evenOdd($tbody, 'tr', {
                         even: function($elem) {
