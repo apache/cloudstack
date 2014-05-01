@@ -77,8 +77,6 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
-import com.cloud.agent.api.ClusterSyncAnswer;
-import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.ClusterVMMetaDataSyncAnswer;
 import com.cloud.agent.api.ClusterVMMetaDataSyncCommand;
 import com.cloud.agent.api.Command;
@@ -2602,41 +2600,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    public void deltaSync(Map<String, Pair<String, State>> newStates) {
-        Map<Long, AgentVmInfo> states = convertToInfos(newStates);
-
-        for (Map.Entry<Long, AgentVmInfo> entry : states.entrySet()) {
-            AgentVmInfo info = entry.getValue();
-            VMInstanceVO vm = info.vm;
-            Command command = null;
-            if (vm != null) {
-                Host host = _resourceMgr.findHostByGuid(info.getHostUuid());
-                long hId = host.getId();
-
-                HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
-                command = compareState(hId, vm, info, false, hvGuru.trackVmHostChange());
-            } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Cleaning up a VM that is no longer found <deltaSync>: " + info.name);
-                }
-                command = cleanup(info.name);
-            }
-            if (command != null) {
-                try {
-                    Host host = _resourceMgr.findHostByGuid(info.getHostUuid());
-                    if (host != null) {
-                        Answer answer = _agentMgr.send(host.getId(), cleanup(info.name));
-                        if (!answer.getResult()) {
-                            s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
-                        }
-                    }
-                } catch (Exception e) {
-                    s_logger.warn("Unable to stop a VM due to " + e.getMessage());
-                }
-            }
-        }
-    }
-
     public void fullSync(final long clusterId, Map<String, Pair<String, State>> newStates) {
         if (newStates == null)
             return;
@@ -3077,15 +3040,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
         for (final Answer answer : answers) {
-            if (answer instanceof ClusterSyncAnswer) {
-                if (!VmJobEnabled.value()) {
-                    ClusterSyncAnswer hs = (ClusterSyncAnswer)answer;
-                    if (!hs.isExecuted()) {
-                        deltaSync(hs.getNewStates());
-                        hs.setExecuted();
-                    }
-                }
-            } else if ( answer instanceof ClusterVMMetaDataSyncAnswer) {
+            if ( answer instanceof ClusterVMMetaDataSyncAnswer) {
                 ClusterVMMetaDataSyncAnswer cvms = (ClusterVMMetaDataSyncAnswer)answer;
                 if (!cvms.isExecuted()) {
                     syncVMMetaData(cvms.getVMMetaDatum());
@@ -3181,14 +3136,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 HashMap<String, Pair<String, State>> allStates = startup.getClusterVMStateChanges();
                 if (allStates != null) {
                     fullSync(clusterId, allStates);
-                }
-                // initiate the cron job
-                ClusterSyncCommand syncCmd = new ClusterSyncCommand(ClusterDeltaSyncInterval.value(), clusterId);
-                try {
-                    long seq_no = _agentMgr.send(agentId, new Commands(syncCmd), this);
-                    s_logger.debug("Cluster VM sync started with jobid " + seq_no);
-                } catch (AgentUnavailableException e) {
-                    s_logger.fatal("The Cluster VM sync process failed for cluster id " + clusterId + " with ", e);
                 }
             }
             // initiate the cron job

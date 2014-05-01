@@ -30,8 +30,6 @@ import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
-import com.cloud.agent.api.ClusterSyncAnswer;
-import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.ClusterVMMetaDataSyncAnswer;
 import com.cloud.agent.api.ClusterVMMetaDataSyncCommand;
 import com.cloud.agent.api.Command;
@@ -528,8 +526,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((OvsDestroyTunnelCommand)cmd);
         } else if (clazz == UpdateHostPasswordCommand.class) {
             return execute((UpdateHostPasswordCommand)cmd);
-        } else if (cmd instanceof ClusterSyncCommand) {
-            return execute((ClusterSyncCommand)cmd);
         } else if (cmd instanceof ClusterVMMetaDataSyncCommand) {
             return execute((ClusterVMMetaDataSyncCommand)cmd);
         } else if (clazz == CheckNetworkCommand.class) {
@@ -7172,27 +7168,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         return new Answer(cmd, success, "");
     }
-
-    protected Answer execute(final ClusterSyncCommand cmd) {
-        Connection conn = getConnection();
-        //check if this is master
-        Pool pool;
-        try {
-            pool = Pool.getByUuid(conn, _host.pool);
-            Pool.Record poolr = pool.getRecord(conn);
-
-            Host.Record hostr = poolr.master.getRecord(conn);
-            if (!_host.uuid.equals(hostr.uuid)) {
-                return new Answer(cmd);
-            }
-        } catch (Throwable e) {
-            s_logger.warn("Check for master failed, failing the Cluster sync command");
-            return new Answer(cmd);
-        }
-        HashMap<String, Pair<String, State>> newStates = deltaClusterSync(conn);
-        return new ClusterSyncAnswer(cmd.getClusterId(), newStates);
-    }
-
 
     protected ClusterVMMetaDataSyncAnswer execute(final ClusterVMMetaDataSyncCommand cmd) {
         Connection conn = getConnection();

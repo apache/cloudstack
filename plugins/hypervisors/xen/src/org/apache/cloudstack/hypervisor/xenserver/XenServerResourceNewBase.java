@@ -35,9 +35,6 @@ import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VM;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.ClusterSyncAnswer;
-import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.hypervisor.xen.resource.XenServer620SP1Resource;
 import com.cloud.utils.Pair;
@@ -151,16 +148,6 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
         }
     }
 
-
-    @Override
-    protected Answer execute(final ClusterSyncCommand cmd) {
-        if (!_listener.isListening()) {
-            return new Answer(cmd);
-        }
-
-        HashMap<String, Pair<String, VirtualMachine.State>> newStates = _listener.getChanges();
-        return new ClusterSyncAnswer(cmd.getClusterId(), newStates);
-    }
 
     protected class VmEventListener extends Thread {
         boolean _stop = false;

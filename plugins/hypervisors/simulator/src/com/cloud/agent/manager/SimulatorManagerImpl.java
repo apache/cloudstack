@@ -46,7 +46,6 @@ import com.cloud.agent.api.CheckRouterCommand;
 import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
-import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
@@ -373,8 +372,6 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockVmMgr.bumpPriority((BumpUpPriorityCommand)cmd);
                 } else if (cmd instanceof GetDomRVersionCmd) {
                     answer = _mockVmMgr.getDomRVersion((GetDomRVersionCmd)cmd);
-                } else if (cmd instanceof ClusterSyncCommand) {
-                    answer = new Answer(cmd);
                 } else if (cmd instanceof CopyVolumeCommand) {
                     answer = _mockStorageMgr.CopyVolume((CopyVolumeCommand)cmd);
                 } else if (cmd instanceof PlugNicCommand) {
