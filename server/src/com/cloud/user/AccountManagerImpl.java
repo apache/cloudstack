@@ -102,6 +102,7 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.Vpc;
@@ -497,7 +498,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             for (ControlledEntity entity : entities) {
                 if (entity instanceof VirtualMachineTemplate || entity instanceof Network
-                        || entity instanceof AffinityGroup) {
+                        || entity instanceof AffinityGroup || entity instanceof SecurityGroup) {
+                    // Go through IAM (SecurityCheckers)
                     for (SecurityChecker checker : _securityCheckers) {
                         if (checker.checkAccess(caller, accessType, apiName, entity)) {
                             if (s_logger.isDebugEnabled()) {
@@ -540,6 +542,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             }
         } else {
+            // Go through IAM (SecurityCheckers)
             for (SecurityChecker checker : _securityCheckers) {
                 if (checker.checkAccess(caller, accessType, apiName, entities)) {
                     if (s_logger.isDebugEnabled()) {

@@ -612,7 +612,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         }
 
         // Verify permissions
-        _accountMgr.checkAccess(caller, null, securityGroup);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, securityGroup);
         Long domainId = owner.getDomainId();
 
         if (protocol == null) {
@@ -1120,7 +1120,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         }
 
         // check permissions
-        _accountMgr.checkAccess(caller, null, group);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, group);
 
         return Transaction.execute(new TransactionCallbackWithException<Boolean, ResourceInUseException>() {
             @Override
