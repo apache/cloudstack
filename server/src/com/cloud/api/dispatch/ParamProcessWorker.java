@@ -42,6 +42,7 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.EntityReference;
@@ -224,6 +225,17 @@ public class ParamProcessWorker implements DispatchWorker {
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
         if (owner == null) {
+            owner = caller;
+        }
+
+        if (cmd instanceof BaseAsyncCreateCmd) {
+            if (owner.getId() != caller.getId()) {
+                // mimic impersonation either by passing (account, domainId) or through derived owner from other api parameters
+                // in this case, we should check access using the owner
+                _accountMgr.checkAccess(caller, null, owner);
+            }
+        } else {
+            // check access using the caller for other operational cmds
             owner = caller;
         }
 

@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.volume;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -42,8 +43,10 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "createVolume", responseObject = VolumeResponse.class, description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.", responseView = ResponseView.Restricted, entityType = {Volume.class},
+@APICommand(name = "createVolume", responseObject = VolumeResponse.class, description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.", responseView = ResponseView.Restricted, entityType = {
+        Volume.class, VirtualMachine.class},
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
@@ -103,7 +106,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "an optional field, whether to display the volume to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVolume;
 
-    @ACL
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
