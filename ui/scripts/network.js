@@ -3393,9 +3393,23 @@
 
                                                                                 $(nics).map(function (index, nic) {
                                                                                     if (nic.secondaryip) {
-                                                                                        notExisting = true;
+                                                                                        var targetIPs = $(nic.secondaryip).map(function (index, sip) {
+                                                                                            return sip.ipaddress;
+                                                                                        });
 
-                                                                                        return false;
+                                                                                        var lbIPs = $(itemData).map(function(index, item) { return item.itemIp; });
+
+                                                                                        targetIPs.push(nic.ipaddress);
+
+                                                                                        var matchingIPs = $.grep(targetIPs, function(item) {
+                                                                                            return $.inArray(item, lbIPs) > -1;
+                                                                                        });
+
+                                                                                        if (targetIPs.length - matchingIPs.length) {
+                                                                                            notExisting = true;
+
+                                                                                            return false;
+                                                                                        }
                                                                                     }
                                                                                 });
                                                                             }
