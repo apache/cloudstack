@@ -2394,7 +2394,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // Perform account permission check
                 if (network.getAclType() == ACLType.Account) {
-                    _accountMgr.checkAccess(caller, AccessType.UseEntry, network);
+                    _accountMgr.checkAccess(owner, AccessType.UseEntry, network);
                 }
                 networkList.add(network);
             }
