@@ -27,6 +27,7 @@ test_data = {
     "vdomain": {
             "name": "domain"
     },
+    "domain": {"name": "domain"},
     "email": "test@test.com",
     "gateway": "172.1.1.1",
     "netmask": "255.255.255.0",
@@ -294,7 +295,7 @@ test_data = {
                 "Dhcp": "VirtualRouter",
             "Dns": "VirtualRouter",
             "UserData": "VirtualRouter"
-            }
+        }
     },
     "shared_network_offering_all_services": {
             "name":"shaared network offering with services enabled",
@@ -418,6 +419,35 @@ test_data = {
             "UserData": 'VirtualRouter',
         },
     },
+    "nw_off_isolated_RVR": {
+        "name": "Network offering-RVR services",
+        "displaytext": "Network off-RVR services",
+        "guestiptype": "Isolated",
+        "supportedservices": "Vpn,Dhcp,Dns,SourceNat,PortForwarding,Firewall,Lb,UserData,StaticNat",
+        "traffictype": "GUEST",
+        "availability": "Optional",
+        "ispersistent": "False",
+        "serviceProviderList": {
+            "Vpn": "VirtualRouter",
+            "Dhcp": "VirtualRouter",
+            "Dns": "VirtualRouter",
+            "SourceNat": "VirtualRouter",
+            "PortForwarding": "VirtualRouter",
+            "Firewall": "VirtualRouter",
+            "Lb": "VirtualRouter",
+            "UserData": "VirtualRouter",
+            "StaticNat": "VirtualRouter"
+        },
+        "serviceCapabilityList": {
+            "SourceNat": {
+                "SupportedSourceNatTypes": "peraccount",
+                "RedundantRouter": "true"
+            },
+            "lb": {
+                "SupportedLbIsolation": "dedicated"
+            }
+        }
+    },
     "nw_off_persistent_RVR": {
         "name": 'Network offering-RVR services',
         "displaytext": 'Network off-RVR services',
@@ -447,6 +477,73 @@ test_data = {
                 "SupportedLbIsolation": "dedicated"
             },
         },
+    },
+    "nw_offering_isolated_vpc": {
+        "name": "Isolated Network for VPC",
+        "displaytext": "Isolated Network for VPC",
+        "guestiptype": "Isolated",
+        "supportedservices": "Dhcp,Dns,SourceNat,PortForwarding,Vpn,UserData,StaticNat,NetworkACL",
+        "traffictype": "GUEST",
+        "availability": "Optional",
+        "ispersistent": "False",
+        "useVpc": "on",
+        "serviceProviderList": {
+            "Dhcp": "VpcVirtualRouter",
+            "Dns": "VpcVirtualRouter",
+            "SourceNat": "VpcVirtualRouter",
+            "PortForwarding": "VpcVirtualRouter",
+            "Vpn": "VpcVirtualRouter",
+            "UserData": "VpcVirtualRouter",
+            "StaticNat": "VpcVirtualRouter",
+            "NetworkACL": "VpcVirtualRouter"
+        }
+    },
+    "nw_off_persistent_VPCVR_LB": {
+        "name": "Persistent Network VPC with LB",
+        "displaytext": "Persistent Network VPC No LB",
+        "guestiptype": "Isolated",
+        "supportedservices": "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat,NetworkACL",
+        "traffictype": "GUEST",
+        "availability": "Optional",
+        "ispersistent": "False",
+        "useVpc": "on",
+        "serviceProviderList": {
+            "Dhcp": "VpcVirtualRouter",
+            "Dns": "VpcVirtualRouter",
+            "SourceNat": "VpcVirtualRouter",
+            "PortForwarding": "VpcVirtualRouter",
+            "Vpn": "VpcVirtualRouter",
+            "Lb": "VpcVirtualRouter",
+            "UserData": "VpcVirtualRouter",
+            "StaticNat": "VpcVirtualRouter",
+            "NetworkACL": "VpcVirtualRouter"
+        }
+    },
+    "nw_off_persistent_VPCVR_NoLB": {
+        "name": "Persistent Network VPC No LB",
+        "displaytext": "Persistent Network VPC No LB",
+        "guestiptype": "Isolated",
+        "supportedservices": "Dhcp,Dns,SourceNat,PortForwarding,Vpn,UserData,StaticNat,NetworkACL",
+        "traffictype": "GUEST",
+        "availability": "Optional",
+        "ispersistent": "False",
+        "useVpc": "on",
+        "serviceProviderList": {
+            "Dhcp": "VpcVirtualRouter",
+            "Dns": "VpcVirtualRouter",
+            "SourceNat": "VpcVirtualRouter",
+            "PortForwarding": "VpcVirtualRouter",
+            "Vpn": "VpcVirtualRouter",
+            "UserData": "VpcVirtualRouter",
+            "StaticNat": "VpcVirtualRouter",
+            "NetworkACL": "VpcVirtualRouter"
+        }
+    },
+    "fwrule": {
+        "startport": 22,
+        "endport": 22,
+        "cidr": "0.0.0.0/0",
+        "protocol": "TCP"
     },
     "nw_off_isolated_persistent_netscaler": {
         "name": 'Netscaler',
@@ -541,7 +638,7 @@ test_data = {
             "bootable": False,
             "ispublic": False,
             "ostype": "CentOS 5.6 (64-bit)",
-    }, 
+    },
     "iso1": {
         "displaytext": "Test ISO 1",
         "name": "ISO 1",
@@ -727,7 +824,7 @@ test_data = {
         "disksize": 1
     },
     "host_anti_affinity": {
-                    "name": "hostantiaffinity",
-                    "type": "host anti-affinity",
-                },
+        "name": "hostantiaffinity",
+        "type": "host anti-affinity",
+    },
 }
