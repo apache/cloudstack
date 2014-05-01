@@ -18,8 +18,6 @@ package com.cloud.vm;
 
 import java.util.Formatter;
 
-import com.cloud.dc.Vlan;
-
 /**
  * VM Name. 
  */
@@ -52,26 +50,16 @@ public class VirtualMachineName {
     
     public static boolean isValidVmName(String vmName, String instance) {
         String[] tokens = vmName.split(SEPARATOR);
-        /*Some vms doesn't have vlan/vnet id*/
-        if (tokens.length != 5 && tokens.length != 4) {
+
+        if (tokens.length <= 1) {
             return false;
         }
 
         if (!tokens[0].equals("i")) {
             return false;
         }
-        
-        try {
-            Long.parseLong(tokens[1]);
-            Long.parseLong(tokens[2]);
-            if (tokens.length == 5 && !Vlan.UNTAGGED.equalsIgnoreCase(tokens[4])) {
-            	Long.parseLong(tokens[4], 16);
-            }
-        } catch (NumberFormatException e) {
-            return false;
-        }
-        
-        return instance == null || instance.equals(tokens[3]);
+
+        return true;
     }
     
     public static String getVmName(long vmId, long userId, String instance) {
