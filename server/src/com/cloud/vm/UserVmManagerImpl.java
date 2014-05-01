@@ -2682,7 +2682,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             // Perform account permission check on network
-            _accountMgr.checkAccess(caller, AccessType.UseEntry, network);
+            _accountMgr.checkAccess(owner, AccessType.UseEntry, network);
 
             IpAddresses requestedIpPair = null;
             if (requestedIps != null && !requestedIps.isEmpty()) {
