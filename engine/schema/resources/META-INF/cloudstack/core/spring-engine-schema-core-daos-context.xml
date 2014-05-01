@@ -195,6 +195,7 @@
   <bean id="networkAccountDaoImpl" class="com.cloud.network.dao.NetworkAccountDaoImpl" />
   <bean id="networkACLDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLDaoImpl" />
   <bean id="networkACLItemDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLItemDaoImpl" />
+  <bean id="networkACLItemCidrsDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLItemCidrsDaoImpl" />
   <bean id="networkDaoImpl" class="com.cloud.network.dao.NetworkDaoImpl" />
   <bean id="networkDomainDaoImpl" class="com.cloud.network.dao.NetworkDomainDaoImpl" />
   <bean id="networkExternalFirewallDaoImpl" class="com.cloud.network.dao.NetworkExternalFirewallDaoImpl" />
