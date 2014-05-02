@@ -1334,7 +1334,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             AttachAnswer answer = new AttachAnswer(disk);
 
             if (isAttach) {
-                vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs);
+                vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
             } else {
                 vmMo.removeAllSnapshots();
                 vmMo.detachDisk(datastoreVolumePath, false);
@@ -1800,7 +1800,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return null;
     }
 
-    private void deleteVmfsDatastore(VmwareHypervisorHost hyperHost, String volumeUuid, String storageIpAddress, int storagePortNumber, String iqn) throws Exception {
+    private void removeVmfsDatastore(VmwareHypervisorHost hyperHost, String volumeUuid, String storageIpAddress, int storagePortNumber, String iqn) throws Exception {
         // hyperHost.unmountDatastore(volumeUuid);
 
         VmwareContext context = hostService.getServiceContext(null);
@@ -1994,7 +1994,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         VmwareContext context = hostService.getServiceContext(null);
         VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
 
-        deleteVmfsDatastore(hyperHost, VmwareResource.getDatastoreName(iqn), storageHost, storagePort, trimIqn(iqn));
+        removeVmfsDatastore(hyperHost, VmwareResource.getDatastoreName(iqn), storageHost, storagePort, trimIqn(iqn));
     }
 
     private void removeManagedTargetsFromCluster(List<String> iqns) throws Exception {
