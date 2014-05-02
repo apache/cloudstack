@@ -204,10 +204,42 @@ test_data = {
             "StaticNat": "VirtualRouter"
         }
     },
+	"network_offering_vlan": {
+		    "name": 'Test Network offering',
+		    "displaytext": 'Test Network offering',
+		    "guestiptype": 'Isolated',
+		    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
+		    "traffictype": 'GUEST',
+		    "specifyvlan": 'False',
+		    "availability": 'Optional',
+		    "serviceProviderList" : {
+								   "Dhcp": 'VirtualRouter',
+								   "Dns": 'VirtualRouter',
+								   "SourceNat": 'VirtualRouter',
+								   "PortForwarding": 'VirtualRouter',
+			                     },
+	},
+	"network_offering_without_sourcenat": {
+	   "name": 'Test Network offering',
+	   "displaytext": 'Test Network offering',
+	   "guestiptype": 'Isolated',
+	   "supportedservices": 'Dhcp,Dns,UserData',
+	   "traffictype": 'GUEST',
+	   "availability": 'Optional',
+	   "serviceProviderList" : {
+							   "Dhcp": 'VirtualRouter',
+							   "Dns": 'VirtualRouter',
+							   "UserData": 'VirtualRouter',
+		},
+	},
     "isolated_network": {
         "name": "Isolated Network",
         "displaytext": "Isolated Network"
     },
+	"network_without_acl": {
+		"name": "TestNetwork",
+		"displaytext": "TestNetwork",
+	},
     "virtual_machine": {
         "displayname": "Test VM",
         "username": "root",
@@ -302,6 +334,12 @@ test_data = {
         "displaytext": "TestVPC",
         "cidr": "10.0.0.1/24"
     },
+	"vpc_network_domain": {
+		"name": "TestVPC",
+		"displaytext": "TestVPC",
+		"cidr": '10.0.0.1/24',
+		"network_domain": "TestVPC"
+	},
     "clusters": {
         0: {
             "clustername": "Xen Cluster",
@@ -433,6 +471,13 @@ test_data = {
         },
 
     },
+	"network_acl_rule": {
+		   "protocol":"TCP", 
+		   "traffictype":"ingress", 
+		   "cidrlist":"0.0.0.0/0",
+		   "startport":"1",
+		   "endport":"1"
+	},
     "network_offering_internal_lb": {
         "name": "Network offering for internal lb service",
         "displaytext": "Network offering for internal lb service",
