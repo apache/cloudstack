@@ -65,7 +65,7 @@ class TestData(object):
                     "offerha": True,
                 },
             },
-            "ostype": 'CentOS 5.3 (32-bit)',
+            "ostype": 'CentOS 5.3 (64-bit)',
         }
 
 
@@ -198,7 +198,7 @@ class TestDeployVMHA(cloudstackTestCase):
             list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
             self.assertTrue(isinstance(list_vms, list) and len(list_vms) == 1, msg = "List VM response was empty")
             vm = list_vms[0]
-            if vm.hostid != self.virtual_machine.hostid:
+            if vm.hostid != self.virtual_machine.hostid and vm.state == "Running":
                 break
             else:
                 time.sleep(10)
