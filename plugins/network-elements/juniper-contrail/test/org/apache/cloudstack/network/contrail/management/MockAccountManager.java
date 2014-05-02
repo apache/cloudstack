@@ -37,7 +37,6 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.domain.Domain;
-import com.cloud.domain.PartOf;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -192,12 +191,6 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     public boolean isNormalUser(long accountId) {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    @Override
-    public void checkAccess(Account account, AccessType accessType, boolean sameOwner, PartOf... entities) throws PermissionDeniedException {
-        // TODO Auto-generated method stub
-
     }
 
 

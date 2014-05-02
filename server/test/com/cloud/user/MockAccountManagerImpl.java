@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
 import com.cloud.domain.Domain;
-import com.cloud.domain.PartOf;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -220,11 +219,6 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
 
-    @Override
-    public void checkAccess(Account account, AccessType accessType, boolean sameOwner, PartOf... entities) throws PermissionDeniedException {
-        // TODO Auto-generated method stub
-
-    }
 
     @Override
     public UserAccount getUserAccountById(Long userId) {

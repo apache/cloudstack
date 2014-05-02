@@ -1432,7 +1432,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     throw new InvalidParameterValueException("Unable to find account " + accountName + " in specified domain");
                 }
 
-                _accountMgr.checkAccess(caller, null, true, owner);
+                _accountMgr.checkAccess(caller, null, owner);
                 permittedAccounts.add(owner.getId());
             }
         }

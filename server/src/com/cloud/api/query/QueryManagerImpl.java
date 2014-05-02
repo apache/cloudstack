@@ -3111,7 +3111,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
 
             if (userAccount != null) {
-                _accountMgr.checkAccess(caller, null, false, userAccount);
+                _accountMgr.checkAccess(caller, null, userAccount);
                 // check permissions
                 permittedAccounts.add(userAccount.getId());
             } else {
@@ -3251,7 +3251,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             // if template is not public, perform permission check here
             if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                 Account owner = _accountMgr.getAccount(template.getAccountId());
-                _accountMgr.checkAccess(caller, null, true, owner);
+                _accountMgr.checkAccess(caller, null, owner);
             }
 
             // if templateId is specified, then we will just use the id to
@@ -3576,7 +3576,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 throw new InvalidParameterValueException("Unable to list affinity groups for virtual machine instance "
                         + vmId + "; instance not found.");
             }
-            _accountMgr.checkAccess(caller, null, true, userVM);
+            _accountMgr.checkAccess(caller, null, userVM);
             return listAffinityGroupsByVM(vmId.longValue(), startIndex, pageSize);
         }
 
