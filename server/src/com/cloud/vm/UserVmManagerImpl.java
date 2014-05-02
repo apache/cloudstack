@@ -71,6 +71,7 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -82,6 +83,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -97,7 +99,6 @@ import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -4609,13 +4610,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
         }
 
+        handleManagedStorage(vm, root);
+
         _volsDao.attachVolume(newVol.getId(), vmId, newVol.getDeviceId());
 
         /* Detach and destory the old root volume */
 
         _volsDao.detachVolume(root.getId());
-
-        handleManagedStorage(vm, root);
 
         volumeMgr.destroyVolume(root);
 
@@ -4671,19 +4672,44 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
 
             if (hostId != null) {
-                DataTO volTO = volFactory.getVolume(root.getId()).getTO();
-                DiskTO disk = new DiskTO(volTO, root.getDeviceId(), root.getPath(), root.getVolumeType());
+                VolumeInfo volumeInfo = volFactory.getVolume(root.getId());
+                Host host = _hostDao.findById(hostId);
 
-                // it's OK in this case to send a detach command to the host for a root volume as this
-                // will simply lead to the SR that supports the root volume being removed
-                DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
+                final Command cmd;
 
-                cmd.setManaged(true);
+                if (host.getHypervisorType() == HypervisorType.XenServer) {
+                    DiskTO disk = new DiskTO(volumeInfo.getTO(), root.getDeviceId(), root.getPath(), root.getVolumeType());
 
-                cmd.setStorageHost(storagePool.getHostAddress());
-                cmd.setStoragePort(storagePool.getPort());
+                    // it's OK in this case to send a detach command to the host for a root volume as this
+                    // will simply lead to the SR that supports the root volume being removed
+                    cmd = new DettachCommand(disk, vm.getInstanceName());
 
-                cmd.set_iScsiName(root.get_iScsiName());
+                    DettachCommand detachCommand = (DettachCommand)cmd;
+
+                    detachCommand.setManaged(true);
+
+                    detachCommand.setStorageHost(storagePool.getHostAddress());
+                    detachCommand.setStoragePort(storagePool.getPort());
+
+                    detachCommand.set_iScsiName(root.get_iScsiName());
+                }
+                else if (host.getHypervisorType() == HypervisorType.VMware) {
+                    PrimaryDataStore primaryDataStore = (PrimaryDataStore)volumeInfo.getDataStore();
+                    Map<String, String> details = primaryDataStore.getDetails();
+
+                    if (details == null) {
+                        details = new HashMap<String, String>();
+
+                        primaryDataStore.setDetails(details);
+                    }
+
+                    details.put(DiskTO.MANAGED, Boolean.TRUE.toString());
+
+                    cmd = new DeleteCommand(volumeInfo.getTO());
+                }
+                else {
+                    throw new CloudRuntimeException("This hypervisor type is not supported on managed storage for this command.");
+                }
 
                 Commands cmds = new Commands(Command.OnError.Stop);
 
@@ -4706,13 +4732,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
                 }
 
-                if (hostId != null) {
-                    // root.getPoolId() should be null if the VM we are attaching the disk to has never been started before
-                    DataStore dataStore = root.getPoolId() != null ? _dataStoreMgr.getDataStore(root.getPoolId(), DataStoreRole.Primary) : null;
-                    Host host = _hostDao.findById(hostId);
+                // root.getPoolId() should be null if the VM we are detaching the disk from has never been started before
+                DataStore dataStore = root.getPoolId() != null ? _dataStoreMgr.getDataStore(root.getPoolId(), DataStoreRole.Primary) : null;
 
-                    volumeMgr.disconnectVolumeFromHost(volFactory.getVolume(root.getId()), host, dataStore);
-                }
+                volumeMgr.disconnectVolumeFromHost(volFactory.getVolume(root.getId()), host, dataStore);
             }
         }
     }
