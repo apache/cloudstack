@@ -379,10 +379,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Account caller = CallContext.current().getCallingAccount();
 
         long ownerId = cmd.getEntityOwnerId();
+        Account owner = _accountMgr.getActiveAccountById(ownerId);
         Boolean displayVolume = cmd.getDisplayVolume();
 
         // permission check
-        _accountMgr.checkAccess(caller, null, _accountMgr.getActiveAccountById(ownerId));
+        _accountMgr.checkAccess(caller, null, owner);
 
         if (displayVolume == null) {
             displayVolume = true;
@@ -394,7 +395,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // Check that the resource limit for volumes won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.volume, displayVolume);
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, displayVolume);
 
         Long zoneId = cmd.getZoneId();
         Long diskOfferingId = null;
@@ -529,7 +530,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // Check that the resource limit for primary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.primary_storage, displayVolume, new Long(size));
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, displayVolume, new Long(size));
 
         // Verify that zone exists
         DataCenterVO zone = _dcDao.findById(zoneId);
@@ -553,13 +554,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             userSpecifiedName = getRandomVolumeName();
         }
 
-        VolumeVO volume = commitVolume(cmd, caller, ownerId, displayVolume, zoneId, diskOfferingId, size, minIops, maxIops, parentVolume, userSpecifiedName,
+        VolumeVO volume = commitVolume(cmd, caller, owner, displayVolume, zoneId, diskOfferingId, size, minIops, maxIops, parentVolume, userSpecifiedName,
                 _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
 
         return volume;
     }
 
-    private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final long ownerId, final Boolean displayVolume, final Long zoneId,
+    private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final Account owner, final Boolean displayVolume, final Long zoneId,
             final Long diskOfferingId, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName, final String uuid) {
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
@@ -569,15 +570,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setUuid(uuid);
         volume.setDataCenterId(zoneId);
         volume.setPodId(null);
-        volume.setAccountId(ownerId);
-        volume.setDomainId(((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId()));
+                volume.setAccountId(owner.getId());
+                volume.setDomainId(owner.getDomainId());
         volume.setDiskOfferingId(diskOfferingId);
         volume.setSize(size);
         volume.setMinIops(minIops);
         volume.setMaxIops(maxIops);
         volume.setInstanceId(null);
         volume.setUpdated(new Date());
-        volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId());
                 volume.setDisplayVolume(displayVolume);
         if (parentVolume != null) {
             volume.setTemplateId(parentVolume.getTemplateId());
