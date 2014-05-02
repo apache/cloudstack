@@ -300,6 +300,13 @@ class deployDataCenters(object):
                     self.enableProvider(pnetprovres[0].id)
                 elif provider.name == 'SecurityGroupProvider':
                     self.enableProvider(pnetprovres[0].id)
+            elif provider.name in ['JuniperContrailRouter', 'JuniperContrailVpcRouter']:
+                netprov = addNetworkServiceProvider.\
+                    addNetworkServiceProviderCmd()
+                netprov.name = provider.name
+                netprov.physicalnetworkid = phynetwrk.id
+                result = self.apiClient.addNetworkServiceProvider(netprov)
+                self.enableProvider(result.id)
             elif provider.name in ['Netscaler', 'JuniperSRX', 'F5BigIp']:
                 netprov = addNetworkServiceProvider.\
                     addNetworkServiceProviderCmd()
