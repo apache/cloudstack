@@ -1036,6 +1036,30 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                                 + " is RBD format 2. We will perform a RBD clone using snapshot "
                                 + this.rbdTemplateSnapName);
                                 /* The source image is format 2, we can do a RBD snapshot+clone (layering) */
+
+
+                        s_logger.debug("Checking if RBD snapshot " + srcPool.getSourceDir() + "/" + template.getName()
+                                       + "@" + rbdTemplateSnapName + " exists prior to attempting a clone operation.");
+
+                        List<RbdSnapInfo> snaps = srcImage.snapList();
+                        s_logger.debug("Found " + snaps.size() +  " snapshots on RBD image " + srcPool.getSourceDir() + "/" + template.getName());
+                        boolean snapFound = false;
+                        for (RbdSnapInfo snap : snaps) {
+                            if (rbdTemplateSnapName.equals(snap.name)) {
+                                s_logger.debug("RBD snapshot " + srcPool.getSourceDir() + "/" + template.getName()
+                                               + "@" + rbdTemplateSnapName + " already exists.");
+                                snapFound = true;
+                                break;
+                            }
+                        }
+
+                        if (!snapFound) {
+                            s_logger.debug("Creating RBD snapshot " + rbdTemplateSnapName + " on image " + name);
+                            srcImage.snapCreate(rbdTemplateSnapName);
+                            s_logger.debug("Protecting RBD snapshot " + rbdTemplateSnapName + " on image " + name);
+                            srcImage.snapProtect(rbdTemplateSnapName);
+                        }
+
                         rbd.clone(template.getName(), this.rbdTemplateSnapName, io, disk.getName(), this.rbdFeatures, this.rbdOrder);
                         s_logger.debug("Succesfully cloned " + template.getName() + "@" + this.rbdTemplateSnapName + " to " + disk.getName());
                     }
@@ -1233,12 +1257,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 Rbd rbd = new Rbd(io);
 
                 RbdImage image = rbd.open(name);
-
-                /* Snapshot the image and protect that snapshot so we can clone (layer) from it */
-                s_logger.debug("Creating RBD snapshot " + rbdTemplateSnapName + " on image " + name);
-                image.snapCreate(rbdTemplateSnapName);
-                s_logger.debug("Protecting RBD snapshot " + rbdTemplateSnapName + " on image " + name);
-                image.snapProtect(rbdTemplateSnapName);
 
                 rbd.close(image);
                 r.ioCtxDestroy(io);
