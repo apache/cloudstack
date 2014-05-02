@@ -1473,7 +1473,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             // Mark the volume as detached
             _volsDao.detachVolume(volume.getId());
 
-            // volume.getPoolId() should be null if the VM we are attaching the disk to has never been started before
+            // volume.getPoolId() should be null if the VM we are detaching the disk from has never been started before
             DataStore dataStore = volume.getPoolId() != null ? dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary) : null;
 
             volService.disconnectVolumeFromHost(volFactory.getVolume(volume.getId()), host, dataStore);
