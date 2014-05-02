@@ -75,7 +75,6 @@ import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
-import com.cloud.domain.PartOf;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
@@ -465,13 +464,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + domain);
     }
 
-    @Override
-    public void checkAccess(Account caller, AccessType accessType, boolean sameOwner, PartOf... entities) throws PermissionDeniedException {
-        // TODO Auto-generated method stub
-
-        //TO BE IMPLEMENTED
-
-    }
 
     @Override
     public void checkAccess(Account caller, AccessType accessType, ControlledEntity... entities) throws PermissionDeniedException {
