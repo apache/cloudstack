@@ -35,8 +35,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
@@ -46,6 +44,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -130,7 +129,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
-import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
@@ -2160,9 +2158,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
 
                 try {
-                    Transaction.execute(new TransactionCallbackWithExceptionNoReturn<Exception>() {
-                        @Override
-                        public void doInTransactionWithoutResult(TransactionStatus status) throws Exception {
                     // Cleanup inactive VPCs
                     List<VpcVO> inactiveVpcs = _vpcDao.listInactiveVpcs();
                     s_logger.info("Found " + inactiveVpcs.size() + " removed VPCs to cleanup");
@@ -2170,8 +2165,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         s_logger.debug("Cleaning up " + vpc);
                         destroyVpc(vpc, _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
                     }
-                        }
-                    });
                 } catch (Exception e) {
                     s_logger.error("Exception ", e);
                 } finally {
