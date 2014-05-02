@@ -39,6 +39,23 @@ VSCTL_PATH = "/usr/bin/ovs-vsctl"
 OFCTL_PATH = "/usr/bin/ovs-ofctl"
 XE_PATH = "/opt/xensource/bin/xe"
 
+# OpenFlow tables set in a pipeline processing fashion for the bridge created for a VPC's that are enabled for
+# distributed routing.
+# L2 path (intra-tier traffic)  CLASSIFIER-> L2 lookup -> L2 flooding tables
+# L3 path (inter-tier traffic)  CLASSIFIER-> EGRESS ACL -> L3 lookup -> INGRESS ACL-> L2 lookup -> L2 flooding tables
+
+# Classifier table has the rules to separate broadcast/multi-cast traffic, inter-tier traffic, intra-tier traffic
+CLASSIFIER_TABLE=0
+# Lookup table to determine the output port (vif/tunnel port) based on the MAC address
+L2_LOOKUP_TABLE=1
+# flooding table has the rules to flood on ports (both VIF, tunnel ports) except on the port on which packet arrived
+L2_FLOOD_TABLE=2
+# table has flow rules derived from egress ACL's
+EGRESS_ACL_TABLE=3
+# Lookup table to determine the output port (vif/tunnel port) based on the IP address
+L3_LOOKUP_TABLE=4
+# table has flow rules derived from egress ACL's
+INGRESS_ACL_TABLE=5
 
 class PluginError(Exception):
     """Base Exception class for all plugin errors."""
@@ -179,9 +196,10 @@ def _build_flow_expr(**kwargs):
     nw_src = 'nw_src' in kwargs and ",nw_src=%s" % kwargs['nw_src'] or ''
     nw_dst = 'nw_dst' in kwargs and ",nw_dst=%s" % kwargs['nw_dst'] or ''
     table = 'table' in kwargs and ",table=%s" % kwargs['table'] or ''
+    cookie = 'cookie' in kwargs and ",cookie=%s" % kwargs['cookie'] or ''
     proto = 'proto' in kwargs and ",%s" % kwargs['proto'] or ''
     ip = ('nw_src' in kwargs or 'nw_dst' in kwargs) and ',ip' or ''
-    flow = (flow + in_port + dl_type + dl_src + dl_dst +
+    flow = (flow + cookie+ in_port + dl_type + dl_src + dl_dst +
             (ip or proto) + nw_src + nw_dst + table)
     return flow
 
@@ -236,11 +254,14 @@ def get_network_id_for_tunnel_port(tunnelif_name):
     return vnet
 
 def clear_flooding_rules_for_port(bridge, ofport):
-        del_flows(bridge, in_port=ofport, table=2)
+        del_flows(bridge, in_port=ofport, table=L2_FLOOD_TABLE)
+
+def clear_flooding_rules_for_all_ports(bridge):
+        del_flows(bridge, cookie=111, table=L2_FLOOD_TABLE)
 
 def add_flooding_rules_for_port(bridge, in_ofport, out_ofports):
         action = "".join("output:%s," %ofport for ofport in out_ofports)[:-1]
-        add_flow(bridge, priority=1100, in_port=in_ofport, table=2, actions=action)
+        add_flow(bridge, cookie=111, priority=1100, in_port=in_ofport, table=L2_FLOOD_TABLE, actions=action)
 
 def get_ofport_for_vif(vif_name):
     return do_cmd([VSCTL_PATH, "get", "interface", vif_name, "ofport"])
@@ -261,18 +282,18 @@ def get_vif_name_from_macaddress(macaddress):
 
 def add_mac_lookup_table_entry(bridge, mac_address, out_of_port):
     action = "output=%s" %out_of_port
-    add_flow(bridge, priority=1100, dl_dst=mac_address, table=1, actions=action)
+    add_flow(bridge, priority=1100, dl_dst=mac_address, table=L2_LOOKUP_TABLE, actions=action)
 
 def delete_mac_lookup_table_entry(bridge, mac_address):
-    del_flows(bridge, dl_dst=mac_address, table=1)
+    del_flows(bridge, dl_dst=mac_address, table=L2_LOOKUP_TABLE)
 
 def add_ip_lookup_table_entry(bridge, ip, dst_tier_gateway_mac, dst_vm_mac):
-    action_str = "mod_dl_src:%s" % dst_tier_gateway_mac + ",mod_dl_dst:%s" % dst_vm_mac + ",resubmit(,5)"
-    action_str = "table=4, ip, nw_dst=%s" % ip + ",  actions=%s" %action_str
+    action_str = "mod_dl_src:%s" % dst_tier_gateway_mac + ",mod_dl_dst:%s" % dst_vm_mac + ",resubmit(,%s)"%INGRESS_ACL_TABLE
+    action_str = "table=%s"%L3_LOOKUP_TABLE + ", ip, nw_dst=%s" % ip + ",  actions=%s" %action_str
     addflow = [OFCTL_PATH, "add-flow", bridge, action_str]
     do_cmd(addflow)
 
-def get_vms_on_host(vpc, host_id):
+def get_vpc_vms_on_host(vpc, host_id):
     all_vms = vpc.vms
     vms_on_host = []
     for vm in all_vms:
@@ -314,74 +335,6 @@ class jsonLoader(object):
   def __str__(self):
         return '{%s}' % str(', '.join('%s : %s' % (k, repr(v)) for (k, v)
                                       in self.__dict__.iteritems()))
-
-def configure_bridge_for_network_topology(bridge, this_host_id, json_config, sequence_no):
-    vpconfig = jsonLoader(json.loads(json_config)).vpc
-
-    if vpconfig is None:
-        logging.debug("WARNING:Can't find VPC info in json config file")
-        return "FAILURE:IMPROPER_JSON_CONFG_FILE"
-
-    try:
-        # get the list of Vm's in the VPC from the JSON config
-        this_host_vms = get_vms_on_host(vpconfig, this_host_id)
-
-        for vm in this_host_vms:
-            for nic in vm.nics:
-                mac_addr = nic.macaddress
-                ip = nic.ipaddress
-                vif_name = get_vif_name_from_macaddress(mac_addr)
-                of_port = get_ofport_for_vif(vif_name)
-                network = get_network_details(vpconfig, nic.networkuuid)
-
-                # Add flow rule in L2 look up table, if the destination mac = MAC of the nic send packet on the found OFPORT
-                add_mac_lookup_table_entry(bridge, mac_addr, of_port)
-
-                # Add flow rule in L3 look up table: if the destination IP = VM's IP then modify the packet
-                # to set DST MAC = VM's MAC, SRC MAC=tier gateway MAC and send to egress table
-                add_ip_lookup_table_entry(bridge, ip, network.gatewaymac, mac_addr)
-
-                # Add flow entry to send with intra tier traffic from the NIC to L2 lookup path)
-                action_str = "table=0, in_port=%s," %of_port + " ip, nw_dst=%s," %network.cidr + " actions=resubmit(,1)"
-                addflow = [OFCTL_PATH, "add-flow", bridge, action_str]
-                do_cmd(addflow)
-
-                #add flow entry to send inter-tier traffic from the NIC to egress ACL table(to L3 lookup path)
-                action_str = "table=0, in_port=%s," % of_port + " ip, dl_dst=%s," %network.gatewaymac +\
-                             "nw_dst=%s," %vpconfig.cidr + "actions=resubmit(,3)"
-                addflow = [OFCTL_PATH, "add-flow", bridge, action_str]
-                do_cmd(addflow)
-
-        # get the list of hosts on which VPC spans from the JSON config
-        vpc_spanning_hosts = vpconfig.hosts
-
-        for host in vpc_spanning_hosts:
-            if str(this_host_id) == str(host.hostid):
-                continue
-            other_host_vms = get_vms_on_host(vpconfig, str(host.hostid))
-            for vm in other_host_vms:
-                for nic in vm.nics:
-                    mac_addr = nic.macaddress
-                    ip = nic.ipaddress
-                    network = get_network_details(vpconfig, nic.networkuuid)
-                    gre_key = network.grekey
-
-                    # generate tunnel name from tunnel naming convention
-                    tunnel_name = "t%s-%s-%s" % (gre_key, this_host_id, host.hostid)
-                    of_port = get_ofport_for_vif(tunnel_name)
-
-                    # Add flow rule in L2 look up table, if the destination mac = MAC of the nic send packet tunnel port
-                    add_mac_lookup_table_entry(bridge, mac_addr, of_port)
-
-                    # Add flow tule in L3 look up table: if the destination IP = VM's IP then modify the packet
-                    # set DST MAC = VM's MAC, SRC MAC=tier gateway MAC and send to egress table
-                    add_ip_lookup_table_entry(bridge, ip, network.gatewaymac, mac_addr)
-
-        return "SUCCESS: successfully configured bridge as per the VPC topology"
-    except:
-        logging.debug("An unexpected error occurred while configuring bridge as per VPC topology.")
-        raise
-
 def get_acl(vpcconfig, required_acl_id):
     acls = vpcconfig.acls
     for acl in acls:
@@ -389,17 +342,133 @@ def get_acl(vpcconfig, required_acl_id):
             return acl
     return None
 
-def configure_ovs_bridge_for_routing_policies(bridge, json_config, sequence_no):
-    vpconfig = jsonLoader(json.loads(json_config)).vpc
+# Configures the bridge created for a VPC enabled for distributed routing. Management server sends VPC physical topology
+# details. Based on the VPC physical topology L2 lookup table and L3 lookup tables are updated by this function.
+def configure_bridge_for_network_topology(bridge, this_host_id, json_config, sequence_no):
 
+    vpconfig = jsonLoader(json.loads(json_config)).vpc
     if vpconfig is None:
-        logging.debug("WARNING:Can't find VPC info in json config file")
+        logging.debug("WARNING:Can't find VPC topology information in the json configuration file")
         return "FAILURE:IMPROPER_JSON_CONFG_FILE"
 
     try:
-        # First flush current ingress and egress ACL's before re-applying the ACL's
-        del_flows(bridge, table=3)
-        del_flows(bridge, table=5)
+        if not os.path.exists('/var/run/cloud'):
+            os.makedirs('/var/run/cloud')
+
+        # create a temporary file to store OpenFlow rules corresponding to L2 and L3 lookup table updates
+        ofspec_filename = "/var/run/cloud/" + bridge + sequence_no + ".ofspec"
+        ofspec = open(ofspec_filename, 'w')
+
+        # get the list of VM's in all the tiers of VPC running in this host from the JSON config
+        this_host_vms = get_vpc_vms_on_host(vpconfig, this_host_id)
+
+        for vm in this_host_vms:
+            for nic in vm.nics:
+                mac_addr = nic.macaddress
+                ip = nic.ipaddress
+                vif_name = get_vif_name_from_macaddress(mac_addr)
+                of_port  = get_ofport_for_vif(vif_name)
+                network  = get_network_details(vpconfig, nic.networkuuid)
+
+                # Add OF rule in L2 look up table, if packet's destination mac matches MAC of the VM's nic
+                # then send packet on the found OFPORT
+                ofspec.write(" table=%s" %L2_LOOKUP_TABLE + " priority=1100 dl_dst=%s " %mac_addr +
+                             " actions=output:%s" %of_port + "\n")
+
+                # Add OF rule in L3 look up table: if packet's destination IP matches VM's IP then modify the packet
+                # to set DST MAC = VM's MAC, SRC MAC= destination tier gateway MAC and send to egress table. This step
+                # emulates steps VPC virtual router would have done on the current host itself.
+                action_str = " mod_dl_src:%s"%network.gatewaymac + ",mod_dl_dst:%s" % mac_addr \
+                             + ",resubmit(,%s)"%INGRESS_ACL_TABLE
+                action_str = " table=%s"%L3_LOOKUP_TABLE + " ip nw_dst=%s"%ip + " actions=%s" %action_str
+                ofspec.write(action_str + "\n")
+
+                # Add OF rule to send intra-tier traffic from this nic of the VM to L2 lookup path (L2 switching)
+                action_str = " table=%s" %CLASSIFIER_TABLE + " priority=1200 in_port=%s " %of_port + \
+                             " ip nw_dst=%s " %network.cidr + " actions=resubmit(,%s)" %L2_LOOKUP_TABLE
+                ofspec.write(action_str + "\n")
+
+                # Add OF rule to send inter-tier traffic from this nic of the VM to egress ACL table(L3 lookup path)
+                action_str = " table=%s "%CLASSIFIER_TABLE + " priority=1100 in_port=%s " %of_port +\
+                             " ip dl_dst=%s " %network.gatewaymac + " nw_dst=%s " %vpconfig.cidr + \
+                             " actions=resubmit(,%s)" %EGRESS_ACL_TABLE
+                ofspec.write(action_str + "\n")
+
+        # get the list of hosts on which VPC spans from the JSON config
+        vpc_spanning_hosts = vpconfig.hosts
+
+        for host in vpc_spanning_hosts:
+            if str(this_host_id) == str(host.hostid):
+                continue
+
+            other_host_vms = get_vpc_vms_on_host(vpconfig, str(host.hostid))
+
+            for vm in other_host_vms:
+                for nic in vm.nics:
+                    mac_addr = nic.macaddress
+                    ip = nic.ipaddress
+                    network = get_network_details(vpconfig, nic.networkuuid)
+                    gre_key = network.grekey
+
+                    # generate tunnel name as per the tunnel naming convention and get the OF port
+                    tunnel_name = "t%s-%s-%s" % (gre_key, this_host_id, host.hostid)
+                    of_port = get_ofport_for_vif(tunnel_name)
+
+                    # Add flow rule in L2 look up table, if packet's destination mac matches MAC of the VM's nic
+                    # on the remote host then send packet on the found OFPORT corresponding to the tunnel
+                    ofspec.write("table=%s" %L2_LOOKUP_TABLE + " priority=1100 dl_dst=%s " %mac_addr +
+                                 " actions=output:%s" %of_port + "\n")
+
+                    # Add flow rule in L3 look up table. if packet's destination IP matches VM's IP then modify the
+                    # packet to set DST MAC = VM's MAC, SRC MAC=tier gateway MAC and send to ingress table. This step
+                    # emulates steps VPC virtual router would have done on the current host itself.
+                    action_str = "mod_dl_src:%s"%network.gatewaymac + ",mod_dl_dst:%s" % mac_addr + \
+                                 ",resubmit(,%s)"%INGRESS_ACL_TABLE
+                    action_str = "table=%s"%L3_LOOKUP_TABLE + " ip nw_dst=%s"%ip + " actions=%s" %action_str
+                    ofspec.write(action_str + "\n")
+
+        action_str = "table=%s "%L2_LOOKUP_TABLE + " priority=0 " + " actions=resubmit(,%s)"%L2_FLOOD_TABLE
+        ofspec.write(action_str + "\n")
+        action_str = "table=%s "%L3_LOOKUP_TABLE + " priority=0 " + " actions=resubmit(,%s)"%L2_LOOKUP_TABLE
+        ofspec.write(action_str + "\n")
+
+        del_flows(bridge, table=L2_LOOKUP_TABLE)
+        del_flows(bridge, table=L3_LOOKUP_TABLE)
+
+        # update bridge with the flow-rules added in the file in one attempt
+        do_cmd([OFCTL_PATH, 'add-flows', bridge, ofspec_filename])
+
+        ofspec.close()
+        return "SUCCESS: successfully configured bridge as per the VPC topology update with sequence no: %s"%sequence_no
+
+    except:
+        logging.debug("An unexpected error occurred while configuring bridge as per VPC topology "
+                      "update with sequence no: %s"%sequence_no)
+        # now that we updated the bridge with flow rules delete the file.
+        os.remove(ofspec_filename)
+        raise
+
+    else:
+        # now that we updated the bridge with flow rules delete the file.
+        os.remove(ofspec_filename)
+
+# Configures the bridge created for a VPC enabled for distributed firewall. Management server sends VPC routing policies
+# details. Based on the VPC routing policies ingress ACL table and egress ACL tables are updated by this function.
+def configure_ovs_bridge_for_routing_policies(bridge, json_config, sequence_no):
+
+    vpconfig = jsonLoader(json.loads(json_config)).vpc
+    if vpconfig is None:
+        logging.debug("WARNING: Can't find VPC routing policies info in json config file")
+        return "FAILURE:IMPROPER_JSON_CONFG_FILE"
+
+    try:
+
+        if not os.path.exists('/var/run/cloud'):
+            os.makedirs('/var/run/cloud')
+
+        # create a temporary file to store OpenFlow rules corresponding to ingress and egress ACL table updates
+        ofspec_filename = "/var/run/cloud/" + bridge + sequence_no + ".ofspec"
+        ofspec = open(ofspec_filename, 'w')
 
         egress_rules_added = False
         ingress_rules_added = False
@@ -419,98 +488,91 @@ def configure_ovs_bridge_for_routing_policies(bridge, json_config, sequence_no):
                 protocol = acl_item.protocol
                 source_cidrs = acl_item.sourcecidrs
                 acl_priority = 1000 + number
+                if direction == "ingress":
+                    matching_table = INGRESS_ACL_TABLE
+                    resubmit_table = L2_LOOKUP_TABLE
+                elif direction == "egress":
+                    matching_table = EGRESS_ACL_TABLE
+                    resubmit_table = L3_LOOKUP_TABLE
+
                 for source_cidr in source_cidrs:
-                    if direction == "ingress":
-                        ingress_rules_added = True
-                        if source_port_start is None and source_port_end is None:
-                            if source_cidr.startswith('0.0.0.0'):
-                                if action == "deny":
-                                    add_flow(bridge, priority= acl_priority, table=5, nw_dst=tier_cidr,
-                                         nw_proto=protocol, actions='drop')
-                                if action == "allow":
-                                    add_flow(bridge, priority= acl_priority,table=5, nw_dst=tier_cidr,
-                                         nw_proto=protocol, actions='resubmit(,1)')
-                            else:
-                                if action == "deny":
-                                    add_flow(bridge, priority= acl_priority, table=5, nw_src=source_cidr, nw_dst=tier_cidr,
-                                         nw_proto=protocol, actions='drop')
-                                if action == "allow":
-                                    add_flow(bridge, priority= acl_priority,table=5, nw_src=source_cidr, nw_dst=tier_cidr,
-                                         nw_proto=protocol, actions='resubmit(,1)')
-                            continue
+                    ingress_rules_added = True
+                    if source_port_start is None and source_port_end is None:
+                        if source_cidr.startswith('0.0.0.0'):
+                            if action == "deny":
+                                ofspec.write(" table=%s "%matching_table + " priority=%s " %acl_priority +
+                                             " nw_dst=%s " %tier_cidr + " nw_proto=%s " %protocol +
+                                             " actions='drop'" + "\n")
+                            if action == "allow":
+                                ofspec.write(" table=%s "%matching_table + " priority=%s " %acl_priority +
+                                             " nw_dst=%s " %tier_cidr + " nw_proto=%s " %protocol +
+                                             " actions='resubmit(,%s)'"%resubmit_table + "\n")
 
-                        # add flow rule to do action (allow/deny) for flows where source IP of the packet is in
-                        # source_cidr and destination ip is in tier_cidr
-                        port = source_port_start
-                        while (port < source_port_end):
-                            if source_cidr.startswith('0.0.0.0'):
-                                if action == "deny":
-                                    add_flow(bridge, priority= acl_priority, table=5, nw_dst=tier_cidr, tp_dst=port,
-                                         nw_proto=protocol, actions='drop')
-                                if action == "allow":
-                                    add_flow(bridge, priority= acl_priority,table=5, nw_dst=tier_cidr, tp_dst=port,
-                                         nw_proto=protocol, actions='resubmit(,1)')
-                            else:
-                                if action == "deny":
-                                    add_flow(bridge, priority= acl_priority, table=5, nw_src=source_cidr, nw_dst=tier_cidr, tp_dst=port,
-                                         nw_proto=protocol, actions='drop')
-                                if action == "allow":
-                                    add_flow(bridge, priority= acl_priority,table=5, nw_src=source_cidr, nw_dst=tier_cidr, tp_dst=port,
-                                         nw_proto=protocol, actions='resubmit(,1)')
-                            port = port + 1
+                        else:
+                            if action == "deny":
+                                ofspec.write(" table=%s "%matching_table + " priority=%s " %acl_priority +
+                                             " nw_src=%s " %source_cidr + " nw_dst=%s " %tier_cidr +
+                                             " nw_proto=%s " %protocol + " actions='drop'" + "\n")
+                            if action == "allow":
+                                ofspec.write(" table=%s "%matching_table + " priority=%s " %acl_priority +
+                                             " nw_src=%s "%source_cidr + " nw_dst=%s " %tier_cidr +
+                                             " nw_proto=%s " %protocol +
+                                             " actions='resubmit(,%s)'"%resubmit_table  + "\n")
+                        continue
 
-                    elif direction == "egress":
-                        egress_rules_added = True
-                        if source_port_start is None and source_port_end is None:
-                            if source_cidr.startswith('0.0.0.0'):
-                                if action == "deny":
-                                    add_flow(bridge, priority= acl_priority, table=3, nw_dst=tier_cidr,
-                                         nw_proto=protocol, actions='drop')
-                                if action == "allow":
-                                    add_flow(bridge, priority= acl_priority,table=3, nw_dst=tier_cidr,
-                                         nw_proto=protocol, actions='resubmit(,4)')
-                            else:
-                                if action == "deny":
-                                    add_flow(bridge, priority= acl_priority, table=3, nw_src=source_cidr, nw_dst=tier_cidr,
-                                         nw_proto=protocol, actions='drop')
-                                if action == "allow":
-                                    add_flow(bridge, priority= acl_priority,table=3, nw_src=source_cidr, nw_dst=tier_cidr,
-                                         nw_proto=protocol, actions='resubmit(,4)')
-                            continue
+                    # add flow rule to do action (allow/deny) for flows where source IP of the packet is in
+                    # source_cidr and destination ip is in tier_cidr
+                    port = source_port_start
+                    while (port < source_port_end):
+                        if source_cidr.startswith('0.0.0.0'):
+                            if action == "deny":
+                                ofspec.write(" table=%s " %matching_table + " priority=%s " %acl_priority +
+                                             " tp_dst=%s " %port + " nw_dst=%s " %tier_cidr +
+                                             " nw_proto=%s " %protocol + " actions='drop'"  + "\n")
+                            if action == "allow":
+                                ofspec.write(" table=%s "%matching_table + " priority=%s " %acl_priority +
+                                             " tp_dst=%s " %port + " nw_dst=%s " %tier_cidr +
+                                             " nw_proto=%s " %protocol +
+                                             " actions='resubmit(,%s)'"%resubmit_table  + "\n")
+                        else:
+                            if action == "deny":
+                                ofspec.write(" table=%s " %matching_table + " priority=%s " %acl_priority +
+                                             " tp_dst=%s " %port + " nw_src=%s "%source_cidr + " nw_dst=%s "%tier_cidr +
+                                             " nw_proto=%s " %protocol + " actions='drop'"  + "\n")
+                            if action == "allow":
+                                ofspec.write(" table=%s "%matching_table + " priority=%s " %acl_priority +
+                                             " tp_dst=%s " %port + " nw_src=%s "%source_cidr + " nw_dst=%s "%tier_cidr +
+                                             " nw_proto=%s " %protocol +
+                                             " actions='resubmit(,%s)'"%resubmit_table + "\n")
+                        port = port + 1
 
-                        # add flow rule to do action (allow/deny) for flows where destination IP of the packet is in
-                        # source_cidr and source ip is in tier_cidr
-                        port = source_port_start
-                        while (port < source_port_end):
-                            if source_cidr.startswith('0.0.0.0'):
-                                if action == "deny":
-                                    add_flow(bridge, priority= acl_priority, table=3, nw_dst=source_cidr, tp_dst=port,
-                                             nw_proto=protocol, actions='drop')
-                                if action == "allow":
-                                    add_flow(bridge, priority= acl_priority, table=3, nw_dst=source_cidr, tp_dst=port,
-                                             nw_proto=protocol, actions='resubmit(,4)')
-                            else:
-                                if action == "deny":
-                                    add_flow(bridge, priority= acl_priority, table=3, nw_src=tier_cidr, nw_dst=source_cidr, tp_dst=port,
-                                             nw_proto=protocol, actions='drop')
-                                if action == "allow":
-                                    add_flow(bridge, priority= acl_priority, table=3, nw_src=tier_cidr, nw_dst=source_cidr, tp_dst=port,
-                                             nw_proto=protocol, actions='resubmit(,4)')
-                            port = port + 1
+        # add a default rule in egress table to allow packets (so forward packet to L3 lookup table)
+        ofspec.write(" table=%s " %EGRESS_ACL_TABLE + " priority=0 actions='resubmit(,%s)')"%L3_LOOKUP_TABLE + "\n")
 
-        if egress_rules_added is False:
-            # add a default rule in egress table to forward packet to L3 lookup table
-            add_flow(bridge, priority=0, table=3, actions='resubmit(,4)')
+        # add a default rule in ingress table drop packets
+        ofspec.write(" table=%s " %INGRESS_ACL_TABLE + " priority=0 actions='drop'" + "\n")
 
-        if ingress_rules_added is False:
-            # add a default rule in ingress table drop packets
-            add_flow(bridge, priority=0, table=5, actions='drop')
+        # First flush current ingress and egress ACL's before re-applying the ACL's
+        del_flows(bridge, table=EGRESS_ACL_TABLE)
+        del_flows(bridge, table=INGRESS_ACL_TABLE)
 
+        # update bridge with the flow-rules for ingress and egress ACL's added in the file in one attempt
+        do_cmd([OFCTL_PATH, 'add-flows', bridge, ofspec_filename])
+
+        ofspec.close()
         return "SUCCESS: successfully configured bridge as per the latest routing policies of the VPC"
 
     except:
         logging.debug("An unexpected error occurred while configuring bridge as per VPC's routing policies.")
+        # now that we updated the bridge with flow rules delete the file.
+        ofspec.close()
+        os.remove(ofspec_filename)
         raise
+
+    else:
+        # now that we updated the bridge with flow rules delete the file.
+        ofspec.close()
+        os.remove(ofspec_filename)
 
 def update_flooding_rules_on_port_plug_unplug(bridge, interface, command, if_network_id):
 
@@ -540,7 +602,6 @@ def update_flooding_rules_on_port_plug_unplug(bridge, interface, command, if_net
                 vnet_all_ofports.append(if_ofport)
 
         if command == 'online':
-
             if len(vnet_all_ofports) == 1 :
                 return
 
@@ -582,7 +643,7 @@ def update_flooding_rules_on_port_plug_unplug(bridge, interface, command, if_net
                 vnet_all_ofports_copy.remove(port)
                 add_flooding_rules_for_port(bridge, port, vnet_all_ofports_copy)
 
-            #un-learn that MAC is reachable through the VIF port
+            # un-learn that MAC is reachable through the VIF port
             if interface.startswith('vif'):
                 mac = get_macaddress_of_vif(interface)
                 delete_mac_lookup_table_entry(bridge, mac)
