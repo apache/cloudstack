@@ -2409,7 +2409,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
         }
 
-        if (nicTo.getType() == Networks.TrafficType.Control || nicTo.getType() == Networks.TrafficType.Management || nicTo.getType() == Networks.TrafficType.Storage) {
+        if (switchName == null
+                && (nicTo.getType() == Networks.TrafficType.Control || nicTo.getType() == Networks.TrafficType.Management || nicTo.getType() == Networks.TrafficType.Storage)) {
             switchName = _privateNetworkVSwitchName;
         }
 
