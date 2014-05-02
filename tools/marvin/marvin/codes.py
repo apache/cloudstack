@@ -31,6 +31,11 @@
 """
 
 RUNNING = "Running"
+STOPPED = "Stopped"
+STOPPING = "Stopping"
+STARTING = "Starting"
+DESTROYED = "Destroyed"
+EXPUNGING = "Expunging"
 RECURRING = "RECURRING"
 ENABLED = "Enabled"
 NETWORK_OFFERING = "network_offering"
