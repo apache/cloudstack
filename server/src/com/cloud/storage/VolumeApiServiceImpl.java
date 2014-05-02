@@ -1093,9 +1093,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Please specify a VM that is in the same zone as the volume.");
         }
 
-        // permission check
-        _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
-
         // Check that the device ID is valid
         if (deviceId != null) {
             // validate ROOT volume type
