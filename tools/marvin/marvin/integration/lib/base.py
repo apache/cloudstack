@@ -22,11 +22,6 @@
 import marvin
 from utils import is_server_ssh_ready, random_gen
 from marvin.cloudstackAPI import *
-from marvin.codes import (FAILED, FAIL, PASS, RUNNING, STOPPED,
-                          STARTING, DESTROYED, EXPUNGING,
-                          STOPPING)
-from marvin.cloudstackException import GetDetailExceptionInfo
-from marvin.lib.utils import validateList
 # Import System modules
 import time
 import hashlib
@@ -223,16 +218,6 @@ class User:
 
 class VirtualMachine:
     """Manage virtual machine lifecycle"""
-
-    '''Class level variables'''
-    # Variables denoting VM state - start
-    STOPPED = STOPPED
-    RUNNING = RUNNING
-    DESTROYED = DESTROYED
-    EXPUNGING = EXPUNGING
-    STOPPING = STOPPING
-    STARTING = STARTING
-    # Varibles denoting VM state - end
 
     def __init__(self, items, services):
         self.__dict__.update(items)
@@ -481,10 +466,6 @@ class VirtualMachine:
         cmd = stopVirtualMachine.stopVirtualMachineCmd()
         cmd.id = self.id
         apiclient.stopVirtualMachine(cmd)
-        response = self.getState(apiclient, VirtualMachine.STOPPED)
-        if response[0] == FAIL:
-            raise Exception(response[1])
-        return
 
     def reboot(self, apiclient):
         """Reboot the instance"""
@@ -535,33 +516,6 @@ class VirtualMachine:
                                                     keyPairFileLocation=keyPairFileLocation
                                                 )
         return self.ssh_client
-
-    def getState(self, apiclient, state, timeout=600):
-        """List VM and check if its state is as expected
-        @returnValue - List[Result, Reason]
-                       1) Result - FAIL if there is any exception
-                       in the operation or VM state does not change
-                       to expected state in given time else PASS
-                       2) Reason - Reason for failure"""
-
-        returnValue = [FAIL, "VM state not trasited to %s,\
-                        operation timed out" % state]
-
-        while timeout>0:
-            try:
-                vms = VirtualMachine.list(apiclient, id=self.id, listAll=True)
-                validationresult = validateList(vms)
-                if validationresult[0] == FAIL:
-                    raise Exception("VM list validation failed: %s" % validationresult[2])
-                elif str(vms[0].state).lower() == str(state).lower():
-                    returnValue = [PASS, None]
-                    break
-            except Exception as e:
-                returnValue = [FAIL, e]
-                break
-            time.sleep(60)
-            timeout -= 60
-        return returnValue
 
     def resetSshKey(self, apiclient, **kwargs):
         """Resets SSH key"""
