@@ -4085,7 +4085,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
-        Map<Volume, StoragePool> volToPoolObjectMap = new HashMap<Volume, StoragePool>();
+        Map<Long, Long> volToPoolObjectMap = new HashMap<Long, Long>();
         if (!isVMUsingLocalStorage(vm) && destinationHost.getClusterId().equals(srcHost.getClusterId())) {
             if (volumeToPool.isEmpty()) {
                 // If the destination host is in the same cluster and volumes do not have to be migrated across pools
@@ -4109,7 +4109,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     if (!vmVolumes.contains(volume)) {
                         throw new InvalidParameterValueException("There volume " + volume + " doesn't belong to " + "the virtual machine " + vm + " that has to be migrated");
                     }
-                    volToPoolObjectMap.put(volume, pool);
+                    volToPoolObjectMap.put(Long.valueOf(volume.getId()), Long.valueOf(pool.getId()));
                 }
             }
         }
