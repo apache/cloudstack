@@ -176,6 +176,8 @@ table tbody td.truncated > span {
 .list-view-select table th.name,
 .list-view-select table td.name {
   width: 170px;
+  min-width: 170px;
+  max-width: 170px;
 }
 
 /** Multiselect*/
