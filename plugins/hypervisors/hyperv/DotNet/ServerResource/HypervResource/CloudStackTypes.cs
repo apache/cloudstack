@@ -717,11 +717,22 @@ namespace HypervResource
         public string macaddress;
         [JsonProperty("vlanid")]
         public int vlanid;
+        [JsonProperty("state")]
+        public bool state;
         public NicDetails() { }
-        public NicDetails(String macaddress, int vlanid)
+        public NicDetails(String macaddress, int vlanid, int enabledState)
         {
             this.macaddress = macaddress;
             this.vlanid = vlanid;
+            if (enabledState == 2)
+            {
+                this.state = true;
+            }
+            else
+            {
+                this.state = false;
+            }
+
         }
     }
 
