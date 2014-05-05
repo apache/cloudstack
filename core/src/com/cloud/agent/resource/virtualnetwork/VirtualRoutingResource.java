@@ -783,10 +783,10 @@ public class VirtualRoutingResource {
         String args = "";
         if(cmd.isAdd() == false) {
             //pass the argument to script to delete the network
-            args +=" -D ";
+            args +=" -D";
         } else {
             // pass create option argument if the ip needs to be added to eth device
-            args +=" -C ";
+            args +=" -C";
         }
         args += " -M " + nic.getMac();
         args += " -d " + dev;
