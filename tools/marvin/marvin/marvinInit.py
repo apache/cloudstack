@@ -187,14 +187,13 @@ class MarvinInit:
         try:
             mgt_details = self.__parsedConfig.mgtSvr[0]
             dbsvr_details = self.__parsedConfig.dbSvr
-            self.__testClient = CSTestClient(mgt_details,
-                                             dbsvr_details,
-                                             logger=self.__tcRunLogger,
-                                             test_data_filepath=
-                                             self.__testDataFilePath,
-                                             zone=self.__zoneForTests,
-                                             hypervisor_type=
-                                             self.__hypervisorType)
+            self.__testClient = CSTestClient(
+                mgt_details,
+                dbsvr_details,
+                logger=self.__tcRunLogger,
+                test_data_filepath=self.__testDataFilePath,
+                zone=self.__zoneForTests,
+                hypervisor_type=self.__hypervisorType)
             if self.__testClient:
                 return self.__testClient.createTestClient()
             return FAILED
