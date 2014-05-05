@@ -152,7 +152,7 @@ class MarvinLog:
                     "__" + str(temp_ts) + "_" + random_gen()
 
             if user_provided_logpath:
-                temp_dir = user_provided_logpath
+                temp_dir = user_provided_logpath + "/MarvinLogs"
             elif ((log_cfg is not None) and
                     ('LogFolderPath' in log_cfg.__dict__.keys()) and
                     (log_cfg.__dict__.get('LogFolderPath') is not None)):

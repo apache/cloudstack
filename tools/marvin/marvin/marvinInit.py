@@ -188,7 +188,8 @@ class MarvinInit:
             mgt_details = self.__parsedConfig.mgtSvr[0]
             dbsvr_details = self.__parsedConfig.dbSvr
             self.__testClient = CSTestClient(
-                mgt_details, dbsvr_details,
+                mgt_details,
+                dbsvr_details,
                 logger=self.__tcRunLogger,
                 test_data_filepath=self.__testDataFilePath,
                 zone=self.__zoneForTests,

@@ -38,7 +38,9 @@ from requests import (
     Timeout,
     RequestException
 )
-from marvin.cloudstackException import GetDetailExceptionInfo
+from marvin.cloudstackException import (
+    InvalidParameterException,
+    GetDetailExceptionInfo)
 
 
 class CSConnection(object):
@@ -235,6 +237,7 @@ class CSConnection(object):
                 self.logger.exception("__sendCmdToCS: Invalid Protocol")
                 return FAILED
         except Exception as e:
+            self.__lastError = e
             self.logger.exception("__sendCmdToCS: Exception:%s" %
                                   GetDetailExceptionInfo(e))
             return FAILED
@@ -265,6 +268,8 @@ class CSConnection(object):
                 if payload[required_param] is None:
                     self.logger.debug("CmdName: %s Parameter : %s is Required"
                                       % (cmd_name, required_param))
+                    self.__lastError = InvalidParameterException(
+                        "Invalid Parameters")
                     return FAILED
             for param, value in payload.items():
                 if value is None:
@@ -284,6 +289,7 @@ class CSConnection(object):
                                 i += 1
             return cmd_name.strip(), isAsync, payload
         except Exception as e:
+            self.__lastError = e
             self.logger.\
                 exception("__sanitizeCmd: CmdName : "
                           "%s : Exception:%s" % (cmd_name,
@@ -301,21 +307,29 @@ class CSConnection(object):
         @Output:Response output from CS
         '''
         try:
-            ret = jsonHelper.getResultObj(cmd_response.json(), response_cls)
-        except TypeError:
-            ret = jsonHelper.getResultObj(cmd_response.json, response_cls)
+            try:
+                ret = jsonHelper.getResultObj(
+                    cmd_response.json(),
+                    response_cls)
+            except TypeError:
+                ret = jsonHelper.getResultObj(cmd_response.json, response_cls)
 
-        '''
-        If the response is asynchronous, poll and return response
-        else return response as it is
-        '''
-        if is_async == "false":
-            self.logger.debug("Response : %s" % str(ret))
-            return ret
-        else:
-            response = self.__poll(ret.jobid, response_cls)
-            self.logger.debug("Response : %s" % str(response))
-            return response.jobresult if response != FAILED else FAILED
+            '''
+            If the response is asynchronous, poll and return response
+            else return response as it is
+            '''
+            if is_async == "false":
+                self.logger.debug("Response : %s" % str(ret))
+                return ret
+            else:
+                response = self.__poll(ret.jobid, response_cls)
+                self.logger.debug("Response : %s" % str(response))
+                return response.jobresult if response != FAILED else FAILED
+        except Exception as e:
+            self.__lastError = e
+            self.logger.\
+                exception("Exception:%s" % GetDetailExceptionInfo(e))
+            return FAILED
 
     def marvinRequest(self, cmd, response_type=None, method='GET', data=''):
         """
@@ -325,7 +339,7 @@ class CSConnection(object):
                 response_type: response type of the command in cmd
                 method: HTTP GET/POST, defaults to GET
         @Output: Response received from CS
-                 FAILED In case of Error\Exception
+                 Exception in case of Error\Exception
         """
         try:
             '''
@@ -334,7 +348,7 @@ class CSConnection(object):
             if (cmd is None or cmd == '')or \
                     (response_type is None or response_type == ''):
                 self.logger.exception("marvinRequest : Invalid Command Input")
-                return FAILED
+                raise InvalidParameterException("Invalid Parameter")
 
             '''
             2. Sanitize the Command
@@ -342,7 +356,7 @@ class CSConnection(object):
             sanitize_cmd_out = self.__sanitizeCmd(cmd)
 
             if sanitize_cmd_out == FAILED:
-                return FAILED
+                raise self.__lastError
 
             cmd_name, is_async, payload = sanitize_cmd_out
             '''
@@ -368,4 +382,4 @@ class CSConnection(object):
         except Exception as e:
             self.logger.exception("marvinRequest : CmdName: %s Exception: %s" %
                                   (str(cmd), GetDetailExceptionInfo(e)))
-            return FAILED
+            raise e

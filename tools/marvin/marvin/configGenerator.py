@@ -431,7 +431,8 @@ class ConfigManager(object):
         @Output: ParsedDict if successful if  cfg file provided is valid
                  None if cfg file is invalid or not able to be parsed
         '''
-        return self.__parsedCfgDict
+        out = self.__parsedCfgDict
+        return out
 
 
 def getDeviceUrl(obj):

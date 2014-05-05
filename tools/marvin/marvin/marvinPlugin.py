@@ -287,21 +287,23 @@ class MarvinPlugin(Plugin):
 
     def finalize(self, result):
         try:
+            src = self.__logFolderPath
             if not self.__userLogPath:
-                src = self.__logFolderPath
                 log_cfg = self.__parsedConfig.logger
                 tmp = log_cfg.__dict__.get('LogFolderPath') + "/MarvinLogs"
-                dst = tmp + "//" + random_gen()
-                mod_name = "test_suite"
-                if self.__testModName:
-                    mod_name = self.__testModName.split(".")
-                    if len(mod_name) > 2:
-                        mod_name = mod_name[-2]
-                if mod_name:
-                    dst = tmp + "/" + mod_name + "_" + random_gen()
-                cmd = "mv " + src + " " + dst
-                os.system(cmd)
-                print "===final results are now copied to: %s===" % str(dst)
+            else:
+                tmp = self.__userLogPath + "/MarvinLogs"
+            dst = tmp + "//" + random_gen()
+            mod_name = "test_suite"
+            if self.__testModName:
+                mod_name = self.__testModName.split(".")
+                if len(mod_name) > 2:
+                    mod_name = mod_name[-2]
+            if mod_name:
+                dst = tmp + "/" + mod_name + "_" + random_gen()
+            cmd = "mv " + src + " " + dst
+            os.system(cmd)
+            print "===final results are now copied to: %s===" % str(dst)
         except Exception as e:
             print "=== Exception occurred under finalize :%s ===" % \
                   str(GetDetailExceptionInfo(e))
