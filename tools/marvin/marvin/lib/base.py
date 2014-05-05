@@ -271,6 +271,7 @@ class VirtualMachine:
                 apiclient,
                 account=cmd.account,
                 domainid=cmd.domainid,
+                listall=True,
                 securitygroupname="basic_sec_grp"
             )
 
