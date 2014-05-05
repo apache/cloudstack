@@ -669,9 +669,11 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
         
         //insert the keys anew
         try {
-            PreparedStatement pstmt; pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD " +
-                    "CONSTRAINT `fk_ssh_keypair__account_id` FOREIGN KEY `fk_ssh_keypair__account_id` (`account_id`)" +
-                    " REFERENCES `account` (`id`) ON DELETE CASCADE");
+            PreparedStatement pstmt;
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD "
+                    + "CONSTRAINT `fk_ssh_keypairs__account_id` FOREIGN KEY `fk_ssh_keypairs__account_id` (`account_id`)"
+                    + " REFERENCES `account` (`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             pstmt.close();
         } catch (SQLException e) {
@@ -679,9 +681,10 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
         }
             
         try {
-            PreparedStatement pstmt; pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT" +
-                    " `fk_ssh_keypair__domain_id` FOREIGN KEY `fk_ssh_keypair__domain_id` (`domain_id`) " +
-                    "REFERENCES `domain` (`id`) ON DELETE CASCADE");
+            PreparedStatement pstmt;
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT"
+                    + " `fk_ssh_keypairs__domain_id` FOREIGN KEY `fk_ssh_keypairs__domain_id` (`domain_id`) " + "REFERENCES `domain` (`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             pstmt.close();
         } catch (SQLException e) {
