@@ -285,15 +285,16 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @Override
     @DB
-    public void destroyRemoteAccessVpnForIp(long ipId, Account caller) throws ResourceUnavailableException {
+    public boolean destroyRemoteAccessVpnForIp(long ipId, Account caller) throws ResourceUnavailableException {
         final RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findByPublicIpAddress(ipId);
         if (vpn == null) {
             s_logger.debug("there are no Remote access vpns for public ip address id=" + ipId);
-            return;
+            return true;
         }
 
         _accountMgr.checkAccess(caller, AccessType.OperateEntry, vpn);
 
+        RemoteAccessVpn.State prevState = vpn.getState();
         vpn.setState(RemoteAccessVpn.State.Removed);
         _remoteAccessVpnDao.update(vpn.getId(), vpn);
 
@@ -305,6 +306,12 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                     break;
                 }
             }
+        }catch (ResourceUnavailableException ex) {
+            vpn.setState(prevState);
+            _remoteAccessVpnDao.update(vpn.getId(), vpn);
+            s_logger.debug("Failed to stop the vpn " + vpn.getId() + " , so reverted state to "+
+                    RemoteAccessVpn.State.Running);
+            success = false;
         } finally {
             if (success) {
                 //Cleanup corresponding ports
@@ -366,6 +373,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                 }
             }
         }
+        return success;
     }
 
     @Override
