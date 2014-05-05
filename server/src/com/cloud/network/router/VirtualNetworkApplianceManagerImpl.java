@@ -2485,6 +2485,19 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             if (reprogramGuestNtwks) {
                 finalizeIpAssocForNetwork(cmds, router, provider, guestNetworkId, null);
                 finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
+
+                NetworkOffering offering = _networkOfferingDao.findById((_networkDao.findById(guestNetworkId)).getNetworkOfferingId());
+                //service monitoring is currently not added in RVR
+                if (!offering.getRedundantRouter()) {
+                    String serviceMonitringSet = _configDao.getValue(Config.EnableServiceMonitoring.key());
+
+                    if (serviceMonitringSet != null && serviceMonitringSet.equalsIgnoreCase("true")) {
+                        finalizeMonitorServiceOnStrat(cmds, profile, router, provider, guestNetworkId, true);
+                    } else {
+                        finalizeMonitorServiceOnStrat(cmds, profile, router, provider, guestNetworkId, false);
+                    }
+                }
+
             }
 
             finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
@@ -2494,15 +2507,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             cmds.addCommand(finishCmd);
         }
 
-
-        String serviceMonitringSet = SetServiceMonitor.valueIn(router.getDataCenterId());
-        //String serviceMonitringSet = _configDao.getValue(Config.EnableServiceMonitoring.key());
-
-        if (serviceMonitringSet != null && serviceMonitringSet.equalsIgnoreCase("true")) {
-            finalizeMonitorServiceOnStrat(cmds, profile, router, provider, routerGuestNtwkIds.get(0), true);
-        } else {
-            finalizeMonitorServiceOnStrat(cmds, profile, router, provider, routerGuestNtwkIds.get(0), false);
-        }
 
         return true;
     }
