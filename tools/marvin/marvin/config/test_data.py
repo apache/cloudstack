@@ -209,6 +209,18 @@ test_data = {
         "name": "Isolated Network",
         "displaytext": "Isolated Network"
     },
+    "netscaler_VPX": {
+        "ipaddress": "10.223.240.174",
+        "username": "nsroot",
+        "password": "nsroot",
+        "networkdevicetype": "NetscalerVPXLoadBalancer",
+        "publicinterface": "1/1",
+        "privateinterface": "1/2",
+        "numretries": 2,
+        "lbdevicededicated": "True",
+        "lbdevicecapacity": 2,
+        "port": 22
+    },
     "virtual_machine": {
         "displayname": "Test VM",
         "username": "root",
@@ -501,6 +513,26 @@ test_data = {
             "NetworkACL": "VpcVirtualRouter"
         }
     },
+    "nw_offering_shared_persistent": {
+        "name": "Network offering for Shared Persistent Network",
+        "displaytext": "Network offering-DA services",
+        "guestiptype": "Shared",
+        "supportedservices": "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat",
+        "traffictype": "GUEST",
+        "availability": "Optional",
+        "ispersistent": "True",
+        "serviceProviderList": {
+            "Dhcp": "VirtualRouter",
+            "Dns": "VirtualRouter",
+            "SourceNat": "VirtualRouter",
+            "PortForwarding": "VirtualRouter",
+            "Vpn": "VirtualRouter",
+            "Firewall": "VirtualRouter",
+            "Lb": "VirtualRouter",
+            "UserData": "VirtualRouter",
+            "StaticNat": "VirtualRouter"
+            }
+    },
     "fwrule": {
         "startport": 22,
         "endport": 22,
@@ -586,6 +618,12 @@ test_data = {
         "publicport": 2222,
         "protocol": 'TCP'
     },
+    "icmprule": {
+        "icmptype": -1,
+        "icmpcode": -1,
+        "cidrlist": "0.0.0.0/0",
+        "protocol": "ICMP"
+    },
     "iso": {
             "displaytext": "Test ISO",
             "name": "ISO",
@@ -662,6 +700,7 @@ test_data = {
     "page": 1,
     "pagesize": 2,
     "listall": 'true',
+    "host_password": "password",
     "advanced_sg": {
         "zone": {
             "name": "",

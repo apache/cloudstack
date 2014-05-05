@@ -15,11 +15,32 @@
 # specific language governing permissions and limitations
 # under the License.
 """ Tests for Persistent Networks without running VMs feature"""
-from marvin.cloudstackException import CloudstackAPIException
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-import netaddr
+from marvin.lib.utils import (validateList,
+                              cleanup_resources,
+                              get_hypervisor_type)
+from marvin.lib.base import (NATRule,
+                             StaticNATRule,
+                             VirtualMachine,
+                             LoadBalancerRule,
+                             VPC,
+                             Account,
+                             Network,
+                             Router,
+                             ServiceOffering,
+                             NetworkACL,
+                             VpcOffering,
+                             Domain,
+                             PublicIPAddress,
+                             FireWallRule,
+                             Host,
+                             NetworkOffering,
+                             Project)
+from marvin.lib.common import (get_zone,
+                               get_template,
+                               get_domain,
+                               add_netscaler,
+                               verifyNetworkState,
+                               wait_for_cleanup)
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, FAIL, FAILED
 from marvin.sshClient import SshClient
@@ -991,7 +1012,7 @@ class TestAssignVirtualMachine(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template"
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -1153,7 +1174,7 @@ class TestProjectAccountOperations(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template"
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -1328,7 +1349,7 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template"
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -1610,7 +1631,7 @@ class TestVPCNetworkOperations(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template"
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
