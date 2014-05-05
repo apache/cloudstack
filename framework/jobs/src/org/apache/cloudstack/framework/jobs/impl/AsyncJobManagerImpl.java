@@ -60,6 +60,7 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHost;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -1009,4 +1010,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     }
 
+    private void publishOnEventBus(AsyncJob job, String jobEvent) {
+        _messageBus.publish(null, AsyncJob.Topics.JOB_EVENT_PUBLISH, PublishScope.LOCAL,
+            new Pair<AsyncJob, String>(job, jobEvent));
+    }
 }
