@@ -69,6 +69,8 @@ public interface EntityManager {
      */
     public <T> List<? extends T> list(Class<T> entityType);
 
+    public <T, K extends Serializable> T findByIdIncludingRemoved(Class<T> entityType, K id);
+
     public <T, K extends Serializable> void remove(Class<T> entityType, K id);
 }
 
