@@ -30,6 +30,7 @@ public interface AsyncJob extends JobInfo {
     public static interface Topics {
         public static final String JOB_HEARTBEAT = "job.heartbeat";
         public static final String JOB_STATE = "job.state";
+        public static final String JOB_EVENT_PUBLISH = "job.eventpublish";
     }
     
     public static interface Constants {
