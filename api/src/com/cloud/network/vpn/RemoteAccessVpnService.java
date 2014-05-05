@@ -33,7 +33,7 @@ public interface RemoteAccessVpnService {
 
     RemoteAccessVpn createRemoteAccessVpn(long vpnServerAddressId, String ipRange, boolean openFirewall, Boolean forDisplay) throws NetworkRuleConflictException;
 
-    void destroyRemoteAccessVpnForIp(long vpnServerAddressId, Account caller) throws ResourceUnavailableException;
+    boolean destroyRemoteAccessVpnForIp(long ipId, Account caller) throws ResourceUnavailableException;
 
     RemoteAccessVpn startRemoteAccessVpn(long vpnServerAddressId, boolean openFirewall) throws ResourceUnavailableException;
 
