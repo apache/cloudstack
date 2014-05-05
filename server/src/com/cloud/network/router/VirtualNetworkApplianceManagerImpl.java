@@ -43,6 +43,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.alert.AlertService;
+import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
@@ -76,7 +80,6 @@ import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
 import com.cloud.agent.api.routing.DeleteIpAliasCommand;
@@ -2682,23 +2685,24 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds,
             ReservationContext context) {
         DomainRouterVO router = _routerDao.findById(profile.getId());
-        
-        boolean result = true;
 
-        Answer answer = cmds.getAnswer("checkSsh");
-        if (answer != null && answer instanceof CheckSshAnswer) {
-            CheckSshAnswer sshAnswer = (CheckSshAnswer) answer;
-            if (sshAnswer == null || !sshAnswer.getResult()) {
-                s_logger.warn("Unable to ssh to the VM: " + sshAnswer.getDetails());
-                result = false;
+        //process all the answers
+        for (Answer answer : cmds.getAnswers()) {
+            // handle any command failures
+            if (!answer.getResult()) {
+                String cmdClassName = answer.getClass().getCanonicalName().replace("Answer", "Command");
+                String errorMessage = "Command: " + cmdClassName + " failed while starting virtual router";
+                String errorDetails = "Details: " + answer.getDetails() + " " + answer.toString();
+                //add alerts for the failed commands
+                _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), errorMessage, errorDetails);
+                s_logger.warn(errorMessage);
+                //Stop the router if any of the commands failed
+                return false;
             }
-        } else {
-            result = false;
         }
-        if (result == false) {
-            return result;
-        }
-        
+
+        // at this point, all the router command are successful.
+        boolean result = true;
         //Get guest networks info
         List<Network> guestNetworks = new ArrayList<Network>();
         
@@ -2713,25 +2717,11 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 }
             }
         }
-        
-        if (!result) {
-        	return result;
-        }
-        
-        answer = cmds.getAnswer("getDomRVersion");
-        if (answer != null && answer instanceof GetDomRVersionAnswer) {
-            GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer)answer;
-            if (answer == null || !answer.getResult()) {
-                s_logger.warn("Unable to get the template/scripts version of router " + router.getInstanceName() +
-                        " due to: " + versionAnswer.getDetails());
-                result = false;
-            } else {
-                router.setTemplateVersion(versionAnswer.getTemplateVersion());
-                router.setScriptsVersion(versionAnswer.getScriptsVersion());
-                router = _routerDao.persist(router, guestNetworks);
-            }
-        } else {
-            result = false;
+        if (result) {
+            GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer)cmds.getAnswer("getDomRVersion");
+            router.setTemplateVersion(versionAnswer.getTemplateVersion());
+            router.setScriptsVersion(versionAnswer.getScriptsVersion());
+            router = _routerDao.persist(router, guestNetworks);
         }
 
         return result;
