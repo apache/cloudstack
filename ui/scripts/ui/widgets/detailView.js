@@ -954,7 +954,7 @@
                     return true;
                 }
 
-                var $detail = $('<tr></tr>').addClass(key).appendTo($detailTable);
+                var $detail = $('<tr></tr>').addClass(key + '-row').appendTo($detailTable);
                 var $name = $('<td></td>').addClass('name').appendTo($detail);
                 var $value = $('<span>').appendTo($('<td></td>').addClass('value').appendTo($detail));
                 var content = data[key];
