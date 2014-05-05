@@ -857,29 +857,11 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.MigrateVolumeCommand + Utils.CleanString(cmd.ToString()));
-
-                string details = null;
-                bool result = false;
-
-                try
-                {
-                    string vm = (string)cmd.attachedVmName;
-                    string volume = (string)cmd.volumePath;
-                    wmiCallsV2.MigrateVolume(vm, volume, GetStoragePoolPath(cmd.pool));
-                    result = true;
-                }
-                catch (Exception sysEx)
-                {
-                    details = CloudStackTypes.MigrateVolumeCommand + " failed due to " + sysEx.Message;
-                    logger.Error(details, sysEx);
-                }
-
+                logger.Info(CloudStackTypes.PlugNicCommand + Utils.CleanString(cmd.ToString()));
                 object ansContent = new
                 {
-                    result = result,
-                    volumePath = (string)cmd.volumePath,
-                    details = details,
+                    result = true,
+                    details = "Hot Nic plug not supported, change any empty virtual network adapter network settings",
                     contextMap = contextMap
                 };
 
@@ -1193,28 +1175,21 @@ namespace HypervResource
 
                 string details = null;
                 bool result = false;
-                List<dynamic> volumeTos = new List<dynamic>();
-
-                try
+                String vmName = cmd.vmName;
+                String vlan = cmd.vlan;
+                string macAddress = cmd.macAddress;
+                uint pos = cmd.index;
+                bool enable = cmd.enable;
+                string switchLableName = cmd.switchLableName;
+                if (macAddress != null)
                 {
-                    string vm = (string)cmd.vm.name;
-                    string destination = (string)cmd.tgtHost;
-                    var volumeToPoolList = cmd.volumeToFilerAsList;
-                    var volumeToPool = new Dictionary<string, string>();
-                    foreach (var item in volumeToPoolList)
-                    {
-                        volumeTos.Add(item.t);
-                        string poolPath = GetStoragePoolPath(item.u);
-                        volumeToPool.Add((string)item.t.path, poolPath);
-                    }
-
-                    wmiCallsV2.MigrateVmWithVolume(vm, destination, volumeToPool);
+                    wmiCallsV2.ModifyVmVLan(vmName, vlan, macAddress);
                     result = true;
                 }
-                catch (Exception sysEx)
+                else if (pos >= 1)
                 {
-                    details = CloudStackTypes.MigrateWithStorageCommand + " failed due to " + sysEx.Message;
-                    logger.Error(details, sysEx);
+                    wmiCallsV2.ModifyVmVLan(vmName, vlan, pos, enable, switchLableName);
+                    result = true;
                 }
 
                 object ansContent = new
@@ -1259,142 +1234,45 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(cmdArray.ToString());
-                // Log agent configuration
-                logger.Info("Agent StartupRoutingCommand received " + cmdArray.ToString());
-                dynamic strtRouteCmd = cmdArray[0][CloudStackTypes.StartupRoutingCommand];
+                logger.Info(CloudStackTypes.GetVmConfigCommand + Utils.CleanString(cmd.ToString()));
+                bool result = false;
+                String vmName = cmd.vmName;
+                ComputerSystem vm = wmiCallsV2.GetComputerSystem(vmName);
+                List<NicDetails> nicDetails = new List<NicDetails>();
+                var nicSettingsViaVm = wmiCallsV2.GetEthernetPortSettings(vm);
+                NicDetails nic = null;
+                int index = 0;
+                int[] nicStates = new int[8];
+                int[] nicVlan = new int[8];
+                int vlanid = 1;
 
-                // Insert networking details
-                string privateIpAddress = strtRouteCmd.privateIpAddress;
-                config.PrivateIpAddress = privateIpAddress;
-                string subnet;
-                System.Net.NetworkInformation.NetworkInterface privateNic = GetNicInfoFromIpAddress(privateIpAddress, out subnet);
-                strtRouteCmd.privateIpAddress = privateIpAddress;
-                strtRouteCmd.privateNetmask = subnet;
-                strtRouteCmd.privateMacAddress = privateNic.GetPhysicalAddress().ToString();
-                string storageip = strtRouteCmd.storageIpAddress;
-                System.Net.NetworkInformation.NetworkInterface storageNic = GetNicInfoFromIpAddress(storageip, out subnet);
-
-                strtRouteCmd.storageIpAddress = storageip;
-                strtRouteCmd.storageNetmask = subnet;
-                strtRouteCmd.storageMacAddress = storageNic.GetPhysicalAddress().ToString();
-                strtRouteCmd.gatewayIpAddress = storageNic.GetPhysicalAddress().ToString();
-                strtRouteCmd.hypervisorVersion = System.Environment.OSVersion.Version.Major.ToString() + "." +
-                        System.Environment.OSVersion.Version.Minor.ToString();
-                strtRouteCmd.caps = "hvm";
-
-                dynamic details = strtRouteCmd.hostDetails;
-                if (details != null)
+                var ethernetConnections = wmiCallsV2.GetEthernetConnections(vm);
+                foreach (EthernetPortAllocationSettingData item in ethernetConnections)
                 {
-                    string productVersion = System.Environment.OSVersion.Version.Major.ToString() + "." +
-                        System.Environment.OSVersion.Version.Minor.ToString();
-                    details.Add("product_version", productVersion);
-                    details.Add("rdp.server.port", 2179);
-                }
-
-                // Detect CPUs, speed, memory
-                uint cores;
-                uint mhz;
-                uint sockets;
-                wmiCallsV2.GetProcessorResources(out sockets, out cores, out mhz);
-                strtRouteCmd.cpus = cores;
-                strtRouteCmd.speed = mhz;
-                strtRouteCmd.cpuSockets = sockets;
-                ulong memoryKBs;
-                ulong freeMemoryKBs;
-                wmiCallsV2.GetMemoryResources(out memoryKBs, out freeMemoryKBs);
-                strtRouteCmd.memory = memoryKBs * 1024;   // Convert to bytes
-
-                // Need 2 Gig for DOM0, see http://technet.microsoft.com/en-us/magazine/hh750394.aspx
-                strtRouteCmd.dom0MinMemory = config.ParentPartitionMinMemoryMb * 1024 * 1024;  // Convert to bytes
-
-                // Insert storage pool details.
-                //
-                // Read the localStoragePath for virtual disks from the Hyper-V configuration
-                // See http://blogs.msdn.com/b/virtual_pc_guy/archive/2010/05/06/managing-the-default-virtual-machine-location-with-hyper-v.aspx
-                // for discussion of Hyper-V file locations paths.
-                string localStoragePath = wmiCallsV2.GetDefaultVirtualDiskFolder();
-                if (localStoragePath != null)
-                {
-                    // GUID arbitrary.  Host agents deals with storage pool in terms of localStoragePath.
-                    // We use HOST guid.
-                    string poolGuid = strtRouteCmd.guid;
-
-                    if (poolGuid == null)
+                    EthernetSwitchPortVlanSettingData vlanSettings = wmiCallsV2.GetVlanSettings(item);
+                    if (vlanSettings == null)
                     {
-                        poolGuid = Guid.NewGuid().ToString();
-                        logger.InfoFormat("Setting Startup StoragePool GUID to " + poolGuid);
+                        vlanid = -1;
                     }
                     else
                     {
-                        logger.InfoFormat("Setting Startup StoragePool GUID same as HOST, i.e. " + poolGuid);
+                        vlanid = vlanSettings.AccessVlanId;
                     }
-
-                    long capacity;
-                    long available;
-                    GetCapacityForLocalPath(localStoragePath, out capacity, out available);
-
-                    logger.Debug(CloudStackTypes.StartupStorageCommand + " set available bytes to " + available);
-
-                    string ipAddr = strtRouteCmd.privateIpAddress;
-                    var vmStates = wmiCallsV2.GetVmSync(config.PrivateIpAddress);
-                    strtRouteCmd.vms = Utils.CreateCloudStackMapObject(vmStates);
-
-                    StoragePoolInfo pi = new StoragePoolInfo(
-                        poolGuid.ToString(),
-                        ipAddr,
-                        localStoragePath,
-                        localStoragePath,
-                        StoragePoolType.Filesystem.ToString(),
-                        capacity,
-                        available);
-
-                    // Build StartupStorageCommand using an anonymous type
-                    // See http://stackoverflow.com/a/6029228/939250
-                    object ansContent = new
-                    {
-                        poolInfo = pi,
-                        guid = pi.uuid,
-                        dataCenter = strtRouteCmd.dataCenter,
-                        resourceType = StorageResourceType.STORAGE_POOL.ToString(),  // TODO: check encoding
-                        contextMap = contextMap
-                    };
-                    JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.StartupStorageCommand, ansContent);
-                    cmdArray.Add(ansObj);
+                    nicStates[index] = (Int32)(item.EnabledState);
+                    nicVlan[index] = vlanid;
+                    index++;
                 }
 
-                // Convert result to array for type correctness?
-                logger.Info(CloudStackTypes.StartupCommand + " result is " + cmdArray.ToString());
-                return cmdArray;
-            }
-        }
-
-        // POST api/HypervResource/GetVncPortCommand
-        [HttpPost]
-        [ActionName(CloudStackTypes.GetVncPortCommand)]
-        public JContainer GetVncPortCommand([FromBody]dynamic cmd)
-        {
-            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
-            {
-                logger.Info(CloudStackTypes.GetVncPortCommand + Utils.CleanString(cmd.ToString()));
-
-                string details = null;
-                bool result = false;
-                string address = null;
-                int port = -9;
-
-                try
+                index = 0;
+                foreach (SyntheticEthernetPortSettingData item in nicSettingsViaVm)
                 {
-                    string vmName = (string)cmd.name;
-                    var sys = wmiCallsV2.GetComputerSystem(vmName);
-                    address = "instanceId=" + sys.Name ;
-                    result = true;
+                    nic = new NicDetails(item.Address, nicVlan[index], nicStates[index]);
+                    index++;
+                    nicDetails.Add(nic);
                 }
-                catch (Exception sysEx)
-                {
-                    details = CloudStackTypes.GetVncPortAnswer + " failed due to " + sysEx.Message;
-                    logger.Error(details, sysEx);
-                }
+
+
+                result = true;
 
                 object ansContent = new
                 {
