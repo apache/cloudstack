@@ -1079,11 +1079,10 @@ namespace HypervResource
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
                 logger.Info(CloudStackTypes.PlugNicCommand + Utils.CleanString(cmd.ToString()));
-
                 object ansContent = new
                 {
                     result = true,
-                    details = "instead of plug, change he network settings",
+                    details = "Hot Nic plug not supported, change any empty virtual network adapter network settings",
                     contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.PlugNicAnswer);
@@ -1396,18 +1395,21 @@ namespace HypervResource
                 logger.Info(CloudStackTypes.ModifyVmNicConfigCommand + Utils.CleanString(cmd.ToString()));
                 bool result = false;
                 String vmName = cmd.vmName;
-                uint vlan = (uint)cmd.vlan;
+                String vlan = cmd.vlan;
                 string macAddress = cmd.macAddress;
                 uint pos = cmd.index;
+                bool enable = cmd.enable;
+                string switchLableName = cmd.switchLableName;
                 if (macAddress != null)
                 {
                     wmiCallsV2.ModifyVmVLan(vmName, vlan, macAddress);
-                }
-                else if (pos > 1)
-                {
-                    wmiCallsV2.ModifyVmVLan(vmName, vlan, pos);
-                }
                     result = true;
+                }
+                else if (pos >= 1)
+                {
+                    wmiCallsV2.ModifyVmVLan(vmName, vlan, pos, enable, switchLableName);
+                    result = true;
+                }
 
                 object ansContent = new
                 {
@@ -1434,16 +1436,12 @@ namespace HypervResource
                 List<NicDetails> nicDetails = new List<NicDetails>();
                 var nicSettingsViaVm = wmiCallsV2.GetEthernetPortSettings(vm);
                 NicDetails nic = null;
-                String[] macAddress = new String[nicSettingsViaVm.Length];
                 int index = 0;
-                foreach (SyntheticEthernetPortSettingData item in nicSettingsViaVm)
-                {
-                    macAddress[index++] = item.Address;
-                }
-
-                index = 0;
-                var ethernetConnections = wmiCallsV2.GetEthernetConnections(vm);
+                int[] nicStates = new int[8];
+                int[] nicVlan = new int[8];
                 int vlanid = 1;
+
+                var ethernetConnections = wmiCallsV2.GetEthernetConnections(vm);
                 foreach (EthernetPortAllocationSettingData item in ethernetConnections)
                 {
                     EthernetSwitchPortVlanSettingData vlanSettings = wmiCallsV2.GetVlanSettings(item);
@@ -1455,9 +1453,19 @@ namespace HypervResource
                     {
                         vlanid = vlanSettings.AccessVlanId;
                     }
-                    nic = new NicDetails(macAddress[index++], vlanid);
+                    nicStates[index] = (Int32)(item.EnabledState);
+                    nicVlan[index] = vlanid;
+                    index++;
+                }
+
+                index = 0;
+                foreach (SyntheticEthernetPortSettingData item in nicSettingsViaVm)
+                {
+                    nic = new NicDetails(item.Address, nicVlan[index], nicStates[index]);
+                    index++;
                     nicDetails.Add(nic);
                 }
+
 
                 result = true;
 

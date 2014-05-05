@@ -177,7 +177,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     protected final int _retry = 24;
     protected final int _sleep = 10000;
     protected static final int DEFAULT_DOMR_SSHPORT = 3922;
-    private final int maxid = 4094;
     private String _clusterGuid;
 
     // Used by initialize to assert object configured before
@@ -539,11 +538,15 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             }
             int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
             int publicNicInfo = -1;
-            publicNicInfo = getVmNics(vmName, maxid);
+            publicNicInfo = getVmFreeNicIndex(vmName);
             if (publicNicInfo > 0) {
-                modifyNicVlan(vmName, vlanId, publicNicInfo);
+                modifyNicVlan(vmName, vlanId, publicNicInfo, true, cmd.getNic().getName());
+                return new PlugNicAnswer(cmd, true, "success");
             }
-            return new PlugNicAnswer(cmd, true, "success");
+            String msg = " Plug Nic failed for the vm as it has reached max limit of NICs to be added";
+            s_logger.warn(msg);
+            return new PlugNicAnswer(cmd, false, msg);
+
         } catch (Exception e) {
             s_logger.error("Unexpected exception: ", e);
             return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + e.toString());
@@ -567,7 +570,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             int publicNicInfo = -1;
             publicNicInfo = getVmNics(vmName, vlanId);
             if (publicNicInfo > 0) {
-                modifyNicVlan(vmName, maxid, publicNicInfo);
+                modifyNicVlan(vmName, 2, publicNicInfo, false, "");
             }
             return new UnPlugNicAnswer(cmd, true, "success");
         } catch (Exception e) {
@@ -1769,6 +1772,37 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         return new IpAssocAnswer(cmd, results);
     }
 
+
+    protected int getVmFreeNicIndex(String vmName) {
+        GetVmConfigCommand vmConfig = new GetVmConfigCommand(vmName);
+        URI agentUri = null;
+        int nicposition = -1;
+        try {
+            String cmdName = GetVmConfigCommand.class.getName();
+            agentUri =
+                    new URI("https", null, _agentIp, _port,
+                            "/api/HypervResource/" + cmdName, null, null);
+        } catch (URISyntaxException e) {
+            String errMsg = "Could not generate URI for Hyper-V agent";
+            s_logger.error(errMsg, e);
+        }
+        String ansStr = postHttpRequest(s_gson.toJson(vmConfig), agentUri);
+        Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
+        s_logger.debug("GetVmConfigCommand response received "
+                + s_gson.toJson(result));
+        if (result.length > 0) {
+            GetVmConfigAnswer ans = ((GetVmConfigAnswer)result[0]);
+            List<NicDetails> nics = ans.getNics();
+            for (NicDetails nic : nics) {
+                if (nic.getState() == false) {
+                    nicposition = nics.indexOf(nic);
+                    break;
+                }
+            }
+        }
+        return nicposition;
+    }
+
     protected int getVmNics(String vmName, int vlanid) {
         GetVmConfigCommand vmConfig = new GetVmConfigCommand(vmName);
         URI agentUri = null;
@@ -1820,8 +1854,9 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
     }
 
-    protected void modifyNicVlan(String vmName, int vlanId, int pos) {
-        ModifyVmNicConfigCommand modifynic = new ModifyVmNicConfigCommand(vmName, vlanId, pos);
+    protected void modifyNicVlan(String vmName, int vlanId, int pos, boolean enable, String switchLabelName) {
+        ModifyVmNicConfigCommand modifyNic = new ModifyVmNicConfigCommand(vmName, vlanId, pos, enable);
+        modifyNic.setSwitchLableName(switchLabelName);
         URI agentUri = null;
         try {
             String cmdName = ModifyVmNicConfigCommand.class.getName();
@@ -1832,7 +1867,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             String errMsg = "Could not generate URI for Hyper-V agent";
             s_logger.error(errMsg, e);
         }
-        String ansStr = postHttpRequest(s_gson.toJson(modifynic), agentUri);
+        String ansStr = postHttpRequest(s_gson.toJson(modifyNic), agentUri);
         Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
         s_logger.debug("executeRequest received response "
                 + s_gson.toJson(result));
