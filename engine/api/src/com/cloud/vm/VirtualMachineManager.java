@@ -39,7 +39,6 @@ import com.cloud.network.Network;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -113,7 +112,7 @@ public interface VirtualMachineManager extends Manager {
 
     void migrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException;
 
-    void migrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException;
+    void migrateWithStorage(String vmUuid, long srcId, long destId, Map<Long, Long> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException;
 
     void reboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
 

@@ -18,18 +18,15 @@ package com.cloud.vm;
 
 import java.util.Map;
 
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume;
-
 public class VmWorkMigrateWithStorage extends VmWork {
     private static final long serialVersionUID = -5626053872453569165L;
 
     long srcHostId;
     long destHostId;
-    Map<Volume, StoragePool> volumeToPool;
+    Map<Long, Long> volumeToPool;
 
     public VmWorkMigrateWithStorage(long userId, long accountId, long vmId, String handlerName, long srcHostId,
-            long destHostId, Map<Volume, StoragePool> volumeToPool) {
+            long destHostId, Map<Long, Long> volumeToPool) {
 
         super(userId, accountId, vmId, handlerName);
 
@@ -46,7 +43,7 @@ public class VmWorkMigrateWithStorage extends VmWork {
         return destHostId;
     }
 
-    public Map<Volume, StoragePool> getVolumeToPool() {
+    public Map<Long, Long> getVolumeToPool() {
         return volumeToPool;
     }
 }
