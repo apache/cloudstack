@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -1964,24 +1965,26 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private Map<Volume, StoragePool> getPoolListForVolumesForMigration(VirtualMachineProfile profile, Host host, Map<Volume, StoragePool> volumeToPool) {
+    private Map<Volume, StoragePool> getPoolListForVolumesForMigration(VirtualMachineProfile profile, Host host, Map<Long, Long> volumeToPool) {
         List<VolumeVO> allVolumes = _volsDao.findUsableVolumesForInstance(profile.getId());
+        Map<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<Volume, StoragePool> ();
         for (VolumeVO volume : allVolumes) {
-            StoragePool pool = volumeToPool.get(volume);
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+            Long poolId = volumeToPool.get(Long.valueOf(volume.getId()));
+            StoragePoolVO pool = _storagePoolDao.findById(poolId);
             StoragePoolVO currentPool = _storagePoolDao.findById(volume.getPoolId());
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
             if (pool != null) {
                 // Check if pool is accessible from the destination host and disk offering with which the volume was
                 // created is compliant with the pool type.
                 if (_poolHostDao.findByPoolHost(pool.getId(), host.getId()) == null || pool.isLocal() != diskOffering.getUseLocalStorage()) {
                     // Cannot find a pool for the volume. Throw an exception.
                     throw new CloudRuntimeException("Cannot migrate volume " + volume + " to storage pool " + pool + " while migrating vm to host " + host +
-                            ". Either the pool is not accessible from the " + "host or because of the offering with which the volume is created it cannot be placed on " +
+                            ". Either the pool is not accessible from the host or because of the offering with which the volume is created it cannot be placed on " +
                             "the given pool.");
                 } else if (pool.getId() == currentPool.getId()) {
-                    // If the pool to migrate too is the same as current pool, remove the volume from the list of
-                    // volumes to be migrated.
-                    volumeToPool.remove(volume);
+                    // If the pool to migrate too is the same as current pool, the volume doesn't need to be migrated.
+                } else {
+                    volumeToPoolObjectMap.put(volume, pool);
                 }
             } else {
                 // Find a suitable pool for the volume. Call the storage pool allocator to find the list of pools.
@@ -1990,23 +1993,33 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 ExcludeList avoid = new ExcludeList();
                 boolean currentPoolAvailable = false;
 
+                List<StoragePool> poolList = new ArrayList<StoragePool>();
                 for (StoragePoolAllocator allocator : _storagePoolAllocators) {
-                    List<StoragePool> poolList = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL);
-                    if (poolList != null && !poolList.isEmpty()) {
-                        // Volume needs to be migrated. Pick the first pool from the list. Add a mapping to migrate the
-                        // volume to a pool only if it is required; that is the current pool on which the volume resides
-                        // is not available on the destination host.
-                        if (poolList.contains(currentPool)) {
-                            currentPoolAvailable = true;
-                        } else {
-                            volumeToPool.put(volume, _storagePoolDao.findByUuid(poolList.get(0).getUuid()));
-                        }
-
-                        break;
+                    List<StoragePool> poolListFromAllocator = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL);
+                    if (poolListFromAllocator != null && !poolListFromAllocator.isEmpty()) {
+                        poolList.addAll(poolListFromAllocator);
                     }
                 }
 
-                if (!currentPoolAvailable && !volumeToPool.containsKey(volume)) {
+                if (poolList != null && !poolList.isEmpty()) {
+                    // Volume needs to be migrated. Pick the first pool from the list. Add a mapping to migrate the
+                    // volume to a pool only if it is required; that is the current pool on which the volume resides
+                    // is not available on the destination host.
+                    Iterator<StoragePool> iter = poolList.iterator();
+                    while (iter.hasNext()) {
+                        if (currentPool.getId() == iter.next().getId()) {
+                            currentPoolAvailable = true;
+                            break;
+                        }
+                    }
+
+                    if (!currentPoolAvailable) {
+                        volumeToPoolObjectMap.put(volume, _storagePoolDao.findByUuid(poolList.get(0).getUuid()));
+                    }
+                }
+
+
+                if (!currentPoolAvailable && !volumeToPoolObjectMap.containsKey(volume)) {
                     // Cannot find a pool for the volume. Throw an exception.
                     throw new CloudRuntimeException("Cannot find a storage pool which is available for volume " + volume + " while migrating virtual machine " +
                             profile.getVirtualMachine() + " to host " + host);
@@ -2014,7 +2027,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         }
 
-        return volumeToPool;
+        return volumeToPoolObjectMap;
     }
 
     private <T extends VMInstanceVO> void moveVmToMigratingState(T vm, Long hostId, ItWorkVO work) throws ConcurrentOperationException {
@@ -2044,7 +2057,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void migrateWithStorage(String vmUuid, long srcHostId, long destHostId, Map<Volume, StoragePool> volumeToPool)
+    public void migrateWithStorage(String vmUuid, long srcHostId, long destHostId, Map<Long, Long> volumeToPool)
             throws ResourceUnavailableException, ConcurrentOperationException {
 
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
@@ -2088,7 +2101,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private void orchestrateMigrateWithStorage(String vmUuid, long srcHostId, long destHostId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException,
+    private void orchestrateMigrateWithStorage(String vmUuid, long srcHostId, long destHostId, Map<Long, Long> volumeToPool) throws ResourceUnavailableException,
     ConcurrentOperationException {
 
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
@@ -2104,11 +2117,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         // Create a map of which volume should go in which storage pool.
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-        volumeToPool = getPoolListForVolumesForMigration(profile, destHost, volumeToPool);
+        Map<Volume, StoragePool> volumeToPoolMap = getPoolListForVolumesForMigration(profile, destHost, volumeToPool);
 
         // If none of the volumes have to be migrated, fail the call. Administrator needs to make a call for migrating
         // a vm and not migrating a vm with storage.
-        if (volumeToPool.isEmpty()) {
+        if (volumeToPoolMap == null || volumeToPoolMap.isEmpty()) {
             throw new InvalidParameterValueException("Migration of the vm " + vm + "from host " + srcHost + " to destination host " + destHost +
                     " doesn't involve migrating the volumes.");
         }
@@ -2138,7 +2151,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         boolean migrated = false;
         try {
             // Migrate the vm and its volume.
-            volumeMgr.migrateVolumes(vm, to, srcHost, destHost, volumeToPool);
+            volumeMgr.migrateVolumes(vm, to, srcHost, destHost, volumeToPoolMap);
 
             // Put the vm back to running state.
             moveVmOutofMigratingStateOnSuccess(vm, destHost.getId(), work);
@@ -4768,7 +4781,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     public Outcome<VirtualMachine> migrateVmWithStorageThroughJobQueue(
             final String vmUuid, final long srcHostId, final long destHostId,
-            final Map<Volume, StoragePool> volumeToPool) {
+            final Map<Long, Long> volumeToPool) {
 
         final CallContext context = CallContext.current();
         final User user = context.getCallingUser();

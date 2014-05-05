@@ -84,10 +84,8 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -196,7 +194,7 @@ public class VirtualMachineManagerImplTest {
     @Mock
     HostVO _destHostMock;
     @Mock
-    Map<Volume, StoragePool> _volumeToPoolMock;
+    Map<Long, Long> _volumeToPoolMock;
     @Mock
     EntityManager _entityMgr;
     @Mock
@@ -355,11 +353,13 @@ public class VirtualMachineManagerImplTest {
         // Mock the disk offering and pool objects for a volume.
         when(_volumeMock.getDiskOfferingId()).thenReturn(5L);
         when(_volumeMock.getPoolId()).thenReturn(200L);
+        when(_volumeMock.getId()).thenReturn(5L);
         when(_diskOfferingDao.findById(anyLong())).thenReturn(_diskOfferingMock);
-        when(_storagePoolDao.findById(anyLong())).thenReturn(_srcStoragePoolMock);
+        when(_storagePoolDao.findById(200L)).thenReturn(_srcStoragePoolMock);
+        when(_storagePoolDao.findById(201L)).thenReturn(_destStoragePoolMock);
 
         // Mock the volume to pool mapping.
-        when(_volumeToPoolMock.get(_volumeMock)).thenReturn(_destStoragePoolMock);
+        when(_volumeToPoolMock.get(5L)).thenReturn(201L);
         when(_destStoragePoolMock.getId()).thenReturn(201L);
         when(_srcStoragePoolMock.getId()).thenReturn(200L);
         when(_destStoragePoolMock.isLocal()).thenReturn(false);
