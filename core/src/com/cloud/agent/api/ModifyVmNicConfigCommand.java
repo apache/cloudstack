@@ -22,6 +22,9 @@ public class ModifyVmNicConfigCommand extends Command {
     int vlan;
     String macAddress;
     int index;
+    boolean enable;
+    String switchLableName;
+
     protected ModifyVmNicConfigCommand() {
     }
 
@@ -37,10 +40,24 @@ public class ModifyVmNicConfigCommand extends Command {
         this.index = position;
     }
 
+    public ModifyVmNicConfigCommand(String vmName, int vlan, int position, boolean enable) {
+        this.vmName = vmName;
+        this.vlan = vlan;
+        this.index = position;
+        this.enable = enable;
+    }
+
     public String getVmName() {
         return vmName;
     }
 
+    public String getSwitchLableName() {
+        return switchLableName;
+    }
+
+    public void setSwitchLableName(String switchlableName) {
+        this.switchLableName = switchlableName;
+    }
 
     @Override
     public boolean executeInSequence() {
