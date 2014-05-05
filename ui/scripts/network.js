@@ -3337,7 +3337,7 @@
                                                 },
                                                                                                 
                                                 dataProvider: function(args) {
-                                                	var itemData = $.isArray(args.context.multiRule) && args.context.subItemData ? args.context.subItemData : [];
+                                                    var itemData = $.isArray(args.context.multiRule) && args.context.subItemData ? args.context.subItemData : [];
 
                                                     var networkid;
                                                     if ('vpc' in args.context)
