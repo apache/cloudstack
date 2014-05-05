@@ -331,8 +331,15 @@
                                                     args.response.success({
                                                         data: items
                                                     });
-
-
+                                                    args.$select.change(function() {
+                                                        var $form = $(this).closest('form');
+                                                        var $fields = $form.find('.field');
+                                                        if ($(this).val() == "ImplicitDedicationPlanner") {
+                                                            $form.find('[rel=plannerMode]').css('display', 'block');
+                                                        } else {	
+                                                            $form.find('[rel=plannerMode]').hide();
+                                                        }
+                                                    });
                                                 }
                                             });
                                         }
