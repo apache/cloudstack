@@ -1298,6 +1298,11 @@ div.panel div.list-view div.data-table table {
   border-left: 1px solid #CACACA;
 }
 
+.detail-view div#details-tab-zones div.list-view div.data-table table td div.disabled {
+  display: none;
+}
+
+
 div.panel div.list-view div.fixed-header {
   position: absolute;
   top: 29px;
@@ -1313,7 +1318,7 @@ div.panel div.list-view div.fixed-header {
 .detail-view div.list-view div.fixed-header {
   width: 703px !important;
   top: 49px !important;
-  left: 32px !important;
+  left: 25px !important;
   background: #FFFFFF;
 }
 
