@@ -14,64 +14,56 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" Tests for Persistent Networks without running VMs feature
-
-    Test Plan: https://cwiki.apache.org/confluence/display/CLOUDSTACK/Persistent+Networks+without+a+running+VM
-
-    Issue Link: https://issues.apache.org/jira/browse/CLOUDSTACK-2232
-
-    Feature Specifications: https://cwiki.apache.org/confluence/display/CLOUDSTACK/FS+-+Persistent+Networks
-"""
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.utils import (cleanup_resources,
-                                          validateList,
-                                          get_hypervisor_type)
-from marvin.integration.lib.base import (Account,
-                                         ServiceOffering,
-                                         NetworkOffering,
-                                         Network,
-                                         VirtualMachine,
-                                         PublicIPAddress,
-                                         FireWallRule,
-                                         Router,
-                                         Host,
-                                         NATRule,
-                                         Project,
-                                         LoadBalancerRule,
-                                         VpcOffering,
-                                         VPC,
-                                         Domain,
-                                         StaticNATRule,
-                                         NetworkACL)
-from marvin.integration.lib.common import (get_domain,
-                                           get_zone,
-                                           get_template,
-                                           wait_for_cleanup,
-                                           add_netscaler,
-                                           verifyNetworkState)
-
+""" Tests for Persistent Networks without running VMs feature"""
+from marvin.lib.utils import (validateList,
+                              cleanup_resources,
+                              get_hypervisor_type)
+from marvin.lib.base import (NATRule,
+                             StaticNATRule,
+                             VirtualMachine,
+                             LoadBalancerRule,
+                             VPC,
+                             Account,
+                             Network,
+                             Router,
+                             ServiceOffering,
+                             NetworkACL,
+                             VpcOffering,
+                             Domain,
+                             PublicIPAddress,
+                             FireWallRule,
+                             Host,
+                             NetworkOffering,
+                             Project)
+from marvin.lib.common import (get_zone,
+                               get_template,
+                               get_domain,
+                               add_netscaler,
+                               verifyNetworkState,
+                               wait_for_cleanup)
 from nose.plugins.attrib import attr
-from marvin.codes import PASS, FAIL
+from marvin.codes import PASS, FAIL, FAILED
 from marvin.sshClient import SshClient
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from ddt import ddt, data
 import time
 
 @ddt
 class TestPersistentNetworks(cloudstackTestCase):
-    """Test Persistent Networks without running VMs
-    """
-
+    '''
+    Test Persistent Networks without running VMs
+    '''
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestPersistentNetworks,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestPersistentNetworks, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -951,20 +943,22 @@ class TestAssignVirtualMachine(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestAssignVirtualMachine,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestAssignVirtualMachine, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template"
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -1105,20 +1099,22 @@ class TestProjectAccountOperations(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestProjectAccountOperations,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestProjectAccountOperations, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template"
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -1260,20 +1256,22 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestRestartPersistentNetwork,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestRestartPersistentNetwork, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template"
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -1516,25 +1514,28 @@ class TestVPCNetworkOperations(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestVPCNetworkOperations,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestVPCNetworkOperations, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template"
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.services["service_offerings"]["small"]
                                             )
         cls.persistent_network_offering_NoLB = NetworkOffering.create(cls.api_client, cls.services["nw_off_persistent_VPCVR_NoLB"],
                                                                        conservemode=False)

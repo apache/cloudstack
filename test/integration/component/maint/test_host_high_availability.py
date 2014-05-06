@@ -21,9 +21,10 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
+import time
 
 
 class Services:
@@ -76,20 +77,13 @@ class TestHostHighAvailability(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-            TestHostHighAvailability,
-            cls
-        ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestHostHighAvailability, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(
-            cls.api_client,
-            cls.services
-        )
-        cls.zone = get_zone(
-            cls.api_client,
-            cls.services
-        )
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.template = get_template(
             cls.api_client,
@@ -626,11 +620,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         #verify the VM live migration happened to another running host
         self.debug("Waiting for VM to come up")
-        wait_for_vm(
-            self.apiclient,
-            virtualmachineid=vm_with_ha_enabled.id,
-            interval=timeout
-        )
+        time.sleep(timeout)
 
         vms = VirtualMachine.list(
             self.apiclient,
@@ -758,11 +748,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         #verify the VM live migration happened to another running host
         self.debug("Waiting for VM to come up")
-        wait_for_vm(
-            self.apiclient,
-            virtualmachineid=vm_with_ha_disabled.id,
-            interval=timeout
-        )
+        time.sleep(timeout)
 
         vms = VirtualMachine.list(
             self.apiclient,

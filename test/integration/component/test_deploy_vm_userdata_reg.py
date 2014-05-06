@@ -19,9 +19,9 @@
 # this script will cover VMdeployment  with Userdata tests
 
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.common import *
+from marvin.lib.base import *
+from marvin.lib.utils import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 from marvin.sshClient import SshClient
 import unittest
@@ -71,9 +71,10 @@ class TestDeployVmWithUserData(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apiClient = super(TestDeployVmWithUserData, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeployVmWithUserData, cls).getClsTestClient()
+        cls.apiClient = cls.testClient.getApiClient()
         cls.services = Services().services
-        cls.zone = get_zone(cls.apiClient, cls.services)
+        cls.zone = get_zone(cls.apiClient, cls.testClient.getZoneForTests())
         if cls.zone.localstorageenabled:
             #For devcloud since localstroage is enabled
             cls.services["service_offering"]["storagetype"] = "local"
@@ -98,6 +99,10 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         cls.user_data_2k= ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(2000))
         cls.user_data_2kl = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(1900))
 
+
+    def setUp(self):
+        self.apiClient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
 
 
     @attr(tags=["simulator", "devcloud", "basic", "advanced", "provisioning"])
@@ -174,7 +179,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         host.passwd="password"
         cmd="cat /var/www/html/userdata/"+deployVmResponse.ipaddress+"/user-data"
 
-        if self.apiClient.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() == 'vmware':
 
             try:
                 result = get_process_status(
@@ -184,7 +189,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
                     self.apiClient.connection.passwd,
                     router.linklocalip,
                     cmd,
-                    hypervisor=self.apiClient.hypervisor
+                    hypervisor=self.hypervisor
                 )
                 res = str(result)
                 self.assertEqual(res.__contains__(self.userdata),True,"Userdata Not applied Check the failures")

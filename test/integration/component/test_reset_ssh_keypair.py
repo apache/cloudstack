@@ -19,18 +19,18 @@
 """
 
 #Import Local Modules
-from marvin.integration.lib.base import (VirtualMachine,
+from marvin.lib.base import (VirtualMachine,
                                          SSHKeyPair,
                                          Account,
                                          Template,
                                          ServiceOffering,
                                          EgressFireWallRule)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            list_virtual_machines,
                                            list_volumes)
-from marvin.integration.lib.utils import (cleanup_resources,
+from marvin.lib.utils import (cleanup_resources,
                                           random_gen,
                                           validateList)
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
@@ -114,14 +114,13 @@ class TestResetSSHKeypair(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-            TestResetSSHKeypair,
-            cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestResetSSHKeypair, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
         # Get Zone, Domain and templates
-        domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         # Set Zones and disk offerings
@@ -955,14 +954,13 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-            TestResetSSHKeyUserRights,
-            cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestResetSSHKeyUserRights, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         # Set Zones and disk offerings

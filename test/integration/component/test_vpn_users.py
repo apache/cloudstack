@@ -19,9 +19,9 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackException import cloudstackAPIException
+from marvin.cloudstackException import CloudstackAPIException
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import (
+from marvin.lib.base import (
                                         Account,
                                         ServiceOffering,
                                         VirtualMachine,
@@ -31,11 +31,11 @@ from marvin.integration.lib.base import (
                                         Configurations,
                                         NATRule
                                         )
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template
                                         )
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 
 
 class Services:
@@ -94,12 +94,13 @@ class Services:
 class TestVPNUsers(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestVPNUsers,
-            cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPNUsers, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.services["mode"] = cls.zone.networktype
 
@@ -155,7 +156,7 @@ class TestVPNUsers(cloudstackTestCase):
                                                services=self.services["virtual_machine"]
                                                )
             return
-        except cloudstackAPIException as e:
+        except CloudstackAPIException as e:
                 self.tearDown()
                 raise e
 
@@ -396,7 +397,7 @@ class TestVPNUsers(cloudstackTestCase):
                                domainid=self.account.domainid)
         self.cleanup.append(admin)
         self.debug("Creating API client for newly created user")
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
 
@@ -438,7 +439,7 @@ class TestVPNUsers(cloudstackTestCase):
                                domainid=self.account.domainid)
         self.cleanup.append(admin)
         self.debug("Creating API client for newly created user")
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
 

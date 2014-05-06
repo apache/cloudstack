@@ -19,21 +19,21 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.base import (
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.base import (
                                         Account,
                                         ServiceOffering,
                                         VirtualMachine,
                                         Domain,
                                         Resources
                                         )
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         findSuitableHostForMigration,
                                         get_resource_type
                                         )
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 from marvin.codes import ERROR_NO_HOST_FOR_MIGRATION
 
 
@@ -92,12 +92,13 @@ class TestCPULimits(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestCPULimits,
-                               cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestCPULimits, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
 
         cls.template = get_template(
@@ -352,12 +353,14 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestDomainCPULimitsConfiguration,
-                               cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDomainCPULimitsConfiguration, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
         cls.services["mode"] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -481,7 +484,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
             UserName=self.account.name,
             DomainName=self.account.domain)
 
@@ -553,7 +556,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
             UserName=self.account.name,
             DomainName=self.account.domain)
 
@@ -613,7 +616,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
             UserName=self.account.name,
             DomainName=self.account.domain)
 
@@ -685,7 +688,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             if cpu_account_gc[0].max != 16:
                 self.skipTest("This test case requires configuration value max.account.cpus to be 16")
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                 UserName=self.account.name,
                 DomainName=self.account.domain)
 
