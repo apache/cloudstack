@@ -45,7 +45,7 @@ public class UpdateUserCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.API_KEY, type = CommandType.STRING, description = "The API key for the user. Must be specified with userSecretKey")
+    @Parameter(name = ApiConstants.USER_API_KEY, type = CommandType.STRING, description = "The API key for the user. Must be specified with userSecretKey")
     private String apiKey;
 
     @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, description = "email")
@@ -65,7 +65,7 @@ public class UpdateUserCmd extends BaseCmd {
                description = "Clear text password (default hashed to SHA256SALT). If you wish to use any other hasing algorithm, you would need to write a custom authentication adapter")
     private String password;
 
-    @Parameter(name = ApiConstants.SECRET_KEY, type = CommandType.STRING, description = "The secret key for the user. Must be specified with userApiKey")
+    @Parameter(name = ApiConstants.SECRET_KEY, type = CommandType.STRING, description = "The secret key for the user. Must be specified with userSecretKey")
     private String secretKey;
 
     @Parameter(name = ApiConstants.TIMEZONE,
