@@ -588,10 +588,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         sc.addAnd("resourceState", SearchCriteria.Op.NIN, ResourceState.Maintenance, ResourceState.PrepareForMaintenance,
                                 ResourceState.ErrorInMaintenance);
                         sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Routing.toString());
-                        sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, HypervisorType.KVM); // support KVM only util 2013.06.25
+                        //sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, HypervisorType.KVM); // support KVM only util 2013.06.25
                         List<HostVO> hosts = _hostDao.search(sc, null);
 
                         for (HostVO host : hosts) {
+                            if (host.getHypervisorType() != HypervisorType.KVM && host.getHypervisorType() != HypervisorType.BareMetal) {
+                                continue;
+                            }
+
                             List<UserVmVO> vms = _userVmDao.listRunningByHostId(host.getId());
                             List<Long> vmIds = new ArrayList<Long>();
 
