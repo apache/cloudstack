@@ -237,7 +237,6 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/awsapi
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
-mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}-management
 
 # Specific for tomcat
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
@@ -295,7 +294,6 @@ chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/work
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/temp
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
-chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}-management
 
 # KVM Agent
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent
@@ -584,7 +582,6 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/%{name}-ipallocator
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
-%dir %attr(0770,root,root) %{_localstatedir}/log/%{name}-management
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 %attr(0644,cloud,cloud) %{_localstatedir}/log/%{name}/management/catalina.out
