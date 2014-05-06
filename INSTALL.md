@@ -10,7 +10,7 @@ Refer to the [wiki](http://cwiki.apache.org/confluence/display/CLOUDSTACK/Index)
 for the latest information, especially:
 
   - [Setting up development environment](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Setting+up+CloudStack+Development+Environment) for Apache CloudStack.
-  - [Building](https://cwiki.apache.org/confluence/display/CLOUDSTACK/How+to+build+on+master+branch) Apache CloudStack.
+  - [Building](https://cwiki.apache.org/confluence/display/CLOUDSTACK/How+to+build+CloudStack) Apache CloudStack.
 
 ## Setting up Development Environment
 
@@ -18,7 +18,7 @@ for the latest information, especially:
 
 Install tools and dependencies used for development:
 
-    $ yum install git ant ant-devel java-1.6.0-openjdk java-1.6.0-openjdk-devel
+    $ yum install git ant ant-devel java-1.7.0-openjdk java-1.7.0-openjdk-devel
     mysql mysql-server tomcat6 mkisofs gcc python MySQL-python openssh-clients wget
 
 Set up Maven (3.0.5):
