@@ -22,12 +22,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 
+import com.cloud.configuration.Config;
 import com.cloud.event.EventCategory;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.Snapshot;
@@ -40,6 +44,8 @@ import com.cloud.utils.fsm.StateListener;
 public class SnapshotStateListener implements StateListener<State, Event, SnapshotVO> {
 
     protected static EventBus s_eventBus = null;
+    @Inject
+    private ConfigurationDao _configDao;
 
     private static final Logger s_logger = Logger.getLogger(VolumeStateListener.class);
 
@@ -61,6 +67,11 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
 
     private void pubishOnEventBus(String event, String status, Snapshot vo, State oldState, State newState) {
 
+        String configKey = Config.PublishResourceStateEvent.key();
+        String value = _configDao.getValue(configKey);
+        boolean configValue = Boolean.parseBoolean(value);
+        if(!configValue)
+            return;
         try {
             s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {

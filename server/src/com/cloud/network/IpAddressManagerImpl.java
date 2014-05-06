@@ -398,7 +398,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         AssignIpAddressFromPodVlanSearch.join("vlan", podVlanSearch, podVlanSearch.entity().getId(), AssignIpAddressFromPodVlanSearch.entity().getVlanId(), JoinType.INNER);
         AssignIpAddressFromPodVlanSearch.done();
 
-        Network.State.getStateMachine().registerListener(new NetworkStateListener(_usageEventDao, _networksDao));
+        Network.State.getStateMachine().registerListener(new NetworkStateListener(_usageEventDao, _networksDao, _configDao));
 
         s_logger.info("Network Manager is configured.");
 

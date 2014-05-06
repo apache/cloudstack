@@ -234,6 +234,11 @@ public class DatabaseConfig {
         s_configurationDescriptions.put("snapshot.test.weeks.per.month", "Set it to a smaller value to take more recurring snapshots");
         s_configurationDescriptions.put("snapshot.test.months.per.year", "Set it to a smaller value to take more recurring snapshots");
         s_configurationDescriptions.put("hypervisor.type", "The type of hypervisor that this deployment will use.");
+        s_configurationDescriptions.put("publish.action.events", "enable or disable to control the publishing of action events on the event bus");
+        s_configurationDescriptions.put("publish.alert.events", "enable or disable to control the publishing of alert events on the event bus");
+        s_configurationDescriptions.put("publish.resource.state.events", "enable or disable to control the publishing of resource state events on the event bus");
+        s_configurationDescriptions.put("publish.usage.events", "enable or disable to control the publishing of usage events on the event bus");
+        s_configurationDescriptions.put("publish.async.job.events", "enable or disable to control the publishing of async job events on the event bus");
 
         s_configurationComponents.put("host.stats.interval", "management-server");
         s_configurationComponents.put("storage.stats.interval", "management-server");
@@ -306,6 +311,11 @@ public class DatabaseConfig {
         s_configurationComponents.put("snapshot.test.weeks.per.month", "SnapshotManager");
         s_configurationComponents.put("snapshot.test.months.per.year", "SnapshotManager");
         s_configurationComponents.put("hypervisor.type", "ManagementServer");
+        s_configurationComponents.put("publish.action.events", "management-server");
+        s_configurationComponents.put("publish.alert.events", "management-server");
+        s_configurationComponents.put("publish.resource.state.events", "management-server");
+        s_configurationComponents.put("publish.usage.events", "management-server");
+        s_configurationComponents.put("publish.async.job.events", "management-server");
 
         s_defaultConfigurationValues.put("host.stats.interval", "60000");
         s_defaultConfigurationValues.put("storage.stats.interval", "60000");
@@ -347,6 +357,11 @@ public class DatabaseConfig {
         s_defaultConfigurationValues.put("init", "false");
         s_defaultConfigurationValues.put("cpu.overprovisioning.factor", "1");
         s_defaultConfigurationValues.put("mem.overprovisioning.factor", "1");
+        s_defaultConfigurationValues.put("publish.action.events", "true");
+        s_defaultConfigurationValues.put("publish.alert.events", "true");
+        s_defaultConfigurationValues.put("publish.resource.state.events", "true");
+        s_defaultConfigurationValues.put("publish.usage.events", "true");
+        s_defaultConfigurationValues.put("publish.async.job.events", "true");
     }
 
     protected DatabaseConfig() {

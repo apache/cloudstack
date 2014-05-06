@@ -57,6 +57,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
@@ -296,6 +297,11 @@ public class AffinityApiUnitTest {
         @Bean
         public MessageBus messageBus() {
             return Mockito.mock(MessageBus.class);
+        }
+
+        @Bean
+        public ConfigurationDao configDao() {
+            return Mockito.mock(ConfigurationDao.class);
         }
 
         public static class Library implements TypeFilter {

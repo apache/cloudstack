@@ -25,9 +25,11 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 
+import com.cloud.configuration.Config;
 import com.cloud.event.EventCategory;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.Volume;
@@ -39,11 +41,12 @@ import com.cloud.utils.fsm.StateListener;
 public class VolumeStateListener implements StateListener<State, Event, Volume> {
 
     protected static EventBus s_eventBus = null;
+    protected ConfigurationDao _configDao;
 
     private static final Logger s_logger = Logger.getLogger(VolumeStateListener.class);
 
-    public VolumeStateListener() {
-
+    public VolumeStateListener(ConfigurationDao configDao) {
+        this._configDao = configDao;
     }
 
     @Override
@@ -60,6 +63,11 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
 
     private void pubishOnEventBus(String event, String status, Volume vo, State oldState, State newState) {
 
+        String configKey = Config.PublishResourceStateEvent.key();
+        String value = _configDao.getValue(configKey);
+        boolean configValue = Boolean.parseBoolean(value);
+        if(!configValue)
+            return;
         try {
             s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {
