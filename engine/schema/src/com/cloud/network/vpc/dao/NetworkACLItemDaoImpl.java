@@ -115,7 +115,7 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
         for(NetworkACLItemVO item :list) {
             loadCidrs(item);
         }
-        return listBy(sc);
+        return list;
     }
 
     @Override
@@ -132,7 +132,9 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
         sc.setParameters("aclId", aclId);
         sc.setParameters("number", number);
         NetworkACLItemVO vo = findOneBy(sc);
-        loadCidrs(vo);
+        if(vo != null) {
+            loadCidrs(vo);
+        }
         return vo;
     }
 
