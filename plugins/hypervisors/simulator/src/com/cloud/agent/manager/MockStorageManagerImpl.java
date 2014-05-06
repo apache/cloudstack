@@ -362,7 +362,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
-        return new ModifyStoragePoolAnswer(cmd, storagePool.getCapacity(), 0, new HashMap<String, TemplateProp>());
+        return new ModifyStoragePoolAnswer(cmd, storagePool.getCapacity(), storagePool.getCapacity(), new HashMap<String, TemplateProp>());
     }
 
     @Override
@@ -964,7 +964,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             }
         }
         return new StoragePoolInfo(storagePool.getUuid(), host.getPrivateIpAddress(), storagePool.getMountPoint(), storagePool.getMountPoint(),
-            storagePool.getPoolType(), storagePool.getCapacity(), 0);
+            storagePool.getPoolType(), storagePool.getCapacity(), storagePool.getCapacity());
     }
 
     @Override
