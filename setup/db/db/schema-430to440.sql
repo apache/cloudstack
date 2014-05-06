@@ -1653,7 +1653,9 @@ CREATE TABLE `cloud`.`op_vpc_distributed_router_sequence_no` (
   UNIQUE `u_op_vpc_distributed_router_sequence_no_vpc_id`(`vpc_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_acl_item_cidr` (
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Advanced', 'DEFAULT', 'NetworkOrchestrationService', 'router.aggregation.command.each.timeout', '3', 'timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ', '3') ON DUPLICATE KEY UPDATE category='Advanced';
+
+CREATE TABLE `cloud`.`network_acl_item_cidrs` (
   `id` bigint unsigned UNIQUE NOT NULL auto_increment,
   `network_acl_item_id` bigint unsigned NOT NULL COMMENT 'Network ACL Item id',
   `cidr` varchar(255) NOT NULL,
