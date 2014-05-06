@@ -34,6 +34,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -218,6 +219,16 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
     static HashMap<Service, List<Provider>> s_serviceToImplementedProvidersMap = new HashMap<Service, List<Provider>>();
     static HashMap<String, String> s_providerToNetworkElementMap = new HashMap<String, String>();
+
+    List<SecurityChecker> _securityCheckers;
+
+    public List<SecurityChecker> getSecurityCheckers() {
+        return _securityCheckers;
+    }
+
+    public void setSecurityCheckers(List<SecurityChecker> securityCheckers) {
+        _securityCheckers = securityCheckers;
+    }
 
     /**
      *
@@ -1586,7 +1597,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                         + ", permission denied");
             }
         } else {
-            _accountMgr.checkAccess(owner, accessType, network);
+            // Go through IAM (SecurityCheckers)
+            for (SecurityChecker checker : _securityCheckers) {
+                if (checker.checkAccess(owner, accessType, null, network)) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Access to " + network + " granted to " + owner + " by " + checker.getName());
+                    }
+                    break;
+                }
+            }
         }
     }
 
