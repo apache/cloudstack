@@ -35,6 +35,13 @@
     <bean id="IAMAccountPolicyMapDaoImpl" class="org.apache.cloudstack.iam.server.dao.IAMAccountPolicyMapDaoImpl" />    
 
         
-    <bean id="IAMServiceImpl" class="org.apache.cloudstack.iam.server.IAMServiceImpl" />
+    <bean id="IAMServiceImpl" class="org.apache.cloudstack.iam.server.IAMServiceImpl" >
+      <property name="configParams">
+        <map>
+          <entry key="cache.size" value="5000" />
+          <entry key="cache.time.to.live" value="300" />
+        </map>
+      </property>
+   </bean>
 
 </beans>
