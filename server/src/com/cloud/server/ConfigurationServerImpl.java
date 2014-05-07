@@ -361,12 +361,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 TransactionLegacy txn = TransactionLegacy.currentTxn();
-                String pvdriverversion = Config.XenPVdriverVersion.getDefaultValue();
+                String pvdriverversion = Config.XenServerPVdriverVersion.getDefaultValue();
                 PreparedStatement pstmt = null;
                 ResultSet rs1 = null;
                 ResultSet rs2 = null;
                 try {
-                    String oldValue = _configDao.getValue(Config.XenPVdriverVersion.key());
+                    String oldValue = _configDao.getValue(Config.XenServerPVdriverVersion.key());
                     if (oldValue == null) {
                         String sql = "select resource from host where hypervisor_type='XenServer' and removed is null and status not in ('Error', 'Removed') group by resource";
                         pstmt = txn.prepareAutoCloseStatement(sql);
@@ -375,17 +375,17 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                             String resouce = rs1.getString(1); //resource column
                             if (resouce == null)
                                 continue;
-                            if (resouce.equalsIgnoreCase("com.cloud.hypervisor.xen.resource.XenServer56Resource")
-                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xen.resource.XenServer56FP1Resource")
-                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xen.resource.XenServer56SP2Resource")
-                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xen.resource.XenServer600Resource")
-                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xen.resource.XenServer602Resource")) {
+                            if (resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56Resource")
+                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56FP1Resource")
+                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56SP2Resource")
+                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer600Resource")
+                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer602Resource")) {
                                 pvdriverversion = "xenserver56";
                                 break;
                             }
                         }
-                        _configDao.getValueAndInitIfNotExist(Config.XenPVdriverVersion.key(), Config.XenPVdriverVersion.getCategory(), pvdriverversion,
-                                Config.XenPVdriverVersion.getDescription());
+                        _configDao.getValueAndInitIfNotExist(Config.XenServerPVdriverVersion.key(), Config.XenServerPVdriverVersion.getCategory(), pvdriverversion,
+                                Config.XenServerPVdriverVersion.getDescription());
                         sql = "select id from vm_template where hypervisor_type='XenServer'  and format!='ISO' and removed is null";
                         pstmt = txn.prepareAutoCloseStatement(sql);
                         rs2 = pstmt.executeQuery();

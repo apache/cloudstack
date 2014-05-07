@@ -291,7 +291,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 if (prodVersion == null) {
                     prodVersion = record.softwareVersion.get("platform_version");
                 }
-                String xenVersion = record.softwareVersion.get("xenserver");
+                String xenVersion = record.softwareVersion.get("xen");
                 String hostOS = record.softwareVersion.get("product_brand");
                 if (hostOS == null) {
                     hostOS = record.softwareVersion.get("platform_name");
@@ -347,12 +347,12 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 params.put("wait", Integer.toString(_wait));
                 details.put("wait", Integer.toString(_wait));
                 params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
-                params.put(Config.XenMaxNics.toString().toLowerCase(), _configDao.getValue(Config.XenMaxNics.toString()));
-                params.put(Config.XenHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenHeartBeatInterval.toString()));
+                params.put(Config.XenServerMaxNics.toString().toLowerCase(), _configDao.getValue(Config.XenServerMaxNics.toString()));
+                params.put(Config.XenServerHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatInterval.toString()));
                 params.put(Config.InstanceName.toString().toLowerCase(), _instance);
                 details.put(Config.InstanceName.toString().toLowerCase(), _instance);
                 try {
-                    resource.configure("Xen Server", params);
+                    resource.configure("XenServer", params);
                 } catch (ConfigurationException e) {
                     _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + record.address, "Error is " + e.getMessage());
                     s_logger.warn("Unable to instantiate " + record.address, e);
@@ -455,7 +455,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     protected void serverConfig() {
-        String value = _params.get(Config.XenSetupMultipath.key());
+        String value = _params.get(Config.XenServerSetupMultipath.key());
         _setupMultipath = Boolean.parseBoolean(value);
     }
 
@@ -464,20 +464,20 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         super.configure(name, params);
         serverConfig();
 
-        _publicNic = _params.get(Config.XenPublicNetwork.key());
-        _privateNic = _params.get(Config.XenPrivateNetwork.key());
+        _publicNic = _params.get(Config.XenServerPublicNetwork.key());
+        _privateNic = _params.get(Config.XenServerPrivateNetwork.key());
 
-        _storageNic1 = _params.get(Config.XenStorageNetwork1.key());
-        _storageNic2 = _params.get(Config.XenStorageNetwork2.key());
+        _storageNic1 = _params.get(Config.XenServerStorageNetwork1.key());
+        _storageNic2 = _params.get(Config.XenServerStorageNetwork2.key());
 
-        _guestNic = _params.get(Config.XenGuestNetwork.key());
+        _guestNic = _params.get(Config.XenServerGuestNetwork.key());
 
         String value = _params.get(Config.XapiWait.toString());
         _wait = NumbersUtil.parseInt(value, Integer.parseInt(Config.XapiWait.getDefaultValue()));
 
         _instance = _params.get(Config.InstanceName.key());
 
-        value = _params.get(Config.XenSetupMultipath.key());
+        value = _params.get(Config.XenServerSetupMultipath.key());
         Boolean.parseBoolean(value);
 
         value = _params.get("xenserver.check.hvm");

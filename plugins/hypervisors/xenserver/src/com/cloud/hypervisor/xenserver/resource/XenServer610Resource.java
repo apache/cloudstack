@@ -64,7 +64,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value = ServerResource.class)
-public class XenServer610Resource extends XenServer56FP1Resource {
+public class XenServer610Resource extends XenServer602Resource {
     private static final Logger s_logger = Logger.getLogger(XenServer610Resource.class);
 
     public XenServer610Resource() {

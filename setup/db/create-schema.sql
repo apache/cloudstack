@@ -2091,7 +2091,7 @@ CREATE TABLE `cloud`.`physical_network_traffic_types` (
   `uuid` varchar(40),
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
   `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
-  `xen_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a XenServer host',
+  `xenserver_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a XenServer host',
   `kvm_network_label` varchar(255) DEFAULT 'cloudbr0' COMMENT 'The network name label of the physical device dedicated to this traffic on a KVM host',
   `vmware_network_label` varchar(255) DEFAULT 'vSwitch0' COMMENT 'The network name label of the physical device dedicated to this traffic on a VMware host',
   `simulator_network_label` varchar(255) COMMENT 'The name labels needed for identifying the simulator',

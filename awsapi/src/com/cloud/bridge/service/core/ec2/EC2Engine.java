@@ -2007,9 +2007,9 @@ public class EC2Engine extends ManagerBase {
                     ec2Image.setState(temp.getIsReady() ? "available" : "pending");
                     ec2Image.setDomainId(temp.getDomainId());
                     if (temp.getHyperVisor().equalsIgnoreCase("xenserver"))
-                        ec2Image.setHypervisor("xen");
+                        ec2Image.setHypervisor("xenserver");
                     else if (temp.getHyperVisor().equalsIgnoreCase("ovm"))
-                        ec2Image.setHypervisor("ovm"); // valid values for hypervisor is 'ovm' and 'xen'
+                        ec2Image.setHypervisor("ovm"); // valid values for hypervisor is 'ovm' and 'xenserver'
                     else
                         ec2Image.setHypervisor("");
                     if (temp.getDisplayText() == null)
@@ -2614,7 +2614,7 @@ public class EC2Engine extends ManagerBase {
      */
     private String mapToAmazonHypervisorType(String hypervisor) {
         if (hypervisor.equalsIgnoreCase("Xenserver"))
-            return ("xen");
+            return ("xenserver");
         else if (hypervisor.equalsIgnoreCase("Ovm"))
             return ("ovm");
         else

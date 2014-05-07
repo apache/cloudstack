@@ -114,6 +114,7 @@ import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -170,6 +171,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHCmdHelper;
+import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
@@ -290,10 +292,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected int _pollingIntervalInSeconds = 60;
 
     //Hypervisor specific params with generic value, may need to be overridden for specific versions
-    long _xsMemoryUsed = 128 * 1024 * 1024L; // xen hypervisor used 128 M
+    long _xsMemoryUsed = 128 * 1024 * 1024L; // xenserver hypervisor used 128 M
     double _xsVirtualizationFactor = 63.0 / 64.0;  // 1 - virtualization overhead
 
-    //static min values for guests on xen
+    //static min values for guests on xenserver
     private static final long mem_128m = 134217728L;
 
     protected boolean _canBridgeFirewall = false;
@@ -558,10 +560,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     @Override
     public ExecutionResult executeInVR(String routerIP, String script, String args, int timeout) {
-        Connection conn = getConnection();
-        String rc = callHostPluginAsync(conn, "vmops", "routerProxy", timeout, "args", script + " " + routerIP + " " + args);
-        // Fail case would be start with "fail#"
-        return new ExecutionResult(rc.startsWith("succ#"), rc.substring(5));
+        Pair<Boolean, String> result;
+        try {
+            result = SshHelper.sshExecute(_host.ip, 22, _username, null, _password.peek(), "/opt/cloud/bin/router_proxy.sh " + script + " " + routerIP + " " + args,
+                    60000, 60000, timeout * 1000);
+        } catch (Exception e) {
+            return new ExecutionResult(false, e.getMessage());
+        }
+        return new ExecutionResult(result.first(), result.second());
     }
 
     @Override
@@ -913,6 +919,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.debug("A VIF for dom0 has already been found - No need to create one");
             }
         }
+
         if (dom0vif == null) {
             s_logger.debug("Create a vif on dom0 for " + networkDesc);
             VIF.Record vifr = new VIF.Record();
@@ -930,14 +937,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             vifr.lockingMode = Types.VifLockingMode.NETWORK_DEFAULT;
             dom0vif = VIF.create(conn, vifr);
+            synchronized (_tmpDom0Vif) {
+                _tmpDom0Vif.add(dom0vif);
+            }
         }
         // At this stage we surely have a VIF
-        dom0vif.plug(conn);
-        dom0vif.unplug(conn);
-        synchronized (_tmpDom0Vif) {
-            _tmpDom0Vif.add(dom0vif);
+        try {
+            dom0vif.plug(conn);
+        } catch (Exception e) {
+            // though an exception is thrown here, VIF actually gets plugged-in to dom0, so just ignore the exception
         }
-
+        dom0vif.unplug(conn);
     }
 
     private synchronized Network setupvSwitchNetwork(Connection conn) {
@@ -989,12 +999,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 rec.otherConfig = otherConfig;
                 nw = Network.create(conn, rec);
                 // Plug dom0 vif only when creating network
-                if (!is_xcp())
-                    enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + nwName);
-                s_logger.debug("### Xen Server network for tunnels created:" + nwName);
+                enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + nwName);
+                s_logger.debug("### XenServer network for tunnels created:" + nwName);
             } else {
                 nw = networks.iterator().next();
-                s_logger.debug("Xen Server network for tunnels found:" + nwName);
+                enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + nwName);
+                s_logger.debug("XenServer network for tunnels found:" + nwName);
             }
             return nw;
         } catch (Exception e) {
@@ -1026,8 +1036,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             if (!configured) {
                 // Plug dom0 vif only if not done before for network and host
-                if (!is_xcp())
-                    enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + bridgeName);
+                enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + bridgeName);
                 String result;
                 if (bridgeName.startsWith("OVS-DR-VPC-Bridge")) {
                     result = callHostPlugin(conn, "ovstunnel", "setup_ovs_bridge_for_distributed_routing", "bridge", bridge,
@@ -1332,7 +1341,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return dynamicMinRam;
     }
 
-    protected HashMap<String, HashMap<String, Long>> getGPUGroupDetails(Connection conn) throws XenAPIException, XmlRpcException {
+    protected HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUGroupDetails(Connection conn) throws XenAPIException, XmlRpcException {
         return null;
     }
 
@@ -1488,8 +1497,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     vm.setPlatform(conn, platform);
                 }
             }
-            String xentoolsversion = details.get("hypervisortoolsversion");
-            if (xentoolsversion == null || !xentoolsversion.equalsIgnoreCase("xenserver61")) {
+            String xenservertoolsversion = details.get("hypervisortoolsversion");
+            if (xenservertoolsversion == null || !xenservertoolsversion.equalsIgnoreCase("xenserver61")) {
                 Map<String, String> platform = vm.getPlatform(conn);
                 platform.remove("device_id");
                 vm.setPlatform(conn, platform);
@@ -1665,7 +1674,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return cmd;
     }
 
-    private void cleanUpTmpDomVif(Connection conn) {
+    private void cleanUpTmpDomVif(Connection conn, Network nw) {
         List<VIF> vifs;
         synchronized (_tmpDom0Vif) {
             vifs = _tmpDom0Vif;
@@ -1673,13 +1682,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         for (VIF v : vifs) {
-            String vifName = "unkown";
+            String vifName = "unknown";
             try {
                 VIF.Record vifr = v.getRecord(conn);
-                Map<String, String> config = vifr.otherConfig;
-                vifName = config.get("nameLabel");
-                v.destroy(conn);
-                s_logger.debug("Destroy temp dom0 vif" + vifName + " success");
+                if (v.getNetwork(conn).getUuid(conn).equals(nw.getUuid(conn))) {
+                    Map<String, String> config = vifr.otherConfig;
+                    vifName = config.get("nameLabel");
+                    s_logger.debug("A VIF in dom0 for the network is found - so destroy the vif");
+                    v.destroy(conn);
+                    s_logger.debug("Destroy temp dom0 vif" + vifName + " success");
+                }
             } catch (Exception e) {
                 s_logger.warn("Destroy temp dom0 vif " + vifName + "failed", e);
             }
@@ -1817,7 +1829,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     }
                 }
             }
-            cleanUpTmpDomVif(conn);
 
             if (_canBridgeFirewall) {
                 String result = null;
@@ -3617,6 +3628,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     return new StopAnswer(cmd, msg, platformstring, false);
                 }
 
+                if (cmd.checkBeforeCleanup() && vmr.powerState == VmPowerState.RUNNING) {
+                    String msg = "Vm " + vmName + " is running on host and checkBeforeCleanup flag is set, so bailing out";
+                    s_logger.debug(msg);
+                    return new StopAnswer(cmd, msg, false);
+                }
+
                 State state = s_vms.getState(_cluster, vmName);
 
                 synchronized (_cluster.intern()) {
@@ -3655,7 +3672,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                                 s_logger.debug("VM " + vmName + " does not have GPU support.");
                             }
                             if (vGPUs != null && !vGPUs.isEmpty()) {
-                                HashMap<String, HashMap<String, Long>> groupDetails = getGPUGroupDetails(conn);
+                                HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = getGPUGroupDetails(conn);
                                 cmd.setGpuDevice(new GPUDeviceTO(null, null, groupDetails));
                             }
 
@@ -3937,6 +3954,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             while (vifIter.hasNext()) {
                 VIF vif = vifIter.next();
                 try {
+                    String deviceId = vif.getDevice(conn);
+                    if(vm.getIsControlDomain(conn) || vif.getCurrentlyAttached(conn)) {
+                        usedDeviceNums.add(Integer.valueOf(deviceId));
+                    } else {
+                        s_logger.debug("Found unplugged VIF " + deviceId + " in VM " + vmName + " destroy it");
+                        vif.destroy(conn);
+                    }
                     usedDeviceNums.add(Integer.valueOf(vif.getDevice(conn)));
                 } catch (NumberFormatException e) {
                     String msg = "Obtained an invalid value for an allocated VIF device number for VM: " + vmName;
@@ -4886,11 +4910,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             host.setTags(conn, hr.tags);
             return true;
         } catch (XenAPIException e) {
-            String msg = "Xen setup failed due to " + e.toString();
+            String msg = "XenServer setup failed due to " + e.toString();
             s_logger.warn(msg, e);
             throw new CloudRuntimeException("Unable to get host information " + e.toString(), e);
         } catch (XmlRpcException e) {
-            String msg = "Xen setup failed due to " + e.getMessage();
+            String msg = "XenServer setup failed due to " + e.getMessage();
             s_logger.warn(msg, e);
             throw new CloudRuntimeException("Unable to get host information ", e);
         }
@@ -5245,6 +5269,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private Answer execute(OvsDestroyBridgeCommand cmd) {
         Connection conn = getConnection();
+        Network nw = findOrCreateTunnelNetwork(conn, cmd.getBridgeName());
+        cleanUpTmpDomVif(conn, nw);
         destroyTunnelNetwork(conn, cmd.getBridgeName());
         s_logger.debug("OVS Bridge destroyed");
         return new Answer(cmd, true, null);

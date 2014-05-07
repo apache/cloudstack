@@ -358,7 +358,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("storage.stats.interval");
         configValuesForValidation.add("storage.cleanup.interval");
         configValuesForValidation.add("wait");
-        configValuesForValidation.add("xen.heartbeat.interval");
+        configValuesForValidation.add("xenserver.heartbeat.interval");
         configValuesForValidation.add("incorrect.login.attempts.allowed");
     }
 
@@ -502,7 +502,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         PreparedStatement pstmt = null;
-        if (Config.XenGuestNetwork.key().equalsIgnoreCase(name)) {
+        if (Config.XenServerGuestNetwork.key().equalsIgnoreCase(name)) {
             String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -513,7 +513,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (Throwable e) {
                 throw new CloudRuntimeException("Failed to update guest.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenPrivateNetwork.key().equalsIgnoreCase(name)) {
+        } else if (Config.XenServerPrivateNetwork.key().equalsIgnoreCase(name)) {
             String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -524,7 +524,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (Throwable e) {
                 throw new CloudRuntimeException("Failed to update private.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenPublicNetwork.key().equalsIgnoreCase(name)) {
+        } else if (Config.XenServerPublicNetwork.key().equalsIgnoreCase(name)) {
             String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -535,7 +535,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (Throwable e) {
                 throw new CloudRuntimeException("Failed to update public.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenStorageNetwork1.key().equalsIgnoreCase(name)) {
+        } else if (Config.XenServerStorageNetwork1.key().equalsIgnoreCase(name)) {
             String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -546,7 +546,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (Throwable e) {
                 throw new CloudRuntimeException("Failed to update storage.network.device1 in host_details due to exception ", e);
             }
-        } else if (Config.XenStorageNetwork2.key().equals(name)) {
+        } else if (Config.XenServerStorageNetwork2.key().equals(name)) {
             String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);

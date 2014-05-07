@@ -245,7 +245,7 @@
                                                 $.ajax({
                                                     url: createURL('listConfigurations'),
                                                     data: {
-                                                        name: 'xen.pvdriver.version'
+                                                        name: 'xenserver.pvdriver.version'
                                                     },
                                                     async: false,
                                                     success: function (json) {
