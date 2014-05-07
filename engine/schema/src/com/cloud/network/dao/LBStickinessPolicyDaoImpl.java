@@ -47,9 +47,10 @@ public class LBStickinessPolicyDaoImpl extends GenericDaoBase<LBStickinessPolicy
     }
 
     @Override
-    public List<LBStickinessPolicyVO> listByLoadBalancerId(long loadBalancerId) {
+    public List<LBStickinessPolicyVO> listByLoadBalancerIdAndDisplayFlag(long loadBalancerId, boolean forDisplay) {
         SearchCriteria<LBStickinessPolicyVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+        sc.addAnd("display", SearchCriteria.Op.EQ, forDisplay);
 
         return listBy(sc);
     }

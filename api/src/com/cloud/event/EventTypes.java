@@ -134,9 +134,11 @@ public class EventTypes {
     public static final String EVENT_LOAD_BALANCER_CREATE = "LB.CREATE";
     public static final String EVENT_LOAD_BALANCER_DELETE = "LB.DELETE";
     public static final String EVENT_LB_STICKINESSPOLICY_CREATE = "LB.STICKINESSPOLICY.CREATE";
+    public static final String EVENT_LB_STICKINESSPOLICY_UPDATE = "LB.STICKINESSPOLICY.UPDATE";
     public static final String EVENT_LB_STICKINESSPOLICY_DELETE = "LB.STICKINESSPOLICY.DELETE";
     public static final String EVENT_LB_HEALTHCHECKPOLICY_CREATE = "LB.HEALTHCHECKPOLICY.CREATE";
     public static final String EVENT_LB_HEALTHCHECKPOLICY_DELETE = "LB.HEALTHCHECKPOLICY.DELETE";
+    public static final String EVENT_LB_HEALTHCHECKPOLICY_UPDATE = "LB.HEALTHCHECKPOLICY.UPDATE";
     public static final String EVENT_LOAD_BALANCER_UPDATE = "LB.UPDATE";
     public static final String EVENT_LB_CERT_UPLOAD = "LB.CERT.UPLOAD";
     public static final String EVENT_LB_CERT_DELETE = "LB.CERT.DELETE";

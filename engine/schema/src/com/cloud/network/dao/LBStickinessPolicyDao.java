@@ -25,7 +25,7 @@ public interface LBStickinessPolicyDao extends GenericDao<LBStickinessPolicyVO, 
 
     void remove(long loadBalancerId, Boolean pending);
 
-    List<LBStickinessPolicyVO> listByLoadBalancerId(long loadBalancerId);
+    List<LBStickinessPolicyVO> listByLoadBalancerIdAndDisplayFlag(long loadBalancerId, boolean forDisplay);
 
     List<LBStickinessPolicyVO> listByLoadBalancerId(long loadBalancerId, boolean revoke);
 }

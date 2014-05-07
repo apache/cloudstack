@@ -30,11 +30,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
@@ -50,6 +45,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
@@ -169,6 +165,8 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 @Local(value = {LoadBalancingRulesManager.class, LoadBalancingRulesService.class})
 public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements LoadBalancingRulesManager, LoadBalancingRulesService {
@@ -557,6 +555,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         /* Finally Insert into DB */
         LBStickinessPolicyVO policy =
             new LBStickinessPolicyVO(loadBalancer.getId(), cmd.getLBStickinessPolicyName(), cmd.getStickinessMethodName(), cmd.getparamList(), cmd.getDescription());
+        Boolean forDisplay = cmd.getDisplay();
+        if (forDisplay != null) {
+            policy.setDisplay(forDisplay);
+        }
         policy = _lb2stickinesspoliciesDao.persist(policy);
 
         return policy;
@@ -620,6 +622,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         LBHealthCheckPolicyVO policy =
             new LBHealthCheckPolicyVO(loadBalancer.getId(), cmd.getPingPath(), cmd.getDescription(), cmd.getResponsTimeOut(), cmd.getHealthCheckInterval(),
                 cmd.getHealthyThreshold(), cmd.getUnhealthyThreshold());
+
+        Boolean forDisplay = cmd.getDisplay();
+        if (forDisplay != null) {
+            policy.setDisplay(forDisplay);
+        }
 
         policy = _lb2healthcheckDao.persist(policy);
         return policy;
@@ -1494,7 +1501,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     }
                 }
 
-                List<LBHealthCheckPolicyVO> hcPolicies = _lb2healthcheckDao.listByLoadBalancerId(loadBalancerId);
+                List<LBHealthCheckPolicyVO> hcPolicies = _lb2healthcheckDao.listByLoadBalancerIdAndDisplayFlag(loadBalancerId, null);
                 for (LBHealthCheckPolicyVO lbHealthCheck : hcPolicies) {
                     lbHealthCheck.setRevoke(true);
                     _lb2healthcheckDao.persist(lbHealthCheck);
@@ -2008,7 +2015,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     public List<LbHealthCheckPolicy> getHealthCheckPolicies(long lbId) {
         List<LbHealthCheckPolicy> healthCheckPolicies = new ArrayList<LbHealthCheckPolicy>();
-        List<LBHealthCheckPolicyVO> hcDbpolicies = _lb2healthcheckDao.listByLoadBalancerId(lbId);
+        List<LBHealthCheckPolicyVO> hcDbpolicies = _lb2healthcheckDao.listByLoadBalancerIdAndDisplayFlag(lbId, null);
 
         for (LBHealthCheckPolicyVO policy : hcDbpolicies) {
             String pingpath = policy.getpingpath();
@@ -2206,6 +2213,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public List<LBStickinessPolicyVO> searchForLBStickinessPolicies(ListLBStickinessPoliciesCmd cmd) throws PermissionDeniedException {
         Account caller = CallContext.current().getCallingAccount();
         Long loadBalancerId = cmd.getLbRuleId();
+        boolean forDisplay = cmd.getDisplay();
+
         LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
             return null;
@@ -2213,7 +2222,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         _accountMgr.checkAccess(caller, null, loadBalancer);
 
-        List<LBStickinessPolicyVO> sDbpolicies = _lb2stickinesspoliciesDao.listByLoadBalancerId(cmd.getLbRuleId());
+        List<LBStickinessPolicyVO> sDbpolicies = _lb2stickinesspoliciesDao.listByLoadBalancerIdAndDisplayFlag(cmd.getLbRuleId(), forDisplay);
 
         return sDbpolicies;
     }
@@ -2222,12 +2231,14 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public List<LBHealthCheckPolicyVO> searchForLBHealthCheckPolicies(ListLBHealthCheckPoliciesCmd cmd) throws PermissionDeniedException {
         Account caller = CallContext.current().getCallingAccount();
         Long loadBalancerId = cmd.getLbRuleId();
+        boolean forDisplay = cmd.getDisplay();
+
         LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
             return null;
         }
         _accountMgr.checkAccess(caller, null, loadBalancer);
-        List<LBHealthCheckPolicyVO> hcDbpolicies = _lb2healthcheckDao.listByLoadBalancerId(cmd.getLbRuleId());
+        List<LBHealthCheckPolicyVO> hcDbpolicies = _lb2healthcheckDao.listByLoadBalancerIdAndDisplayFlag(cmd.getLbRuleId(), forDisplay);
         return hcDbpolicies;
     }
 
@@ -2454,6 +2465,60 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Inject
     public void setLbProviders(List<LoadBalancingServiceProvider> lbProviders) {
         this._lbProviders = lbProviders;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_LB_STICKINESSPOLICY_UPDATE, eventDescription = "updating lb stickiness policy", async = true)
+    public StickinessPolicy updateLBStickinessPolicy(long id, String customId, Boolean forDisplay) {
+        LBStickinessPolicyVO policy = _lb2stickinesspoliciesDao.findById(id);
+        if (policy == null) {
+            throw new InvalidParameterValueException("Fail to find stickiness policy with " + id);
+        }
+
+        LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(policy.getLoadBalancerId()));
+        if (loadBalancer == null) {
+            throw new InvalidParameterException("Invalid Load balancer : " + policy.getLoadBalancerId() + " for Stickiness policy id: " + id);
+        }
+
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, loadBalancer);
+
+        if (customId != null) {
+            policy.setUuid(customId);
+        }
+
+        if (forDisplay != null) {
+            policy.setDisplay(forDisplay);
+        }
+
+        _lb2stickinesspoliciesDao.update(id, policy);
+        return _lb2stickinesspoliciesDao.findById(id);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_LB_HEALTHCHECKPOLICY_UPDATE, eventDescription = "updating lb healthcheck policy", async = true)
+    public HealthCheckPolicy updateLBHealthCheckPolicy(long id, String customId, Boolean forDisplay) {
+        LBHealthCheckPolicyVO policy = _lb2healthcheckDao.findById(id);
+        if (policy == null) {
+            throw new InvalidParameterValueException("Fail to find stickiness policy with " + id);
+        }
+
+        LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(policy.getLoadBalancerId()));
+        if (loadBalancer == null) {
+            throw new InvalidParameterException("Invalid Load balancer : " + policy.getLoadBalancerId() + " for Stickiness policy id: " + id);
+        }
+
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, loadBalancer);
+
+        if (customId != null) {
+            policy.setUuid(customId);
+        }
+
+        if (forDisplay != null) {
+            policy.setDisplay(forDisplay);
+        }
+
+        _lb2healthcheckDao.update(id, policy);
+        return _lb2healthcheckDao.findById(id);
     }
 
 }

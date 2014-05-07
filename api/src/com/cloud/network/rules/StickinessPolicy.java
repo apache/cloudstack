@@ -39,4 +39,9 @@ public interface StickinessPolicy extends InternalIdentity, Identity {
 
     public List<Pair<String, String>> getParams(); /* get params in Map <string,String> format */
 
+    /**
+     * @return
+     */
+    boolean isDisplay();
+
 }
