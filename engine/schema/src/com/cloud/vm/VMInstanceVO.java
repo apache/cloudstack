@@ -281,6 +281,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return instanceName;
     }
 
+    // Be very careful to use this. This has to be unique for the vm and if changed should be done by root admin only.
+    public void setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
+    }
+
     @Override
     public State getState() {
         return state;

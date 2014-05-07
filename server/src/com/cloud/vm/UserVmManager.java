@@ -100,7 +100,7 @@ public interface UserVmManager extends UserVmService {
     void collectVmDiskStatistics(UserVmVO userVm);
 
     UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData,
-        Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId, String hostName) throws ResourceUnavailableException, InsufficientCapacityException;
+                                Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId, String hostName, String instanceName) throws ResourceUnavailableException, InsufficientCapacityException;
 
     //the validateCustomParameters, save and remove CustomOfferingDetils functions can be removed from the interface once we can
     //find a common place for all the scaling and upgrading code of both user and systemvms.

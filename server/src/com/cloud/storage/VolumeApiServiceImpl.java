@@ -1442,7 +1442,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private void validateRootVolumeDetachAttach(VolumeVO volume, UserVmVO vm) {
-        if (!(vm.getHypervisorType() == HypervisorType.XenServer)) {
+        if (!(vm.getHypervisorType() == HypervisorType.XenServer || vm.getHypervisorType() == HypervisorType.VMware)) {
             throw new InvalidParameterValueException("Root volume detach is allowed for hypervisor type " + HypervisorType.XenServer + " only");
         }
         if (!(vm.getState() == State.Stopped) || (vm.getState() == State.Destroyed)) {
