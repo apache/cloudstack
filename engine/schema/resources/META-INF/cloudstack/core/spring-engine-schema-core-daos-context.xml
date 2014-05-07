@@ -338,5 +338,8 @@
   <bean id="AutoScaleVmProfileDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.AutoScaleVmProfileDetailsDaoImpl" />
   <bean id="AutoScaleVmGroupDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.AutoScaleVmGroupDetailsDaoImpl" />
   <bean id="databaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker" />
+  <bean id="LBStickinessPolicyDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.LBStickinessPolicyDetailsDaoImpl" />
+  <bean id="LBHealthCheckPolicyDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.LBHealthCheckPolicyDetailsDaoImpl" />
+
 
 </beans>
