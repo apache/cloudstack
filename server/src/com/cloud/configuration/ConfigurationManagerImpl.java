@@ -3968,17 +3968,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             + " specified with connectivity service.");
                 }
             }
-        }
 
-        if (providers != null && !providers.isEmpty()) {
-            for (Provider provider: providers) {
-                NetworkElement element = _networkModel.getElementImplementingProvider(provider.getName());
-                Map<Service, Map<Capability, String>> capabilities = element.getCapabilities();
-                if (capabilities != null && !capabilities.isEmpty()) {
-                    Map<Capability, String> connectivityCapabilities =  capabilities.get(Service.Connectivity);
-                    if (connectivityCapabilities == null || (connectivityCapabilities != null && !connectivityCapabilities.keySet().contains(Capability.StretchedL2Subnet))) {
-                        throw new InvalidParameterValueException("Provider: " + provider.getName() + " does not support "
-                                + Capability.StretchedL2Subnet.getName());
+            // validate connectivity service provider actually supports specified capabilities
+            if (providers != null && !providers.isEmpty()) {
+                for (Provider provider: providers) {
+                    NetworkElement element = _networkModel.getElementImplementingProvider(provider.getName());
+                    Map<Service, Map<Capability, String>> capabilities = element.getCapabilities();
+                    if (capabilities != null && !capabilities.isEmpty()) {
+                        Map<Capability, String> connectivityCapabilities =  capabilities.get(Service.Connectivity);
+                        if (connectivityCapabilities == null || (connectivityCapabilities != null && !connectivityCapabilities.keySet().contains(Capability.StretchedL2Subnet))) {
+                            throw new InvalidParameterValueException("Provider: " + provider.getName() + " does not support "
+                                    + Capability.StretchedL2Subnet.getName());
+                        }
                     }
                 }
             }
