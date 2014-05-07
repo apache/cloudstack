@@ -2250,6 +2250,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         Long instanceId = cmd.getVirtualMachineId();
         Long networkId = cmd.getNetworkId();
         Map<String, String> tags = cmd.getTags();
+        Boolean forDisplay = cmd.getDisplay();
 
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedDomains = new ArrayList<Long>();
@@ -2273,6 +2274,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         sb.and("sourceIpAddress", sb.entity().getSourceIpAddressId(), SearchCriteria.Op.EQ);
         sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
         sb.and("scheme", sb.entity().getScheme(), SearchCriteria.Op.EQ);
+        sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
 
         if (instanceId != null) {
             SearchBuilder<LoadBalancerVMMapVO> lbVMSearch = _lb2VmMapDao.createSearchBuilder();
@@ -2340,6 +2342,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
                 count++;
             }
+        }
+
+        if (forDisplay != null) {
+            sc.setParameters("display", forDisplay);
         }
 
         //list only Public load balancers using this command
