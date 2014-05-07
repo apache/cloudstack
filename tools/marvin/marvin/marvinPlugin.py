@@ -179,7 +179,7 @@ class MarvinPlugin(Plugin):
         Dump Start Msg of TestCase to Log
         """
         if self.__tcRunLogger:
-            self.__tcRunLogger.debug("\n\n::::::::::::STARTED : TC: " +
+            self.__tcRunLogger.debug("::::::::::::STARTED : TC: " +
                                      str(self.__testName) + " :::::::::::")
         self.__startTime = time.time()
 

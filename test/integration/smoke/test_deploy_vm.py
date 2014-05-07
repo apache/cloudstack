@@ -169,8 +169,8 @@ class TestDeployVMVolumeCreationFailure(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
 
         # Get Zone, Domain and Default Built-in template
-        self.domain = get_domain(self.apiclient, self.testdata)
-        self.zone = get_zone(self.apiclient, self.testdata)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.testdata["mode"] = self.zone.networktype
         self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
 
@@ -183,7 +183,7 @@ class TestDeployVMVolumeCreationFailure(cloudstackTestCase):
         #create a service offering
         self.service_offering = ServiceOffering.create(
             self.apiclient,
-            self.testdata["service_offering"]["small"]
+            self.testdata["service_offerings"]["small"]
         )
         #create first VM
         self.virtual_machine = VirtualMachine.create(
@@ -280,8 +280,8 @@ class TestDeployVMStartFailure(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
 
         # Get Zone, Domain and Default Built-in template
-        self.domain = get_domain(self.apiclient, self.testdata)
-        self.zone = get_zone(self.apiclient, self.testdata)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.testdata["mode"] = self.zone.networktype
         self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
 
@@ -294,7 +294,7 @@ class TestDeployVMStartFailure(cloudstackTestCase):
         #create a service offering
         self.service_offering = ServiceOffering.create(
             self.apiclient,
-            self.testdata["service_offering"]["small"]
+            self.testdata["service_offerings"]["small"]
         )
         #create first VM
         self.virtual_machine = VirtualMachine.create(
