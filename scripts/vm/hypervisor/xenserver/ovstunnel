@@ -418,23 +418,23 @@ def configure_ovs_bridge_for_network_topology(session, args):
     last_seq_no = last_seq_no[1:-1]
     if long(sequence_no) > long(last_seq_no):
         lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other-config:sequence-number=%s"%sequence_no])
-        return lib.configure_bridge_for_network_topology(bridge, this_host_id, json_config, sequence_no)
+        return lib.configure_vpc_bridge_for_network_topology(bridge, this_host_id, json_config, sequence_no)
     else:
         return "SUCCESS: Ignoring the update with the sequence number %s" %sequence_no + " as there is already recent" \
                 " update received and applied with sequence number %s" %last_seq_no
-
 
 @echo
 def configure_ovs_bridge_for_routing_policies(session, args):
     bridge = args.pop("bridge")
     json_config = args.pop("config")
     sequence_no = args.pop("seq-no")
+
     # get the last update sequence number
     last_seq_no = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge", bridge, "other-config:sequence-number"])
     last_seq_no = last_seq_no[1:-1]
     if long(sequence_no) > long(last_seq_no):
         lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other-config:sequence-number=%s"%sequence_no])
-        return lib.configure_ovs_bridge_for_routing_policies(bridge, json_config, sequence_no)
+        return lib.configure_vpc_bridge_for_routing_policies(bridge, json_config, sequence_no)
     else:
         return "SUCCESS: Ignoring the update with the sequence number %s" %sequence_no + " as there is already recent" \
                 " update received and applied with sequence number %s" %last_seq_no
