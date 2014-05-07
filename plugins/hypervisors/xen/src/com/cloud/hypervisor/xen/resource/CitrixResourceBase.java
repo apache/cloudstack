@@ -16,6 +16,77 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeoutException;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
+import com.trilead.ssh2.SCPClient;
+import com.xensource.xenapi.Bond;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Console;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.HostCpu;
+import com.xensource.xenapi.HostMetrics;
+import com.xensource.xenapi.Network;
+import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.PIF;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Task;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.VmPowerState;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VBDMetrics;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VGPU;
+import com.xensource.xenapi.VIF;
+import com.xensource.xenapi.VLAN;
+import com.xensource.xenapi.VM;
+import com.xensource.xenapi.VMGuestMetrics;
+import com.xensource.xenapi.XenAPIObject;
+
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -177,73 +248,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.snapshot.VMSnapshot;
-import com.trilead.ssh2.SCPClient;
-import com.xensource.xenapi.Bond;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Console;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.HostCpu;
-import com.xensource.xenapi.HostMetrics;
-import com.xensource.xenapi.Network;
-import com.xensource.xenapi.PBD;
-import com.xensource.xenapi.PIF;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.Task;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.VmPowerState;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VBDMetrics;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VGPU;
-import com.xensource.xenapi.VIF;
-import com.xensource.xenapi.VLAN;
-import com.xensource.xenapi.VM;
-import com.xensource.xenapi.VMGuestMetrics;
-import com.xensource.xenapi.XenAPIObject;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import java.util.concurrent.TimeoutException;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Queue;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process
@@ -805,7 +809,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             try {
                 vm = getVM(conn, vmName);
             } catch (Exception e) {
-                vm = createWorkingVM(conn, vmName, cmd.getGuestOSType(), listVolumeTo);
+                vm = createWorkingVM(conn, vmName, cmd.getGuestOSType(), cmd.getPlatformEmulator(), listVolumeTo);
             }
 
             if (vm == null) {
@@ -1345,7 +1349,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected VM createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
-        String guestOsTypeName = getGuestOsType(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD);
+        String guestOsTypeName = getGuestOsType(vmSpec.getOs(), vmSpec.getPlatformEmulator(), vmSpec.getBootloader() == BootloaderType.CD);
         Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
         if ( templates == null || templates.isEmpty() ){
             s_logger.debug("Cannot find template : " + guestOsTypeName + " on XS version: " + this.getClass().getName());
@@ -1445,7 +1449,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         TemplateObjectTO iso = (TemplateObjectTO)disk.getData();
                         String osType = iso.getGuestOsType();
                         if (osType != null) {
-                            String isoGuestOsName = getGuestOsType(osType, vmSpec.getBootloader() == BootloaderType.CD);
+                            String isoGuestOsName = getGuestOsType(osType, vmSpec.getPlatformEmulator(), vmSpec.getBootloader() == BootloaderType.CD);
                             if (!isoGuestOsName.equals(guestOsTypeName)) {
                                 vmSpec.setBootloader(BootloaderType.PyGrub);
                             }
@@ -6434,6 +6438,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         List<VolumeObjectTO> listVolumeTo = cmd.getVolumeTOs();
         VirtualMachine.State vmState = cmd.getVmState();
         String guestOSType = cmd.getGuestOSType();
+        String platformEmulator = cmd.getPlatformEmulator();
 
         boolean snapshotMemory = cmd.getTarget().getType() == VMSnapshot.Type.DiskAndMemory;
         long timeout = cmd.getWait();
@@ -6468,7 +6473,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     vm = getVM(conn, vmName);
                 } catch (Exception e) {
                     if (!snapshotMemory) {
-                        vm = createWorkingVM(conn, vmName, guestOSType, listVolumeTo);
+                        vm = createWorkingVM(conn, vmName, guestOSType, platformEmulator, listVolumeTo);
                     }
                 }
 
@@ -6556,9 +6561,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private VM createWorkingVM(Connection conn, String vmName, String guestOSType, List<VolumeObjectTO> listVolumeTo) throws BadServerResponse, Types.VmBadPowerState, Types.SrFull,
+    private VM createWorkingVM(Connection conn, String vmName, String guestOSType, String platformEmulator, List<VolumeObjectTO> listVolumeTo) throws BadServerResponse,
+            Types.VmBadPowerState, Types.SrFull,
     Types.OperationNotAllowed, XenAPIException, XmlRpcException {
-        String guestOsTypeName = getGuestOsType(guestOSType, false);
+        //below is redundant but keeping for consistency and code readabilty
+        String guestOsTypeName = platformEmulator;
         if (guestOsTypeName == null) {
             String msg =
                     " Hypervisor " + this.getClass().getName() + " doesn't support guest OS type " + guestOSType + ". you can choose 'Other install media' to run it as HVM";
@@ -7142,7 +7149,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     /*Override by subclass*/
-    protected String getGuestOsType(String stdType, boolean bootFromCD) {
+    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
         return stdType;
     }
 
