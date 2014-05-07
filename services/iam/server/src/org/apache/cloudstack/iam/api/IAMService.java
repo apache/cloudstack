@@ -18,7 +18,6 @@ package org.apache.cloudstack.iam.api;
 
 import java.util.List;
 
-
 import org.apache.cloudstack.iam.api.IAMPolicyPermission.Permission;
 
 import com.cloud.utils.Pair;
@@ -89,5 +88,12 @@ public interface IAMService {
     List<IAMGroup> listParentIAMGroups(long groupId);
 
     List<IAMPolicy> listRecursiveIAMPoliciesByGroup(long groupId);
+
+    /* Interface used for cache IAM checkAccess result */
+    void addToIAMCache(Object accessKey, Object allowDeny);
+
+    Object getFromIAMCache(Object accessKey);
+
+    void invalidateIAMCache();
 
 }
