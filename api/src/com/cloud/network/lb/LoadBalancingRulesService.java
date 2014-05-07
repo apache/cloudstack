@@ -155,4 +155,8 @@ public interface LoadBalancingRulesService {
     boolean isLbRuleMappedToVmGuestIp(String vmSecondaryIp);
 
     List<String> listLbVmIpAddress(long id, long vmId);
+
+    StickinessPolicy updateLBStickinessPolicy(long id, String customId, Boolean forDisplay);
+
+    HealthCheckPolicy updateLBHealthCheckPolicy(long id, String customId, Boolean forDisplay);
 }

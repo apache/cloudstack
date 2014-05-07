@@ -39,4 +39,9 @@ public interface HealthCheckPolicy extends InternalIdentity, Identity {
 
     public boolean isRevoke();
 
+    /**
+     * @return
+     */
+    boolean isDisplay();
+
 }

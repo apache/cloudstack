@@ -26,7 +26,7 @@ public interface LBHealthCheckPolicyDao extends GenericDao<LBHealthCheckPolicyVO
 
     void remove(long loadBalancerId, Boolean pending);
 
-    List<LBHealthCheckPolicyVO> listByLoadBalancerId(long loadBalancerId);
+    List<LBHealthCheckPolicyVO> listByLoadBalancerIdAndDisplayFlag(long loadBalancerId, Boolean forDisplay);
 
     List<LBHealthCheckPolicyVO> listByLoadBalancerId(long loadBalancerId, boolean revoke);
 }

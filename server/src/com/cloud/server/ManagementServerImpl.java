@@ -38,9 +38,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -346,6 +343,8 @@ import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.RemoveCertFromLoadBalancerCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.RemoveFromLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateApplicationLoadBalancerCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLBHealthCheckPolicyCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLBStickinessPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
 import org.apache.cloudstack.api.command.user.nat.CreateIpForwardingRuleCmd;
@@ -508,6 +507,8 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -2992,6 +2993,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateVPCCmdByAdmin.class);
         cmdList.add(ListVPCsCmdByAdmin.class);
         cmdList.add(UpdateVPCCmdByAdmin.class);
+        cmdList.add(UpdateLBStickinessPolicyCmd.class);
+        cmdList.add(UpdateLBHealthCheckPolicyCmd.class);
+
         return cmdList;
     }
 
