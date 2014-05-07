@@ -19,19 +19,28 @@ package com.cloud.hypervisor;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 
 @Local(value = HypervisorGuru.class)
 public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
     GuestOSDao _guestOsDao;
+    @Inject
+    GuestOSHypervisorDao _guestOsHypervisorDao;
+    @Inject
+    HostDao _hostDao;
 
     @Override
     public HypervisorType getHypervisorType() {
@@ -50,6 +59,9 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());
+        HostVO host = _hostDao.findById(vm.getVirtualMachine().getHostId());
+        GuestOSHypervisorVO guestOsMapping = _guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), getHypervisorType().toString(), host.getHypervisorVersion());
+        to.setPlatformEmulator(guestOsMapping.getGuestOsName());
 
         return to;
     }
