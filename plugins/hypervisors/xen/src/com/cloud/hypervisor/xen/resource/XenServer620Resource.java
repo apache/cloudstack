@@ -15,16 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.hypervisor.xen.resource;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ejb.Local;
+
+import org.apache.log4j.Logger;
+
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.HostPatch;
 import com.xensource.xenapi.PoolPatch;
 
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
-import java.util.Map;
-import java.util.Set;
-import javax.ejb.Local;
-import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.resource.ServerResource;
 
@@ -37,8 +41,17 @@ public class XenServer620Resource extends XenServer610Resource {
     }
 
     @Override
-    protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        return CitrixHelper.getXenServer620GuestOsType(stdType, bootFromCD);
+    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
+        if (platformEmulator == null) {
+            if (!bootFromCD) {
+                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 6.2.0 guestOS type, start it as HVM guest");
+                platformEmulator = "Other install media";
+            } else {
+                String msg = "XenServer 6.2.0 DOES NOT support Guest OS type " + stdType;
+                s_logger.warn(msg);
+            }
+        }
+        return platformEmulator;
     }
 
     @Override
@@ -89,6 +102,7 @@ public class XenServer620Resource extends XenServer610Resource {
         return false;
     }
 
+    @Override
     protected void fillHostInfo(Connection conn, StartupRoutingCommand cmd) {
         super.fillHostInfo(conn, cmd);
         Map<String, String> details = cmd.getHostDetails();

@@ -45,11 +45,15 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
@@ -73,6 +77,8 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     @Inject
     GuestOSDao guestOSDao;
     @Inject
+    GuestOSHypervisorDao guestOsHypervisorDao;
+    @Inject
     UserVmDao userVmDao;
     @Inject
     VMSnapshotDao vmSnapshotDao;
@@ -85,6 +91,8 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     VolumeDao volumeDao;
     @Inject
     DiskOfferingDao diskOfferingDao;
+    @Inject
+    HostDao hostDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -108,7 +116,6 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         boolean result = false;
         try {
             GuestOSVO guestOS = guestOSDao.findById(userVm.getGuestOSId());
-
             List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
 
             VMSnapshotTO current = null;
@@ -126,7 +133,10 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             else
                 vmSnapshotVO.setParent(current.getId());
 
+            HostVO host = hostDao.findById(hostId);
+            GuestOSHypervisorVO guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
             CreateVMSnapshotCommand ccmd = new CreateVMSnapshotCommand(userVm.getInstanceName(), target, volumeTOs, guestOS.getDisplayName(), userVm.getState());
+            ccmd.setPlatformEmulator(guestOsMapping.getGuestOsName());
             ccmd.setWait(_wait);
 
             answer = (CreateVMSnapshotAnswer)agentMgr.send(hostId, ccmd);
@@ -334,7 +344,10 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                     snapshot.getCurrent(), parent, true);
             Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshot.getVmId());
             GuestOSVO guestOS = guestOSDao.findById(userVm.getGuestOSId());
+            HostVO host = hostDao.findById(hostId);
+            GuestOSHypervisorVO guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
             RevertToVMSnapshotCommand revertToSnapshotCommand = new RevertToVMSnapshotCommand(vmInstanceName, vmSnapshotTO, volumeTOs, guestOS.getDisplayName());
+            revertToSnapshotCommand.setPlatformEmulator(guestOsMapping.getGuestOsName());
 
             RevertToVMSnapshotAnswer answer = (RevertToVMSnapshotAnswer)agentMgr.send(hostId, revertToSnapshotCommand);
             if (answer != null && answer.getResult()) {

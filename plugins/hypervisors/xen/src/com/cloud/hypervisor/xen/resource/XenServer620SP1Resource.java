@@ -28,15 +28,6 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.GetGPUStatsAnswer;
-import com.cloud.agent.api.GetGPUStatsCommand;
-import com.cloud.agent.api.StartCommand;
-import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.VgpuTypesInfo;
-import com.cloud.agent.api.to.GPUDeviceTO;
-import com.cloud.resource.ServerResource;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.GPUGroup;
 import com.xensource.xenapi.Host;
@@ -46,6 +37,16 @@ import com.xensource.xenapi.VGPU;
 import com.xensource.xenapi.VGPUType;
 import com.xensource.xenapi.VGPUType.Record;
 import com.xensource.xenapi.VM;
+
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.GetGPUStatsAnswer;
+import com.cloud.agent.api.GetGPUStatsCommand;
+import com.cloud.agent.api.StartCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.resource.ServerResource;
 
 @Local(value=ServerResource.class)
 public class XenServer620SP1Resource extends XenServer620Resource {
@@ -159,8 +160,17 @@ public class XenServer620SP1Resource extends XenServer620Resource {
     }
 
     @Override
-    protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        return CitrixHelper.getXenServer620SP1GuestOsType(stdType, bootFromCD);
+    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
+        if (platformEmulator == null) {
+            if (!bootFromCD) {
+                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 6.2.0 guestOS type, start it as HVM guest");
+                platformEmulator = "Other install media";
+            } else {
+                String msg = "XenServer 6.2.0 DOES NOT support Guest OS type " + stdType;
+                s_logger.warn(msg);
+            }
+        }
+        return platformEmulator;
     }
 
     @Override

@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 import javax.ejb.Local;
+
 import org.apache.log4j.Logger;
+
 import com.cloud.resource.ServerResource;
 
 @Local(value = ServerResource.class)
@@ -28,8 +30,17 @@ public class XenServer602Resource extends XenServer600Resource {
     }
 
     @Override
-    protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        return CitrixHelper.getXenServer602GuestOsType(stdType, bootFromCD);
+    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
+        if (platformEmulator == null) {
+            if (!bootFromCD) {
+                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 6.0.2 guestOS type, start it as HVM guest");
+                platformEmulator = "Other install media";
+            } else {
+                String msg = "XenServer 6.0.2 DOES NOT support Guest OS type " + stdType;
+                s_logger.warn(msg);
+            }
+        }
+        return platformEmulator;
     }
 
     @Override

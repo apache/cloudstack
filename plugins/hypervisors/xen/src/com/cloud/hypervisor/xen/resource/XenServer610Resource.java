@@ -73,8 +73,17 @@ public class XenServer610Resource extends XenServer602Resource {
     }
 
     @Override
-    protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        return CitrixHelper.getXenServer610GuestOsType(stdType, bootFromCD);
+    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
+        if (platformEmulator == null) {
+            if (!bootFromCD) {
+                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 6.1.0 guestOS type, start it as HVM guest");
+                platformEmulator = "Other install media";
+            } else {
+                String msg = "XenServer 6.1.0 DOES NOT support Guest OS type " + stdType;
+                s_logger.warn(msg);
+            }
+        }
+        return platformEmulator;
     }
 
     @Override

@@ -47,6 +47,7 @@ public class VirtualMachineTO {
     String hostName;
     String arch;
     String os;
+    String platformEmulator;
     String bootArgs;
     String[] bootupScripts;
     boolean rebootOnCrash;
@@ -236,7 +237,7 @@ public class VirtualMachineTO {
     }
 
     public String getVncPassword() {
-        return this.vncPassword;
+        return vncPassword;
     }
 
     public void setVncPassword(String vncPassword) {
@@ -244,7 +245,7 @@ public class VirtualMachineTO {
     }
 
     public String getVncAddr() {
-        return this.vncAddr;
+        return vncAddr;
     }
 
     public void setVncAddr(String vncAddr) {
@@ -273,6 +274,14 @@ public class VirtualMachineTO {
 
     public void setGpuDevice(GPUDeviceTO gpuDevice) {
         this.gpuDevice = gpuDevice;
+    }
+
+    public String getPlatformEmulator() {
+        return platformEmulator;
+    }
+
+    public void setPlatformEmulator(String platformEmulator) {
+        this.platformEmulator = platformEmulator;
     }
 
 }
