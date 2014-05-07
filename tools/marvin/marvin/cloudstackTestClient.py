@@ -152,23 +152,23 @@ class CSTestClient(object):
                 if api_key is None:
                     ret = self.__getKeys(user_id)
                     if ret != FAILED:
-                        self.__mgmtDetails.port = 8080
-                        self.__mgmtDetails.apiKey = ret[0]
-                        self.__mgmtDetails.securityKey = ret[1]
+                        mgmt_details = self.__mgmtDetails
+                        mgmt_details.apiKey = ret[0]
+                        mgmt_details.securityKey = ret[1]
                     else:
                         self.__logger.error("__createApiClient: API Client "
                                             "Creation Failed while "
                                             "Registering User")
                         return FAILED
                 else:
-                    self.__mgmtDetails.port = 8080
-                    self.__mgmtDetails.apiKey = api_key
-                    self.__mgmtDetails.securityKey = security_key
+                    mgmt_details.port = 8080
+                    mgmt_details.apiKey = api_key
+                    mgmt_details.securityKey = security_key
                 '''
                 Now Create the Connection objects and Api Client using
                 new details
                 '''
-                self.__csConnection = CSConnection(self.__mgmtDetails,
+                self.__csConnection = CSConnection(mgmt_details,
                                                    self.__asyncTimeOut,
                                                    self.__logger)
                 self.__apiClient = CloudStackAPIClient(self.__csConnection)
