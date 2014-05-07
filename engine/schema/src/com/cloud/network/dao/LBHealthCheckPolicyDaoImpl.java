@@ -48,9 +48,12 @@ public class LBHealthCheckPolicyDaoImpl extends GenericDaoBase<LBHealthCheckPoli
     }
 
     @Override
-    public List<LBHealthCheckPolicyVO> listByLoadBalancerId(long loadBalancerId) {
+    public List<LBHealthCheckPolicyVO> listByLoadBalancerIdAndDisplayFlag(long loadBalancerId, Boolean forDisplay) {
         SearchCriteria<LBHealthCheckPolicyVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+        if (forDisplay != null) {
+            sc.addAnd("display", SearchCriteria.Op.EQ, forDisplay);
+        }
 
         return listBy(sc);
     }

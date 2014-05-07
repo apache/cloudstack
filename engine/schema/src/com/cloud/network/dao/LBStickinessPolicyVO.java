@@ -64,6 +64,9 @@ public class LBStickinessPolicyVO implements StickinessPolicy {
     @Column(name = "revoke")
     private boolean revoke = false;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     protected LBStickinessPolicyVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -149,5 +152,14 @@ public class LBStickinessPolicyVO implements StickinessPolicy {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 }

@@ -453,20 +453,20 @@ CREATE VIEW `cloud`.`user_vm_view` AS
            left join
         `cloud`.`user_vm_details` `custom_ram_size`  ON (((`custom_ram_size`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_ram_size`.`name` = 'memory')));
 
--- ACL DB schema        
+-- ACL DB schema
 CREATE TABLE `cloud`.`iam_group` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `name` varchar(255) NOT NULL,
   `description` varchar(255) default NULL,
   `uuid` varchar(40),
-  `path` varchar(255) NOT NULL,  
+  `path` varchar(255) NOT NULL,
   `account_id` bigint unsigned NOT NULL,
   `view` varchar(40) default 'User' COMMENT 'response review this group account should see for result',
   `removed` datetime COMMENT 'date the group was removed',
   `created` datetime COMMENT 'date the group was created',
   PRIMARY KEY  (`id`),
   INDEX `i_iam_group__removed`(`removed`),
-  CONSTRAINT `uc_iam_group__uuid` UNIQUE (`uuid`)  
+  CONSTRAINT `uc_iam_group__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`iam_group_account_map` (
@@ -474,11 +474,11 @@ CREATE TABLE `cloud`.`iam_group_account_map` (
   `group_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
   `removed` datetime COMMENT 'date the account was removed from the group',
-  `created` datetime COMMENT 'date the account was assigned to the group',  
+  `created` datetime COMMENT 'date the account was assigned to the group',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_iam_group_vm_map__group_id` FOREIGN KEY(`group_id`) REFERENCES `iam_group` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_iam_group_vm_map__account_id` FOREIGN KEY(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;        
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `cloud`.`iam_policy` (
@@ -487,7 +487,7 @@ CREATE TABLE `cloud`.`iam_policy` (
   `description` varchar(255) DEFAULT NULL,
   `uuid` varchar(40) DEFAULT NULL,
   `path` varchar(255) NOT NULL,
-  `account_id` bigint unsigned NOT NULL,  
+  `account_id` bigint unsigned NOT NULL,
   `removed` datetime DEFAULT NULL COMMENT 'date the role was removed',
   `created` datetime DEFAULT NULL COMMENT 'date the role was created',
   `policy_type` varchar(64) DEFAULT 'Static' COMMENT 'Static or Dynamic',
@@ -1661,3 +1661,8 @@ CREATE TABLE `cloud`.`network_acl_item_cidrs` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_network_acl_item_id` FOREIGN KEY `fk_network_acl_item_id`(`network_acl_item_id`) REFERENCES `network_acl_item`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+ALTER TABLE `cloud`.`load_balancer_healthcheck_policies` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the policy can be displayed to the end user';
+ALTER TABLE `cloud`.`load_balancer_stickiness_policies` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the policy can be displayed to the end user';
+

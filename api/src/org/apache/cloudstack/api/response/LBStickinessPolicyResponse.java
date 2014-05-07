@@ -22,6 +22,8 @@ import java.util.Map;
 
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.network.rules.StickinessPolicy;
@@ -48,6 +50,10 @@ public class LBStickinessPolicyResponse extends BaseResponse {
     @SerializedName("state")
     @Param(description = "the state of the policy")
     private String state;
+
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is policy for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
 
     // FIXME : if prams with the same name exists more then once then value are concatinated with ":" as delimitor .
     // Reason: Map does not support duplicate keys, need to look for the alernate data structure
@@ -98,6 +104,7 @@ public class LBStickinessPolicyResponse extends BaseResponse {
         List<Pair<String, String>> paramsList = stickinesspolicy.getParams();
         this.methodName = stickinesspolicy.getMethodName();
         this.description = stickinesspolicy.getDescription();
+        this.forDisplay = stickinesspolicy.isDisplay();
         if (stickinesspolicy.isRevoke()) {
             this.setState("Revoked");
         }
@@ -125,5 +132,9 @@ public class LBStickinessPolicyResponse extends BaseResponse {
 
         this.params = tempParamList;
         setObjectName("stickinesspolicy");
+    }
+
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 }
