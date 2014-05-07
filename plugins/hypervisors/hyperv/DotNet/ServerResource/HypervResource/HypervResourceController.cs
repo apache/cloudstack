@@ -1172,7 +1172,7 @@ namespace HypervResource
                                 string defaultDataPath = wmiCallsV2.GetDefaultDataRoot();
 
                                 string secondaryPath = Utils.NormalizePath(Path.Combine(share.UncPath, "systemvm"));
-                                string[] choices = choices = Directory.GetFiles(secondaryPath, "systemvm*.iso");
+                                string[] choices = Directory.GetFiles(secondaryPath, "systemvm*.iso");
                                 if (choices.Length != 1)
                                 {
                                     String errMsg = "Couldn't locate the systemvm iso on " + secondaryPath;
