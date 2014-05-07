@@ -266,7 +266,7 @@ public class Upgrade430to440 implements DbUpgrade {
                 // split it
                 String[] cidrArray = cidrList.split(",");
                 // insert a record per cidr
-                String networkAclItemCidrSql = "INSERT INTO `cloud`.`network_acl_item_cidr` (network_acl_item_id, cidr) VALUES (?,?)";
+                String networkAclItemCidrSql = "INSERT INTO `cloud`.`network_acl_item_cidrs` (network_acl_item_id, cidr) VALUES (?,?)";
                 for(String cidr: cidrArray)
                 {
                     pstmtCidr = conn.prepareStatement(networkAclItemCidrSql);
