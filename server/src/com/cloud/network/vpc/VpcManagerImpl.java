@@ -1652,10 +1652,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         boolean success = true;
         try {
+            List<Provider> providersToImplement = getVpcProviders(vo.getVpcId());
+
             PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
             for (VpcProvider provider : getVpcElements()) {
-                if (!provider.createPrivateGateway(gateway)) {
-                    success = false;
+                if (providersToImplement.contains(provider.getProvider())) {
+                    if (!provider.createPrivateGateway(gateway)) {
+                        success = false;
+                    }
                 }
             }
             if (success) {
@@ -1714,17 +1718,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             });
 
             //1) delete the gateway on the backend
+            List<Provider> providersToImplement = getVpcProviders(gatewayVO.getVpcId());
             PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
             for (VpcProvider provider : getVpcElements()) {
-                if (provider.deletePrivateGateway(gateway)) {
-                    s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
-                } else {
-                    s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
-                    gatewayVO.setState(VpcGateway.State.Ready);
-                    _vpcGatewayDao.update(gatewayVO.getId(), gatewayVO);
-                    s_logger.debug("Marked gateway " + gatewayVO + " with state " + VpcGateway.State.Ready);
+                if (providersToImplement.contains(provider.getProvider())) {
+                    if (provider.deletePrivateGateway(gateway)) {
+                        s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
+                    } else {
+                        s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
+                        gatewayVO.setState(VpcGateway.State.Ready);
+                        _vpcGatewayDao.update(gatewayVO.getId(), gatewayVO);
+                        s_logger.debug("Marked gateway " + gatewayVO + " with state " + VpcGateway.State.Ready);
 
-                    return false;
+                        return false;
+                    }
                 }
             }
 
