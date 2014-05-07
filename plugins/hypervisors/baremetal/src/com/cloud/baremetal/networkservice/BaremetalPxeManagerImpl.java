@@ -125,8 +125,14 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
 
     @Override
     public boolean prepare(VirtualMachineProfile profile, NicProfile nic, Network network, DeployDestination dest, ReservationContext context) {
-        //TODO: select type from template
-        BaremetalPxeType type = BaremetalPxeType.KICK_START;
+        BaremetalPxeType type=null;
+        String templateUrl = profile.getTemplate().getUrl();
+        if (templateUrl.startsWith("ks=")){
+            type = BaremetalPxeType.KICK_START;
+        }
+        else {
+            type = BaremetalPxeType.PING;
+        }
         return getServiceByType(type.toString()).prepare(profile, nic, network, dest, context);
     }
 
@@ -202,7 +208,8 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
         cmd.addVmData("metadata", "public-hostname", StringUtils.unicodeEscape(vm.getInstanceName()));
         cmd.addVmData("metadata", "instance-id", String.valueOf(vm.getId()));
         cmd.addVmData("metadata", "vm-id", String.valueOf(vm.getInstanceName()));
-        cmd.addVmData("metadata", "public-keys", null);
+        String sshKey = vm.getDetail("SSH.PublicKey");
+        cmd.addVmData("metadata", "public-keys", sshKey);
         String cloudIdentifier = _configDao.getValue("cloud.identifier");
         if (cloudIdentifier == null) {
             cloudIdentifier = "";
