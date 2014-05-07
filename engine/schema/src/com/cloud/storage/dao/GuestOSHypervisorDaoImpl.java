@@ -58,9 +58,13 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
     @Override
     public GuestOSHypervisorVO findByOsIdAndHypervisor(long guestOsId, String hypervisorType, String hypervisorVersion) {
         SearchCriteria<GuestOSHypervisorVO> sc = mappingSearch.create();
+        String version = "default";
+        if (!(hypervisorVersion == null || hypervisorVersion.isEmpty())) {
+            version = hypervisorVersion;
+        }
         sc.setParameters("guest_os_id", guestOsId);
         sc.setParameters("hypervisor_type", hypervisorType);
-        sc.setParameters("hypervisor_version", hypervisorVersion);
+        sc.setParameters("hypervisor_version", version);
         return findOneBy(sc);
     }
 

@@ -47,8 +47,8 @@ public abstract class VifDriverBase implements VifDriver {
     @Override
     public abstract void unplug(LibvirtVMDef.InterfaceDef iface);
 
-    protected LibvirtVMDef.InterfaceDef.nicModel getGuestNicModel(String guestOSType) {
-        if (_libvirtComputingResource.isGuestPVEnabled(guestOSType)) {
+    protected LibvirtVMDef.InterfaceDef.nicModel getGuestNicModel(String platformEmulator) {
+        if (_libvirtComputingResource.isGuestPVEnabled(platformEmulator)) {
             return LibvirtVMDef.InterfaceDef.nicModel.VIRTIO;
         } else {
             return LibvirtVMDef.InterfaceDef.nicModel.E1000;
