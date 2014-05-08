@@ -363,6 +363,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public boolean isAdmin(Long accountId) {
         if (accountId != null) {
             AccountVO acct = _accountDao.findById(accountId);
+            if (acct == null) {
+                return false;  //account is deleted or does not exist
+            }
             if ((isRootAdmin(accountId)) || (isDomainAdmin(accountId)) || (isResourceDomainAdmin(accountId))) {
                 return true;
             } else if (acct.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
@@ -377,6 +380,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public boolean isRootAdmin(Long accountId) {
         if (accountId != null) {
             AccountVO acct = _accountDao.findById(accountId);
+            if (acct == null) {
+                return false;  //account is deleted or does not exist
+            }
             for (SecurityChecker checker : _securityCheckers) {
                 try {
                     if (checker.checkAccess(acct, null, null, "SystemCapability")) {
@@ -397,6 +403,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public boolean isDomainAdmin(Long accountId) {
         if (accountId != null) {
             AccountVO acct = _accountDao.findById(accountId);
+            if (acct == null) {
+                return false;  //account is deleted or does not exist
+            }
             for (SecurityChecker checker : _securityCheckers) {
                 try {
                     if (checker.checkAccess(acct, null, null, "DomainCapability")) {
@@ -425,6 +434,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public boolean isResourceDomainAdmin(Long accountId) {
         if (accountId != null) {
             AccountVO acct = _accountDao.findById(accountId);
+            if (acct == null) {
+                return false;  //account is deleted or does not exist
+            }
             for (SecurityChecker checker : _securityCheckers) {
                 try {
                     if (checker.checkAccess(acct, null, null, "DomainResourceCapability")) {
@@ -443,6 +455,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     public boolean isInternalAccount(long accountId) {
         Account account = _accountDao.findById(accountId);
+        if (account == null) {
+            return false;  //account is deleted or does not exist
+        }
         if (isRootAdmin(accountId) || (account.getType() == Account.ACCOUNT_ID_SYSTEM)) {
             return true;
         }
@@ -1138,6 +1153,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // If the account is an admin type, return an error. We do not allow this
         Account account = _accountDao.findById(user.getAccountId());
+        if (account == null) {
+            throw new InvalidParameterValueException("unable to find user account " + user.getAccountId());
+        }
 
         // don't allow updating project account
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -1145,7 +1163,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         // don't allow updating system account
-        if (account != null && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
             throw new PermissionDeniedException("user id : " + id + " is system account, update is not allowed");
         }
 
@@ -1252,6 +1270,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         Account account = _accountDao.findById(user.getAccountId());
+        if (account == null) {
+            throw new InvalidParameterValueException("unable to find user account " + user.getAccountId());
+        }
 
         // don't allow disabling user belonging to project's account
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -1291,6 +1312,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         Account account = _accountDao.findById(user.getAccountId());
+        if (account == null) {
+            throw new InvalidParameterValueException("unable to find user account " + user.getAccountId());
+        }
 
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("Unable to find active user by id " + userId);
@@ -1339,6 +1363,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         Account account = _accountDao.findById(user.getAccountId());
+        if (account == null) {
+            throw new InvalidParameterValueException("unable to find user account " + user.getAccountId());
+        }
 
         // don't allow to lock user of the account of type Project
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -1404,7 +1431,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
 
-        if (account.getRemoved() != null) {
+        if (account == null || account.getRemoved() != null) {
             s_logger.info("The account:" + account.getAccountName() + " is already removed");
             return true;
         }
