@@ -90,4 +90,11 @@ public interface IAMService {
 
     List<IAMPolicy> listRecursiveIAMPoliciesByGroup(long groupId);
 
+    /* Interface used for cache IAM checkAccess result */
+    void addToIAMCache(Object accessKey, Object allowDeny);
+
+    Object getFromIAMCache(Object accessKey);
+
+    void invalidateIAMCache();
+
 }

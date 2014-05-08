@@ -18,9 +18,15 @@ package org.apache.cloudstack.iam.server;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Element;
 
 import org.apache.log4j.Logger;
 
@@ -39,6 +45,7 @@ import org.apache.cloudstack.iam.server.dao.IAMPolicyDao;
 import org.apache.cloudstack.iam.server.dao.IAMPolicyPermissionDao;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -83,6 +90,62 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     @Inject
     IAMPolicyPermissionDao _policyPermissionDao;
 
+    private Cache _iamCache;
+
+    private void createIAMCache(final Map<String, ? extends Object> params) {
+        final String value = (String)params.get("cache.size");
+
+        if (value != null) {
+            final CacheManager cm = CacheManager.create();
+            final int maxElements = NumbersUtil.parseInt(value, 0);
+            final int live = NumbersUtil.parseInt((String)params.get("cache.time.to.live"), 300);
+            final int idle = NumbersUtil.parseInt((String)params.get("cache.time.to.idle"), 300);
+            _iamCache = new Cache(getName(), maxElements, false, live == -1, live == -1 ? Integer.MAX_VALUE : live, idle);
+            cm.addCache(_iamCache);
+            s_logger.info("IAM Cache created: " + _iamCache.toString());
+        } else {
+            _iamCache = null;
+        }
+    }
+
+    @Override
+    public void addToIAMCache(Object accessKey, Object allowDeny) {
+        if (_iamCache != null) {
+            try {
+                s_logger.debug("Put IAM access check for " + accessKey + " in cache");
+                _iamCache.put(new Element(accessKey, allowDeny));
+            } catch (final Exception e) {
+                s_logger.debug("Can't put " + accessKey + " to IAM cache", e);
+            }
+        }
+    }
+
+    @Override
+    public void invalidateIAMCache() {
+        //This may need to use event bus to publish to other MS, but event bus now is missing this functionality to handle PublishScope.GLOBAL
+        if (_iamCache != null) {
+            s_logger.debug("Invalidate IAM cache");
+            _iamCache.removeAll();
+        }
+    }
+
+    @Override
+    public Object getFromIAMCache(Object accessKey) {
+        if (_iamCache != null) {
+            final Element element = _iamCache.get(accessKey);
+            return element == null ? null : element.getObjectValue();
+        }
+        return null;
+    }
+
+    @Override
+    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+        boolean result = super.configure(name, params);
+        // create IAM cache
+        createIAMCache(params);
+        return result;
+    }
+
     @DB
     @Override
     public IAMGroup createIAMGroup(String iamGroupName, String description, String path) {
@@ -112,7 +175,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                // remove this group related entry in acl_group_role_map
+                // remove this group related entry in acl_group_policy_map
                 List<IAMGroupPolicyMapVO> groupPolicyMap = _aclGroupPolicyMapDao.listByGroupId(grp.getId());
                 if (groupPolicyMap != null) {
                     for (IAMGroupPolicyMapVO gr : groupPolicyMap) {
@@ -133,6 +196,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
             }
         });
 
+        invalidateIAMCache();
         return true;
     }
 
@@ -185,6 +249,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                 }
             }
         });
+
+        invalidateIAMCache();
         return group;
     }
 
@@ -211,6 +277,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                 }
             }
         });
+
+        invalidateIAMCache();
         return group;
     }
 
@@ -346,7 +414,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                // remove this role related entry in acl_group_role_map
+                // remove this policy related entry in acl_group_policy_map
                 List<IAMGroupPolicyMapVO> groupPolicyMap = _aclGroupPolicyMapDao.listByPolicyId(policy.getId());
                 if (groupPolicyMap != null) {
                     for (IAMGroupPolicyMapVO gr : groupPolicyMap) {
@@ -374,6 +442,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                 _aclPolicyDao.remove(iamPolicyId);
             }
         });
+
+        invalidateIAMCache();
 
         return true;
     }
@@ -537,6 +607,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
             }
         });
 
+        invalidateIAMCache();
         return group;
     }
 
@@ -569,6 +640,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                 }
             }
         });
+
+        invalidateIAMCache();
         return group;
     }
 
@@ -595,6 +668,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                 }
             }
         });
+
+        invalidateIAMCache();
     }
 
     @Override
@@ -618,6 +693,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                 }
             }
         });
+
+        invalidateIAMCache();
     }
 
     @DB
@@ -639,6 +716,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                     recursive);
             _policyPermissionDao.persist(permit);
         }
+
+        invalidateIAMCache();
         return policy;
 
     }
@@ -659,6 +738,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
             // not removed yet
             _policyPermissionDao.remove(permit.getId());
         }
+
+        invalidateIAMCache();
         return policy;
     }
 
@@ -681,6 +762,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                 }
             }
         });
+
+        invalidateIAMCache();
     }
 
     @DB
@@ -701,6 +784,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         permissionSC.setParameters("policyId", iamPolicyId);
         _policyPermissionDao.expunge(permissionSC);
 
+        invalidateIAMCache();
         return policy;
     }
 
