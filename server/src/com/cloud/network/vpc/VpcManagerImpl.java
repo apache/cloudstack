@@ -1588,9 +1588,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (privateNtwk == null) {
             s_logger.info("creating new network for vpc " + vpc + " using broadcast uri: " + broadcastUri);
             String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
-            /* vpcid should not be set on the new network as it is not part of the vpc but an outside net */
-            privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkIdFinal, broadcastUri, ipAddress, null,
-                    gateway, netmask, gatewayOwnerId, null, isSourceNat, networkOfferingId);
+                        privateNtwk =
+                            _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkIdFinal, broadcastUri, ipAddress, null, gateway, netmask,
+                                gatewayOwnerId, vpcId, isSourceNat, networkOfferingId);
         } else { // create the nic/ip as createPrivateNetwork doesn''t do that work for us now
                         s_logger.info("found and using existing network for vpc " + vpc + ": " + broadcastUri);
                         DataCenterVO dc = _dcDao.lockRow(physNetFinal.getDataCenterId(), true);
