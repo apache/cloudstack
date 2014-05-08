@@ -325,6 +325,7 @@ class CSTestClient(object):
             cmd = listAccounts.listAccountsCmd()
             cmd.name = UserName
             cmd.domainid = domId
+            cmd.listall = True
             try:
                 accounts = self.__apiClient.listAccounts(cmd)
                 acctId = accounts[0].id
