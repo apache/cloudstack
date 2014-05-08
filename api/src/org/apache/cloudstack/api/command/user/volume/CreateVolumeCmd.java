@@ -161,6 +161,14 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
         return displayVolume;
     }
 
+    @Override
+    public boolean isDisplay() {
+        if(displayVolume == null)
+            return true;
+        else
+            return displayVolume;
+    }
+
     public Long getVirtualMachineId() {
         return virtualMachineId;
     }

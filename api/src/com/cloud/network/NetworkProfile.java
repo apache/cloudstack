@@ -249,6 +249,11 @@ public class NetworkProfile implements Network {
     }
 
     @Override
+    public boolean isDisplay(){
+        return displayNetwork;
+    }
+
+    @Override
     public Long getVpcId() {
         return vpcId;
     }

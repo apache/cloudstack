@@ -157,16 +157,6 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
     }
 
     @Override
-    public boolean isDisplay(){
-        UserVm userVm = _entityMgr.findById(UserVm.class, getId());
-        if (userVm != null) {
-            return userVm.isDisplayVm();
-        }
-
-        return true; // no info means true
-    }
-
-    @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException {
         CallContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result = _userVmService.updateVirtualMachine(this);

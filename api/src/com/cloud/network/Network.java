@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -34,7 +35,7 @@ import com.cloud.utils.fsm.StateObject;
 /**
  * owned by an account.
  */
-public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity, Serializable {
+public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity, Serializable, Displayable {
 
     public enum GuestType {
         Shared, Isolated
@@ -327,7 +328,10 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     boolean getSpecifyIpRanges();
 
+    @Deprecated
     boolean getDisplayNetwork();
+
+    boolean isDisplay();
 
     String getGuruName();
 

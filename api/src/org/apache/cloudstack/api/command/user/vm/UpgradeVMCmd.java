@@ -118,11 +118,6 @@ public class UpgradeVMCmd extends BaseCmd {
     }
 
     @Override
-    public boolean isDisplay(){
-        return _userVmService.isDisplayResourceEnabled(getId());
-    }
-
-    @Override
     public void execute() throws ResourceAllocationException {
         CallContext.current().setEventDetails("Vm Id: " + getId());
 

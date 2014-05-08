@@ -19,6 +19,7 @@ package com.cloud.storage;
 import java.util.Date;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -26,7 +27,7 @@ import com.cloud.template.BasedOn;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
 
-public interface Volume extends ControlledEntity, Identity, InternalIdentity, BasedOn, StateObject<Volume.State> {
+public interface Volume extends ControlledEntity, Identity, InternalIdentity, BasedOn, StateObject<Volume.State>, Displayable {
     enum Type {
         UNKNOWN, ROOT, SWAP, DATADISK, ISO
     };
@@ -193,5 +194,8 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 
     Integer getHypervisorSnapshotReserve();
 
+    @Deprecated
     boolean isDisplayVolume();
+
+    boolean isDisplay();
 }

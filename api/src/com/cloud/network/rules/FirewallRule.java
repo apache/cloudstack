@@ -19,10 +19,11 @@ package com.cloud.network.rules;
 import java.util.List;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface FirewallRule extends ControlledEntity, Identity, InternalIdentity {
+public interface FirewallRule extends ControlledEntity, Identity, InternalIdentity, Displayable {
     enum Purpose {
         Firewall, PortForwarding, LoadBalancing, Vpn, StaticNat, NetworkACL,
     }
@@ -87,6 +88,7 @@ public interface FirewallRule extends ControlledEntity, Identity, InternalIdenti
      */
     TrafficType getTrafficType();
 
+    @Override
     boolean isDisplay();
 
 }

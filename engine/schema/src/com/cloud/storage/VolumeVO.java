@@ -567,6 +567,15 @@ public class VolumeVO implements Volume {
         return displayVolume;
     }
 
+    @Override
+    public  boolean isDisplay(){
+        return displayVolume;
+    }
+
+    public void setDisplay(boolean display){
+        this.displayVolume = display;
+    }
+
     public void setDisplayVolume(boolean displayVolume) {
         this.displayVolume = displayVolume;
     }
