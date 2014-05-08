@@ -167,6 +167,11 @@ public class VolumeObject implements VolumeInfo {
         return volumeVO.isDisplayVolume();
     }
 
+    @Override
+    public boolean isDisplay() {
+        return volumeVO.isDisplay();
+    }
+
     public long getVolumeId() {
         return volumeVO.getId();
     }

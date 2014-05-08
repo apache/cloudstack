@@ -80,11 +80,6 @@ public class DeleteVolumeCmd extends BaseCmd {
     }
 
     @Override
-    public boolean isDisplay(){
-        return _volumeService.isDisplayResourceEnabled(getId());
-    }
-
-    @Override
     public void execute() throws ConcurrentOperationException {
         CallContext.current().setEventDetails("Volume Id: " + getId());
         boolean result = _volumeService.deleteVolume(id, CallContext.current().getCallingAccount());

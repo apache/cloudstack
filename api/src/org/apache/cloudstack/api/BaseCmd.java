@@ -361,6 +361,44 @@ public abstract class BaseCmd {
      * @return display flag
      */
     public boolean isDisplay(){
-        return true;
+        CallContext context = CallContext.current();
+        Map<Object, Object> contextMap = context.getContextParameters();
+        boolean isDisplay = true;
+
+        // Iterate over all the first class entities in context and check their display property.
+        for(Map.Entry<Object, Object> entry : contextMap.entrySet()){
+            try{
+                Object key = entry.getKey();
+                Class clz = Class.forName((String)key);
+                if(Displayable.class.isAssignableFrom(clz)){
+                    final Object objVO = _entityMgr.findById(clz, getInternalId(entry.getValue()));
+                    isDisplay = ((Displayable) objVO).isDisplay();
+                }
+
+                // If the flag is false break immediately
+                if(!isDisplay)
+                    break;
+            } catch (Exception e){
+                s_logger.trace("Caught exception while checking first class entities for display property, continuing on", e);
+            }
+        }
+
+        context.setEventDisplayEnabled(isDisplay);
+        return isDisplay;
+
     }
+
+    private static Long getInternalId(Object internalIdObj){
+        Long internalId = null;
+
+        // In case its an async job the value would be a string because of json deserialization
+        if(internalIdObj instanceof String){
+            internalId = Long.valueOf((String) internalIdObj);
+        }else if (internalIdObj instanceof Long){
+            internalId = (Long) internalIdObj;
+        }
+
+        return internalId;
+    }
+
 }
