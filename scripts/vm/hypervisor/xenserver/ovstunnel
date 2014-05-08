@@ -193,7 +193,8 @@ def setup_ovs_bridge_for_distributed_routing(session, args):
         lib.add_flow(bridge, priority=0, table=lib.INGRESS_ACL_TABLE, actions='drop')
 
         # initialize the sequence number for the bridge
-        lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other-config:sequence-number=0"])
+        lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other-config:topology-update-sequence-number=0"])
+        lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other-config:route-policy-update-sequence-number=0"])
 
         result = "SUCCESS: successfully setup bridge with flow rules"
 
@@ -232,128 +233,7 @@ def create_tunnel(session, args):
     dst_host = args.pop("to")
     network_uuid = args.pop("cloudstack-network-id")
 
-    logging.debug("Entering create_tunnel")
-
-    res = lib.check_switch()
-    if res != "SUCCESS":
-        logging.debug("Openvswitch running: NO")
-        return "FAILURE:%s" % res
-
-    # We need to keep the name below 14 characters
-    # src and target are enough - consider a fixed length hash
-    name = "t%s-%s-%s" % (gre_key, src_host, dst_host)
-
-    # Verify the xapi bridge to be created
-    # NOTE: Timeout should not be necessary anymore
-    wait = [lib.VSCTL_PATH, "--timeout=30", "wait-until", "bridge",
-                    bridge, "--", "get", "bridge", bridge, "name"]
-    res = lib.do_cmd(wait)
-    if bridge not in res:
-        logging.debug("WARNING:Can't find bridge %s for creating " +
-                                  "tunnel!" % bridge)
-        return "FAILURE:NO_BRIDGE"
-    logging.debug("bridge %s for creating tunnel - VERIFIED" % bridge)
-    tunnel_setup = False
-    drop_flow_setup = False
-    try:
-        # Create a port and configure the tunnel interface for it
-        add_tunnel = [lib.VSCTL_PATH, "add-port", bridge,
-                                  name, "--", "set", "interface",
-                                  name, "type=gre", "options:key=%s" % gre_key,
-                                  "options:remote_ip=%s" % remote_ip]
-        lib.do_cmd(add_tunnel)
-        tunnel_setup = True
-        # verify port
-        verify_port = [lib.VSCTL_PATH, "get", "port", name, "interfaces"]
-        res = lib.do_cmd(verify_port)
-        # Expecting python-style list as output
-        iface_list = []
-        if len(res) > 2:
-            iface_list = res.strip()[1:-1].split(',')
-        if len(iface_list) != 1:
-            logging.debug("WARNING: Unexpected output while verifying " +
-                                      "port %s on bridge %s" % (name, bridge))
-            return "FAILURE:VERIFY_PORT_FAILED"
-
-        # verify interface
-        iface_uuid = iface_list[0]
-        verify_interface_key = [lib.VSCTL_PATH, "get", "interface",
-                                iface_uuid, "options:key"]
-        verify_interface_ip = [lib.VSCTL_PATH, "get", "interface",
-                               iface_uuid, "options:remote_ip"]
-
-        key_validation = lib.do_cmd(verify_interface_key)
-        ip_validation = lib.do_cmd(verify_interface_ip)
-
-        if not gre_key in key_validation or not remote_ip in ip_validation:
-            logging.debug("WARNING: Unexpected output while verifying " +
-                          "interface %s on bridge %s" % (name, bridge))
-            return "FAILURE:VERIFY_INTERFACE_FAILED"
-        logging.debug("Tunnel interface validated:%s" % verify_interface_ip)
-        cmd_tun_ofport = [lib.VSCTL_PATH, "get", "interface",
-                                          iface_uuid, "ofport"]
-        tun_ofport = lib.do_cmd(cmd_tun_ofport)
-        # Ensure no trailing LF
-        if tun_ofport.endswith('\n'):
-            tun_ofport = tun_ofport[:-1]
-        # find xs network for this bridge, verify is used for ovs tunnel network
-        xs_nw_uuid = lib.do_cmd([lib.XE_PATH, "network-list",
-								   "bridge=%s" % bridge, "--minimal"])
-        ovs_tunnel_network = False
-        try:
-            ovs_tunnel_network = lib.do_cmd([lib.XE_PATH,"network-param-get",
-						       "uuid=%s" % xs_nw_uuid,
-						       "param-name=other-config",
-						       "param-key=is-ovs-tun-network", "--minimal"])
-        except:
-            pass
-
-        ovs_vpc_distributed_vr_network = False
-        try:
-            ovs_vpc_distributed_vr_network = lib.do_cmd([lib.XE_PATH,"network-param-get",
-                           "uuid=%s" % xs_nw_uuid,
-                           "param-name=other-config",
-                           "param-key=is-ovs-vpc-distributed-vr-network", "--minimal"])
-        except:
-            pass
-
-        if ovs_tunnel_network == 'True':
-            # add flow entryies for dropping broadcast coming in from gre tunnel
-            lib.add_flow(bridge, priority=1000, in_port=tun_ofport,
-                         dl_dst='ff:ff:ff:ff:ff:ff', actions='drop')
-            lib.add_flow(bridge, priority=1000, in_port=tun_ofport,
-                     nw_dst='224.0.0.0/24', actions='drop')
-            drop_flow_setup = True
-            logging.debug("Broadcast drop rules added")
-
-        if ovs_vpc_distributed_vr_network == 'True':
-            # add flow rules for dropping broadcast coming in from tunnel ports
-            lib.add_flow(bridge, priority=1000, in_port=tun_ofport, table=0,
-                         dl_dst='ff:ff:ff:ff:ff:ff', actions='drop')
-            lib.add_flow(bridge, priority=1000, in_port=tun_ofport, table=0,
-                     nw_dst='224.0.0.0/24', actions='drop')
-
-            # add flow rule to send the traffic from tunnel ports to L2 switching table only
-            lib.add_flow(bridge, priority=1100, in_port=tun_ofport, table=0, actions='resubmit(,1)')
-
-            # mark tunnel interface with network id for which this tunnel was created
-            lib.do_cmd([lib.VSCTL_PATH, "set", "interface", name, "options:cloudstack-network-id=%s" % network_uuid])
-            lib.update_flooding_rules_on_port_plug_unplug(bridge, name, 'online', network_uuid)
-
-        return "SUCCESS:%s" % name
-    except:
-        logging.debug("An unexpected error occured. Rolling back")
-        if tunnel_setup:
-            logging.debug("Deleting GRE interface")
-            # Destroy GRE port and interface
-            lib.del_port(bridge, name)
-        if drop_flow_setup:
-            # Delete flows
-            logging.debug("Deleting flow entries from GRE interface")
-            lib.del_flows(bridge, in_port=tun_ofport)
-        # This will not cancel the original exception
-        raise
-
+    return lib.create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host, network_uuid)
 
 @echo
 def destroy_tunnel(session, args):
@@ -414,10 +294,11 @@ def configure_ovs_bridge_for_network_topology(session, args):
     sequence_no = args.pop("seq-no")
 
     # get the last update sequence number
-    last_seq_no = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge", bridge, "other-config:sequence-number"])
+    last_seq_no = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge", bridge, "other-config:topology-update-sequence-number"])
     last_seq_no = last_seq_no[1:-1]
     if long(sequence_no) > long(last_seq_no):
-        lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other-config:sequence-number=%s"%sequence_no])
+        lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge,
+                    "other-config:topology-update-sequence-number=%s"%sequence_no])
         return lib.configure_vpc_bridge_for_network_topology(bridge, this_host_id, json_config, sequence_no)
     else:
         return "SUCCESS: Ignoring the update with the sequence number %s" %sequence_no + " as there is already recent" \
@@ -430,10 +311,12 @@ def configure_ovs_bridge_for_routing_policies(session, args):
     sequence_no = args.pop("seq-no")
 
     # get the last update sequence number
-    last_seq_no = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge", bridge, "other-config:sequence-number"])
+    last_seq_no = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge", bridge,
+                              "other-config:route-policy-update-sequence-number"])
     last_seq_no = last_seq_no[1:-1]
     if long(sequence_no) > long(last_seq_no):
-        lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other-config:sequence-number=%s"%sequence_no])
+        lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge,
+                    "other-config:route-policy-update-sequence-number=%s"%sequence_no])
         return lib.configure_vpc_bridge_for_routing_policies(bridge, json_config, sequence_no)
     else:
         return "SUCCESS: Ignoring the update with the sequence number %s" %sequence_no + " as there is already recent" \

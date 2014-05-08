@@ -710,7 +710,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             String bridgeName=generateBridgeNameForVpc(vpcId);
 
             OvsVpcPhysicalTopologyConfigCommand topologyConfigCommand = prepareVpcTopologyUpdate(vpcId);
-            topologyConfigCommand.setSequenceNumber(getNextSequenceNumber(vpcId));
+            topologyConfigCommand.setSequenceNumber(getNextTopologyUpdateSequenceNumber(vpcId));
 
             // send topology change update to VPC spanned hosts
             for (Long id: vpcSpannedHostIds) {
@@ -820,7 +820,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 if (network.getVpcId() != null && isVpcEnabledForDistributedRouter(network.getVpcId())) {
                     long vpcId = network.getVpcId();
                     OvsVpcRoutingPolicyConfigCommand cmd = prepareVpcRoutingPolicyUpdate(vpcId);
-                    cmd.setSequenceNumber(getNextSequenceNumber(vpcId));
+                    cmd.setSequenceNumber(getNextRoutingPolicyUpdateSequenceNumber(vpcId));
 
                     // get the list of hosts on which VPC spans (i.e hosts that need to be aware of VPC
                     // network ACL update)
@@ -901,7 +901,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         }
     }
 
-    private long getNextSequenceNumber(final long vpcId) {
+    private long getNextTopologyUpdateSequenceNumber(final long vpcId) {
 
         try {
             return  Transaction.execute(new TransactionCallback<Long>() {
@@ -913,9 +913,31 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                         _vpcDrSeqNoDao.persist(seqVo);
                     }
                     seqVo = _vpcDrSeqNoDao.lockRow(seqVo.getId(), true);
-                    seqVo.incrSequenceNo();
+                    seqVo.incrTopologyUpdateSequenceNo();
                     _vpcDrSeqNoDao.update(seqVo.getId(), seqVo);
-                    return seqVo.getSequenceNo();
+                    return seqVo.getTopologyUpdateSequenceNo();
+                }
+            });
+        } finally {
+
+        }
+    }
+
+    private long getNextRoutingPolicyUpdateSequenceNumber(final long vpcId) {
+
+        try {
+            return  Transaction.execute(new TransactionCallback<Long>() {
+                @Override
+                public Long doInTransaction(TransactionStatus status) {
+                    VpcDistributedRouterSeqNoVO seqVo = _vpcDrSeqNoDao.findByVpcId(vpcId);
+                    if (seqVo == null) {
+                        seqVo = new VpcDistributedRouterSeqNoVO(vpcId);
+                        _vpcDrSeqNoDao.persist(seqVo);
+                    }
+                    seqVo = _vpcDrSeqNoDao.lockRow(seqVo.getId(), true);
+                    seqVo.incrPolicyUpdateSequenceNo();
+                    _vpcDrSeqNoDao.update(seqVo.getId(), seqVo);
+                    return seqVo.getPolicyUpdateSequenceNo();
                 }
             });
         } finally {

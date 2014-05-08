@@ -1648,7 +1648,8 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 CREATE TABLE `cloud`.`op_vpc_distributed_router_sequence_no` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
   `vpc_id` bigint unsigned NOT NULL COMMENT 'vpc id.',
-  `sequence_no` bigint unsigned  COMMENT 'seq number to be sent to agent, uniquely identifies topology or routing policy updates',
+  `topology_update_sequence_no` bigint unsigned  COMMENT 'sequence number to be sent to hypervisor, uniquely identifies a VPC topology update',
+  `routing_policy__update_sequence_no` bigint unsigned  COMMENT 'sequence number to be sent to hypervisor, uniquely identifies a routing policy update',
   PRIMARY KEY (`id`),
   UNIQUE `u_op_vpc_distributed_router_sequence_no_vpc_id`(`vpc_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
