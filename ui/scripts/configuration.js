@@ -2175,7 +2175,7 @@
                                         } else { //Isolated network offering
                                             $useVpc.css('display', 'inline-block');
                                         }
-                                        var $providers = $useVpcCb.closest('form').find('.dynamic-input select');
+                                        var $providers = $useVpcCb.closest('form').find('.dynamic-input select[name!="service.Connectivity.provider"]');
                                         var $optionsOfProviders = $providers.find('option');
                                         //p.s. Netscaler is supported in both vpc and non-vpc
                                         if ($useVpc.is(':visible') && $useVpcCb.is(':checked')) { //*** vpc ***
