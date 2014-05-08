@@ -37,8 +37,11 @@ public class VpcDistributedRouterSeqNoVO implements InternalIdentity {
     @Column(name = "vpc_id", updatable = false, nullable = false)
     private Long vpcId;
 
-    @Column(name = "sequence_no")
-    long sequenceNo = 0;
+    @Column(name = "topology_update_sequence_no")
+    long topologyUpdateSequenceNo = 0;
+
+    @Column(name = "routing_policy__update_sequence_no")
+    long policyUpdateSequenceNo = 0;
 
     protected VpcDistributedRouterSeqNoVO() {
 
@@ -62,11 +65,19 @@ public class VpcDistributedRouterSeqNoVO implements InternalIdentity {
         this.vpcId = vpcId;
     }
 
-    public long getSequenceNo() {
-        return sequenceNo;
+    public long getTopologyUpdateSequenceNo() {
+        return topologyUpdateSequenceNo;
     }
 
-    public void incrSequenceNo() {
-        sequenceNo++;
+    public void incrTopologyUpdateSequenceNo() {
+        topologyUpdateSequenceNo++;
+    }
+
+    public long getPolicyUpdateSequenceNo() {
+        return policyUpdateSequenceNo;
+    }
+
+    public void incrPolicyUpdateSequenceNo() {
+        policyUpdateSequenceNo++;
     }
 }
