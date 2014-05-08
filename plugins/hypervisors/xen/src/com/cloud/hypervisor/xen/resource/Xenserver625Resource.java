@@ -140,7 +140,7 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
                                       String vmName, String oldVmUuid, Boolean snapshotMemory, String hostUUID)
             throws Types.XenAPIException, XmlRpcException {
 
-        String results = callHostPluginAsync(conn, "cloud-plugin-storage",
+        String results = callHostPluginAsync(conn, "vmopsSnapshot",
                 "revert_memory_snapshot", 10 * 60 * 1000, "snapshotUUID",
                 vmSnapshot.getUuid(conn), "vmName", vmName, "oldVmUuid",
                 oldVmUuid, "snapshotMemory", snapshotMemory.toString(), "hostUUID", hostUUID);
