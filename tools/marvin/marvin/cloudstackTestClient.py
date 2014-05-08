@@ -124,7 +124,8 @@ class CSTestClient(object):
             '''
             Step1 : Create a CS Connection Object
             '''
-            self.__csConnection = CSConnection(self.__mgmtDetails,
+            mgmt_details = self.__mgmtDetails
+            self.__csConnection = CSConnection(mgmt_details,
                                                self.__asyncTimeOut,
                                                self.__logger)
 
@@ -137,7 +138,7 @@ class CSTestClient(object):
             Step3:  If API Key is not provided as part of Management Details,
                     then verify and register
             '''
-            if self.__mgmtDetails.apiKey is None:
+            if mgmt_details.apiKey is None:
                 list_user = listUsers.listUsersCmd()
                 list_user.account = "admin"
                 list_user_res = self.__apiClient.listUsers(list_user)
@@ -152,7 +153,6 @@ class CSTestClient(object):
                 if api_key is None:
                     ret = self.__getKeys(user_id)
                     if ret != FAILED:
-                        mgmt_details = self.__mgmtDetails
                         mgmt_details.apiKey = ret[0]
                         mgmt_details.securityKey = ret[1]
                     else:
@@ -309,7 +309,7 @@ class CSTestClient(object):
         try:
             if not self.isAdminContext():
                 return self.__apiClient
-
+            mgmt_details = self.__mgmtDetails
             listDomain = listDomains.listDomainsCmd()
             listDomain.listall = True
             listDomain.name = DomainName
@@ -353,21 +353,20 @@ class CSTestClient(object):
             if apiKey is None:
                 ret = self.__getKeys(userId)
                 if ret != FAILED:
-                    mgtDetails = self.__mgmtDetails
-                    mgtDetails.apiKey = ret[0]
-                    mgtDetails.securityKey = ret[1]
+                    mgmt_details.apiKey = ret[0]
+                    mgmt_details.securityKey = ret[1]
                 else:
                     self.__logger.error("__createUserApiClient: "
                                         "User API Client Creation."
                                         " While Registering User Failed")
                     return FAILED
             else:
-                mgtDetails = self.__mgmtDetails
-                mgtDetails.apiKey = apiKey
-                mgtDetails.securityKey = securityKey
+                mgmt_details.port = 8080
+                mgmt_details.apiKey = apiKey
+                mgmt_details.securityKey = securityKey
 
             newUserConnection =\
-                CSConnection(mgtDetails,
+                CSConnection(mgmt_details,
                              self.__csConnection.asyncTimeout,
                              self.__csConnection.logger)
             self.__userApiClient = CloudStackAPIClient(newUserConnection)
