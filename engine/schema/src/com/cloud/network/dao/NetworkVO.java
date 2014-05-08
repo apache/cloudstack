@@ -578,6 +578,11 @@ public class NetworkVO implements Network {
     }
 
     @Override
+    public boolean isDisplay(){
+        return displayNetwork;
+    }
+
+    @Override
     public void setNetworkACLId(Long networkACLId) {
         this.networkACLId = networkACLId;
     }

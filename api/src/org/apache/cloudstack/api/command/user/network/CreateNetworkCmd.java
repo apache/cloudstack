@@ -213,6 +213,14 @@ public class CreateNetworkCmd extends BaseCmd {
         return displayNetwork;
     }
 
+    @Override
+    public boolean isDisplay() {
+        if(displayNetwork == null)
+            return true;
+        else
+            return displayNetwork;
+    }
+
     public Long getZoneId() {
         Long physicalNetworkId = getPhysicalNetworkId();
 

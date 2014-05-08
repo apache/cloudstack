@@ -371,7 +371,7 @@ public abstract class BaseCmd {
                 Object key = entry.getKey();
                 Class clz = Class.forName((String)key);
                 if(Displayable.class.isAssignableFrom(clz)){
-                    final Object objVO = getEntityVO(clz, entry.getValue());
+                    final Object objVO = _entityMgr.findById(clz, getInternalId(entry.getValue()));
                     isDisplay = ((Displayable) objVO).isDisplay();
                 }
 
@@ -388,25 +388,17 @@ public abstract class BaseCmd {
 
     }
 
-    private Object getEntityVO(Class entityType, Object entityId){
+    private static Long getInternalId(Object internalIdObj){
+        Long internalId = null;
 
-        // entityId can be internal db id or UUID so accordingly call findbyId or findByUUID
-
-        if (entityId instanceof Long){
-            // Its internal db id - use findById
-            return _entityMgr.findById(entityType, (Long)entityId);
-        } else if(entityId instanceof String){
-            try{
-                // In case its an async job the internal db id would be a string because of json deserialization
-                Long internalId = Long.valueOf((String) entityId);
-                return _entityMgr.findById(entityType, internalId);
-            } catch (NumberFormatException e){
-               // It is uuid - use findByUuid`
-               return _entityMgr.findByUuid(entityType, (String)entityId);
-            }
+        // In case its an async job the value would be a string because of json deserialization
+        if(internalIdObj instanceof String){
+            internalId = Long.valueOf((String) internalIdObj);
+        }else if (internalIdObj instanceof Long){
+            internalId = (Long) internalIdObj;
         }
 
-        return null;
+        return internalId;
     }
 
 }
