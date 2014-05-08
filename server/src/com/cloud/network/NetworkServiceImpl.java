@@ -3973,7 +3973,11 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                         //create Guest network
                         privateNetwork = _networkMgr.createGuestNetwork(ntwkOffFinal.getId(), networkName, displayText, gateway, cidr, uriString, null, owner, null, pNtwk,
                                 pNtwk.getDataCenterId(), ACLType.Account, null, vpcId, null, null, true, null);
-                        s_logger.debug("Created private network " + privateNetwork);
+                        if (privateNetwork != null) {
+                            s_logger.debug("Successfully created guest network " + privateNetwork);
+                        } else {
+                            throw new CloudRuntimeException("Creating guest network failed");
+                        }
                     } else {
                         s_logger.debug("Private network already exists: " + privateNetwork);
                         //Do not allow multiple private gateways with same Vlan within a VPC
