@@ -344,8 +344,139 @@ def get_acl(vpcconfig, required_acl_id):
             return acl
     return None
 
-# Configures the bridge created for a VPC enabled for distributed routing. Management server sends VPC physical topology
-# details. Based on the VPC physical topology L2 lookup table and L3 lookup tables are updated by this function.
+def check_tunnel_exists(bridge, tunnel_name):
+    res = do_cmd([VSCTL_PATH, "port-to-br", tunnel_name])
+    return res == bridge
+
+def create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host, network_uuid):
+
+    logging.debug("Creating tunnel from host %s" %src_host + " to host %s" %dst_host + " with GRE key %s" %gre_key)
+
+    res = check_switch()
+    if res != "SUCCESS":
+        logging.debug("Openvswitch running: NO")
+        return "FAILURE:%s" % res
+
+    # We need to keep the name below 14 characters
+    # src and target are enough - consider a fixed length hash
+    name = "t%s-%s-%s" % (gre_key, src_host, dst_host)
+
+    # Verify the xapi bridge to be created
+    # NOTE: Timeout should not be necessary anymore
+    wait = [VSCTL_PATH, "--timeout=30", "wait-until", "bridge",
+                    bridge, "--", "get", "bridge", bridge, "name"]
+    res = do_cmd(wait)
+    if bridge not in res:
+        logging.debug("WARNING:Can't find bridge %s for creating " +
+                                  "tunnel!" % bridge)
+        return "FAILURE:NO_BRIDGE"
+    logging.debug("bridge %s for creating tunnel - VERIFIED" % bridge)
+    tunnel_setup = False
+    drop_flow_setup = False
+    try:
+        # Create a port and configure the tunnel interface for it
+        add_tunnel = [VSCTL_PATH, "add-port", bridge,
+                                  name, "--", "set", "interface",
+                                  name, "type=gre", "options:key=%s" % gre_key,
+                                  "options:remote_ip=%s" % remote_ip]
+        do_cmd(add_tunnel)
+        tunnel_setup = True
+        # verify port
+        verify_port = [VSCTL_PATH, "get", "port", name, "interfaces"]
+        res = do_cmd(verify_port)
+        # Expecting python-style list as output
+        iface_list = []
+        if len(res) > 2:
+            iface_list = res.strip()[1:-1].split(',')
+        if len(iface_list) != 1:
+            logging.debug("WARNING: Unexpected output while verifying " +
+                                      "port %s on bridge %s" % (name, bridge))
+            return "FAILURE:VERIFY_PORT_FAILED"
+
+        # verify interface
+        iface_uuid = iface_list[0]
+        verify_interface_key = [VSCTL_PATH, "get", "interface",
+                                iface_uuid, "options:key"]
+        verify_interface_ip = [VSCTL_PATH, "get", "interface",
+                               iface_uuid, "options:remote_ip"]
+
+        key_validation = do_cmd(verify_interface_key)
+        ip_validation = do_cmd(verify_interface_ip)
+
+        if not gre_key in key_validation or not remote_ip in ip_validation:
+            logging.debug("WARNING: Unexpected output while verifying " +
+                          "interface %s on bridge %s" % (name, bridge))
+            return "FAILURE:VERIFY_INTERFACE_FAILED"
+        logging.debug("Tunnel interface validated:%s" % verify_interface_ip)
+        cmd_tun_ofport = [VSCTL_PATH, "get", "interface",
+                                          iface_uuid, "ofport"]
+        tun_ofport = do_cmd(cmd_tun_ofport)
+        # Ensure no trailing LF
+        if tun_ofport.endswith('\n'):
+            tun_ofport = tun_ofport[:-1]
+        # find xs network for this bridge, verify is used for ovs tunnel network
+        xs_nw_uuid = do_cmd([XE_PATH, "network-list",
+								   "bridge=%s" % bridge, "--minimal"])
+        ovs_tunnel_network = False
+        try:
+            ovs_tunnel_network = do_cmd([XE_PATH,"network-param-get",
+						       "uuid=%s" % xs_nw_uuid,
+						       "param-name=other-config",
+						       "param-key=is-ovs-tun-network", "--minimal"])
+        except:
+            pass
+
+        ovs_vpc_distributed_vr_network = False
+        try:
+            ovs_vpc_distributed_vr_network = do_cmd([XE_PATH,"network-param-get",
+                           "uuid=%s" % xs_nw_uuid,
+                           "param-name=other-config",
+                           "param-key=is-ovs-vpc-distributed-vr-network", "--minimal"])
+        except:
+            pass
+
+        if ovs_tunnel_network == 'True':
+            # add flow entryies for dropping broadcast coming in from gre tunnel
+            add_flow(bridge, priority=1000, in_port=tun_ofport,
+                         dl_dst='ff:ff:ff:ff:ff:ff', actions='drop')
+            add_flow(bridge, priority=1000, in_port=tun_ofport,
+                     nw_dst='224.0.0.0/24', actions='drop')
+            drop_flow_setup = True
+            logging.debug("Broadcast drop rules added")
+
+        if ovs_vpc_distributed_vr_network == 'True':
+            # add flow rules for dropping broadcast coming in from tunnel ports
+            add_flow(bridge, priority=1000, in_port=tun_ofport, table=0,
+                         dl_dst='ff:ff:ff:ff:ff:ff', actions='drop')
+            add_flow(bridge, priority=1000, in_port=tun_ofport, table=0,
+                     nw_dst='224.0.0.0/24', actions='drop')
+
+            # add flow rule to send the traffic from tunnel ports to L2 switching table only
+            add_flow(bridge, priority=1100, in_port=tun_ofport, table=0, actions='resubmit(,1)')
+
+            # mark tunnel interface with network id for which this tunnel was created
+            do_cmd([VSCTL_PATH, "set", "interface", name, "options:cloudstack-network-id=%s" % network_uuid])
+            update_flooding_rules_on_port_plug_unplug(bridge, name, 'online', network_uuid)
+
+        logging.debug("Successfully created tunnel from host %s" %src_host + " to host %s" %dst_host +
+                      " with GRE key %s" %gre_key)
+        return "SUCCESS:%s creation succeeded" % name
+    except:
+        logging.debug("An unexpected error occured. Rolling back")
+        if tunnel_setup:
+            logging.debug("Deleting GRE interface")
+            # Destroy GRE port and interface
+            del_port(bridge, name)
+        if drop_flow_setup:
+            # Delete flows
+            logging.debug("Deleting flow entries from GRE interface")
+            del_flows(bridge, in_port=tun_ofport)
+        # This will not cancel the original exception
+        raise
+
+# Configures the bridge created for a VPC that is enabled for distributed routing. Management server sends VPC
+# physical topology details (which VM from which tier running on which host etc). Based on the VPC physical topology L2
+# lookup table and L3 lookup tables are updated by this function.
 def configure_vpc_bridge_for_network_topology(bridge, this_host_id, json_config, sequence_no):
 
     vpconfig = jsonLoader(json.loads(json_config)).vpc
@@ -412,8 +543,13 @@ def configure_vpc_bridge_for_network_topology(bridge, this_host_id, json_config,
                     network = get_network_details(vpconfig, nic.networkuuid)
                     gre_key = network.grekey
 
-                    # generate tunnel name as per the tunnel naming convention and get the OF port
+                    # generate tunnel name as per the tunnel naming convention
                     tunnel_name = "t%s-%s-%s" % (gre_key, this_host_id, host.hostid)
+
+                    # check if tunnel exists already, if not create a tunnel from this host to remote host
+                    if not check_tunnel_exists(bridge, tunnel_name):
+                        create_tunnel(bridge, host.ipaddress, gre_key, this_host_id, host.hostid, network.networkuuid)
+
                     of_port = get_ofport_for_vif(tunnel_name)
 
                     # Add flow rule in L2 look up table, if packet's destination mac matches MAC of the VM's nic
@@ -441,10 +577,10 @@ def configure_vpc_bridge_for_network_topology(bridge, this_host_id, json_config,
         del_flows(bridge, table=L3_LOOKUP_TABLE)
 
         ofspec.seek(0)
-        logging.debug("Adding below flows rules L2 & L3 lookup tables:\n" + ofspec.read())
+        logging.debug("Adding below flows rules in L2 & L3 lookup tables:\n" + ofspec.read())
+        ofspec.close()
 
         # update bridge with the flow-rules for L2 lookup and L3 lookup in the file in one attempt
-        ofspec.close()
         do_cmd([OFCTL_PATH, 'add-flows', bridge, ofspec_filename])
 
         # now that we updated the bridge with flow rules close and delete the file.
@@ -460,8 +596,9 @@ def configure_vpc_bridge_for_network_topology(bridge, this_host_id, json_config,
             os.remove(ofspec_filename)
         raise error_message
 
-# Configures the bridge created for a VPC enabled for distributed firewall. Management server sends VPC routing policies
-# details. Based on the VPC routing policies ingress ACL table and egress ACL tables are updated by this function.
+# Configures the bridge created for a VPC that is enabled for distributed firewall. Management server sends VPC routing
+# policy (network ACL applied on the tiers etc) details. Based on the VPC routing policies ingress ACL table and
+# egress ACL tables are updated by this function.
 def configure_vpc_bridge_for_routing_policies(bridge, json_config, sequence_no):
 
     vpconfig = jsonLoader(json.loads(json_config)).vpc
@@ -564,9 +701,9 @@ def configure_vpc_bridge_for_routing_policies(bridge, json_config, sequence_no):
 
         ofspec.seek(0)
         logging.debug("Adding below flows rules Ingress & Egress ACL tables:\n" + ofspec.read())
+        ofspec.close()
 
         # update bridge with the flow-rules for ingress and egress ACL's added in the file in one attempt
-        ofspec.close()
         do_cmd([OFCTL_PATH, 'add-flows', bridge, ofspec_filename])
 
         # now that we updated the bridge with flow rules delete the file.
@@ -658,9 +795,9 @@ def update_flooding_rules_on_port_plug_unplug(bridge, interface, command, if_net
 
         ofspec.seek(0)
         logging.debug("Adding below flows rules L2 flooding table: \n" + ofspec.read())
+        ofspec.close()
 
         # update bridge with the flow-rules for broadcast rules added in the file in one attempt
-        ofspec.close()
         do_cmd([OFCTL_PATH, 'add-flows', bridge, ofspec_filename])
 
         # now that we updated the bridge with flow rules delete the file.
