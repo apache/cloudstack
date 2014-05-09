@@ -66,6 +66,9 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         String entityType = null;
         if (entity != null && entity.getEntityType() != null) {
             entityType = entity.getEntityType().getSimpleName();
+            if (entity instanceof InternalIdentity) {
+                entityType += ((InternalIdentity)entity).getId();
+            }
         }
         key.append(entityType != null ? entityType : "null");
         key.append("-");
@@ -91,7 +94,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         String accessKey = buildAccessCacheKey(caller, entity, accessType, action);
         CheckAccessResult allowDeny = (CheckAccessResult)_iamSrv.getFromIAMCache(accessKey);
         if (allowDeny != null) {
-            s_logger.debug("IAM access check for " + accessKey + " from cache");
+            s_logger.debug("IAM access check for " + accessKey + " from cache: " + allowDeny.isAllow());
             if (allowDeny.isAllow()) {
                 return true;
             } else {
