@@ -50,6 +50,7 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -161,10 +162,17 @@ public class HypervStorageMotionStrategy implements DataMotionStrategy {
                     VolumeVO volumeVO = volDao.findById(volume.getId());
                     Long oldPoolId = volumeVO.getPoolId();
                     volumeVO.setPath(volumeTo.getPath());
-                    volumeVO.setFolder(pool.getPath());
                     volumeVO.setPodId(pool.getPodId());
                     volumeVO.setPoolId(pool.getId());
                     volumeVO.setLastPoolId(oldPoolId);
+                    // For SMB, pool credentials are also stored in the uri query string.  We trim the query string
+                    // part  here to make sure the credentials do not get stored in the db unencrypted.
+                    String folder = pool.getPath();
+                    if (pool.getPoolType() == StoragePoolType.SMB && folder != null && folder.contains("?")) {
+                        folder = folder.substring(0, folder.indexOf("?"));
+                    }
+                    volumeVO.setFolder(folder);
+
                     volDao.update(volume.getId(), volumeVO);
                     updated = true;
                     break;

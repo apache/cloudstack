@@ -63,6 +63,7 @@ import com.cloud.host.Host;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
@@ -389,10 +390,16 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             VolumeVO volumeVo = volDao.findById(volume.getId());
             Long oldPoolId = volume.getPoolId();
             volumeVo.setPath(((MigrateVolumeAnswer)answer).getVolumePath());
-            volumeVo.setFolder(destPool.getPath());
             volumeVo.setPodId(destPool.getPodId());
             volumeVo.setPoolId(destPool.getId());
             volumeVo.setLastPoolId(oldPoolId);
+            // For SMB, pool credentials are also stored in the uri query string.  We trim the query string
+            // part  here to make sure the credentials do not get stored in the db unencrypted.
+            String folder = destPool.getPath();
+            if (destPool.getPoolType() == StoragePoolType.SMB && folder != null && folder.contains("?")) {
+                folder = folder.substring(0, folder.indexOf("?"));
+            }
+            volumeVo.setFolder(folder);
             volDao.update(volume.getId(), volumeVo);
         }
 
