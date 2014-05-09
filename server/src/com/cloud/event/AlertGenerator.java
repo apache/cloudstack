@@ -59,7 +59,6 @@ public class AlertGenerator {
     void init() {
         s_dcDao = dcDao;
         s_podDao = podDao;
-        s_configDao = configDao;
     }
 
     public static void publishAlertOnEventBus(String alertType, long dataCenterId, Long podId, String subject, String body) {
