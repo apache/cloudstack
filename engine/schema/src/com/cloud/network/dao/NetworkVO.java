@@ -605,4 +605,8 @@ public class NetworkVO implements Network {
     public void setStrechedL2Network(boolean strechedL2Network) {
         this.strechedL2Network = strechedL2Network;
     }
+
+    public void setVpcId(long vpcId) {
+        this.vpcId = vpcId;
+    }
 }
