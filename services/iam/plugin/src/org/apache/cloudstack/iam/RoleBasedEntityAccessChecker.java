@@ -290,16 +290,16 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         boolean allow;
         String denyMsg;
 
-        public CheckAccessResult(boolean allow) {
-            this(allow, null);
+        public CheckAccessResult(boolean aw) {
+            this(aw, null);
         }
 
         public CheckAccessResult(String msg) {
             this(false, msg);
         }
 
-        public CheckAccessResult(boolean allow, String msg) {
-            allow = allow;
+        public CheckAccessResult(boolean aw, String msg) {
+            allow = aw;
             denyMsg = msg;
         }
 
@@ -307,8 +307,8 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
             return allow;
         }
 
-        public void setAllow(boolean allow) {
-            this.allow = allow;
+        public void setAllow(boolean aw) {
+            allow = aw;
         }
 
 
