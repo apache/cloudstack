@@ -60,8 +60,18 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
         return vpcId;
     }
 
+    @Deprecated
     public Boolean getDisplay() {
         return display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if (display != null) {
+            return display;
+        } else {
+            return true;
+        }
     }
 
     /////////////////////////////////////////////////////

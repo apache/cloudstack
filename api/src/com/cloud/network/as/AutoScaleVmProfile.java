@@ -20,6 +20,7 @@ package com.cloud.network.as;
 import java.util.List;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.utils.Pair;
@@ -27,7 +28,7 @@ import com.cloud.utils.Pair;
 /**
  * AutoScaleVmProfile
  */
-public interface AutoScaleVmProfile extends ControlledEntity, InternalIdentity {
+public interface AutoScaleVmProfile extends ControlledEntity, InternalIdentity, Displayable {
 
     @Override
     public long getId();
@@ -48,6 +49,7 @@ public interface AutoScaleVmProfile extends ControlledEntity, InternalIdentity {
 
     public long getAutoScaleUserId();
 
+    @Override
     boolean isDisplay();
 
 }

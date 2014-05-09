@@ -77,8 +77,13 @@ public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
         return vpcId;
     }
 
-    public Boolean getDisplay() {
-        return display;
+    @Override
+    public boolean isDisplay() {
+        if (display != null) {
+            return display;
+        } else {
+            return true;
+        }
     }
 
     // ///////////////////////////////////////////////////
@@ -92,7 +97,7 @@ public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() {
-        NetworkACL result = _networkACLService.createNetworkACL(getName(), getDescription(), getVpcId(), getDisplay());
+        NetworkACL result = _networkACLService.createNetworkACL(getName(), getDescription(), getVpcId(), isDisplay());
         setEntityId(result.getId());
         setEntityUuid(result.getUuid());
     }

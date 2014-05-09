@@ -16,12 +16,13 @@
 // under the License.
 package com.cloud.network.rules;
 
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  */
-public interface HealthCheckPolicy extends InternalIdentity, Identity {
+public interface HealthCheckPolicy extends InternalIdentity, Identity, Displayable {
 
     public long getLoadBalancerId();
 
@@ -39,9 +40,7 @@ public interface HealthCheckPolicy extends InternalIdentity, Identity {
 
     public boolean isRevoke();
 
-    /**
-     * @return
-     */
+    @Override
     boolean isDisplay();
 
 }

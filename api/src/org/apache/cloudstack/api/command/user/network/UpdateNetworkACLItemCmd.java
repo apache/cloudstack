@@ -88,8 +88,14 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-    public Boolean getDisplay() {
-        return display;
+
+    @Override
+    public boolean isDisplay() {
+        if (display != null) {
+            return display;
+        } else {
+            return true;
+        }
     }
 
     public Long getId() {
@@ -172,7 +178,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
         CallContext.current().setEventDetails("Rule Id: " + getId());
         NetworkACLItem aclItem =
             _networkACLService.updateNetworkACLItem(getId(), getProtocol(), getSourceCidrList(), getTrafficType(), getAction(), getNumber(), getSourcePortStart(),
-                getSourcePortEnd(), getIcmpCode(), getIcmpType(), this.getCustomId(), this.getDisplay());
+                getSourcePortEnd(), getIcmpCode(), getIcmpType(), this.getCustomId(), this.isDisplay());
         if (aclItem == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update network ACL Item");
         }
