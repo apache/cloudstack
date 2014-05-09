@@ -2685,6 +2685,10 @@ namespace HypervResource
 
         public void GetSummaryInfo(Dictionary<string, VmStatsEntry> vmProcessorInfo, List<System.Management.ManagementPath> vmsToInspect)
         {
+            if (vmsToInspect == null || vmsToInspect.Count == 0)
+            {
+                return;
+            }
             // Process info available from WMI, 
             // See http://msdn.microsoft.com/en-us/library/hh850062(v=vs.85).aspx
             uint[] requestedInfo = new uint[] {  // TODO: correct?
