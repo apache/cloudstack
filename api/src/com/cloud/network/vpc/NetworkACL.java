@@ -17,9 +17,10 @@
 
 package com.cloud.network.vpc;
 
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface NetworkACL extends InternalIdentity {
+public interface NetworkACL extends InternalIdentity, Displayable {
     public static final long DEFAULT_DENY = 1;
     public static final long DEFAULT_ALLOW = 2;
 
@@ -34,5 +35,6 @@ public interface NetworkACL extends InternalIdentity {
 
     String getName();
 
+    @Override
     boolean isDisplay();
 }

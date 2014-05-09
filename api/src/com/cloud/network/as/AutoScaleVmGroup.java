@@ -20,9 +20,10 @@ package com.cloud.network.as;
 import java.util.Date;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity {
+public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity, Displayable {
 
     String State_New = "new";
     String State_Revoke = "revoke";
@@ -53,6 +54,7 @@ public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity {
 
     String getUuid();
 
+    @Override
     boolean isDisplay();
 
 }

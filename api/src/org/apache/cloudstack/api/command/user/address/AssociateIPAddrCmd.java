@@ -201,8 +201,17 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         }
     }
 
+    @Deprecated
     public Boolean getDisplayIp() {
         return display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if(display == null)
+            return true;
+        else
+            return display;
     }
 
     @Override

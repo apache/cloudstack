@@ -97,8 +97,17 @@ public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
+    @Deprecated
     public Boolean getDisplay() {
         return display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if(display == null)
+            return true;
+        else
+            return display;
     }
 
     public Long getLbRuleId() {
