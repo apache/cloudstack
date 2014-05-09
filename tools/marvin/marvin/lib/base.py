@@ -1397,8 +1397,7 @@ class PublicIPAddress:
 
         cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
-        if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+        cmd.listall=True
         return(apiclient.listPublicIpAddresses(cmd))
 
 
