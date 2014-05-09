@@ -18,6 +18,7 @@ var g_mySession = null;
 var g_sessionKey = null;
 var g_role = null; // roles - root, domain-admin, ro-admin, user
 var g_username = null;
+var g_userid = null;
 var g_account = null;
 var g_domainid = null;
 var g_loginCmdText = null;
