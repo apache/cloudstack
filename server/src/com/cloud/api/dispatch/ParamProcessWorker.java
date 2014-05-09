@@ -155,7 +155,8 @@ public class ParamProcessWorker implements DispatchWorker {
                     // for maps, specify access to be checkd on key or value.
                     // Find the controlled entity DBid by uuid
 
-                    if (parameterAnnotation.entityType() != null) {
+                    if (parameterAnnotation.entityType() != null && parameterAnnotation.entityType().length > 0
+                            && parameterAnnotation.entityType()[0].getAnnotation(EntityReference.class) != null) {
                         final Class<?>[] entityList = parameterAnnotation.entityType()[0].getAnnotation(EntityReference.class).value();
 
                         // Check if the parameter type is a single

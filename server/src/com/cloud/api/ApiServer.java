@@ -96,10 +96,14 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.volume.ListVolumesCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
@@ -138,8 +142,8 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
-import com.cloud.event.EventTypes;
 import com.cloud.event.EventCategory;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -210,7 +214,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private static Map<String, List<Class<?>>> s_apiNameCmdClassMap = new HashMap<String, List<Class<?>>>();
 
     private static ExecutorService s_executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(
-        "ApiServer"));
+            "ApiServer"));
     @Inject
     MessageBus _messageBus;
 
@@ -442,7 +446,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 final Matcher matcher = pattern.matcher(value[0]);
                 if (matcher.find()) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Received value " + value[0] + " for parameter " + key +
-                        " is invalid, contains illegal ASCII non-printable characters");
+                            " is invalid, contains illegal ASCII non-printable characters");
                 }
             }
             stringMap.put(key, value[0]);
@@ -506,7 +510,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                                 StringUtils.cleanString(response));
                     }
                     else
-                    buildAuditTrail(auditTrailSb, command[0], response);
+                        buildAuditTrail(auditTrailSb, command[0], response);
                 } else {
                     if (!command[0].equalsIgnoreCase("login") && !command[0].equalsIgnoreCase("logout")) {
                         final String errorString = "Unknown API command: " + command[0];
@@ -612,7 +616,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 objectUuid = createCmd.getEntityUuid();
                 params.put("id", objectId.toString());
                 Class entityClass = EventTypes.getEntityClassForEvent(createCmd.getEventType());
-                if(entityClass != null)
+                if (entityClass != null)
                     ctx.putContextParameter(entityClass.getName(), objectId);
             } else {
                 // Extract the uuid before params are processed and id reflects internal db id
@@ -628,7 +632,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if (caller != null) {
                 params.put("ctxAccountId", String.valueOf(caller.getId()));
             }
-            if(objectUuid != null){
+            if (objectUuid != null) {
                 params.put("uuid", objectUuid);
             }
 
@@ -637,14 +641,14 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             // Add the resource id in the call context, also add some other first class object ids (for now vm) if available.
             // TODO - this should be done for all the uuids passed in the cmd - so should be moved where uuid to id conversion happens.
-            if(EventTypes.getEntityForEvent(asyncCmd.getEventType()) != null){
+            if (EventTypes.getEntityForEvent(asyncCmd.getEventType()) != null) {
                 ctx.putContextParameter(EventTypes.getEntityForEvent(asyncCmd.getEventType()), objectUuid);
             }
 
             // save the scheduled event
             final Long eventId =
-                ActionEventUtils.onScheduledActionEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(),
-                    asyncCmd.getEventDescription(), asyncCmd.isDisplay(), startEventId);
+                    ActionEventUtils.onScheduledActionEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(),
+                            asyncCmd.getEventDescription(), asyncCmd.isDisplay(), startEventId);
             if (startEventId == 0) {
                 // There was no create event before, set current event id as start eventId
                 startEventId = eventId;
@@ -681,13 +685,15 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
             // For those listXXXCommand which we have already created DB views, this step is not needed since async job is joined in their db views.
-            if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd) && !(cmdObj instanceof ListSecurityGroupsCmd) &&
-                !(cmdObj instanceof ListTagsCmd) && !(cmdObj instanceof ListEventsCmd) && !(cmdObj instanceof ListVMGroupsCmd) && !(cmdObj instanceof ListProjectsCmd) &&
-                !(cmdObj instanceof ListProjectAccountsCmd) && !(cmdObj instanceof ListProjectInvitationsCmd) && !(cmdObj instanceof ListHostsCmd) &&
-                !(cmdObj instanceof ListVolumesCmd) && !(cmdObj instanceof ListUsersCmd) && !(cmdObj instanceof ListAccountsCmd) &&
-                !(cmdObj instanceof ListStoragePoolsCmd) && !(cmdObj instanceof ListDiskOfferingsCmd) && !(cmdObj instanceof ListServiceOfferingsCmd) &&
-                !(cmdObj instanceof ListZonesCmd)) {
-                buildAsyncListResponse((BaseListCmd) cmdObj, caller);
+            if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListVMsCmdByAdmin) && !(cmdObj instanceof ListRoutersCmd)
+                    && !(cmdObj instanceof ListSecurityGroupsCmd) &&
+                    !(cmdObj instanceof ListTagsCmd) && !(cmdObj instanceof ListEventsCmd) && !(cmdObj instanceof ListVMGroupsCmd) && !(cmdObj instanceof ListProjectsCmd) &&
+                    !(cmdObj instanceof ListProjectAccountsCmd) && !(cmdObj instanceof ListProjectInvitationsCmd) && !(cmdObj instanceof ListHostsCmd) &&
+                    !(cmdObj instanceof ListVolumesCmd) && !(cmdObj instanceof ListVolumesCmdByAdmin) && !(cmdObj instanceof ListUsersCmd) && !(cmdObj instanceof ListAccountsCmd)
+                    && !(cmdObj instanceof ListAccountsCmdByAdmin) &&
+                    !(cmdObj instanceof ListStoragePoolsCmd) && !(cmdObj instanceof ListDiskOfferingsCmd) && !(cmdObj instanceof ListServiceOfferingsCmd) &&
+                    !(cmdObj instanceof ListZonesCmd) && !(cmdObj instanceof ListZonesCmdByAdmin)) {
+                buildAsyncListResponse((BaseListCmd)cmdObj, caller);
             }
 
             SerializationContext.current().setUuidTranslation(true);
@@ -861,7 +867,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             if (user.getState() != Account.State.enabled || !account.getState().equals(Account.State.enabled)) {
                 s_logger.info("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() +
-                    "; accountState: " + account.getState());
+                        "; accountState: " + account.getState());
                 return false;
             }
 
@@ -917,7 +923,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Override
     public void loginUser(final HttpSession session, final String username, final String password, Long domainId, final String domainPath, final String loginIpAddress,
-        final Map<String, Object[]> requestParameters) throws CloudAuthenticationException {
+            final Map<String, Object[]> requestParameters) throws CloudAuthenticationException {
         // We will always use domainId first. If that does not exist, we will use domain name. If THAT doesn't exist
         // we will default to ROOT
         if (domainId == null) {
@@ -1006,7 +1012,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
 
         if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.enabled) || (account == null) ||
-            !account.getState().equals(Account.State.enabled)) {
+                !account.getState().equals(Account.State.enabled)) {
             s_logger.warn("Deleted/Disabled/Locked user with id=" + userId + " attempting to access public API");
             return false;
         }
@@ -1102,10 +1108,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             _params = new BasicHttpParams();
             _params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 30000)
-                .setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024)
-                .setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK, false)
-                .setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true)
-            .setParameter(CoreProtocolPNames.ORIGIN_SERVER, "HttpComponents/1.1");
+                    .setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024)
+                    .setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK, false)
+                    .setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true)
+                    .setParameter(CoreProtocolPNames.ORIGIN_SERVER, "HttpComponents/1.1");
 
             // Set up the HTTP protocol processor
             final BasicHttpProcessor httpproc = new BasicHttpProcessor();
