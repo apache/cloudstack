@@ -145,7 +145,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() {
         try {
-            RemoteAccessVpn vpn = _ravService.createRemoteAccessVpn(publicIpId, ipRange, getOpenFirewall(), getDisplay());
+            RemoteAccessVpn vpn = _ravService.createRemoteAccessVpn(publicIpId, ipRange, getOpenFirewall(), isDisplay());
             if (vpn != null) {
                 setEntityId(vpn.getServerAddressId());
                 // find uuid for server ip address
@@ -198,7 +198,11 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
         return ip;
     }
 
-    public Boolean getDisplay() {
-        return display;
+    @Override
+    public boolean isDisplay() {
+        if(display == null)
+            return true;
+        else
+            return display;
     }
 }
