@@ -90,10 +90,10 @@ import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.UnPlugNicAnswer;
-import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StartupStorageCommand;
+import com.cloud.agent.api.UnPlugNicAnswer;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -355,8 +355,12 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
         s_logger.debug("HostVmStateReportCommand received response "
                 + s_gson.toJson(result));
-        if (!result.isEmpty()) {
-            return result;
+        if (result != null) {
+            if (!result.isEmpty()) {
+                return result;
+            } else {
+                return new ArrayList<Map<String, String>>();
+            }
         }
         return null;
     }
@@ -364,7 +368,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport() {
         final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
         ArrayList<Map<String, String>> vmList = requestHostVmStateReport();
-        if (vmList == null || vmList.isEmpty()) {
+        if (vmList == null) {
             return null;
         }
 
