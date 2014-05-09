@@ -38,8 +38,12 @@ class TestPVLAN(cloudstackTestCase):
     vlan = 1234
     isolatedpvlan = 567
 
-    def setUp(self):
-        self.apiClient = self.testClient.getApiClient()
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(TestPVLAN, cls).getClsTestClient()
+        cls.apiClient = cls.testClient.getApiClient()
+        cls.zone = get_zone(cls.apiClient, cls.testClient.getZoneForTests())
+        cls.zoneId = cls.zone.id
 
     @attr(tags = ["advanced", "selfservice"])
     def test_create_pvlan_network(self):
