@@ -1284,13 +1284,13 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<Volume, List<StoragePool>>();
         List<Volume> readyAndReusedVolumes = new ArrayList<Volume>();
 
-        // There should be atleast the ROOT volume of the VM in usable state
-        if (volumesTobeCreated.isEmpty()) {
+        // There should be at least the ROOT volume of the VM in usable state unless we're dealing with baremetal.
+        if (volumesTobeCreated.isEmpty() && vmProfile.getHypervisorType() != HypervisorType.BareMetal) {
             throw new CloudRuntimeException("Unable to create deployment, no usable volumes found for the VM");
         }
 
-        // don't allow to start vm that doesn't have a root volume
-        if (_volsDao.findByInstanceAndType(vmProfile.getId(), Volume.Type.ROOT).isEmpty()) {
+        // don't allow to start vm that doesn't have a root volume unless we're dealing with baremetal
+        if (_volsDao.findByInstanceAndType(vmProfile.getId(), Volume.Type.ROOT).isEmpty() && vmProfile.getHypervisorType() != HypervisorType.BareMetal) {
             throw new CloudRuntimeException("Unable to prepare volumes for vm as ROOT volume is missing");
         }
 
