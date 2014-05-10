@@ -195,6 +195,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             throw new InvalidParameterValueException("Invalid user vm: " + userVm.getId());
         }
 
+        // This same owner check is actually not needed, since multiple entities OperateEntry trick guarantee that
         if (rule.getAccountId() != userVm.getAccountId()) {
             throw new InvalidParameterValueException("New rule " + rule + " and vm id=" + userVm.getId() + " belong to different accounts");
         }
@@ -267,8 +268,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             if (vm == null) {
                 throw new InvalidParameterValueException("Unable to create port forwarding rule on address " + ipAddress + ", invalid virtual machine id specified (" +
                     vmId + ").");
-            } else {
-                checkRuleAndUserVm(rule, vm, caller);
+            } else if (vm.getState() == VirtualMachine.State.Destroyed || vm.getState() == VirtualMachine.State.Expunging) {
+                throw new InvalidParameterValueException("Invalid user vm: " + vm.getId());
             }
 
             // Verify that vm has nic in the network
