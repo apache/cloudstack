@@ -535,7 +535,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
             }
 
             try {
-                Thread.sleep(1000);
+                Thread.sleep(2500);
             } catch (InterruptedException e) {
                 break;
             }
