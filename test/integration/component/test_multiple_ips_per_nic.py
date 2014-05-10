@@ -164,11 +164,11 @@ class TestBasicOperations(cloudstackTestCase):
                                             cls.services["service_offering"]
                                             )
         cls._cleanup = [cls.service_offering]
-        cls.services["shared_network_offering"]["specifyVlan"] = "True"
-        cls.services["shared_network_offering"]["specifyIpRanges"] = "True"
+        cls.services["shared_network_offering_all_services"]["specifyVlan"] = "True"
+        cls.services["shared_network_offering_all_services"]["specifyIpRanges"] = "True"
 
         cls.shared_network_offering = CreateEnabledNetworkOffering(cls.api_client,
-                                                                      cls.services["shared_network_offering"])
+                                                                      cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
         cls.mode = cls.zone.networktype
         if cls.mode.lower() == "advanced":
@@ -464,7 +464,7 @@ class TestBasicOperations(cloudstackTestCase):
         try:
             ipaddress_1 = NIC.addIp(apiclient, id=virtual_machine.nic[0].id)
         except Exception as e:
-            self.fail("Failed while adding secondary IP to NIC of vm %s" % virtual_machine.id)
+            self.fail("Failed while adding secondary IP to NIC of vm %s: %s" % (virtual_machine.id, e))
 
         try:
             NIC.list(apiclient, virtualmachineid=virtual_machine.id)
@@ -515,10 +515,11 @@ class TestNetworkRules(cloudstackTestCase):
                                             cls.services["service_offering"]
                                             )
         cls._cleanup = [cls.service_offering]
-        cls.services["shared_network_offering"]["specifyVlan"] = "True"
-        cls.services["shared_network_offering"]["specifyIpRanges"] = "True"
+        cls.services["shared_network_offering_all_services"]["specifyVlan"] = "True"
+        cls.services["shared_network_offering_all_services"]["specifyIpRanges"] = "True"
 
-        cls.shared_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["shared_network_offering"])
+        cls.shared_network_offering = CreateEnabledNetworkOffering(cls.api_client,
+                                        cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
         cls.mode = cls.zone.networktype
         if cls.mode.lower() == "advanced":
@@ -889,10 +890,11 @@ class TestVmNetworkOperations(cloudstackTestCase):
                                             cls.services["service_offering"]
                                             )
         cls._cleanup = [cls.service_offering]
-        cls.services["shared_network_offering"]["specifyVlan"] = "True"
-        cls.services["shared_network_offering"]["specifyIpRanges"] = "True"
+        cls.services["shared_network_offering_all_services"]["specifyVlan"] = "True"
+        cls.services["shared_network_offering_all_services"]["specifyIpRanges"] = "True"
 
-        cls.shared_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["shared_network_offering"])
+        cls.shared_network_offering = CreateEnabledNetworkOffering(cls.api_client,
+                                        cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
         cls.mode = cls.zone.networktype
         if cls.mode.lower() == "advanced":
