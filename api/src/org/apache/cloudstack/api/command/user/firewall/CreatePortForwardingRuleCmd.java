@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.firewall;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.bouncycastle.util.IPAddress;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -51,7 +50,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "createPortForwardingRule", description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class, entityType = {FirewallRule.class,
-        VirtualMachine.class, IPAddress.class},
+        VirtualMachine.class, IpAddress.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
     public static final Logger s_logger = Logger.getLogger(CreatePortForwardingRuleCmd.class.getName());
