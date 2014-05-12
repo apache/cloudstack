@@ -16,6 +16,8 @@
 // under the License.
 
 (function(cloudStack, $) {
+	var rootDomainId;
+	
     cloudStack.accountsWizard = {
 
         informationWithinLdap: {
@@ -75,20 +77,9 @@
                 validation: {
                     required: true
                 },
-                select: function(args) {
-                    var data = {};
-
-                    if (args.context.users) { // In accounts section
-                        data.listAll = true;
-                    } else if (args.context.domains) { // In domain section (use specific domain)
-                        data.id = args.context.domains[0].id;
-                    }
-
+                select: function(args) {                    
                     $.ajax({
-                        url: createURL("listDomains"),
-                        data: data,
-                        dataType: "json",
-                        async: false,
+                        url: createURL("listDomains"),                        
                         success: function(json) {
                             var items = [];
                             domainObjs = json.listdomainsresponse.domain;
@@ -204,8 +195,10 @@
             }
 
             var accountType = args.data.accounttype;
-            if (args.data.accounttype == "1" && args.data.domainid != rootDomainId) { //if account type is admin, but domain is not Root domain
-                accountType = "2"; // Change accounttype from root-domain("1") to domain-admin("2")
+            if (accountType == "1") { //if "admin" is selected in account type dropdown            
+            	if (rootDomainId == undefined || args.data.domainid != rootDomainId ) { //but current login has no visibility to root domain object, or the selected domain is not root domain
+                    accountType = "2"; // change accountType from root-domain("1") to domain-admin("2")
+            	}
             }
             array1.push("&accounttype=" + accountType);
 
@@ -268,48 +261,6 @@
                     }
                 });
             }
-        }
-        /*
-                action: function(args) {
-                    var array1 = [];
-
-                    var username = args.data.username;
-
-                    array1.push("&domainid=" + args.data.domainid);
-
-                    if (args.data.account != null && args.data.account.length != 0) {
-                        array1.push("&account=" + args.data.account);
-                    }
-
-                    if (args.data.accounttype == "1" && args.data.domainid != rootDomainId) {
-                        args.data.accounttype = "2";
-                    }
-                    array1.push("&accountType=" + args.data.accounttype);
-
-                    if (args.data.timezone != null && args.data.timezone.length != 0) {
-                        array1.push("&timezone=" + args.data.timezone);
-                    }
-                    if (args.data.networkdomain != null && args.data.networkdomain != 0) {
-                        array1.push("&networkDomain=" + args.data.networkdomain);
-                    }
-
-                    for (var i = 0; i < username.length; i++) {
-                        $.ajax({
-                            url: createURL("ldapCreateAccount&username=" + username[i] + array1.join("")),
-                            dataType: "json",
-                            async: false,
-                            success: function(json) {
-                                var item = json.createaccountresponse.account;
-                                args.response.success({
-                                    data: item
-                                });
-                            },
-                            error: function(XMLHttpResponse) {
-                                args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                            }
-                        });
-                    }
-                }
-                */
+        }        
     };
 }(cloudStack, jQuery));
