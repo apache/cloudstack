@@ -60,6 +60,30 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @Param(description = "id of the virtual machine")
     private String virtualMachineId;
 
+    @SerializedName("isoid")
+    @Param(description = "the ID of the ISO attached to the virtual machine")
+    private String isoId;
+
+    @SerializedName("isoname")
+    @Param(description = "the name of the ISO attached to the virtual machine")
+    private String isoName;
+
+    @SerializedName("isodisplaytext")
+    @Param(description = "an alternate display text of the ISO attached to the virtual machine")
+    private String isoDisplayText;
+
+    @SerializedName(ApiConstants.TEMPLATE_ID)
+    @Param(description = "the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
+    private String templateId;
+
+    @SerializedName("templatename")
+    @Param(description = "the name of the template for the virtual machine")
+    private String templateName;
+
+    @SerializedName("templatedisplaytext")
+    @Param(description = " an alternate display text of the template for the virtual machine")
+    private String templateDisplayText;
+
     @SerializedName("vmname")
     @Param(description = "name of the virtual machine")
     private String virtualMachineName;
@@ -451,5 +475,51 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
         return this.needQuiescevm;
     }
 
+    public String getIsoId() {
+        return isoId;
+    }
 
+    public void setIsoId(String isoId) {
+        this.isoId = isoId;
+    }
+
+    public String getIsoName() {
+        return isoName;
+    }
+
+    public void setIsoName(String isoName) {
+        this.isoName = isoName;
+    }
+
+    public String getIsoDisplayText() {
+        return isoDisplayText;
+    }
+
+    public void setIsoDisplayText(String isoDisplayText) {
+        this.isoDisplayText = isoDisplayText;
+    }
+
+    public String getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
+    }
+
+    public String getTemplateName() {
+        return templateName;
+    }
+
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
+    }
+
+    public String getTemplateDisplayText() {
+        return templateDisplayText;
+    }
+
+    public void setTemplateDisplayText(String templateDisplayText) {
+        this.templateDisplayText = templateDisplayText;
+    }
 }

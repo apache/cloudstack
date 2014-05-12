@@ -217,6 +217,14 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         volResponse.setDisplayVolume(volume.isDisplayVolume());
         volResponse.setChainInfo(volume.getChainInfo());
 
+        volResponse.setTemplateId(volume.getTemplateUuid());
+        volResponse.setTemplateName(volume.getTemplateName());
+        volResponse.setTemplateDisplayText(volume.getTemplateDisplayText());
+
+        volResponse.setIsoId(volume.getIsoUuid());
+        volResponse.setIsoName(volume.getIsoName());
+        volResponse.setIsoDisplayText(volume.getIsoDisplayText());
+
         // set async job
         if (volume.getJobId() != null) {
             volResponse.setJobId(volume.getJobUuid());
