@@ -212,11 +212,29 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "template_uuid")
     private String templateUuid;
 
+    @Column(name = "template_name")
+    private String templateName;
+
+    @Column(name = "template_display_text", length = 4096)
+    private String templateDisplayText;
+
     @Column(name = "extractable")
     private boolean extractable;
 
     @Column(name = "template_type")
     private Storage.TemplateType templateType;
+
+    @Column(name = "iso_id", updatable = true, nullable = true, length = 17)
+    private long isoId;
+
+    @Column(name = "iso_uuid")
+    private String isoUuid;
+
+    @Column(name = "iso_name")
+    private String isoName;
+
+    @Column(name = "iso_display_text", length = 4096)
+    private String isoDisplayText;
 
     @Column(name = "job_id")
     private Long jobId;
@@ -492,6 +510,30 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public Storage.TemplateType getTemplateType() {
         return templateType;
+    }
+
+    public String getTemplateName() {
+        return templateName;
+    }
+
+    public String getTemplateDisplayText() {
+        return templateDisplayText;
+    }
+
+    public long getIsoId() {
+        return isoId;
+    }
+
+    public String getIsoUuid() {
+        return isoUuid;
+    }
+
+    public String getIsoName() {
+        return isoName;
+    }
+
+    public String getIsoDisplayText() {
+        return isoDisplayText;
     }
 
     public Long getJobId() {
