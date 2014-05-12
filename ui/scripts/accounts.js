@@ -17,8 +17,7 @@
 (function(cloudStack) {
 
     var domainObjs;
-    var rootDomainId;
-
+    
     cloudStack.sections.accounts = {
         title: 'label.accounts',
         id: 'accounts',
