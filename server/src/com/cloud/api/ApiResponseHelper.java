@@ -2890,6 +2890,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         GuestOSResponse response = new GuestOSResponse();
         response.setDescription(guestOS.getDisplayName());
         response.setId(guestOS.getUuid());
+        response.setIsUserDefined(Boolean.valueOf(guestOS.getIsUserDefined()).toString());
         GuestOSCategoryVO category = ApiDBUtils.findGuestOsCategoryById(guestOS.getCategoryId());
         if (category != null) {
             response.setOsCategoryId(category.getUuid());
@@ -2906,6 +2907,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setHypervisor(guestOSHypervisor.getHypervisorType());
         response.setHypervisorVersion(guestOSHypervisor.getHypervisorVersion());
         response.setOsNameForHypervisor((guestOSHypervisor.getGuestOsName()));
+        response.setIsUserDefined(Boolean.valueOf(guestOSHypervisor.getIsUserDefined()).toString());
         GuestOS guestOs = ApiDBUtils.findGuestOSById(guestOSHypervisor.getGuestOsId());
         if (guestOs != null) {
             response.setOsStdName(guestOs.getDisplayName());

@@ -2029,7 +2029,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Unable to find the guest OS by name or UUID");
         }
         //check for duplicates
-        GuestOSHypervisorVO duplicate = _guestOSHypervisorDao.findByOsIdAndHypervisor(guestOs.getId(), hypervisorType.toString(), hypervisorVersion);
+        GuestOSHypervisorVO duplicate = _guestOSHypervisorDao.findByOsIdAndHypervisorAndUserDefined(guestOs.getId(), hypervisorType.toString(), hypervisorVersion, true);
 
         if (duplicate != null) {
             throw new InvalidParameterValueException("Mapping from hypervisor : " + hypervisorType.toString() + ", version : " + hypervisorVersion + " and guest OS : "
@@ -2096,6 +2096,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Guest OS not found. Please specify a valid ID for the Guest OS");
         }
 
+        if (!guestOsHandle.getIsUserDefined()) {
+            throw new InvalidParameterValueException("Unable to modify system defined guest OS");
+        }
+
         //Check if update is needed
         if (displayName.equals(guestOsHandle.getDisplayName())) {
             return guestOsHandle;
@@ -2127,6 +2131,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Guest OS not found. Please specify a valid ID for the Guest OS");
         }
 
+        if (!guestOs.getIsUserDefined()) {
+            throw new InvalidParameterValueException("Unable to remove system defined guest OS");
+        }
+
         return _guestOSDao.remove(id);
     }
 
@@ -2141,6 +2149,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         GuestOSHypervisor guestOsHypervisorHandle = _guestOSHypervisorDao.findById(id);
         if (guestOsHypervisorHandle == null) {
             throw new InvalidParameterValueException("Guest OS Mapping not found. Please specify a valid ID for the Guest OS Mapping");
+        }
+
+        if (!guestOsHypervisorHandle.getIsUserDefined()) {
+            throw new InvalidParameterValueException("Unable to modify system defined Guest OS mapping");
         }
 
         GuestOSHypervisorVO guestOsHypervisor = _guestOSHypervisorDao.createForUpdate(id);
@@ -2162,6 +2174,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         GuestOSHypervisor guestOsHypervisorHandle = _guestOSHypervisorDao.findById(id);
         if (guestOsHypervisorHandle == null) {
             throw new InvalidParameterValueException("Guest OS Mapping not found. Please specify a valid ID for the Guest OS Mapping");
+        }
+
+        if (!guestOsHypervisorHandle.getIsUserDefined()) {
+            throw new InvalidParameterValueException("Unable to remove system defined Guest OS mapping");
         }
 
         return _guestOSHypervisorDao.removeGuestOsMapping(id);
