@@ -35,51 +35,18 @@ from marvin.lib.common import get_zone, get_domain, get_template
 
 from nose.plugins.attrib import attr
 
-class TestData(object):
-    """Test data object that is required to create resources
-    """
-    def __init__(self):
-        self.testdata = {
-            #data to create an account
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                "password": "password",
-            },
-            #data reqd for virtual machine creation
-            "virtual_machine" : {
-                "name" : "testvm",
-                "displayname" : "Test VM",
-            },
-            #small service offering
-            "service_offering": {
-                "hasmall": {
-                    "name": "HA Small Instance",
-                    "displaytext": "HA Small Instance",
-                    "cpunumber": 1,
-                    "cpuspeed": 100,
-                    "memory": 256,
-                    "hosttags": "ha",                    
-                    "offerha": True,
-                },
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-        }
-
-
 class TestDeployVMHA(cloudstackTestCase):
     """Test VM HA
     """
 
     def setUp(self):
-        self.testdata = TestData().testdata
+        self.testdata = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
 
         # Get Zone, Domain and Default Built-in template
-        self.domain = get_domain(self.apiclient, self.testdata)
-        self.zone = get_zone(self.apiclient, self.testdata)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
+
         self.testdata["mode"] = self.zone.networktype
         self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
 
@@ -95,7 +62,7 @@ class TestDeployVMHA(cloudstackTestCase):
         self.assertTrue(isinstance(self.hosts, list) and len(self.hosts) >= 2, msg = "Atleast 2 hosts required in cluster for VM HA test")
         #update host tags
         for host in self.hosts:
-            Host.update(self.apiclient, id=host.id, hosttags=self.testdata["service_offering"]["hasmall"]["hosttags"])
+            Host.update(self.apiclient, id=host.id, hosttags=self.testdata["service_offerings"]["hasmall"]["hosttags"])
 
         #create a user account
         self.account = Account.create(
@@ -106,7 +73,7 @@ class TestDeployVMHA(cloudstackTestCase):
         #create a service offering
         self.service_offering = ServiceOffering.create(
             self.apiclient,
-            self.testdata["service_offering"]["hasmall"]
+            self.testdata["service_offerings"]["hasmall"]
         )
         #deploy ha vm
         self.virtual_machine = VirtualMachine.create(
