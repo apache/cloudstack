@@ -121,7 +121,7 @@ public class XenServer620SP1Resource extends XenServer620Resource {
                         entry.setMaxVmCapacity(maxCapacity);
                         gpuCapacity.put(record.modelName, entry);
                     } else {
-                        VgpuTypesInfo vgpuTypeRecord = new VgpuTypesInfo(record.modelName, record.framebufferSize, record.maxHeads,
+                        VgpuTypesInfo vgpuTypeRecord = new VgpuTypesInfo(null, record.modelName, record.framebufferSize, record.maxHeads,
                                 record.maxResolutionX, record.maxResolutionY, maxCapacity, remainingCapacity, maxCapacity);
                         gpuCapacity.put(record.modelName, vgpuTypeRecord);
                     }

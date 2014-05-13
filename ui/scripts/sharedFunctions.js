@@ -1104,6 +1104,8 @@ cloudStack.converters = {
                 return "VLAN";
             case 18:
                 return "Secondary Storage VM";
+            case 19:
+                return "GPU";
         }
     },
 

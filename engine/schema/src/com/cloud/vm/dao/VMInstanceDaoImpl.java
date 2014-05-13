@@ -115,6 +115,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     private static final String ORDER_HOSTS_NUMBER_OF_VMS_FOR_ACCOUNT_PART2 = " GROUP BY host.id ORDER BY 2 ASC ";
 
+    private static final String COUNT_VMS_BASED_ON_VGPU_TYPES1 =
+            "SELECT pci, type, SUM(vmcount) FROM (SELECT MAX(IF(offering.name = 'pciDevice',value,'')) AS pci, MAX(IF(offering.name = 'vgpuType', value,'')) " +
+            "AS type, COUNT(DISTINCT vm.id) AS vmcount FROM service_offering_details offering INNER JOIN vm_instance vm ON offering.service_offering_id = vm.service_offering_id " +
+            "INNER JOIN `cloud`.`host` ON vm.host_id = host.id WHERE vm.state = 'Running' AND host.data_center_id = ? ";
+    private static final String COUNT_VMS_BASED_ON_VGPU_TYPES2 =
+            "GROUP BY offering.service_offering_id) results GROUP BY pci, type";
+
     @Inject
     protected HostDao _hostDao;
 
@@ -637,6 +644,45 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             throw new CloudRuntimeException("DB Exception on: " + ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT, e);
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT, e);
+        }
+    }
+
+    @Override
+    public HashMap<String, Long> countVgpuVMs(Long dcId, Long podId, Long clusterId) {
+        StringBuilder finalQuery = new StringBuilder();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> resourceIdList = new ArrayList<Long>();
+        HashMap<String, Long> result = new HashMap<String, Long>();
+
+        resourceIdList.add(dcId);
+        finalQuery.append(COUNT_VMS_BASED_ON_VGPU_TYPES1);
+
+        if (podId != null) {
+            finalQuery.append(" AND host.pod_id = ?");
+            resourceIdList.add(podId);
+        }
+
+        if (clusterId != null) {
+            finalQuery.append(" AND host.cluster_id = ?");
+            resourceIdList.add(clusterId);
+        }
+        finalQuery.append(COUNT_VMS_BASED_ON_VGPU_TYPES2);
+
+        try {
+            pstmt = txn.prepareAutoCloseStatement(finalQuery.toString());
+            for (int i = 0; i < resourceIdList.size(); i++) {
+                pstmt.setLong(1 + i, resourceIdList.get(i));
+            }
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.put(rs.getString(1).concat(rs.getString(2)), rs.getLong(3));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + finalQuery, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + finalQuery, e);
         }
     }
 

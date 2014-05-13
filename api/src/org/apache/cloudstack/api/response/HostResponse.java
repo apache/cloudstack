@@ -328,6 +328,7 @@ public class HostResponse extends BaseResponse {
     public void setGpuGroups(List<GpuResponse> gpuGroup) {
         this.gpuGroup = gpuGroup;
     }
+
     public void setDiskSizeTotal(Long diskSizeTotal) {
         this.diskSizeTotal = diskSizeTotal;
     }
