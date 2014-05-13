@@ -150,6 +150,7 @@ import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
@@ -193,6 +194,7 @@ import com.cloud.domain.Domain;
 import com.cloud.event.Event;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.gpu.GPU;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.HypervisorCapabilities;
@@ -1735,6 +1737,44 @@ public class ApiResponseHelper implements ResponseGenerator {
             capacityResponses.add(capacityResponse);
         }
 
+        List<VgpuTypesInfo> gpuCapacities;
+        if ((gpuCapacities = ApiDBUtils.getGpuCapacites(result.get(0).getDataCenterId(), result.get(0).getPodId(), result.get(0).getClusterId())) != null) {
+            HashMap<String, Long> vgpuVMs = ApiDBUtils.getVgpuVmsCount(result.get(0).getDataCenterId(), result.get(0).getPodId(), result.get(0).getClusterId());
+
+            float capacityUsed = 0;
+            long capacityMax = 0;
+            for (VgpuTypesInfo capacity : gpuCapacities) {
+                if (vgpuVMs.containsKey(capacity.getGroupName().concat(capacity.getModelName()))) {
+                    capacityUsed += (float)vgpuVMs.get(capacity.getGroupName().concat(capacity.getModelName())) / capacity.getMaxVpuPerGpu();
+                }
+                if (capacity.getModelName().equals(GPU.vGPUType.passthrough.toString())) {
+                    capacityMax += capacity.getMaxCapacity();
+                }
+            }
+
+            DataCenter zone = ApiDBUtils.findZoneById(result.get(0).getDataCenterId());
+            CapacityResponse capacityResponse = new CapacityResponse();
+            if (zone != null) {
+                capacityResponse.setZoneId(zone.getUuid());
+                capacityResponse.setZoneName(zone.getName());
+            }
+            if (result.get(0).getPodId() != null) {
+                HostPodVO pod = ApiDBUtils.findPodById(result.get(0).getPodId());
+                capacityResponse.setPodId(pod.getUuid());
+                capacityResponse.setPodName(pod.getName());
+            }
+            if (result.get(0).getClusterId() != null) {
+                ClusterVO cluster = ApiDBUtils.findClusterById(result.get(0).getClusterId());
+                capacityResponse.setClusterId(cluster.getUuid());
+                capacityResponse.setClusterName(cluster.getName());
+            }
+            capacityResponse.setCapacityType(Capacity.CAPACITY_TYPE_GPU);
+            capacityResponse.setCapacityUsed((long)Math.ceil(capacityUsed));
+            capacityResponse.setCapacityTotal(capacityMax);
+            capacityResponse.setPercentUsed(format.format(capacityUsed / capacityMax * 100f));
+            capacityResponse.setObjectName("capacity");
+            capacityResponses.add(capacityResponse);
+        }
         return capacityResponses;
     }
 
