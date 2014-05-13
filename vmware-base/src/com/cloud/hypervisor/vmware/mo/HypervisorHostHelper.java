@@ -501,10 +501,10 @@ public class HypervisorHostHelper {
 
             if(vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
                 createGCTag = true;
-                vid = Integer.parseInt(BroadcastDomainType.getValue(vlanId));
+                vid = Integer.parseInt(vlanId);
             }
             if (secondaryvlanId != null) {
-                spvlanid = Integer.parseInt(BroadcastDomainType.getValue(secondaryvlanId));
+                spvlanid = Integer.parseInt(secondaryvlanId);
             }
         }
 
