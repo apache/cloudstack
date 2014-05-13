@@ -250,14 +250,9 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
 
         if (_vpnConnectionDao.findByVpnGatewayIdAndCustomerGatewayId(vpnGatewayId, customerGatewayId) != null) {
-            throw new InvalidParameterValueException("The vpn connection with customer gateway id " + customerGatewayId + " or vpn gateway id " 
-                    + vpnGatewayId + " already existed!");
+            throw new InvalidParameterValueException("The vpn connection with customer gateway id " + customerGatewayId + " and vpn gateway id " + vpnGatewayId +
+                " already existed!");
         }
-        if (_vpnConnectionDao.findByCustomerGatewayId(customerGatewayId) != null) {
-            throw new InvalidParameterValueException("The vpn connection with specified customer gateway id " + customerGatewayId +
-                    " already exists!");
-        }
-
         String[] cidrList = customerGateway.getGuestCidrList().split(",");
 
         // Remote sub nets cannot overlap VPC's sub net
