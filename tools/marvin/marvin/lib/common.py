@@ -1004,22 +1004,31 @@ def setNonContiguousVlanIds(apiclient, zoneid):
 
     return physical_network, vlan
 
-def is_public_ip_in_correct_state(apiclient, ipaddressid, state):
+def isIpInDesiredState(apiclient, ipaddressid, state):
     """ Check if the given IP is in the correct state (given)
     and return True/False accordingly"""
     retriesCount = 10
-    while True:
-        portableips = PublicIPAddress.list(apiclient, id=ipaddressid)
-        assert validateList(portableips)[0] == PASS, "IPs list validation failed"
-        if str(portableips[0].state).lower() == state:
-            break
-        elif retriesCount == 0:
-           return False
-        else:
+    ipInDesiredState = False
+    exceptionOccured = False
+    exceptionMessage = ""
+    try:
+        while retriesCount >= 0:
+            portableips = PublicIPAddress.list(apiclient, id=ipaddressid)
+            assert validateList(
+                portableips)[0] == PASS, "IPs list validation failed"
+            if str(portableips[0].state).lower() == state:
+                ipInDesiredState = True
+                break
             retriesCount -= 1
             time.sleep(60)
-            continue
-    return True
+    except Exception as e:
+        exceptionOccured = True
+        exceptionMessage = e
+        return [exceptionOccured, ipInDesiredState, e]
+    if not ipInDesiredState:
+        exceptionMessage = "Ip should be in %s state, it is in %s" %\
+                            (state, portableips[0].state)
+    return [False, ipInDesiredState, exceptionMessage]
 
 def setSharedNetworkParams(networkServices, range=20):
     """Fill up the services dictionary for shared network using random subnet"""
