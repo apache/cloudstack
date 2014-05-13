@@ -146,7 +146,7 @@ listDedicatedGuestVlanRanges=1
 associateIpAddress=15
 disassociateIpAddress=15
 listPublicIpAddresses=15
-updatePublicIpAddress=15
+updateIpAddress=15
 
 #### firewall commands
 listPortForwardingRules=15
