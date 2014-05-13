@@ -18,6 +18,7 @@ package com.cloud.api;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -64,6 +65,7 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
@@ -1099,6 +1101,14 @@ public class ApiDBUtils {
 
     public static List<HostGpuGroupsVO> getGpuGroups(long hostId) {
         return s_hostGpuGroupsDao.listByHostId(hostId);
+    }
+
+    public static List<VgpuTypesInfo> getGpuCapacites(Long zoneId, Long podId, Long clusterId) {
+        return s_vgpuTypesDao.listGPUCapacities(zoneId, podId, clusterId);
+    }
+
+    public static HashMap<String, Long> getVgpuVmsCount(Long zoneId, Long podId, Long clusterId) {
+        return s_vmDao.countVgpuVMs(zoneId, podId, clusterId);
     }
 
     public static List<VGPUTypesVO> getVgpus(long groupId) {

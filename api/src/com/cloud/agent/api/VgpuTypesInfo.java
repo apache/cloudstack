@@ -18,6 +18,7 @@ package com.cloud.agent.api;
 public class VgpuTypesInfo {
 
     private String modelName;
+    private String groupName;
     private Long maxHeads;
     private Long videoRam;
     private Long maxResolutionX;
@@ -28,6 +29,10 @@ public class VgpuTypesInfo {
 
     public String getModelName() {
         return modelName;
+    }
+
+    public String getGroupName() {
+        return groupName;
     }
 
     public Long getVideoRam() {
@@ -66,8 +71,9 @@ public class VgpuTypesInfo {
         this.maxCapacity = maxCapacity;
     }
 
-    public VgpuTypesInfo(String modelName, Long videoRam, Long maxHeads, Long maxResolutionX, Long maxResolutionY, Long maxVgpuPerGpu,
+    public VgpuTypesInfo(String groupName, String modelName, Long videoRam, Long maxHeads, Long maxResolutionX, Long maxResolutionY, Long maxVgpuPerGpu,
             Long remainingCapacity, Long maxCapacity) {
+        this.groupName = groupName;
         this.modelName = modelName;
         this.videoRam = videoRam;
         this.maxHeads = maxHeads;

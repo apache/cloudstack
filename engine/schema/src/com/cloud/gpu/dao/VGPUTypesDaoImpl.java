@@ -16,6 +16,10 @@
 //under the License.
 package com.cloud.gpu.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -33,6 +37,8 @@ import com.cloud.gpu.VGPUTypesVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value = VGPUTypesDao.class)
@@ -41,10 +47,13 @@ public class VGPUTypesDaoImpl extends GenericDaoBase<VGPUTypesVO, Long> implemen
 
     private final SearchBuilder<VGPUTypesVO> _searchByGroupId;
     private final SearchBuilder<VGPUTypesVO> _searchByGroupIdVGPUType;
-    // private final SearchBuilder<VGPUTypesVO> _searchByHostId;
-    // private final SearchBuilder<VGPUTypesVO> _searchForStaleEntries;
 
     @Inject protected HostGpuGroupsDao _hostGpuGroupsDao;
+
+    private static final String LIST_ZONE_POD_CLUSTER_WIDE_GPU_CAPACITIES =
+            "SELECT host_gpu_groups.group_name, vgpu_type, max_vgpu_per_pgpu, SUM(remaining_capacity) AS remaining_capacity, SUM(max_capacity) AS total_capacity FROM" +
+            " `cloud`.`vgpu_types` INNER JOIN `cloud`.`host_gpu_groups` ON vgpu_types.gpu_group_id = host_gpu_groups.id INNER JOIN `cloud`.`host`" +
+            " ON host_gpu_groups.host_id = host.id WHERE host.type =  'Routing' AND host.data_center_id = ?";
 
     public VGPUTypesDaoImpl() {
 
@@ -56,6 +65,47 @@ public class VGPUTypesDaoImpl extends GenericDaoBase<VGPUTypesVO, Long> implemen
         _searchByGroupIdVGPUType.and("groupId", _searchByGroupIdVGPUType.entity().getGpuGroupId(), SearchCriteria.Op.EQ);
         _searchByGroupIdVGPUType.and("vgpuType", _searchByGroupIdVGPUType.entity().getVgpuType(), SearchCriteria.Op.EQ);
         _searchByGroupIdVGPUType.done();
+    }
+
+    @Override
+    public List<VgpuTypesInfo> listGPUCapacities(Long dcId, Long podId, Long clusterId) {
+        StringBuilder finalQuery = new StringBuilder();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> resourceIdList = new ArrayList<Long>();
+        ArrayList<VgpuTypesInfo> result = new ArrayList<VgpuTypesInfo>();
+
+        resourceIdList.add(dcId);
+        finalQuery.append(LIST_ZONE_POD_CLUSTER_WIDE_GPU_CAPACITIES);
+
+        if (podId != null) {
+            finalQuery.append(" AND host.pod_id = ?");
+            resourceIdList.add(podId);
+        }
+
+        if (clusterId != null) {
+            finalQuery.append(" AND host.cluster_id = ?");
+            resourceIdList.add(clusterId);
+        }
+        finalQuery.append(" GROUP BY host_gpu_groups.group_name, vgpu_type");
+
+        try {
+            pstmt = txn.prepareAutoCloseStatement(finalQuery.toString());
+            for (int i = 0; i < resourceIdList.size(); i++) {
+                pstmt.setLong(1 + i, resourceIdList.get(i));
+            }
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+
+                VgpuTypesInfo gpuCapacity = new VgpuTypesInfo(rs.getString(1), rs.getString(2), null, null, null, null, rs.getLong(3), rs.getLong(4), rs.getLong(5));
+                result.add(gpuCapacity);
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + finalQuery, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + finalQuery, e);
+        }
     }
 
     @Override
