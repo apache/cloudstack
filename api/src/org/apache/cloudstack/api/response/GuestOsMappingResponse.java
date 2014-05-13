@@ -52,6 +52,18 @@ public class GuestOsMappingResponse extends BaseResponse {
     @Param(description = "hypervisor specific name for the Guest OS")
     private String osNameForHypervisor;
 
+    @SerializedName(ApiConstants.IS_USER_DEFINED)
+    @Param(description = "is the mapping user defined")
+    private String isUserDefined;
+
+    public String getIsUserDefined() {
+        return isUserDefined;
+    }
+
+    public void setIsUserDefined(String isUserDefined) {
+        this.isUserDefined = isUserDefined;
+    }
+
     public String getId() {
         return id;
     }
