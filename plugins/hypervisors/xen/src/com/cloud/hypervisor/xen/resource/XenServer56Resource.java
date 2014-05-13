@@ -16,25 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import javax.ejb.Local;
-
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Network;
-import com.xensource.xenapi.PIF;
-import com.xensource.xenapi.Types.IpConfigurationMode;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VLAN;
-import com.xensource.xenapi.VM;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostAnswer;
 import com.cloud.agent.api.CheckOnHostCommand;
@@ -45,9 +26,26 @@ import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Network;
+import com.xensource.xenapi.PIF;
+import com.xensource.xenapi.Types.IpConfigurationMode;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VLAN;
+import com.xensource.xenapi.VM;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
+import javax.ejb.Local;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 @Local(value = ServerResource.class)
 public class XenServer56Resource extends CitrixResourceBase {
@@ -178,11 +176,15 @@ public class XenServer56Resource extends CitrixResourceBase {
                 return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
             }
 
-            String result = executeInVR(cmd.getPrivateIP(), "vpc_netusage.sh", args).getDetails();
+            ExecutionResult result = executeInVR(cmd.getPrivateIP(), "vpc_netusage.sh", args);
+            String detail = result.getDetails();
+            if (!result.isSuccess()) {
+                throw new Exception(" vpc network usage plugin call failed ");
+            }
             if (option.equals("get") || option.equals("vpn")) {
                 long[] stats = new long[2];
-                if (result != null) {
-                    String[] splitResult = result.split(":");
+                if (detail != null) {
+                    String[] splitResult = detail.split(":");
                     int i = 0;
                     while (i < splitResult.length - 1) {
                         stats[0] += (new Long(splitResult[i++])).longValue();
@@ -190,9 +192,6 @@ public class XenServer56Resource extends CitrixResourceBase {
                     }
                     return new NetworkUsageAnswer(cmd, "success", stats[0], stats[1]);
                 }
-            }
-            if (result == null || result.isEmpty()) {
-                throw new Exception(" vpc network usage plugin call failed ");
             }
             return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
         } catch (Exception ex) {
