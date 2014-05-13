@@ -109,7 +109,16 @@ test_data = {
             "cpunumber": 1,
             "cpuspeed": 100,
             "memory": 512,
-        }
+        },
+        "hasmall": {
+            "name": "HA Small Instance",
+                    "displaytext": "HA Small Instance",
+                    "cpunumber": 1,
+                    "cpuspeed": 100,
+                    "memory": 256,
+                    "hosttags": "ha",
+                    "offerha": True,
+        },
     },
     "disk_offering": {
         "name": "Disk offering",
@@ -278,14 +287,14 @@ test_data = {
         }
     },
     "shared_network_offering_all_services": {
-            "name":"shaared network offering with services enabled",
+            "name": "shaared network offering with services enabled",
             "displaytext": "Shard network offering",
             "guestiptype": "Shared",
             "supportedservices": "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat",
-            "specifyVlan" : "False",
-            "specifyIpRanges" : "False",
+            "specifyVlan": "False",
+            "specifyIpRanges": "False",
             "traffictype": "GUEST",
-            "serviceProviderList" : {
+            "serviceProviderList": {
                 "Dhcp": "VirtualRouter",
                 "Dns": "VirtualRouter",
                 "UserData": "VirtualRouter",
@@ -531,7 +540,7 @@ test_data = {
             "Lb": "VirtualRouter",
             "UserData": "VirtualRouter",
             "StaticNat": "VirtualRouter"
-            }
+        }
     },
     "fwrule": {
         "startport": 22,
