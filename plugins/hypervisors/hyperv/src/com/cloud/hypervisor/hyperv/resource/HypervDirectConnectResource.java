@@ -531,6 +531,10 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         try {
 
             String vmName = cmd.getVmName();
+            if(cmd.getVMType() == VirtualMachine.Type.User) {
+                s_logger.error("Vm in Running state cannot be added to new network.Nic cannot be plugged to VM in running state");
+                return new PlugNicAnswer(cmd, false, "Vm in Running state cannot be added to new network.Nic cannot be plugged to VM in running state");
+            }
             NicTO nic = cmd.getNic();
             URI broadcastUri = nic.getBroadcastUri();
             if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
