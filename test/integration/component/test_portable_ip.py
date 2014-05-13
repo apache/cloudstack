@@ -21,11 +21,24 @@
     Feature Specifications: https://cwiki.apache.org/confluence/display/CLOUDSTACK/portable+public+IP
 """
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackException import CloudstackAPIException
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-from netaddr import *
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (VirtualMachine,
+                             PublicIPAddress,
+                             Network,
+                             NetworkOffering,
+                             ServiceOffering,
+                             NATRule,
+                             Account,
+                             PortablePublicIpRange,
+                             StaticNATRule,
+                             FireWallRule)
+from marvin.lib.common import (get_zone,
+                               get_template,
+                               get_domain,
+                               get_region,
+                               get_pod,
+                               isIpInDesiredState)
+from netaddr import IPAddress
 from marvin.sshClient import SshClient
 
 from nose.plugins.attrib import attr
@@ -196,29 +209,19 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
         # 2. Portable ip range should be created successfully
 
         portable_ip_range_services = self.services["portableIpRange"]
-
-        self.debug(portable_ip_range_services)
-
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
 
         portable_ip_range_services["regionid"] = self.region.id
 
-        self.debug("Creating new portable IP range with startip:%s and endip:%s" %
-                    (str(portable_ip_range_services["startip"]),
-                     str(portable_ip_range_services["endip"])))
-
-        #create new portable ip range
-        new_portable_ip_range = PortablePublicIpRange.create(self.apiclient,
+        try:
+            #create new portable ip range
+            new_portable_ip_range = PortablePublicIpRange.create(self.apiclient,
                                                              portable_ip_range_services)
 
-        self.debug("Created new portable IP range with startip:%s and endip:%s and id:%s" %
-                    (new_portable_ip_range.startip,
-                     new_portable_ip_range.endip,
-                     new_portable_ip_range.id))
-
-        self.cleanup.append(new_portable_ip_range)
-
+            self.cleanup.append(new_portable_ip_range)
+        except Exception as e:
+            self.fail("Failed to create portable IP range: %s" % e)
         return
 
     @attr(tags=["advanced", "selfservice"])
@@ -228,29 +231,32 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
         # 1. Create new portable ip range with non root admin api client
         # 2. Portable ip range should not be created
 
-        self.account = Account.create(
-                            self.apiclient,
-                            self.services["account"],
-                            domainid=self.domain.id
-                            )
-
-        self.api_client_user = self.testClient.getUserApiClient(
-                                            UserName=self.account.name,
-                                            DomainName=self.account.domain
-                                            )
-
         portable_ip_range_services = self.services["portableIpRange"]
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
 
-        portable_ip_range_services["regionid"] = self.region.id
+        try:
+            self.account = Account.create(
+                            self.apiclient,
+                            self.services["account"],
+                            domainid=self.domain.id
+                            )
 
-        self.debug("Trying to create portable ip range with non root-admin api client, should raise exception")
-        with self.assertRaises(Exception):
-            portable_ip_range = PortablePublicIpRange.create(self.api_client_user,
+            self.api_client_user = self.testClient.getUserApiClient(
+                                            UserName=self.account.name,
+                                            DomainName=self.account.domain
+                                            )
+
+            portable_ip_range_services["regionid"] = self.region.id
+
+            self.debug("Trying to create portable ip range with non root-admin api client, should raise exception")
+            with self.assertRaises(Exception):
+                portable_ip_range = PortablePublicIpRange.create(self.api_client_user,
                                          portable_ip_range_services)
-            self.cleanup.append(portable_ip_range)
+                self.cleanup.append(portable_ip_range)
+        except Exception as e:
+            self.fail(e)
 
         return
 
@@ -322,18 +328,9 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
 
         portable_ip_range_services["regionid"] = self.region.id
 
-        self.debug("Creating new portable IP range with startip:%s and endip:%s" %
-                    (str(portable_ip_range_services["startip"]),
-                     str(portable_ip_range_services["endip"])))
-
         #create new portable ip range
         self.portable_ip_range = PortablePublicIpRange.create(self.apiclient,
                                                              portable_ip_range_services)
-
-        self.debug("Created new portable IP range with startip:%s and endip:%s and id:%s" %
-                    (self.portable_ip_range.startip,
-                     self.portable_ip_range.endip,
-                     self.portable_ip_range.id))
 
         self.cleanup = []
         return
@@ -353,12 +350,7 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
         # 1. Try to delete the created range with root admin api client
         # 2. Portable range should be deleted successfully
 
-        self.debug("Deleting portable ip range with root-admin api")
-
         self.portable_ip_range.delete(self.apiclient)
-
-        self.debug("Deleted portable ip range")
-
         return
 
     @attr(tags=["advanced", "selfservice"])
@@ -368,23 +360,29 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
         # 1. Try to delete the created range with non root admin api client
         # 2. Portable range deletion should fail
 
-        self.account = Account.create(
+        try:
+            self.account = Account.create(
                             self.apiclient,
                             self.services["account"],
                             domainid=self.domain.id
                             )
 
-        self.cleanup.append(self.account)
+            self.cleanup.append(self.account)
 
-        self.api_client_user = self.testClient.getUserApiClient(
+            self.api_client_user = self.testClient.getUserApiClient(
                                             UserName=self.account.name,
                                             DomainName=self.account.domain
                                             )
+        except Exception as e:
+            self.fail(e)
 
-        with self.assertRaises(Exception):
-            self.portable_ip_range.delete(self.api_client_user)
-
-        self.portable_ip_range.delete(self.apiclient)
+        try:
+            with self.assertRaises(Exception):
+                self.portable_ip_range.delete(self.api_client_user)
+        except Exception as e:
+            self.fail(e)
+        finally:
+            self.portable_ip_range.delete(self.apiclient)
         return
 
     @attr(tags=["advanced", "selfservice"])
@@ -395,30 +393,23 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
         # 2. Try to delete the portable ip range with root admin api client
         # 3. Portable ip range should not be deleted unless currently used ip is disassociated
 
-        self.account = Account.create(
+        try:
+            self.account = Account.create(
                             self.apiclient,
                             self.services["account"],
                             domainid=self.domain.id
                             )
 
-        self.cleanup.append(self.account)
-
-        self.debug(
-            "Creating n/w offering"
-            )
-        self.network_offering = NetworkOffering.create(
+            self.cleanup.append(self.account)
+            self.network_offering = NetworkOffering.create(
                                             self.apiclient,
                                             self.services["network_offering"],
                                             conservemode=False
                                             )
+            # Enable Network offering
+            self.network_offering.update(self.apiclient, state='Enabled')
 
-        self.debug("Created n/w offering with ID: %s" %
-                                                    self.network_offering.id)
-        # Enable Network offering
-        self.network_offering.update(self.apiclient, state='Enabled')
-        self.debug("Creating network")
-
-        self.network = Network.create(
+            self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
                                     accountid=self.account.name,
@@ -426,10 +417,7 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
-
-        self.debug("Created network with id: %s" % self.network.id)
-        self.debug("Associating public ip address with network: %s with isportable=True" % self.network.id)
-        portableip = PublicIPAddress.create(
+            portableip = PublicIPAddress.create(
                                     self.apiclient,
                                     accountid=self.account.name,
                                     zoneid=self.zone.id,
@@ -437,19 +425,21 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
                                     networkid=self.network.id,
                                     isportable=True
                                     )
-        self.debug("Associated public ip address (portable): %s" % portableip.ipaddress.ipaddress)
 
-        with self.assertRaises(Exception):
-            self.debug("Trying to Delete portable ip range with root-admin api, this should fail")
+        except Exception as e:
+            self.fail(e)
+
+        try:
+            with self.assertRaises(Exception):
+                self.debug("Trying to Delete portable ip range with root-admin api, this should fail")
+                self.portable_ip_range.delete(self.apiclient)
+        except Exception as e:
+            self.fail(e)
+        finally:
+            self.debug("Disassociating portable ip")
+            portableip.delete(self.apiclient)
+            self.debug("Deleting portable ip range")
             self.portable_ip_range.delete(self.apiclient)
-
-        self.debug("Deleting portable ip range failed")
-        self.debug("Disassociating portable ip")
-        portableip.delete(self.apiclient)
-
-        self.debug("Deleting portable ip range")
-        self.portable_ip_range.delete(self.apiclient)
-
         return
 
 class TestListPortablePublicIpRanges(cloudstackTestCase):
@@ -660,21 +650,10 @@ class TestAssociatePublicIp(cloudstackTestCase):
 
         portable_ip_range_services["regionid"] = self.region.id
 
-        self.debug("Creating new portable IP range with startip:%s and endip:%s" %
-                    (str(portable_ip_range_services["startip"]),
-                     str(portable_ip_range_services["endip"])))
-
         #create new portable ip range
         self.portable_ip_range = PortablePublicIpRange.create(self.apiclient,
                                                              portable_ip_range_services)
-
-        self.debug("Created new portable IP range with startip:%s and endip:%s and id:%s" %
-                    (self.portable_ip_range.startip,
-                     self.portable_ip_range.endip,
-                     self.portable_ip_range.id))
-
         self.cleanup.append(self.portable_ip_range)
-
         return
 
     def tearDown(self):
@@ -755,7 +734,6 @@ class TestAssociatePublicIp(cloudstackTestCase):
                                    isportable=True
                                     )
             publicipaddress.delete(self.apiclient)
-        self.debug("Associating ip address failed")
         return
 
     @attr(tags=["advanced", "provisioning"])
@@ -803,10 +781,13 @@ class TestAssociatePublicIp(cloudstackTestCase):
                                     )
         self.debug("created public ip address (portable): %s" % portableip.ipaddress.ipaddress)
 
-        ipInCorrectState = is_public_ip_in_correct_state(self.apiclient, portableip.ipaddress.id, state="allocated")
-        if not ipInCorrectState:
+        response = isIpInDesiredState(self.apiclient, portableip.ipaddress.id, state="allocated")
+        exceptionOccured = response[0]
+        ipInDesiredState = response[1]
+        exceptionMessage = response[2]
+        if (exceptionOccured or (not ipInDesiredState)):
             portableip.delete(self.apiclient)
-            self.fail("Portable IP not in allocated state even after 10 mins")
+            self.fail(exceptionMessage)
 
         try:
             # Open up firewall port for SSH
@@ -1004,21 +985,10 @@ class TestDisassociatePublicIp(cloudstackTestCase):
 
         portable_ip_range_services["regionid"] = self.region.id
 
-        self.debug("Creating new portable IP range with startip:%s and endip:%s" %
-                    (str(portable_ip_range_services["startip"]),
-                     str(portable_ip_range_services["endip"])))
-
         #create new portable ip range
         new_portable_ip_range = PortablePublicIpRange.create(self.apiclient,
                                                              portable_ip_range_services)
-
-        self.debug("Created new portable IP range with startip:%s and endip:%s and id:%s" %
-                    (new_portable_ip_range.startip,
-                     new_portable_ip_range.endip,
-                     new_portable_ip_range.id))
-
         self.cleanup.append(new_portable_ip_range)
-
         return
 
     def tearDown(self):
@@ -1039,7 +1009,8 @@ class TestDisassociatePublicIp(cloudstackTestCase):
         # 3. Disassociate the portable ip with root admin api client
         # 4. Disassociating should be successful
 
-        portableip = PublicIPAddress.create(
+        try:
+            portableip = PublicIPAddress.create(
                                     self.apiclient,
                                     accountid=self.account.name,
                                     zoneid=self.zone.id,
@@ -1047,18 +1018,9 @@ class TestDisassociatePublicIp(cloudstackTestCase):
                                     networkid=self.network.id,
                                     isportable=True
                                     )
-        self.debug("created public ip address (portable): %s" % portableip.ipaddress.ipaddress)
-
-        try:
-            self.debug("Disassociating portable ip: %s with id: %s" %
-                        (portableip.ipaddress.ipaddress, portableip.ipaddress.id)
-                       )
-
             portableip.delete(self.apiclient)
-
         except Exception as e:
-            raise Exception("Exception while disassociating portable ip: %s" % e)
-
+            raise Exception("Exception occured: %s" % e)
         return
 
     @attr(tags=["advanced", "selfservice"])
@@ -1079,12 +1041,14 @@ class TestDisassociatePublicIp(cloudstackTestCase):
                                     networkid=self.network.id,
                                     isportable=True
                                     )
-        self.debug("created public ip address (portable): %s" % portableip.ipaddress.ipaddress)
 
-        ipInCorrectState = is_public_ip_in_correct_state(self.apiclient, portableip.ipaddress.id, state="allocated")
-        if not ipInCorrectState:
+        response = isIpInDesiredState(self.apiclient, portableip.ipaddress.id, state="allocated")
+        exceptionOccured = response[0]
+        ipInDesiredState = response[1]
+        exceptionMessage = response[2]
+        if (exceptionOccured or (not ipInDesiredState)):
             portableip.delete(self.apiclient)
-            self.fail("Portable IP not in allocated state even after 10 mins")
+            self.fail(exceptionMessage)
 
         try:
             # Open up firewall port for SSH
@@ -1111,15 +1075,9 @@ class TestDisassociatePublicIp(cloudstackTestCase):
             self.fail("Error: %s" % e)
 
         try:
-            self.debug("Disassociating portable ip: %s with id: %s" %
-                        (portableip.ipaddress.ipaddress, portableip.ipaddress.id)
-                       )
-
             portableip.delete(self.apiclient)
-
         except Exception as e:
             raise Exception("Exception while disassociating portable ip: %s" % e)
-
         return
 
     @attr(tags=["advanced", "selfservice"])
@@ -1132,7 +1090,8 @@ class TestDisassociatePublicIp(cloudstackTestCase):
         # 3. Try to Disassociate the portable ip with an account which is not owner of portable ip
         # 4. Disassociating should fail
 
-        portableip = PublicIPAddress.create(
+        try:
+            portableip = PublicIPAddress.create(
                                     self.apiclient,
                                     accountid=self.account.name,
                                     zoneid=self.zone.id,
@@ -1140,30 +1099,26 @@ class TestDisassociatePublicIp(cloudstackTestCase):
                                     networkid=self.network.id,
                                     isportable=True
                                     )
-        self.debug("created public ip address (portable): %s" % portableip.ipaddress.ipaddress)
+        except Exception as e:
+            self.fail("Failed to create portable ip: %s" % e)
 
-        self.user_account = Account.create(
+        try:
+            self.user_account = Account.create(
                             self.apiclient,
                             self.services["account"],
                             domainid=self.domain.id
                             )
 
-        self.api_client_user = self.testClient.getUserApiClient(
+            self.api_client_user = self.testClient.getUserApiClient(
                                             UserName=self.user_account.name,
                                             DomainName=self.user_account.domain
                                             )
-        try:
-            self.debug("Disassociating portable ip: %s with id: %s with other account :%s" %
-                        (portableip.ipaddress.ipaddress, portableip.ipaddress.id, self.user_account.name)
-                       )
 
             with self.assertRaises(Exception):
                 portableip.delete(self.api_client_user)
-
         except Exception as e:
-            raise Exception("Exception while disassociating portable ip: %s" % e)
-
-        portableip.delete(self.apiclient)
+            portableip.delete(self.apiclient)
+            self.fail("Exception while disassociating portable ip: %s" % e)
         return
 
 class TestDeleteAccount(cloudstackTestCase):
@@ -1194,7 +1149,7 @@ class TestDeleteAccount(cloudstackTestCase):
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
- 
+
         cls._cleanup = []
         return
 
@@ -1211,52 +1166,32 @@ class TestDeleteAccount(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
 
-        self.account = Account.create(
+        portable_ip_range_services = self.services["portableIpRange"]
+        if portable_ip_range_services is None:
+            self.skipTest('Failed to read config values related to portable ip range')
+
+        self.cleanup = []
+        try:
+            self.account = Account.create(
                             self.apiclient,
                             self.services["account"],
                             domainid=self.domain.id,
                             admin=True
                             )
-        self.cleanup = []
-
-        portable_ip_range_services = self.services["portableIpRange"]
-
-        if portable_ip_range_services is None:
-            self.skipTest('Failed to read config values related to portable ip range')
-
-        portable_ip_range_services["regionid"] = self.region.id
-
-        self.debug("Creating new portable IP range with startip:%s and endip:%s" %
-                    (str(portable_ip_range_services["startip"]),
-                     str(portable_ip_range_services["endip"])))
-
-        #create new portable ip range
-        new_portable_ip_range = PortablePublicIpRange.create(self.apiclient,
+            portable_ip_range_services["regionid"] = self.region.id
+            #create new portable ip range
+            new_portable_ip_range = PortablePublicIpRange.create(self.apiclient,
                                                              portable_ip_range_services)
-
-        self.debug("Created new portable IP range with startip:%s and endip:%s and id:%s" %
-                    (new_portable_ip_range.startip,
-                     new_portable_ip_range.endip,
-                     new_portable_ip_range.id))
-
-        self.cleanup.append(new_portable_ip_range)
-
-        self.debug(
-            "Creating n/w offering"
-            )
-        self.network_offering = NetworkOffering.create(
+            self.cleanup.append(new_portable_ip_range)
+            self.network_offering = NetworkOffering.create(
                                             self.apiclient,
                                             self.services["network_offering"],
                                             conservemode=False
                                             )
+            # Enable Network offering
+            self.network_offering.update(self.apiclient, state='Enabled')
 
-        self.debug("Created n/w offering with ID: %s" %
-                                                    self.network_offering.id)
-        # Enable Network offering
-        self.network_offering.update(self.apiclient, state='Enabled')
-        self.debug("Creating network")
-
-        self.network = Network.create(
+            self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
                                     accountid=self.account.name,
@@ -1264,17 +1199,14 @@ class TestDeleteAccount(cloudstackTestCase):
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
-
-        self.cleanup.append(self.network_offering)
-
-        self.debug("Created network with id: %s" % self.network.id)
+            self.cleanup.append(self.network_offering)
+        except Exception as e:
+            self.cleanup.append(self.account)
+            self.fail("Exception in setupClass: %s" % e)
         return
 
     def tearDown(self):
         try:
-            # Disable Network offering
-            self.network_offering.update(self.apiclient, state='Enabled')
-
             #Clean up, terminate the resources created
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
@@ -1289,7 +1221,8 @@ class TestDeleteAccount(cloudstackTestCase):
         # 2. Delete account
         # 3. Account should get deleted successfully
 
-        portableip = PublicIPAddress.create(
+        try:
+            portableip = PublicIPAddress.create(
                                     self.apiclient,
                                     accountid=self.account.name,
                                     zoneid=self.zone.id,
@@ -1297,18 +1230,12 @@ class TestDeleteAccount(cloudstackTestCase):
                                     networkid=self.network.id,
                                     isportable=True
                                     )
-        self.debug("created public ip address (portable): %s" % portableip.ipaddress.ipaddress)
-
-        self.debug("Deleting account: %s :" % self.account.name)
-
-        self.account.delete(self.apiclient)
-
-        self.debug("Account deleted successfully")
-
-        with self.assertRaises(Exception):
-            PublicIPAddress.list(self.apiclient,
+            self.account.delete(self.apiclient)
+            with self.assertRaises(Exception):
+                PublicIPAddress.list(self.apiclient,
                                  id=portableip.ipaddress.id)
-
+        except Exception as e:
+            self.fail(e)
         return
 
     @attr(tags=["advanced", "selfservice"])
@@ -1348,11 +1275,14 @@ class TestDeleteAccount(cloudstackTestCase):
                                     )
         self.debug("created public ip address (portable): %s" % portableip.ipaddress.ipaddress)
 
-        ipInCorrectState = is_public_ip_in_correct_state(self.apiclient, portableip.ipaddress.id, state="allocated")
-        if not ipInCorrectState:
+        response = isIpInDesiredState(self.apiclient, portableip.ipaddress.id, state="allocated")
+        exceptionOccured = response[0]
+        ipInDesiredState = response[1]
+        exceptionMessage = response[2]
+        if (exceptionOccured or (not ipInDesiredState)):
             portableip.delete(self.apiclient)
             self.account.delete(self.apiclient)
-            self.fail("Portable IP not in allocated state even after 10 mins")
+            self.fail(exceptionMessage)
 
         try:
             # Open up firewall port for SSH
@@ -1503,18 +1433,9 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
 
         self.portable_ip_range_services["regionid"] = self.region.id
 
-        self.debug("Creating new portable IP range with startip:%s and endip:%s" %
-                    (str(self.portable_ip_range_services["startip"]),
-                     str(self.portable_ip_range_services["endip"])))
-
         #create new portable ip range
         self.portable_ip_range = PortablePublicIpRange.create(self.apiclient,
                                                              self.portable_ip_range_services)
-
-        self.debug("Created new portable IP range with startip:%s and endip:%s and id:%s" %
-                    (self.portable_ip_range.startip,
-                     self.portable_ip_range.endip,
-                     self.portable_ip_range.id))
 
         self.cleanup = [self.portable_ip_range, ]
         return
@@ -1546,10 +1467,13 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
                                     isportable=True
                                     )
 
-        ipInCorrectState = is_public_ip_in_correct_state(self.apiclient, portableip.ipaddress.id, state="allocated")
-        if not ipInCorrectState:
+        response = isIpInDesiredState(self.apiclient, portableip.ipaddress.id, state="allocated")
+        exceptionOccured = response[0]
+        ipInDesiredState = response[1]
+        exceptionMessage = response[2]
+        if (exceptionOccured or (not ipInDesiredState)):
             portableip.delete(self.apiclient)
-            self.fail("Portable IP not in allocated state even after 10 mins")
+            self.fail(exceptionMessage)
 
         self.debug("created public ip address (portable): %s" % portableip.ipaddress.ipaddress)
         #Create NAT rule
