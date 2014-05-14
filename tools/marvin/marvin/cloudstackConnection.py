@@ -21,18 +21,26 @@ import base64
 import hmac
 import hashlib
 import time
-from cloudstackAPI import queryAsyncJobResult
+from cloudstackAPI import *
 import jsonHelper
 from marvin.codes import (
     FAILED,
+    INVALID_RESPONSE,
+    INVALID_INPUT,
     JOB_FAILED,
+    JOB_INPROGRESS,
     JOB_CANCELLED,
-    JOB_SUCCEEDED,
-    JOB_NO_EXCEPTION,
-    JOB_EXCEPTION_OCCURED
+    JOB_SUCCEEDED
 )
-from marvin.cloudstackException import (GetDetailExceptionInfo,
-                                        InvalidParameterException)
+from requests import (
+    ConnectionError,
+    HTTPError,
+    Timeout,
+    RequestException
+)
+from marvin.cloudstackException import (
+    InvalidParameterException,
+    GetDetailExceptionInfo)
 
 
 class CSConnection(object):
@@ -92,7 +100,6 @@ class CSConnection(object):
             start_time = time.time()
             end_time = time.time()
             async_response = FAILED
-            jobresultcode = JOB_NO_EXCEPTION
             self.logger.debug("=== Jobid: %s Started ===" % (str(jobid)))
             while timeout > 0:
                 async_response = self.\
@@ -102,7 +109,6 @@ class CSConnection(object):
                     if job_status in [JOB_FAILED,
                                       JOB_CANCELLED,
                                       JOB_SUCCEEDED]:
-                        jobresultcode = async_response.jobresultcode
                         break
                 time.sleep(5)
                 timeout -= 5
@@ -116,8 +122,6 @@ class CSConnection(object):
                 "TotalTime:%s===" %
                 (str(jobid), str(time.ctime(start_time)),
                  str(time.ctime(end_time)), str(tot_time)))
-            if jobresultcode == JOB_EXCEPTION_OCCURED:
-                async_response = FAILED
             return async_response
         except Exception as e:
             self.__lastError = e
