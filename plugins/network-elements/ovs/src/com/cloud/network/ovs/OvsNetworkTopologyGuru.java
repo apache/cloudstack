@@ -55,7 +55,7 @@ public interface OvsNetworkTopologyGuru extends Manager {
     /**
      * get the list of all Vm id's in the network that are running on the host
      */
-    public List<Long> getActiveVmsInNetworkOnHost(long vpcId, long hostId);
+    public List<Long> getActiveVmsInNetworkOnHost(long vpcId, long hostId, boolean includeVr);
 
     /**
      * get the list of all Vpc id's in which, a VM has a nic in the network that is part of VPC
