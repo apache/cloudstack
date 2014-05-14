@@ -103,11 +103,12 @@ public interface AccountService {
 
     RoleType getRoleType(Account account);
 
-    void checkAccess(Account caller, Domain domain) throws PermissionDeniedException;
+    void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
 
-    void checkAccess(Account caller, AccessType accessType, ControlledEntity... entities) throws PermissionDeniedException;
+    void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;
 
-    void checkAccess(Account caller, AccessType accessType, String apiName, ControlledEntity... entities) throws PermissionDeniedException;
+    void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
+            ControlledEntity... entities) throws PermissionDeniedException;
 
     Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
 

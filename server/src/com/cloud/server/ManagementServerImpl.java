@@ -952,7 +952,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), permittedAccountIds);
         ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, sameOwnerEvents);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, sameOwnerEvents);
 
         if (ids != null && events.size() < ids.size()) {
             result = false;
@@ -979,7 +979,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), permittedAccountIds);
         ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, sameOwnerEvents);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, sameOwnerEvents);
 
         if (ids != null && events.size() < ids.size()) {
             result = false;
@@ -1768,22 +1768,19 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         Long domainId = null;
         Boolean isRecursive = null;
-        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        List<Long> permittedResources = new ArrayList<Long>();
-
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
         if (isAllocated) {
             Account caller = CallContext.current().getCallingAccount();
 
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                     cmd.getDomainId(), cmd.isRecursive(), null);
-            _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
-                    domainIdRecursiveListProject, cmd.listAll(), false, "listPublicIpAddresses");
-            //domainId = domainIdRecursiveListProject.first();
+            _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccounts,
+                    domainIdRecursiveListProject, cmd.listAll(), false);
+            domainId = domainIdRecursiveListProject.first();
             isRecursive = domainIdRecursiveListProject.second();
             listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-            _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+            _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         }
 
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -1838,7 +1835,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         SearchCriteria<IPAddressVO> sc = sb.create();
         if (isAllocated) {
-            _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+            _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         }
 
         sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
@@ -3315,7 +3312,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         // check permissions
-        _accountMgr.checkAccess(caller, null, _accountMgr.getAccount(user.getAccountId()));
+        _accountMgr.checkAccess(caller, null, true, _accountMgr.getAccount(user.getAccountId()));
 
         String cloudIdentifier = _configDao.getValue("cloud.identifier");
         if (cloudIdentifier == null) {
@@ -3422,7 +3419,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        _accountMgr.checkAccess(caller, null, group);
+        _accountMgr.checkAccess(caller, null, true, group);
 
         // Check if name is already in use by this account (exclude this group)
         boolean isNameInUse = _vmGroupDao.isNameInUse(group.getAccountId(), groupName);
@@ -3581,22 +3578,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String fingerPrint = cmd.getFingerprint();
 
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        List<Long> permittedResources = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
-                domainIdRecursiveListProject, cmd.listAll(), false, "listSSHKeyPairs");
+        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject,
+                cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         SearchBuilder<SSHKeyPairVO> sb = _sshKeyPairDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         Filter searchFilter = new Filter(SSHKeyPairVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
         SearchCriteria<SSHKeyPairVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
@@ -3661,7 +3657,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         // make permission check
-        _accountMgr.checkAccess(caller, null, vm);
+        _accountMgr.checkAccess(caller, null, true, vm);
 
         _userVmDao.loadDetails(vm);
         String password = vm.getDetail("Encrypted.Password");
@@ -3834,7 +3830,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Unable to find SystemVm with id " + systemVmId);
         }
 
-        _accountMgr.checkAccess(caller, null, systemVm);
+        _accountMgr.checkAccess(caller, null, true, systemVm);
 
         // Check that the specified service offering ID is valid
         ServiceOfferingVO newServiceOffering = _offeringDao.findById(serviceOfferingId);

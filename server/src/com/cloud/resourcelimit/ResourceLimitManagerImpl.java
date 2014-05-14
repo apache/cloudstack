@@ -483,7 +483,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                         return limits;
                     }
 
-                    _accountMgr.checkAccess(caller, null, account);
+                    _accountMgr.checkAccess(caller, null, true, account);
                     domainId = null;
                 }
             }
@@ -503,7 +503,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (id != null) {
             ResourceLimitVO vo = _resourceLimitDao.findById(id);
             if (vo.getAccountId() != null) {
-                _accountMgr.checkAccess(caller, null, _accountDao.findById(vo.getAccountId()));
+                _accountMgr.checkAccess(caller, null, true, _accountDao.findById(vo.getAccountId()));
                 limits.add(vo);
             } else if (vo.getDomainId() != null) {
                 _accountMgr.checkAccess(caller, _domainDao.findById(vo.getDomainId()));
@@ -656,9 +656,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             }
 
             if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                _accountMgr.checkAccess(caller, AccessType.ModifyProject, account);
+                _accountMgr.checkAccess(caller, AccessType.ModifyProject, true, account);
             } else {
-                _accountMgr.checkAccess(caller, null, account);
+                _accountMgr.checkAccess(caller, null, true, account);
             }
 
             ownerType = ResourceOwnerType.Account;

@@ -147,7 +147,7 @@ public class CertServiceImpl implements CertService {
         if (certVO == null) {
             throw new InvalidParameterValueException("Invalid certificate id: " + certId);
         }
-        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, certVO);
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, true, certVO);
 
         List<LoadBalancerCertMapVO> lbCertRule = _lbCertDao.listByCertId(certId);
 
@@ -191,7 +191,7 @@ public class CertServiceImpl implements CertService {
                 throw new InvalidParameterValueException("Invalid certificate id: " + certId);
             }
 
-            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, certVO);
+            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, certVO);
 
             certLbMap = _lbCertDao.listByCertId(certId);
 
@@ -206,7 +206,7 @@ public class CertServiceImpl implements CertService {
                 throw new InvalidParameterValueException("found no loadbalancer  wth id: " + lbRuleId);
             }
 
-            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, lb);
+            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, lb);
 
             // get the cert id
             LoadBalancerCertMapVO lbCertMapRule;
@@ -229,7 +229,7 @@ public class CertServiceImpl implements CertService {
         List<SslCertVO> certVOList = _sslCertDao.listByAccountId(accountId);
         if (certVOList == null || certVOList.isEmpty())
             return certResponseList;
-        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, certVOList.get(0));
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, certVOList.get(0));
 
         for (SslCertVO cert : certVOList) {
             certLbMap = _lbCertDao.listByCertId(cert.getId());

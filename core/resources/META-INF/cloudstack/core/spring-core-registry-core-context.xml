@@ -46,7 +46,7 @@
         <property name="orderConfigKey" value="security.checkers.order" />
         <property name="excludeKey" value="security.checkers.exclude" />
         <property name="orderConfigDefault"
-            value="RoleBasedEntityAccessChecker,AffinityGroupAccessChecker,DomainChecker" />
+            value="AffinityGroupAccessChecker,DomainChecker" />
     </bean>
 
     <bean id="resourceDiscoverersRegistry"

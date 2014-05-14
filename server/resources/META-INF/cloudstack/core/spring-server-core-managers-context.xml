@@ -74,7 +74,6 @@
 
     <bean id="networkModelImpl" class="com.cloud.network.NetworkModelImpl">
         <property name="networkElements" value="#{networkElementsRegistry.registered}" />
-        <property name="securityCheckers" value="#{securityCheckersRegistry.registered}" />
     </bean>
 
     <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />

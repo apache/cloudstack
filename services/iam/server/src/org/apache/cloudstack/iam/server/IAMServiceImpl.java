@@ -153,7 +153,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         if (grp != null) {
             throw new InvalidParameterValueException(
                     "Unable to create acl group with name " + iamGroupName
-                    + " already exisits for path " + path);
+                            + " already exisits for path " + path);
         }
         IAMGroupVO rvo = new IAMGroupVO(iamGroupName, description);
         rvo.setPath(path);
@@ -372,7 +372,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         if (ro != null) {
             throw new InvalidParameterValueException(
                     "Unable to create acl policy with name " + iamPolicyName
-                    + " already exisits");
+                            + " already exisits");
         }
 
         IAMPolicy role = Transaction.execute(new TransactionCallback<IAMPolicy>() {
@@ -885,13 +885,14 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     @Override
     public IAMPolicy getResourceGrantPolicy(String entityType, Long entityId, String accessType, String action) {
         List<IAMPolicyVO> policyList = _aclPolicyDao.listAll();
-        for (IAMPolicyVO policy : policyList){
+        for (IAMPolicyVO policy : policyList) {
             List<IAMPolicyPermission> pp = listPolicyPermissions(policy.getId());
-            if ( pp != null && pp.size() == 1){
+            if (pp != null && pp.size() == 1) {
                 // resource grant policy should only have one ACL permission assigned
                 IAMPolicyPermission permit = pp.get(0);
-                if ( permit.getEntityType().equals(entityType) && permit.getScope().equals(PermissionScope.RESOURCE.toString()) && permit.getScopeId().longValue() == entityId.longValue()){
-                    if (accessType != null && permit.getAccessType().equals(accessType)){
+                if (permit.getEntityType().equals(entityType) && permit.getScope().equals(PermissionScope.RESOURCE.toString())
+                        && permit.getScopeId().longValue() == entityId.longValue()) {
+                    if (accessType != null && permit.getAccessType().equals(accessType)) {
                         return policy;
                     } else if (action != null && permit.getAction().equals(action)) {
                         return policy;

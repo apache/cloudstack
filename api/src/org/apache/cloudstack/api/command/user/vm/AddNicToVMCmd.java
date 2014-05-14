@@ -54,7 +54,6 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
             required=true, description="Virtual Machine ID")
     private Long vmId;
 
-    @ACL
     @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "Network ID")
     private Long netId;
 

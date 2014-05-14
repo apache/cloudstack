@@ -254,7 +254,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         //check if the caller can operate with the template owner
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
-        _accountMgr.checkAccess(caller, null, owner);
+        _accountMgr.checkAccess(caller, null, true, owner);
 
         boolean isRouting = (cmd.isRoutingType() == null) ? false : cmd.isRoutingType();
 
@@ -277,7 +277,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         //check if the caller can operate with the template owner
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
-        _accountMgr.checkAccess(caller, null, owner);
+        _accountMgr.checkAccess(caller, null, true, owner);
 
         Long zoneId = cmd.getZoneId();
         // ignore passed zoneId if we are using region wide image store

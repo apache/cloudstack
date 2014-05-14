@@ -30,7 +30,6 @@ import javax.inject.Inject;
 import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.types.ServiceInstance;
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.contrail.api.response.ServiceInstanceResponse;
 import org.apache.cloudstack.network.contrail.model.ServiceInstanceModel;
@@ -137,10 +136,10 @@ public class ServiceManagerImpl implements ServiceManager {
         // TODO: permission model.
         // service instances need to be able to access the public network.
         if (left.getTrafficType() == TrafficType.Guest) {
-            _networkModel.checkNetworkPermissions(owner, left, AccessType.UseEntry);
+            _networkModel.checkNetworkPermissions(owner, left);
         }
         if (right.getTrafficType() == TrafficType.Guest) {
-            _networkModel.checkNetworkPermissions(owner, right, AccessType.UseEntry);
+            _networkModel.checkNetworkPermissions(owner, right);
         }
 
         final ApiConnector api = _manager.getApiConnector();

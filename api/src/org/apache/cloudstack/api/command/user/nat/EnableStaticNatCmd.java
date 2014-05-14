@@ -18,8 +18,6 @@ package org.apache.cloudstack.api.command.user.nat;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,13 +33,10 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
-import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
-import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "enableStaticNat", description = "Enables static nat for given ip address", responseObject = SuccessResponse.class,
-        entityType = {IpAddress.class, VirtualMachine.class, Vpc.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class EnableStaticNatCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
@@ -52,12 +47,10 @@ public class EnableStaticNatCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.UUID, entityType = IPAddressResponse.class, required = true, description = "the public IP "
         + "address id for which static nat feature is being enabled")
     private Long ipAddressId;
 
-    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "the ID of "
         + "the virtual machine for enabling static nat feature")
     private Long virtualMachineId;
@@ -140,7 +133,7 @@ public class EnableStaticNatCmd extends BaseCmd {
             boolean result = _rulesService.enableStaticNat(ipAddressId, virtualMachineId, getNetworkId(), getVmSecondaryIp());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
-                setResponseObject(response);
+                this.setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable static nat");
             }

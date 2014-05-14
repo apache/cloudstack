@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.iam.api.IAMGroup;
 import org.apache.cloudstack.iam.api.IAMPolicy;
@@ -204,15 +205,13 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
                 boolean otherEntitiesAccess = true;
 
                 for (ControlledEntity otherEntity : entities) {
-                    if (otherEntity != entity) {
-                        if (otherEntity.getAccountId() == caller.getAccountId()
-                                || (checkAccess(caller, otherEntity, accessType, action) && otherEntity.getAccountId() == entity
-                                        .getAccountId())) {
-                            continue;
-                        } else {
-                            otherEntitiesAccess = false;
-                            break;
-                        }
+                    if (otherEntity.getAccountId() == caller.getAccountId()
+                            || (checkAccess(caller, otherEntity, accessType, action) && otherEntity.getAccountId() == entity
+                                    .getAccountId())) {
+                        continue;
+                    } else {
+                        otherEntitiesAccess = false;
+                        break;
                     }
                 }
 
@@ -263,8 +262,6 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
                 if (_domainDao.isChildDomain(caller.getDomainId(), entity.getDomainId())) {
                     return true;
                 }
-            } else if (scope.equals(PermissionScope.ALL.name())) {
-                return true;
             }
         }
         return false;
