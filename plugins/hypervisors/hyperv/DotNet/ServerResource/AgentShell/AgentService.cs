@@ -72,8 +72,6 @@ namespace CloudStack.Plugin.AgentShell
             // use of VisualStudio settings designer.  The designer allows us to avoid
             // accessing config using their key strings.
             HypervResourceControllerConfig rsrcCnf = new HypervResourceControllerConfig();
-            rsrcCnf.PrivateIpAddress = AgentSettings.Default.private_ip_address;
-            rsrcCnf.GatewayIpAddress = AgentSettings.Default.gateway_ip_address;
             rsrcCnf.RootDeviceReservedSpaceBytes = AgentSettings.Default.RootDeviceReservedSpaceBytes;
             rsrcCnf.RootDeviceName = AgentSettings.Default.RootDeviceName;
             rsrcCnf.ParentPartitionMinMemoryMb = AgentSettings.Default.dom0MinMemory;
