@@ -1854,7 +1854,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             saveUsageEvent(vmInstance);
 
             // take care of the root volume as well.
-            _volumeService.updateDisplay(_volsDao.findByInstanceAndType(id, Volume.Type.ROOT).get(0), isDisplayVm);
+            List<VolumeVO> rootVols = _volsDao.findByInstanceAndType(id, Volume.Type.ROOT);
+            if(!rootVols.isEmpty()){
+                _volumeService.updateDisplay(rootVols.get(0), isDisplayVm);
+            }
+
+            // take care of the data volumes as well.
+            List<VolumeVO> dataVols = _volsDao.findByInstanceAndType(id, Volume.Type.DATADISK);
+            for(Volume dataVol : dataVols){
+                _volumeService.updateDisplay(dataVol, isDisplayVm);
+            }
 
         }
 
