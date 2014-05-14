@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.firewall;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,10 +25,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.IpAddress;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
@@ -94,10 +92,6 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
         return protocol;
     }
 
-    public Long getPublicIpId() {
-        return publicIpId;
-    }
-
     public String getPublicPort() {
         return publicPort;
     }
@@ -109,10 +103,15 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
     public Boolean getDisplay() {
         return display;
     }
+    public Long getId() {
+        return id;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+
 
     @Override
     public String getCommandName() {
@@ -121,9 +120,9 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public long getEntityOwnerId() {
-        IpAddress addr = _entityMgr.findById(IpAddress.class, getPublicIpId());
-        if (addr != null) {
-            return addr.getAccountId();
+        PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getId());
+        if (rule != null) {
+            return rule.getAccountId();
         }
 
         // bad address given, parent this command to SYSTEM so ERROR events are tracked
@@ -173,14 +172,11 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public Long getSyncObjId() {
-        return getIp().getAssociatedWithNetworkId();
-    }
-
-    private IpAddress getIp() {
-        IpAddress ip = _networkService.getIp(publicIpId);
-        if (ip == null) {
-            throw new InvalidParameterValueException("Unable to find ip address by id " + publicIpId);
+        PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getId());
+        if (rule != null) {
+            return rule.getNetworkId();
+        } else {
+            throw new InvalidParameterValueException("Unable to find the rule by id");
         }
-        return ip;
     }
 }
