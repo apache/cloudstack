@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.snapshot;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -63,7 +62,6 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             description = "The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the disk volume.")
     private Long domainId;
 
-    @ACL
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "The ID of the disk volume")
     private Long volumeId;
 

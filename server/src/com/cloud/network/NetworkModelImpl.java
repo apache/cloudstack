@@ -34,9 +34,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 
@@ -99,7 +97,6 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
@@ -176,8 +173,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     FirewallRulesDao _firewallDao;
     @Inject
     DomainManager _domainMgr;
-    @Inject
-    AccountManager _accountMgr;
+
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
@@ -219,16 +215,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
     static HashMap<Service, List<Provider>> s_serviceToImplementedProvidersMap = new HashMap<Service, List<Provider>>();
     static HashMap<String, String> s_providerToNetworkElementMap = new HashMap<String, String>();
-
-    List<SecurityChecker> _securityCheckers;
-
-    public List<SecurityChecker> getSecurityCheckers() {
-        return _securityCheckers;
-    }
-
-    public void setSecurityCheckers(List<SecurityChecker> securityCheckers) {
-        _securityCheckers = securityCheckers;
-    }
 
     /**
      *
@@ -1576,35 +1562,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
                 throw new PermissionDeniedException("Shared network id=" + ((NetworkVO)network).getUuid() + " is not available in domain id=" +
                     owner.getDomainId());
-            }
-        }
-    }
-
-    @Override
-    public void checkNetworkPermissions(Account owner, Network network, AccessType accessType) {
-        if (network == null) {
-            throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
-        }
-
-        AccountVO networkOwner = _accountDao.findById(network.getAccountId());
-        if (networkOwner == null) {
-            throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid()
-                    + ", network does not have an owner");
-        }
-        if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            if (!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), network.getAccountId())) {
-                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid()
-                        + ", permission denied");
-            }
-        } else {
-            // Go through IAM (SecurityCheckers)
-            for (SecurityChecker checker : _securityCheckers) {
-                if (checker.checkAccess(owner, accessType, null, network)) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Access to " + network + " granted to " + owner + " by " + checker.getName());
-                    }
-                    break;
-                }
             }
         }
     }

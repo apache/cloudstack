@@ -732,21 +732,6 @@ listLdapUsers=3
 ldapCreateAccount=3
 importLdapUsers=3
 
-### IAM commands
-createIAMPolicy=1
-deleteIAMPolicy=1
-listIAMPolicies=1
-addIAMPermissionToIAMPolicy=1
-removeIAMPermissionFromIAMPolicy=1
-createIAMGroup=1
-deleteIAMGroup=1
-listIAMGroups=1
-addAccountToIAMGroup=1
-removeAccountFromIAMGroup=1
-attachIAMPolicyToIAMGroup=1
-removeIAMPolicyFromIAMGroup=1
-attachIAMPolicyToAccount=1
-removeIAMPolicyFromAccount=1
 
 #### juniper-contrail commands
 createServiceInstance=1

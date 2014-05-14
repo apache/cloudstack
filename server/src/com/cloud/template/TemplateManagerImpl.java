@@ -369,7 +369,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to find template id=" + templateId);
         }
 
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, vmTemplate);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, vmTemplate);
 
         prepareTemplateInAllStoragePools(vmTemplate, zoneId);
         return vmTemplate;
@@ -415,7 +415,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to extract template id=" + templateId + " as it's not extractable");
         }
 
-        _accountMgr.checkAccess(caller, AccessType.OperateEntry, template);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
 
         List<DataStore> ssStores = _dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
 
@@ -722,7 +722,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             return template;
         }
 
-        _accountMgr.checkAccess(caller, AccessType.OperateEntry, template);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
 
         boolean success = copy(userId, template, srcSecStore, dstZone);
 
@@ -911,7 +911,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Please specify a valid VM.");
         }
 
-        _accountMgr.checkAccess(caller, null, userVM);
+        _accountMgr.checkAccess(caller, null, true, userVM);
 
         Long isoId = userVM.getIsoId();
         if (isoId == null) {
@@ -952,11 +952,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // check permissions
         // check if caller has access to VM and ISO
-        // and also check if the VM's owner has access to the ISO. This is a bit different from sameOwner check for attachVolumeToVM, where both volume and VM need
-        // OperateEntry access type. Here VM needs OperateEntry access type, ISO needs UseEntry access type.
-        _accountMgr.checkAccess(caller, null, iso, vm);
+        // and also check if the VM's owner has access to the ISO.
+
+        _accountMgr.checkAccess(caller, null, false, iso, vm);
+
         Account vmOwner = _accountDao.findById(vm.getAccountId());
-        _accountMgr.checkAccess(vmOwner, null, iso);
+        _accountMgr.checkAccess(vmOwner, null, false, iso, vm);
 
         State vmState = vm.getState();
         if (vmState != State.Running && vmState != State.Stopped) {
@@ -1060,7 +1061,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
 
-        _accountMgr.checkAccess(caller, AccessType.OperateEntry, template);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
 
         if (template.getFormat() == ImageFormat.ISO) {
             throw new InvalidParameterValueException("Please specify a valid template.");
@@ -1083,7 +1084,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("unable to find iso with id " + templateId);
         }
 
-        _accountMgr.checkAccess(caller, AccessType.OperateEntry, template);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
 
         if (template.getFormat() != ImageFormat.ISO) {
             throw new InvalidParameterValueException("Please specify a valid iso.");
@@ -1133,7 +1134,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (!template.isPublicTemplate()) {
-            _accountMgr.checkAccess(caller, AccessType.ListEntry, template);
+            _accountMgr.checkAccess(caller, null, true, template);
         }
 
         List<String> accountNames = new ArrayList<String>();
@@ -1206,7 +1207,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
 
-        _accountMgr.checkAccess(caller, AccessType.OperateEntry, template);
+        //_accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template); //TODO: should we replace all ModifyEntry as OperateEntry?
 
         // If the template is removed throw an error.
         if (template.getRemoved() != null) {
@@ -1487,7 +1489,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Account caller = CallContext.current().getCallingAccount();
         boolean isAdmin = (_accountMgr.isAdmin(caller.getId()));
 
-        _accountMgr.checkAccess(caller, null, templateOwner);
+        _accountMgr.checkAccess(caller, null, true, templateOwner);
 
         String name = cmd.getTemplateName();
         if ((name == null) || (name.length() > 32)) {
@@ -1539,7 +1541,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new InvalidParameterValueException("Failed to create private template record, unable to find volume " + volumeId);
             }
             // check permissions
-            _accountMgr.checkAccess(caller, null, volume);
+            _accountMgr.checkAccess(caller, null, true, volume);
 
             // If private template is created from Volume, check that the volume
             // will not be active when the private template is
@@ -1562,7 +1564,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             volume = _volumeDao.findById(snapshot.getVolumeId());
 
             // check permissions
-            _accountMgr.checkAccess(caller, null, snapshot);
+            _accountMgr.checkAccess(caller, null, true, snapshot);
 
             if (snapshot.getState() != Snapshot.State.BackedUp) {
                 throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.State.BackedUp +
@@ -1778,7 +1780,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         verifyTemplateId(id);
 
         // do a permission check
-        _accountMgr.checkAccess(account, AccessType.OperateEntry, template);
+        _accountMgr.checkAccess(account, AccessType.OperateEntry, true, template);
         if (cmd.isRoutingType() != null) {
             if (!_accountService.isRootAdmin(account.getId())) {
                 throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");

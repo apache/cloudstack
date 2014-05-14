@@ -34,11 +34,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "disableStaticNat", description = "Disables static rule for given ip address", responseObject = SuccessResponse.class,
-        entityType = {IpAddress.class, VirtualMachine.class, Vpc.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DisableStaticNatCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingRuleCmd.class.getName());
@@ -92,7 +89,7 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            setResponseObject(response);
+            this.setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to disable static nat");
         }

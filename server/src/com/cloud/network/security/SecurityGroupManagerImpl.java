@@ -612,7 +612,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         }
 
         // Verify permissions
-        _accountMgr.checkAccess(caller, AccessType.OperateEntry, securityGroup);
+        _accountMgr.checkAccess(caller, null, true, securityGroup);
         Long domainId = owner.getDomainId();
 
         if (protocol == null) {
@@ -819,7 +819,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
         // Check permissions
         SecurityGroup securityGroup = _securityGroupDao.findById(rule.getSecurityGroupId());
-        _accountMgr.checkAccess(caller, AccessType.OperateEntry, securityGroup);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, securityGroup);
 
         long securityGroupId = rule.getSecurityGroupId();
         Boolean result = Transaction.execute(new TransactionCallback<Boolean>() {
@@ -1120,7 +1120,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         }
 
         // check permissions
-        _accountMgr.checkAccess(caller, AccessType.OperateEntry, group);
+        _accountMgr.checkAccess(caller, null, true, group);
 
         return Transaction.execute(new TransactionCallbackWithException<Boolean, ResourceInUseException>() {
             @Override
@@ -1359,7 +1359,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         }
 
         // Verify permissions
-        _accountMgr.checkAccess(caller, null, vm);
+        _accountMgr.checkAccess(caller, null, false, vm);
 
         // Validate parameters
         List<SecurityGroupVO> vmSgGrps = getSecurityGroupsForVm(vmId);

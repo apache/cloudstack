@@ -262,7 +262,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             affinityGroupId = group.getId();
         }
         // check permissions
-        _accountMgr.checkAccess(caller, AccessType.OperateEntry, group);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, group);
 
         final Long affinityGroupIdFinal = affinityGroupId;
         Transaction.execute(new TransactionCallbackNoReturn() {
@@ -353,7 +353,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             if (userVM == null) {
                 throw new InvalidParameterValueException("Unable to list affinity groups for virtual machine instance " + vmId + "; instance not found.");
             }
-            _accountMgr.checkAccess(caller, null, userVM);
+            _accountMgr.checkAccess(caller, null, true, userVM);
             // add join to affinity_groups_vm_map
             groupSearch.join("vmInstanceSearch", vmInstanceSearch, groupSearch.entity().getId(), vmInstanceSearch.entity().getAffinityGroupId(),
                 JoinBuilder.JoinType.INNER);
@@ -477,7 +477,14 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                 throw new InvalidParameterValueException("Unable to find affinity group by id " + affinityGroupId);
             } else {
                 // verify permissions
-                _accountMgr.checkAccess(owner, AccessType.UseEntry, ag);
+                _accountMgr.checkAccess(caller, null, true, owner, ag);
+                // Root admin has access to both VM and AG by default, but make sure the
+                // owner of these entities is same
+                if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
+                    if (ag.getAccountId() != owner.getAccountId()) {
+                        throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's account");
+                    }
+                }
             }
         }
         _affinityGroupVMMapDao.updateMap(vmId, affinityGroupIds);

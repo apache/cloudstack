@@ -19,7 +19,6 @@ package com.cloud.acl;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -50,8 +49,6 @@ import com.cloud.utils.component.AdapterBase;
 @Component
 @Local(value = SecurityChecker.class)
 public class DomainChecker extends AdapterBase implements SecurityChecker {
-
-    public static final Logger s_logger = Logger.getLogger(DomainChecker.class);
 
     @Inject
     DomainDao _domainDao;
@@ -104,15 +101,6 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Override
     public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType)
             throws PermissionDeniedException {
-
-        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountService.isRootAdmin(caller.getId())) {
-            // no need to make permission checks if the system/root admin makes the call
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("No need to make permission check for System/RootAdmin account, returning true");
-            }
-            return true;
-        }
-
         if (entity instanceof VirtualMachineTemplate) {
 
             VirtualMachineTemplate template = (VirtualMachineTemplate)entity;
@@ -344,15 +332,20 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         if (action != null && ("SystemCapability".equals(action))) {
             if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
                 return true;
+            } else {
+                return false;
             }
-
         } else if (action != null && ("DomainCapability".equals(action))) {
             if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
                 return true;
+            } else {
+                return false;
             }
         } else if (action != null && ("DomainResourceCapability".equals(action))) {
             if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
                 return true;
+            } else {
+                return false;
             }
         }
         return checkAccess(caller, entity, accessType);

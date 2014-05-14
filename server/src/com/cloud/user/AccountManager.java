@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
+import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -84,18 +85,34 @@ public interface AccountManager extends AccountService {
     boolean enableAccount(long accountId);
 
 
+    void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId,
+            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+
+    void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
+            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+
+    void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
+            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria, List<Long> grantedIds, List<Long> revokedIds);
+
+    void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc,
+            Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+
+    void buildACLSearchParameters(Account caller, Long id,
+            String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll,
+            boolean forProjectInvitation);
+
+    void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc,
+            Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+
+    void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledEntity> sc,
+            Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria, List<Long> grantedIds,
+            List<Long> revokedIds);
+
+
     // new ACL model routine for query api based on db views
     void buildACLSearchParameters(Account caller, Long id,
             String accountName, Long projectId, List<Long> permittedDomains, List<Long> permittedAccounts, List<Long> permittedResources,
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation, String action);
-
-    void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, boolean isRecursive,
-            List<Long> permittedDomains,
-            List<Long> permittedAccounts, List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria);
-
-    void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, boolean isRecursive,
-            List<Long> permittedDomains,
-            List<Long> permittedAccounts, List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria);
 
     void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, SearchCriteria<? extends ControlledEntity> aclSc, boolean isRecursive,
             List<Long> permittedDomains, List<Long> permittedAccounts,

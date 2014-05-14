@@ -244,7 +244,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             throw new InvalidParameterValueException("Unable to find project by id " + projectId);
         }
 
-        _accountMgr.checkAccess(caller, AccessType.ModifyProject, _accountMgr.getAccount(project.getProjectAccountId()));
+        _accountMgr.checkAccess(caller, AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
         //at this point enabling project doesn't require anything, so just update the state
         project.setState(State.Active);
@@ -264,7 +264,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             throw new InvalidParameterValueException("Unable to find project by id " + projectId);
         }
 
-        _accountMgr.checkAccess(ctx.getCallingAccount(), AccessType.ModifyProject, _accountMgr.getAccount(project.getProjectAccountId()));
+        _accountMgr.checkAccess(ctx.getCallingAccount(), AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
         return deleteProject(ctx.getCallingAccount(), ctx.getCallingUserId(), project);
     }
@@ -463,7 +463,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
 
         //verify permissions
-        _accountMgr.checkAccess(caller, AccessType.ModifyProject, _accountMgr.getAccount(project.getProjectAccountId()));
+        _accountMgr.checkAccess(caller, AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
@@ -550,7 +550,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             }
 
             //verify permissions - only project owner can assign
-            _accountMgr.checkAccess(caller, AccessType.ModifyProject, _accountMgr.getAccount(project.getProjectAccountId()));
+            _accountMgr.checkAccess(caller, AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
             //Check if the account already added to the project
             ProjectAccount projectAccount =  _projectAccountDao.findByProjectIdAccountId(projectId, account.getId());
@@ -628,7 +628,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
 
         //verify permissions
-        _accountMgr.checkAccess(caller, AccessType.ModifyProject, _accountMgr.getAccount(project.getProjectAccountId()));
+        _accountMgr.checkAccess(caller, AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
         //Check if the account exists in the project
         ProjectAccount projectAccount =  _projectAccountDao.findByProjectIdAccountId(projectId, account.getId());
@@ -750,7 +750,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             }
 
             //verify permissions
-            _accountMgr.checkAccess(caller, null, account);
+            _accountMgr.checkAccess(caller, null, true, account);
 
             accountId = account.getId();
         } else {
@@ -830,7 +830,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
 
         //verify permissions
-        _accountMgr.checkAccess(caller, AccessType.ModifyProject, _accountMgr.getAccount(project.getProjectAccountId()));
+        _accountMgr.checkAccess(caller, AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
         //allow project activation only when it's in Suspended state
         Project.State currentState = project.getState();
@@ -870,7 +870,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             throw ex;
         }
 
-        _accountMgr.checkAccess(caller, AccessType.ModifyProject, _accountMgr.getAccount(project.getProjectAccountId()));
+        _accountMgr.checkAccess(caller, AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
         if (suspendProject(project)) {
             s_logger.debug("Successfully suspended project id=" + projectId);
@@ -1012,7 +1012,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         Project project = getProject(invitation.getProjectId());
 
         //check permissions - only project owner can remove the invitations
-        _accountMgr.checkAccess(caller, AccessType.ModifyProject, _accountMgr.getAccount(project.getProjectAccountId()));
+        _accountMgr.checkAccess(caller, AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
         if (_projectInvitationDao.remove(id)) {
             s_logger.debug("Project Invitation id=" + id + " is removed");

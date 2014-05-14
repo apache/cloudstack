@@ -26,8 +26,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -894,11 +892,5 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public boolean getNetworkEgressDefaultPolicy(Long networkId) {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void checkNetworkPermissions(Account owner, Network network, AccessType accessType) {
-        // TODO Auto-generated method stub
-
     }
 }
