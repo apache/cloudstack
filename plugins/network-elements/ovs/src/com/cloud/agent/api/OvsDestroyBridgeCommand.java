@@ -22,10 +22,12 @@ public class OvsDestroyBridgeCommand extends Command {
 
     Long networkId;
     String name;
+    Long hostId;
 
-    public OvsDestroyBridgeCommand(Long networkId, String name) {
+    public OvsDestroyBridgeCommand(Long networkId, String name, Long hostId) {
         this.networkId = networkId;
         this.name = name;
+        this.hostId = hostId;
     }
 
     public Long getNetworkId() {
@@ -34,6 +36,10 @@ public class OvsDestroyBridgeCommand extends Command {
 
     public String getBridgeName() {
         return name;
+    }
+
+    public Long getHostId() {
+        return hostId;
     }
 
     @Override

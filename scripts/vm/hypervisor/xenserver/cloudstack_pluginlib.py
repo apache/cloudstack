@@ -345,8 +345,11 @@ def get_acl(vpcconfig, required_acl_id):
     return None
 
 def check_tunnel_exists(bridge, tunnel_name):
-    res = do_cmd([VSCTL_PATH, "port-to-br", tunnel_name])
-    return res == bridge
+    try:
+        res = do_cmd([VSCTL_PATH, "port-to-br", tunnel_name])
+        return res == bridge
+    except:
+        return False
 
 def create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host, network_uuid):
 
@@ -460,7 +463,7 @@ def create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host, network_uuid):
 
         logging.debug("Successfully created tunnel from host %s" %src_host + " to host %s" %dst_host +
                       " with GRE key %s" %gre_key)
-        return "SUCCESS:%s creation succeeded" % name
+        return "SUCCESS:%s" % name
     except:
         logging.debug("An unexpected error occured. Rolling back")
         if tunnel_setup:
@@ -548,7 +551,8 @@ def configure_vpc_bridge_for_network_topology(bridge, this_host_id, json_config,
 
                     # check if tunnel exists already, if not create a tunnel from this host to remote host
                     if not check_tunnel_exists(bridge, tunnel_name):
-                        create_tunnel(bridge, host.ipaddress, gre_key, this_host_id, host.hostid, network.networkuuid)
+                        create_tunnel(bridge, str(host.ipaddress), str(gre_key), this_host_id,
+                                      host.hostid, network.networkuuid)
 
                     of_port = get_ofport_for_vif(tunnel_name)
 

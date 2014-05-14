@@ -96,16 +96,16 @@ def setup_ovs_bridge(session, args):
             result = "SUCCESS:%s" % bridge
         else:
             result = "FAILURE:%s" % res
+        lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
+                   "other-config:is-ovs-tun-network=True"])
         # Finally note in the xenapi network object that the network has
         # been configured
         xs_nw_uuid = lib.do_cmd([lib.XE_PATH, "network-list",
                                 "bridge=%s" % bridge, "--minimal"])
-        lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
-                   "other-config:is-ovs-tun-network=True"])
         conf_hosts = lib.do_cmd([lib.XE_PATH, "network-param-get",
                                 "uuid=%s" % xs_nw_uuid,
                                 "param-name=other-config",
-                                "param-key=ovs-host-setup", "--minimal"])
+                                "param-key=ovs-host-setup"])
         conf_hosts = cs_host_id + (conf_hosts and ',%s' % conf_hosts or '')
         lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
                    "other-config:ovs-host-setup=%s" % conf_hosts])
@@ -160,7 +160,7 @@ def setup_ovs_bridge_for_distributed_routing(session, args):
         conf_hosts = lib.do_cmd([lib.XE_PATH, "network-param-get",
                                 "uuid=%s" % xs_nw_uuid,
                                 "param-name=other-config",
-                                "param-key=ovs-host-setup", "--minimal"])
+                                "param-key=ovs-host-setup"])
         conf_hosts = cs_host_id + (conf_hosts and ',%s' % conf_hosts or '')
         lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
                    "other-config:ovs-host-setup=%s" % conf_hosts])
@@ -204,6 +204,7 @@ def setup_ovs_bridge_for_distributed_routing(session, args):
 @echo
 def destroy_ovs_bridge(session, args):
     bridge = args.pop("bridge")
+    this_host_id = args.pop("cs_host_id")
     res = lib.check_switch()
     if res != "SUCCESS":
         return res
@@ -213,11 +214,21 @@ def destroy_ovs_bridge(session, args):
         result = "FAILURE:%s" % res
     else:
         # Note that the bridge has been removed on xapi network object
-        xs_nw_uuid = lib.do_cmd([xePath, "network-list",
+        xs_nw_uuid = lib.do_cmd([lib.XE_PATH, "network-list",
                                 "bridge=%s" % bridge, "--minimal"])
-        #FIXME: WOW, this an error
-        #lib.do_cmd([xePath,"network-param-set", "uuid=%s" % xs_nw_uuid,
-        #                  "other-config:ovs-setup=False"])
+        conf_hosts = lib.do_cmd([lib.XE_PATH, "network-param-get",
+                                "uuid=%s" % xs_nw_uuid,
+                                "param-name=other-config",
+                                "param-key=ovs-host-setup"])
+        new_conf_hosts = ""
+        hosts = conf_hosts.split(',')
+        for host in hosts:
+            if str(host) == str(this_host_id):
+                continue
+            new_conf_hosts = host + "," + new_conf_hosts
+        new_conf_hosts = new_conf_hosts[:-1]
+        lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
+                   "other-config:ovs-host-setup=%s" % new_conf_hosts])
         result = "SUCCESS:%s" % bridge
 
     logging.debug("Destroy_ovs_bridge completed with result:%s" % result)

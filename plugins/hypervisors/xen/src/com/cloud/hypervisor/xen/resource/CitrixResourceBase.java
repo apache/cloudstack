@@ -990,6 +990,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Network.Record rec = new Network.Record();
             Set<Network> networks = Network.getByNameLabel(conn, nwName);
 
+
             if (networks.size() == 0) {
                 rec.nameDescription = "tunnel network id# " + nwName;
                 rec.nameLabel = nwName;
@@ -1064,11 +1065,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private synchronized void destroyTunnelNetwork(Connection conn, String bridgeName) {
+    private synchronized void destroyTunnelNetwork(Connection conn, Network nw, long hostId) {
         try {
-            Network nw = findOrCreateTunnelNetwork(conn, bridgeName);
             String bridge = nw.getBridge(conn);
-            String result = callHostPlugin(conn, "ovstunnel", "destroy_ovs_bridge", "bridge", bridge);
+            String result = callHostPlugin(conn, "ovstunnel", "destroy_ovs_bridge", "bridge", bridge,
+                    "cs_host_id", ((Long)hostId).toString());
             String[] res = result.split(":");
             if (res.length != 2 || !res[0].equalsIgnoreCase("SUCCESS")) {
                 //TODO: Should make this error not fatal?
@@ -1677,14 +1678,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return cmd;
     }
 
-    private void cleanUpTmpDomVif(Connection conn, Network nw) {
-        List<VIF> vifs;
-        synchronized (_tmpDom0Vif) {
-            vifs = _tmpDom0Vif;
-            _tmpDom0Vif = new ArrayList<VIF>();
-        }
+    private void cleanUpTmpDomVif(Connection conn, Network nw) throws XenAPIException, XmlRpcException {
 
-        for (VIF v : vifs) {
+        Pair<VM, VM.Record> vm = getControlDomain(conn);
+        VM dom0 = vm.first();
+        Set<VIF> dom0Vifs = dom0.getVIFs(conn);
+        for (VIF v : dom0Vifs) {
             String vifName = "unknown";
             try {
                 VIF.Record vifr = v.getRecord(conn);
@@ -5277,12 +5276,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     private Answer execute(OvsDestroyBridgeCommand cmd) {
-        Connection conn = getConnection();
-        Network nw = findOrCreateTunnelNetwork(conn, cmd.getBridgeName());
-        cleanUpTmpDomVif(conn, nw);
-        destroyTunnelNetwork(conn, cmd.getBridgeName());
-        s_logger.debug("OVS Bridge destroyed");
-        return new Answer(cmd, true, null);
+        try {
+            Connection conn = getConnection();
+            Network nw = findOrCreateTunnelNetwork(conn, cmd.getBridgeName());
+            cleanUpTmpDomVif(conn, nw);
+            destroyTunnelNetwork(conn, nw, cmd.getHostId());
+            s_logger.debug("OVS Bridge destroyed");
+            return new Answer(cmd, true, null);
+        } catch (Exception e) {
+            s_logger.warn("caught execption when destroying ovs bridge", e);
+            return new Answer(cmd, false, e.getMessage());
+        }
     }
 
     private Answer execute(OvsDestroyTunnelCommand cmd) {
