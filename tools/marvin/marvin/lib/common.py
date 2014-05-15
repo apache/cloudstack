@@ -1083,13 +1083,25 @@ def shouldTestBeSkipped(networkType, zoneType):
 
 def verifyNetworkState(apiclient, networkid, state):
     """List networks and check if the network state matches the given state"""
+    retriesCount = 10
+    isNetworkInDesiredState = False
+    exceptionOccured = False
+    exceptionMessage = ""
     try:
-        networks = Network.list(apiclient, id=networkid)
+        while retriesCount >= 0:
+            networks = Network.list(apiclient, id=networkid)
+            assert validateList(
+                networks)[0] == PASS, "Networks list validation failed"
+            if str(networks[0].state).lower() == state:
+                isNetworkInDesiredState = True
+                break
+            retriesCount -= 1
+            time.sleep(60)
     except Exception as e:
-        raise Exception("Failed while fetching network list with error: %s" % e)
-    assert validateList(networks)[0] == PASS, "Networks list validation failed, list is %s" % networks
-    assert str(networks[0].state).lower() == state, "network state should be %s, it is %s" % (state, networks[0].state)
-    return
+        exceptionOccured = True
+        exceptionMessage = e
+        return [exceptionOccured, isNetworkInDesiredState, exceptionMessage]
+    return [exceptionOccured, isNetworkInDesiredState, exceptionMessage]
 
 def verifyComputeOfferingCreation(apiclient, computeofferingid):
     """List Compute offerings by ID and verify that the offering exists"""
