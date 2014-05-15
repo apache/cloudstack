@@ -70,7 +70,7 @@ public class NetworkACLItemCidrsDaoImpl extends GenericDaoBase<NetworkACLItemCid
     @Override
     public List<String> getCidrs(long networkACLItemId) {
         SearchCriteria<NetworkACLItemCidrsVO> sc = cidrsSearch.create();
-        sc.setParameters("firewallRuleId", networkACLItemId);
+        sc.setParameters("networkAclItemId", networkACLItemId);
 
         List<NetworkACLItemCidrsVO> results = search(sc, null);
         List<String> cidrs = new ArrayList<String>(results.size());
@@ -84,7 +84,7 @@ public class NetworkACLItemCidrsDaoImpl extends GenericDaoBase<NetworkACLItemCid
     @Override
     public List<NetworkACLItemCidrsVO> listByNetworkACLItemId(long networkACLItemId) {
         SearchCriteria<NetworkACLItemCidrsVO> sc = cidrsSearch.create();
-        sc.setParameters("firewallRuleId", networkACLItemId);
+        sc.setParameters("networkAclItemId", networkACLItemId);
 
         List<NetworkACLItemCidrsVO> results = search(sc, null);
 
