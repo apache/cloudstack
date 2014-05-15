@@ -191,7 +191,7 @@ class CSTestClient(object):
         user = "cloud" if self.__dbSvrDetails.user is None \
             else self.__dbSvrDetails.user
         passwd = 'cloud' if self.__dbSvrDetails.passwd is None \
-            else self.__dbSvrDetails.passd
+            else self.__dbSvrDetails.passwd
         db = 'cloud' if self.__dbSvrDetails.db is None \
             else self.__dbSvrDetails.db
         self.__dbConnection = DbConnection(host, port, user, passwd, db)
