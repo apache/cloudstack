@@ -185,7 +185,7 @@ test_data = {
         "guestiptype": 'Isolated',
         "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
         "traffictype": 'GUEST',
-        "isPersistent": 'True',
+        "ispersistent": 'True',
         "availability": 'Optional',
         "serviceProviderList": {
                 "Dhcp": 'VirtualRouter',
@@ -438,7 +438,7 @@ test_data = {
         "supportedservices":
         'Vpn,Dhcp,Dns,SourceNat,PortForwarding,Firewall,Lb,UserData,StaticNat',
         "traffictype": 'GUEST',
-        "isPersistent": 'True',
+        "ispersistent": 'True',
         "availability": 'Optional',
         "serviceProviderList": {
                 "Vpn": 'VirtualRouter',
@@ -555,7 +555,7 @@ test_data = {
         "supportedservices":
         'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
         "traffictype": 'GUEST',
-        "isPersistent": 'True',
+        "ispersistent": 'True',
         "availability": 'Optional',
         "serviceProviderList": {
             "Dhcp": 'VirtualRouter',
@@ -578,7 +578,7 @@ test_data = {
         'Vpn,Dhcp,Dns,SourceNat,PortForwarding,UserData,StaticNat,NetworkACL',
         "traffictype": 'GUEST',
         "availability": 'Optional',
-        "isPersistent": 'True',
+        "ispersistent": 'True',
         "useVpc": 'on',
         "serviceProviderList": {
                 "Vpn": 'VpcVirtualRouter',
