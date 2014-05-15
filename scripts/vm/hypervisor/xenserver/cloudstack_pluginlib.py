@@ -634,6 +634,12 @@ def configure_vpc_bridge_for_routing_policies(bridge, json_config, sequence_no):
                 protocol = acl_item.protocol
                 if protocol == "all":
                     protocol = "*"
+                elif protocol == "tcp":
+                    protocol = "6"
+                elif protocol == "udp":
+                    protocol == "17"
+                elif protocol == "icmp":
+                    protocol == "1"
                 source_cidrs = acl_item.sourcecidrs
                 acl_priority = 1000 + number
                 if direction == "ingress":
@@ -647,50 +653,96 @@ def configure_vpc_bridge_for_routing_policies(bridge, json_config, sequence_no):
                     if source_port_start is None and source_port_end is None:
                         if source_cidr.startswith('0.0.0.0'):
                             if action == "deny":
-                                ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
-                                             " nw_dst=%s " %tier_cidr + " nw_proto=%s " %protocol +
-                                             " actions=drop" + "\n")
+                                if direction == "ingress":
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " nw_dst=%s " %tier_cidr + " nw_proto=%s " %protocol +
+                                                 " actions=drop" + "\n")
+                                else:
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " nw_src=%s " %tier_cidr + " nw_proto=%s " %protocol +
+                                                 " actions=drop" + "\n")
                             if action == "allow":
-                                ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
-                                             " nw_dst=%s " %tier_cidr + " nw_proto=%s " %protocol +
-                                             " actions=resubmit(,%s)"%resubmit_table + "\n")
-
+                                if direction == "ingress":
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " nw_dst=%s " %tier_cidr + " nw_proto=%s " %protocol +
+                                                 " actions=resubmit(,%s)"%resubmit_table + "\n")
+                                else:
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " nw_src=%s " %tier_cidr + " nw_proto=%s " %protocol +
+                                                 " actions=resubmit(,%s)"%resubmit_table + "\n")
                         else:
                             if action == "deny":
-                                ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
-                                             " nw_src=%s " %source_cidr + " nw_dst=%s " %tier_cidr +
-                                             " nw_proto=%s " %protocol + " actions=drop" + "\n")
+                                if direction == "ingress":
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " nw_src=%s " %source_cidr + " nw_dst=%s " %tier_cidr +
+                                                 " nw_proto=%s " %protocol + " actions=drop" + "\n")
+                                else:
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " nw_src=%s " %tier_cidr + " nw_dst=%s " %source_cidr +
+                                                 " nw_proto=%s " %protocol + " actions=drop" + "\n")
                             if action == "allow":
-                                ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
-                                             " nw_src=%s "%source_cidr + " nw_dst=%s " %tier_cidr +
-                                             " nw_proto=%s " %protocol +
-                                             " actions=resubmit(,%s)"%resubmit_table  + "\n")
+                                if direction == "ingress":
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " nw_src=%s "%source_cidr + " nw_dst=%s " %tier_cidr +
+                                                 " nw_proto=%s " %protocol +
+                                                 " actions=resubmit(,%s)"%resubmit_table  + "\n")
+                                else:
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " nw_src=%s "%tier_cidr + " nw_dst=%s " %source_cidr +
+                                                 " nw_proto=%s " %protocol +
+                                                 " actions=resubmit(,%s)"%resubmit_table  + "\n")
                         continue
 
                     # add flow rule to do action (allow/deny) for flows where source IP of the packet is in
                     # source_cidr and destination ip is in tier_cidr
-                    port = source_port_start
-                    while (port < source_port_end):
+                    port = int(source_port_start)
+                    while (port <= int(source_port_end)):
                         if source_cidr.startswith('0.0.0.0'):
                             if action == "deny":
-                                ofspec.write("table=%s " %matching_table + " priority=%s " %acl_priority + " ip " +
-                                             " tp_dst=%s " %port + " nw_dst=%s " %tier_cidr +
-                                             " nw_proto=%s " %protocol + " actions=drop"  + "\n")
+                                if direction == "ingress":
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " tp_dst=%s " %port + " nw_dst=%s " %tier_cidr +
+                                                 " nw_proto=%s " %protocol + " actions=drop"  + "\n")
+                                else:
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " tp_dst=%s " %port + " nw_src=%s " %tier_cidr +
+                                                 " nw_proto=%s " %protocol + " actions=drop" + "\n")
                             if action == "allow":
-                                ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
-                                             " tp_dst=%s " %port + " nw_dst=%s " %tier_cidr +
-                                             " nw_proto=%s " %protocol +
-                                             " actions=resubmit(,%s)"%resubmit_table  + "\n")
+                                if direction == "ingress":
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " tp_dst=%s " %port + " nw_dst=%s " %tier_cidr +
+                                                 " nw_proto=%s " %protocol +
+                                                 " actions=resubmit(,%s)"%resubmit_table + "\n")
+                                else:
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " tp_dst=%s " %port + " nw_src=%s " %tier_cidr +
+                                                 " nw_proto=%s " %protocol +
+                                                 " actions=resubmit(,%s)"%resubmit_table + "\n")
                         else:
                             if action == "deny":
-                                ofspec.write("table=%s " %matching_table + " priority=%s " %acl_priority + " ip " +
-                                             " tp_dst=%s " %port + " nw_src=%s "%source_cidr + " nw_dst=%s "%tier_cidr +
-                                             " nw_proto=%s " %protocol + " actions=drop"  + "\n")
+                                if direction == "ingress":
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " tp_dst=%s " %port + " nw_src=%s " %source_cidr +
+                                                 " nw_dst=%s " %tier_cidr +
+                                                 " nw_proto=%s " %protocol + " actions=drop" + "\n")
+                                else:
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " tp_dst=%s " %port + " nw_src=%s " %tier_cidr +
+                                                 " nw_dst=%s " %source_cidr +
+                                                 " nw_proto=%s " %protocol + " actions=drop" + "\n")
                             if action == "allow":
-                                ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
-                                             " tp_dst=%s " %port + " nw_src=%s "%source_cidr + " nw_dst=%s "%tier_cidr +
-                                             " nw_proto=%s " %protocol +
-                                             " actions=resubmit(,%s)"%resubmit_table + "\n")
+                                if direction == "ingress":
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " tp_dst=%s " %port + " nw_src=%s "%source_cidr +
+                                                 " nw_dst=%s " %tier_cidr +
+                                                 " nw_proto=%s " %protocol +
+                                                 " actions=resubmit(,%s)"%resubmit_table  + "\n")
+                                else:
+                                    ofspec.write("table=%s "%matching_table + " priority=%s " %acl_priority + " ip " +
+                                                 " tp_dst=%s " %port + " nw_src=%s "%tier_cidr +
+                                                 " nw_dst=%s " %source_cidr +
+                                                 " nw_proto=%s " %protocol +
+                                                 " actions=resubmit(,%s)"%resubmit_table  + "\n")
                         port = port + 1
 
         # add a default rule in egress table to allow packets (so forward packet to L3 lookup table)
