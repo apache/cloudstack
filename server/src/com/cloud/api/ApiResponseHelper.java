@@ -1470,7 +1470,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         List<VgpuTypesInfo> gpuCapacities;
-        if ((gpuCapacities = ApiDBUtils.getGpuCapacites(result.get(0).getDataCenterId(), result.get(0).getPodId(), result.get(0).getClusterId())) != null) {
+        if (!result.isEmpty() && (gpuCapacities = ApiDBUtils.getGpuCapacites(result.get(0).getDataCenterId(), result.get(0).getPodId(), result.get(0).getClusterId())) != null) {
             HashMap<String, Long> vgpuVMs = ApiDBUtils.getVgpuVmsCount(result.get(0).getDataCenterId(), result.get(0).getPodId(), result.get(0).getClusterId());
 
             float capacityUsed = 0;
@@ -1503,7 +1503,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             capacityResponse.setCapacityType(Capacity.CAPACITY_TYPE_GPU);
             capacityResponse.setCapacityUsed((long)Math.ceil(capacityUsed));
             capacityResponse.setCapacityTotal(capacityMax);
-            capacityResponse.setPercentUsed(format.format(capacityUsed / capacityMax * 100f));
+            if (capacityMax > 0) {
+                capacityResponse.setPercentUsed(format.format(capacityUsed / capacityMax * 100f));
+            } else {
+                capacityResponse.setPercentUsed(format.format(0));
+            }
             capacityResponse.setObjectName("capacity");
             capacityResponses.add(capacityResponse);
         }
