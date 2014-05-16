@@ -54,6 +54,7 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.GetDatadisksAnswer;
 import com.cloud.agent.api.storage.GetDatadisksCommand;
 import com.cloud.agent.api.storage.Proxy;
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -66,7 +67,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.Ternary;
 
 public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     private static final Logger s_logger = Logger.getLogger(BaseImageStoreDriverImpl.class);
@@ -293,8 +293,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     }
 
     @Override
-    public List<Ternary<String, Long, Long>> getDatadiskTemplates(DataObject obj) {
-        List<Ternary<String, Long, Long>> dataDiskDetails = new ArrayList<Ternary<String, Long, Long>>();
+    public List<DatadiskTO> getDatadiskTemplates(DataObject obj) {
+        List<DatadiskTO> dataDiskDetails = new ArrayList<DatadiskTO>();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Get the data disks present in the OVA template");
         }
@@ -311,20 +311,20 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         }
         if (answer != null && answer.getResult()) {
             GetDatadisksAnswer getDatadisksAnswer = (GetDatadisksAnswer)answer;
-            dataDiskDetails = getDatadisksAnswer.getDataDiskDetails(); // Details - Disk path, virtual size
+            dataDiskDetails = getDatadisksAnswer.getDataDiskDetails(); // Details - Disk path, virtual size, bootable
         }
         return dataDiskDetails;
     }
 
     @Override
-    public Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, long fileSize,
+    public Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, boolean bootable, long fileSize,
             AsyncCompletionCallback<CreateCmdResult> callback) {
         Answer answer = null;
         String errMsg = null;
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Create Datadisk template: " + dataDiskTemplate.getId());
         }
-        CreateDatadiskTemplateCommand cmd = new CreateDatadiskTemplateCommand(dataDiskTemplate.getTO(), path, fileSize);
+        CreateDatadiskTemplateCommand cmd = new CreateDatadiskTemplateCommand(dataDiskTemplate.getTO(), path, fileSize, bootable);
         EndPoint ep = _defaultEpSelector.selectHypervisorHostByType(dataDiskTemplate.getDataStore().getScope(), HypervisorType.VMware);
         if (ep == null) {
             errMsg = "No remote endpoint to send command, check if host or ssvm is down?";

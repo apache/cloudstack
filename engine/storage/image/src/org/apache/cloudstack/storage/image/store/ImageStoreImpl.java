@@ -45,12 +45,12 @@ import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.ImageStoreTO;
 
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
 
 public class ImageStoreImpl implements ImageStoreEntity {
@@ -208,13 +208,12 @@ public class ImageStoreImpl implements ImageStoreEntity {
     }
 
     @Override
-    public List<Ternary<String, Long, Long>> getDatadiskTemplates(DataObject obj) {
+    public List<DatadiskTO> getDatadiskTemplates(DataObject obj) {
         return driver.getDatadiskTemplates(obj);
     }
 
     @Override
-    public Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, long fileSize, AsyncCompletionCallback<CreateCmdResult> callback) {
-        return driver.createDataDiskTemplateAsync(dataDiskTemplate, path, fileSize, callback);
-
+    public Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, long fileSize, boolean bootable, AsyncCompletionCallback<CreateCmdResult> callback) {
+        return driver.createDataDiskTemplateAsync(dataDiskTemplate, path, bootable, fileSize, callback);
     }
 }

@@ -68,6 +68,7 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
@@ -550,7 +551,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     @Override
     public Answer execute(VmwareHostService hostService, GetDatadisksCommand cmd) {
-        List<Ternary<String, Long, Long>> datDiskDetails = new ArrayList<Ternary<String, Long, Long>>();
+        List<DatadiskTO> disks = new ArrayList<DatadiskTO>();
         DataTO srcData = cmd.getData();
         TemplateObjectTO template = (TemplateObjectTO)srcData;
         DataStoreTO srcStore = srcData.getDataStore();
@@ -603,22 +604,19 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             s_logger.debug("Reading OVF " + ovfFilePath + " to retrive the number of disks present in OVA");
             List<Pair<String, Boolean>> ovfVolumeDetails = HypervisorHostHelper.readOVF(hyperHost, ovfFilePath, datastoreMo);
 
-            // Get the virtual size of data disk
+            // Get OVA disk details
             for (Pair<String, Boolean> ovfVolumeDetail : ovfVolumeDetails) {
-                if (ovfVolumeDetail.second()) { // ROOT disk
-                    continue;
-                }
                 String dataDiskPath = ovfVolumeDetail.first();
                 String diskName = dataDiskPath.substring((dataDiskPath.lastIndexOf(File.separator)) + 1);
                 Pair<Long, Long> diskDetails = new OVAProcessor().getDiskDetails(ovfFilePath, diskName);
-                datDiskDetails.add(new Ternary<String, Long, Long>(dataDiskPath, diskDetails.first(), diskDetails.second()));
+                disks.add(new DatadiskTO(dataDiskPath, diskDetails.first(), diskDetails.second(), ovfVolumeDetail.second()));
             }
         } catch (Exception e) {
             String msg = "Get Datadisk Template Count failed due to " + e.getMessage();
             s_logger.error(msg);
             return new GetDatadisksAnswer(msg);
         }
-        return new GetDatadisksAnswer(datDiskDetails);
+        return new GetDatadisksAnswer(disks);
     }
 
     @Override
@@ -653,35 +651,49 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             long physicalSize = new File(dataDiskPath).length();
             String dataDiskTemplateFolderPath = getTemplateRelativeDirInSecStorage(dataDiskTemplate.getAccountId(), dataDiskTemplate.getId());
             String dataDiskTemplateFolderFullPath = secondaryMountPoint + "/" + dataDiskTemplateFolderPath;
-
-            // Create folder to hold datadisk template
-            synchronized (dataDiskTemplateFolderPath.intern()) {
-                Script command = new Script(false, "mkdir", _timeout, s_logger);
-                command.add("-p");
-                command.add(dataDiskTemplateFolderFullPath);
-                String result = command.execute();
-                if (result != null) {
-                    String msg = "Unable to prepare template directory: " + dataDiskTemplateFolderPath + ", storage: " + secondaryStorageUrl + ", error msg: " + result;
-                    s_logger.error(msg);
-                    throw new Exception(msg);
-                }
-            }
-
-            // Copy Datadisk VMDK from parent template folder to Datadisk template folder
-            synchronized (dataDiskPath.intern()) {
-                Script command = new Script(false, "cp", _timeout, s_logger);
-                command.add(dataDiskPath);
-                command.add(dataDiskTemplateFolderFullPath);
-                String result = command.execute();
-                if (result != null) {
-                    String msg = "Unable to copy VMDK from parent template folder to datadisk template folder" + ", error msg: " + result;
-                    s_logger.error(msg);
-                    throw new Exception(msg);
-                }
-            }
-
             String ovfName = diskName.substring(0, diskName.lastIndexOf("-"));
             String datastorePath = String.format("[%s] %s", datastoreMo.getName(), dataDiskTemplateFolderPath);
+
+            if (!cmd.getBootable()) {
+                // Create folder to hold datadisk template
+                synchronized (dataDiskTemplateFolderPath.intern()) {
+                    Script command = new Script(false, "mkdir", _timeout, s_logger);
+                    command.add("-p");
+                    command.add(dataDiskTemplateFolderFullPath);
+                    String result = command.execute();
+                    if (result != null) {
+                        String msg = "Unable to prepare template directory: " + dataDiskTemplateFolderPath + ", storage: " + secondaryStorageUrl + ", error msg: " + result;
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                }
+                // Move Datadisk VMDK from parent template folder to Datadisk template folder
+                synchronized (dataDiskPath.intern()) {
+                    Script command = new Script(false, "mv", _timeout, s_logger);
+                    command.add(dataDiskPath);
+                    command.add(dataDiskTemplateFolderFullPath);
+                    String result = command.execute();
+                    if (result != null) {
+                        String msg = "Unable to copy VMDK from parent template folder to datadisk template folder" + ", error msg: " + result;
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                }
+            } else {
+                // Delete original OVA as a new OVA will be created for the root disk template
+                String rootDiskTemplatePath = dataDiskTemplate.getPath();
+                String rootDiskTemplateFullPath = secondaryMountPoint + "/" + rootDiskTemplatePath;
+                synchronized (rootDiskTemplateFullPath.intern()) {
+                    Script command = new Script(false, "rm", _timeout, s_logger);
+                    command.add(rootDiskTemplateFullPath);
+                    String result = command.execute();
+                    if (result != null) {
+                        String msg = "Unable to delete original OVA" + ", error msg: " + result;
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                }
+            }
 
             // Create OVF for Datadisk
             s_logger.debug("Creating OVF file for datadisk " + diskName + " in " + dataDiskTemplateFolderFullPath);

@@ -18,38 +18,20 @@
  */
 package com.cloud.agent.api.to;
 
-public class DatadiskTemplateTO {
-    private long id;
-    private String uniqueName;
+public class DatadiskTO {
     private String path;
-    private Long virtualSize;
-    private Long fileSize;
+    private long virtualSize;
+    private long fileSize;
+    boolean bootable;
 
-    public DatadiskTemplateTO() {
+    public DatadiskTO() {
     }
 
-    public DatadiskTemplateTO(long id, String uniqueName, String path, Long virtualSize, Long fileSize) {
-        this.id = id;
-        this.uniqueName = uniqueName;
+    public DatadiskTO(String path, long virtualSize, long fileSize, boolean bootable) {
         this.path = path;
         this.virtualSize = virtualSize;
         this.fileSize = fileSize;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getUniqueName() {
-        return uniqueName;
-    }
-
-    public void setUniqueName(String uniqueName) {
-        this.uniqueName = uniqueName;
+        this.bootable = bootable;
     }
 
     public String getPath() {
@@ -70,5 +52,9 @@ public class DatadiskTemplateTO {
 
     public Long getFileSize() {
         return fileSize;
+    }
+
+    public boolean isBootable() {
+        return bootable;
     }
 }

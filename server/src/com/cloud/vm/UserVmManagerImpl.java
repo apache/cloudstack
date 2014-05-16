@@ -2612,18 +2612,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         (dataDiskTemplate.getState().equals(VirtualMachineTemplate.State.Active))) {
                     throw new InvalidParameterValueException("Invalid template id specified for Datadisk template" + datadiskTemplateToDiskOffering.getKey());
                 }
+                long dataDiskTemplateId = datadiskTemplateToDiskOffering.getKey();
                 if (!dataDiskTemplate.getParentTemplateId().equals(template.getId())) {
-                    throw new InvalidParameterValueException("Invalid Datadisk template. Specified Datadisk template " + datadiskTemplateToDiskOffering.getKey()
+                    throw new InvalidParameterValueException("Invalid Datadisk template. Specified Datadisk template " + dataDiskTemplateId
                             + " doesn't belong to template " + template.getId());
                 }
                 if (dataDiskOffering == null) {
-                    throw new InvalidParameterValueException("Invalid disk offering id specified" + datadiskTemplateToDiskOffering.getValue());
+                    throw new InvalidParameterValueException("Invalid disk offering id " + datadiskTemplateToDiskOffering.getValue().getId() +
+                            " specified for datadisk template " + dataDiskTemplateId);
+                }
+                if (dataDiskOffering.isCustomized()) {
+                    throw new InvalidParameterValueException("Invalid disk offering id " + dataDiskOffering.getId() + " specified for datadisk template " +
+                            dataDiskTemplateId + ". Custom Disk offerings are not supported for Datadisk templates");
+                }
+                if (dataDiskOffering.getDiskSize() < dataDiskTemplate.getSize()) {
+                    throw new InvalidParameterValueException("Invalid disk offering id " + dataDiskOffering.getId() + " specified for datadisk template " +
+                            dataDiskTemplateId + ". Disk offering size should be greater than or equal to the template size");
                 }
                 _templateDao.loadDetails(dataDiskTemplate);
-                if (dataDiskOffering.isCustomized()) {
-                    throw new InvalidParameterValueException("Invalid disk offering id specified" + datadiskTemplateToDiskOffering.getValue() + ". Custom Disk offerings are not" +
-                            " supported for Datadisk templates");
-                }
                 _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, 1);
                 _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, dataDiskOffering.getDiskSize());
             }

@@ -20,17 +20,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.utils.Ternary;
+import com.cloud.agent.api.to.DatadiskTO;
 
 public class GetDatadisksAnswer extends Answer {
-    List<Ternary<String, Long, Long>> dataDiskDetails = new ArrayList<Ternary<String, Long, Long>>();
+    List<DatadiskTO> dataDiskDetails = new ArrayList<DatadiskTO>();
 
-    public GetDatadisksAnswer(List<Ternary<String, Long, Long>> dataDiskDetails) {
+    public GetDatadisksAnswer(List<DatadiskTO> dataDiskDetails) {
         super(null);
         this.dataDiskDetails = dataDiskDetails;
     }
 
-    public List<Ternary<String, Long, Long>> getDataDiskDetails() {
+    public List<DatadiskTO> getDataDiskDetails() {
         return dataDiskDetails;
     }
 

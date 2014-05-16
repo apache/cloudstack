@@ -29,9 +29,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.utils.Ternary;
 
 public interface ImageStoreEntity extends DataStore, ImageStore {
     TemplateInfo getTemplate(long templateId);
@@ -48,7 +48,7 @@ public interface ImageStoreEntity extends DataStore, ImageStore {
 
     String createEntityExtractUrl(String installPath, ImageFormat format, DataObject dataObject);  // get the entity download URL
 
-    List<Ternary<String, Long, Long>> getDatadiskTemplates(DataObject obj);
+    List<DatadiskTO> getDatadiskTemplates(DataObject obj);
 
-    Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, long fileSize, AsyncCompletionCallback<CreateCmdResult> callback);
+    Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, long fileSize, boolean bootable, AsyncCompletionCallback<CreateCmdResult> callback);
 }

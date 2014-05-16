@@ -67,14 +67,17 @@ import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
@@ -91,9 +94,11 @@ import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -581,6 +586,18 @@ public class TemplateServiceImpl implements TemplateService {
             return null;
         }
 
+        // Check if OVA contains additional data disks. If yes, create Datadisk templates for each of the additional datadisk present in the OVA
+        if (template.getFormat().equals(ImageFormat.OVA)) {
+            if(!createDataDiskTemplates(template)) {
+                template.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+                result.setResult(callbackResult.getResult());
+                if (parentCallback != null) {
+                    parentCallback.complete(result);
+                }
+                return null;
+            }
+        }
+
         try {
             template.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
         } catch (Exception e) {
@@ -595,6 +612,81 @@ public class TemplateServiceImpl implements TemplateService {
             parentCallback.complete(result);
         }
         return null;
+    }
+
+    protected boolean createDataDiskTemplates(TemplateInfo parentTemplate) {
+        TemplateApiResult result = null;
+        // Get Datadisk template (if any) for OVA
+        List<DatadiskTO> dataDiskTemplates = new ArrayList<DatadiskTO>();
+        ImageStoreEntity tmpltStore = (ImageStoreEntity)parentTemplate.getDataStore();
+        dataDiskTemplates = tmpltStore.getDatadiskTemplates(parentTemplate);
+        s_logger.error("Found " + dataDiskTemplates.size() + " Datadisk template(s) for template: " + parentTemplate.getId());
+        int diskCount = 1;
+        VMTemplateVO template = _templateDao.findById(parentTemplate.getId());
+        DataStore imageStore = parentTemplate.getDataStore();
+        for (DatadiskTO dataDiskTemplate : dataDiskTemplates) {
+            if (dataDiskTemplate.isBootable())
+                continue;
+            // Make an entry in vm_template table
+            final long templateId = _templateDao.getNextInSequence(Long.class, "id");
+            VMTemplateVO templateVO = new VMTemplateVO(templateId, template.getName() + "-DataDiskTemplate-" + diskCount, template.getFormat(), false, false, false,
+                    TemplateType.DATADISK, template.getUrl(), template.requiresHvm(), template.getBits(), template.getAccountId(), null,
+                    template.getDisplayText() + "-DataDiskTemplate", false, 0, false, template.getHypervisorType(), null, null, false, false);
+            templateVO.setParentTemplateId(template.getId());
+            templateVO.setSize(dataDiskTemplate.getVirtualSize());
+            templateVO = _templateDao.persist(templateVO);
+            // Make sync call to create Datadisk templates in image store
+            TemplateInfo dataDiskTemplateInfo = imageFactory.getTemplate(templateVO.getId(), imageStore);
+            AsyncCallFuture<TemplateApiResult> future = createDatadiskTemplateAsync(parentTemplate, dataDiskTemplateInfo, dataDiskTemplate.getPath(),
+                    dataDiskTemplate.getFileSize(), dataDiskTemplate.isBootable());
+            try {
+                result = future.get();
+                if (result.isSuccess()) {
+                    // Make an entry in template_zone_ref table
+                    if (imageStore.getScope().getScopeType() == ScopeType.REGION) {
+                        associateTemplateToZone(templateId, null);
+                    } else if (imageStore.getScope().getScopeType() == ScopeType.ZONE) {
+                        Long zoneId = ((ImageStoreEntity)imageStore).getDataCenterId();
+                        VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, templateId, new Date());
+                        _vmTemplateZoneDao.persist(templateZone);
+                    }
+                    _resourceLimitMgr.incrementResourceCount(template.getAccountId(), ResourceType.secondary_storage, templateVO.getSize());
+                } else {
+                    // Cleanup Datadisk template enries in case of failure
+                    Transaction.execute(new TransactionCallbackNoReturn() {
+                        @Override
+                        public void doInTransactionWithoutResult(TransactionStatus status) {
+                            _vmTemplateStoreDao.deletePrimaryRecordsForTemplate(templateId);
+                            _vmTemplateZoneDao.deletePrimaryRecordsForTemplate(templateId);
+                            _templateDao.expunge(templateId);
+                        }
+                    });
+                    // Don't create the remaining Datadisk templates if creation of any of the Datadisk template failed
+                    s_logger.error("Creation of Datadisk: " + templateVO.getId() + " failed: " + result.getResult());
+                    return false;
+                }
+            } catch (Exception e) {
+                s_logger.error("Creation of Datadisk: " + templateVO.getId() + " failed: " + result.getResult());
+                return false;
+            }
+            diskCount++;
+        }
+        // Create disk template for the bootable parent template
+        for (DatadiskTO dataDiskTemplate : dataDiskTemplates) {
+            if (dataDiskTemplate.isBootable()) {
+                TemplateInfo templateInfo = imageFactory.getTemplate(template.getId(), imageStore);
+                AsyncCallFuture<TemplateApiResult> templateFuture = createDatadiskTemplateAsync(parentTemplate, templateInfo, dataDiskTemplate.getPath(),
+                        dataDiskTemplate.getFileSize(), dataDiskTemplate.isBootable());
+                try {
+                    result = templateFuture.get();
+                    return result.isSuccess();
+                } catch (Exception e) {
+                    s_logger.error("Creation of template: " + template.getId() + " failed: " + result.getResult());
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     @Override
@@ -891,14 +983,6 @@ public class TemplateServiceImpl implements TemplateService {
         }
     }
 
-    @Override
-    public List<Ternary<String, Long, Long>> getDatadiskTemplates(TemplateInfo template) {
-        List<Ternary<String, Long, Long>> dataDiskDetails = new ArrayList<Ternary<String, Long, Long>>();
-        ImageStoreEntity tmpltStore = (ImageStoreEntity)template.getDataStore();
-        dataDiskDetails = tmpltStore.getDatadiskTemplates(template);
-        return dataDiskDetails;
-    }
-
     private class CreateDataDiskTemplateContext<T> extends AsyncRpcContext<T> {
         private final DataObject dataDiskTemplate;
         private final AsyncCallFuture<TemplateApiResult> future;
@@ -915,18 +999,23 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public AsyncCallFuture<TemplateApiResult> createDatadiskTemplateAsync(TemplateInfo parentTemplate, TemplateInfo dataDiskTemplate, String path, long fileSize) {
+    public AsyncCallFuture<TemplateApiResult> createDatadiskTemplateAsync(TemplateInfo parentTemplate, TemplateInfo dataDiskTemplate, String path, long fileSize, boolean bootable) {
         AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
         // Make an entry for Datadisk template in template_store_ref table
         DataStore store = parentTemplate.getDataStore();
-        TemplateObject dataDiskTemplateOnStore = (TemplateObject)store.create(dataDiskTemplate);
-        dataDiskTemplateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested);
+        TemplateObject dataDiskTemplateOnStore;
+        if (!bootable) {
+            dataDiskTemplateOnStore = (TemplateObject)store.create(dataDiskTemplate);
+            dataDiskTemplateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested);
+        } else {
+            dataDiskTemplateOnStore = (TemplateObject) imageFactory.getTemplate(parentTemplate, store);
+        }
         try {
             CreateDataDiskTemplateContext<TemplateApiResult> context = new CreateDataDiskTemplateContext<TemplateApiResult>(null, dataDiskTemplateOnStore, future);
             AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
-            caller.setCallback(caller.getTarget().createDataDiskTemplateCallback(null, null)).setContext(context);
+            caller.setCallback(caller.getTarget().createDatadiskTemplateCallback(null, null)).setContext(context);
             ImageStoreEntity tmpltStore = (ImageStoreEntity)parentTemplate.getDataStore();
-            tmpltStore.createDataDiskTemplateAsync(dataDiskTemplate, path, fileSize, caller);
+            tmpltStore.createDataDiskTemplateAsync(dataDiskTemplate, path, fileSize, bootable, caller);
         } catch (CloudRuntimeException ex) {
             dataDiskTemplateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
             TemplateApiResult result = new TemplateApiResult(dataDiskTemplate);
@@ -938,7 +1027,7 @@ public class TemplateServiceImpl implements TemplateService {
         return future;
     }
 
-    protected Void createDataDiskTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback, CreateDataDiskTemplateContext<TemplateApiResult> context) {
+    protected Void createDatadiskTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback, CreateDataDiskTemplateContext<TemplateApiResult> context) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Performing create datadisk template cross callback after completion");
         }
@@ -954,7 +1043,7 @@ public class TemplateServiceImpl implements TemplateService {
                 dataDiskTemplateResult.setResult(result.getResult());
             }
         } catch (Exception e) {
-            s_logger.debug("Failed to process copy template cross zones callback", e);
+            s_logger.debug("Failed to process create datadisk template callback", e);
             dataDiskTemplateResult.setResult(e.toString());
         }
         future.complete(dataDiskTemplateResult);
