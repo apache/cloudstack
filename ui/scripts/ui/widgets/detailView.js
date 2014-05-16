@@ -940,6 +940,14 @@
 
         $detailGroups.append($('<div>').addClass('main-groups'));
 
+        $(window).trigger('cloudStack.detailView.makeFieldContent', {
+            fields: fields,
+            data: data,
+            detailViewArgs: detailViewArgs,
+            $detailView: $detailView,
+            $detailGroups: $detailGroups
+        });
+
         $(fields).each(function() {
             var fieldGroup = this;
             var $detailTable = $('<tbody></tbody>').appendTo(
