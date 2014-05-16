@@ -19,7 +19,7 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (VirtualMachine,
                                          NetworkOffering,
                                          VpcOffering,
@@ -43,6 +43,7 @@ from marvin.lib.common import (get_domain,
                                            get_free_vlan)
 
 from marvin.lib.utils import cleanup_resources
+from marvin.codes import ERROR_CODE_530
 from marvin.cloudstackAPI import rebootRouter
 
 
@@ -1622,8 +1623,10 @@ class TestVMDeployVPC(cloudstackTestCase):
                              "Vm state should be running for each VM deployed"
                              )
         self.debug("Trying to delete network: %s" % network_1.name)
-        with self.assertRaises(Exception):
-            network_1.delete(self.apiclient)
+        response = network_1.delete(self.apiclient)
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
         self.debug("Delete netwpork failed as there are running instances")
 
         self.debug("Destroying all the instances in network1: %s" %
@@ -2161,8 +2164,10 @@ class TestVMDeployVPC(cloudstackTestCase):
                          )
 
         self.debug("Trying to delete network: %s" % network_1.name)
-        with self.assertRaises(Exception):
-            network_1.delete(self.apiclient)
+        response = network_1.delete(self.apiclient)
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
         self.debug("Delete network failed as there are running instances")
 
         self.debug("Destroying all the instances in network1: %s" %

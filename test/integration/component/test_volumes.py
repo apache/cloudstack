@@ -36,6 +36,7 @@ from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
                                get_pod)
+from marvin.codes import ERROR_CODE_530
 #Import System modules
 import time
 
@@ -341,16 +342,17 @@ class TestAttachVolume(cloudstackTestCase):
             True,
             "Check list volumes response for valid list"
         )
-        # Attach volume to VM
-        with self.assertRaises(Exception):
-            self.debug("Trying to Attach volume: %s to VM: %s" % (
+        self.debug("Trying to Attach volume: %s to VM: %s" % (
                                                 volume.id,
                                                 self.virtual_machine.id
                                                 ))
-            self.virtual_machine.attach_volume(
+        response = self.virtual_machine.attach_volume(
                                                 self.apiclient,
                                                 volume
                                                 )
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
         return
 
 class TestAttachDetachVolume(cloudstackTestCase):

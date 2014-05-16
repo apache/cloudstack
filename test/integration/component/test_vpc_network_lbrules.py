@@ -39,6 +39,7 @@ from marvin.lib.common import (get_domain,
                                         get_template,
                                         list_routers)
 from marvin.lib.utils import cleanup_resources
+from marvin.codes import ERROR_CODE_530
 import socket
 import time
 
@@ -640,8 +641,10 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2], self.services["lbrule_http"])
         # In a VPC, the load balancing service is supported only on a single tier.
         # http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.0.2/html/Installation_Guide/configure-vpc.html
-        with self.assertRaises(Exception):
-            lb_rule.assign(self.apiclient, [vm_3])
+        response = lb_rule.assign(self.apiclient, [vm_3])
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         return
 

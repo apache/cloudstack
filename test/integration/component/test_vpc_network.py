@@ -44,7 +44,7 @@ from marvin.lib.common import (get_zone,
 # For more info on ddt refer to http://ddt.readthedocs.org/en/latest/api.html#module-ddt
 from ddt import ddt, data
 import time
-from marvin.codes import PASS
+from marvin.codes import PASS, ERROR_CODE_530
 
 class Services:
     """Test VPC network services
@@ -2107,12 +2107,14 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
             self.fail("Failed to stop VMs, %s" % e)
 
         self.debug("Upgrading network offering to support PF services")
-        with self.assertRaises(Exception):
-            network_1.update(
+        response = network_1.update(
                             self.apiclient,
                             networkofferingid=nw_off_vr.id,
                             changecidr=True
                             )
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
         return
 
 class TestVPCNetworkGc(cloudstackTestCase):

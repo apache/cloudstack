@@ -17,15 +17,13 @@
 """ P1 tests for Project
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from marvin.sshClient import SshClient
-import datetime
+from marvin.codes import ERROR_CODE_530
 
 
 class Services:
@@ -430,13 +428,14 @@ class TestCrossDomainAccountAdd(cloudstackTestCase):
                                                     self.user.domainid,
                                                     project.id
                                                     ))
-        with self.assertRaises(Exception):
-            # Add user to the project from different domain
-            project.addAccount(
+        # Add user to the project from different domain
+        response = project.addAccount(
                            self.apiclient,
                            self.user.name
                            )
-            self.debug("User add to project failed!")
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
         return
 
 
@@ -542,10 +541,10 @@ class TestDeleteAccountWithProject(cloudstackTestCase):
                             "Check project name from list response"
                             )
         # Deleting account who is owner of the project
-        with self.assertRaises(Exception):
-            self.account.delete(self.apiclient)
-            self.debug("Deleting account %s failed!" %
-                                    self.account.name)
+        response = self.account.delete(self.apiclient)
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
         return
 
 

@@ -258,8 +258,10 @@ class TestIpReservation(cloudstackTestCase):
         except Exception as e:
             self.fail("VM creation failed: %s" % e)
 
-        with self.assertRaises(Exception):
-            isolated_network.update(self.apiclient, guestvmcidr=guest_vm_cidr)
+        response = isolated_network.update(self.apiclient, guestvmcidr=guest_vm_cidr)
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
         return
 
     @attr(tags=["advanced"])
@@ -288,8 +290,10 @@ class TestIpReservation(cloudstackTestCase):
         except Exception as e:
             self.fail("VM creation failed: %s" % e)
 
-        with self.assertRaises(Exception):
-            isolated_network.update(self.apiclient, guestvmcidr=guest_vm_cidr)
+        response = isolated_network.update(self.apiclient, guestvmcidr=guest_vm_cidr)
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
         return
 
     @data(NAT_RULE, STATIC_NAT_RULE)
@@ -1072,11 +1076,18 @@ class TestFailureScnarios(cloudstackTestCase):
         #
         # validation
         # should throw exception as network is not in implemented state as no vm is created
-        try:
-            update_response = Network.update(self.isolated_network, self.apiclient, id=isolated_network.id, guestvmcidr="10.1.1.0/26")
-            self.fail("Network Update of guest VM CIDR is successful withot any VM deployed in network")
-        except Exception as e:
-            self.debug("Network Update of guest VM CIDR should fail as there is no VM deployed in network")
+        networkOffering = self.isolated_network_offering
+        resultSet = createIsolatedNetwork(self, networkOffering.id)
+        if resultSet[0] == FAIL:
+            self.fail("Failed to create isolated network")
+        else:
+            isolated_network = resultSet[1]
+
+        response = isolated_network.update(self.apiclient, guestvmcidr="10.1.1.0/26")
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
+        return
 
     @attr(tags=["advanced", "selfservice"])
     def test_vm_create_after_reservation(self):

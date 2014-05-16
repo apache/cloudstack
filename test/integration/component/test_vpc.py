@@ -25,6 +25,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
+from marvin.codes import ERROR_CODE_530
 
 
 class Services:
@@ -699,8 +700,10 @@ class TestVPC(cloudstackTestCase):
         self.debug("Created network with ID: %s" % network_2.id)
 
         self.debug("Deleting the VPC with no network")
-        with self.assertRaises(Exception):
-            vpc.delete(self.apiclient)
+        response = vpc.delete(self.apiclient)
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
         self.debug("Delete VPC failed as there are still networks in VPC")
         self.debug("Deleting the networks in the VPC")
 
