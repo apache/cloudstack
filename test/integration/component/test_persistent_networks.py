@@ -190,8 +190,8 @@ class TestPersistentNetworks(cloudstackTestCase):
             retriesCount -= 1
             # end while
 
-	    if not isVmExpunged:
-	        self.fail("Failed to expunge vm even after 20 minutes")
+        if not isVmExpunged:
+            self.fail("Failed to expunge vm even after 20 minutes")
         return
 
     def setUp(self):
