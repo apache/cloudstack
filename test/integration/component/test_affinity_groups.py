@@ -29,6 +29,7 @@ from marvin.lib.common import (get_zone,
                                get_template,
                                list_virtual_machines,
                                wait_for_cleanup)
+from marvin.codes import ERROR_CODE_530
 from nose.plugins.attrib import attr
 
 class Services:
@@ -1086,9 +1087,10 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
         vm1, hostid1 = self.create_vm_in_aff_grps([self.aff_grp[0].name], account_name=self.account.name, domain_id=self.domain.id)
 
         aff_grps = [self.aff_grp[0], self.aff_grp[1]]
-        with self.assertRaises(Exception):
-            vm1.update_affinity_group(self.api_client, affinitygroupnames=[])
-
+        response = vm1.update_affinity_group(self.api_client, affinitygroupnames=[])
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
         vm1.delete(self.api_client)
         #Wait for expunge interval to cleanup VM
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
