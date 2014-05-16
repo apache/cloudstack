@@ -422,7 +422,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return podIdToDeployIn;
     }
 
-    public void setPodId(Long podId) {
+    public void setPodIdToDeployIn(Long podId) {
         this.podIdToDeployIn = podId;
     }
 

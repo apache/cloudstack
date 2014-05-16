@@ -387,7 +387,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         vm.setDataCenterId(plan.getDataCenterId());
         if (plan.getPodId() != null) {
-            vm.setPodId(plan.getPodId());
+            vm.setPodIdToDeployIn(plan.getPodId());
         }
         assert (plan.getClusterId() == null && plan.getPoolId() == null) : "We currently don't support cluster and pool preset yet";
         final VMInstanceVO vmFinal = _vmDao.persist(vm);
@@ -949,7 +949,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 long destHostId = dest.getHost().getId();
-                vm.setPodId(dest.getPod().getId());
+                vm.setPodIdToDeployIn(dest.getPod().getId());
                 Long cluster_id = dest.getCluster().getId();
                 ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, "cpuOvercommitRatio");
                 ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, "memoryOvercommitRatio");
@@ -1729,7 +1729,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 //when start the vm next time, don;'t look at last_host_id, only choose the host based on volume/storage pool
                 vm.setLastHostId(null);
-                vm.setPodId(destPool.getPodId());
+                vm.setPodIdToDeployIn(destPool.getPodId());
             } else {
                 s_logger.debug("Storage migration failed");
             }
