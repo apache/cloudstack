@@ -27,6 +27,7 @@ from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
 from nose.plugins.attrib import attr
+from marvin.codes import ERROR_CODE_530
 #Import System modules
 import time
 
@@ -383,13 +384,14 @@ class TestPortForwarding(cloudstackTestCase):
 
         try:
             nat_rule.delete(self.apiclient)
-        except Exception as e:
-            self.fail("NAT Rule Deletion Failed: %s" % e)
+        except CloudstackAPIException:
+            self.fail("Nat Rule deletion failed: %s" % e)
 
-        # NAT rule listing should fail as the nat rule does not exist
-        with self.assertRaises(Exception):
-            list_nat_rules(self.apiclient,
-                           id=nat_rule.id)
+        response = list_nat_rules(self.apiclient,
+                                  id=nat_rule.id)
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
 
         # Check if the Public SSH port is inaccessible
         with self.assertRaises(Exception):

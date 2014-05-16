@@ -17,16 +17,18 @@
 """ BVT tests for Primary Storage
 """
 #Import Local Modules
-import marvin
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import StoragePool
+from marvin.lib.common import (get_zone,
+                               get_pod,
+                               list_clusters,
+                               list_hosts,
+                               list_storage_pools)
 from nose.plugins.attrib import attr
 
 #Import System modules
-import time
 _multiprocess_shared_ = True
 
 class TestPrimaryStorageServices(cloudstackTestCase):

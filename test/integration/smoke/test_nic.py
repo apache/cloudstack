@@ -15,14 +15,17 @@
 # specific language governing permissions and limitations
 # under the License.
 """ NIC tests for VM """
-import marvin
-from marvin.codes import FAILED
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.sshClient import SshClient
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.codes import ERROR_CODE_530
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.base import(Account,
+                            ServiceOffering,
+                            Network,
+                            VirtualMachine,
+                            NetworkOffering)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               list_virtual_machines)
 from nose.plugins.attrib import attr
 
 import signal
@@ -186,7 +189,7 @@ class TestNic(cloudstackTestCase):
             existing_nic_id = vm_response.nic[0].id
 
             # 1. add a nic
-            add_response = self.virtual_machine.add_nic(self.apiclient, self.test_network2.id)
+            self.virtual_machine.add_nic(self.apiclient, self.test_network2.id)
 
             time.sleep(5)
             # now go get the vm list?
@@ -231,13 +234,11 @@ class TestNic(cloudstackTestCase):
                         "Verify second adapter is set to default"
                     )
 
-            sawException = False
-            try:
-                self.virtual_machine.remove_nic(self.apiclient, new_nic_id)
-            except Exception as ex:
-                sawException = True
+            response = self.virtual_machine.remove_nic(self.apiclient, new_nic_id)
+            self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
 
-            self.assertEqual(sawException, True, "Make sure we cannot delete the default NIC")
             self.virtual_machine.update_default_nic(self.apiclient, existing_nic_id)
             time.sleep(5)
             self.virtual_machine.remove_nic(self.apiclient, new_nic_id)

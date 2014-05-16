@@ -18,11 +18,9 @@
 """
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
-#from marvin.cloudstackException import *
 from marvin.cloudstackAPI import (deleteVolume,
                                   extractVolume,
                                   resizeVolume)
-#from marvin.sshClient import SshClient
 from marvin.lib.utils import (cleanup_resources,
                               format_volume_to_ext3)
 from marvin.lib.base import (ServiceOffering,
@@ -35,7 +33,7 @@ from marvin.lib.common import (get_domain,
                                 get_zone,
                                 get_template)
 from marvin.lib.utils import checkVolumeSize
-from marvin.codes import SUCCESS, FAILED
+from marvin.codes import SUCCESS, FAILED, ERROR_CODE_530
 from nose.plugins.attrib import attr
 #Import System modules
 import os
@@ -379,8 +377,11 @@ class TestVolumes(cloudstackTestCase):
         cmd.zoneid = self.services["zoneid"]
         # A proper exception should be raised;
         # downloading attach VM is not allowed
-        with self.assertRaises(Exception):
-            self.apiClient.extractVolume(cmd)
+        response = self.apiClient.extractVolume(cmd)
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
+        return
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_04_delete_attached_volume(self):
@@ -532,15 +533,11 @@ class TestVolumes(cloudstackTestCase):
         cmd.id             = rootvolume.id
         cmd.diskofferingid = self.services['diskofferingid']
         success            = False
-        try:
-            self.apiClient.resizeVolume(cmd)
-        except Exception as ex:
-            if "Can only resize Data volumes" in str(ex):
-                success = True
-        self.assertEqual(
-                success,
-                True,
-                "ResizeVolume - verify root disks cannot be resized by disk offering id")
+
+        response = self.apiClient.resizeVolume(cmd)
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
 
         # Ok, now let's try and resize a volume that is not custom.
         cmd.id             = self.volume.id

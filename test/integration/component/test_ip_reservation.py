@@ -270,8 +270,10 @@ class TestIpReservation(cloudstackTestCase):
         except Exception as e:
             self.fail("VM creation failed: %s" % e)
 
-        with self.assertRaises(Exception):
-            isolated_network.update(self.apiclient, guestvmcidr=guest_vm_cidr)
+        response = isolated_network.update(self.apiclient, guestvmcidr=guest_vm_cidr)
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
         return
 
     @attr(tags=["advanced"])
@@ -300,8 +302,10 @@ class TestIpReservation(cloudstackTestCase):
         except Exception as e:
             self.fail("VM creation failed: %s" % e)
 
-        with self.assertRaises(Exception):
-            isolated_network.update(self.apiclient, guestvmcidr=guest_vm_cidr)
+        response = isolated_network.update(self.apiclient, guestvmcidr=guest_vm_cidr)
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, str(response)))
         return
 
     @data(NAT_RULE, STATIC_NAT_RULE)
@@ -1086,7 +1090,7 @@ class TestFailureScnarios(cloudstackTestCase):
         response = isolated_network.update(self.apiclient, guestvmcidr="10.1.1.0/26")
         self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
                          have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, response))
+                         %s" % (ERROR_CODE_530, str(response)))
         return
 
     @attr(tags=["advanced", "selfservice"])
