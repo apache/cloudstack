@@ -908,7 +908,7 @@
         var isOddRow = false; // Even/odd row coloring
         var $header;
         var detailViewArgs = $detailView.data('view-args');
-        var fields = tabData.fields;
+        var fields = tabData.fields.slice();
         var hiddenFields;
         var context = $.extend(true, {}, detailViewArgs ? detailViewArgs.context : cloudStack.context);
         var isMultiple = tabData.multiple || tabData.isMultiple;
