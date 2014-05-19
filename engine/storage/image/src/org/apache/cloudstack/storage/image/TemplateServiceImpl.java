@@ -42,6 +42,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -96,9 +97,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -652,17 +650,12 @@ public class TemplateServiceImpl implements TemplateService {
                     }
                     _resourceLimitMgr.incrementResourceCount(template.getAccountId(), ResourceType.secondary_storage, templateVO.getSize());
                 } else {
-                    // Cleanup Datadisk template enries in case of failure
-                    Transaction.execute(new TransactionCallbackNoReturn() {
-                        @Override
-                        public void doInTransactionWithoutResult(TransactionStatus status) {
-                            _vmTemplateStoreDao.deletePrimaryRecordsForTemplate(templateId);
-                            _vmTemplateZoneDao.deletePrimaryRecordsForTemplate(templateId);
-                            _templateDao.expunge(templateId);
-                        }
-                    });
-                    // Don't create the remaining Datadisk templates if creation of any of the Datadisk template failed
                     s_logger.error("Creation of Datadisk: " + templateVO.getId() + " failed: " + result.getResult());
+                    // Delete the Datadisk templates that were already created as they are now invalid
+                    s_logger.debug("Since creation of Datadisk template: " + templateVO.getId() + " failed, delete other Datadisk templates that were created as part of parent" +
+                            " template download");
+                    TemplateInfo parentTemplateInfo = imageFactory.getTemplate(templateVO.getParentTemplateId(), imageStore);
+                    cleanupDatadiskTemplates(parentTemplateInfo);
                     return false;
                 }
             } catch (Exception e) {
@@ -679,6 +672,11 @@ public class TemplateServiceImpl implements TemplateService {
                         dataDiskTemplate.getFileSize(), dataDiskTemplate.isBootable());
                 try {
                     result = templateFuture.get();
+                    if (!result.isSuccess()) {
+                        s_logger.debug("Since creation of parent template: " + templateInfo.getId() + " failed, delete Datadisk templates that were created as part of parent" +
+                                " template download");
+                        cleanupDatadiskTemplates(templateInfo);
+                    }
                     return result.isSuccess();
                 } catch (Exception e) {
                     s_logger.error("Creation of template: " + template.getId() + " failed: " + result.getResult());
@@ -687,6 +685,27 @@ public class TemplateServiceImpl implements TemplateService {
             }
         }
         return true;
+    }
+
+    private void cleanupDatadiskTemplates(TemplateInfo parentTemplateInfo) {
+        DataStore imageStore = parentTemplateInfo.getDataStore();
+        List<VMTemplateVO> datadiskTemplatesToDelete = _templateDao.listByParentTemplatetId(parentTemplateInfo.getId());
+        for (VMTemplateVO datadiskTemplateToDelete: datadiskTemplatesToDelete) {
+            s_logger.info("Delete template: " + datadiskTemplateToDelete.getId() + " from image store: " + imageStore.getName());
+            AsyncCallFuture<TemplateApiResult> future = deleteTemplateAsync(imageFactory.getTemplate(datadiskTemplateToDelete.getId(), imageStore));
+            try {
+                TemplateApiResult result = future.get();
+                if (!result.isSuccess()) {
+                    s_logger.warn("Failed to delete datadisk template: " + datadiskTemplateToDelete + " from image store: " + imageStore.getName() + " due to: " + result.getResult());
+                    break;
+                }
+                _vmTemplateZoneDao.deletePrimaryRecordsForTemplate(datadiskTemplateToDelete.getId());
+                _resourceLimitMgr.decrementResourceCount(datadiskTemplateToDelete.getAccountId(), ResourceType.secondary_storage, datadiskTemplateToDelete.getSize());
+            } catch (Exception e) {
+                s_logger.debug("Delete datadisk template failed", e);
+                throw new CloudRuntimeException("Delete template Failed", e);
+            }
+        }
     }
 
     @Override
