@@ -34,6 +34,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("value", AllFieldsSearch.entity().getValue(), SearchCriteria.Op.EQ);
         // FIXME SnapshotDetailsVO doesn't have a display field
         if (_allAttributes.containsKey("display")) {
             AllFieldsSearch.and("display", AllFieldsSearch.entity().isDisplay(), SearchCriteria.Op.EQ);
@@ -47,6 +48,25 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         sc.setParameters("name", name);
 
         return findOneBy(sc);
+    }
+
+    public List<R> findDetails(String name, String value, Boolean display) {
+        SearchCriteria<R> sc = AllFieldsSearch.create();
+
+        if(display != null){
+            sc.setParameters("display", display);
+        }
+
+        if(name != null){
+            sc.setParameters("name", name);
+        }
+
+        if(value != null){
+            sc.setParameters("value", value);
+        }
+
+        List<R> results = search(sc, null);
+        return results;
     }
 
     public Map<String, String> listDetailsKeyPairs(long resourceId) {
