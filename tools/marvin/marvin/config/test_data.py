@@ -617,7 +617,7 @@ test_data = {
     },
     "natrule": {
         "privateport": 22,
-        "publicport": 2222,
+        "publicport": 22,
         "protocol": "TCP"
     },
     "lbrule": {

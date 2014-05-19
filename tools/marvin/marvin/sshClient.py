@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import paramiko
 from paramiko import (BadHostKeyException,
                       AuthenticationException,
                       SSHException,
@@ -32,9 +31,8 @@ from marvin.cloudstackException import (
 import contextlib
 import logging
 from marvin.codes import (
-    SUCCESS, FAILED, INVALID_INPUT, EXCEPTION_OCCURRED
+    SUCCESS, FAILED, INVALID_INPUT
 )
-from contextlib import closing
 
 
 class SshClient(object):
@@ -152,9 +150,9 @@ class SshClient(object):
                     self.logger.\
                         exception("SshClient: Exception under "
                                   "createConnection: %s" % except_msg)
-                self.retryCnt = self.retryCnt - 1
+                self.retryCnt -= 1
                 time.sleep(self.delay)
-                return ret
+        return ret
 
     def runCommand(self, command):
         '''
