@@ -224,6 +224,10 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
             return dao.findDetail(resourceId, key);
         }
 
+        private List<? extends ResourceDetail> getDetails(String key, String value, Boolean forDisplay) {
+            return dao.findDetails(key, value, forDisplay);
+        }
+
         private void addDetail(long resourceId, String key, String value, boolean forDisplay) {
             dao.addDetail(resourceId, key, value, forDisplay);
         }
@@ -255,6 +259,12 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     public ResourceDetail getDetail(long resourceId, ResourceObjectType resourceType, String key) {
         DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
         return newDetailDaoHelper.getDetail(resourceId, key);
+    }
+
+    @Override
+    public List<? extends ResourceDetail> getDetails(ResourceObjectType resourceType, String key, String value, Boolean forDisplay){
+        DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
+        return newDetailDaoHelper.getDetails(key, value, forDisplay);
     }
 
     @Override

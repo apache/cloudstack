@@ -46,6 +46,16 @@ public interface ResourceMetaDataService {
 
     ResourceDetail getDetail(long resourceId, ResourceObjectType resourceType, String key);
 
+    /**
+     * List by key, value pair
+     * @param resourceType
+     * @param key
+     * @param value
+     * @param forDisplay
+     * @return
+     */
+    List<? extends ResourceDetail> getDetails(ResourceObjectType resourceType, String key, String value, Boolean forDisplay);
+
     Map<String, String> getDetailsMap(long resourceId, ResourceObjectType resourceType, Boolean forDisplay);
 
     List<? extends ResourceDetail> getDetailsList(long resourceId, ResourceObjectType resourceType, Boolean forDisplay);
