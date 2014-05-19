@@ -1209,8 +1209,8 @@ public class ApiResponseHelper implements ResponseGenerator {
                         NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
                         if (networkOffering.getElasticIp()) {
                             IpAddress ip = ApiDBUtils.findIpByAssociatedVmId(vm.getId());
-                            Vlan vlan = ApiDBUtils.findVlanById(ip.getVlanId());
                             if (ip != null) {
+                                Vlan vlan = ApiDBUtils.findVlanById(ip.getVlanId());
                                 vmResponse.setPublicIp(ip.getAddress().addr());
                                 vmResponse.setPublicNetmask(vlan.getVlanNetmask());
                                 vmResponse.setGateway(vlan.getVlanGateway());
