@@ -728,6 +728,7 @@
                       <get src="http://dev.mysql.com/get/Downloads/MySQL-5.1/mysql-5.1.73-winx64.msi" dest="target" verbose="false" usetimestamp="true"/>
                       <get src="http://mirror.sdunix.com/apache/tomcat/tomcat-6/v6.0.39/bin/apache-tomcat-6.0.39.exe" dest="target" verbose="false" usetimestamp="true"/>
                       <get src="http://downloads.sourceforge.net/project/cdrtoolswin/1.0/Binaries/CDR-Tools.exe?r=&amp;ts=1398764640&amp;use_mirror=kaz" dest="target" verbose="false" usetimestamp="true"/>
+                      <get src="https://bootstrap.pypa.io/ez_setup.py" dest="target" verbose="false" usetimestamp="true"/>
                     </target>
                   </configuration>
                  </execution>

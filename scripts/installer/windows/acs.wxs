@@ -81,6 +81,9 @@
                 Permanent="yes" System="yes" Part="last"
                 Value="[JAVA_HOME]\bin;[PYTHON_HOME];[SEVENZ_HOME];[ProgramFilesFolder]\cdrtools" />
             </Component>
+            <Component Id='setuptools' Guid='019a51dd-7fc4-4d6c-9277-13cc7b600789'>
+              <File Id="ez_setup" Source="ez_setup.py" />
+            </Component>
           </Directory>
         </Directory>
       </Directory>
@@ -242,6 +245,9 @@
     <CustomAction Id="DeleteFiles" Directory='CSMANAGEMENT'
       ExeCommand='[SystemFolder]cmd.exe /c del "[CSMANAGEMENT]\webapps\client\WEB-INF\classes\db.properties" "[CSMANAGEMENT]\webapps\client\WEB-INF\classes\log4j*.xml"'
       Execute="commit" Return="check" />
+    <CustomAction Id="SetuptoolsInstallation" Directory='INSTALLDIR'
+      ExeCommand='[PYTHON_HOME]\python "[INSTALLDIR]\ez_setup.py"'
+      Execute="commit" Return="check" />
     <CustomAction Id="GenerateSSLKey" Directory='CSMANAGEMENT'
       ExeCommand='[PYTHON_HOME]\python "[CSMANAGEMENT]\webapps\client\WEB-INF\classes\scripts\common\keys\ssl-keys.py" "[CSMANAGEMENT]\lib"'
       Execute="commit" Return="check" />
@@ -259,7 +265,8 @@
       </Custom>
       <Custom Action="UpdateTomcatCatalinaBase" Before="DeleteFiles">NOT
         Installed</Custom>
-      <Custom Action="DeleteFiles" Before="GenerateSSLKey">NOT Installed</Custom>
+      <Custom Action="DeleteFiles" Before="SetuptoolsInstallation">NOT Installed</Custom>
+      <Custom Action="SetuptoolsInstallation" Before="GenerateSSLKey">NOT Installed</Custom>
       <Custom Action="GenerateSSLKey" Before="InstallFinalize">NOT Installed
       </Custom>
       <Custom Action="CopySitePackages" Before="InstallFinalize">NOT Installed</Custom>
@@ -284,6 +291,7 @@
         <ComponentRef Id='copyToConf' />
         <ComponentRef Id='firewallRules' />
         <ComponentRef Id='MainExecutable' />
+        <ComponentRef Id='setuptools' />
         <ComponentRef Id='ServiceInstaller' />
       </Feature>
     </Feature>
