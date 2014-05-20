@@ -172,6 +172,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         job.setSyncSource(null);        // no sync source originally
         dao.persist(job);
 
+        publishOnEventBus(job, "submit");
         scheduleExecution(job, scheduleJobExecutionInContext);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("submit async job-" + job.getId() + ", details: " + job.toString());
@@ -193,6 +194,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     job.setInitMsid(getMsid());
                     dao.persist(job);
 
+                    publishOnEventBus(job, "submit");
                     syncAsyncJobExecution(job, syncObjType, syncObjId, 1);
 
                     return job.getId();
@@ -230,6 +232,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return;
         }
 
+        publishOnEventBus(job, "complete"); // publish before the instance type and ID are wiped out
         List<Long> wakeupList = Transaction.execute(new TransactionCallback<List<Long>>() {
             @Override
             public List<Long> doInTransaction(TransactionStatus status) {
@@ -287,6 +290,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return;
         }
 
+        publishOnEventBus(job, "update");
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
@@ -306,6 +310,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Update async-job attachment, job-" + jobId + ", instanceType: " + instanceType + ", instanceId: " + instanceId);
         }
+
+        final AsyncJobVO job = _jobDao.findById(jobId);
+        publishOnEventBus(job, "update");
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
