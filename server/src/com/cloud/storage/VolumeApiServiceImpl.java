@@ -1227,7 +1227,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 s_logger.info("Trying to attaching volume " + volumeId + " to vm instance:" + vm.getId() + ", update async job-" + job.getId() + " progress status");
             }
 
-            _jobMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
+            _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
         }
 
         VolumeVO newVol = _volsDao.findById(newVolumeOnPrimaryStorage.getId());
@@ -1399,7 +1399,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 s_logger.info("Trying to attaching volume " + volumeId + "to vm instance:" + vm.getId() + ", update async job-" + job.getId() + " progress status");
             }
 
-            _jobMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
+            _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
         }
 
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
