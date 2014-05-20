@@ -42,7 +42,6 @@ class TestDeployVM(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
 
         self.testdata = self.testClient.getParsedTestDataConfig()
-        
         # Get Zone, Domain and Default Built-in template
         self.domain = get_domain(self.apiclient)
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
@@ -116,7 +115,7 @@ class TestDeployVM(cloudstackTestCase):
         """Test Multiple Deploy Virtual Machine
 
         # Validate the following:
-        # 1. deploy 2 virtual machines 
+        # 1. deploy 2 virtual machines
         # 2. listVirtualMachines using 'ids' parameter returns accurate information
         """
         self.virtual_machine = VirtualMachine.create(
@@ -206,7 +205,7 @@ class TestDeployVMVolumeCreationFailure(cloudstackTestCase):
             self.mock_volume_failure
         ]
 
-    @attr(tags = ['selfservice'])
+    @attr(tags = ['selfservice'],BugId="CLOUDSTACK-6708")
     def test_deploy_vm_volume_creation_failure(self):
         """Test Deploy Virtual Machine - volume creation failure and retry
 
