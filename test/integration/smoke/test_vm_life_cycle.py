@@ -507,14 +507,14 @@ class TestVMLifeCycle(cloudstackTestCase):
         # For XenServer and VMware, migration is possible between hosts belonging to different clusters
         # with the help of XenMotion and Vmotion respectively.
 
-        if hypervisor == "kvm":
+        if hypervisor.lower() in ["kvm","simulator"]:
             #identify suitable host
             clusters = [h.clusterid for h in hosts]
             #find hosts withe same clusterid
             clusters = [cluster for index, cluster in enumerate(clusters) if clusters.count(cluster) > 1]
 
             if len(clusters) <= 1:
-                self.skipTest("In KVM, Live Migration needs two hosts within same cluster")
+                self.skipTest("In " + hypervisor.lower() + " Live Migration needs two hosts within same cluster")
 
             suitable_hosts = [host for host in hosts if host.clusterid == clusters[0]]
         else:
@@ -567,7 +567,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @attr(configuration = "expunge.interval")
     @attr(configuration = "expunge.delay")
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"],BugId="CLOUDSTACK-6708")
     def test_09_expunge_vm(self):
         """Test destroy(expunge) Virtual Machine
         """
@@ -595,7 +595,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                                      name='expunge.interval'
                                      )
         expunge_cycle = int(config[0].value)
-        wait_time = expunge_cycle * 2
+        wait_time = expunge_cycle * 4
         while wait_time >= 0:
             list_vm_response = list_virtual_machines(
                                                 self.apiclient,
