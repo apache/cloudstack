@@ -58,10 +58,6 @@ class TestCreateVolume(cloudstackTestCase):
                                     cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
-        cls.sparse_disk_offering = DiskOffering.create(
-                                    cls.apiclient,
-                                    cls.services["sparse_disk_offering"]
-                                    )
         cls.custom_disk_offering = DiskOffering.create(
                                     cls.apiclient,
                                     cls.services["disk_offering"],
@@ -132,18 +128,6 @@ class TestCreateVolume(cloudstackTestCase):
                                    )
             self.debug("Created a volume with ID: %s" % volume.id)
             self.volumes.append(volume)
-
-        if self.virtual_machine.hypervisor == "KVM":
-            sparse_volume = Volume.create(
-                                        self.apiClient,
-                                        self.services,
-                                        zoneid=self.zone.id,
-                                        account=self.account.name,
-                                        domainid=self.account.domainid,
-                                        diskofferingid=self.sparse_disk_offering.id
-                                        )
-            self.debug("Created a sparse volume: %s" % sparse_volume.id)
-            self.volumes.append(sparse_volume)
 
         volume = Volume.create_custom_disk(
                                     self.apiClient,
