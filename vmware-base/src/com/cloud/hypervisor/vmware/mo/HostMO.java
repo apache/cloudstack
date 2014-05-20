@@ -699,7 +699,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
                     ManagedObjectReference morDs = oc.getObj();
                     String name = (String)VmwareHelper.getPropValue(oc, "name");
 
-                    if (!name.startsWith("-iqn.")) {
+                    if (!name.startsWith("-iqn.") && !name.startsWith("_iqn.")) {
                         dsList.add(new Pair<ManagedObjectReference, String>(morDs, name));
                     }
                 }

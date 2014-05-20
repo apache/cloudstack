@@ -29,11 +29,16 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
+import java.util.UUID;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -49,10 +54,17 @@ import org.apache.http.impl.conn.BasicClientConnectionManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.user.AccountDetailVO;
+import com.cloud.user.AccountDetailsDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFireUtil {
     public static final String PROVIDER_NAME = "SolidFire";
+    public static final String SHARED_PROVIDER_NAME = "SolidFireShared";
 
     public static final String MANAGEMENT_VIP = "mVip";
     public static final String STORAGE_VIP = "sVip";
@@ -63,11 +75,18 @@ public class SolidFireUtil {
     public static final String CLUSTER_ADMIN_USERNAME = "clusterAdminUsername";
     public static final String CLUSTER_ADMIN_PASSWORD = "clusterAdminPassword";
 
+    // these three variables should only be used for the SolidFire plug-in with the name SolidFireUtil.PROVIDER_NAME
     public static final String CLUSTER_DEFAULT_MIN_IOPS = "clusterDefaultMinIops";
     public static final String CLUSTER_DEFAULT_MAX_IOPS = "clusterDefaultMaxIops";
     public static final String CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS = "clusterDefaultBurstIopsPercentOfMaxIops";
 
+    // these three variables should only be used for the SolidFire plug-in with the name SolidFireUtil.SHARED_PROVIDER_NAME
+    public static final String MIN_IOPS = "minIops";
+    public static final String MAX_IOPS = "maxIops";
+    public static final String BURST_IOPS = "burstIops";
+
     public static final String ACCOUNT_ID = "accountId";
+    public static final String VOLUME_ID = "volumeId";
 
     public static final String CHAP_INITIATOR_USERNAME = "chapInitiatorUsername";
     public static final String CHAP_INITIATOR_SECRET = "chapInitiatorSecret";
@@ -75,18 +94,323 @@ public class SolidFireUtil {
     public static final String CHAP_TARGET_USERNAME = "chapTargetUsername";
     public static final String CHAP_TARGET_SECRET = "chapTargetSecret";
 
-    public static long createSolidFireVolume(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword,
-            String strSfVolumeName, long lSfAccountId, long lTotalSize, boolean bEnable512e, final String strCloudStackVolumeSize,
-            long lMinIops, long lMaxIops, long lBurstIops)
+    public static final String DATACENTER = "datacenter";
+
+    public static final String DATASTORE_NAME = "datastoreName";
+    public static final String IQN = "iqn";
+
+    private static final int DEFAULT_MANAGEMENT_PORT = 443;
+    private static final int DEFAULT_STORAGE_PORT = 3260;
+
+    public static class SolidFireConnection {
+        private final String _managementVip;
+        private final int _managementPort;
+        private final String _clusterAdminUsername;
+        private final String _clusterAdminPassword;
+
+        public SolidFireConnection(String managementVip, int managementPort, String clusterAdminUsername, String clusterAdminPassword) {
+            _managementVip = managementVip;
+            _managementPort = managementPort;
+            _clusterAdminUsername = clusterAdminUsername;
+            _clusterAdminPassword = clusterAdminPassword;
+        }
+
+        public String getManagementVip() {
+            return _managementVip;
+        }
+
+        public int getManagementPort() {
+            return _managementPort;
+        }
+
+        public String getClusterAdminUsername() {
+            return _clusterAdminUsername;
+        }
+
+        public String getClusterAdminPassword() {
+            return _clusterAdminPassword;
+        }
+    }
+
+    public static SolidFireConnection getSolidFireConnection(long storagePoolId, StoragePoolDetailsDao storagePoolDetailsDao) {
+        StoragePoolDetailVO storagePoolDetail = storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.MANAGEMENT_VIP);
+
+        String mVip = storagePoolDetail.getValue();
+
+        storagePoolDetail = storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.MANAGEMENT_PORT);
+
+        int mPort = Integer.parseInt(storagePoolDetail.getValue());
+
+        storagePoolDetail = storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.CLUSTER_ADMIN_USERNAME);
+
+        String clusterAdminUsername = storagePoolDetail.getValue();
+
+        storagePoolDetail = storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.CLUSTER_ADMIN_PASSWORD);
+
+        String clusterAdminPassword = storagePoolDetail.getValue();
+
+        return new SolidFireConnection(mVip, mPort, clusterAdminUsername, clusterAdminPassword);
+    }
+
+    public static String getSolidFireAccountName(String csAccountUuid, long csAccountId) {
+        return "CloudStack_" + csAccountUuid + "_" + csAccountId;
+    }
+
+    public static void updateCsDbWithSolidFireAccountInfo(long csAccountId, SolidFireUtil.SolidFireAccount sfAccount,
+            AccountDetailsDao accountDetailsDao) {
+        AccountDetailVO accountDetail = new AccountDetailVO(csAccountId,
+                SolidFireUtil.ACCOUNT_ID,
+                String.valueOf(sfAccount.getId()));
+
+        accountDetailsDao.persist(accountDetail);
+
+        accountDetail = new AccountDetailVO(csAccountId,
+                SolidFireUtil.CHAP_INITIATOR_USERNAME,
+                String.valueOf(sfAccount.getName()));
+
+        accountDetailsDao.persist(accountDetail);
+
+        accountDetail = new AccountDetailVO(csAccountId,
+                SolidFireUtil.CHAP_INITIATOR_SECRET,
+                String.valueOf(sfAccount.getInitiatorSecret()));
+
+        accountDetailsDao.persist(accountDetail);
+
+        accountDetail = new AccountDetailVO(csAccountId,
+                SolidFireUtil.CHAP_TARGET_USERNAME,
+                sfAccount.getName());
+
+        accountDetailsDao.persist(accountDetail);
+
+        accountDetail = new AccountDetailVO(csAccountId,
+                SolidFireUtil.CHAP_TARGET_SECRET,
+                sfAccount.getTargetSecret());
+
+        accountDetailsDao.persist(accountDetail);
+    }
+
+    public static SolidFireAccount getSolidFireAccount(SolidFireConnection sfConnection, String sfAccountName) {
+        try {
+            return getSolidFireAccountByName(sfConnection, sfAccountName);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    public static long placeVolumeInVolumeAccessGroup(SolidFireConnection sfConnection, long sfVolumeId, long storagePoolId, List<HostVO> hosts,
+            ClusterDetailsDao clusterDetailsDao) {
+        if (hosts == null || hosts.isEmpty()) {
+            throw new CloudRuntimeException("There must be at least one host in the cluster.");
+        }
+
+        long lVagId;
+
+        try {
+            lVagId = SolidFireUtil.createSolidFireVag(sfConnection, "CloudStack-" + UUID.randomUUID().toString(),
+                SolidFireUtil.getIqnsFromHosts(hosts), new long[] { sfVolumeId });
+        }
+        catch (Exception ex) {
+            String iqnInVagAlready = "Exceeded maximum number of Volume Access Groups per initiator";
+
+            if (!ex.getMessage().contains(iqnInVagAlready)) {
+                throw new CloudRuntimeException(ex.getMessage());
+            }
+
+            // getCompatibleVag throws an exception if an existing VAG can't be located
+            SolidFireUtil.SolidFireVag sfVag = getCompatibleVag(sfConnection, hosts);
+
+            lVagId = sfVag.getId();
+
+            long[] volumeIds = getNewVolumeIds(sfVag.getVolumeIds(), sfVolumeId, true);
+
+            SolidFireUtil.modifySolidFireVag(sfConnection, lVagId,
+                sfVag.getInitiators(), volumeIds);
+        }
+
+        ClusterDetailsVO clusterDetail = new ClusterDetailsVO(hosts.get(0).getClusterId(), getVagKey(storagePoolId), String.valueOf(lVagId));
+
+        clusterDetailsDao.persist(clusterDetail);
+
+        return lVagId;
+    }
+
+    public static boolean hostsSupport_iScsi(List<HostVO> hosts) {
+        if (hosts == null || hosts.size() == 0) {
+            return false;
+        }
+
+        for (Host host : hosts) {
+            if (host == null || host.getStorageUrl() == null || host.getStorageUrl().trim().length() == 0 || !host.getStorageUrl().startsWith("iqn")) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static String[] getNewHostIqns(String[] currentIqns, String[] newIqns) {
+        List<String> lstIqns = new ArrayList<String>();
+
+        if (currentIqns != null) {
+            for (String currentIqn : currentIqns) {
+                lstIqns.add(currentIqn);
+            }
+        }
+
+        if (newIqns != null) {
+            for (String newIqn : newIqns) {
+                if (!lstIqns.contains(newIqn)) {
+                    lstIqns.add(newIqn);
+                }
+            }
+        }
+
+        return lstIqns.toArray(new String[0]);
+    }
+
+    public static long[] getNewVolumeIds(long[] volumeIds, long volumeIdToAddOrRemove, boolean add) {
+        if (add) {
+            return getNewVolumeIdsAdd(volumeIds, volumeIdToAddOrRemove);
+        }
+
+        return getNewVolumeIdsRemove(volumeIds, volumeIdToAddOrRemove);
+    }
+
+    private static long[] getNewVolumeIdsAdd(long[] volumeIds, long volumeIdToAdd) {
+        List<Long> lstVolumeIds = new ArrayList<Long>();
+
+        if (volumeIds != null) {
+            for (long volumeId : volumeIds) {
+                lstVolumeIds.add(volumeId);
+            }
+        }
+
+        if (lstVolumeIds.contains(volumeIdToAdd)) {
+            return volumeIds;
+        }
+
+        lstVolumeIds.add(volumeIdToAdd);
+
+        return convertArray(lstVolumeIds);
+    }
+
+    private static long[] getNewVolumeIdsRemove(long[] volumeIds, long volumeIdToRemove) {
+        List<Long> lstVolumeIds = new ArrayList<Long>();
+
+        if (volumeIds != null) {
+            for (long volumeId : volumeIds) {
+                lstVolumeIds.add(volumeId);
+            }
+        }
+
+        lstVolumeIds.remove(volumeIdToRemove);
+
+        return convertArray(lstVolumeIds);
+    }
+
+    private static long[] convertArray(List<Long> items) {
+        if (items == null) {
+            return new long[0];
+        }
+
+        long[] outArray = new long[items.size()];
+
+        for (int i = 0; i < items.size(); i++) {
+            Long value = items.get(i);
+
+            outArray[i] = value;
+        }
+
+        return outArray;
+    }
+
+    public static String getVagKey(long storagePoolId) {
+        return "sfVolumeAccessGroup_" + storagePoolId;
+    }
+
+    public static String[] getIqnsFromHosts(List<? extends Host> hosts) {
+        if (hosts == null || hosts.size() == 0) {
+            throw new CloudRuntimeException("There do not appear to be any hosts in this cluster.");
+        }
+
+        List<String> lstIqns = new ArrayList<String>();
+
+        for (Host host : hosts) {
+            lstIqns.add(host.getStorageUrl());
+        }
+
+        return lstIqns.toArray(new String[0]);
+    }
+
+    // this method takes in a collection of hosts and tries to find an existing VAG that has all of them in it
+    // if successful, the VAG is returned; else, a CloudRuntimeException is thrown and this issue should be corrected by an admin
+    private static SolidFireUtil.SolidFireVag getCompatibleVag(SolidFireConnection sfConnection, List<HostVO> hosts) {
+        List<SolidFireUtil.SolidFireVag> sfVags = SolidFireUtil.getAllSolidFireVags(sfConnection);
+
+        if (sfVags != null) {
+            List<String> hostIqns = new ArrayList<String>();
+
+            // where the method we're in is called, hosts should not be null
+            for (HostVO host : hosts) {
+                // where the method we're in is called, host.getStorageUrl() should not be null (it actually should start with "iqn")
+                hostIqns.add(host.getStorageUrl().toLowerCase());
+            }
+
+            for (SolidFireUtil.SolidFireVag sfVag : sfVags) {
+                List<String> lstInitiators = getStringArrayAsLowerCaseStringList(sfVag.getInitiators());
+
+                // lstInitiators should not be returned from getStringArrayAsLowerCaseStringList as null
+                if (lstInitiators.containsAll(hostIqns)) {
+                    return sfVag;
+                }
+            }
+        }
+
+        throw new CloudRuntimeException("Unable to locate the appropriate SolidFire Volume Access Group");
+    }
+
+    private static List<String> getStringArrayAsLowerCaseStringList(String[] aString) {
+        List<String> lstLowerCaseString = new ArrayList<String>();
+
+        if (aString != null) {
+            for (String str : aString) {
+                if (str != null) {
+                    lstLowerCaseString.add(str.toLowerCase());
+                }
+            }
+        }
+
+        return lstLowerCaseString;
+    }
+
+    public static String getSolidFireVolumeName(String strCloudStackVolumeName) {
+        final String specialChar = "-";
+
+        StringBuilder strSolidFireVolumeName = new StringBuilder();
+
+        for (int i = 0; i < strCloudStackVolumeName.length(); i++) {
+            String strChar = strCloudStackVolumeName.substring(i, i + 1);
+
+            if (StringUtils.isAlphanumeric(strChar)) {
+                strSolidFireVolumeName.append(strChar);
+            } else {
+                strSolidFireVolumeName.append(specialChar);
+            }
+        }
+
+        return strSolidFireVolumeName.toString();
+    }
+
+    public static long createSolidFireVolume(SolidFireConnection sfConnection, String strSfVolumeName, long lSfAccountId, long lTotalSize,
+            boolean bEnable512e, final String strCloudStackVolumeSize, long lMinIops, long lMaxIops, long lBurstIops)
     {
         final Gson gson = new GsonBuilder().create();
 
-        VolumeToCreate volumeToCreate =
-            new VolumeToCreate(strSfVolumeName, lSfAccountId, lTotalSize, bEnable512e, strCloudStackVolumeSize, lMinIops, lMaxIops, lBurstIops);
+        VolumeToCreate volumeToCreate = new VolumeToCreate(strSfVolumeName, lSfAccountId, lTotalSize, bEnable512e, strCloudStackVolumeSize, lMinIops, lMaxIops, lBurstIops);
 
         String strVolumeToCreateJson = gson.toJson(volumeToCreate);
 
-        String strVolumeCreateResultJson = executeJsonRpc(strVolumeToCreateJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+        String strVolumeCreateResultJson = executeJsonRpc(sfConnection, strVolumeToCreateJson);
 
         VolumeCreateResult volumeCreateResult = gson.fromJson(strVolumeCreateResultJson, VolumeCreateResult.class);
 
@@ -95,7 +419,7 @@ public class SolidFireUtil {
         return volumeCreateResult.result.volumeID;
     }
 
-    public static SolidFireVolume getSolidFireVolume(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lVolumeId)
+    public static SolidFireVolume getSolidFireVolume(SolidFireConnection sfConnection, long lVolumeId)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -103,7 +427,7 @@ public class SolidFireUtil {
 
         String strVolumeToGetJson = gson.toJson(volumeToGet);
 
-        String strVolumeGetResultJson = executeJsonRpc(strVolumeToGetJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+        String strVolumeGetResultJson = executeJsonRpc(sfConnection, strVolumeToGetJson);
 
         VolumeGetResult volumeGetResult = gson.fromJson(strVolumeGetResultJson, VolumeGetResult.class);
 
@@ -118,14 +442,14 @@ public class SolidFireUtil {
         return new SolidFireVolume(lVolumeId, strVolumeName, strVolumeIqn, lAccountId, strVolumeStatus, lTotalSize);
     }
 
-    public static List<SolidFireVolume> getSolidFireVolumesForAccountId(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lAccountId) {
+    public static List<SolidFireVolume> getSolidFireVolumesForAccountId(SolidFireConnection sfConnection, long lAccountId) {
         final Gson gson = new GsonBuilder().create();
 
         VolumesToGetForAccount volumesToGetForAccount = new VolumesToGetForAccount(lAccountId);
 
         String strVolumesToGetForAccountJson = gson.toJson(volumesToGetForAccount);
 
-        String strVolumesGetForAccountResultJson = executeJsonRpc(strVolumesToGetForAccountJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+        String strVolumesGetForAccountResultJson = executeJsonRpc(sfConnection, strVolumesToGetForAccountJson);
 
         VolumeGetResult volumeGetResult = gson.fromJson(strVolumesGetForAccountResultJson, VolumeGetResult.class);
 
@@ -140,7 +464,7 @@ public class SolidFireUtil {
         return sfVolumes;
     }
 
-    public static List<SolidFireVolume> getDeletedVolumes(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword)
+    public static List<SolidFireVolume> getDeletedVolumes(SolidFireConnection sfConnection)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -148,8 +472,7 @@ public class SolidFireUtil {
 
         String strListDeletedVolumesJson = gson.toJson(listDeletedVolumes);
 
-        String strListDeletedVolumesResultJson = executeJsonRpc(strListDeletedVolumesJson, strSfMvip, iSfPort,
-                strSfAdmin, strSfPassword);
+        String strListDeletedVolumesResultJson = executeJsonRpc(sfConnection, strListDeletedVolumesJson);
 
         VolumeGetResult volumeGetResult = gson.fromJson(strListDeletedVolumesResultJson, VolumeGetResult.class);
 
@@ -164,9 +487,9 @@ public class SolidFireUtil {
         return deletedVolumes;
     }
 
-    public static SolidFireVolume deleteSolidFireVolume(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lVolumeId)
+    public static SolidFireVolume deleteSolidFireVolume(SolidFireConnection sfConnection, long lVolumeId)
     {
-        SolidFireVolume sfVolume = getSolidFireVolume(strSfMvip, iSfPort, strSfAdmin, strSfPassword, lVolumeId);
+        SolidFireVolume sfVolume = getSolidFireVolume(sfConnection, lVolumeId);
 
         final Gson gson = new GsonBuilder().create();
 
@@ -174,12 +497,12 @@ public class SolidFireUtil {
 
         String strVolumeToDeleteJson = gson.toJson(volumeToDelete);
 
-        executeJsonRpc(strVolumeToDeleteJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+        executeJsonRpc(sfConnection, strVolumeToDeleteJson);
 
         return sfVolume;
     }
 
-   public static void purgeSolidFireVolume(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lVolumeId)
+   public static void purgeSolidFireVolume(SolidFireConnection sfConnection, long lVolumeId)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -187,7 +510,7 @@ public class SolidFireUtil {
 
         String strVolumeToPurgeJson = gson.toJson(volumeToPurge);
 
-        executeJsonRpc(strVolumeToPurgeJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+        executeJsonRpc(sfConnection, strVolumeToPurgeJson);
     }
 
     private static final String ACTIVE = "active";
@@ -267,7 +590,7 @@ public class SolidFireUtil {
         }
     }
 
-    public static long createSolidFireAccount(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, String strAccountName)
+    public static long createSolidFireAccount(SolidFireConnection sfConnection, String strAccountName)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -275,7 +598,7 @@ public class SolidFireUtil {
 
         String strAccountAddJson = gson.toJson(accountToAdd);
 
-        String strAccountAddResultJson = executeJsonRpc(strAccountAddJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+        String strAccountAddResultJson = executeJsonRpc(sfConnection, strAccountAddJson);
 
         AccountAddResult accountAddResult = gson.fromJson(strAccountAddResultJson, AccountAddResult.class);
 
@@ -284,7 +607,7 @@ public class SolidFireUtil {
         return accountAddResult.result.accountID;
     }
 
-    public static SolidFireAccount getSolidFireAccountById(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lSfAccountId)
+    public static SolidFireAccount getSolidFireAccountById(SolidFireConnection sfConnection, long lSfAccountId)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -292,7 +615,7 @@ public class SolidFireUtil {
 
         String strAccountToGetByIdJson = gson.toJson(accountToGetById);
 
-        String strAccountGetByIdResultJson = executeJsonRpc(strAccountToGetByIdJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+        String strAccountGetByIdResultJson = executeJsonRpc(sfConnection, strAccountToGetByIdJson);
 
         AccountGetResult accountGetByIdResult = gson.fromJson(strAccountGetByIdResultJson, AccountGetResult.class);
 
@@ -305,7 +628,7 @@ public class SolidFireUtil {
         return new SolidFireAccount(lSfAccountId, strSfAccountName, strSfAccountInitiatorSecret, strSfAccountTargetSecret);
     }
 
-    public static SolidFireAccount getSolidFireAccountByName(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, String strSfAccountName)
+    public static SolidFireAccount getSolidFireAccountByName(SolidFireConnection sfConnection, String strSfAccountName)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -313,7 +636,7 @@ public class SolidFireUtil {
 
         String strAccountToGetByNameJson = gson.toJson(accountToGetByName);
 
-        String strAccountGetByNameResultJson = executeJsonRpc(strAccountToGetByNameJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+        String strAccountGetByNameResultJson = executeJsonRpc(sfConnection, strAccountToGetByNameJson);
 
         AccountGetResult accountGetByNameResult = gson.fromJson(strAccountGetByNameResultJson, AccountGetResult.class);
 
@@ -326,7 +649,7 @@ public class SolidFireUtil {
         return new SolidFireAccount(lSfAccountId, strSfAccountName, strSfAccountInitiatorSecret, strSfAccountTargetSecret);
     }
 
-    public static void deleteSolidFireAccount(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lAccountId)
+    public static void deleteSolidFireAccount(SolidFireConnection sfConnection, long lAccountId)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -334,7 +657,7 @@ public class SolidFireUtil {
 
         String strAccountToRemoveJson = gson.toJson(accountToRemove);
 
-        executeJsonRpc(strAccountToRemoveJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+        executeJsonRpc(sfConnection, strAccountToRemoveJson);
     }
 
     public static class SolidFireAccount
@@ -399,7 +722,7 @@ public class SolidFireUtil {
         }
     }
 
-    public static long createSolidFireVag(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, String strVagName,
+    public static long createSolidFireVag(SolidFireConnection sfConnection, String strVagName,
             String[] iqns, long[] volumeIds)
     {
         final Gson gson = new GsonBuilder().create();
@@ -408,7 +731,7 @@ public class SolidFireUtil {
 
         String strVagCreateJson = gson.toJson(vagToCreate);
 
-        String strVagCreateResultJson = executeJsonRpc(strVagCreateJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+        String strVagCreateResultJson = executeJsonRpc(sfConnection, strVagCreateJson);
 
         VagCreateResult vagCreateResult = gson.fromJson(strVagCreateResultJson, VagCreateResult.class);
 
@@ -417,8 +740,7 @@ public class SolidFireUtil {
         return vagCreateResult.result.volumeAccessGroupID;
     }
 
-    public static void modifySolidFireVag(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lVagId,
-            String[] iqns, long[] volumeIds)
+    public static void modifySolidFireVag(SolidFireConnection sfConnection, long lVagId, String[] iqns, long[] volumeIds)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -426,10 +748,10 @@ public class SolidFireUtil {
 
         String strVagModifyJson = gson.toJson(vagToModify);
 
-        executeJsonRpc(strVagModifyJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+        executeJsonRpc(sfConnection, strVagModifyJson);
     }
 
-    public static SolidFireVag getSolidFireVag(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lVagId)
+    public static SolidFireVag getSolidFireVag(SolidFireConnection sfConnection, long lVagId)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -437,7 +759,7 @@ public class SolidFireUtil {
 
         String strVagToGetJson = gson.toJson(vagToGet);
 
-        String strVagGetResultJson = executeJsonRpc(strVagToGetJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+        String strVagGetResultJson = executeJsonRpc(sfConnection, strVagToGetJson);
 
         VagGetResult vagGetResult = gson.fromJson(strVagGetResultJson, VagGetResult.class);
 
@@ -449,7 +771,7 @@ public class SolidFireUtil {
         return new SolidFireVag(lVagId, vagIqns, vagVolumeIds);
     }
 
-    public static List<SolidFireVag> getAllSolidFireVags(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword)
+    public static List<SolidFireVag> getAllSolidFireVags(SolidFireConnection sfConnection)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -457,7 +779,7 @@ public class SolidFireUtil {
 
         String strAllVagsJson = gson.toJson(allVags);
 
-        String strAllVagsGetResultJson = executeJsonRpc(strAllVagsJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+        String strAllVagsGetResultJson = executeJsonRpc(sfConnection, strAllVagsJson);
 
         VagGetResult allVagsGetResult = gson.fromJson(strAllVagsGetResultJson, VagGetResult.class);
 
@@ -476,7 +798,7 @@ public class SolidFireUtil {
         return lstSolidFireVags;
     }
 
-    public static void deleteSolidFireVag(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lVagId)
+    public static void deleteSolidFireVag(SolidFireConnection sfConnection, long lVagId)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -484,7 +806,7 @@ public class SolidFireUtil {
 
         String strVagToDeleteJson = gson.toJson(vagToDelete);
 
-        executeJsonRpc(strVagToDeleteJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+        executeJsonRpc(sfConnection, strVagToDeleteJson);
     }
 
     public static class SolidFireVag
@@ -996,7 +1318,7 @@ public class SolidFireUtil {
         }
     }
 
-    private static String executeJsonRpc(String strJsonToExecute, String strMvip, int iPort, String strAdmin, String strPassword) {
+    private static String executeJsonRpc(SolidFireConnection sfConnection, String strJsonToExecute) {
         DefaultHttpClient httpClient = null;
         StringBuilder sb = new StringBuilder();
 
@@ -1005,11 +1327,11 @@ public class SolidFireUtil {
 
             input.setContentType("application/json");
 
-            httpClient = getHttpClient(iPort);
+            httpClient = getHttpClient(sfConnection.getManagementPort());
 
-            URI uri = new URI("https://" + strMvip + ":" + iPort + "/json-rpc/5.0");
+            URI uri = new URI("https://" + sfConnection.getManagementVip() + ":" + sfConnection.getManagementPort() + "/json-rpc/5.0");
             AuthScope authScope = new AuthScope(uri.getHost(), uri.getPort(), AuthScope.ANY_SCHEME);
-            UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(strAdmin, strPassword);
+            UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(sfConnection.getClusterAdminUsername(), sfConnection.getClusterAdminPassword());
 
             httpClient.getCredentialsProvider().setCredentials(authScope, credentials);
 
@@ -1131,5 +1453,120 @@ public class SolidFireUtil {
         }
 
         throw new CloudRuntimeException("Could not determine the volume IDs of the volume access group for volume access group ID of " + lVagId + ".");
+    }
+
+    // used to parse the "url" parameter when creating primary storage that's based on the SolidFire plug-in with the
+    // name SolidFireUtil.PROVIDER_NAME (as opposed to the SolidFire plug-in with the name SolidFireUtil.SHARED_PROVIDER_NAME)
+    // return a String instance that contains at most the MVIP and SVIP info
+    public static String getModifiedUrl(String originalUrl) {
+        StringBuilder sb = new StringBuilder();
+
+        String delimiter = ";";
+
+        StringTokenizer st = new StringTokenizer(originalUrl, delimiter);
+
+        while (st.hasMoreElements()) {
+            String token = st.nextElement().toString().toUpperCase();
+
+            if (token.startsWith(SolidFireUtil.MANAGEMENT_VIP.toUpperCase()) || token.startsWith(SolidFireUtil.STORAGE_VIP.toUpperCase())) {
+                sb.append(token).append(delimiter);
+            }
+        }
+
+        String modifiedUrl = sb.toString();
+        int lastIndexOf = modifiedUrl.lastIndexOf(delimiter);
+
+        if (lastIndexOf == (modifiedUrl.length() - delimiter.length())) {
+            return modifiedUrl.substring(0, lastIndexOf);
+        }
+
+        return modifiedUrl;
+    }
+
+    public static String getManagementVip(String url) {
+        return getVip(SolidFireUtil.MANAGEMENT_VIP, url);
+    }
+
+    public static String getStorageVip(String url) {
+        return getVip(SolidFireUtil.STORAGE_VIP, url);
+    }
+
+    public static int getManagementPort(String url) {
+        return getPort(SolidFireUtil.MANAGEMENT_VIP, url, DEFAULT_MANAGEMENT_PORT);
+    }
+
+    public static int getStoragePort(String url) {
+        return getPort(SolidFireUtil.STORAGE_VIP, url, DEFAULT_STORAGE_PORT);
+    }
+
+    private static String getVip(String keyToMatch, String url) {
+        String delimiter = ":";
+
+        String storageVip = getValue(keyToMatch, url);
+
+        int index = storageVip.indexOf(delimiter);
+
+        if (index != -1) {
+            return storageVip.substring(0, index);
+        }
+
+        return storageVip;
+    }
+
+    private static int getPort(String keyToMatch, String url, int defaultPortNumber) {
+        String delimiter = ":";
+
+        String storageVip = getValue(keyToMatch, url);
+
+        int index = storageVip.indexOf(delimiter);
+
+        int portNumber = defaultPortNumber;
+
+        if (index != -1) {
+            String port = storageVip.substring(index + delimiter.length());
+
+            try {
+                portNumber = Integer.parseInt(port);
+            } catch (NumberFormatException ex) {
+                throw new IllegalArgumentException("Invalid URL format (port is not an integer)");
+            }
+        }
+
+        return portNumber;
+    }
+
+    public static String getValue(String keyToMatch, String url) {
+        return getValue(keyToMatch, url, true);
+    }
+
+    public static String getValue(String keyToMatch, String url, boolean throwExceptionIfNotFound) {
+        String delimiter1 = ";";
+        String delimiter2 = "=";
+
+        StringTokenizer st = new StringTokenizer(url, delimiter1);
+
+        while (st.hasMoreElements()) {
+            String token = st.nextElement().toString();
+
+            int index = token.indexOf(delimiter2);
+
+            if (index == -1) {
+                throw new RuntimeException("Invalid URL format");
+            }
+
+            String key = token.substring(0, index);
+
+            if (key.equalsIgnoreCase(keyToMatch)) {
+                String valueToReturn = token.substring(index + delimiter2.length());
+
+                return valueToReturn;
+            }
+        }
+
+        if (throwExceptionIfNotFound) {
+            throw new RuntimeException("Key not found in URL");
+        }
+
+        return null;
     }
 }

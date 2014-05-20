@@ -53,7 +53,6 @@ import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
@@ -66,7 +65,6 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase.SRType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.resource.StorageProcessor;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -76,7 +74,6 @@ import com.cloud.utils.storage.encoding.Decoder;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.PBD;
-import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
@@ -570,150 +567,6 @@ public class XenServerStorageProcessor implements StorageProcessor {
         } catch (XmlRpcException e) {
             throw new CloudRuntimeException("Unable to create NFS SR " + pool.toString(), e);
         }
-    }
-
-    protected SR getIscsiSR(Connection conn, StorageFilerTO pool) {
-        synchronized (pool.getUuid().intern()) {
-            Map<String, String> deviceConfig = new HashMap<String, String>();
-            try {
-                String target = pool.getHost();
-                String path = pool.getPath();
-                if (path.endsWith("/")) {
-                    path = path.substring(0, path.length() - 1);
-                }
-
-                String tmp[] = path.split("/");
-                if (tmp.length != 3) {
-                    String msg = "Wrong iscsi path " + pool.getPath() + " it should be /targetIQN/LUN";
-                    s_logger.warn(msg);
-                    throw new CloudRuntimeException(msg);
-                }
-                String targetiqn = tmp[1].trim();
-                String lunid = tmp[2].trim();
-                String scsiid = "";
-
-                Set<SR> srs = SR.getByNameLabel(conn, pool.getUuid());
-                for (SR sr : srs) {
-                    if (!SRType.LVMOISCSI.equals(sr.getType(conn))) {
-                        continue;
-                    }
-                    Set<PBD> pbds = sr.getPBDs(conn);
-                    if (pbds.isEmpty()) {
-                        continue;
-                    }
-                    PBD pbd = pbds.iterator().next();
-                    Map<String, String> dc = pbd.getDeviceConfig(conn);
-                    if (dc == null) {
-                        continue;
-                    }
-                    if (dc.get("target") == null) {
-                        continue;
-                    }
-                    if (dc.get("targetIQN") == null) {
-                        continue;
-                    }
-                    if (dc.get("lunid") == null) {
-                        continue;
-                    }
-                    if (target.equals(dc.get("target")) && targetiqn.equals(dc.get("targetIQN")) && lunid.equals(dc.get("lunid"))) {
-                        throw new CloudRuntimeException("There is a SR using the same configuration target:" + dc.get("target") + ",  targetIQN:" + dc.get("targetIQN") +
-                                ", lunid:" + dc.get("lunid") + " for pool " + pool.getUuid() + "on host:" + hypervisorResource.getHost().uuid);
-                    }
-                }
-                deviceConfig.put("target", target);
-                deviceConfig.put("targetIQN", targetiqn);
-
-                Host host = Host.getByUuid(conn, hypervisorResource.getHost().uuid);
-                Map<String, String> smConfig = new HashMap<String, String>();
-                String type = SRType.LVMOISCSI.toString();
-                String poolId = Long.toString(pool.getId());
-                SR sr = null;
-                try {
-                    sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), poolId, type, "user", true, smConfig);
-                } catch (XenAPIException e) {
-                    String errmsg = e.toString();
-                    if (errmsg.contains("SR_BACKEND_FAILURE_107")) {
-                        String lun[] = errmsg.split("<LUN>");
-                        boolean found = false;
-                        for (int i = 1; i < lun.length; i++) {
-                            int blunindex = lun[i].indexOf("<LUNid>") + 7;
-                            int elunindex = lun[i].indexOf("</LUNid>");
-                            String ilun = lun[i].substring(blunindex, elunindex);
-                            ilun = ilun.trim();
-                            if (ilun.equals(lunid)) {
-                                int bscsiindex = lun[i].indexOf("<SCSIid>") + 8;
-                                int escsiindex = lun[i].indexOf("</SCSIid>");
-                                scsiid = lun[i].substring(bscsiindex, escsiindex);
-                                scsiid = scsiid.trim();
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) {
-                            String msg = "can not find LUN " + lunid + " in " + errmsg;
-                            s_logger.warn(msg);
-                            throw new CloudRuntimeException(msg);
-                        }
-                    } else {
-                        String msg = "Unable to create Iscsi SR  " + deviceConfig + " due to  " + e.toString();
-                        s_logger.warn(msg, e);
-                        throw new CloudRuntimeException(msg, e);
-                    }
-                }
-                deviceConfig.put("SCSIid", scsiid);
-
-                String result = SR.probe(conn, host, deviceConfig, type, smConfig);
-                String pooluuid = null;
-                if (result.indexOf("<UUID>") != -1) {
-                    pooluuid = result.substring(result.indexOf("<UUID>") + 6, result.indexOf("</UUID>")).trim();
-                }
-                if (pooluuid == null || pooluuid.length() != 36) {
-                    sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), poolId, type, "user", true, smConfig);
-                } else {
-                    sr = SR.introduce(conn, pooluuid, pool.getUuid(), poolId, type, "user", true, smConfig);
-                    Pool.Record pRec = XenServerConnectionPool.getPoolRecord(conn);
-                    PBD.Record rec = new PBD.Record();
-                    rec.deviceConfig = deviceConfig;
-                    rec.host = pRec.master;
-                    rec.SR = sr;
-                    PBD pbd = PBD.create(conn, rec);
-                    pbd.plug(conn);
-                }
-                sr.scan(conn);
-                return sr;
-            } catch (XenAPIException e) {
-                String msg = "Unable to create Iscsi SR  " + deviceConfig + " due to  " + e.toString();
-                s_logger.warn(msg, e);
-                throw new CloudRuntimeException(msg, e);
-            } catch (Exception e) {
-                String msg = "Unable to create Iscsi SR  " + deviceConfig + " due to  " + e.getMessage();
-                s_logger.warn(msg, e);
-                throw new CloudRuntimeException(msg, e);
-            }
-        }
-    }
-
-    protected Answer execute(CreateStoragePoolCommand cmd) {
-        Connection conn = hypervisorResource.getConnection();
-        StorageFilerTO pool = cmd.getPool();
-        try {
-            if (pool.getType() == StoragePoolType.NetworkFilesystem) {
-                getNfsSR(conn, pool);
-            } else if (pool.getType() == StoragePoolType.IscsiLUN) {
-                getIscsiSR(conn, pool);
-            } else if (pool.getType() == StoragePoolType.PreSetup) {
-            } else {
-                return new Answer(cmd, false, "The pool type: " + pool.getType().name() + " is not supported.");
-            }
-            return new Answer(cmd, true, "success");
-        } catch (Exception e) {
-            String msg =
-                    "Catch Exception " + e.getClass().getName() + ", create StoragePool failed due to " + e.toString() + " on host:" +
-                            hypervisorResource.getHost().uuid + " pool: " + pool.getHost() + pool.getPath();
-            s_logger.warn(msg, e);
-            return new Answer(cmd, false, msg);
-        }
-
     }
 
     protected Answer directDownloadHttpTemplate(CopyCommand cmd, DecodedDataObject srcObj, DecodedDataObject destObj) {

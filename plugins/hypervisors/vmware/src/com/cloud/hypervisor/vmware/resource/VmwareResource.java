@@ -3177,6 +3177,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(CreateStoragePoolCommand cmd) {
+        if (cmd.getCreateDatastore()) {
+            try {
+                VmwareContext context = getServiceContext();
+
+                _storageProcessor.prepareManagedDatastore(context, getHyperHost(context),
+                        cmd.getDetails().get(CreateStoragePoolCommand.DATASTORE_NAME), cmd.getDetails().get(CreateStoragePoolCommand.IQN),
+                        cmd.getDetails().get(CreateStoragePoolCommand.STORAGE_HOST), Integer.parseInt(cmd.getDetails().get(CreateStoragePoolCommand.STORAGE_PORT)));
+            } catch (Exception ex) {
+                return new Answer(cmd, false, "Issue creating datastore");
+            }
+        }
+
         return new Answer(cmd, true, "success");
     }
 
@@ -3223,22 +3235,32 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.info("Executing resource DeleteStoragePoolCommand: " + _gson.toJson(cmd));
         }
 
-        StorageFilerTO pool = cmd.getPool();
         try {
-            // We will leave datastore cleanup management to vCenter. Since for cluster VMFS datastore, it will always
-            // be mounted by vCenter.
+            if (cmd.getRemoveDatastore()) {
+                _storageProcessor.handleDatastoreAndVmdkDetach(cmd.getDetails().get(DeleteStoragePoolCommand.DATASTORE_NAME), cmd.getDetails().get(DeleteStoragePoolCommand.IQN),
+                    cmd.getDetails().get(DeleteStoragePoolCommand.STORAGE_HOST), Integer.parseInt(cmd.getDetails().get(DeleteStoragePoolCommand.STORAGE_PORT)));
 
-            // VmwareHypervisorHost hyperHost = this.getHyperHost(getServiceContext());
-            // hyperHost.unmountDatastore(pool.getUuid());
-            Answer answer = new Answer(cmd, true, "success");
-            return answer;
+                return new Answer(cmd, true, "success");
+            }
+            else {
+                // We will leave datastore cleanup management to vCenter. Since for cluster VMFS datastore, it will always
+                // be mounted by vCenter.
+
+                // VmwareHypervisorHost hyperHost = this.getHyperHost(getServiceContext());
+                // hyperHost.unmountDatastore(pool.getUuid());
+
+                return new Answer(cmd, true, "success");
+            }
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+
                 invalidateServiceContext();
             }
 
+            StorageFilerTO pool = cmd.getPool();
             String msg = "DeleteStoragePoolCommand (pool: " + pool.getHost() + ", path: " + pool.getPath() + ") failed due to " + VmwareHelper.getExceptionMessage(e);
+
             return new Answer(cmd, false, msg);
         }
     }

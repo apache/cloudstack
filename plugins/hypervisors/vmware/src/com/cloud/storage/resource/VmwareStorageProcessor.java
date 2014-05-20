@@ -1688,6 +1688,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
+    public ManagedObjectReference prepareManagedDatastore(VmwareContext context, VmwareHypervisorHost hyperHost, String datastoreName,
+            String iScsiName, String storageHost, int storagePort) throws Exception {
+        return getVmfsDatastore(context, hyperHost, datastoreName, storageHost, storagePort, trimIqn(iScsiName), null, null, null, null);
+    }
+
     private ManagedObjectReference prepareManagedDatastore(VmwareContext context, VmwareHypervisorHost hyperHost, String iScsiName,
             String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
             String chapTargetUsername, String chapTargetSecret) throws Exception {
@@ -1800,8 +1805,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return null;
     }
 
-    private void removeVmfsDatastore(VmwareHypervisorHost hyperHost, String volumeUuid, String storageIpAddress, int storagePortNumber, String iqn) throws Exception {
-        // hyperHost.unmountDatastore(volumeUuid);
+    private void removeVmfsDatastore(VmwareHypervisorHost hyperHost, String datastoreName, String storageIpAddress, int storagePortNumber, String iqn) throws Exception {
+        // hyperHost.unmountDatastore(datastoreName);
 
         VmwareContext context = hostService.getServiceContext(null);
         ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
@@ -1990,11 +1995,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return morDs;
     }
 
-    private void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception {
+    public void handleDatastoreAndVmdkDetach(String datastoreName, String iqn, String storageHost, int storagePort) throws Exception {
         VmwareContext context = hostService.getServiceContext(null);
         VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
 
-        removeVmfsDatastore(hyperHost, VmwareResource.getDatastoreName(iqn), storageHost, storagePort, trimIqn(iqn));
+        removeVmfsDatastore(hyperHost, datastoreName, storageHost, storagePort, trimIqn(iqn));
+    }
+
+    private void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception {
+        handleDatastoreAndVmdkDetach(VmwareResource.getDatastoreName(iqn), iqn, storageHost, storagePort);
     }
 
     private void removeManagedTargetsFromCluster(List<String> iqns) throws Exception {

@@ -29,5 +29,7 @@
 
     <bean id="solidFireDataStoreProvider"
         class="org.apache.cloudstack.storage.datastore.provider.SolidfirePrimaryDataStoreProvider" />
-    
+    <bean id="solidFireSharedDataStoreProvider"
+        class="org.apache.cloudstack.storage.datastore.provider.SolidFireSharedPrimaryDataStoreProvider" />
+
 </beans>
