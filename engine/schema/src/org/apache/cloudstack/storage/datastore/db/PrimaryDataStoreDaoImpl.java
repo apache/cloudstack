@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -55,9 +54,6 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     protected final SearchBuilder<StoragePoolVO> DcPodAnyClusterSearch;
     protected final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
     protected final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
-    protected SearchBuilder<StoragePoolVO> HostSearch;
-    protected SearchBuilder<StoragePoolHostVO> HostPoolSearch;
-    protected SearchBuilder<StoragePoolDetailVO> TagPoolSearch;
 
     @Inject
     protected StoragePoolDetailsDao _detailsDao;
@@ -118,26 +114,6 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         StatusCountSearch.select(null, Func.COUNT, null);
         StatusCountSearch.done();
 
-    }
-
-    @PostConstruct
-    void init() {
-        HostSearch = createSearchBuilder();
-        TagPoolSearch = _detailsDao.createSearchBuilder();
-        HostPoolSearch = _hostDao.createSearchBuilder();
-        // Search for pools on the host
-        HostPoolSearch.and("hostId", HostPoolSearch.entity().getHostId(), Op.EQ);
-        // Set criteria for pools
-        HostSearch.and("scope", HostSearch.entity().getScope(), Op.EQ);
-        HostSearch.and("removed", HostSearch.entity().getRemoved(), Op.NULL);
-        HostSearch.and("status", HostSearch.entity().getStatus(), Op.EQ);
-        HostSearch.join("hostJoin", HostPoolSearch, HostSearch.entity().getId(), HostPoolSearch.entity().getPoolId(), JoinBuilder.JoinType.INNER);
-        // Set criteria for tags
-        TagPoolSearch.and("name", TagPoolSearch.entity().getName(), Op.EQ);
-        TagPoolSearch.and("value", TagPoolSearch.entity().getValue(), Op.EQ);
-
-        HostSearch.join("tagJoin", TagPoolSearch, HostSearch.entity().getId(), TagPoolSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
-        HostSearch.done();
     }
 
     @Override
@@ -345,11 +321,29 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     @Override
     public List<StoragePoolVO> findLocalStoragePoolsByHostAndTags(long hostId, String[] tags) {
+        SearchBuilder<StoragePoolVO> hostSearch = createSearchBuilder();
+        SearchBuilder<StoragePoolHostVO> hostPoolSearch = _hostDao.createSearchBuilder();
+        SearchBuilder<StoragePoolDetailVO> tagPoolSearch = _detailsDao.createSearchBuilder();;
 
-        SearchCriteria<StoragePoolVO> sc = HostSearch.create();
+        // Search for pools on the host
+        hostPoolSearch.and("hostId", hostPoolSearch.entity().getHostId(), Op.EQ);
+        // Set criteria for pools
+        hostSearch.and("scope", hostSearch.entity().getScope(), Op.EQ);
+        hostSearch.and("removed", hostSearch.entity().getRemoved(), Op.NULL);
+        hostSearch.and("status", hostSearch.entity().getStatus(), Op.EQ);
+        hostSearch.join("hostJoin", hostPoolSearch, hostSearch.entity().getId(), hostPoolSearch.entity().getPoolId(), JoinBuilder.JoinType.INNER);
+
+        if (!(tags == null || tags.length == 0 )) {
+            tagPoolSearch.and("name", tagPoolSearch.entity().getName(), Op.EQ);
+            tagPoolSearch.and("value", tagPoolSearch.entity().getValue(), Op.EQ);
+            hostSearch.join("tagJoin", tagPoolSearch, hostSearch.entity().getId(), tagPoolSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
+
+        SearchCriteria<StoragePoolVO> sc = hostSearch.create();
         sc.setJoinParameters("hostJoin", "hostId", hostId );
         sc.setParameters("scope", ScopeType.HOST.toString());
         sc.setParameters("status", Status.Up.toString());
+
         if (!(tags == null || tags.length == 0 )) {
             Map<String, String> details = tagsToDetails(tags);
             for (Map.Entry<String, String> detail : details.entrySet()) {
