@@ -476,7 +476,8 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
 
         accounts_response = list_accounts(
                                           self.apiclient,
-                                          domainid=self.domain.id
+                                          domainid=self.domain.id,
+                                          listall=True
                                           )
 
         self.assertEqual(
@@ -1681,15 +1682,13 @@ class TestDomainForceRemove(cloudstackTestCase):
                          %s" % (ERROR_CODE_530, str(response)))
 
         self.debug("Checking if the resources in domain are deleted")
-        response = Account.list(
+        with self.assertRaises(Exception):
+            response = Account.list(
                         self.apiclient,
                         name=self.account_1.name,
                         domainid=self.account_1.domainid,
                         listall=True
                         )
-        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
-                         have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, str(response)))
         return
 
     @attr(tags=["domains", "advanced", "advancedns", "simulator", "selfservice"])
