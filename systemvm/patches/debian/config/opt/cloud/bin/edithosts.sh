@@ -99,7 +99,7 @@ if [ $dnsmasq_managed_lease ]
 then
   #release previous dhcp lease if present
   logger -t cloud "edithosts: releasing $ipv4"
-  dhcp_release $(ip route get "$ipv4/32" | tr " " "\n" | grep eth) $ipv4 $(grep "$ipv4 " $DHCP_LEASES | awk '{print $2}') > /dev/null 2>&1
+  dhcp_release $(ip route get "$ipv4/32" | grep " dev " | sed -e "s/^.* dev \([^ ]*\) .*$/\1/g") $ipv4 $(grep "$ipv4 " $DHCP_LEASES | awk '{print $2}') > /dev/null 2>&1
   logger -t cloud "edithosts: released $ipv4"
 fi
 
