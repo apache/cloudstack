@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -160,16 +160,10 @@ class TestPublicIP(cloudstackTestCase):
                                               self.apiclient,
                                               id=ip_address.ipaddress.id
                                               )
-        self.assertEqual(
-                            isinstance(list_pub_ip_addr_resp, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        self.assertEqual(
-                            len(list_pub_ip_addr_resp),
-                            0,
-                            "Check if the list public ip api response is not zero"
-                            )
+        if list_pub_ip_addr_resp is None:
+            return
+        if (list_pub_ip_addr_resp) and (isinstance(list_pub_ip_addr_resp, list)) and (len(list_pub_ip_addr_resp) > 0):
+            self.fail("list public ip response is not empty")
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
@@ -328,7 +322,7 @@ class TestPortForwarding(cloudstackTestCase):
                             'Running',
                             "VM state should be Running before creating a NAT rule."
                         )
-        # Open up firewall port for SSH        
+        # Open up firewall port for SSH
         fw_rule = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=src_nat_ip_addr.id,
@@ -381,7 +375,7 @@ class TestPortForwarding(cloudstackTestCase):
                                            )
             if vm_response[0].state != 'Running':
                 self.fail("State of VM : %s is not found to be Running" % str(self.virtual_machine.ipaddress))
- 
+
         except Exception as e:
             self.fail(
                       "SSH Access failed for %s: %s" % \
@@ -451,7 +445,7 @@ class TestPortForwarding(cloudstackTestCase):
                             'Running',
                             "VM state should be Running before creating a NAT rule."
                         )
-        # Open up firewall port for SSH        
+        # Open up firewall port for SSH
         fw_rule = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=ip_address.ipaddress.id,
@@ -790,7 +784,6 @@ class TestReleaseIP(cloudstackTestCase):
 
         retriesCount = 10
         isIpAddressDisassociated = False
-
         while retriesCount > 0:
             listResponse = list_publicIP(
                                     self.apiclient,
