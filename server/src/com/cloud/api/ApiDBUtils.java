@@ -1442,6 +1442,12 @@ public class ApiDBUtils {
         String jobInstanceId = null;
         ApiCommandJobType jobInstanceType = EnumUtils.fromString(ApiCommandJobType.class, job.getInstanceType(), ApiCommandJobType.None);
 
+        if (job.getInstanceId() == null) {
+            // when assert is hit, implement 'getInstanceId' of BaseAsyncCmd and return appropriate instance id
+            assert (false);
+            return null;
+        }
+
         if (jobInstanceType == ApiCommandJobType.Volume) {
             VolumeVO volume = ApiDBUtils.findVolumeById(job.getInstanceId());
             if (volume != null) {
