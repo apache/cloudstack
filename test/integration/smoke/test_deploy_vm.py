@@ -85,7 +85,8 @@ class TestDeployVM(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             templateid=self.template.id
         )
-
+        if not self.virtual_machine:
+            self.fail("Deploying a Virtual Machine Failed")
         list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
         self.debug(
             "Verify listVirtualMachines response for virtual machine: %s"\
