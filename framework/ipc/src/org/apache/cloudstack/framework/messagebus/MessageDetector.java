@@ -18,27 +18,31 @@
  */
 package org.apache.cloudstack.framework.messagebus;
 
+import org.apache.log4j.Logger;
+
 public class MessageDetector implements MessageSubscriber {
+    private static final Logger s_logger = Logger.getLogger(MessageDetector.class);
 
     private MessageBus _messageBus;
     private String[] _subjects;
-
-    private volatile boolean _signalled = false;
 
     public MessageDetector() {
         _messageBus = null;
         _subjects = null;
     }
 
-    public boolean waitAny(long timeoutInMiliseconds) {
-        _signalled = false;
+    public void waitAny(long timeoutInMiliseconds) {
+        if (timeoutInMiliseconds < 100) {
+            s_logger.warn("waitAny is passed with a too short time-out interval. " + timeoutInMiliseconds + "ms");
+            timeoutInMiliseconds = 100;
+        }
+
         synchronized (this) {
             try {
                 wait(timeoutInMiliseconds);
             } catch (InterruptedException e) {
             }
         }
-        return _signalled;
     }
 
     public void open(MessageBus messageBus, String[] subjects) {
@@ -67,9 +71,20 @@ public class MessageDetector implements MessageSubscriber {
 
     @Override
     public void onPublishMessage(String senderAddress, String subject, Object args) {
-        synchronized (this) {
-            _signalled = true;
-            notifyAll();
+        if (subjectMatched(subject)) {
+            synchronized (this) {
+                notifyAll();
+            }
         }
+    }
+
+    private boolean subjectMatched(String subject) {
+        if (_subjects != null) {
+            for (String sub : _subjects) {
+                if (sub.equals(subject))
+                    return true;
+            }
+        }
+        return false;
     }
 }
