@@ -572,7 +572,11 @@ class VirtualMachine:
 
         while timeout>0:
             try:
-                vms = VirtualMachine.list(apiclient, id=self.id, listAll=True)
+                projectid = None
+                if hasattr(self, "projectid"):
+                    projectid = self.projectid
+                vms = VirtualMachine.list(apiclient, projectid=projectid,
+				          id=self.id, listAll=True)
                 validationresult = validateList(vms)
                 if validationresult[0] == FAIL:
                     raise Exception("VM list validation failed: %s" % validationresult[2])
