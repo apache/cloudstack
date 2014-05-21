@@ -172,7 +172,8 @@ class TestProjectsCPULimits(cloudstackTestCase):
                         projectid=project.id,
                         networkids=networks,
                         serviceofferingid=service_off.id)
-            vms = VirtualMachine.list(api_client, id=self.vm.id, listall=True)
+            vms = VirtualMachine.list(api_client, projectid=project.id,
+			              id=self.vm.id, listall=True)
             self.assertIsInstance(vms,
                     list,
                     "List VMs should return a valid response")
