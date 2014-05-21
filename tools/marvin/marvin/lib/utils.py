@@ -460,10 +460,9 @@ def checkVolumeSize(ssh_handle=None,
             fdisk_output = ssh_handle.runCommand(cmd_inp)
             if fdisk_output["status"] != SUCCESS:
                 return FAILED
-            temp_out = fdisk_output["stdout"]
-            for line in temp_out.split("\n"):
+            for line in fdisk_output["stdout"]:
                 if volume_name in line:
-                    parts = line.split()
+                    parts = line.strip().split()
                     if str(parts[-2]) == str(size_to_verify):
                         return [SUCCESS,str(parts[-2])]
             return [FAILED,"Volume Not Found"]
