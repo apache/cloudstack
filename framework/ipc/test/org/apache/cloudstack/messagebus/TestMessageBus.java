@@ -138,12 +138,7 @@ public class TestMessageBus extends TestCase {
         try {
             int count = 0;
             while (count < 2) {
-                if (detector.waitAny(1000)) {
-                    System.out.println("Detected signal on bus");
-                    count++;
-                } else {
-                    System.out.println("Waiting timed out");
-                }
+                detector.waitAny(1000);
             }
         } finally {
             detector.close();
