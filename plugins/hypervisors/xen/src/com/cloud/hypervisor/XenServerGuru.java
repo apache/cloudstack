@@ -93,7 +93,11 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
         to.setOs(guestOS.getDisplayName());
         HostVO host = hostDao.findById(vm.getVirtualMachine().getHostId());
         GuestOSHypervisorVO guestOsMapping = _guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), getHypervisorType().toString(), host.getHypervisorVersion());
-        to.setPlatformEmulator(guestOsMapping.getGuestOsName());
+        if (guestOsMapping == null) {
+            to.setPlatformEmulator(null);
+        } else {
+            to.setPlatformEmulator(guestOsMapping.getGuestOsName());
+        }
 
         return to;
     }
