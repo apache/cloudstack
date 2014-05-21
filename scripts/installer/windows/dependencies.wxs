@@ -13,10 +13,11 @@
 <!-- Installing dependencies -->
 	<Bundle UpgradeCode="7cc78eac-106d-400e-b266-1b2c778b16b9" Version="4.4.0">
 		<BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.RtfLicense" >
-			<bal:WixStandardBootstrapperApplication LicenseFile="acs_license.rtf" ShowVersion="yes"/>
+			<bal:WixStandardBootstrapperApplication LicenseFile="acs_license.rtf" ShowVersion="yes" ThemeFile="optionstheme.xml"/>
 		</BootstrapperApplicationRef>
 		<Chain>
-			<MsiPackage Id="MySql" Name="mysql-5.1.73-winx64.msi" DownloadUrl="http://cdn.mysql.com/Downloads/MySQL-5.1/mysql-5.1.73-winx64.msi" Compressed="no" Visible="yes" ForcePerMachine="yes" DisplayInternalUI="yes" EnableFeatureSelection="yes" />
+			<MsiPackage Id="MySql" Name="mysql-5.1.73-winx64.msi" DownloadUrl="http://cdn.mysql.com/Downloads/MySQL-5.1/mysql-5.1.73-winx64.msi" Compressed="no" Visible="yes" ForcePerMachine="yes" DisplayInternalUI="yes" EnableFeatureSelection="yes" InstallCondition="ACSCheckbox"/>
+			<MsiPackage Id="MySqlClient" Name="mysql-5.1.73-winx64.msi" DownloadUrl="http://cdn.mysql.com/Downloads/MySQL-5.1/mysql-5.1.73-winx64.msi" Compressed="no" Visible="yes" ForcePerMachine="yes" EnableFeatureSelection="no" DisplayInternalUI="no" InstallCondition="Not ACSCheckbox"/>
 			<MsiPackage Id="SevenZip" Name="7z920-x64.msi" DownloadUrl="http://downloads.sourceforge.net/sevenzip/7z920-x64.msi" Compressed="no" Visible="yes" ForcePerMachine="yes" After="MySql"/>
 			<MsiPackage Id="Python" Name="python-2.7.6.amd64.msi" DownloadUrl="https://www.python.org/ftp/python/2.7.6/python-2.7.6.amd64.msi" Compressed="no" Visible="yes" ForcePerMachine="yes" After="SevenZip"/>
 			<ExePackage Id="Tomcat6" Name="apache-tomcat-6.0.39.exe" PerMachine="yes" DownloadUrl="http://mirror.sdunix.com/apache/tomcat/tomcat-6/v6.0.39/bin/apache-tomcat-6.0.39.exe" Compressed="no" InstallCommand="/S" After="Python"/>

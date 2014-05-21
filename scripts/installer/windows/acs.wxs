@@ -53,6 +53,9 @@
       <RegistrySearch Id="SecenZSearch" Name="Path" Root="HKLM"
         Key="SOFTWARE\7-Zip" Type="raw" Win64="yes" />
     </Property>
+    <Property Id='MYSQL'>
+      <RegistrySearch Id="MySqlSearch" Name="Location" Root="HKLM" Key="SOFTWARE\Wow6432Node\MySQL AB\MySQL Server 5.1" Type="raw" Win64="yes" />
+    </Property>
     <Condition Message="7Z is not installed please do install 7z and then try"><![CDATA[(Installed OR SEVENZ_HOME)]]></Condition>
 
     <!-- Properties for Database Related Information to be collected -->
@@ -79,7 +82,7 @@
                 Value="-XX:MaxPermSize=512m -Xmx1024m -Xms256m" />
               <Environment Id="Path" Action="set" Name="Path"
                 Permanent="yes" System="yes" Part="last"
-                Value="[JAVA_HOME]\bin;[PYTHON_HOME];[SEVENZ_HOME];[ProgramFilesFolder]\cdrtools" />
+                Value="[JAVA_HOME]\bin;[PYTHON_HOME];[SEVENZ_HOME];[ProgramFilesFolder]\cdrtools;[MYSQL]\bin" />
             </Component>
             <Component Id='setuptools' Guid='019a51dd-7fc4-4d6c-9277-13cc7b600789'>
               <File Id="ez_setup" Source="ez_setup.py" />
@@ -278,7 +281,7 @@
     </InstallExecuteSequence>
     <Feature Id='Complete' Title='ACS' Description='The complete package.'
       Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR'>
-      <Feature Id='MainProgram' Title='Program' Description='The main executable.'
+      <Feature Id='MainProgram' Title='Management Server' Description='The main executable.'
         Level='1'>
         <ComponentRef Id='webappsFolder' />
         <ComponentGroupRef Id='ClientPath' />
@@ -295,7 +298,7 @@
         <ComponentRef Id='ServiceInstaller' />
       </Feature>
     </Feature>
-    <UIRef Id="WixUI_Mondo_Custom" />
-    <UIRef Id="WixUI_ErrorProgressText" />
+		<UIRef Id="WixUI_Mondo_Custom" />
+		<UIRef Id="WixUI_ErrorProgressText" />
   </Product>
 </Wix>

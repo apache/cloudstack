@@ -679,6 +679,7 @@
                       <fileset dir="../scripts/installer/windows/">
                         <include name="start.bat"/>
                         <include name="acs_license.rtf"/>
+                        <include name="optionstheme.xml"/>
                       </fileset>
                     </copy>
                     <copy todir="./target/client">
