@@ -33,7 +33,7 @@ from marvin.lib.common import (get_domain,
                                 get_zone,
                                 get_template)
 from marvin.lib.utils import checkVolumeSize
-from marvin.codes import SUCCESS, FAILED, ERROR_CODE_530
+from marvin.codes import SUCCESS, FAILED, ERROR_CODE_530, XEN_SERVER
 from nose.plugins.attrib import attr
 #Import System modules
 import os
@@ -197,7 +197,16 @@ class TestCreateVolume(cloudstackTestCase):
             ssh = self.virtual_machine.get_ssh_client(
                                                       reconnect=True
                                                       )
-            ret = checkVolumeSize(ssh_handle=ssh,size_to_verify=vol_sz)
+            # Get the updated volume information
+            list_volume_response = Volume.list(
+                                               self.apiClient,
+                                               id=volume.id)
+            if list_volume_response[0].hypervisor.lower() == XEN_SERVER.lower():
+                volume_name = "/dev/xvd" + chr(ord('a') + int(list_volume_response[0].deviceid))
+                self.debug(" Using XenServer volume_name: %s" % (volume_name))
+                ret = checkVolumeSize(ssh_handle=ssh,volume_name=volume_name,size_to_verify=vol_sz)
+            else:
+                ret = checkVolumeSize(ssh_handle=ssh,size_to_verify=vol_sz)
             self.debug(" Volume Size Expected %s  Actual :%s" %(vol_sz,ret[1]))
             self.virtual_machine.detach_volume(self.apiClient, volume)
             self.assertEqual(ret[0],SUCCESS,"Check if promised disk size actually available")
