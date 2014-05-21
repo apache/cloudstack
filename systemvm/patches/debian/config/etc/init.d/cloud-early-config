@@ -30,13 +30,13 @@ PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 #set -x
 #exec 3>&0 4>&1 > /var/log/test.log 2>&1
 #start hv_kvp daemon
-/usr/sbin/hv_kvp_daemon
+[ -f /usr/sbin/hv_kvp_daemon ] && /usr/sbin/hv_kvp_daemon
 
 # Fix haproxy directory issue
 mkdir -p /var/lib/haproxy
 
 # Clear boot up flag, it would be created by rc.local after boot up done
-rm /var/cache/cloud/boot_up_done
+rm -f /var/cache/cloud/boot_up_done
 
 [ -x /sbin/ifup ] || exit 0
 
@@ -44,7 +44,7 @@ rm /var/cache/cloud/boot_up_done
 
 log_it() {
   echo "$(date) $@" >> /var/log/cloud.log
-  log_action_begin_msg "$@"
+  log_action_msg "$@"
 }
 
 init_interfaces_orderby_macs() {
