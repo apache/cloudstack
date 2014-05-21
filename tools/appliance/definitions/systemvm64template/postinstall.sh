@@ -195,6 +195,16 @@ fix_vhdutil() {
   chmod a+x /bin/vhd-util
 }
 
+# Preload these module otherwise the sysctl settings will not be set, and pasive ftp will not work.
+fix_modules() {
+  cat >> /etc/modules << EOF
+nf_conntrack_ipv4
+nf_conntrack
+nf_conntrack_ftp
+nf_nat_ftp
+EOF
+}
+
 do_fixes() {
   fix_nameserver
   fix_inittab
@@ -203,6 +213,7 @@ do_fixes() {
   fix_locale
   fix_conntrackd
   fix_vhdutil
+  fix_modules
 }
 
 configure_apache2() {
