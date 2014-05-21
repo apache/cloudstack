@@ -328,8 +328,8 @@ class VirtualMachine:
                     securitygroupids=None, projectid=None, startvm=None,
                     diskofferingid=None, affinitygroupnames=None, affinitygroupids=None, group=None,
                     hostid=None, keypair=None, ipaddress=None, mode='default', method='GET',hypervisor=None,
-                    customcpunumber=None, customcpuspeed=None, custommemory=None, rootdisksize=None):
-                    datadisktemplateid=None, datadiskofferingid=None):
+                    customcpunumber=None, customcpuspeed=None, custommemory=None, rootdisksize=None,
+                    datadisktemplate_diskoffering_list={}):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -434,12 +434,12 @@ class VirtualMachine:
         if group:
             cmd.group = group
 
-        if datadisktemplateid is not None and datadiskofferingid is not None:
-            cmd.datadisktemplatetodiskofferinglist = []
+        cmd.datadisktemplatetodiskofferinglist = []
+        for datadisktemplate, diskoffering in datadisktemplate_diskoffering_list.items():
             cmd.datadisktemplatetodiskofferinglist.append({
-                 'datadisktemplateid': datadisktemplateid,
-                 'diskofferingid': datadiskofferingid
-                 })
+                                            'datadisktemplateid': datadisktemplate,
+                                            'diskofferingid': diskoffering
+                                           })
 
         #program default access to ssh
         if mode.lower() == 'basic':

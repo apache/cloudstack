@@ -20,13 +20,13 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 import urllib
 from random import random
 import time
-
+from ddt import ddt
 
 class Services:
     """Test OVA template with mutiple disks
@@ -51,7 +51,6 @@ class Services:
                         "disk_offering": {
                                     "displaytext": "Small",
                                     "name": "Small",
-                                    "disksize": 1
                         },
                         "virtual_machine": {
                                     "displayname": "testVM",
@@ -63,24 +62,19 @@ class Services:
                                     "privateport": 22,
                                     "publicport": 22,
                          },
-                        "templates": {
-                            0: {
+                        "template": {
                                 "displaytext": "Template with multiple disks",
                                 "name": "Template with multiple disks",
-                                "ostype": 'CentOS 5.3 (64-bit)',
-                                "url": "http://10.147.28.7/templates/multipledisk.ova",
-                                "hypervisor": 'VMware',
-                                "format": 'OVA',
                                 "isfeatured": True,
                                 "ispublic": True,
                                 "isextractable": False,
-                                },
                         },
                         "sleep": 60,
                         "timeout": 10,
+                        "format": 'ova',
                      }
 
-
+@ddt
 class TestOVATemplateWithMupltipleDisks(cloudstackTestCase):
 
     def setUp(self):
@@ -101,20 +95,21 @@ class TestOVATemplateWithMupltipleDisks(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestOVATemplateWithMupltipleDisks, cls).getClsTestClient().getApiClient()
-        cls.api_client.hypervisor = 'VMware'
+        cls.testClient = super(TestOVATemplateWithMupltipleDisks, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.services['mode'] = cls.zone.networktype
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        # Disk offering size should be greater than datadisk template size
+        cls.services["disk_offering"]["disksize"] = 10
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
@@ -158,21 +153,25 @@ class TestOVATemplateWithMupltipleDisks(cloudstackTestCase):
         # 5. Verify an additional data disk attached to the VM
 
         # Register new template
-        template = Template.register(
+        self.services["template"]["url"] = 'http://10.147.28.7/templates/single-datadisk-template.ova'
+        self.services["template"]["format"] = 'OVA'
+        self.services["template"]["ostype"] = 'CentOS 5.3 (64-bit)'
+        registered_template = Template.register(
                                         self.apiclient,
-                                        self.services["templates"][0],
+                                        self.services["template"],
                                         zoneid=self.zone.id,
                                         account=self.account.name,
-                                        domainid=self.account.domainid
+                                        domainid=self.account.domainid,
+                                        hypervisor='VMware'
                                         )
         self.debug(
-                "Registered a template of format: %s with ID: %s" % (
-                                                                self.services["templates"][0]["format"],
-                                                                template.id
+                "Registered a template of format: %s with id: %s" % (
+                                                                self.services["template"]["format"],
+                                                                registered_template.id
                                                                 ))
         # Wait for template to download
-        template.download(self.apiclient)
-        self.cleanup.append(template)
+        registered_template.download(self.apiclient)
+        self.cleanup.append(registered_template)
 
         # Wait for template status to be changed across
         time.sleep(self.services["sleep"])
@@ -181,7 +180,7 @@ class TestOVATemplateWithMupltipleDisks(cloudstackTestCase):
             list_template_response = list_templates(
                                     self.apiclient,
                                     templatefilter='all',
-                                    id=template.id,
+                                    id=registered_template.id,
                                     zoneid=self.zone.id,
                                     account=self.account.name,
                                     domainid=self.account.domainid
@@ -213,12 +212,11 @@ class TestOVATemplateWithMupltipleDisks(cloudstackTestCase):
                             "Template state is not ready, it is %s" % template_response.isready
                         )
 
-        time.sleep(120)
         # Veriy 1 additonal Datadisk Templates got created
         list_datadisk_template_response = list_templates(
                                     self.apiclient,
-                                    templatefilter='all',
-                                    parenttemplateid=template.id,
+                                    templatefilter='self',
+                                    parenttemplateid=registered_template.id,
                                     zoneid=self.zone.id,
                                     account=self.account.name,
                                     domainid=self.account.domainid
@@ -244,18 +242,17 @@ class TestOVATemplateWithMupltipleDisks(cloudstackTestCase):
                         )
 
         # Deploy new virtual machine using template
+        datadisktemplate_diskoffering_list = {datadisk_template_response.id: self.disk_offering.id}
         virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    templateid=template.id,
+                                    templateid=registered_template.id,
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
-                                    mode=self.services["mode"],
-                                    datadisktemplateid=datadisk_template_response.id,
-                                    datadiskofferingid=self.disk_offering.id
+                                    datadisktemplate_diskoffering_list=datadisktemplate_diskoffering_list
                                     )
-        self.debug("Creating an instance with template ID: %s" % template.id)
+        self.debug("Creating an instance with template ID: %s" % registered_template.id)
         vm_response = list_virtual_machines(
                                         self.apiclient,
                                         id=virtual_machine.id,

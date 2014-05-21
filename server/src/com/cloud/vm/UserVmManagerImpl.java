@@ -2610,7 +2610,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 if (dataDiskTemplate == null || (!dataDiskTemplate.getTemplateType().equals(TemplateType.DATADISK)) &&
                         (dataDiskTemplate.getState().equals(VirtualMachineTemplate.State.Active))) {
-                    throw new InvalidParameterValueException("Invalid template id specified for Datadisk template" + datadiskTemplateToDiskOffering.getKey());
+                    throw new InvalidParameterValueException("Invalid template id specified for Datadisk template " + datadiskTemplateToDiskOffering.getKey());
                 }
                 long dataDiskTemplateId = datadiskTemplateToDiskOffering.getKey();
                 if (!dataDiskTemplate.getParentTemplateId().equals(template.getId())) {
