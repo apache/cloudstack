@@ -190,7 +190,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
 
-    @Parameter(name = ApiConstants.DATADISKTEMPLATE_TO_DISKOFFERING_LIST, type = CommandType.MAP, since = "4.4", description = "datadisk template to disk-offering mapping;" +
+    @Parameter(name = ApiConstants.DATADISKTEMPLATE_TO_DISKOFFERING_LIST, type = CommandType.MAP, since = "4.5", description = "datadisk template to disk-offering mapping;" +
             " an optional parameter used to create additional data disks from datadisk templates; can't be specified with diskOfferingId parameter")
     private Map dataDiskTemplateToDiskOfferingList;
 

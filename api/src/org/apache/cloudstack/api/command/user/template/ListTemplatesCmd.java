@@ -72,7 +72,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     private Boolean showRemoved;
 
     @Parameter(name = ApiConstants.PARENT_TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list datadisk templates by parent template id",
-            since = "4.4")
+            since = "4.5")
     private Long parentTemplateId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
