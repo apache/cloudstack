@@ -1117,9 +1117,23 @@
                     createEditField($td).appendTo($td);
                 } else {
                     $td.html('');
-                    $td.append(
-                        $('<span></span>').html(_s(content))
-                    );
+
+                    if ($.isArray(content)) {
+                        var $ul = $('<ul>');
+
+                        $(content).map(function (index, contentItem) {
+                            var $li = $('<li>');
+
+                            $li.append('<span>').text(contentItem.toString());
+                            $li.appendTo($ul);
+                        });
+
+                        $ul.appendTo($td);
+                    } else {
+                        $td.append(
+                            $('<span>').html(_s(content))
+                        );
+                    }
                 }
 
                 $td.attr('title', _s(content));
