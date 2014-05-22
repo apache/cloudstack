@@ -688,6 +688,7 @@ class TestVolumes(cloudstackTestCase):
         cmd                = resizeVolume.resizeVolumeCmd()
         cmd.id             = rootvolume.id
         cmd.size           = 10
+        cmd.shrinkok       = "true"
 
         self.apiClient.resizeVolume(cmd)
 
