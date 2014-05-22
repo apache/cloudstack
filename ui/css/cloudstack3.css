@@ -1318,6 +1318,10 @@ div.panel div.list-view div.fixed-header {
   background: #FFFFFF;
 }
 
+.detail-view div#details-tab-zones div.fixed-header {
+  left: 25px !important;
+}
+
 .detail-view div.list-view div.fixed-header table {
   width: 100% !important;
 }
