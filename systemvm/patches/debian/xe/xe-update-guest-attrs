@@ -74,7 +74,7 @@ xenstore_write_cached() {
     fi
     
     # try to write and update cache if successfull
-    if $XENSTORE write "$key" "$newval" ; then
+    if $XENSTORE-write "$key" "$newval" ; then
 	mkdir -p $(dirname "$cache")
 	echo -n "$newval" > "$cache"
 	XENSTORE_UPDATED=1
@@ -104,7 +104,7 @@ xenstore_rm_cached() {
 	return 1
     fi
     # try to write and update cache if successfull
-    if $XENSTORE rm "$key" ; then
+    if $XENSTORE-rm "$key" ; then
 	rm -rf "$cache"
 	XENSTORE_UPDATED=1
 	return 0
