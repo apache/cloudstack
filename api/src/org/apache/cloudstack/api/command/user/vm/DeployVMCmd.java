@@ -27,7 +27,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -105,7 +104,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     private Long domainId;
 
     //Network information
-    @ACL(accessType = AccessType.UseEntry)
+    //@ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NETWORK_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = NetworkResponse.class, description = "list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
     private List<Long> networkIds;
 
