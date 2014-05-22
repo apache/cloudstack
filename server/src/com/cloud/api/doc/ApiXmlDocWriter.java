@@ -105,10 +105,21 @@ public class ApiXmlDocWriter {
         for (Class<?> cmdClass : cmdClasses) {
             String apiName = cmdClass.getAnnotation(APICommand.class).name();
             if (s_apiNameCmdClassMap.containsKey(apiName)) {
-                System.out.println("Warning, API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
-                continue;
+                // handle API cmd separation into admin cmd and user cmd with the common api name
+                Class<?> curCmd = s_apiNameCmdClassMap.get(apiName);
+                if (curCmd.isAssignableFrom(cmdClass)) {
+                    // api_cmd map always keep the admin cmd class to get full response and parameters
+                    s_apiNameCmdClassMap.put(apiName, cmdClass);
+                } else if (cmdClass.isAssignableFrom(curCmd)) {
+                    // just skip this one without warning
+                    continue;
+                } else {
+                    System.out.println("Warning, API Cmd class " + cmdClass.getName() + " has non-unique apiname " + apiName);
+                    continue;
+                }
+            } else {
+                s_apiNameCmdClassMap.put(apiName, cmdClass);
             }
-            s_apiNameCmdClassMap.put(apiName, cmdClass);
         }
 
         LinkedProperties preProcessedCommands = new LinkedProperties();
