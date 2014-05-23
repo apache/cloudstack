@@ -21,15 +21,6 @@ import java.util.Arrays;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -39,12 +30,24 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
+
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -246,6 +249,7 @@ public class AccountManagerImplTest {
     public void deleteUserAccount() {
         AccountVO account = new AccountVO();
         account.setId(42l);
+        DomainVO domain = new DomainVO();
         Mockito.when(_accountDao.findById(42l)).thenReturn(account);
         Mockito.when(
                 securityChecker.checkAccess(Mockito.any(Account.class),
@@ -255,6 +259,12 @@ public class AccountManagerImplTest {
         Mockito.when(_accountDao.remove(42l)).thenReturn(true);
         Mockito.when(_configMgr.releaseAccountSpecificVirtualRanges(42l))
                 .thenReturn(true);
+        Mockito.when(_domainMgr.getDomain(Mockito.anyLong())).thenReturn(domain);
+        Mockito.when(
+                securityChecker.checkAccess(Mockito.any(Account.class),
+                        Mockito.any(Domain.class)))
+                .thenReturn(true);
+
         Assert.assertTrue(accountManager.deleteUserAccount(42));
         // assert that this was a clean delete
         Mockito.verify(_accountDao, Mockito.never()).markForCleanup(
@@ -265,6 +275,7 @@ public class AccountManagerImplTest {
     public void deleteUserAccountCleanup() {
         AccountVO account = new AccountVO();
         account.setId(42l);
+        DomainVO domain = new DomainVO();
         Mockito.when(_accountDao.findById(42l)).thenReturn(account);
         Mockito.when(
                 securityChecker.checkAccess(Mockito.any(Account.class),
@@ -279,6 +290,12 @@ public class AccountManagerImplTest {
         Mockito.when(
                 _vmMgr.expunge(Mockito.any(UserVmVO.class), Mockito.anyLong(),
                         Mockito.any(Account.class))).thenReturn(false);
+        Mockito.when(_domainMgr.getDomain(Mockito.anyLong())).thenReturn(domain);
+        Mockito.when(
+                securityChecker.checkAccess(Mockito.any(Account.class),
+                        Mockito.any(Domain.class)))
+                .thenReturn(true);
+
         Assert.assertTrue(accountManager.deleteUserAccount(42));
         // assert that this was NOT a clean delete
         Mockito.verify(_accountDao, Mockito.atLeastOnce()).markForCleanup(
