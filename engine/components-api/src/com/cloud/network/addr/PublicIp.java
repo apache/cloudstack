@@ -239,6 +239,16 @@ public class PublicIp implements PublicIpAddress {
     }
 
     @Override
+    public Date getRemoved() {
+        return _addr.getRemoved();
+    }
+
+    @Override
+    public Date getCreated() {
+        return _addr.getCreated();
+    }
+
+    @Override
     public Class<?> getEntityType() {
         return IpAddress.class;
     }

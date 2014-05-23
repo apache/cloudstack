@@ -1676,3 +1676,12 @@ CREATE TABLE `cloud`.`network_acl_item_cidrs` (
 ALTER TABLE `cloud`.`load_balancer_healthcheck_policies` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the policy can be displayed to the end user';
 ALTER TABLE `cloud`.`load_balancer_stickiness_policies` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the policy can be displayed to the end user';
 
+
+alter table user_ip_address add column removed datetime DEFAULT NULL COMMENT 'date removed';
+alter table user_ip_address add column created datetime NULL COMMENT 'date created';
+
+alter table vlan add column removed datetime DEFAULT NULL COMMENT 'date removed';
+alter table vlan add column created datetime NULL COMMENT 'date created';
+
+alter table user_ip_address drop key public_ip_address;
+alter table user_ip_address add UNIQUE KEY public_ip_address (public_ip_address,source_network_id, removed);

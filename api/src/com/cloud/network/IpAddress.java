@@ -86,7 +86,10 @@ public interface IpAddress extends ControlledEntity, Identity, InternalIdentity,
 
     Long getNetworkId();
 
-    @Override
     boolean isDisplay();
+
+    public Date getRemoved();
+
+    public Date getCreated();
 
 }

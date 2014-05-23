@@ -20,6 +20,8 @@ import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import java.util.Date;
+
 public interface Vlan extends InfrastructureEntity, InternalIdentity, Identity {
     public enum VlanType {
         DirectAttached, VirtualNetwork
@@ -40,6 +42,10 @@ public interface Vlan extends InfrastructureEntity, InternalIdentity, Identity {
     public VlanType getVlanType();
 
     public Long getNetworkId();
+
+    public Date getRemoved();
+
+    public Date getCreated();
 
     public Long getPhysicalNetworkId();
 

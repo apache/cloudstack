@@ -3183,7 +3183,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
         _publicIpAddressDao.deletePublicIPRange(vlanDbId);
-        _vlanDao.expunge(vlanDbId);
+        _vlanDao.remove(vlanDbId);
             }
         });
 
