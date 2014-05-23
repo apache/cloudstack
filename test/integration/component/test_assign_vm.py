@@ -38,7 +38,6 @@ from marvin.lib.common import (get_domain,
                                            list_snapshots,
                                            list_virtual_machines)
 from marvin.lib.utils import cleanup_resources
-from marvin.codes import ERROR_CODE_530
 
 def log_test_exceptions(func):
     def test_wrap_exception_log(self, *args, **kwargs):
@@ -370,14 +369,7 @@ class TestVMOwnership(cloudstackTestCase):
         # 1. deploy VM in sub subdomain1
         # 3. assignVirtualMachine to subdomain2
         self.create_vm(self.sdomain_account_user1['account'], self.sdomain_account_user1['domain'],isRunning=True)
-        response = self.virtual_machine.assign_virtual_machine(
-                        self.apiclient,
-                        self.sdomain_account_user2['account'].name,
-                        self.sdomain_account_user2['domain'].id)
-        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
-                         have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, str(response)))
-        return
+        self.assertRaises(Exception, self.virtual_machine.assign_virtual_machine, self.apiclient, self.sdomain_account_user2['account'].name ,self.sdomain_account_user2['domain'].id)
 
     @attr(tags = ["advanced"])
     @log_test_exceptions
@@ -388,14 +380,7 @@ class TestVMOwnership(cloudstackTestCase):
         # 1. deploy VM in sub subdomain1 with PF rule set.
         # 3. assignVirtualMachine to subdomain2
         self.create_vm(self.sdomain_account_user1['account'], self.sdomain_account_user1['domain'],pfrule=True)
-        response = self.virtual_machine.assign_virtual_machine(
-                        self.apiclient,
-                        self.sdomain_account_user2['account'].name,
-                        self.sdomain_account_user2['domain'].id)
-        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
-                         have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, str(response)))
-        return
+        self.assertRaises(Exception, self.virtual_machine.assign_virtual_machine, self.apiclient, self.sdomain_account_user2['account'].name ,self.sdomain_account_user2['domain'].id)
 
     @attr(tags = ["advanced"])
     @log_test_exceptions

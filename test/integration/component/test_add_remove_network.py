@@ -58,7 +58,7 @@ from marvin.cloudstackAPI import (addNicToVirtualMachine,
                                   removeNicFromVirtualMachine,
                                   updateDefaultNicForVirtualMachine)
 
-from marvin.codes import PASS, ERROR_CODE_530
+from marvin.codes import PASS
 import random
 import time
 
@@ -466,10 +466,8 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
         self.cleanup.append(vpc)
         self.cleanup.append(vpc_off)
         self.debug("Trying to add VPC to vm belonging to isolated network, this should fail")
-        response = self.virtual_machine.add_nic(self.apiclient, vpc.id)
-        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
-                         have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, str(response)))
+        with self.assertRaises(Exception):
+            self.virtual_machine.add_nic(self.apiclient, vpc.id)
         self.debug("Starting virtual machine")
         self.virtual_machine.start(self.apiclient)
         self.debug("Disabling vpc offering: %s" % vpc_off.id)
@@ -827,10 +825,9 @@ class TestRemoveNetworkFromVirtualMachine(cloudstackTestCase):
         self.assertEqual(len(vm_list[0].nic), 1, "There should only be default nic present in the vm")
         self.debug("Trying to remove the default nic of vm : %s, this should fail" %
                     self.virtual_machine.id)
-        response = self.virtual_machine.remove_nic(self.apiclient, vm_list[0].nic[0].id)
-        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
-                         have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, str(response)))
+        with self.assertRaises(Exception):
+            self.virtual_machine.remove_nic(self.apiclient, vm_list[0].nic[0].id)
+            self.debug("Removing default nic of vm failed")
         return
 
     @attr(tags = ["advanced"])
