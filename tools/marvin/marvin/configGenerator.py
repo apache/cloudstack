@@ -154,11 +154,8 @@ class host(object):
         self.podid = None
         self.clusterid = None
         self.clustername = None
-        self.cpunumber = None
-        self.cpuspeed = None
-        self.hostmac = None
         self.hosttags = None
-        self.memory = None
+        self.allocationstate = None
 
 
 class physicalNetwork(object):
