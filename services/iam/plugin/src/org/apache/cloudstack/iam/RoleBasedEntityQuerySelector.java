@@ -57,11 +57,9 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
         List<Long> domainIds = new ArrayList<Long>();
         for (IAMPolicy policy : policies) {
             List<IAMPolicyPermission> pp = new ArrayList<IAMPolicyPermission>();
-            for (AccessType type : AccessType.values()) {
-                if (type.ordinal() >= accessType.ordinal()) {
-                    pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.DOMAIN.toString(), type));
-                }
-            }
+            pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action,
+                    PermissionScope.DOMAIN.toString(), accessType.toString()));
+
             if (pp != null) {
                 for (IAMPolicyPermission p : pp) {
                     if (p.getScopeId() != null) {
@@ -101,11 +99,9 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
         List<Long> accountIds = new ArrayList<Long>();
         for (IAMPolicy policy : policies) {
             List<IAMPolicyPermission> pp = new ArrayList<IAMPolicyPermission>();
-            for (AccessType type : AccessType.values()) {
-                if (type.ordinal() >= accessType.ordinal()) {
-                    pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.ACCOUNT.toString(), type));
-                }
-            }
+            pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action,
+                    PermissionScope.ACCOUNT.toString(), accessType.toString()));
+
             if (pp != null) {
                 for (IAMPolicyPermission p : pp) {
                     if (p.getScopeId() != null) {
@@ -144,11 +140,9 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
         List<Long> entityIds = new ArrayList<Long>();
         for (IAMPolicy policy : policies) {
             List<IAMPolicyPermission> pp = new ArrayList<IAMPolicyPermission>();
-            for (AccessType type : AccessType.values()) {
-                if (type.ordinal() >= accessType.ordinal()) {
-                    pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.RESOURCE.toString(), type));
-                }
-            }
+            pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action,
+                    PermissionScope.RESOURCE.toString(), accessType.toString()));
+
             if (pp != null) {
                 for (IAMPolicyPermission p : pp) {
                     if (p.getScopeId() != null) {
@@ -171,13 +165,10 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
         // for each policy, find granted permission with ALL scope
         for (IAMPolicy policy : policies) {
             List<IAMPolicyPermission> pp = new ArrayList<IAMPolicyPermission>();
-            for (AccessType type : AccessType.values()) {
-                if (type.ordinal() >= accessType.ordinal()) {
-                    pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.ALL.toString(), type));
-                }
-                if (pp != null && pp.size() > 0) {
-                    return true;
-                }
+            pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.ALL.toString(),
+                    accessType.toString()));
+            if (pp != null && pp.size() > 0) {
+                return true;
             }
         }
         return false;
@@ -194,3 +185,4 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
     }
 
 }
+

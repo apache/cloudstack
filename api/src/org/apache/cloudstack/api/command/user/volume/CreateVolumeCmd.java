@@ -19,8 +19,6 @@ package org.apache.cloudstack.api.command.user.volume;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -93,7 +91,6 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, description = "max iops")
     private Long maxIops;
 
-    @ACL
     @Parameter(name = ApiConstants.SNAPSHOT_ID,
                type = CommandType.UUID,
                entityType = SnapshotResponse.class,
@@ -106,7 +103,6 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "an optional field, whether to display the volume to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVolume;
 
-    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
                entityType = UserVmResponse.class,

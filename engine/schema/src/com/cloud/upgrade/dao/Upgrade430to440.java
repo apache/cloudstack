@@ -59,56 +59,9 @@ public class Upgrade430to440 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
-        populateIAMGroupAccountMap(conn);
         secondaryIpsAccountAndDomainIdsUpdate(conn);
         moveCidrsToTheirOwnTable(conn);
     }
-
-    // populate iam_group_account_map table for existing accounts
-    private void populateIAMGroupAccountMap(Connection conn) {
-        PreparedStatement acctInsert = null;
-        PreparedStatement acctQuery = null;
-        ResultSet rs = null;
-
-        s_logger.debug("Populating iam_group_account_map table for existing accounts...");
-        try {
-            acctInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`iam_group_account_map` (group_id, account_id, created) values(?, ?, Now())");
-            acctQuery = conn
-                    .prepareStatement("select id, type from `cloud`.`account` where removed is null");
-            rs = acctQuery.executeQuery();
-
-            while (rs.next()) {
-                Long acct_id = rs.getLong("id");
-                short type = rs.getShort("type");
-
-                // insert entry in iam_group_account_map table
-                acctInsert.setLong(1, type + 1);
-                acctInsert.setLong(2, acct_id);
-                acctInsert.executeUpdate();
-            }
-        } catch (SQLException e) {
-            String msg = "Unable to populate iam_group_account_map for existing accounts." + e.getMessage();
-            s_logger.error(msg);
-            throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (acctInsert != null) {
-                    acctInsert.close();
-                }
-                if (acctQuery != null) {
-                    acctQuery.close();
-                }
-            } catch (SQLException e) {
-            }
-        }
-        s_logger.debug("Completed populate iam_group_account_map for existing accounts.");
-    }
-
 
 
     private void secondaryIpsAccountAndDomainIdsUpdate(Connection conn) {

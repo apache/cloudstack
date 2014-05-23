@@ -31,7 +31,6 @@ import net.sf.ehcache.Element;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.PermissionScope;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.iam.api.IAMGroup;
 import org.apache.cloudstack.iam.api.IAMPolicy;
 import org.apache.cloudstack.iam.api.IAMPolicyPermission;
@@ -154,7 +153,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         if (grp != null) {
             throw new InvalidParameterValueException(
                     "Unable to create acl group with name " + iamGroupName
-                    + " already exisits for path " + path);
+                            + " already exisits for path " + path);
         }
         IAMGroupVO rvo = new IAMGroupVO(iamGroupName, description);
         rvo.setPath(path);
@@ -373,7 +372,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         if (ro != null) {
             throw new InvalidParameterValueException(
                     "Unable to create acl policy with name " + iamPolicyName
-                    + " already exisits");
+                            + " already exisits");
         }
 
         IAMPolicy role = Transaction.execute(new TransactionCallback<IAMPolicy>() {
@@ -709,7 +708,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         }
 
         // add entry in acl_policy_permission table
-        IAMPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(iamPolicyId, entityType, scope, scopeId, action, perm);
+        IAMPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(iamPolicyId, entityType, scope,
+                scopeId, action, perm, accessType);
         if (permit == null) {
             // not there already
             permit = new IAMPolicyPermissionVO(iamPolicyId, action, entityType, accessType, scope, scopeId, perm,
@@ -733,7 +733,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                     + "; failed to revoke permission from policy.");
         }
         // remove entry from acl_entity_permission table
-        IAMPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(iamPolicyId, entityType, scope, scopeId, action, Permission.Allow);
+        IAMPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(iamPolicyId, entityType, scope,
+                scopeId, action, Permission.Allow, null);
         if (permit != null) {
             // not removed yet
             _policyPermissionDao.remove(permit.getId());
@@ -850,9 +851,10 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<IAMPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope, AccessType accessType) {
+    public List<IAMPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope,
+            String accessType) {
         @SuppressWarnings("rawtypes")
-        List pp = _policyPermissionDao.listByPolicyActionAndScope(policyId, action, scope, accessType.toString());
+        List pp = _policyPermissionDao.listByPolicyActionAndScope(policyId, action, scope, accessType);
         return pp;
     }
 
@@ -883,13 +885,14 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     @Override
     public IAMPolicy getResourceGrantPolicy(String entityType, Long entityId, String accessType, String action) {
         List<IAMPolicyVO> policyList = _aclPolicyDao.listAll();
-        for (IAMPolicyVO policy : policyList){
+        for (IAMPolicyVO policy : policyList) {
             List<IAMPolicyPermission> pp = listPolicyPermissions(policy.getId());
-            if ( pp != null && pp.size() == 1){
+            if (pp != null && pp.size() == 1) {
                 // resource grant policy should only have one ACL permission assigned
                 IAMPolicyPermission permit = pp.get(0);
-                if ( permit.getEntityType().equals(entityType) && permit.getScope().equals(PermissionScope.RESOURCE.toString()) && permit.getScopeId().longValue() == entityId.longValue()){
-                    if (accessType != null && permit.getAccessType().equals(accessType)){
+                if (permit.getEntityType().equals(entityType) && permit.getScope().equals(PermissionScope.RESOURCE.toString())
+                        && permit.getScopeId().longValue() == entityId.longValue()) {
+                    if (accessType != null && permit.getAccessType().equals(accessType)) {
                         return policy;
                     } else if (action != null && permit.getAction().equals(action)) {
                         return policy;

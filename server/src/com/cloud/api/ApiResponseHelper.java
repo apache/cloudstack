@@ -1587,7 +1587,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 throw new PermissionDeniedException("Account " + caller + " is not authorized to see job id=" + job.getId());
             }
         } else if (_accountMgr.isDomainAdmin(caller.getId())) {
-            _accountMgr.checkAccess(caller, null, jobOwner);
+            _accountMgr.checkAccess(caller, null, true, jobOwner);
         }
 
         return createAsyncJobResponse(_jobMgr.queryJob(cmd.getId(), true));

@@ -284,7 +284,7 @@ public class UserVmManagerTest {
         doReturn(3L).when(_volumeMock).getTemplateId();
         doReturn(ImageFormat.VHD).when(_templateMock).getFormat();
         when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
-        doNothing().when(_accountMgr).checkAccess(_account, null, _templateMock);
+        doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
         when(_storageMgr.allocateDuplicateVolume(_volumeMock, 14L)).thenReturn(_volumeMock);
         when(_templateMock.getGuestOSId()).thenReturn(5L);
         doNothing().when(_vmMock).setGuestOSId(anyLong());
@@ -328,7 +328,7 @@ public class UserVmManagerTest {
         doReturn(3L).when(_vmMock).getIsoId();
         doReturn(ImageFormat.ISO).when(_templateMock).getFormat();
         when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
-        doNothing().when(_accountMgr).checkAccess(_account, null, _templateMock);
+        doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
         when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
         doNothing().when(_vmMock).setIsoId(14L);
         when(_templateMock.getGuestOSId()).thenReturn(5L);
@@ -414,7 +414,7 @@ public class UserVmManagerTest {
 
         doReturn(VirtualMachine.State.Running).when(_vmInstance).getState();
 
-        doNothing().when(_accountMgr).checkAccess(_account, null, _templateMock);
+        doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
 
         doNothing().when(_itMgr).checkIfCanUpgrade(_vmMock, _offeringVo);
 
@@ -608,7 +608,7 @@ public class UserVmManagerTest {
 
         when(_accountService.getActiveAccountByName(anyString(), anyLong())).thenReturn(newAccount);
 
-        doThrow(new PermissionDeniedException("Access check failed")).when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class),
+        doThrow(new PermissionDeniedException("Access check failed")).when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class),
             any(ControlledEntity.class));
 
         CallContext.register(user, caller);

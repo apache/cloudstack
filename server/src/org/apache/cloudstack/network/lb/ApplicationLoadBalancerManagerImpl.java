@@ -115,7 +115,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         }
 
         Account caller = CallContext.current().getCallingAccount();
-        _accountMgr.checkAccess(caller, AccessType.UseEntry, guestNtwk);
+        _accountMgr.checkAccess(caller, AccessType.UseEntry, false, guestNtwk);
 
         Network sourceIpNtwk = _networkModel.getNetwork(sourceIpNetworkId);
         if (sourceIpNtwk == null) {
@@ -389,20 +389,19 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         Map<String, String> tags = cmd.getTags();
 
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        List<Long> permittedResources = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
-                domainIdRecursiveListProject, cmd.listAll(), false, "listLoadBalancers");
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts,
+                domainIdRecursiveListProject, cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(ApplicationLoadBalancerRuleVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<ApplicationLoadBalancerRuleVO> sb = _lbDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
@@ -429,7 +428,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         }
 
         SearchCriteria<ApplicationLoadBalancerRuleVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (keyword != null) {
             SearchCriteria<ApplicationLoadBalancerRuleVO> ssc = _lbDao.createSearchCriteria();
@@ -547,7 +546,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         if (rule == null) {
             throw new InvalidParameterValueException("Unable to find load balancer " + id);
         }
-        _accountMgr.checkAccess(caller, null, rule);
+        _accountMgr.checkAccess(caller, null, true, rule);
 
         if (customId != null) {
             rule.setUuid(customId);

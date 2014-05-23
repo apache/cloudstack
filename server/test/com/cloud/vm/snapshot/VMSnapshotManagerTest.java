@@ -125,7 +125,7 @@ public class VMSnapshotManagerTest {
         _vmSnapshotMgr._guestOSDao = _guestOSDao;
         _vmSnapshotMgr._hypervisorCapabilitiesDao = _hypervisorCapabilitiesDao;
 
-        doNothing().when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(ControlledEntity.class));
+        doNothing().when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
 
         _vmSnapshotMgr._vmSnapshotMax = _vmSnapshotMax;
 

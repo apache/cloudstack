@@ -37,8 +37,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "attachVolume", description = "Attaches a disk volume to a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {
-        VirtualMachine.class, Volume.class},
+@APICommand(name = "attachVolume", description = "Attaches a disk volume to a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AttachVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AttachVolumeCmd.class.getName());
@@ -53,7 +52,6 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
         + "* 4 - /dev/xvde" + "* 5 - /dev/xvdf" + "* 6 - /dev/xvdg" + "* 7 - /dev/xvdh" + "* 8 - /dev/xvdi" + "* 9 - /dev/xvdj")
     private Long deviceId;
 
-    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the disk volume")
     private Long id;
 

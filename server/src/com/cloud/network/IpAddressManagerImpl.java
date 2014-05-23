@@ -29,8 +29,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
@@ -42,6 +40,7 @@ import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -410,7 +409,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         Account caller = CallContext.current().getCallingAccount();
         long callerUserId = CallContext.current().getCallingUserId();
         // check permissions
-        _accountMgr.checkAccess(caller, null, ipOwner);
+        _accountMgr.checkAccess(caller, null, false, ipOwner);
 
         DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
 
@@ -1165,14 +1164,15 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             if (zone.getNetworkType() == NetworkType.Advanced) {
                 if (network.getGuestType() == Network.GuestType.Shared) {
                     if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
-                        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.UseEntry, network);
+                        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.UseEntry, false,
+                                network);
                     } else {
                         throw new InvalidParameterValueException("IP can be associated with guest network of 'shared' type only if "
                                                                  + "network services Source Nat, Static Nat, Port Forwarding, Load balancing, firewall are enabled in the network");
                     }
                 }
             } else {
-                _accountMgr.checkAccess(caller, null, ipToAssoc);
+                _accountMgr.checkAccess(caller, null, true, ipToAssoc);
             }
             owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
         } else {
@@ -1187,7 +1187,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         Network network = _networksDao.findById(networkId);
         if (network != null) {
-            _accountMgr.checkAccess(owner, AccessType.UseEntry, network);
+            _accountMgr.checkAccess(owner, AccessType.UseEntry, false, network);
         } else {
             s_logger.debug("Unable to find ip address by id: " + ipId);
             return null;
@@ -1319,10 +1319,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             if (zone.getNetworkType() == NetworkType.Advanced) {
                 if (network.getGuestType() == Network.GuestType.Shared) {
                     assert (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()));
-                    _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.UseEntry, network);
+                    _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.UseEntry, false,
+                            network);
                 }
             } else {
-                _accountMgr.checkAccess(caller, null, ipToAssoc);
+                _accountMgr.checkAccess(caller, null, true, ipToAssoc);
             }
             owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
         } else {

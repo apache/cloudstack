@@ -40,7 +40,6 @@ import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
@@ -56,11 +55,7 @@ import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.dc.DataCenter;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.offering.DiskOffering;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
@@ -222,111 +217,27 @@ public class ParamProcessWorker implements DispatchWorker {
     }
 
 
-    private void doAccessChecks(final BaseCmd cmd, final Map<Object, AccessType> entitiesToAccess) {
+    private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
         Account caller = CallContext.current().getCallingAccount();
-        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
-        if (owner == null) {
-            owner = caller;
-        }
+        Account owner = _accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
 
         if (cmd instanceof BaseAsyncCreateCmd) {
-            if (owner.getId() != caller.getId()) {
-                // mimic impersonation either by passing (account, domainId) or through derived owner from other api parameters
-                // in this case, we should check access using the owner
-                _accountMgr.checkAccess(caller, null, owner);
-            }
-        } else {
-            // check access using the caller for other operational cmds
-            owner = caller;
+            // check that caller can access the owner account.
+            _accountMgr.checkAccess(caller, null, true, owner);
         }
-
-        APICommand commandAnnotation = cmd.getClass().getAnnotation(APICommand.class);
-
-        String apiName = commandAnnotation != null ? commandAnnotation.name() : null;
 
         if (!entitiesToAccess.isEmpty()) {
-            List<ControlledEntity> entitiesToOperate = new ArrayList<ControlledEntity>();
+            // check that caller can access the owner account.
+            _accountMgr.checkAccess(caller, null, true, owner);
             for (Object entity : entitiesToAccess.keySet()) {
                 if (entity instanceof ControlledEntity) {
-
-                    if (AccessType.OperateEntry == entitiesToAccess.get(entity)) {
-                        entitiesToOperate.add((ControlledEntity) entity);
-                    } else {
-                        _accountMgr.checkAccess(owner, entitiesToAccess.get(entity), apiName,
-                                (ControlledEntity) entity);
-                    }
+                    _accountMgr.checkAccess(caller, entitiesToAccess.get(entity), true, (ControlledEntity) entity);
                 } else if (entity instanceof InfrastructureEntity) {
-                    if (entity instanceof DataCenter) {
-                        checkZoneAccess(owner, (DataCenter)entity);
-                    } else if (entity instanceof ServiceOffering) {
-                        checkServiceOfferingAccess(owner, (ServiceOffering)entity);
-                    } else if (entity instanceof DiskOffering) {
-                        checkDiskOfferingAccess(owner, (DiskOffering)entity);
-                    }
+                    // FIXME: Move this code in adapter, remove code from
+                    // Account manager
                 }
             }
-
-            if (!entitiesToOperate.isEmpty()) {
-                _accountMgr.checkAccess(owner, AccessType.OperateEntry, apiName,
-                        entitiesToOperate.toArray(new ControlledEntity[entitiesToOperate.size()]));
-            }
-
         }
-    }
-
-    private void checkDiskOfferingAccess(Account caller, DiskOffering dof) {
-        for (SecurityChecker checker : _secChecker) {
-            if (checker.checkAccess(caller, dof)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + caller + " to disk offering:" + dof.getId() + " by "
-                            + checker.getName());
-                }
-                return;
-            } else {
-                throw new PermissionDeniedException("Access denied to " + caller + " by " + checker.getName());
-            }
-        }
-
-        assert false : "How can all of the security checkers pass on checking this caller?";
-        throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to disk offering:"
-                + dof.getId());
-    }
-
-    private void checkServiceOfferingAccess(Account caller, ServiceOffering sof) {
-        for (SecurityChecker checker : _secChecker) {
-            if (checker.checkAccess(caller, sof)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + caller + " to service offering:" + sof.getId() + " by "
-                            + checker.getName());
-                }
-                return;
-            } else {
-                throw new PermissionDeniedException("Access denied to " + caller + " by " + checker.getName());
-            }
-        }
-
-        assert false : "How can all of the security checkers pass on checking this caller?";
-        throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to service offering:"
-                + sof.getId());
-    }
-
-    private void checkZoneAccess(Account caller, DataCenter zone) {
-        for (SecurityChecker checker : _secChecker) {
-            if (checker.checkAccess(caller, zone)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + caller + " to zone:" + zone.getId() + " by "
-                            + checker.getName());
-                }
-                return;
-            } else {
-                throw new PermissionDeniedException("Access denied to " + caller + " by " + checker.getName()
-                        + " for zone " + zone.getId());
-            }
-        }
-
-        assert false : "How can all of the security checkers pass on checking this caller?";
-        throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to zone:"
-                + zone.getId());
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

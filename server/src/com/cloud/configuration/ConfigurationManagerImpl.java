@@ -175,8 +175,8 @@ import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
-import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
@@ -4339,7 +4339,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("Can't update system networks");
             }
 
-            _accountMgr.checkAccess(caller, null, network);
+            _accountMgr.checkAccess(caller, null, true, network);
 
             List<Long> offeringIds = _networkModel.listNetworkOfferingsForUpgrade(networkId);
 

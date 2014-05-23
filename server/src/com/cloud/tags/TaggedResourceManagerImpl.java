@@ -227,7 +227,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                         Long domainId = accountDomainPair.second();
                         Long accountId = accountDomainPair.first();
                         if (accountId != null) {
-                            _accountMgr.checkAccess(caller, null, _accountMgr.getAccount(accountId));
+                            _accountMgr.checkAccess(caller, null, false, _accountMgr.getAccount(accountId));
                         } else if (domainId != null && !_accountMgr.isNormalUser(caller.getId())) {
                             //check permissions;
                             _accountMgr.checkAccess(caller, _domainMgr.getDomain(domainId));
@@ -289,7 +289,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         for (ResourceTag resourceTag : resourceTags) {
             //1) validate the permissions
             Account owner = _accountMgr.getAccount(resourceTag.getAccountId());
-            _accountMgr.checkAccess(caller, null, owner);
+            _accountMgr.checkAccess(caller, null, false, owner);
             //2) Only remove tag if it matches key value pairs
             if (tags != null && !tags.isEmpty()) {
                 for (String key : tags.keySet()) {

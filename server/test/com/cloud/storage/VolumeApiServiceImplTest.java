@@ -233,7 +233,7 @@ public class VolumeApiServiceImplTest {
         }
 
         // helper methods mock
-        doNothing().when(_svc._accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(ControlledEntity.class));
+        doNothing().when(_svc._accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
         doNothing().when(_svc._jobMgr).updateAsyncJobAttachment(any(Long.class), any(String.class), any(Long.class));
         when(_svc._jobMgr.submitAsyncJob(any(AsyncJobVO.class), any(String.class), any(Long.class))).thenReturn(1L);
     }

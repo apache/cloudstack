@@ -31,11 +31,8 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
-import com.cloud.network.vpc.Vpc;
 
-@APICommand(name = "associateIpAddress", description = "Acquires and associates a public IP to an account.", responseObject = IPAddressResponse.class, responseView = ResponseView.Full,
-        entityType = {IpAddress.class, Vpc.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "associateIpAddress", description = "Acquires and associates a public IP to an account.", responseObject = IPAddressResponse.class, responseView = ResponseView.Full)
 public class AssociateIPAddrCmdByAdmin extends AssociateIPAddrCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateIPAddrCmdByAdmin.class.getName());
 

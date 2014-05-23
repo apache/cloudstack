@@ -28,7 +28,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -265,7 +264,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private boolean validateVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url, String format) throws ResourceAllocationException {
 
         // permission check
-        _accountMgr.checkAccess(caller, null, _accountMgr.getActiveAccountById(ownerId));
+        _accountMgr.checkAccess(caller, null, true, _accountMgr.getActiveAccountById(ownerId));
 
         // Check that the resource limit for volumes won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.volume);
@@ -375,11 +374,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Boolean displayVolume = cmd.getDisplayVolume();
 
         // permission check
-        _accountMgr.checkAccess(caller, null, owner);
+        _accountMgr.checkAccess(caller, null, true, _accountMgr.getActiveAccountById(ownerId));
 
         if (displayVolume == null) {
             displayVolume = true;
-
         } else {
             if (!_accountMgr.isRootAdmin(caller.getId())) {
                 throw new PermissionDeniedException("Cannot update parameter displayvolume, only admin permitted ");
@@ -507,6 +505,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             // purposes
 
             provisioningType = diskOffering.getProvisioningType();
+            // check snapshot permissions
+            _accountMgr.checkAccess(caller, null, true, snapshotCheck);
 
             // one step operation - create volume in VM's cluster and attach it
             // to the VM
@@ -522,6 +522,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
                     throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
                 }
+
+                // permission check
+                _accountMgr.checkAccess(caller, null, false, vm);
             }
 
         }
@@ -769,7 +772,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         /* does the caller have the authority to act on this volume? */
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, volume);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
         long currentSize = volume.getSize();
 
@@ -932,7 +935,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("There are snapshot creating on it, Unable to delete the volume");
         }
 
-        _accountMgr.checkAccess(caller, null, volume);
+        _accountMgr.checkAccess(caller, null, true, volume);
 
         if (volume.getInstanceId() != null) {
             throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
@@ -1137,8 +1140,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // permission check
-        // TODO: remove this if we can annotate volume parameter in createVolumeCmd since this routine is used there as well.
-        _accountMgr.checkAccess(caller, AccessType.OperateEntry, volumeToAttach, vm);
+        _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
 
         if (!(Volume.State.Allocated.equals(volumeToAttach.getState()) || Volume.State.Ready.equals(volumeToAttach.getState()) || Volume.State.Uploaded.equals(volumeToAttach
                 .getState()))) {
@@ -1361,7 +1363,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // Permissions check
-        _accountMgr.checkAccess(caller, null, volume);
+        _accountMgr.checkAccess(caller, null, true, volume);
 
 
         // Check that the volume is currently attached to a VM
@@ -1828,7 +1830,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // perform permission check
-        _accountMgr.checkAccess(account, null, volume);
+        _accountMgr.checkAccess(account, null, true, volume);
 
         if (_dcDao.findById(zoneId) == null) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
