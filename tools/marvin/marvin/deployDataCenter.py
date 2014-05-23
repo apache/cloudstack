@@ -117,18 +117,16 @@ class DeployDataCenters(object):
             self.__cleanUp["order"].append(type)
 
     def addHosts(self, hosts, zoneId, podId, clusterId, hypervisor):
-        try:
-            if hosts is None:
-                return
-            for host in hosts:
+        if hosts is None:
+            print "\n === Invalid Hosts Information ===="
+            return
+        failed_cnt = 0
+        for host in hosts:
+            try:
                 hostcmd = addHost.addHostCmd()
                 hostcmd.clusterid = clusterId
-                hostcmd.cpunumber = host.cpunumer
-                hostcmd.cpuspeed = host.cpuspeed
-                hostcmd.hostmac = host.hostmac
                 hostcmd.hosttags = host.hosttags
                 hostcmd.hypervisor = host.hypervisor
-                hostcmd.memory = host.memory
                 hostcmd.password = host.password
                 hostcmd.podid = podId
                 hostcmd.url = host.url
@@ -139,10 +137,15 @@ class DeployDataCenters(object):
                 if ret:
                     self.__tcRunLogger.debug("=== Add Host Successful ===")
                     self.__addToCleanUp("Host", ret[0].id)
-        except Exception as e:
-            print "Exception Occurred %s" % GetDetailExceptionInfo(e)
-            self.__tcRunLogger.exception("=== Adding Host Failed ===")
-            self.__cleanAndExit()
+            except Exception as e:
+                failed_cnt = failed_cnt + 1
+                print "Exception Occurred :%s" % GetDetailExceptionInfo(e)
+                self.__tcRunLogger.exception(
+                    "=== Adding Host Failed :%s===" % str(
+                        host.url))
+                if failed_cnt == len(hosts):
+                    self.__cleanAndExit()
+                continue
 
     def addVmWareDataCenter(self, vmwareDc):
         try:
@@ -516,7 +519,8 @@ class DeployDataCenters(object):
                         self.enableProvider(pnetprovres[0].id)
                     elif provider.name == 'SecurityGroupProvider':
                         self.enableProvider(pnetprovres[0].id)
-                elif provider.name in ['JuniperContrailRouter', 'JuniperContrailVpcRouter']:
+                elif provider.name in ['JuniperContrailRouter',
+                                       'JuniperContrailVpcRouter']:
                     netprov = addNetworkServiceProvider.\
                         addNetworkServiceProviderCmd()
                     netprov.name = provider.name
@@ -1073,6 +1077,10 @@ if __name__ == "__main__":
     '''
     Step1: Create the Logger
     '''
+    if (options.input) and not (os.path.isfile(options.input)):
+        print "\n=== Invalid Input Config File Path, Please Check ==="
+        exit(1)
+
     log_obj = MarvinLog("CSLog")
     cfg = configGenerator.getSetupConfig(options.input)
     log = cfg.logger
