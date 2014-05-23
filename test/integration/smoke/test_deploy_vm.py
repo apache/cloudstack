@@ -353,7 +353,7 @@ class TestDeployVMStartFailure(cloudstackTestCase):
             self.mock_start_failure
         ]
 
-    @attr(tags = ['selfservice'])
+    @attr(tags = ['selfservice'],BugId="CLOUDSTACK-6708")
     def test_deploy_vm_start_failure(self):
         """Test Deploy Virtual Machine - start operation failure and retry
 
