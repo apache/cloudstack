@@ -87,4 +87,8 @@ public interface IpAddress extends ControlledEntity, Identity, InternalIdentity 
 
     boolean isDisplay();
 
+    public Date getRemoved();
+
+    public Date getCreated();
+
 }
