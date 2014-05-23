@@ -2702,6 +2702,52 @@ class Vpn:
         if openfirewall:
             cmd.openfirewall = openfirewall
         return Vpn(apiclient.createRemoteAccessVpn(cmd).__dict__)
+    
+    @classmethod
+    def createVpnGateway(cls, apiclient, vpcid):
+        """Create VPN Gateway """
+        cmd = createVpnGateway.createVpnGatewayCmd()
+        cmd.vpcid = vpcid
+        return (apiclient.createVpnGateway(cmd).__dict__)
+    
+    @classmethod
+    def createVpnConnection(cls, apiclient, s2scustomergatewayid,s2svpngatewayid):
+        """Create VPN Connection """
+        cmd = createVpnConnection.createVpnConnectionCmd()
+        cmd.s2scustomergatewayid = s2scustomergatewayid
+        cmd.s2svpngatewayid = s2svpngatewayid
+        return (apiclient.createVpnGateway(cmd).__dict__)
+    
+    @classmethod
+    def resetVpnConnection(cls, apiclient,id):
+        """Reset VPN Connection """
+        cmd = resetVpnConnection.resetVpnConnectionCmd()
+        cmd.id = id
+        return (apiclient.resetVpnConnection(cmd).__dict__)
+    
+    @classmethod
+    def deleteVpnConnection(cls, apiclient,id):
+        """Delete VPN Connection """
+        cmd = deleteVpnConnection.deleteVpnConnectionCmd()
+        cmd.id = id
+        return (apiclient.deleteVpnConnection(cmd).__dict__)
+
+    @classmethod
+    def listVpnGateway(cls, apiclient, **kwargs):
+        """List all VPN Gateways matching criteria"""
+
+        cmd = listVpnGateways.listVpnGatewaysCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listVpnGateways(cmd))
+    
+    @classmethod
+    def listVpnConnection(cls, apiclient, **kwargs):
+        """List all VPN Connections matching criteria"""
+
+        cmd = listVpnConnections.listVpnConnectionsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listVpnConnections(cmd))
+
 
     def delete(self, apiclient):
         """Delete remote VPN access"""
@@ -3465,7 +3511,14 @@ class Configurations:
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
             cmd.listall=True
         return(apiclient.listConfigurations(cmd))
+    
+    @classmethod
+    def listCapabilities(cls, apiclient, **kwargs):
+        """Lists capabilities"""
 
+        cmd = listCapabilities.listCapabilitiesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listCapabilities(cmd))
 
 class NetScaler:
 
@@ -3832,7 +3885,7 @@ class PrivateGateway:
 
     @classmethod
     def create(cls, apiclient, gateway, ipaddress, netmask, vlan, vpcid,
-               physicalnetworkid=None):
+               physicalnetworkid=None, ,aclid=None):
         """Create private gateway"""
 
         cmd = createPrivateGateway.createPrivateGatewayCmd()
@@ -3843,6 +3896,8 @@ class PrivateGateway:
         cmd.vpcid = vpcid
         if physicalnetworkid:
             cmd.physicalnetworkid = physicalnetworkid
+        if aclid:
+            cmd.aclid = aclid
 
         return PrivateGateway(apiclient.createPrivateGateway(cmd).__dict__)
 
