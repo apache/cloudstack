@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackAPI import *
 from marvin.lib.utils import (random_gen,
                               cleanup_resources)
 from marvin.lib.base import (Domain,
@@ -40,7 +41,7 @@ from marvin.lib.common import (get_domain,
                                get_builtin_template_info,
                                wait_for_cleanup)
 from nose.plugins.attrib import attr
-from marvin.codes import ERROR_CODE_530
+from marvin.cloudstackException import CloudstackAPIException
 import time
 
 class Services:
@@ -1677,18 +1678,16 @@ class TestDomainForceRemove(cloudstackTestCase):
                 " to cleanup any remaining resouces")
             # Sleep 3*account.gc to ensure that all resources are deleted
             wait_for_cleanup(self.apiclient, ["account.cleanup.interval"]*3)
-            response = Domain.list(
+            with self.assertRaises(CloudstackAPIException):
+                Domain.list(
                         self.apiclient,
                         id=domain.id,
                         listall=True
                         )
-            self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
-                         have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, str(response)))
 
         self.debug("Checking if the resources in domain are deleted")
-        with self.assertRaises(Exception):
-            response = Account.list(
+        with self.assertRaises(CloudstackAPIException):
+            Account.list(
                         self.apiclient,
                         name=self.account_1.name,
                         domainid=self.account_1.domainid,
@@ -1838,8 +1837,6 @@ class TestDomainForceRemove(cloudstackTestCase):
                     )
 
         self.debug("Deleting domain without force option")
-        response = domain.delete(self.apiclient, cleanup=False)
-        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
-                         have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, str(response)))
+        with self.assertRaises(Exception):
+            domain.delete(self.apiclient, cleanup=False)
         return

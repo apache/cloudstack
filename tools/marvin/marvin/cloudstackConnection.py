@@ -21,22 +21,13 @@ import base64
 import hmac
 import hashlib
 import time
-from cloudstackAPI import *
+from cloudstackAPI import queryAsyncJobResult
 import jsonHelper
 from marvin.codes import (
     FAILED,
-    INVALID_RESPONSE,
-    INVALID_INPUT,
     JOB_FAILED,
-    JOB_INPROGRESS,
     JOB_CANCELLED,
     JOB_SUCCEEDED
-)
-from requests import (
-    ConnectionError,
-    HTTPError,
-    Timeout,
-    RequestException
 )
 from marvin.cloudstackException import (
     InvalidParameterException,
@@ -106,10 +97,12 @@ class CSConnection(object):
                     marvinRequest(cmd, response_type=response_cmd)
                 if async_response != FAILED:
                     job_status = async_response.jobstatus
-                    if job_status in [JOB_FAILED,
-                                      JOB_CANCELLED,
+                    if job_status in [JOB_CANCELLED,
                                       JOB_SUCCEEDED]:
                         break
+                    elif job_status == JOB_FAILED:
+                        raise Exception("Job failed: %s"\
+                                         % async_response)
                 time.sleep(5)
                 timeout -= 5
                 self.logger.debug("=== JobId:%s is Still Processing, "

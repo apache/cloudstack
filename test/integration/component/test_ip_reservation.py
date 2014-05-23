@@ -38,7 +38,7 @@ from marvin.lib.common import (get_zone,
                                createNetworkRulesForVM,
                                verifyNetworkState)
 from marvin.codes import (PASS, FAIL, FAILED, UNKNOWN, FAULT, MASTER,
-                          NAT_RULE, STATIC_NAT_RULE, ERROR_CODE_530)
+                          NAT_RULE, STATIC_NAT_RULE)
 import netaddr
 
 import random
@@ -270,10 +270,8 @@ class TestIpReservation(cloudstackTestCase):
         except Exception as e:
             self.fail("VM creation failed: %s" % e)
 
-        response = isolated_network.update(self.apiclient, guestvmcidr=guest_vm_cidr)
-        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
-                         have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, str(response)))
+        with self.assertRaises(Exception):
+            isolated_network.update(self.apiclient, guestvmcidr=guest_vm_cidr)
         return
 
     @attr(tags=["advanced"])
@@ -302,10 +300,8 @@ class TestIpReservation(cloudstackTestCase):
         except Exception as e:
             self.fail("VM creation failed: %s" % e)
 
-        response = isolated_network.update(self.apiclient, guestvmcidr=guest_vm_cidr)
-        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
-                         have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, str(response)))
+        with self.assertRaises(Exception):
+            isolated_network.update(self.apiclient, guestvmcidr=guest_vm_cidr)
         return
 
     @data(NAT_RULE, STATIC_NAT_RULE)
@@ -1087,10 +1083,8 @@ class TestFailureScnarios(cloudstackTestCase):
         else:
             isolated_network = resultSet[1]
 
-        response = isolated_network.update(self.apiclient, guestvmcidr="10.1.1.0/26")
-        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
-                         have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, str(response)))
+        with self.assertRaises(Exception):
+            response = isolated_network.update(self.apiclient, guestvmcidr="10.1.1.0/26")
         return
 
     @attr(tags=["advanced", "selfservice"])

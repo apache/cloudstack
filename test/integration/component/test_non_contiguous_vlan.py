@@ -27,7 +27,7 @@
 #Import local modules
 
 
-from marvin.cloudstackTestCase import (cloudstackTestCase)
+from marvin.cloudstackTestCase import (cloudstackTestCase,unittest)
 from marvin.lib.base import (Account,
                                          ServiceOffering,
                                          PhysicalNetwork,
@@ -40,7 +40,6 @@ from marvin.lib.common import (get_zone,
                                            setNonContiguousVlanIds)
 from marvin.lib.utils import (cleanup_resources,
                                           xsplit)
-from marvin.codes import ERROR_CODE_530
 
 from nose.plugins.attrib import attr
 
@@ -318,11 +317,12 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
             self.debug("Deployed instance in account: %s" % account.name)
             self.debug("Trying to remove vlan range : %s , This should fail" % self.vlan["partial_range"][0])
 
-            response = self.physicalnetwork.update(self.apiClient, id = self.physicalnetworkid, vlan = self.vlan["partial_range"][0])
-            self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
-                         have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, str(response)))
+            with self.assertRaises(Exception) as e:
+                self.physicalnetwork.update(self.apiClient, id = self.physicalnetworkid, vlan = self.vlan["partial_range"][0])
+
+            self.debug("operation failed with exception: %s" % e.exception)
             account.delete(self.apiclient)
+
         except Exception as e:
             self.fail("Exception in test case: %s" % e)
 
