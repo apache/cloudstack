@@ -1695,3 +1695,12 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'KVM', 'default', 'FreeBSD 10', 226, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'KVM', 'default', 'Other PV', 139, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'KVM', 'default', 'Other PV', 140, now(), 0);
+
+alter table user_ip_address add column removed datetime DEFAULT NULL COMMENT 'date removed';
+alter table user_ip_address add column created datetime NULL COMMENT 'date created';
+
+alter table vlan add column removed datetime DEFAULT NULL COMMENT 'date removed';
+alter table vlan add column created datetime NULL COMMENT 'date created';
+
+alter table user_ip_address drop key public_ip_address;
+alter table user_ip_address add UNIQUE KEY public_ip_address (public_ip_address,source_network_id, removed);
