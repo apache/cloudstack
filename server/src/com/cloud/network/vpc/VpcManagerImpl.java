@@ -1623,6 +1623,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             networkAclId = aclId;
         }
 
+        {   // experimental block, this is a hack
+            // set vpc id in network to null
+            // might be needed for all types of broadcast domains
+            // the ugly hack is that vpc gateway nets are created as guest network
+            // while they are not.
+            // A more permanent solution would be to define a type of 'gatewaynetwork'
+            // so that handling code is not mixed between the two
+            NetworkVO gatewaynet = _ntwkDao.findById(privateNtwk.getId());
+            gatewaynet.setVpcId(vpcId);
+            _ntwkDao.persist(gatewaynet);
+        }
+
         //2) create gateway entry
                     VpcGatewayVO gatewayVO =
                         new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(), privateNtwk.getId(), broadcastUri, gateway, netmask,
