@@ -13,7 +13,7 @@
 <!-- Installing dependencies -->
 	<Bundle UpgradeCode="7cc78eac-106d-400e-b266-1b2c778b16b9" Version="4.4.0">
 		<BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.RtfLicense" >
-			<bal:WixStandardBootstrapperApplication LicenseFile="acs_license.rtf" ShowVersion="yes" ThemeFile="optionstheme.xml"/>
+			<bal:WixStandardBootstrapperApplication LicenseFile="acs_license.rtf" ShowVersion="yes" ThemeFile="optionstheme.xml" LocalizationFile="optionstheme_en-us.wxl"/>
 		</BootstrapperApplicationRef>
 		<Chain>
 			<MsiPackage Id="MySql" Name="mysql-5.1.73-winx64.msi" DownloadUrl="http://cdn.mysql.com/Downloads/MySQL-5.1/mysql-5.1.73-winx64.msi" Compressed="no" Visible="yes" ForcePerMachine="yes" DisplayInternalUI="yes" EnableFeatureSelection="yes" InstallCondition="ACSCheckbox"/>

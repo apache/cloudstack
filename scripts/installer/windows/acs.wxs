@@ -9,13 +9,13 @@
   OF ANY KIND, either express or implied. See the License for the specific
   language governing permissions and limitations under the License. -->
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi' xmlns:fire='http://schemas.microsoft.com/wix/FirewallExtension' xmlns:util='http://schemas.microsoft.com/wix/UtilExtension'>
-  <Product Name='ACS' Id='eea70ed5-5950-4f01-b4aa-4a07636359bb'
+  <Product Name='!(loc.ProductName)' Id='eea70ed5-5950-4f01-b4aa-4a07636359bb'
     UpgradeCode='d6208c34-7b50-4512-b19e-b904dcc1373e' Language='1033'
-    Codepage='1252' Version='4.4.0' Manufacturer='Apache Cloud Stack'>
+    Codepage='1252' Version='4.4.0' Manufacturer='!(loc.ProductManufacturer)'>
 
-    <Package Id='*' Keywords='Installer' Description="Apache Cloud Stack Installer"
-      Comments='Foobar is a registered trademark of Acme Ltd.'
-      Manufacturer='Apache' Languages='1033' Compressed='yes'
+    <Package Id='*' Keywords='Installer' Description="!(loc.PackageDescription)"
+      Comments='!(loc.PackageComments)'
+      Manufacturer='!(loc.PackageManufacturer)' Languages='1033' Compressed='yes'
       SummaryCodepage='1252' Platform="x64" InstallerVersion="500" />
 
     <Media Id='1' Cabinet='Sample.cab' EmbedCab='yes' DiskPrompt="CD-ROM #1" />
@@ -28,7 +28,7 @@
         Type="raw" Win64="yes" />
     </Property>
     <Condition
-      Message="Java 7 Is not Installed. Please Install Java 7 and then try"><![CDATA[(Installed OR JAVA_HOME)]]></Condition>
+      Message="!(loc.Java7ConditionMessage)"><![CDATA[(Installed OR JAVA_HOME)]]></Condition>
 
     <!-- Get Tomcat6 installation path -->
     <Property Id='TOMCATDIRECTORY'>
@@ -37,7 +37,7 @@
         Type="raw" Win64="yes" />
     </Property>
     <Condition
-      Message="Apache tomcat6 is not installed please do install tomcat6 and then try"><![CDATA[(Installed OR TOMCATDIRECTORY)]]></Condition>
+      Message="!(loc.Tomcat6ConditionMessage)"><![CDATA[(Installed OR TOMCATDIRECTORY)]]></Condition>
 
     <!-- Get Python installation path -->
     <Property Id='PYTHON_HOME'>
@@ -46,7 +46,7 @@
         Win64="yes" />
     </Property>
     <Condition
-      Message="Python 2.7 is not installed Please do install python and then try"><![CDATA[(Installed OR PYTHON_HOME)]]></Condition>
+      Message="!(loc.Python2ConditionMessage)"><![CDATA[(Installed OR PYTHON_HOME)]]></Condition>
 
     <!-- Get 7Z installation path -->
     <Property Id='SEVENZ_HOME'>
@@ -56,7 +56,7 @@
     <Property Id='MYSQL'>
       <RegistrySearch Id="MySqlSearch" Name="Location" Root="HKLM" Key="SOFTWARE\Wow6432Node\MySQL AB\MySQL Server 5.1" Type="raw" Win64="yes" />
     </Property>
-    <Condition Message="7Z is not installed please do install 7z and then try"><![CDATA[(Installed OR SEVENZ_HOME)]]></Condition>
+    <Condition Message="!(loc.SevenZConditionMessage)"><![CDATA[(Installed OR SEVENZ_HOME)]]></Condition>
 
     <!-- Properties for Database Related Information to be collected -->
     <Property Id="DB_USERNAME" Value="cloud" />
@@ -279,9 +279,9 @@
       <Custom Action="SetupDatabases" After="DeleteDirectory">(NOT Installed) AND (<![CDATA[CREATE_DATABASE <> "1"]]>)
       </Custom>
     </InstallExecuteSequence>
-    <Feature Id='Complete' Title='ACS' Description='The complete package.'
+    <Feature Id='Complete' Title='!(loc.ProductName)' Description='!(loc.FeatureDescription2)'
       Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR'>
-      <Feature Id='MainProgram' Title='Management Server' Description='The main executable.'
+      <Feature Id='MainProgram' Title='!(loc.FeatureTitle1)' Description='!(loc.FeatureDescription1)'
         Level='1'>
         <ComponentRef Id='webappsFolder' />
         <ComponentGroupRef Id='ClientPath' />
