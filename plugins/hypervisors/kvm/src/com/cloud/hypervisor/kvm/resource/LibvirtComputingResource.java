@@ -447,7 +447,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected boolean _noMemBalloon = false;
     protected String _guestCpuMode;
     protected String _guestCpuModel;
-    private final Map<String, String> _pifs = new HashMap<String, String>();
+    protected boolean _noKvmClock;
+    private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
 
     protected boolean _disconnected = true;
@@ -799,6 +800,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         value = (String)params.get("host.reserved.mem.mb");
         _dom0MinMem = NumbersUtil.parseInt(value, 0) * 1024 * 1024;
+
+        value = (String) params.get("kvmclock.disable");
+        if (Boolean.parseBoolean(value)) {
+            _noKvmClock = true;
+        }
 
         LibvirtConnection.initialize(_hypervisorURI);
         Connect conn = null;
@@ -3724,6 +3730,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (vmTO.getOs().startsWith("Windows")) {
             clock.setClockOffset(ClockDef.ClockOffset.LOCALTIME);
             clock.setTimer("rtc", "catchup", null);
+        } else if (vmTO.getType() != VirtualMachine.Type.User || isGuestPVEnabled(vmTO.getOs())) {
+            clock.setTimer("kvmclock", "catchup", null, _noKvmClock);
         }
 
         vm.addComp(clock);

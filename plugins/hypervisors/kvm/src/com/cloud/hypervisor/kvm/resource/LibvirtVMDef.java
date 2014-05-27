@@ -242,6 +242,7 @@ public class LibvirtVMDef {
         private String _timerName;
         private String _tickPolicy;
         private String _track;
+        private boolean _noKvmClock = false;
 
         public ClockDef() {
             _offset = ClockOffset.UTC;
@@ -257,6 +258,11 @@ public class LibvirtVMDef {
             _track = track;
         }
 
+        public void setTimer(String timerName, String tickPolicy, String track, boolean noKvmClock) {
+            _noKvmClock = noKvmClock;
+            setTimer(timerName, tickPolicy, track);
+        }
+
         @Override
         public String toString() {
             StringBuilder clockBuilder = new StringBuilder();
@@ -268,20 +274,24 @@ public class LibvirtVMDef {
                 clockBuilder.append(_timerName);
                 clockBuilder.append("' ");
 
-                if (_tickPolicy != null) {
-                    clockBuilder.append("tickpolicy='");
-                    clockBuilder.append(_tickPolicy);
-                    clockBuilder.append("' ");
-                }
+                if (_timerName.equals("kvmclock") && _noKvmClock) {
+                    clockBuilder.append("present='no' />");
+                } else {
+                    if (_tickPolicy != null) {
+                        clockBuilder.append("tickpolicy='");
+                        clockBuilder.append(_tickPolicy);
+                        clockBuilder.append("' ");
+                    }
 
-                if (_track != null) {
-                    clockBuilder.append("track='");
-                    clockBuilder.append(_track);
-                    clockBuilder.append("' ");
-                }
+                    if (_track != null) {
+                        clockBuilder.append("track='");
+                        clockBuilder.append(_track);
+                        clockBuilder.append("' ");
+                    }
 
-                clockBuilder.append(">\n");
-                clockBuilder.append("</timer>\n");
+                    clockBuilder.append(">\n");
+                    clockBuilder.append("</timer>\n");
+                }
             }
             clockBuilder.append("</clock>\n");
             return clockBuilder.toString();
