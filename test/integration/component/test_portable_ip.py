@@ -1103,21 +1103,27 @@ class TestDisassociatePublicIp(cloudstackTestCase):
             self.fail("Failed to create portable ip: %s" % e)
 
         try:
-            self.user_account = Account.create(
+            self.otherAccount = Account.create(
                             self.apiclient,
                             self.services["account"],
                             domainid=self.domain.id
                             )
+            self.cleanup.append(self.otherAccount)
 
-            self.api_client_user = self.testClient.getUserApiClient(
-                                            UserName=self.user_account.name,
-                                            DomainName=self.user_account.domain
+            self.apiclientOtherAccount = self.testClient.getUserApiClient(
+                                            UserName=self.otherAccount.name,
+                                            DomainName=self.otherAccount.domain
                                             )
 
+            # Trying to disassociate portable ip using
+            # api client of other account than the one
+            # used to create portable ip
             with self.assertRaises(Exception):
-                portableip.delete(self.api_client_user)
-        except Exception as e:
+                portableip.delete(self.apiclientOtherAccount)
+
+            # Disassociate IP using api client of account used to create it
             portableip.delete(self.apiclient)
+        except Exception as e:
             self.fail("Exception while disassociating portable ip: %s" % e)
         return
 
