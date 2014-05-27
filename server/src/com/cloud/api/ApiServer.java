@@ -279,15 +279,19 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         eventDescription.put("account", jobOwner.getUuid());
         eventDescription.put("processStatus", "" + job.getProcessStatus());
         eventDescription.put("resultCode", "" + job.getResultCode());
-        eventDescription.put("instanceUuid", ApiDBUtils.findJobInstanceUuid(job));
+        eventDescription.put("instanceUuid", (job.getInstanceId() != null ? ApiDBUtils.findJobInstanceUuid(job) : "" ) );
         eventDescription.put("instanceType", (job.getInstanceType() != null ? job.getInstanceType().toString() : "unknown"));
         eventDescription.put("commandEventType", cmdEventType);
         eventDescription.put("jobId", job.getUuid());
+        eventDescription.put("jobResult", job.getResult());
+        eventDescription.put("cmdInfo", job.getCmdInfo());
+        eventDescription.put("status", "" + job.getStatus() );
         // If the event.accountinfo boolean value is set, get the human readable value for the username / domainname
         Map<String, String> configs = _configDao.getConfiguration("management-server", new HashMap<String, String>());
         if (Boolean.valueOf(configs.get("event.accountinfo"))) {
             DomainVO domain = _domainDao.findById(jobOwner.getDomainId());
             eventDescription.put("username", userJobOwner.getUsername());
+            eventDescription.put("accountname", jobOwner.getAccountName());
             eventDescription.put("domainname", domain.getName());
         }
         event.setDescription(eventDescription);

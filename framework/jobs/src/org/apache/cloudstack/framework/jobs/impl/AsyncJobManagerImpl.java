@@ -232,6 +232,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return;
         }
 
+        if (resultObject != null) {
+            job.setResult(resultObject);
+        }
+
         publishOnEventBus(job, "complete"); // publish before the instance type and ID are wiped out
         List<Long> wakeupList = Transaction.execute(new TransactionCallback<List<Long>>() {
             @Override

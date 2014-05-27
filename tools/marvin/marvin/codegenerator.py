@@ -32,6 +32,7 @@ class cmdParameterProperty(object):
         self.desc = ""
         self.type = "planObject"
         self.subProperties = []
+        self.dataType = ""
 
 
 class cloudStackCmd(object):
@@ -123,6 +124,8 @@ class CodeGenerator(object):
         self.code += 'from baseCmd import *\n'
         self.code += 'from baseResponse import *\n'
         self.code += "class %sCmd (baseCmd):\n" % self.cmd.name
+        self.code += self.space
+        self.code += 'typeInfo = {}\n'
         self.code += self.space + "def __init__(self):\n"
 
         self.code += self.space + self.space
@@ -142,6 +145,8 @@ class CodeGenerator(object):
             self.code += 'self.%s = %s\n' % (req.name, value)
             if req.required == "true":
                 self.required.append(req.name)
+            self.code += self.space + self.space
+            self.code += "self.typeInfo['%s'] = '%s'\n" % ( req.name, req.dataType )
 
         self.code += self.space + self.space + "self.required = ["
         for require in self.required:
@@ -153,6 +158,8 @@ class CodeGenerator(object):
         subItems = {}
         self.code += self.newline
         self.code += 'class %sResponse (baseResponse):\n' % self.cmd.name
+        self.code += self.space
+        self.code += 'typeInfo = {}\n'
         self.code += self.space + "def __init__(self):\n"
         if len(self.cmd.response) == 0:
             self.code += self.space + self.space + "pass"
@@ -169,6 +176,10 @@ class CodeGenerator(object):
                 else:
                     self.code += self.space + self.space
                     self.code += 'self.%s = None\n' % res.name
+                    if res.dataType is not None:
+                        self.code += self.space + self.space
+                        self.code += "self.typeInfo['%s'] = '%s'\n" % ( res.name, res.dataType )
+
         self.code += self.newline
 
         for subclass in self.subclass:
@@ -267,6 +278,9 @@ class CodeGenerator(object):
         paramProperty.name = getText(response.getElementsByTagName('name'))
         paramProperty.desc = getText(response.
                                      getElementsByTagName('description'))
+        dataType = response.getElementsByTagName('dataType')
+        if dataType:
+            paramProperty.dataType = getText(dataType)
         if paramProperty.name.find('(*)') != -1:
             '''This is a list'''
             paramProperty.name = paramProperty.name.split('(*)')[0]
@@ -312,6 +326,10 @@ class CodeGenerator(object):
                 type = param.getElementsByTagName("type")
                 if type:
                     paramProperty.type = getText(type)
+
+                dataType = param.getElementsByTagName('dataType')
+                if dataType:
+                    paramProperty.dataType = getText(dataType)
 
                 csCmd.request.append(paramProperty)
 

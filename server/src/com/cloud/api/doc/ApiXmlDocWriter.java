@@ -471,6 +471,8 @@ public class ApiXmlDocWriter {
                     reqArg.setType(parameterAnnotation.type().toString().toLowerCase());
                 }
 
+                reqArg.setDataType(parameterAnnotation.type().toString().toLowerCase());
+
                 if (!parameterAnnotation.since().isEmpty()) {
                     reqArg.setSinceVersion(parameterAnnotation.since());
                 }
@@ -517,6 +519,8 @@ public class ApiXmlDocWriter {
                     if (description != null && !description.isEmpty()) {
                         respArg.setDescription(description);
                     }
+
+                    respArg.setDataType(responseField.getType().getSimpleName().toLowerCase());
 
                     if (!paramAnnotation.since().isEmpty()) {
                         respArg.setSinceVersion(paramAnnotation.since());
