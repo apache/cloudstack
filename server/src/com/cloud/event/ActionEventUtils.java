@@ -288,8 +288,8 @@ public class ActionEventUtils {
         CallContext context = CallContext.current();
         Map<Object, Object> contextMap = context.getContextParameters();
 
-        try{
-            for(Map.Entry<Object, Object> entry : contextMap.entrySet()){
+        for(Map.Entry<Object, Object> entry : contextMap.entrySet()){
+            try{
                 Object key = entry.getKey();
                 Class clz = Class.forName((String)key);
                 if(clz instanceof Class && Identity.class.isAssignableFrom(clz)){
@@ -297,9 +297,9 @@ public class ActionEventUtils {
                     String uuid = ((Identity) objVO).getUuid();
                     eventDescription.put(ReflectUtil.getEntityName(clz), uuid);
                 }
+            } catch (Exception e){
+                s_logger.trace("Caught exception while populating first class entities for event bus, moving on");
             }
-        }catch (Exception e){
-            s_logger.debug("Caught exception while populating first class entities for event bus, moving on", e);
         }
 
     }
