@@ -53,7 +53,6 @@ public class IPAddressVO implements IpAddress {
     @Column(name = "domain_id")
     private Long allocatedInDomainId = null;
 
-    @Id
     @Column(name = "public_ip_address")
     @Enumerated(value = EnumType.STRING)
     private Ip address = null;
