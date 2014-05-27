@@ -389,12 +389,13 @@ class TestPortForwarding(cloudstackTestCase):
 
         try:
             nat_rule.delete(self.apiclient)
-            list_nat_rule_response = list_nat_rules(
-                                                self.apiclient,
-                                                id=nat_rule.id
-                                                )
-        except CloudstackAPIException:
-            self.fail("Nat Rule Deletion or Listing Failed")
+        except Exception as e:
+            self.fail("NAT Rule Deletion Failed: %s" % e)
+
+        # NAT rule listing should fail as the nat rule does not exist
+        with self.assertRaises(Exception):
+            list_nat_rules(self.apiclient,
+                           id=nat_rule.id)
 
         # Check if the Public SSH port is inaccessible
         with self.assertRaises(Exception):
