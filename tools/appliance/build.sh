@@ -28,7 +28,7 @@ fi
 build_date=`date +%Y-%m-%d`
 
 # set fixed or leave empty to use git to determine
-branch=master
+branch=
 
 if [ -z "$branch" ] ; then
   branch=`git status | grep '# On branch' | awk '{print $4}'`
