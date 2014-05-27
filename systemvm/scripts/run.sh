@@ -34,7 +34,7 @@ LOCKFILE=$LOCKDIR/$PROGNAME.xlock
 lock $LOCKFILE $LOCKFD
 if [ $? -eq 1 ];then
   exit 1
-fi 
+fi
 
 while true
 do
