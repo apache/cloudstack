@@ -536,7 +536,7 @@ class TestVolumes(cloudstackTestCase):
                 % (extract_vol.url, self.volume.id)
             )
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "provisioning"])
     def test_07_resize_fail(self):
         """Test resize (negative) non-existent volume"""
         # Verify the size is the new size is what we wanted it to be.
