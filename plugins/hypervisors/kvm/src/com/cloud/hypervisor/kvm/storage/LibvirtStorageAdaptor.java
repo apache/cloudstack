@@ -546,6 +546,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 pool.setLocalPath("");
             }
 
+            if (pool.getType() == StoragePoolType.RBD
+             || pool.getType() == StoragePoolType.Gluster) {
+                pool.setSourceHost(spd.getSourceHost());
+                pool.setSourcePort(spd.getSourcePort());
+                pool.setSourceDir(spd.getSourceDir());
+                String authUsername = spd.getAuthUserName();
+                if (authUsername != null) {
+                    Secret secret = conn.secretLookupByUUIDString(spd.getSecretUUID());
+                    String secretValue = new String(Base64.encodeBase64(secret.getByteValue()));
+                    pool.setAuthUsername(authUsername);
+                    pool.setAuthSecret(secretValue);
+                }
+            }
+
             pool.setCapacity(sp.getInfo().capacity);
             pool.setUsed(sp.getInfo().allocation);
             pool.setAvailable(sp.getInfo().available);
