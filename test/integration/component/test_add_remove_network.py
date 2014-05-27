@@ -290,7 +290,14 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
         self.debug("virtual machine nics: %s" % vm_list[0].nic)
         nics = [x for x in vm_list[0].nic if x.networkid == network.id]
         self.debug("Filtered nics list: %s:" % nics)
-        self.addednics.append(nics[-1])
+
+        # Only the nics added to self.virtual_machine should be added to this list
+        # Nics added to his list are removed before execution of next test case because we are using
+        # same virtual machine in all test cases, so it is important that the common
+        # virtual machine should contain only the default nic whenever new test case
+        # execution starts
+        if vm.id == self.virtual_machine.id:
+            self.addednics.append(nics[-1])
 
         self.assertTrue(len(nics) == 1, "nics list should contain the nic of added isolated network,\
                         the number of nics for the network should be 1, instead they are %s" %
@@ -386,12 +393,23 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
         if network is None:
             self.skipTest("Network should not be none. Case not handled for Network of type %s" % value)
 
+        try:
+            virtual_machine = VirtualMachine.create(
+                self.api_client, self.services["virtual_machine"],
+                accountid=self.account.name, domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id,
+                mode=self.zone.networktype,
+                networkids=[self.defaultNetworkId])
+            self.cleanup.append(virtual_machine)
+        except Exception as e:
+            self.fail("Failed to deply virtual machine: %s" % e)
+
         # Adding network to vm for the first time
-        self.addNetworkToVm(network, self.virtual_machine)
+        self.addNetworkToVm(network, virtual_machine)
 
         # Trying to add same network to vm for the second time
         with self.assertRaises(Exception) as e:
-            self.addNetworkToVm(network, self.virtual_machine)
+            self.addNetworkToVm(network, virtual_machine)
             self.debug("Adding same network again failed with exception: %s" % e.exception)
 
         return
@@ -409,8 +427,19 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
         # Validate the following:
         # 1. Adding VPC to vm should fail
 
+        try:
+            virtual_machine = VirtualMachine.create(
+                self.api_client, self.services["virtual_machine"],
+                accountid=self.account.name, domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id,
+                mode=self.zone.networktype,
+                networkids=[self.defaultNetworkId])
+            self.cleanup.append(virtual_machine)
+        except Exception as e:
+            self.fail("Failed to deply virtual machine: %s" % e)
+
         network = self.isolated_network
-        self.addNetworkToVm(network, self.virtual_machine)
+        self.addNetworkToVm(network, virtual_machine)
 
         self.debug("Creating VPC offering")
         vpc_off = VpcOffering.create(self.api_client,self.services["vpc_offering"])
@@ -426,11 +455,10 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         self.debug("Trying to add VPC to vm belonging to isolated network, this should fail")
         with self.assertRaises(Exception):
-            self.virtual_machine.add_nic(self.apiclient, vpc.id)
+            virtual_machine.add_nic(self.apiclient, vpc.id)
 
         self.debug("Disabling vpc offering: %s" % vpc_off.id)
         vpc_off.update(self.apiclient, state='Disabled')
-
         return
 
     @attr(tags = ["advanced"])
@@ -487,10 +515,20 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
         # 2. The newly added nic has the ip address same as
         #    that passed while adding the network
 
+        try:
+            virtual_machine = VirtualMachine.create(
+                self.api_client, self.services["virtual_machine"],
+                accountid=self.account.name, domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id,
+                mode=self.zone.networktype,
+                networkids=[self.defaultNetworkId])
+            self.cleanup.append(virtual_machine)
+        except Exception as e:
+            self.fail("Failed to deply virtual machine: %s" % e)
+
         ipaddress = self.shared_nw_endip
         self.debug("Adding network to vm with ip address %s: " % ipaddress)
-        self.addNetworkToVm(self.shared_network, self.virtual_machine,ipaddress = ipaddress)
-
+        self.addNetworkToVm(self.shared_network, virtual_machine,ipaddress = ipaddress)
         return
 
     @attr(tags = ["advanced"])
@@ -1065,7 +1103,6 @@ class TestUpdateVirtualMachineNIC(cloudstackTestCase):
                 serviceofferingid=self.service_offering.id,mode=self.zone.networktype)
         time.sleep(self.services["sleep"])
         self.debug("Deployed virtual machine: %s" % virtual_machine.id)
-     
         foreignNicId = virtual_machine.nic[0].id
 
         self.debug("Trying to set nic of new virtual machine as default nic of existing virtual machine, This \
