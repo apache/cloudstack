@@ -168,6 +168,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 
@@ -195,7 +196,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private DomainManager _domainMgr;
     @Inject
     private DomainDao _domainDao;
-
+    @Inject
+    private UUIDManager _uuidMgr;
     @Inject
     private AsyncJobManager _asyncMgr;
     @Inject
@@ -659,10 +661,15 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             params.put("ctxDetails", ApiGsonHelper.getBuilder().create().toJson(ctx.getContextParameters()));
 
             Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
+
+            // users can provide the job id they want to use, so log as it is a uuid and is unique
+            String injectedJobId = asyncCmd.getInjectedJobId();
+            _uuidMgr.checkUuidSimple(injectedJobId, AsyncJob.class);
+
             AsyncJobVO job = new AsyncJobVO("", callerUserId, caller.getId(), cmdObj.getClass().getName(),
                     ApiGsonHelper.getBuilder().create().toJson(params), instanceId,
                     asyncCmd.getInstanceType() != null ? asyncCmd.getInstanceType().toString() : null,
-                    asyncCmd.getInjectedJobId());
+                    injectedJobId);
             job.setDispatcher(_asyncDispatcher.getName());
 
             final long jobId = _asyncMgr.submitAsyncJob(job);

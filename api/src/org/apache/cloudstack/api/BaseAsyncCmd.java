@@ -36,7 +36,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     @Parameter(name = "starteventid", type = CommandType.LONG)
     private Long startEventId;
 
-    @Parameter(name= "injectedjobid", type = CommandType.STRING)
+    @Parameter(name = ApiConstants.CUSTOM_JOB_ID , type = CommandType.STRING)
     private String injectedJobId;
 
     public String getInjectedJobId() {

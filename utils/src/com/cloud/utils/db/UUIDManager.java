@@ -37,4 +37,12 @@ public interface UUIDManager {
      * .
      */
     <T> void checkUuid(String uuid, Class<T> entityType);
+
+    /**
+     * Checks the uuid for correct format, uniqueness, without checking permissions
+     * @param uuid uuid to check
+     * @param entityType the type of entity
+     * .
+     */
+    <T> void checkUuidSimple(String uuid, Class<T> entityType);
 }
