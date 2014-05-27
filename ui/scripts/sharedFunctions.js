@@ -765,18 +765,6 @@ var addGuestNetworkDialog = {
         return (g_role == 0);
     }
 
-    function isSelfOrChildDomainUser(username, useraccounttype, userdomainid, iscallerchilddomain) {
-        if (username == g_username) { //is self
-            return true;
-        } else if (isDomainAdmin() && !iscallerchilddomain && (useraccounttype == 0)) { //domain admin to user
-            return true;
-        } else if (isDomainAdmin() && iscallerchilddomain && (userdomainid != g_domainid)) { //domain admin to subdomain admin and user
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     // FUNCTION: Handles AJAX error callbacks.  You can pass in an optional function to
     // handle errors that are not already handled by this method.
 
