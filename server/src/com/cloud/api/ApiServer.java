@@ -661,7 +661,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
             AsyncJobVO job = new AsyncJobVO("", callerUserId, caller.getId(), cmdObj.getClass().getName(),
                     ApiGsonHelper.getBuilder().create().toJson(params), instanceId,
-                    asyncCmd.getInstanceType() != null ? asyncCmd.getInstanceType().toString() : null);
+                    asyncCmd.getInstanceType() != null ? asyncCmd.getInstanceType().toString() : null,
+                    asyncCmd.getInjectedJobId());
             job.setDispatcher(_asyncDispatcher.getName());
 
             final long jobId = _asyncMgr.submitAsyncJob(job);

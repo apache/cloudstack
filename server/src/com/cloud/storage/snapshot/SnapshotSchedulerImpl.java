@@ -264,7 +264,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
                 AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(),
                         ApiGsonHelper.getBuilder().create().toJson(params), cmd.getEntityId(),
-                        cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null);
+                        cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null, null);
                 job.setDispatcher(_asyncDispatcher.getName());
 
                 final long jobId = _asyncMgr.submitAsyncJob(job);

@@ -4360,7 +4360,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     params.put("ctxStartEventId", "1");
                 AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, router.getAccountId(), RebootRouterCmd.class.getName(),
                             ApiGsonHelper.getBuilder().create().toJson(params), router.getId(),
-                            cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null);
+                            cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null, null);
                     job.setDispatcher(_asyncDispatcher.getName());
                     long jobId = _asyncMgr.submitAsyncJob(job);
                     jobIds.add(jobId);
