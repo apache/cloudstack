@@ -274,7 +274,10 @@ class TestEgressFWRules(cloudstackTestCase):
             self.debug("script: %s" % script+exec_cmd_params)
             self.debug("result: %s" % result)
 
-            str_result = str(str(result).strip())
+            if isinstance(result, list):
+                str_result = str([str(x) for x in result])
+            else:
+                str_result = str(result)
             str_expected_result = str(expected_result).strip()
             if str_result == str_expected_result:
                 exec_success = True
