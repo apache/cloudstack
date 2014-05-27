@@ -310,7 +310,8 @@ class VirtualMachine:
 
     @classmethod
     def access_ssh_over_nat(
-            cls, apiclient, services, virtual_machine, allow_egress=False):
+            cls, apiclient, services, virtual_machine, allow_egress=False,
+            networkid=None):
         """
         Program NAT and PF rules to open up ssh access to deployed guest
         @return:
@@ -320,7 +321,8 @@ class VirtualMachine:
             accountid=virtual_machine.account,
             zoneid=virtual_machine.zoneid,
             domainid=virtual_machine.domainid,
-            services=services
+            services=services,
+            networkid=networkid
         )
         FireWallRule.create(
             apiclient=apiclient,
@@ -476,7 +478,8 @@ class VirtualMachine:
                 apiclient,
                 services,
                 virtual_machine,
-                allow_egress=allow_egress)
+                allow_egress=allow_egress,
+                networkid=cmd.networkids[0] if cmd.networkids else None)
         elif mode.lower() == 'basic':
             if virtual_machine.publicip is not None:
                 # EIP/ELB (netscaler) enabled zone
