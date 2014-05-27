@@ -32,7 +32,7 @@ class Services():
         }
 
 
-@attr(tags = ["simulator", "advanced", "selfservice"])
+@attr(tags = ["simulator", "advanced", "selfservice"], BugId="CLOUDSTACK-6776")
 class TestUpdatePhysicalNetwork(cloudstackTestCase):
     """
     Test to extend physical network vlan range
