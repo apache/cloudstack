@@ -497,6 +497,10 @@ class VirtualMachine:
         cmd = startVirtualMachine.startVirtualMachineCmd()
         cmd.id = self.id
         apiclient.startVirtualMachine(cmd)
+        response = self.getState(apiclient, VirtualMachine.RUNNING)
+        if response[0] == FAIL:
+            raise Exception(response[1])
+        return
 
     def stop(self, apiclient, forced=None):
         """Stop the instance"""
