@@ -142,6 +142,9 @@ public class BridgeVifDriver extends VifDriverBase {
             String storageBrName = nic.getName() == null ? _bridges.get("private") : nic.getName();
             intf.defBridgeNet(storageBrName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter));
         }
+        if (nic.getPxeDisable() == true) {
+            intf.setPxeDisable(true);
+        }
         return intf;
     }
 

@@ -3793,6 +3793,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 _vms.put(vmName, State.Starting);
             }
 
+            NicTO[] nics = vmSpec.getNics();
+
+            for (NicTO nic : nics) {
+                if (vmSpec.getType() != VirtualMachine.Type.User) {
+                    nic.setPxeDisable(true);
+                }
+            }
+
             vm = createVMFromSpec(vmSpec);
 
             conn = LibvirtConnection.getConnectionByType(vm.getHvsType());
@@ -3808,7 +3816,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.debug("starting " + vmName + ": " + vm.toString());
             startVM(conn, vmName, vm.toString());
 
-            NicTO[] nics = vmSpec.getNics();
             for (NicTO nic : nics) {
                 if (nic.isSecurityGroupEnabled() || (nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString()))) {
                     if (vmSpec.getType() != VirtualMachine.Type.User) {

@@ -765,6 +765,7 @@ public class LibvirtVMDef {
         private String _virtualPortType;
         private String _virtualPortInterfaceId;
         private int _vlanTag = -1;
+        private boolean _pxeDisable = false;
 
         public void defBridgeNet(String brName, String targetBrName, String macAddr, nicModel model) {
             defBridgeNet(brName, targetBrName, macAddr, model, 0);
@@ -830,6 +831,10 @@ public class LibvirtVMDef {
 
         public hostNicType getHostNetType() {
             return _hostNetType;
+        }
+
+        public void setPxeDisable(boolean pxeDisable) {
+            _pxeDisable = pxeDisable;
         }
 
         public String getBrName() {
@@ -908,6 +913,9 @@ public class LibvirtVMDef {
             }
             if (_scriptPath != null) {
                 netBuilder.append("<script path='" + _scriptPath + "'/>\n");
+            }
+            if (_pxeDisable) {
+                netBuilder.append("<rom bar='off' file='dummy'/>");
             }
             if (_virtualPortType != null) {
                 netBuilder.append("<virtualport type='" + _virtualPortType + "'>\n");

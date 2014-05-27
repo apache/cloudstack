@@ -904,6 +904,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         } else {
             to.setGateway(config.getGateway());
         }
+        if (nic.getVmType() != VirtualMachine.Type.User) {
+            to.setPxeDisable(true);
+        }
         to.setDefaultNic(nic.isDefaultNic());
         to.setBroadcastUri(nic.getBroadcastUri());
         to.setIsolationuri(nic.getIsolationUri());
