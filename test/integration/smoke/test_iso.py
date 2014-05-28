@@ -138,6 +138,7 @@ class TestCreateIso(cloudstackTestCase):
 class TestISO(cloudstackTestCase):
 
     @classmethod
+    @attr(BugId="CLOUDSTACK-6769, CLOUDSTACK-6774")
     def setUpClass(cls):
         testClient = super(TestISO, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
