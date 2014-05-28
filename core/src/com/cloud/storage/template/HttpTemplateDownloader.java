@@ -42,6 +42,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
+import org.apache.cloudstack.utils.template.TemplateUtils;
 
 import com.cloud.agent.api.storage.Proxy;
 import com.cloud.storage.StorageLayer;
@@ -238,6 +239,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             byte[] block = new byte[CHUNK_SIZE];
             long offset = 0;
             boolean done = false;
+            boolean verifiedFormat=false;
             status = TemplateDownloader.Status.IN_PROGRESS;
             while (!done && status != Status.ABORTED && offset <= remoteSize) {
                 if ((bytes = in.read(block, 0, CHUNK_SIZE)) > -1) {
@@ -245,6 +247,23 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                     offset += bytes;
                     out.seek(offset);
                     totalBytes += bytes;
+                        if (!verifiedFormat && (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
+                            String unsupportedFormat = TemplateUtils.checkTemplateFormat(file.getAbsolutePath(), getDownloadUrl());
+                            if (unsupportedFormat == null || !unsupportedFormat.isEmpty()) {
+                                 try {
+                                     request.abort();
+                                     out.close();
+                                     in.close();
+                                 } catch (Exception ex) {
+                                     s_logger.debug("Error on http connection : " + ex.getMessage());
+                                 }
+                                 status = Status.UNRECOVERABLE_ERROR;
+                                 errorString = "Template content is unsupported, or mismatch between selected format and template content. Found  : " + unsupportedFormat;
+                                 return 0;
+                            }
+                            s_logger.debug("Verified format of downloading file " + file.getAbsolutePath() + " is supported");
+                            verifiedFormat = true;
+                        }
                 } else {
                     done = true;
                 }
