@@ -727,7 +727,7 @@
     };
 
     var viewAll = function(viewAllID, options) {
-        var $detailView = $('div.detail-view:last');
+        var $detailView = $('div.detail-view:visible:last');
         var args = $detailView.data('view-args');
         var cloudStackArgs = $('[cloudstack-container]').data('cloudStack-args');
         var $browser = args.$browser;
