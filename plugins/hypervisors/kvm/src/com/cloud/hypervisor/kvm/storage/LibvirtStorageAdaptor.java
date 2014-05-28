@@ -537,34 +537,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 sp.create(0);
             }
 
-            LibvirtStoragePoolDef spd = getStoragePoolDef(conn, sp);
-            LibvirtStoragePool pool = new LibvirtStoragePool(name, sp.getName(), type, this, sp);
-
-            if (pool.getType() != StoragePoolType.RBD) {
-                pool.setLocalPath(spd.getTargetPath());
-            } else {
-                pool.setLocalPath("");
-            }
-
-            if (pool.getType() == StoragePoolType.RBD
-             || pool.getType() == StoragePoolType.Gluster) {
-                pool.setSourceHost(spd.getSourceHost());
-                pool.setSourcePort(spd.getSourcePort());
-                pool.setSourceDir(spd.getSourceDir());
-                String authUsername = spd.getAuthUserName();
-                if (authUsername != null) {
-                    Secret secret = conn.secretLookupByUUIDString(spd.getSecretUUID());
-                    String secretValue = new String(Base64.encodeBase64(secret.getByteValue()));
-                    pool.setAuthUsername(authUsername);
-                    pool.setAuthSecret(secretValue);
-                }
-            }
-
-            pool.setCapacity(sp.getInfo().capacity);
-            pool.setUsed(sp.getInfo().allocation);
-            pool.setAvailable(sp.getInfo().available);
-
-            return pool;
+            return getStoragePool(name);
         } catch (LibvirtException e) {
             String error = e.toString();
             if (error.contains("Storage source conflict")) {
