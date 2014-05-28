@@ -57,6 +57,19 @@
             <Publish Dialog="MaintenanceTypeDlg" Control="RepairButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
             <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
             <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg">1</Publish>
+
+            <!-- Progress Text for Custom Actions STARTs here -->
+            <ProgressText Action="GenerateSSLKey">!(loc.GenerateSSLKey)</ProgressText>
+            <ProgressText Action="DeployDB">!(loc.DeployDB)</ProgressText>
+            <ProgressText Action="SetupDatabases">!(loc.SetupDatabases)</ProgressText>
+            <ProgressText Action="DeleteDirectory">!(loc.DeleteDirectory)</ProgressText>
+            <ProgressText Action="CopySitePackages">!(loc.CopySitePackages)</ProgressText>
+            <ProgressText Action="SetuptoolsInstallation">!(loc.SetuptoolsInstallation)</ProgressText>
+            <ProgressText Action="DeleteFiles">!(loc.DeleteFiles)</ProgressText>
+            <ProgressText Action="UpdateTomcatCatalinaBase">!(loc.UpdateTomcatCatalinaBase)</ProgressText>
+            <ProgressText Action="UpdateTomcatClassPath">!(loc.UpdateTomcatClassPath)</ProgressText>
+
+            <!-- Progress Text for Custom Actions ENDs here -->
         </UI>
         <UIRef Id="WixUI_Common" />
     </Fragment>

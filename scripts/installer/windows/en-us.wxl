@@ -28,6 +28,15 @@
   <String Id="DbPasswordLabel">Password</String>
   <String Id="DbRootPasswordLabel">Root Password</String>
   <String Id="CreateDBCheckBoxLabel">Create Cloud Stack Database</String>
+  <String Id="GenerateSSLKey">Generating SSL Keys which is needed to talk to Management Server.</String>
+  <String Id="DeployDB">Creating Database and needed Schemas for management server.</String>
+  <String Id="SetupDatabases">Updating db.properties with the given database configuration.</String>
+  <String Id="DeleteDirectory">Deleting un-necessary directories from installation directory.</String>
+  <String Id="CopySitePackages">Copying Management Server related python libraries.</String>
+  <String Id="SetuptoolsInstallation">Installing Setup Tools for Python.</String>
+  <String Id="DeleteFiles">Deleting un-necessary files from installation directory.</String>
+  <String Id="UpdateTomcatCatalinaBase">Updating Tomcat Catalina Base with Management Server Home.</String>
+  <String Id="UpdateTomcatClassPath">Updating Tomcat Classpath with necessary paths.</String>
 
   <String Id="InstallVersion">Version 4.0.0.0</String>
 </WixLocalization>

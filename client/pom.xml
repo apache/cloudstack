@@ -693,6 +693,7 @@
                         <include name="**/*" />
                       </fileset>
                     </copy>
+                    <copy file="../scripts/storage/secondary/cloud-install-sys-tmplt.py" tofile="target/scripts/cloud-install-sys-tmplt.py" />
                     <copy todir="./target/scripts">
                       <fileset dir="./target/utilities/bin">
                         <include name="**/*" />

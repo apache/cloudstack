@@ -81,8 +81,11 @@
                 Name="CATALINA_OPTS" Permanent="no" System="yes"
                 Value="-XX:MaxPermSize=512m -Xmx1024m -Xms256m" />
               <Environment Id="Path" Action="set" Name="Path"
-                Permanent="yes" System="yes" Part="last"
-                Value="[JAVA_HOME]\bin;[PYTHON_HOME];[SEVENZ_HOME];[ProgramFilesFolder]\cdrtools;[MYSQL]\bin" />
+                Permanent="no" System="yes" Part="last"
+                Value="[JAVA_HOME]bin;[PYTHON_HOME];[SEVENZ_HOME];[ProgramFilesFolder]cdrtools;[MYSQL]bin;[INSTALLDIR]scripts" />
+              <Environment Id="PATHEXT" Action="set" Name="PATHEXT"
+                Permanent="no" System="yes" Part="last"
+                Value=".py" />
             </Component>
             <Component Id='setuptools' Guid='019a51dd-7fc4-4d6c-9277-13cc7b600789'>
               <File Id="ez_setup" Source="ez_setup.py" />
@@ -235,31 +238,31 @@
     </CustomAction>
     <CustomAction Id="UpdateTomcatCatalinaBase"
       ExeCommand='//US//Tomcat6 --JvmOptions=-Dcatalina.base=[CSMANAGEMENT];-Djava.io.tmpdir=[CSMANAGEMENT]\temp;-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager;-Dcatalina.home="[TOMCATDIRECTORY]";-Xms512m;-Xmx1024m;-XX:MaxPermSize=512m;-Duser.name=cloud'
-      Property="TOMCATDIRECTORY1" Execute="commit" Return="check" />
+      Property="TOMCATDIRECTORY1" Execute="deferred" Return="check" />
     <CustomAction Id="UpdateTomcatClassPath"
       ExeCommand='//US//Tomcat6 --Classpath="[TOMCATDIRECTORY]\bin\bootstrap.jar";"[TOMCATDIRECTORY]\bin\tomcat-juli.jar";[CSMANAGEMENT]\conf;[CSMANAGEMENT]\lib;[CSMANAGEMENT]\setup'
-      Property="TOMCATDIRECTORY1" Execute="commit" Return="check" />
+      Property="TOMCATDIRECTORY1" Execute="deferred" Return="check" />
     <CustomAction Id="CopySitePackages" Directory='INSTALLDIR'
       ExeCommand='[SystemFolder]cmd.exe /c xcopy /S "[INSTALLDIR]\python-site-packages" [PYTHON_HOME]\Lib\site-packages'
-      Execute="commit" Return="check"/>
+      Execute="deferred" Return="check"/>
     <CustomAction Id="DeleteDirectory" Directory='INSTALLDIR'
       ExeCommand='[SystemFolder]cmd.exe /c RD /S /Q "[INSTALLDIR]\python-site-packages"'
-      Execute="commit" Return="check" />
+      Execute="deferred" Return="check" />
     <CustomAction Id="DeleteFiles" Directory='CSMANAGEMENT'
       ExeCommand='[SystemFolder]cmd.exe /c del "[CSMANAGEMENT]\webapps\client\WEB-INF\classes\db.properties" "[CSMANAGEMENT]\webapps\client\WEB-INF\classes\log4j*.xml"'
-      Execute="commit" Return="check" />
+      Execute="deferred" Return="check" />
     <CustomAction Id="SetuptoolsInstallation" Directory='INSTALLDIR'
       ExeCommand='[PYTHON_HOME]\python "[INSTALLDIR]\ez_setup.py"'
-      Execute="commit" Return="check" />
+      Execute="deferred" Return="check" />
     <CustomAction Id="GenerateSSLKey" Directory='CSMANAGEMENT'
       ExeCommand='[PYTHON_HOME]\python "[CSMANAGEMENT]\webapps\client\WEB-INF\classes\scripts\common\keys\ssl-keys.py" "[CSMANAGEMENT]\lib"'
-      Execute="commit" Return="check" />
+      Execute="deferred" Return="check" />
     <CustomAction Id="DeployDB" Directory='CSMANAGEMENT'
       ExeCommand='[PYTHON_HOME]\python "[INSTALLDIR]\scripts\cloud-setup-databases" [DB_USERNAME]:[DB_PASSWORD]@[DB_HOSTNAME] --deploy-as=root:[DB_ROOT_PASSWORD] -c "[CSMANAGEMENT]\lib" -f "[CSMANAGEMENT]\setup" -j "[CSMANAGEMENT]\webapps\client\WEB-INF\lib\jasypt-1.9.0.jar" -n "[CSMANAGEMENT]\lib\key"'
-      Execute="commit" Return="check" />
+      Execute="deferred" Return="check" Impersonate="no"/>
     <CustomAction Id="SetupDatabases" Directory='CSMANAGEMENT'
       ExeCommand='[PYTHON_HOME]\python "[INSTALLDIR]\scripts\cloud-setup-databases" [DB_USERNAME]:[DB_PASSWORD]@[DB_HOSTNAME] -c "[CSMANAGEMENT]\lib" -f "[CSMANAGEMENT]\setup" -j "[CSMANAGEMENT]\webapps\client\WEB-INF\lib\jasypt-1.9.0.jar" -n "[CSMANAGEMENT]\lib\key"'
-      Execute="commit" Return="check" />
+      Execute="deferred" Return="check" Impersonate="no"/>
 
     <InstallExecuteSequence>
       <InstallServices Sequence="4990"></InstallServices>
@@ -270,9 +273,9 @@
         Installed</Custom>
       <Custom Action="DeleteFiles" Before="SetuptoolsInstallation">NOT Installed</Custom>
       <Custom Action="SetuptoolsInstallation" Before="GenerateSSLKey">NOT Installed</Custom>
-      <Custom Action="GenerateSSLKey" Before="InstallFinalize">NOT Installed
+      <Custom Action="GenerateSSLKey" After="PublishProduct">NOT Installed
       </Custom>
-      <Custom Action="CopySitePackages" Before="InstallFinalize">NOT Installed</Custom>
+      <Custom Action="CopySitePackages" After="GenerateSSLKey">NOT Installed</Custom>
       <Custom Action="DeleteDirectory" After="CopySitePackages">NOT Installed</Custom>
       <Custom Action="DeployDB" After="DeleteDirectory">(NOT Installed) AND (CREATE_DATABASE = "1")
       </Custom>
