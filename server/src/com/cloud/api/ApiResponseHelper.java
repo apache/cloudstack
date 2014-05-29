@@ -3028,7 +3028,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         if (usageRecord.getUsageType() == UsageTypes.RUNNING_VM || usageRecord.getUsageType() == UsageTypes.ALLOCATED_VM) {
-            ServiceOfferingVO svcOffering = _entityMgr.findById(ServiceOfferingVO.class, usageRecord.getOfferingId().toString());
+            ServiceOfferingVO svcOffering = _entityMgr.findByIdIncludingRemoved(ServiceOfferingVO.class, usageRecord.getOfferingId().toString());
             //Service Offering Id
             usageRecResponse.setOfferingId(svcOffering.getUuid());
             //VM Instance ID
