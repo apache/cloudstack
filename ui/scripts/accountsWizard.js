@@ -182,6 +182,8 @@
                 password = args.data.password;
                 if (md5Hashed) {
                     password = $.md5(password);
+                } else {
+                	password = todb(password);
                 }
                 array1.push("&password=" + password);
             }
@@ -218,6 +220,7 @@
                     $.ajax({
                         url: createURL('importLdapUsers' + array1.join("")),
                         dataType: "json",
+                        type: "POST",
                         async: false,
                         success: function(json) {
                             var count = json.ldapuserresponse.count;
@@ -233,6 +236,7 @@
                     $.ajax({
                         url: createURL('ldapCreateAccount' + array1.join("")),
                         dataType: "json",
+                        type: "POST",
                         async: false,
                         success: function(json) {
                             var item = json.createaccountresponse.account;
@@ -249,6 +253,7 @@
                 $.ajax({
                     url: createURL('createAccount' + array1.join("")),
                     dataType: "json",
+                    type: "POST",
                     async: false,
                     success: function(json) {
                         var item = json.createaccountresponse.account;
