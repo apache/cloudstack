@@ -6177,7 +6177,7 @@
                                     args.response.success({
                                         actionFilter: virtualRouterProviderActionFilter,
                                         data: $.extend(nspMap[ "Ovs"], {
-                                            supportedServices: nspMap[ "Ovs"].servicelist.join(', ')
+                                            supportedServices: nspMap["Ovs"] == undefined? "": nspMap["Ovs"].servicelist.join(', ')
                                         })
                                     });
                                 }
@@ -19444,11 +19444,14 @@
             });
         }
         
+        if ($.grep(nspHardcodingArray, function(e) { return e.id == 'Ovs'; }).length == 0 ) {
         nspHardcodingArray.push({
-            id: 'OVS',
-            name: 'OVS',
+                id: 'Ovs',
+                name: 'Ovs',
             state: nspMap.Ovs ? nspMap.Ovs.state : 'Disabled'
         });        
+        }
+
     };
     
     cloudStack.actionFilter.physicalNetwork = function (args) {
