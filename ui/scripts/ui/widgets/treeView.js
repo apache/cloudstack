@@ -20,6 +20,7 @@
      */
     var makeTreeList = function(args) {
         var $treeList = $('<ul>');
+        var $treeView = args.$treeView;
 
         args.dataProvider({
             context: $.extend(args.context, {
@@ -28,18 +29,25 @@
             response: {
                 success: function(successArgs) {
                     $(successArgs.data).each(function() {
-                        $('<li>')
-                            .data('tree-view-item-id', this.id)
-                            .data('tree-view-item-obj', this)
-                            .append(
-                                $('<div>')
-                                .addClass('expand')
-                        )
-                            .append(
-                                $('<div>').addClass('name')
-                                .html(_s(this.name))
-                        )
-                            .appendTo($treeList);
+                        var itemData = this;
+
+                        var $li = $('<li>')
+                                .data('tree-view-item-id', this.id)
+                                .data('tree-view-item-obj', this)
+                                .append(
+                                    $('<div>')
+                                        .addClass('expand')
+                                )
+                                .append(
+                                    $('<div>').addClass('name')
+                                        .html(_s(this.name))
+                                )
+                                .appendTo($treeList);
+
+                        $treeView.trigger('cloudStack.treeView.addItem', {
+                            $li: $li,
+                            itemData: itemData
+                        });
                     });
                 }
             }
@@ -76,6 +84,7 @@
         var $browser = args.$browser;
 
         makeTreeList({
+            $treeView: $treeView,
             parent: null,
             dataProvider: treeViewArgs.dataProvider,
             context: args.context
@@ -98,6 +107,7 @@
                 }
 
                 makeTreeList({
+                    $treeView: $treeView,
                     parent: $li.data('tree-view-item-obj'),
                     dataProvider: treeViewArgs.dataProvider
                 }).appendTo($li);
