@@ -239,15 +239,20 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         // Get the event type from the cmdInfo json string
         String info = job.getCmdInfo();
-        String cmdEventType;
-        if (info == null) {
-            cmdEventType = "unknown";
-        } else {
+        String cmdEventType = "unknown";
+        if (info != null) {
             String marker = "\"cmdEventType\"";
             int begin = info.indexOf(marker);
-            cmdEventType = info.substring(begin + marker.length() + 2, info.indexOf(",", begin) - 1);
-        }
+            if (begin >= 0) {
+                cmdEventType = info.substring(begin + marker.length() + 2, info.indexOf(",", begin) - 1);
 
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Retrieved cmdEventType from job info: " + cmdEventType);
+            } else {
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Unable to locate cmdEventType marker in job info. publish as unknown event");
+            }
+        }
         // For some reason, the instanceType / instanceId are not abstract, which means we may get null values.
         org.apache.cloudstack.framework.events.Event event = new org.apache.cloudstack.framework.events.Event(
                 "management-server",
