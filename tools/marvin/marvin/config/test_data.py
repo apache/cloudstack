@@ -41,6 +41,13 @@ test_data = {
             "name": "Project",
         "displaytext": "Test project"
     },
+    "private_gateway": {
+       "ipaddress": "172.16.1.2",
+       "gateway": "172.16.1.1",
+       "netmask": "255.255.255.0",
+       "vlan":"10",
+       "name":"test_private_gateway"
+    },
     "account": {
         "email": "test-account@test.com",
         "firstname": "test",
@@ -72,8 +79,8 @@ test_data = {
         "name": "Tiny Instance",
         "displaytext": "Tiny Instance",
         "cpunumber": 1,
-        "cpuspeed": 100,    # in MHz
-        "memory": 128,    # In MBs
+        "cpuspeed": 100,  # in MHz
+        "memory": 128,  # In MBs
     },
     "service_offerings": {
         "name": "Tiny Instance",
@@ -109,7 +116,16 @@ test_data = {
             "cpunumber": 1,
             "cpuspeed": 100,
             "memory": 512,
-        }
+        },
+        "hasmall": {
+            "name": "HA Small Instance",
+            "displaytext": "HA Small Instance",
+            "cpunumber": 1,
+            "cpuspeed": 100,
+            "memory": 256,
+            "hosttags": "ha",
+            "offerha": True,
+        },
     },
     "disk_offering": {
         "name": "Disk offering",
@@ -236,6 +252,18 @@ test_data = {
     "isolated_network": {
         "name": "Isolated Network",
         "displaytext": "Isolated Network"
+    },
+    "netscaler_VPX": {
+        "ipaddress": "10.223.240.174",
+        "username": "nsroot",
+        "password": "nsroot",
+        "networkdevicetype": "NetscalerVPXLoadBalancer",
+        "publicinterface": "1/1",
+        "privateinterface": "1/2",
+        "numretries": 2,
+        "lbdevicededicated": "True",
+        "lbdevicecapacity": 2,
+        "port": 22
     },
 	"network_without_acl": {
 		"name": "TestNetwork",
@@ -539,6 +567,26 @@ test_data = {
             "NetworkACL": "VpcVirtualRouter"
         }
     },
+    "nw_offering_shared_persistent": {
+        "name": "Network offering for Shared Persistent Network",
+        "displaytext": "Network offering-DA services",
+        "guestiptype": "Shared",
+        "supportedservices": "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat",
+        "traffictype": "GUEST",
+        "availability": "Optional",
+        "ispersistent": "True",
+        "serviceProviderList": {
+            "Dhcp": "VirtualRouter",
+            "Dns": "VirtualRouter",
+            "SourceNat": "VirtualRouter",
+            "PortForwarding": "VirtualRouter",
+            "Vpn": "VirtualRouter",
+            "Firewall": "VirtualRouter",
+            "Lb": "VirtualRouter",
+            "UserData": "VirtualRouter",
+            "StaticNat": "VirtualRouter"
+        }
+    },
     "fwrule": {
         "startport": 22,
         "endport": 22,
@@ -590,8 +638,8 @@ test_data = {
 
     },
 	"network_acl_rule": {
-		   "protocol":"TCP", 
-		   "traffictype":"ingress", 
+		   "protocol":"TCP",
+		   "traffictype":"ingress",
 		   "cidrlist":"0.0.0.0/0",
 		   "startport":"1",
 		   "endport":"1"
@@ -630,6 +678,12 @@ test_data = {
         "privateport": 22,
         "publicport": 2222,
         "protocol": 'TCP'
+    },
+    "icmprule": {
+        "icmptype":-1,
+        "icmpcode":-1,
+        "cidrlist": "0.0.0.0/0",
+        "protocol": "ICMP"
     },
     "iso": {
             "displaytext": "Test ISO",
@@ -707,6 +761,7 @@ test_data = {
     "page": 1,
     "pagesize": 2,
     "listall": 'true',
+    "host_password": "password",
     "advanced_sg": {
         "zone": {
             "name": "",
@@ -807,14 +862,14 @@ test_data = {
         "name": "Sparse Type Disk offering",
         "displaytext":
         "Sparse Type Disk offering",
-        "disksize": 1,   # in GB
+        "disksize": 1,  # in GB
         "provisioningtype": "sparse"
     },
     "fat": {
         "name": "Fat Type Disk offering",
         "displaytext":
         "Fat Type Disk offering",
-        "disksize": 1,   # in GB
+        "disksize": 1,  # in GB
         "provisioningtype": "fat"
     },
     "sparse_disk_offering": {

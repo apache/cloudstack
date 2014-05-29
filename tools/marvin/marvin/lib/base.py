@@ -83,7 +83,7 @@ class Domain:
         cmd = listDomains.listDomainsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listDomains(cmd))
 
 
@@ -115,7 +115,7 @@ class Account:
             cmd.accountid = "-".join([services["accountUUID"], random_gen()])
 
         if "userUUID" in services:
-            cmd.userid = "-".join([services["userUUID"],random_gen()])
+            cmd.userid = "-".join([services["userUUID"], random_gen()])
 
 
         if domainid:
@@ -138,7 +138,7 @@ class Account:
         cmd = listAccounts.listAccountsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listAccounts(cmd))
 
     def disable(self, apiclient, lock=False):
@@ -166,7 +166,7 @@ class User:
         cmd.lastname = services["lastname"]
 
         if "userUUID" in services:
-            cmd.userid = "-".join([services["userUUID"],random_gen()])
+            cmd.userid = "-".join([services["userUUID"], random_gen()])
 
         cmd.password = services["password"]
         cmd.username = "-".join([services["username"], random_gen()])
@@ -188,7 +188,7 @@ class User:
         cmd = listUsers.listUsersCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listUsers(cmd))
 
     @classmethod
@@ -577,7 +577,7 @@ class VirtualMachine:
         returnValue = [FAIL, "VM state not trasited to %s,\
                         operation timed out" % state]
 
-        while timeout>0:
+        while timeout > 0:
             try:
                 projectid = None
                 if hasattr(self, "projectid"):
@@ -684,7 +684,7 @@ class VirtualMachine:
         cmd = detachIso.detachIsoCmd()
         cmd.virtualmachineid = self.id
         return apiclient.detachIso(cmd)
-    
+
     def scale_virtualmachine(self, apiclient, serviceOfferingId):
         """ Scale up of service offering for the Instance"""
         cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
@@ -707,7 +707,7 @@ class VirtualMachine:
         cmd = listVirtualMachines.listVirtualMachinesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listVirtualMachines(cmd))
 
     def resetPassword(self, apiclient):
@@ -862,7 +862,7 @@ class Volume:
         cmd = listVolumes.listVolumesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listVolumes(cmd))
 
     def resize(self, apiclient, **kwargs):
@@ -929,7 +929,7 @@ class Volume:
     @classmethod
     def extract(cls, apiclient, volume_id, zoneid, mode):
         """Extracts the volume"""
-        
+
         cmd = extractVolume.extractVolumeCmd()
         cmd.id = volume_id
         cmd.zoneid = zoneid
@@ -976,7 +976,7 @@ class Snapshot:
         cmd = listSnapshots.listSnapshotsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listSnapshots(cmd))
 
 
@@ -1212,7 +1212,7 @@ class Template:
         cmd = listTemplates.listTemplatesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listTemplates(cmd))
 
 
@@ -1343,7 +1343,7 @@ class Iso:
         cmd = listIsos.listIsosCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listIsos(cmd))
 
 
@@ -1402,7 +1402,7 @@ class PublicIPAddress:
         cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listPublicIpAddresses(cmd))
 
 
@@ -1464,7 +1464,7 @@ class NATRule:
         cmd = listPortForwardingRules.listPortForwardingRulesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listPortForwardingRules(cmd))
 
 
@@ -1527,7 +1527,7 @@ class StaticNATRule:
         cmd = listIpForwardingRules.listIpForwardingRulesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listIpForwardingRules(cmd))
 
     @classmethod
@@ -1594,7 +1594,7 @@ class EgressFireWallRule:
         cmd = listEgressFirewallRules.listEgressFirewallRulesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listEgressFirewallRules(cmd))
 
 
@@ -1641,7 +1641,7 @@ class FireWallRule:
         cmd = listFirewallRules.listFirewallRulesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listFirewallRules(cmd))
 
 class Autoscale:
@@ -1716,7 +1716,7 @@ class Autoscale:
         return(apiclient.listAutoScaleVmProfiles(cmd))
 
     @classmethod
-    def createAutoscaleVmProfile(cls, apiclient, serviceofferingid, zoneid, templateid, 
+    def createAutoscaleVmProfile(cls, apiclient, serviceofferingid, zoneid, templateid,
                                  autoscaleuserid=None, destroyvmgraceperiod=None, counterparam=None):
         """creates Autoscale VM Profile."""
 
@@ -1749,7 +1749,7 @@ class Autoscale:
         return(apiclient.updateAutoScaleVmProfile(cmd))
 
     @classmethod
-    def createAutoscaleVmGroup(cls, apiclient, lbruleid, minmembers, maxmembers, 
+    def createAutoscaleVmGroup(cls, apiclient, lbruleid, minmembers, maxmembers,
                                  scaledownpolicyids, scaleuppolicyids, vmprofileid, interval=None):
         """creates Autoscale VM Group."""
 
@@ -1866,7 +1866,7 @@ class ServiceOffering:
         cmd = listServiceOfferings.listServiceOfferingsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listServiceOfferings(cmd))
 
 
@@ -1909,7 +1909,7 @@ class DiskOffering:
         cmd = listDiskOfferings.listDiskOfferingsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listDiskOfferings(cmd))
 
 
@@ -1988,7 +1988,7 @@ class NetworkOffering:
         cmd = listNetworkOfferings.listNetworkOfferingsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listNetworkOfferings(cmd))
 
 
@@ -2023,7 +2023,7 @@ class SnapshotPolicy:
         cmd = listSnapshotPolicies.listSnapshotPoliciesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listSnapshotPolicies(cmd))
 
 class Hypervisor:
@@ -2039,7 +2039,7 @@ class Hypervisor:
         cmd = listHypervisors.listHypervisorsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listHypervisors(cmd))
 
 
@@ -2155,7 +2155,7 @@ class LoadBalancerRule:
         cmd.lbruleid = lbruleid
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return apiclient.listLBStickinessPolicies(cmd)
 
     @classmethod
@@ -2165,7 +2165,7 @@ class LoadBalancerRule:
         cmd = listLoadBalancerRules.listLoadBalancerRulesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listLoadBalancerRules(cmd))
 
     @classmethod
@@ -2229,7 +2229,7 @@ class Cluster:
         cmd = listClusters.listClustersCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listClusters(cmd))
 
 
@@ -2346,7 +2346,7 @@ class Host:
         cmd = listHosts.listHostsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listHosts(cmd))
 
     @classmethod
@@ -2356,7 +2356,7 @@ class Host:
         cmd = findHostsForMigration.findHostsForMigrationCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.findHostsForMigration(cmd))
 
     @classmethod
@@ -2427,7 +2427,7 @@ class StoragePool:
         cmd = listStoragePools.listStoragePoolsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listStoragePools(cmd))
 
     @classmethod
@@ -2437,7 +2437,7 @@ class StoragePool:
         cmd = findStoragePoolsForMigration.findStoragePoolsForMigrationCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.findStoragePoolsForMigration(cmd))
 
 class Network:
@@ -2529,7 +2529,7 @@ class Network:
         cmd = listNetworks.listNetworksCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listNetworks(cmd))
 
 
@@ -2606,7 +2606,7 @@ class NetworkACL:
         cmd = listNetworkACLs.listNetworkACLsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listNetworkACLs(cmd))
 
 
@@ -2653,7 +2653,7 @@ class NetworkACLList:
         cmd = listNetworkACLLists.listNetworkACLListsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listNetworkACLLists(cmd))
 
 
@@ -2683,6 +2683,49 @@ class Vpn:
             cmd.openfirewall = openfirewall
         return Vpn(apiclient.createRemoteAccessVpn(cmd).__dict__)
 
+    @classmethod
+    def createVpnGateway(cls, apiclient, vpcid):
+        """Create VPN Gateway """
+        cmd = createVpnGateway.createVpnGatewayCmd()
+        cmd.vpcid = vpcid
+        return (apiclient.createVpnGateway(cmd).__dict__)
+
+    @classmethod
+    def createVpnConnection(cls, apiclient, s2scustomergatewayid, s2svpngatewayid):
+        """Create VPN Connection """
+        cmd = createVpnConnection.createVpnConnectionCmd()
+        cmd.s2scustomergatewayid = s2scustomergatewayid
+        cmd.s2svpngatewayid = s2svpngatewayid
+        return (apiclient.createVpnGateway(cmd).__dict__)
+
+    @classmethod
+    def resetVpnConnection(cls, apiclient, id):
+        """Reset VPN Connection """
+        cmd = resetVpnConnection.resetVpnConnectionCmd()
+        cmd.id = id
+        return (apiclient.resetVpnConnection(cmd).__dict__)
+
+    @classmethod
+    def deleteVpnConnection(cls, apiclient, id):
+        """Delete VPN Connection """
+        cmd = deleteVpnConnection.deleteVpnConnectionCmd()
+        cmd.id = id
+        return (apiclient.deleteVpnConnection(cmd).__dict__)
+
+    @classmethod
+    def listVpnGateway(cls, apiclient, **kwargs):
+        """List all VPN Gateways matching criteria"""
+        cmd = listVpnGateways.listVpnGatewaysCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listVpnGateways(cmd))
+
+    @classmethod
+    def listVpnConnection(cls, apiclient, **kwargs):
+        """List all VPN Connections matching criteria"""
+        cmd = listVpnConnections.listVpnConnectionsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listVpnConnections(cmd))
+
     def delete(self, apiclient):
         """Delete remote VPN access"""
 
@@ -2697,7 +2740,7 @@ class Vpn:
         cmd = listRemoteAccessVpns.listRemoteAccessVpnsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listRemoteAccessVpns(cmd))
 
 
@@ -2743,7 +2786,7 @@ class VpnUser:
         cmd = listVpnUsers.listVpnUsersCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listVpnUsers(cmd))
 
 
@@ -2795,7 +2838,7 @@ class Zone:
         cmd = listZones.listZonesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listZones(cmd))
 
 
@@ -2832,7 +2875,7 @@ class Pod:
         cmd = listPods.listPodsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return apiclient.listPods(cmd)
 
 
@@ -2873,7 +2916,7 @@ class PublicIpRange:
         cmd = listVlanIpRanges.listVlanIpRangesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listVlanIpRanges(cmd))
 
     @classmethod
@@ -2933,7 +2976,7 @@ class PortablePublicIpRange:
         cmd = listPortableIpRanges.listPortableIpRangesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listPortableIpRanges(cmd))
 
 class SecondaryStagingStore:
@@ -2969,7 +3012,7 @@ class SecondaryStagingStore:
         cmd = listSecondaryStagingStores.listSecondaryStagingStoresCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listSecondaryStagingStores(cmd))
 
 
@@ -3006,7 +3049,7 @@ class ImageStore:
         cmd = listImageStores.listImageStoresCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listImageStores(cmd))
 
 
@@ -3078,7 +3121,7 @@ class PhysicalNetwork:
         cmd = listDedicatedGuestVlanRanges.listDedicatedGuestVlanRangesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return apiclient.listDedicatedGuestVlanRanges(cmd)
 
     @classmethod
@@ -3088,7 +3131,7 @@ class PhysicalNetwork:
         cmd = listPhysicalNetworks.listPhysicalNetworksCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return map(lambda pn: PhysicalNetwork(
             pn.__dict__), apiclient.listPhysicalNetworks(cmd))
 
@@ -3205,7 +3248,7 @@ class SecurityGroup:
         cmd = listSecurityGroups.listSecurityGroupsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listSecurityGroups(cmd))
 
 
@@ -3278,7 +3321,7 @@ class VpnCustomerGateway:
         cmd = listVpnCustomerGateways.listVpnCustomerGatewaysCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listVpnCustomerGateways(cmd))
 
 
@@ -3357,7 +3400,7 @@ class Project:
         cmd = listProjectAccounts.listProjectAccountsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listProjectAccounts(cmd))
 
     @classmethod
@@ -3367,7 +3410,7 @@ class Project:
         cmd = listProjects.listProjectsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listProjects(cmd))
 
 
@@ -3405,7 +3448,7 @@ class ProjectInvitation:
         cmd = listProjectInvitations.listProjectInvitationsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listProjectInvitations(cmd))
 
 
@@ -3428,9 +3471,15 @@ class Configurations:
         cmd = listConfigurations.listConfigurationsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listConfigurations(cmd))
 
+    @classmethod
+    def listCapabilities(cls, apiclient, **kwargs):
+        """Lists capabilities"""
+        cmd = listCapabilities.listCapabilitiesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listCapabilities(cmd))
 
 class NetScaler:
     """Manage external netscaler device"""
@@ -3498,7 +3547,7 @@ class NetScaler:
         cmd = listNetscalerLoadBalancers.listNetscalerLoadBalancersCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listNetscalerLoadBalancers(cmd))
 
 
@@ -3550,7 +3599,7 @@ class NetworkServiceProvider:
         cmd = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listNetworkServiceProviders(cmd))
 
 
@@ -3605,7 +3654,7 @@ class Router:
         cmd = listRouters.listRoutersCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listRouters(cmd))
 
 
@@ -3651,7 +3700,7 @@ class Tag:
         cmd = listTags.listTagsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listTags(cmd))
 
 
@@ -3707,7 +3756,7 @@ class VpcOffering:
         cmd = listVPCOfferings.listVPCOfferingsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listVPCOfferings(cmd))
 
     def delete(self, apiclient):
@@ -3778,7 +3827,7 @@ class VPC:
         cmd = listVPCs.listVPCsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listVPCs(cmd))
 
 
@@ -3790,7 +3839,7 @@ class PrivateGateway:
 
     @classmethod
     def create(cls, apiclient, gateway, ipaddress, netmask, vlan, vpcid,
-               physicalnetworkid=None):
+               physicalnetworkid=None, aclid=None):
         """Create private gateway"""
 
         cmd = createPrivateGateway.createPrivateGatewayCmd()
@@ -3801,6 +3850,8 @@ class PrivateGateway:
         cmd.vpcid = vpcid
         if physicalnetworkid:
             cmd.physicalnetworkid = physicalnetworkid
+        if aclid:
+            cmd.aclid = aclid
 
         return PrivateGateway(apiclient.createPrivateGateway(cmd).__dict__)
 
@@ -3818,7 +3869,7 @@ class PrivateGateway:
         cmd = listPrivateGateways.listPrivateGatewaysCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listPrivateGateways(cmd))
 
 
@@ -3851,7 +3902,7 @@ class AffinityGroup:
         cmd = listAffinityGroups.listAffinityGroupsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return apiclient.listAffinityGroups(cmd)
 
 class StaticRoute:
@@ -3882,7 +3933,7 @@ class StaticRoute:
         cmd = listStaticRoutes.listStaticRoutesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listStaticRoutes(cmd))
 
 
@@ -3916,7 +3967,7 @@ class VNMC:
         cmd = listCiscoVnmcResources.listCiscoVnmcResourcesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listCiscoVnmcResources(cmd))
 
 
@@ -3960,7 +4011,7 @@ class SSHKeyPair:
         cmd = listSSHKeyPairs.listSSHKeyPairsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listSSHKeyPairs(cmd))
 
 
@@ -3974,7 +4025,7 @@ class Capacities:
         cmd = listCapacity.listCapacityCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listCapacity(cmd))
 
 
@@ -3988,7 +4039,7 @@ class Alert:
         cmd = listAlerts.listAlertsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listAlerts(cmd))
 
 
@@ -4034,7 +4085,7 @@ class InstanceGroup:
         cmd = listInstanceGroups.listInstanceGroupsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return (apiclient.listInstanceGroups(cmd))
 
     def startInstances(self, apiclient):
@@ -4108,7 +4159,7 @@ class ASA1000V:
         cmd = listCiscoAsa1000vResources.listCiscoAsa1000vResourcesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listCiscoAsa1000vResources(cmd))
 
 class VmSnapshot:
@@ -4128,27 +4179,25 @@ class VmSnapshot:
         if description:
             cmd.description = description
         return VmSnapshot(apiclient.createVMSnapshot(cmd).__dict__)
-    
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         cmd = listVMSnapshot.listVMSnapshotCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listVMSnapshot(cmd))
-    
+
     @classmethod
     def revertToSnapshot(cls, apiclient, vmsnapshotid):
         cmd = revertToVMSnapshot.revertToVMSnapshotCmd()
         cmd.vmsnapshotid = vmsnapshotid
-        
         return apiclient.revertToVMSnapshot(cmd)
-    
+
     @classmethod
     def deleteVMSnapshot(cls, apiclient, vmsnapshotid):
         cmd = deleteVMSnapshot.deleteVMSnapshotCmd()
         cmd.vmsnapshotid = vmsnapshotid
-        
         return apiclient.deleteVMSnapshot(cmd)
 
 class Region:
@@ -4174,7 +4223,7 @@ class Region:
         cmd = listRegions.listRegionsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         region = apiclient.listRegions(cmd)
         return region
 
@@ -4274,7 +4323,7 @@ class ApplicationLoadBalancer:
         cmd = listLoadBalancers.listLoadBalancersCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listLoadBalancerRules(cmd))
 
 class Resources:
@@ -4290,7 +4339,7 @@ class Resources:
         cmd = listResourceLimits.listResourceLimitsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listResourceLimits(cmd))
 
     @classmethod
@@ -4308,7 +4357,7 @@ class Resources:
         cmd = updateResourceCount.updateResourceCountCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.updateResourceCount(cmd))
-   
+
 class NIC:
     """NIC related API"""
     def __init__(self, items):
@@ -4337,9 +4386,9 @@ class NIC:
         cmd = listNics.listNicsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return(apiclient.listNics(cmd))
-        
+
 class IAMGroup:
     def __init__(self, items):
         self.__dict__.update(items)
@@ -4368,7 +4417,8 @@ class IAMGroup:
         cmd = listIAMGroups.listIAMGroupsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
+        return apiclient.listIAMGroups(cmd)
 
     def addAccount(self, apiclient, accts):
         """Add accounts to iam group"""
@@ -4430,7 +4480,7 @@ class IAMPolicy:
         cmd = listIAMPolicies.listIAMPoliciesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
-            cmd.listall=True
+            cmd.listall = True
         return apiclient.listIAMPoliciesCmd(cmd)
 
     def addPermission(self, apiclient, permission):
@@ -4476,13 +4526,12 @@ class SimulatorMock:
     """Manage simulator mock lifecycle"""
     def __init__(self, items):
         self.__dict__.update(items)
-    
+
     @classmethod
     def create(cls, apiclient, command, zoneid=None, podid=None,
                clusterid=None, hostid=None, value="result:fail",
                count=None, jsonresponse=None):
         """Creates simulator mock"""
-        
         cmd = configureSimulator.configureSimulatorCmd()
         cmd.zoneid = zoneid
         cmd.podid = podid
@@ -4498,17 +4547,15 @@ class SimulatorMock:
                 return SimulatorMock(simulatormock.__dict__)
         except Exception as e:
             raise e
-    
+
     def delete(self, apiclient):
         """Removes simulator mock"""
-        
         cmd = cleanupSimulatorMock.cleanupSimulatorMockCmd()
         cmd.id = self.id
         return apiclient.cleanupSimulatorMock(cmd)
-    
+
     def query(self, apiclient):
         """Queries simulator mock"""
-        
         cmd = querySimulatorMock.querySimulatorMockCmd()
         cmd.id = self.id
         try:
