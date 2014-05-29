@@ -17,18 +17,16 @@
 """ BVT tests for Primary Storage
 """
 #Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase
-#from marvin.cloudstackAPI import *
-from marvin.lib.utils import cleanup_resources
-from marvin.lib.base import StoragePool
-from marvin.lib.common import (get_zone,
-                               get_pod,
-                               list_clusters,
-                               list_hosts,
-                               list_storage_pools)
+import marvin
+from marvin.cloudstackTestCase import *
+from marvin.cloudstackAPI import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 
 #Import System modules
+import time
 _multiprocess_shared_ = True
 
 class TestPrimaryStorageServices(cloudstackTestCase):
@@ -53,7 +51,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice"], BugId="CLOUDSTACK-6770")
     def test_01_primary_storage_nfs(self):
         """Test primary storage pools - XEN, KVM, VMWare
         """
@@ -146,7 +144,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             return
 
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice"], BugId="CLOUDSTACK-6770")
     def test_01_primary_storage_iscsi(self):
         """Test primary storage pools - XEN, KVM, VMWare
         """

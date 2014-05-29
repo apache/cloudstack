@@ -75,7 +75,7 @@ class TestCreateIso(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"], BugId="CLOUDSTACK-6769, CLOUDSTACK-6774")
     def test_01_create_iso(self):
         """Test create public & private ISO
         """
@@ -138,6 +138,7 @@ class TestCreateIso(cloudstackTestCase):
 class TestISO(cloudstackTestCase):
 
     @classmethod
+    @attr(BugId="CLOUDSTACK-6769, CLOUDSTACK-6774")
     def setUpClass(cls):
         testClient = super(TestISO, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()

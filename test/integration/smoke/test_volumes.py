@@ -18,9 +18,11 @@
 """
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackException import *
 from marvin.cloudstackAPI import (deleteVolume,
                                   extractVolume,
                                   resizeVolume)
+#from marvin.sshClient import SshClient
 from marvin.lib.utils import (cleanup_resources,
                               format_volume_to_ext3)
 from marvin.lib.base import (ServiceOffering,
@@ -33,7 +35,7 @@ from marvin.lib.common import (get_domain,
                                 get_zone,
                                 get_template)
 from marvin.lib.utils import checkVolumeSize
-from marvin.codes import SUCCESS, FAILED, ERROR_CODE_530
+from marvin.codes import SUCCESS, FAILED, XEN_SERVER
 from nose.plugins.attrib import attr
 #Import System modules
 import os
@@ -197,7 +199,16 @@ class TestCreateVolume(cloudstackTestCase):
             ssh = self.virtual_machine.get_ssh_client(
                                                       reconnect=True
                                                       )
-            ret = checkVolumeSize(ssh_handle=ssh,size_to_verify=vol_sz)
+            # Get the updated volume information
+            list_volume_response = Volume.list(
+                                               self.apiClient,
+                                               id=volume.id)
+            if list_volume_response[0].hypervisor.lower() == XEN_SERVER.lower():
+                volume_name = "/dev/xvd" + chr(ord('a') + int(list_volume_response[0].deviceid))
+                self.debug(" Using XenServer volume_name: %s" % (volume_name))
+                ret = checkVolumeSize(ssh_handle=ssh,volume_name=volume_name,size_to_verify=vol_sz)
+            else:
+                ret = checkVolumeSize(ssh_handle=ssh,size_to_verify=vol_sz)
             self.debug(" Volume Size Expected %s  Actual :%s" %(vol_sz,ret[1]))
             self.virtual_machine.detach_volume(self.apiClient, volume)
             self.assertEqual(ret[0],SUCCESS,"Check if promised disk size actually available")
@@ -377,11 +388,8 @@ class TestVolumes(cloudstackTestCase):
         cmd.zoneid = self.services["zoneid"]
         # A proper exception should be raised;
         # downloading attach VM is not allowed
-        response = self.apiClient.extractVolume(cmd)
-        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
-                         have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, str(response)))
-        return
+        with self.assertRaises(Exception):
+            self.apiClient.extractVolume(cmd)
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic", "selfservice"])
     def test_04_delete_attached_volume(self):
@@ -483,7 +491,7 @@ class TestVolumes(cloudstackTestCase):
                 % (extract_vol.url, self.volume.id)
             )
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "provisioning"])
     def test_07_resize_fail(self):
         """Test resize (negative) non-existent volume"""
         # Verify the size is the new size is what we wanted it to be.
@@ -533,11 +541,15 @@ class TestVolumes(cloudstackTestCase):
         cmd.id             = rootvolume.id
         cmd.diskofferingid = self.services['diskofferingid']
         success            = False
-
-        response = self.apiClient.resizeVolume(cmd)
-        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
-                         have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, str(response)))
+        try:
+            self.apiClient.resizeVolume(cmd)
+        except Exception as ex:
+            if "Can only resize Data volumes" in str(ex):
+                success = True
+        self.assertEqual(
+                success,
+                True,
+                "ResizeVolume - verify root disks cannot be resized by disk offering id")
 
         # Ok, now let's try and resize a volume that is not custom.
         cmd.id             = self.volume.id
@@ -663,6 +675,7 @@ class TestVolumes(cloudstackTestCase):
         cmd                = resizeVolume.resizeVolumeCmd()
         cmd.id             = rootvolume.id
         cmd.size           = 10
+        cmd.shrinkok       = "true"
 
         self.apiClient.resizeVolume(cmd)
 

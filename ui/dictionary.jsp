@@ -1236,6 +1236,7 @@ dictionary = {
 'label.yes': '<fmt:message key="label.yes" />',
 'label.zone.details': '<fmt:message key="label.zone.details" />',
 'label.zone': '<fmt:message key="label.zone" />',
+'label.zones': '<fmt:message key="label.zones" />',
 'label.zone.id': '<fmt:message key="label.zone.id" />',
 'label.zone.name': '<fmt:message key="label.zone.name" />',
 'label.zone.step.1.title': '<fmt:message key="label.zone.step.1.title" />',

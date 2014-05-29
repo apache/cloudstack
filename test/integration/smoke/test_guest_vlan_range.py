@@ -31,7 +31,7 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         testClient = super(TestDedicateGuestVlanRange, cls).getClsTestClient()
-        cls.apiclient = testClient.getApiClient() 
+        cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain
@@ -78,7 +78,7 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["simulator", "advanced", "guestvlanrange", "dedicate", "release", "selfservice"])
+    @attr(tags=["simulator", "advanced", "guestvlanrange", "dedicate", "release", "selfservice"],BugId="CLOUDSTACK-6738")
     def test_dedicateGuestVlanRange(self):
         """Test guest vlan range dedication
         """
@@ -97,11 +97,7 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
         """
         self.debug("Adding guest vlan range")
 
-
-        print "existing vlna = %s" %self.physical_network.vlan
-        print "free vlan = %s" %self.free_vlan
         new_vlan = self.physical_network.vlan + "," + self.free_vlan["partial_range"][0]
-        print "new vlan = %s" % new_vlan
         #new_vlan = self.free_vlan["partial_range"][0]
         addGuestVlanRangeResponse = self.physical_network.update(self.apiclient,
                 id=self.physical_network.id, vlan=new_vlan)

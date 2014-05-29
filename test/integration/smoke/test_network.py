@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,7 +27,6 @@ from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
 from nose.plugins.attrib import attr
-from marvin.codes import ERROR_CODE_530
 #Import System modules
 import time
 
@@ -160,16 +159,10 @@ class TestPublicIP(cloudstackTestCase):
                                               self.apiclient,
                                               id=ip_address.ipaddress.id
                                               )
-        self.assertEqual(
-                            isinstance(list_pub_ip_addr_resp, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        self.assertEqual(
-                            len(list_pub_ip_addr_resp),
-                            0,
-                            "Check if the list public ip api response is not zero"
-                            )
+        if list_pub_ip_addr_resp is None:
+            return
+        if (list_pub_ip_addr_resp) and (isinstance(list_pub_ip_addr_resp, list)) and (len(list_pub_ip_addr_resp) > 0):
+            self.fail("list public ip response is not empty")
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
@@ -328,7 +321,7 @@ class TestPortForwarding(cloudstackTestCase):
                             'Running',
                             "VM state should be Running before creating a NAT rule."
                         )
-        # Open up firewall port for SSH        
+        # Open up firewall port for SSH
         fw_rule = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=src_nat_ip_addr.id,
@@ -381,7 +374,7 @@ class TestPortForwarding(cloudstackTestCase):
                                            )
             if vm_response[0].state != 'Running':
                 self.fail("State of VM : %s is not found to be Running" % str(self.virtual_machine.ipaddress))
- 
+
         except Exception as e:
             self.fail(
                       "SSH Access failed for %s: %s" % \
@@ -390,14 +383,13 @@ class TestPortForwarding(cloudstackTestCase):
 
         try:
             nat_rule.delete(self.apiclient)
-        except CloudstackAPIException:
-            self.fail("Nat Rule deletion failed: %s" % e)
+        except Exception as e:
+            self.fail("NAT Rule Deletion Failed: %s" % e)
 
-        response = list_nat_rules(self.apiclient,
-                                  id=nat_rule.id)
-        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
-                         have failed with error code %s, instead got response \
-                         %s" % (ERROR_CODE_530, str(response)))
+        # NAT rule listing should fail as the nat rule does not exist
+        with self.assertRaises(Exception):
+            list_nat_rules(self.apiclient,
+                           id=nat_rule.id)
 
         # Check if the Public SSH port is inaccessible
         with self.assertRaises(Exception):
@@ -452,7 +444,7 @@ class TestPortForwarding(cloudstackTestCase):
                             'Running',
                             "VM state should be Running before creating a NAT rule."
                         )
-        # Open up firewall port for SSH        
+        # Open up firewall port for SSH
         fw_rule = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=ip_address.ipaddress.id,
@@ -789,7 +781,7 @@ class TestReleaseIP(cloudstackTestCase):
 
         self.ip_address.delete(self.apiclient)
 
-        # Sleep to ensure that deleted state is reflected in other calls 
+        # Sleep to ensure that deleted state is reflected in other calls
         time.sleep(self.services["sleep"])
 
         # ListPublicIpAddresses should not list deleted Public IP address

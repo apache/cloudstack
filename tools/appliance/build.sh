@@ -28,7 +28,7 @@ fi
 build_date=`date +%Y-%m-%d`
 
 # set fixed or leave empty to use git to determine
-branch=master
+branch=
 
 if [ -z "$branch" ] ; then
   branch=`git status | grep '# On branch' | awk '{print $4}'`
@@ -105,8 +105,8 @@ echo "$appliance exported for VMWare: dist/$appliance-$branch-vmware.vmdk.bz2"
 vboxmanage export $machine_uuid --output $appliance-$branch-vmware.ovf
 mv $appliance-$branch-vmware.ovf $appliance-$branch-vmware.ovf-orig
 java -cp convert Convert convert_ovf_vbox_to_esx.xslt $appliance-$branch-vmware.ovf-orig $appliance-$branch-vmware.ovf
-tar -cf $appliance-$branch-vmware.ova $appliance-$branch-vmware.ovf $appliance-$branch-vmware-disk1.vmdk
-rm -f $appliance-$branch-vmware.ovf $appliance-$branch-vmware.ovf-orig $appliance-$branch-vmware-disk1.vmdk
+tar -cf $appliance-$branch-vmware.ova $appliance-$branch-vmware.ovf $appliance-$branch-vmware-disk[0-9].vmdk
+rm -f $appliance-$branch-vmware.ovf $appliance-$branch-vmware.ovf-orig $appliance-$branch-vmware-disk[0-9].vmdk
 echo "$appliance exported for VMWare: dist/$appliance-$branch-vmware.ova"
 
 # Export for HyperV

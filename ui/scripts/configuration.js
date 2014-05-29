@@ -507,21 +507,17 @@
                                 };
                                 
                                 //custom fields (begin)
-                                if (args.$form.find('.form-item[rel=cpuNumber]').css("display") != "none") {
+                                if (args.data.isCustomized != "on") {      
                                     $.extend(data, {
                                         cpuNumber: args.data.cpuNumber
                                     });
-                                }
-                                if (args.$form.find('.form-item[rel=cpuSpeed]').css("display") != "none") {
                                     $.extend(data, {
                                         cpuSpeed: args.data.cpuSpeed
                                     });
-                                }
-                                if (args.$form.find('.form-item[rel=memory]').css("display") != "none") {
                                     $.extend(data, {
                                         memory: args.data.memory
                                     });
-                                }      
+                                }                                
                                 //custom fields (end)
                                 
                                 if (args.data.deploymentPlanner != null && args.data.deploymentPlanner.length > 0) {
@@ -628,7 +624,7 @@
                                     isvolatile: (args.data.isVolatile == "on")
                                 });
 
-                                if (args.$form.find('.form-item[rel=domainId]').css("display") != "none") {
+                                if (args.data.isPublic != "on") {
                                     $.extend(data, {
                                         domainid: args.data.domainId
                                     });
@@ -1173,7 +1169,7 @@
                                     limitcpuuse: (args.data.cpuCap == "on")
                                 });
 
-                                if (args.$form.find('.form-item[rel=domainId]').css("display") != "none") {
+                                if (args.data.isPublic != "on") {
                                     $.extend(data, {
                                         domainid: args.data.domainId
                                     });
@@ -1732,7 +1728,7 @@
                                     customized: (args.data.isCustomized == "on")
                                 };
 
-                                if (args.$form.find('.form-item[rel=disksize]').css("display") != "none") {
+                                if (args.data.isCustomized != "on") {  
                                     $.extend(data, {
                                         disksize: args.data.disksize
                                     });
@@ -1796,7 +1792,7 @@
                                     });
                                 }
 
-                                if (args.$form.find('.form-item[rel=domainId]').css("display") != "none") {
+                                if (args.data.isPublic != "on") {
                                     $.extend(data, {
                                         domainid: args.data.domainId
                                     });

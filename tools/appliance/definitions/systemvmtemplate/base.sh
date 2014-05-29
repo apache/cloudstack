@@ -1,6 +1,10 @@
 # Update the box
-apt-get -y update
-apt-get -y install curl unzip
+
+export DEBIAN_FRONTEND=noninteractive
+export DEBIAN_PRIORITY=critical
+
+apt-get -q -y --force-yes update
+apt-get -q -y --force-yes install curl unzip
 apt-get clean
 
 # Set up sudo, TODO: Check security concerns

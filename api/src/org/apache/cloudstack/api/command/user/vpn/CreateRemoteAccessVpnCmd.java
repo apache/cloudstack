@@ -147,12 +147,8 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
         try {
             RemoteAccessVpn vpn = _ravService.createRemoteAccessVpn(publicIpId, ipRange, getOpenFirewall(), isDisplay());
             if (vpn != null) {
-                setEntityId(vpn.getServerAddressId());
-                // find uuid for server ip address
-                IpAddress ipAddr = _entityMgr.findById(IpAddress.class, vpn.getServerAddressId());
-                if (ipAddr != null) {
-                    setEntityUuid(ipAddr.getUuid());
-                }
+                setEntityId(vpn.getId());
+                setEntityUuid(vpn.getUuid());
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create remote access vpn");
             }

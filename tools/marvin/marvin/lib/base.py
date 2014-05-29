@@ -316,7 +316,8 @@ class VirtualMachine:
 
     @classmethod
     def access_ssh_over_nat(
-            cls, apiclient, services, virtual_machine, allow_egress=False):
+            cls, apiclient, services, virtual_machine, allow_egress=False,
+            networkid=None):
         """
         Program NAT and PF rules to open up ssh access to deployed guest
         @return:
@@ -326,7 +327,8 @@ class VirtualMachine:
             accountid=virtual_machine.account,
             zoneid=virtual_machine.zoneid,
             domainid=virtual_machine.domainid,
-            services=services
+            services=services,
+            networkid=networkid
         )
         FireWallRule.create(
             apiclient=apiclient,
@@ -482,7 +484,8 @@ class VirtualMachine:
                 apiclient,
                 services,
                 virtual_machine,
-                allow_egress=allow_egress)
+                allow_egress=allow_egress,
+                networkid=cmd.networkids[0] if cmd.networkids else None)
         elif mode.lower() == 'basic':
             if virtual_machine.publicip is not None:
                 # EIP/ELB (netscaler) enabled zone
@@ -500,6 +503,10 @@ class VirtualMachine:
         cmd = startVirtualMachine.startVirtualMachineCmd()
         cmd.id = self.id
         apiclient.startVirtualMachine(cmd)
+        response = self.getState(apiclient, VirtualMachine.RUNNING)
+        if response[0] == FAIL:
+            raise Exception(response[1])
+        return
 
     def stop(self, apiclient, forced=None):
         """Stop the instance"""
@@ -578,7 +585,11 @@ class VirtualMachine:
 
         while timeout>0:
             try:
-                vms = VirtualMachine.list(apiclient, id=self.id, listAll=True)
+                projectid = None
+                if hasattr(self, "projectid"):
+                    projectid = self.projectid
+                vms = VirtualMachine.list(apiclient, projectid=projectid,
+				          id=self.id, listAll=True)
                 validationresult = validateList(vms)
                 if validationresult[0] == FAIL:
                     raise Exception("VM list validation failed: %s" % validationresult[2])
@@ -2702,6 +2713,52 @@ class Vpn:
         if openfirewall:
             cmd.openfirewall = openfirewall
         return Vpn(apiclient.createRemoteAccessVpn(cmd).__dict__)
+    
+    @classmethod
+    def createVpnGateway(cls, apiclient, vpcid):
+        """Create VPN Gateway """
+        cmd = createVpnGateway.createVpnGatewayCmd()
+        cmd.vpcid = vpcid
+        return (apiclient.createVpnGateway(cmd).__dict__)
+    
+    @classmethod
+    def createVpnConnection(cls, apiclient, s2scustomergatewayid,s2svpngatewayid):
+        """Create VPN Connection """
+        cmd = createVpnConnection.createVpnConnectionCmd()
+        cmd.s2scustomergatewayid = s2scustomergatewayid
+        cmd.s2svpngatewayid = s2svpngatewayid
+        return (apiclient.createVpnGateway(cmd).__dict__)
+    
+    @classmethod
+    def resetVpnConnection(cls, apiclient,id):
+        """Reset VPN Connection """
+        cmd = resetVpnConnection.resetVpnConnectionCmd()
+        cmd.id = id
+        return (apiclient.resetVpnConnection(cmd).__dict__)
+    
+    @classmethod
+    def deleteVpnConnection(cls, apiclient,id):
+        """Delete VPN Connection """
+        cmd = deleteVpnConnection.deleteVpnConnectionCmd()
+        cmd.id = id
+        return (apiclient.deleteVpnConnection(cmd).__dict__)
+
+    @classmethod
+    def listVpnGateway(cls, apiclient, **kwargs):
+        """List all VPN Gateways matching criteria"""
+
+        cmd = listVpnGateways.listVpnGatewaysCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listVpnGateways(cmd))
+    
+    @classmethod
+    def listVpnConnection(cls, apiclient, **kwargs):
+        """List all VPN Connections matching criteria"""
+
+        cmd = listVpnConnections.listVpnConnectionsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listVpnConnections(cmd))
+
 
     def delete(self, apiclient):
         """Delete remote VPN access"""
@@ -3465,7 +3522,14 @@ class Configurations:
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
             cmd.listall=True
         return(apiclient.listConfigurations(cmd))
+    
+    @classmethod
+    def listCapabilities(cls, apiclient, **kwargs):
+        """Lists capabilities"""
 
+        cmd = listCapabilities.listCapabilitiesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listCapabilities(cmd))
 
 class NetScaler:
 
@@ -3832,7 +3896,7 @@ class PrivateGateway:
 
     @classmethod
     def create(cls, apiclient, gateway, ipaddress, netmask, vlan, vpcid,
-               physicalnetworkid=None):
+               physicalnetworkid=None, aclid=None):
         """Create private gateway"""
 
         cmd = createPrivateGateway.createPrivateGatewayCmd()
@@ -3843,6 +3907,8 @@ class PrivateGateway:
         cmd.vpcid = vpcid
         if physicalnetworkid:
             cmd.physicalnetworkid = physicalnetworkid
+        if aclid:
+            cmd.aclid = aclid
 
         return PrivateGateway(apiclient.createPrivateGateway(cmd).__dict__)
 

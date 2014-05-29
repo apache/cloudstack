@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -184,9 +184,6 @@ class TestRouterServices(cloudstackTestCase):
         return
 
 
-
-
-
     @attr(tags = ["advanced", "smoke", "provisioning"])
     def test_02_router_internal_adv(self):
         """Test router internal advanced zone
@@ -208,7 +205,6 @@ class TestRouterServices(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        
         router = list_router_response[0]
 
         hosts = list_hosts(
@@ -257,7 +253,6 @@ class TestRouterServices(cloudstackTestCase):
                 self.skipTest("Marvin configuration has no host credentials to check router services")
         res = str(result)
         self.debug("Dnsmasq process status: %s" % res)
-        
         self.assertEqual(
                             res.count("running"),
                             1,
@@ -469,7 +464,6 @@ class TestRouterServices(cloudstackTestCase):
                                 )
             except KeyError:
                 self.skipTest("Marvin configuration has no host credentials to check router services")
-        
         # res = 12:37:14 up 1 min,  0 users,  load average: 0.61, 0.22, 0.08
         # Split result to check the uptime
         result = res[0].split()
@@ -664,7 +658,6 @@ class TestRouterServices(cloudstackTestCase):
                             "Check list response returns a valid list"
                         )
         router = list_router_response[0]
-        
         self.debug("Stopping the router with ID: %s" % router.id)
         #Stop the router
         cmd = stopRouter.stopRouterCmd()
@@ -737,6 +730,13 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
+    def verifyRouterResponse(self,router_response,ip):
+            if (router_response) and (isinstance(router_response, list)) and \
+               (router_response[0].state == "Running") and \
+               (router_response[0].publicip == ip):
+               return True
+            return False
+
     @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
     def test_09_reboot_router(self):
         """Test reboot router
@@ -761,33 +761,23 @@ class TestRouterServices(cloudstackTestCase):
         public_ip = router.publicip
 
         self.debug("Rebooting the router with ID: %s" % router.id)
-        
         #Reboot the router
         cmd = rebootRouter.rebootRouterCmd()
         cmd.id = router.id
         self.apiclient.rebootRouter(cmd)
 
         #List routers to check state of router
-        router_response = list_routers(
+        retries_cnt = 6
+        while retries_cnt >= 0:
+            router_response = list_routers(
                                     self.apiclient,
                                     id=router.id,
                                     listall=True
                                     )
-        self.assertEqual(
-                            isinstance(router_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        #List router should have router in running state and same public IP
-        self.assertEqual(
-                            router_response[0].state,
-                            'Running',
-                            "Check list router response for router state"
-                        )
-
-        self.assertEqual(
-                            router_response[0].publicip,
-                            public_ip,
-                            "Check list router response for router public IP"
-                        )
+            if self.verifyRouterResponse(router_response,public_ip):
+                self.debug("Router is running successfully after reboot")
+                return
+            time.sleep(10)
+            retries_cnt = retries_cnt - 1
+        self.fail("Router response after reboot is either is invalid or in stopped state")
         return

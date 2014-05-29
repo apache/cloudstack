@@ -1265,7 +1265,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         NicProfile privateNicProfile = new NicProfile();
 
         if (privateNic != null) {
-            VirtualMachine vm = _vmDao.findById(privateNic.getId());
+            VirtualMachine vm = _vmDao.findById(privateNic.getInstanceId());
             privateNicProfile =
                 new NicProfile(privateNic, privateNetwork, privateNic.getBroadcastUri(), privateNic.getIsolationUri(), _networkModel.getNetworkRate(
                     privateNetwork.getId(), vm.getId()), _networkModel.isSecurityGroupSupportedInNetwork(privateNetwork), _networkModel.getNetworkTag(

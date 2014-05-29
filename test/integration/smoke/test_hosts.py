@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,6 +23,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
+from marvin.lib.utils import (random_gen)
 from nose.plugins.attrib import attr
 
 #Import System modules
@@ -52,7 +53,7 @@ class TestHosts(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["selfservice"])
+    #@attr(tags=["selfservice"])
     def test_01_clusters(self):
         """Test Add clusters & hosts - simulator
 
@@ -66,21 +67,22 @@ class TestHosts(cloudstackTestCase):
         #Create clusters with Hypervisor type Simulator/XEN/KVM/VWare
         """
         for k, v in self.services["clusters"].items():
+            v["clustername"] = v["clustername"] + "-" + random_gen()
             cluster = Cluster.create(
                                      self.apiclient,
                                      v,
                                      zoneid=self.zone.id,
                                      podid=self.pod.id,
-                                     hypervisor=self.hypervisor
+                                     hypervisor=v["hypervisor"].lower()
                                      )
             self.debug(
                 "Created Cluster for hypervisor type %s & ID: %s" %(
                                                                     v["hypervisor"],
-                                                                    cluster.id     
+                                                                    cluster.id
                                                                     ))
             self.assertEqual(
-                    cluster.hypervisortype,
-                    v["hypervisor"],
+                    cluster.hypervisortype.lower(),
+                    v["hypervisor"].lower(),
                     "Check hypervisor type is " + v["hypervisor"] + " or not"
                     )
             self.assertEqual(
@@ -103,7 +105,7 @@ class TestHosts(cloudstackTestCase):
                                self.services["hosts"][hypervisor_type],
                                zoneid=self.zone.id,
                                podid=self.pod.id,
-                               hypervisor=self.hypervisor
+                               hypervisor=v["hypervisor"].lower()
                                )
                 if host == FAILED:
                     self.fail("Host Creation Failed")
@@ -112,9 +114,8 @@ class TestHosts(cloudstackTestCase):
                                                                 host.id,
                                                                 cluster.id
                                                                 ))
-
-            #Cleanup Host & Cluster
-            self.cleanup.append(host)
+                #Cleanup Host & Cluster
+                self.cleanup.append(host)
             self.cleanup.append(cluster)
 
             list_hosts_response = list_hosts(
@@ -162,8 +163,8 @@ class TestHosts(cloudstackTestCase):
                             "Check cluster ID with list clusters response"
                         )
             self.assertEqual(
-                cluster_response.hypervisortype,
-                cluster.hypervisortype,
+                cluster_response.hypervisortype.lower(),
+                cluster.hypervisortype.lower(),
                 "Check hypervisor type with is " + v["hypervisor"] + " or not"
                 )
         return

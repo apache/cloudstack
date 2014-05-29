@@ -34,6 +34,9 @@ class TestScaleVm(cloudstackTestCase):
         testClient = super(TestScaleVm, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() == 'kvm':
+            raise unittest.SkipTest("ScaleVM is not supported on KVM. Hence, skipping the test")
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.apiclient)
@@ -100,7 +103,7 @@ class TestScaleVm(cloudstackTestCase):
         return
 
     @attr(hypervisor="xenserver")
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic", "provisioning"], BugId="CLOUDSTACK-6768")
     def test_01_scale_vm(self):
         """Test scale virtual machine 
         """
