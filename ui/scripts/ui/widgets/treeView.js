@@ -103,6 +103,10 @@
                     $li.find('ul').remove();
                     $li.removeClass('expanded');
 
+                    $treeView.trigger('cloudStack.treeView.removeItem', {
+                        $li: $li
+                    });
+
                     return false;
                 }
 
