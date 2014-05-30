@@ -1686,7 +1686,3 @@ alter table `cloud`.`vlan` add column created datetime NULL COMMENT 'date create
 alter table `cloud`.`user_ip_address` drop key public_ip_address;
 alter table `cloud`.`user_ip_address` add UNIQUE KEY public_ip_address (public_ip_address,source_network_id, removed);
 
-ALTER TABLE `cloud`.`volume_store_ref` ADD `download_url_created` datetime;
-ALTER TABLE `cloud`.`template_store_ref` ADD `download_url_created` datetime;
-ALTER TABLE `cloud`.`template_store_ref` ADD `download_url` varchar(255);
-
