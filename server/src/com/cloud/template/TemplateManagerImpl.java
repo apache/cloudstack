@@ -31,6 +31,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.DateUtil;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -437,12 +438,20 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
         }
 
+        // Check if the url already exists
+        if(tmpltStoreRef.getExtractUrl() != null){
+            return tmpltStoreRef.getExtractUrl();
+        }
+
         // Handle NFS to S3 object store migration case, we trigger template sync from NFS to S3 during extract template or copy template
         _tmpltSvr.syncTemplateToRegionStore(templateId, tmpltStore);
 
         TemplateInfo templateObject = _tmplFactory.getTemplate(templateId, tmpltStore);
-
-        return tmpltStore.createEntityExtractUrl(templateObject.getInstallPath(), template.getFormat(), templateObject);
+        String extractUrl = tmpltStore.createEntityExtractUrl(tmpltStoreRef.getInstallPath(), template.getFormat(), templateObject);
+        tmpltStoreRef.setExtractUrl(extractUrl);
+        tmpltStoreRef.setExtractUrlCreated(DateUtil.now());
+        _tmplStoreDao.update(tmpltStoreRef.getId(), tmpltStoreRef);
+        return extractUrl;
     }
 
     @Override
