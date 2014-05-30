@@ -2452,7 +2452,6 @@ alter table `cloud`.`vlan` add column created datetime NULL COMMENT 'date create
 alter table `cloud`.`user_ip_address` drop key public_ip_address;
 alter table `cloud`.`user_ip_address` add UNIQUE KEY public_ip_address (public_ip_address,source_network_id, removed);
 
-
 CREATE TABLE `cloud`.`load_balancer_stickiness_policy_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `lb_policy_id` bigint unsigned NOT NULL COMMENT 'resource id',
