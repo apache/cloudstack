@@ -29,13 +29,13 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.Answer;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 
 import com.cloud.agent.api.storage.CreateEntityDownloadURLAnswer;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
-import com.cloud.agent.api.storage.DeleteEntityDownloadURLAnswer;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
@@ -303,7 +303,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
     }
 
     @Override
-    public DeleteEntityDownloadURLAnswer handleDeleteEntityDownloadURLCommand(DeleteEntityDownloadURLCommand cmd) {
+    public Answer handleDeleteEntityDownloadURLCommand(DeleteEntityDownloadURLCommand cmd) {
 
         //Delete the soft link. Example path = volumes/8/74eeb2c6-8ab1-4357-841f-2e9d06d1f360.vhd
         s_logger.warn("handleDeleteEntityDownloadURLCommand Path:" + cmd.getPath() + " Type:" + cmd.getType().toString());
@@ -318,24 +318,24 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         if (result != null) {
             String errorString = "Error in deleting =" + result;
             s_logger.warn(errorString);
-            return new DeleteEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
+            return new Answer(cmd, false, errorString);
         }
 
         // If its a volume also delete the Hard link since it was created only for the purpose of download.
         if (cmd.getType() == Upload.Type.VOLUME) {
             command = new Script("/bin/bash", s_logger);
             command.add("-c");
-            command.add("rm -f /mnt/SecStorage/" + cmd.getParentPath() + File.separator + path);
+            command.add("rm -rf /mnt/SecStorage/" + cmd.getParentPath() + File.separator + path);
             s_logger.warn(" " + parentDir + File.separator + path);
             result = command.execute();
             if (result != null) {
                 String errorString = "Error in linking  err=" + result;
                 s_logger.warn(errorString);
-                return new DeleteEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
+                return new Answer(cmd, false, errorString);
             }
         }
 
-        return new DeleteEntityDownloadURLAnswer("", CreateEntityDownloadURLAnswer.RESULT_SUCCESS);
+        return new Answer(cmd, true, "");
     }
 
     private String getInstallPath(String jobId) {

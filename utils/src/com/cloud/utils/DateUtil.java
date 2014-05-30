@@ -261,6 +261,17 @@ public class DateUtil {
         }
     }
 
+    public static long getTimeDifference(Date date1, Date date2){
+
+        Calendar dateCalendar1 = Calendar.getInstance();
+        dateCalendar1.setTime(date1);
+        Calendar dateCalendar2 = Calendar.getInstance();
+        dateCalendar2.setTime(date2);
+
+        return (dateCalendar1.getTimeInMillis() - dateCalendar2.getTimeInMillis() )/1000;
+
+    }
+
     // test only
     public static void main(String[] args) {
         TimeZone localTimezone = Calendar.getInstance().getTimeZone();

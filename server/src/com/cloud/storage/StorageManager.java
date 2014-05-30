@@ -114,4 +114,6 @@ public interface StorageManager extends StorageService {
     Long getDiskIopsReadRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
 
     Long getDiskIopsWriteRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
+
+    void cleanupDownloadUrls();
 }

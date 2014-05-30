@@ -25,6 +25,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.Upload;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -270,5 +271,9 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     @Override
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+    }
+
+    @Override
+    public void deleteEntityExtractUrl(DataStore store, String installPath, String url, Upload.Type entityType){
     }
 }

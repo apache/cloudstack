@@ -98,6 +98,13 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Column(name = "url")
     private String downloadUrl;
 
+    @Column(name = "download_url")
+    private String extractUrl;
+
+    @Column(name = "download_url_created")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date extractUrlCreated = null;
+
     @Column(name = "is_copy")
     private boolean isCopy = false;
 
@@ -377,6 +384,22 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         else{
             s_logger.warn("We should not try to decrement a zero reference count even though our code has guarded");
         }
+    }
+
+    public String getExtractUrl() {
+        return extractUrl;
+    }
+
+    public void setExtractUrl(String extractUrl) {
+        this.extractUrl = extractUrl;
+    }
+
+    public Date getExtractUrlCreated() {
+        return extractUrlCreated;
+    }
+
+    public void setExtractUrlCreated(Date extractUrlCreated) {
+        this.extractUrlCreated = extractUrlCreated;
     }
 
 }
