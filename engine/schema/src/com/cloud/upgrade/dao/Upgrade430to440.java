@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.Network;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -62,7 +63,7 @@ public class Upgrade430to440 implements DbUpgrade {
         secondaryIpsAccountAndDomainIdsUpdate(conn);
         moveCidrsToTheirOwnTable(conn);
         addExtractTemplateAndVolumeColumns(conn);
-
+        updateVlanUris(conn);
     }
 
     private void addExtractTemplateAndVolumeColumns(Connection conn) {
@@ -284,6 +285,41 @@ public class Upgrade430to440 implements DbUpgrade {
         s_logger.debug("Done moving network acl item cidrs to a row per cidr");
     }
 
+    private void updateVlanUris(Connection conn) {
+        s_logger.debug("updating vlan URIs");
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement("SELECT id, vlan_id FROM `cloud`.`vlan` where vlan_id not like '%:%'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                String vlan = rs.getString(2);
+                if (vlan == null || "".equals(vlan)) {
+                    continue;
+                }
+                String vlanUri = BroadcastDomainType.Vlan.toUri(vlan).toString();
+                pstmt = conn.prepareStatement("update `cloud`.`vlan` set vlan_id=? where id=?");
+                pstmt.setString(1, vlanUri);
+                pstmt.setLong(2, id);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update vlan URIs ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Done updateing vlan URIs");
+    }
 
     @Override
     public File[] getCleanupScripts() {
