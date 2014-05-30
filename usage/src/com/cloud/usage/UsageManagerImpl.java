@@ -961,9 +961,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     }
 
     private boolean isVolumeEvent(String eventType) {
-        if (eventType == null)
-            return false;
-        return (eventType.equals(EventTypes.EVENT_VOLUME_CREATE) || eventType.equals(EventTypes.EVENT_VOLUME_DELETE));
+        return eventType != null &&
+            (eventType.equals(EventTypes.EVENT_VOLUME_CREATE) || eventType.equals(EventTypes.EVENT_VOLUME_DELETE) || eventType.equals(EventTypes.EVENT_VOLUME_RESIZE));
     }
 
     private boolean isTemplateEvent(String eventType) {
@@ -1366,20 +1365,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
     private void createVolumeHelperEvent(UsageEventVO event) {
 
-        Long doId = -1L;
-        long zoneId = -1L;
-        Long templateId = -1L;
-        long size = -1L;
-
         long volId = event.getResourceId();
-        if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType())) {
-            doId = event.getOfferingId();
-            zoneId = event.getZoneId();
-            templateId = event.getTemplateId();
-            size = event.getSize();
-        }
 
-        if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType())) {
+        if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType()) || EventTypes.EVENT_VOLUME_RESIZE.equals(event.getType())) {
             SearchCriteria<UsageVolumeVO> sc = _usageVolumeDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
             sc.addAnd("id", SearchCriteria.Op.EQ, volId);
@@ -1389,6 +1377,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 //This is a safeguard to avoid double counting of volumes.
                 s_logger.error("Found duplicate usage entry for volume: " + volId + " assigned to account: " + event.getAccountId() + "; marking as deleted...");
             }
+            //an entry exists if it is a resize volume event. marking the existing deleted and creating a new one in the case of resize.
             for (UsageVolumeVO volumesVO : volumesVOs) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("deleting volume: " + volumesVO.getId() + " from account: " + volumesVO.getAccountId());
@@ -1400,7 +1389,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 s_logger.debug("create volume with id : " + volId + " for account: " + event.getAccountId());
             }
             Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
-            UsageVolumeVO volumeVO = new UsageVolumeVO(volId, zoneId, event.getAccountId(), acct.getDomainId(), doId, templateId, size, event.getCreateDate(), null);
+            UsageVolumeVO volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), event.getOfferingId(), event.getTemplateId(), event.getSize(), event.getCreateDate(), null);
             _usageVolumeDao.persist(volumeVO);
         } else if (EventTypes.EVENT_VOLUME_DELETE.equals(event.getType())) {
             SearchCriteria<UsageVolumeVO> sc = _usageVolumeDao.createSearchCriteria();
