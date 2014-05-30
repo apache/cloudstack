@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.DateUtil;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -1910,6 +1911,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         String extractUrl = secStore.createEntityExtractUrl(vol.getPath(), vol.getFormat(), vol);
         volumeStoreRef = _volumeStoreDao.findByVolume(volumeId);
         volumeStoreRef.setExtractUrl(extractUrl);
+        volumeStoreRef.setExtractUrlCreated(DateUtil.now());
         _volumeStoreDao.update(volumeStoreRef.getId(), volumeStoreRef);
 
         return extractUrl;

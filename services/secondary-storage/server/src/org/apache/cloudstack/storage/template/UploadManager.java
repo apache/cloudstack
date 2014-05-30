@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
+import com.cloud.agent.api.Answer;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 
 import com.cloud.agent.api.storage.CreateEntityDownloadURLAnswer;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
-import com.cloud.agent.api.storage.DeleteEntityDownloadURLAnswer;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
@@ -77,6 +77,6 @@ public interface UploadManager extends Manager {
 
     CreateEntityDownloadURLAnswer handleCreateEntityURLCommand(CreateEntityDownloadURLCommand cmd);
 
-    DeleteEntityDownloadURLAnswer handleDeleteEntityDownloadURLCommand(DeleteEntityDownloadURLCommand cmd);
+    Answer handleDeleteEntityDownloadURLCommand(DeleteEntityDownloadURLCommand cmd);
 
 }

@@ -42,4 +42,6 @@ public interface VolumeDataStoreDao extends GenericDao<VolumeDataStoreVO, Long>,
     List<VolumeDataStoreVO> listDestroyed(long storeId);
 
     void duplicateCacheRecordsOnRegionStore(long storeId);
+
+    List<VolumeDataStoreVO> listVolumeDownloadUrls();
 }

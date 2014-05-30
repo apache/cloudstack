@@ -17,6 +17,7 @@
 package com.cloud.configuration;
 
 import java.net.URI;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -36,6 +37,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.StorageManager;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -315,6 +317,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     AffinityGroupDao _affinityGroupDao;
     @Inject
     AffinityGroupService _affinityGroupService;
+    @Inject
+    StorageManager _storageManager;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -585,6 +589,27 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new CloudRuntimeException("Failed to update SecondaryStorage offering's use_local_storage option to value:" + useLocalStorage);
                 }
             }
+        }else if (Config.SecStorageSecureCopyCert.key().equalsIgnoreCase(name)) {
+            //FIXME - Ideally there should be a listener model to listen to global config changes and be able to take action gracefully.
+            //Expire the download urls
+            String sqlTemplate = "update template_store_ref set download_url_created=?";
+            String sqlVolume = "update volume_store_ref set download_url_created=?";
+            try {
+                // Change for templates
+                pstmt = txn.prepareAutoCloseStatement(sqlTemplate);
+                pstmt.setDate(1, new Date(-1l));// Set the time before the epoch time.
+                pstmt.executeUpdate();
+                // Change for volumes
+                pstmt = txn.prepareAutoCloseStatement(sqlVolume);
+                pstmt.setDate(1, new Date(-1l));// Set the time before the epoch time.
+                pstmt.executeUpdate();
+                // Cleanup the download urls
+                _storageManager.cleanupDownloadUrls();
+            } catch (Throwable e) {
+                throw new CloudRuntimeException("Failed to clean up download URLs in template_store_ref or volume_store_ref due to exception ", e);
+            }
+
+
         }
 
         txn.commit();

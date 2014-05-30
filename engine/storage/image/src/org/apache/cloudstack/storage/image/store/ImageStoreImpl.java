@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.Upload;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -202,5 +203,11 @@ public class ImageStoreImpl implements ImageStoreEntity {
     public String createEntityExtractUrl(String installPath, ImageFormat format, DataObject dataObject) {
         return driver.createEntityExtractUrl(this, installPath, format, dataObject);
     }
+
+    @Override
+    public void deleteExtractUrl(String installPath, String url, Upload.Type entityType) {
+        driver.deleteEntityExtractUrl(this, installPath, url, entityType);
+    }
+
 
 }

@@ -41,6 +41,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.DateUtil;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -284,6 +286,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     boolean _templateCleanupEnabled = true;
     int _storageCleanupInterval;
     int _storagePoolAcquisitionWaitSeconds = 1800; // 30 minutes
+    int _downloadUrlCleanupInterval;
+    int _downloadUrlExpirationInterval;
     // protected BigDecimal _overProvisioningFactor = new BigDecimal(1);
     private long _serverId;
 
@@ -455,6 +459,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         s_logger.info("Storage cleanup enabled: " + _storageCleanupEnabled + ", interval: " + _storageCleanupInterval + ", template cleanup enabled: " +
             _templateCleanupEnabled);
 
+        String cleanupInterval = configs.get("extract.url.cleanup.interval");
+        _downloadUrlCleanupInterval = NumbersUtil.parseInt(cleanupInterval, 7200);
+
+        String urlExpirationInterval = configs.get("extract.url.expiration.interval");
+        _downloadUrlExpirationInterval = NumbersUtil.parseInt(urlExpirationInterval, 14400);
+
         String workers = configs.get("expunge.workers");
         int wrks = NumbersUtil.parseInt(workers, 10);
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("StorageManager-Scavenger"));
@@ -507,6 +517,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } else {
             s_logger.debug("Storage cleanup is not enabled, so the storage cleanup thread is not being scheduled.");
         }
+
+        _executor.scheduleWithFixedDelay(new DownloadURLGarbageCollector(), _downloadUrlCleanupInterval, _downloadUrlCleanupInterval, TimeUnit.SECONDS);
+
         return true;
     }
 
@@ -1960,6 +1973,80 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         });
 
         return true;
+    }
+
+    protected class DownloadURLGarbageCollector implements Runnable {
+
+        public DownloadURLGarbageCollector() {
+        }
+
+        @Override
+        public void run() {
+            try {
+                s_logger.trace("Download URL Garbage Collection Thread is running.");
+
+                cleanupDownloadUrls();
+
+            } catch (Exception e) {
+                s_logger.error("Caught the following Exception", e);
+            }
+        }
+    }
+
+    @Override
+    public void cleanupDownloadUrls(){
+
+        // Cleanup expired volume URLs
+        List<VolumeDataStoreVO> volumesOnImageStoreList = _volumeStoreDao.listVolumeDownloadUrls();
+        for(VolumeDataStoreVO volumeOnImageStore : volumesOnImageStoreList){
+
+            try {
+                long downloadUrlCurrentAgeInSecs = DateUtil.getTimeDifference(DateUtil.now(), volumeOnImageStore.getExtractUrlCreated());
+                if(downloadUrlCurrentAgeInSecs < _downloadUrlExpirationInterval){  // URL hasnt expired yet
+                    continue;
+                }
+
+                s_logger.debug("Removing download url " + volumeOnImageStore.getExtractUrl() + " for volume id " + volumeOnImageStore.getVolumeId());
+
+                // Remove it from image store
+                ImageStoreEntity secStore = (ImageStoreEntity) _dataStoreMgr.getDataStore(volumeOnImageStore.getDataStoreId(), DataStoreRole.Image);
+                secStore.deleteExtractUrl(volumeOnImageStore.getInstallPath(), volumeOnImageStore.getExtractUrl(), Upload.Type.VOLUME);
+
+                // Now expunge it from DB since this entry was created only for download purpose
+                _volumeStoreDao.expunge(volumeOnImageStore.getId());
+            }catch(Throwable th){
+                s_logger.warn("Caught exception while deleting download url " +volumeOnImageStore.getExtractUrl() +
+                        " for volume id " + volumeOnImageStore.getVolumeId(), th);
+            }
+        }
+
+        // Cleanup expired template URLs
+        List<TemplateDataStoreVO> templatesOnImageStoreList = _templateStoreDao.listTemplateDownloadUrls();
+        for(TemplateDataStoreVO templateOnImageStore : templatesOnImageStoreList){
+
+            try {
+                long downloadUrlCurrentAgeInSecs = DateUtil.getTimeDifference(DateUtil.now(), templateOnImageStore.getExtractUrlCreated());
+                if(downloadUrlCurrentAgeInSecs < _downloadUrlExpirationInterval){  // URL hasnt expired yet
+                    continue;
+                }
+
+                s_logger.debug("Removing download url " + templateOnImageStore.getExtractUrl() + " for template id " + templateOnImageStore.getTemplateId());
+
+                // Remove it from image store
+                ImageStoreEntity secStore = (ImageStoreEntity) _dataStoreMgr.getDataStore(templateOnImageStore.getDataStoreId(), DataStoreRole.Image);
+                secStore.deleteExtractUrl(templateOnImageStore.getInstallPath(), templateOnImageStore.getExtractUrl(), Upload.Type.TEMPLATE);
+
+                // Now remove download details from DB.
+                templateOnImageStore.setExtractUrl(null);
+                templateOnImageStore.setExtractUrlCreated(null);
+                _templateStoreDao.update(templateOnImageStore.getId(), templateOnImageStore);
+            }catch(Throwable th){
+                s_logger.warn("caught exception while deleting download url " +templateOnImageStore.getExtractUrl() +
+                        " for template id " +templateOnImageStore.getTemplateId(), th);
+            }
+        }
+
+
     }
 
     // get bytesReadRate from service_offering, disk_offering and vm.disk.throttling.bytes_read_rate
