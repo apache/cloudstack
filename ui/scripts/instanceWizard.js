@@ -509,6 +509,47 @@
                         }
                     });
 
+                    //In addition to the networks in the current zone, find networks in other zones that have stretchedL2subnet==true
+                    //capability and show them on the UI
+                    var allOtherAdvancedZones = [];
+                    $.ajax({
+                        url: createURL('listZones'),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {
+                            var result = $.grep(json.listzonesresponse.zone, function(zone) {
+                               return (zone.networktype == 'Advanced');
+                            });
+                            $(result).each(function() {
+                                if (selectedZoneObj.id != this.id)
+                                    allOtherAdvancedZones.push(this);
+                            });
+                        }
+                    });
+                    if (allOtherAdvancedZones.length > 0) {
+                        for (var i = 0; i < allOtherAdvancedZones.length; i++) {
+                            var networkDataForZone = {
+                                zoneId: allOtherAdvancedZones[i].id,
+                                canusefordeploy: true
+                            };
+                            $.ajax({
+                                url: createURL('listNetworks'),
+                                data: networkDataForZone,
+                                async: false,
+                                success: function(json) {
+                                    var networksInThisZone = json.listnetworksresponse.network ? json.listnetworksresponse.network : [];
+                                    if (networksInThisZone.length > 0) {
+                                        for (var i = 0; i < networksInThisZone.length; i++) {
+                                            if (networksInThisZone[i].strechedl2subnet) {
+                                                networkObjsToPopulate.push(networksInThisZone[i]);
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
+
                     $.ajax({
                         url: createURL("listNetworkOfferings"),
                         dataType: "json",
