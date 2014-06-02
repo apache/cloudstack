@@ -77,19 +77,23 @@
         steps: [
             // Step 1: Setup
             function(args) {
-                if (args.initArgs.pluginForm != null && args.initArgs.pluginForm.name == "vpcTierInstanceWizard") { //from VPC Tier chart
-                    //populate only one zone to the dropdown, the zone which the VPC is under.
-                    zoneObjs = [{
-                        id: args.context.vpc[0].zoneid,
-                        name: args.context.vpc[0].zonename,
-                        networktype: 'Advanced'
-                    }];
-                    args.response.success({
-                        data: {
-                            zones: zoneObjs
-                        }
-                    });
-                } else { //from Instance page
+                //from VPC Tier chart -- when the tier (network) has strechedl2subnet==false:
+                //only own zone is populated to the dropdown
+                if (args.initArgs.pluginForm != null && args.initArgs.pluginForm.name == "vpcTierInstanceWizard"
+                    && args.context.networks[0].strechedl2subnet) {
+                        zoneObjs = [{
+                            id: args.context.vpc[0].zoneid,
+                            name: args.context.vpc[0].zonename,
+                            networktype: 'Advanced'
+                        }];
+                        args.response.success({
+                            data: {
+                                zones: zoneObjs
+                            }
+                        });
+                }
+                //in all other cases (as well as from instance page) all zones are populated to dropdown
+                else {
                     $.ajax({
                         url: createURL("listZones&available=true"),
                         dataType: "json",
