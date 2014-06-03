@@ -64,30 +64,22 @@ public class UsageSanityChecker {
     }
 
     protected boolean checkItemCountByPstmt(CheckCase checkCase) throws SQLException {
-        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
         boolean checkOk = true;
 
         /*
          * Check for item usage records which are created after it is removed
          */
-        PreparedStatement pstmt;
-        try {
-            pstmt = conn.prepareStatement(checkCase.sqlTemplate);
+        try (PreparedStatement pstmt = conn.prepareStatement(checkCase.sqlTemplate)) {
             if(checkCase.checkId) {
                 pstmt.setInt(1, lastId);
                 pstmt.setInt(2, maxId);
             }
 
-            pstmt2Close.add(pstmt);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next() && (rs.getInt(1) > 0)) {
                 errors.append(String.format("Error: Found %s %s\n", rs.getInt(1), checkCase.itemName));
                 checkOk = false;
             }
-        } catch (SQLException e) {
-            throw e;
-        } finally {
-            TransactionLegacy.closePstmts(pstmt2Close);
         }
         return checkOk;
     }
@@ -190,12 +182,13 @@ public class UsageSanityChecker {
     }
 
     protected void readMaxId() throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement("select max(id) from cloud_usage.cloud_usage");
-        ResultSet rs = pstmt.executeQuery();
-        maxId = -1;
-        if (rs.next() && (rs.getInt(1) > 0)) {
-            maxId = rs.getInt(1);
-            lastCheckId += " and cu.id <= ?";
+        try (PreparedStatement pstmt = conn.prepareStatement("select max(id) from cloud_usage.cloud_usage")) {
+            ResultSet rs = pstmt.executeQuery();
+            maxId = -1;
+            if (rs.next() && (rs.getInt(1) > 0)) {
+                maxId = rs.getInt(1);
+                lastCheckId += " and cu.id <= ?";
+            }
         }
     }
 
