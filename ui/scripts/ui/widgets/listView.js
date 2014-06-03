@@ -2033,7 +2033,7 @@
             var jsonObj = $target.closest('tr').data('jsonObj');
             var detailViewArgs;
             var detailViewPresent = ($target.closest('div.data-table tr td.first').size() &&
-                listViewData.detailView && !$target.closest('div.edit').size());
+                listViewData.detailView && !$target.closest('div.edit').size()) && !listViewData.detailView.noPanelView;
             var uiCustom = args.uiCustom == true ? true : false;
 
             // Click on first item will trigger detail view (if present)
