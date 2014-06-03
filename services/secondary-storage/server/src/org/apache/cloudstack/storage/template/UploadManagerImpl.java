@@ -316,9 +316,9 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         command.add("unlink /var/www/html/userdata/" + extractUrl.substring(extractUrl.lastIndexOf(File.separator) + 1));
         String result = command.execute();
         if (result != null) {
-            String errorString = "Error in deleting =" + result;
-            s_logger.warn(errorString);
-            return new Answer(cmd, false, errorString);
+            // FIXME - Ideally should bail out if you cant delete symlink. Not doing it right now.
+            // This is because the ssvm might already be destroyed and the symlinks do not exist.
+            s_logger.warn("Error in deleting symlink :" + result);
         }
 
         // If its a volume also delete the Hard link since it was created only for the purpose of download.
@@ -329,7 +329,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             s_logger.warn(" " + parentDir + File.separator + path);
             result = command.execute();
             if (result != null) {
-                String errorString = "Error in linking  err=" + result;
+                String errorString = "Error in deleting volume " + path + " : " + result;
                 s_logger.warn(errorString);
                 return new Answer(cmd, false, errorString);
             }
