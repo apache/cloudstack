@@ -16,17 +16,20 @@
 // under the License.
 package com.cloud.hypervisor;
 
-import com.cloud.network.dao.NetworkVO;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.gpu.GPU;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ConfigurationServer;
@@ -42,12 +45,12 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru {
+    public static final Logger s_logger = Logger.getLogger(HypervisorGuruBase.class);
 
     @Inject
     VMTemplateDetailsDao _templateDetailsDao;
@@ -94,13 +97,18 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         NetworkVO network = _networkDao.findById(profile.getNetworkId());
         to.setNetworkUuid(network.getUuid());
 
-        // Workaround to make sure the TO has the UUID we need for Niciri integration
+        // Workaround to make sure the TO has the UUID we need for Nicira integration
         NicVO nicVO = _nicDao.findById(profile.getId());
-        to.setUuid(nicVO.getUuid());
-        // disable pxe on system vm nics to speed up boot time
-        if(nicVO != null && nicVO.getVmType() != VirtualMachine.Type.User){
-            to.setPxeDisable(true);
+        if (nicVO != null) {
+            to.setUuid(nicVO.getUuid());
+            // disable pxe on system vm nics to speed up boot time
+            if (nicVO.getVmType() != VirtualMachine.Type.User) {
+                to.setPxeDisable(true);
+            }
+        } else {
+            s_logger.warn("Unabled to load NicVO for NicProfile " + profile.getId());
         }
+
         //check whether the this nic has secondary ip addresses set
         //set nic secondary ip address in NicTO which are used for security group
         // configuration. Use full when vm stop/start
@@ -120,8 +128,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         int minspeed = (int)(offering.getSpeed() / vmProfile.getCpuOvercommitRatio());
         int maxspeed = (offering.getSpeed());
         VirtualMachineTO to =
-            new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), minspeed, maxspeed, minMemory * 1024l * 1024l,
-                offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
+                new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), minspeed, maxspeed, minMemory * 1024l * 1024l,
+                        offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
         to.setBootArgs(vmProfile.getBootArgs());
 
         List<NicProfile> nicProfiles = vmProfile.getNics();
