@@ -23,7 +23,6 @@ import java.io.File;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.net.URI;
 
 import javax.naming.ConfigurationException;
 
@@ -117,7 +116,13 @@ public class BridgeVifDriver extends VifDriverBase {
                     intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
                 }
             } else {
-                intf.defBridgeNet(_bridges.get("guest"), null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
+                String brname = "";
+                if (trafficLabel != null && !trafficLabel.isEmpty()) {
+                    brname = trafficLabel;
+                } else {
+                    brname = _bridges.get("guest");
+                }
+                intf.defBridgeNet(brname, null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
             }
         } else if (nic.getType() == Networks.TrafficType.Control) {
             /* Make sure the network is still there */
