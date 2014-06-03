@@ -130,17 +130,19 @@ public class Upgrade421to430 implements DbUpgrade {
 
         try {
 
+            pstmt = conn.prepareStatement(insertSql);
             for (String[] ldapParam : ldapParams) {
                 String name = ldapParam[0];
                 String value = ldapParam[1];
                 String desc = ldapParam[2];
                 String encryptedValue = DBEncryptionUtil.encrypt(value);
-                pstmt = conn.prepareStatement(insertSql);
                 pstmt.setString(1, name);
                 pstmt.setBytes(2, encryptedValue.getBytes("UTF-8"));
                 pstmt.setString(3, desc);
                 pstmt.executeUpdate();
             }
+
+            pstmt.close();
 
             /**
              * if encrypted, decrypt the ldap hostname and port and then update as they are not encrypted now.
@@ -154,6 +156,8 @@ public class Upgrade421to430 implements DbUpgrade {
                 hostname = DBEncryptionUtil.decrypt(resultSet.getString(1));
             }
 
+            pstmt.close();
+
             pstmt = conn.prepareStatement("SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.port'");
             resultSet = pstmt.executeQuery();
             if (resultSet.next()) {
@@ -162,6 +166,7 @@ public class Upgrade421to430 implements DbUpgrade {
                     portNumber = Integer.valueOf(port);
                 }
             }
+            pstmt.close();
 
             if (StringUtils.isNotBlank(hostname)) {
                 pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ldap_configuration`(hostname, port) VALUES(?,?)");
@@ -172,6 +177,7 @@ public class Upgrade421to430 implements DbUpgrade {
                     pstmt.setNull(2, Types.INTEGER);
                 }
                 pstmt.executeUpdate();
+                pstmt.close();
             }
 
         } catch (SQLException e) {
