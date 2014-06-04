@@ -683,27 +683,43 @@ def cleanup_rules_for_dead_vms():
 
 def cleanup_rules():
     try:
-        chainscmd = """iptables-save | grep -P '^:(?!.*-(def|eg))' | awk '{sub(/^:/, "", $1) ; print $1}'"""
+        chainscmd = """iptables-save | awk '{for(i=1;i<=NF;i++){ if($i ~ /[i|r|s|v]-[0-9]/){print $i} } }'"""
         chains = execute(chainscmd).split('\n')
         cleanup = []
         for chain in chains:
-            if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
-                vm_name = chain
+            if chain == '':
+                continue
+            elif chain.startswith(':'):
+                chain = chain[1:]
+            if chain.endswith('-eg'):
+                chain = chain[:-3]
+            elif chain.endswith('-def'):
+                chain = chain[:-3]
+                chain = chain + 'VM'
 
-                result = virshdomstate(vm_name)
+            vm_name = chain
 
-                if result == None or len(result) == 0:
-                    logging.debug("chain " + chain + " does not correspond to a vm, cleaning up iptable rules")
-                    cleanup.append(vm_name)
-                    continue
-                if not (result == "running" or result == "paused"):
-                    logging.debug("vm " + vm_name + " is not running or paused, cleaning up iptable rules")
-                    cleanup.append(vm_name)
+            result = virshdomstate(vm_name)
 
-        chainscmd = """ebtables-save | awk '/:i/ { gsub(/(^:|-(in|out|ips))/, "") ; print $1}'"""
+            if result == None or len(result) == 0:
+                logging.debug("chain " + chain + " does not correspond to a vm, cleaning up iptable rules")
+                cleanup.append(vm_name)
+                continue
+            if not (result == "running" or result == "paused"):
+                logging.debug("vm " + vm_name + " is not running or paused, cleaning up iptable rules")
+                cleanup.append(vm_name)
+
+        chainscmd = """ebtables-save | awk '{for(i=1;i<=NF;i++){ if($i ~ /[i|r|s|v]-[0-9]/){print $i} } }'"""
         chains = execute(chainscmd).split('\n')
         for chain in chains:
-            if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
+            if chain == '':
+                continue
+            elif chain.startswith(':'):
+                chain = chain[1:]
+            if not chain.endswith('VM'):
+                chain = chain.split('VM')
+                chain = chain[0] + 'VM'
+
                 vm_name = chain
 
                 result = virshdomstate(vm_name)
