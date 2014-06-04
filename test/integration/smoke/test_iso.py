@@ -281,7 +281,7 @@ class TestISO(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"],BugId="CLOUDSTACK-6769, CLOUDSTACK-6774")
     def test_02_edit_iso(self):
         """Test Edit ISO
         """
@@ -346,7 +346,7 @@ class TestISO(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"], BugId="CLOUDSTACK-6769, CLOUDSTACK-6774")
     def test_03_delete_iso(self):
         """Test delete ISO
         """
@@ -374,7 +374,7 @@ class TestISO(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "provisioning"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "provisioning"], BugId="CLOUDSTACK-6769, CLOUDSTACK-6774")
     def test_04_extract_Iso(self):
         "Test for extract ISO"
 
@@ -425,7 +425,7 @@ class TestISO(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"], BugId="CLOUDSTACK-6769, CLOUDSTACK-6774")
     def test_05_iso_permissions(self):
         """Update & Test for ISO permissions"""
 
@@ -477,7 +477,7 @@ class TestISO(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "multizone", "provisioning"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "multizone", "provisioning"], BugId="CLOUDSTACK-6769, CLOUDSTACK-6774")
     def test_06_copy_iso(self):
         """Test for copy ISO from one zone to another"""
 
