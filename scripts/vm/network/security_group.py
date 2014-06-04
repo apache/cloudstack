@@ -547,7 +547,7 @@ def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     delcmds = execute(delcmd).split('\n')
     delcmds.pop()
     for cmd in delcmds:
-        if cmd == '':
+        if cmd == "":
             continue
         try:
             execute("iptables " + cmd)
@@ -689,15 +689,14 @@ def cleanup_rules():
         chains = execute(chainscmd).split('\n')
         cleanup = []
         for chain in chains:
-            if chain == '':
+            if chain == "":
                 continue
-            elif chain.startswith(':'):
+            elif chain.startswith(":"):
                 chain = chain[1:]
-            if chain.endswith('-eg'):
+            if chain.endswith("-eg"):
                 chain = chain[:-3]
-            elif chain.endswith('-def'):
-                chain = chain[:-3]
-                chain = chain + 'VM'
+            elif chain.endswith("-def"):
+                chain = chain[:-3] + "VM"
 
             vm_name = chain
 
@@ -714,13 +713,12 @@ def cleanup_rules():
         chainscmd = """ebtables-save | awk '{for(i=1;i<=NF;i++){ if($i ~ /[i|r|s|v]-[0-9]/){print $i} } }'"""
         chains = execute(chainscmd).split('\n')
         for chain in chains:
-            if chain == '':
+            if chain == "":
                 continue
-            elif chain.startswith(':'):
+            elif chain.startswith(":"):
                 chain = chain[1:]
-            if not chain.endswith('VM'):
-                chain = chain.split('VM')
-                chain = chain[0] + 'VM'
+            if not chain.endswith("VM"):
+                chain = chain.split("VM")[0] + "VM"
 
                 vm_name = chain
 
