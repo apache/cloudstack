@@ -223,6 +223,10 @@ class TestCreateVolume(cloudstackTestCase):
                 volume_name = "/dev/xvd" + chr(ord('a') + int(list_volume_response[0].deviceid))
                 self.debug(" Using XenServer volume_name: %s" % (volume_name))
                 ret = checkVolumeSize(ssh_handle=ssh,volume_name=volume_name,size_to_verify=vol_sz)
+            elif list_volume_response[0].hypervisor.lower() == "kvm":
+                volume_name = "/dev/vd" + chr(ord('a') + int(list_volume_response[0].deviceid))
+                self.debug(" Using KVM volume_name: %s" % (volume_name))
+                ret = checkVolumeSize(ssh_handle=ssh,volume_name=volume_name,size_to_verify=vol_sz)
             else:
                 ret = checkVolumeSize(ssh_handle=ssh,size_to_verify=vol_sz)
             self.debug(" Volume Size Expected %s  Actual :%s" %(vol_sz,ret[1]))
