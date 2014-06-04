@@ -547,6 +547,8 @@ def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     delcmds = execute(delcmd).split('\n')
     delcmds.pop()
     for cmd in delcmds:
+        if cmd == '':
+            continue
         try:
             execute("iptables " + cmd)
         except:
