@@ -763,9 +763,6 @@ class ubuntuFirewallConfigServer(firewallConfigServer):
             for port in self.ports:
                 self.allowPort(port)
 
-            #FIXME: urgly make /root writable
-            bash("sudo chmod 0777 /root")
-
             return True
         except:
             raise

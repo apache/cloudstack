@@ -24,19 +24,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.springframework.stereotype.Component;
-
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -44,7 +46,6 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
-
 
 @Local(value = { PrimaryDataStoreDao.class })
 @DB()
@@ -54,8 +55,12 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     protected final SearchBuilder<StoragePoolVO> DcPodAnyClusterSearch;
     protected final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
     protected final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
+    protected SearchBuilder<StoragePoolVO> HostSearch;
+    protected SearchBuilder<StoragePoolHostVO> HostPoolSearch;
+    protected SearchBuilder<StoragePoolDetailVO> TagPoolSearch;
 
     @Inject protected StoragePoolDetailsDao _detailsDao;
+    @Inject protected StoragePoolHostDao _hostDao;
 
     private final String DetailsSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_details ON storage_pool.id = storage_pool_details.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' and storage_pool.data_center_id = ? and (storage_pool.pod_id = ? or storage_pool.pod_id is null) and storage_pool.scope = ? and (";
     private final String DetailsSqlSuffix = ") GROUP BY storage_pool_details.pool_id HAVING COUNT(storage_pool_details.name) >= ?";
@@ -110,6 +115,26 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         StatusCountSearch.select(null, Func.COUNT, null);
         StatusCountSearch.done();
 
+    }
+
+    @PostConstruct
+    void init() {
+        HostSearch = createSearchBuilder();
+        TagPoolSearch = _detailsDao.createSearchBuilder();
+        HostPoolSearch = _hostDao.createSearchBuilder();
+        // Search for pools on the host
+        HostPoolSearch.and("hostId", HostPoolSearch.entity().getHostId(), Op.EQ);
+        // Set criteria for pools
+        HostSearch.and("scope", HostSearch.entity().getScope(), Op.EQ);
+        HostSearch.and("removed", HostSearch.entity().getRemoved(), Op.NULL);
+        HostSearch.and("status", HostSearch.entity().getStatus(), Op.EQ);
+        HostSearch.join("hostJoin", HostPoolSearch, HostSearch.entity().getId(), HostPoolSearch.entity().getPoolId(), JoinBuilder.JoinType.INNER);
+        // Set criteria for tags
+        TagPoolSearch.and("name", TagPoolSearch.entity().getName(), Op.EQ);
+        TagPoolSearch.and("value", TagPoolSearch.entity().getValue(), Op.EQ);
+
+        HostSearch.join("tagJoin", TagPoolSearch, HostSearch.entity().getId(), TagPoolSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        HostSearch.done();
     }
 
     @Override
@@ -351,6 +376,23 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
                 throw new CloudRuntimeException("Unable to execute " + pstmt, e);
             }
         }
+    }
+
+    @Override
+    public List<StoragePoolVO> findLocalStoragePoolsByHostAndTags(long hostId, String[] tags) {
+
+        SearchCriteria<StoragePoolVO> sc = HostSearch.create();
+        sc.setJoinParameters("hostJoin", "hostId", hostId );
+        sc.setParameters("scope", ScopeType.HOST.toString());
+        sc.setParameters("status", Status.Up.toString());
+        if (!(tags == null || tags.length == 0 )) {
+            Map<String, String> details = tagsToDetails(tags);
+            for (Map.Entry<String, String> detail : details.entrySet()) {
+                sc.setJoinParameters("tagJoin","name", detail.getKey());
+                sc.setJoinParameters("tagJoin", "value", detail.getValue());
+            }
+        }
+        return listBy(sc);
     }
 
     @Override

@@ -1,9 +1,13 @@
 # Update the box
-apt-get -y update
+export DEBIAN_FRONTEND=noninteractive
+export DEBIAN_PRIORITY=critical
+
+apt-get -q -y --force-yes update
 #below are needed for ruby perhaps
 #apt-get -y install linux-headers-$(uname -r) build-essential
 #apt-get -y install zlib1g-dev libssl-dev libreadline-gplv2-dev
-apt-get -y install curl unzip
+apt-get -q -y --force-yes install curl unzip
+
 apt-get clean
 
 # Set up sudo, TODO: Check security concerns

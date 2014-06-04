@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -39,12 +39,17 @@ import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.sun.mail.smtp.SMTPMessage;
+import com.sun.mail.smtp.SMTPSSLTransport;
+import com.sun.mail.smtp.SMTPTransport;
+
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
@@ -77,7 +82,6 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -87,9 +91,6 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.sun.mail.smtp.SMTPMessage;
-import com.sun.mail.smtp.SMTPSSLTransport;
-import com.sun.mail.smtp.SMTPTransport;
 
 @Component
 @Local(value = { ProjectService.class, ProjectManager.class })
@@ -108,7 +109,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @Inject
     DomainManager _domainMgr;
     @Inject
-    ConfigurationManager _configMgr;  
+    ConfigurationManager _configMgr;
     @Inject
     ResourceLimitService _resourceLimitMgr;
     @Inject
@@ -257,7 +258,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_DELETE, eventDescription = "deleting project", async = true) 
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_DELETE, eventDescription = "deleting project", async = true)
     public boolean deleteProject(long projectId) {
         CallContext ctx = CallContext.current();
 
@@ -269,7 +270,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
         _accountMgr.checkAccess(ctx.getCallingAccount(),AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
-        return deleteProject(ctx.getCallingAccount(), ctx.getCallingUserId(), project);  
+        return deleteProject(ctx.getCallingAccount(), ctx.getCallingUserId(), project);
     }
 
     @DB
@@ -309,7 +310,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
     @DB
     private boolean cleanupProject(final Project project, AccountVO caller, Long callerUserId) {
-        boolean result=true; 
+        boolean result=true;
         //Delete project's account
         AccountVO account = _accountDao.findById(project.getProjectAccountId());
         s_logger.debug("Deleting projects " + project + " internal account id=" + account.getId() + " as a part of project cleanup...");
@@ -527,7 +528,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
         if (project == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
-            ex.addProxyObject(String.valueOf(projectId), "projectId");            
+            ex.addProxyObject(String.valueOf(projectId), "projectId");
             throw ex;
         }
 
@@ -586,7 +587,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             } else {
                 s_logger.warn("Failed to generate invitation for account " + account.getAccountName() + " to project id=" + project);
                 return false;
-            } 
+            }
         }
 
         if (email != null) {
@@ -597,7 +598,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             } else {
                 s_logger.warn("Failed to generate invitation for email " + email + " to project id=" + project);
                 return false;
-            } 
+            }
         }
 
         return false;
@@ -613,7 +614,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
         if (project == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
-            ex.addProxyObject(String.valueOf(projectId), "projectId");            
+            ex.addProxyObject(String.valueOf(projectId), "projectId");
             throw ex;
         }
 
@@ -626,7 +627,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             if ( domain != null ){
                 domainUuid = domain.getUuid();
             }
-            ex.addProxyObject(domainUuid, "domainId");           
+            ex.addProxyObject(domainUuid, "domainId");
+            throw ex;
         }
 
         //verify permissions
@@ -654,7 +656,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
 
 
-    public ProjectInvitation createAccountInvitation(Project project, Long accountId) { 
+    public ProjectInvitation createAccountInvitation(Project project, Long accountId) {
         if (activeInviteExists(project, accountId, null)) {
             throw new InvalidParameterValueException("There is already a pending invitation for account id=" + accountId + " to the project id=" + project);
         }
@@ -678,7 +680,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                 }
 
                 if (invite != null) {
-                    if (invite.getState() == ProjectInvitation.State.Completed || 
+                    if (invite.getState() == ProjectInvitation.State.Completed ||
                             (invite.getState() == ProjectInvitation.State.Pending && _projectInvitationDao.isActive(invite.getId(), _invitationTimeOut))) {
                         return true;
                     } else {
@@ -796,7 +798,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                             if (projectAccount != null) {
                                 s_logger.debug("Account " + accountNameFinal + " already added to the project id=" + projectId);
                             } else {
-                                assignAccountToProject(project, accountIdFinal, ProjectAccount.Role.Regular); 
+                                assignAccountToProject(project, accountIdFinal, ProjectAccount.Role.Regular);
                             }
                         } else {
                             s_logger.warn("Failed to update project invitation " + inviteFinal + " with state " + newState);
@@ -842,7 +844,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         if (currentState == State.Active) {
             s_logger.debug("The project id=" + projectId + " is already active, no need to activate it again");
             return project;
-        } 
+        }
 
         if (currentState != State.Suspended) {
             throw new InvalidParameterValueException("Can't activate the project in " + currentState + " state");
@@ -966,7 +968,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             }
         }
 
-        public void sendInvite(String token, String email, long projectId) throws MessagingException, UnsupportedEncodingException {  
+        public void sendInvite(String token, String email, long projectId) throws MessagingException, UnsupportedEncodingException {
             if (_smtpSession != null) {
                 InternetAddress address = null;
                 if (email != null) {
@@ -1025,7 +1027,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             return true;
         } else {
             s_logger.debug("Failed to remove project invitation id=" + id);
-            return false; 
+            return false;
         }
     }
 

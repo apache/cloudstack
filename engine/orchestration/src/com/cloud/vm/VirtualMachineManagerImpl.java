@@ -2954,12 +2954,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (cmd instanceof PingRoutingCommand) {
                 PingRoutingCommand ping = (PingRoutingCommand)cmd;
                 if (ping.getNewStates() != null && ping.getNewStates().size() > 0) {
-                    Commands commands = deltaHostSync(agentId, ping.getNewStates());
-                    if (commands.size() > 0) {
-                        try {
-                            _agentMgr.send(agentId, commands, this);
-                        } catch (final AgentUnavailableException e) {
-                            s_logger.warn("Agent is now unavailable", e);
+                    if (!VmJobEnabled.value()) {
+                        Commands commands = deltaHostSync(agentId, ping.getNewStates());
+                        if (commands.size() > 0) {
+                            try {
+                                _agentMgr.send(agentId, commands, this);
+                            } catch (final AgentUnavailableException e) {
+                                s_logger.warn("Agent is now unavailable", e);
+                            }
                         }
                     }
                 }
@@ -3983,6 +3985,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 s_logger.warn("VM " + vmId + " no longer exists when processing VM state report");
             }
         } else {
+            s_logger.info("There is pending job working on the VM. vm id: " + vmId + ", postpone power-change report by resetting power-change counters");
+
             // reset VM power state tracking so that we won't lost signal when VM has
             // been translated to
             _vmDao.resetVmPowerStateTracking(vmId);
@@ -3991,18 +3995,22 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private void handlePowerOnReportWithNoPendingJobsOnVM(VMInstanceVO vm) {
         //
-        //     1) handle left-over transitional VM states
+        //    1) handle left-over transitional VM states
         //    2) handle out of band VM live migration
         //    3) handle out of sync stationary states, marking VM from Stopped to Running with
         //       alert messages
         //
         switch (vm.getState()) {
         case Starting:
+            s_logger.info("VM " + vm.getInstanceName() + " is at " + vm.getState() + " and we received a power-on report while there is no pending jobs on it");
+
             try {
                 stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOnReport, vm.getPowerHostId());
             } catch (NoTransitionException e) {
                 s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
             }
+
+            s_logger.info("VM " + vm.getInstanceName() + " is sync-ed to at Running state according to power-on report from hypervisor");
 
             // we need to alert admin or user about this risky state transition
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
@@ -4018,10 +4026,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             } catch (NoTransitionException e) {
                 s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
             }
+
             break;
 
         case Stopping:
         case Stopped:
+            s_logger.info("VM " + vm.getInstanceName() + " is at " + vm.getState() + " and we received a power-on report while there is no pending jobs on it");
+
             try {
                 stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOnReport, vm.getPowerHostId());
             } catch (NoTransitionException e) {
@@ -4030,6 +4041,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
                     VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") state is sync-ed (" + vm.getState()
                             + " -> Running) from out-of-context transition. VM network environment may need to be reset");
+
+            s_logger.info("VM " + vm.getInstanceName() + " is sync-ed to at Running state according to power-on report from hypervisor");
             break;
 
         case Destroyed:
@@ -4039,11 +4052,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             break;
 
         case Migrating:
+            s_logger.info("VM " + vm.getInstanceName() + " is at " + vm.getState() + " and we received a power-on report while there is no pending jobs on it");
             try {
                 stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOnReport, vm.getPowerHostId());
             } catch (NoTransitionException e) {
                 s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
             }
+            s_logger.info("VM " + vm.getInstanceName() + " is sync-ed to at Running state according to power-on report from hypervisor");
             break;
 
         case Error:
@@ -4056,7 +4071,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private void handlePowerOffReportWithNoPendingJobsOnVM(VMInstanceVO vm) {
 
-        //     1) handle left-over transitional VM states
+        //    1) handle left-over transitional VM states
         //    2) handle out of sync stationary states, schedule force-stop to release resources
         //
         switch (vm.getState()) {
@@ -4065,14 +4080,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Running:
         case Stopped:
         case Migrating:
+            s_logger.info("VM " + vm.getInstanceName() + " is at " + vm.getState() + " and we received a power-off report while there is no pending jobs on it");
             try {
                 stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOffReport, vm.getPowerHostId());
             } catch (NoTransitionException e) {
                 s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
             }
+
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
                     VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") state is sync-ed (" + vm.getState()
                             + " -> Stopped) from out-of-context transition.");
+
+            s_logger.info("VM " + vm.getInstanceName() + " is sync-ed to at Stopped state according to power-on report from hypervisor");
+
             // TODO: we need to forcely release all resource allocation
             break;
 

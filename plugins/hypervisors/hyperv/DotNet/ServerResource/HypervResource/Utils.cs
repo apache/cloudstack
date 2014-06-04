@@ -167,8 +167,8 @@ namespace HypervResource
         public static string CleanString(string stringToClean)
         {
             string cleanString = null;
-            string regexQueryString = "(&|%26)?(password|accesskey|secretkey)(=|%3D).*?(?=(%26|[&'\"]))";
-            string regexJson = "\"(password|accesskey|secretkey)\":\".*?\",?";
+            string regexQueryString = "(&|%26)?(password|accesskey|secretkey|Password)(=|%3D).*?(?=(%26|[&'\"]))";
+            string regexJson = "\"(password|accesskey|secretkey|Password)\":\\s?\".*?\",?";
             cleanString = System.Text.RegularExpressions.Regex.Replace(stringToClean, regexQueryString, "");
             cleanString = System.Text.RegularExpressions.Regex.Replace(cleanString, regexJson, "");
             return cleanString;

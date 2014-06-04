@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,12 +17,27 @@
 """ BVT tests for Virtual Machine Life Cycle
 """
 #Import Local Modules
-import marvin
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackAPI import (detachIso,
+                                  attachIso,
+                                  recoverVirtualMachine,
+                                  destroyVirtualMachine)
+from marvin.integration.lib.utils import (cleanup_resources,
+                                           validateList,
+                                           get_hypervisor_type)
+from marvin.integration.lib.base import (Account,
+                                         ServiceOffering,
+                                         VirtualMachine,
+                                         Iso,
+                                         Host)
+from marvin.integration.lib.common import (get_domain,
+                                           get_zone,
+                                           get_template,
+                                           list_virtual_machines,
+                                           list_configurations,
+                                           list_routers,
+                                           list_isos)
+from marvin.codes import PASS
 from nose.plugins.attrib import attr
 #Import System modules
 import time
@@ -44,12 +59,12 @@ class Services:
                     "firstname": "Test",
                     "lastname": "User",
                     "username": "test",
-                    # Random characters are appended in create account to 
+                    # Random characters are appended in create account to
                     # ensure unique username generated each time
                     "password": "password",
                 },
                 "small":
-                # Create a small virtual machine instance with disk offering 
+                # Create a small virtual machine instance with disk offering
                 {
                     "displayname": "testserver",
                     "username": "root", # VM creds for SSH
@@ -60,7 +75,7 @@ class Services:
                     "publicport": 22,
                     "protocol": 'TCP',
                 },
-                "medium":   # Create a medium virtual machine instance 
+                "medium":   # Create a medium virtual machine instance
                 {
                     "displayname": "testserver",
                     "username": "root",
@@ -83,7 +98,7 @@ class Services:
                     },
                  "small":
                     {
-                     # Small service offering ID to for change VM 
+                     # Small service offering ID to for change VM
                      # service offering from medium to small
                         "name": "Small Instance",
                         "displaytext": "Small Instance",
@@ -109,7 +124,7 @@ class Services:
                     "url": "http://people.apache.org/~tsp/dummy.iso",
                      # Source URL where ISO is located
                     "ostype": 'CentOS 5.3 (64-bit)',
-                    "mode": 'HTTP_DOWNLOAD', # Downloading existing ISO 
+                    "mode": 'HTTP_DOWNLOAD', # Downloading existing ISO
                 },
                 "template": {
                     "displaytext": "Cent OS Template",
@@ -125,7 +140,6 @@ class Services:
             "ostype": 'CentOS 5.3 (64-bit)',
             # CentOS 5.3 (64-bit)
         }
-
 
 class TestDeployVM(cloudstackTestCase):
 
@@ -378,7 +392,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    
+
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_01_stop_vm(self):
         """Test Stop Virtual Machine
@@ -575,31 +589,37 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 2. DeployVM on suitable host (with another host in the cluster)
         # 3. Migrate the VM and assert migration successful
 
+        suitable_hosts = None
+
         hosts = Host.list(
             self.apiclient,
             zoneid=self.zone.id,
             type='Routing'
         )
-        self.assertEqual(
-            isinstance(hosts, list),
-            True,
-            "Check the number of hosts in the zone"
-        )
-        self.assertGreaterEqual(
-            len(hosts),
-            2,
-            "Atleast 2 hosts should be present for VM migration"
-        )
+        self.assertEqual(validateList(hosts)[0], PASS, "hosts list validation failed")
 
-        #identify suitable host
-        clusters = [h.clusterid for h in hosts]
-        #find hosts withe same clusterid
-        clusters = [cluster for index, cluster in enumerate(clusters) if clusters.count(cluster) > 1]
+        if len(hosts) < 2:
+            self.skipTest("At least two hosts should be present in the zone for migration")
 
-        if len(clusters) <= 1:
-            self.skipTest("Migration needs a cluster with at least two hosts")
+        hypervisor = str(get_hypervisor_type(self.apiclient)).lower()
 
-        suitable_hosts = [host for host in hosts if host.clusterid == clusters[0]]
+        # For KVM, two hosts used for migration should  be present in same cluster
+        # For XenServer and VMware, migration is possible between hosts belonging to different clusters
+        # with the help of XenMotion and Vmotion respectively.
+
+        if hypervisor == "kvm":
+            #identify suitable host
+            clusters = [h.clusterid for h in hosts]
+            #find hosts withe same clusterid
+            clusters = [cluster for index, cluster in enumerate(clusters) if clusters.count(cluster) > 1]
+
+            if len(clusters) <= 1:
+                self.skipTest("In KVM, Live Migration needs two hosts within same cluster")
+
+            suitable_hosts = [host for host in hosts if host.clusterid == clusters[0]]
+        else:
+            suitable_hosts = hosts
+
         target_host = suitable_hosts[0]
         migrate_host = suitable_hosts[1]
 

@@ -503,7 +503,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             byte[] details = proxy.getSessionDetails();
             status = gson.fromJson(details != null ? new String(details, Charset.forName("US-ASCII")) : null, ConsoleProxyStatus.class);
         } catch (Throwable e) {
-            s_logger.warn("Unable to parse proxy session details : " + proxy.getSessionDetails());
+            s_logger.warn("Unable to parse proxy session details : " + Arrays.toString(proxy.getSessionDetails()));
         }
 
         if (status != null && status.getConnections() != null) {
@@ -1714,7 +1714,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
     @Inject
     public void setConsoleProxyAllocators(List<ConsoleProxyAllocator> consoleProxyAllocators) {
-        this._consoleProxyAllocators = consoleProxyAllocators;
+        _consoleProxyAllocators = consoleProxyAllocators;
     }
 
 }

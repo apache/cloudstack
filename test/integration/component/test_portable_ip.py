@@ -15,14 +15,31 @@
 # specific language governing permissions and limitations
 # under the License.
 """ Tests for Portable public IP Ranges feature
+
+    Test Plan: https://cwiki.apache.org/confluence/display/CLOUDSTACK/Portable+IP+Test+Execution
+
+    Feature Specifications: https://cwiki.apache.org/confluence/display/CLOUDSTACK/portable+public+IP
 """
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.cloudstackException import cloudstackAPIException
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-from netaddr import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.integration.lib.utils import cleanup_resources
+from marvin.integration.lib.base import (Account,
+                                         NetworkOffering,
+                                         ServiceOffering,
+                                         Network,
+                                         VirtualMachine,
+                                         PublicIPAddress,
+                                         FireWallRule,
+                                         NATRule,
+                                         PortablePublicIpRange,
+                                         StaticNATRule)
+from marvin.integration.lib.common import (get_zone,
+                                           get_pod,
+                                           get_domain,
+                                           get_region,
+                                           get_template,
+                                           get_portable_ip_range_services,
+                                           is_public_ip_in_correct_state)
+from netaddr import IPAddress
 from marvin.sshClient import SshClient
 
 from nose.plugins.attrib import attr
@@ -147,7 +164,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
         cls.services["regionid"] = cls.region.id
- 
+
         cls._cleanup = []
         return
 
@@ -255,7 +272,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
 
         portable_ip_range_services["regionid"] = -1
 
-        #create new portable ip range 
+        #create new portable ip range
         self.debug("Trying to create portable ip range with wrong region id")
 
         with self.assertRaises(Exception):
@@ -655,7 +672,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
                      self.portable_ip_range.id))
 
         self.cleanup.append(self.portable_ip_range)
- 
+
         return
 
     def tearDown(self):
@@ -715,7 +732,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
         publicipaddressportable.delete(self.apiclient)
 
         return
- 
+
     @attr(tags=["advanced"])
     def test_associate_ip_address_invalid_zone(self):
         """ Test Associate IP with invalid zone id
@@ -739,7 +756,6 @@ class TestAssociatePublicIp(cloudstackTestCase):
         self.debug("Associating ip address failed")
         return
 
-    @unittest.skip("SSH failing to portable ip, need to investigate the issue")
     @attr(tags=["advanced"])
     def test_associate_ip_address_services_enable_disable(self):
         """ Test enabling and disabling NAT, Firewall services on portable ip
@@ -785,9 +801,15 @@ class TestAssociatePublicIp(cloudstackTestCase):
                                     )
         self.debug("created public ip address (portable): %s" % portableip.ipaddress.ipaddress)
 
-        # Open up firewall port for SSH
-        self.debug("Opening firewall on the portable public ip")
-        fw_rule = FireWallRule.create(
+        ipInCorrectState = is_public_ip_in_correct_state(self.apiclient, portableip.ipaddress.id, state="allocated")
+        if not ipInCorrectState:
+            portableip.delete(self.apiclient)
+            self.fail("Portable IP not in allocated state even after 10 mins")
+
+        try:
+            # Open up firewall port for SSH
+            self.debug("Opening firewall on the portable public ip")
+            fw_rule = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=portableip.ipaddress.id,
                             protocol=self.services["natrule"]["protocol"],
@@ -796,14 +818,17 @@ class TestAssociatePublicIp(cloudstackTestCase):
                             endport=self.services["natrule"]["publicport"]
                             )
 
-        #Create NAT rule
-        self.debug("Creating NAT rule on the portable public ip")
-        nat_rule = NATRule.create(
+            #Create NAT rule
+            self.debug("Creating NAT rule on the portable public ip")
+            nat_rule = NATRule.create(
                         self.apiclient,
                         self.virtual_machine,
                         self.services["natrule"],
                         portableip.ipaddress.id
                         )
+        except Exception as e:
+            portableip.delete(self.apiclient)
+            self.fail("Error: %s" % e)
 
         try:
 
@@ -991,7 +1016,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
                      new_portable_ip_range.id))
 
         self.cleanup.append(new_portable_ip_range)
- 
+
         return
 
     def tearDown(self):
@@ -1002,7 +1027,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
- 
+
     @attr(tags=["advanced"])
     def test_disassociate_ip_address_no_services(self):
         """ Test disassociating portable ip
@@ -1054,9 +1079,15 @@ class TestDisassociatePublicIp(cloudstackTestCase):
                                     )
         self.debug("created public ip address (portable): %s" % portableip.ipaddress.ipaddress)
 
-        # Open up firewall port for SSH
-        self.debug("Opening firewall on the portable public ip")
-        FireWallRule.create(
+        ipInCorrectState = is_public_ip_in_correct_state(self.apiclient, portableip.ipaddress.id, state="allocated")
+        if not ipInCorrectState:
+            portableip.delete(self.apiclient)
+            self.fail("Portable IP not in allocated state even after 10 mins")
+
+        try:
+            # Open up firewall port for SSH
+            self.debug("Opening firewall on the portable public ip")
+            FireWallRule.create(
                             self.apiclient,
                             ipaddressid=portableip.ipaddress.id,
                             protocol=self.services["natrule"]["protocol"],
@@ -1065,14 +1096,17 @@ class TestDisassociatePublicIp(cloudstackTestCase):
                             endport=self.services["natrule"]["publicport"]
                             )
 
-        #Create NAT rule
-        self.debug("Creating NAT rule on the portable public ip")
-        NATRule.create(
+            #Create NAT rule
+            self.debug("Creating NAT rule on the portable public ip")
+            NATRule.create(
                         self.apiclient,
                         self.virtual_machine,
                         self.services["natrule"],
                         portableip.ipaddress.id
                         )
+        except Exception as e:
+            portableip.delete(self.apiclient)
+            self.fail("Error: %s" % e)
 
         try:
             self.debug("Disassociating portable ip: %s with id: %s" %
@@ -1310,9 +1344,16 @@ class TestDeleteAccount(cloudstackTestCase):
                                     )
         self.debug("created public ip address (portable): %s" % portableip.ipaddress.ipaddress)
 
-        # Open up firewall port for SSH
-        self.debug("Opening firewall on the portable public ip")
-        FireWallRule.create(
+        ipInCorrectState = is_public_ip_in_correct_state(self.apiclient, portableip.ipaddress.id, state="allocated")
+        if not ipInCorrectState:
+            portableip.delete(self.apiclient)
+            self.account.delete(self.apiclient)
+            self.fail("Portable IP not in allocated state even after 10 mins")
+
+        try:
+            # Open up firewall port for SSH
+            self.debug("Opening firewall on the portable public ip")
+            FireWallRule.create(
                             self.apiclient,
                             ipaddressid=portableip.ipaddress.id,
                             protocol=self.services["natrule"]["protocol"],
@@ -1321,14 +1362,18 @@ class TestDeleteAccount(cloudstackTestCase):
                             endport=self.services["natrule"]["publicport"]
                             )
 
-        #Create NAT rule
-        self.debug("Creating NAT rule on the portable public ip")
-        NATRule.create(
+            #Create NAT rule
+            self.debug("Creating NAT rule on the portable public ip")
+            NATRule.create(
                         self.apiclient,
                         self.virtual_machine,
                         self.services["natrule"],
                         portableip.ipaddress.id
                         )
+        except Exception as e:
+            portableip.delete(self.apiclient)
+            self.account.delete(self.apiclient)
+            self.fail("Error %s" % e)
 
         self.debug("Deleting account: %s :" % self.account.name)
 
@@ -1494,19 +1539,28 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
                                     networkid=self.network1.id,
                                     isportable=True
                                     )
+
+        ipInCorrectState = is_public_ip_in_correct_state(self.apiclient, portableip.ipaddress.id, state="allocated")
+        if not ipInCorrectState:
+            portableip.delete(self.apiclient)
+            self.fail("Portable IP not in allocated state even after 10 mins")
+
         self.debug("created public ip address (portable): %s" % portableip.ipaddress.ipaddress)
         #Create NAT rule
         self.debug("Creating NAT rule on the portable public ip")
-        # Enable Static NAT for VM
-        StaticNATRule.enable(
+
+        try:
+            # Enable Static NAT for VM
+            StaticNATRule.enable(
                              self.apiclient,
                              portableip.ipaddress.id,
                              self.virtual_machine2.id,
                              networkid=self.network2.id
                             )
-        # Open up firewall port for SSH
-        self.debug("Opening firewall on the portable public ip")
-        fw_rule = FireWallRule.create(
+
+            # Open up firewall port for SSH
+            self.debug("Opening firewall on the portable public ip")
+            FireWallRule.create(
                             self.apiclient,
                             ipaddressid=portableip.ipaddress.id,
                             protocol=self.services["natrule"]["protocol"],
@@ -1514,6 +1568,10 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
                             startport=self.services["natrule"]["publicport"],
                             endport=self.services["natrule"]["publicport"]
                             )
+        except Exception as e:
+            portableip.delete(self.apiclient)
+            self.fail("Error: %s" % e)
+
         static_nat_list = PublicIPAddress.list(
                                     self.apiclient,
                                     associatednetworkid=self.network2.id,

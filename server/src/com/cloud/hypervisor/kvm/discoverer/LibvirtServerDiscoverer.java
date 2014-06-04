@@ -28,8 +28,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -41,7 +39,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
@@ -49,10 +46,8 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
@@ -71,18 +66,11 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     private String _kvmPublicNic;
     private String _kvmGuestNic;
     @Inject
-    HostDao _hostDao = null;
-    @Inject
-    ClusterDao _clusterDao;
-    @Inject
     ResourceManager _resourceMgr;
     @Inject
     AgentManager _agentMgr;
-    @Inject
-    ConfigurationDao _configDao;
-    @Inject
-    NetworkModel _networkMgr;
 
+    @Override
     public abstract Hypervisor.HypervisorType getHypervisorType();
 
     @Override
