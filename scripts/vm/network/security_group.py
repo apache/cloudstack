@@ -688,6 +688,8 @@ def cleanup_rules():
         chainscmd = """iptables-save | awk '{for(i=1;i<=NF;i++){ if($i ~ /[i|r|s|v]-[0-9]/){print $i} } }'"""
         chains = execute(chainscmd).split('\n')
         cleanup = []
+        results = []
+        results = virshlist('paused', 'running')
         for chain in chains:
             if chain == "":
                 continue
@@ -700,14 +702,8 @@ def cleanup_rules():
 
             vm_name = chain
 
-            result = virshdomstate(vm_name)
-
-            if result == None or len(result) == 0:
-                logging.debug("chain " + chain + " does not correspond to a vm, cleaning up iptable rules")
-                cleanup.append(vm_name)
-                continue
-            if not (result == "running" or result == "paused"):
-                logging.debug("vm " + vm_name + " is not running or paused, cleaning up iptable rules")
+            if not vm_name in results:
+                logging.debug("chain " + chain + " does not correspond to a vm or vm is not running or paused, cleaning up iptable rules")
                 cleanup.append(vm_name)
 
         chainscmd = """ebtables-save | awk '{for(i=1;i<=NF;i++){ if($i ~ /[i|r|s|v]-[0-9]/){print $i} } }'"""
@@ -720,17 +716,11 @@ def cleanup_rules():
             if not chain.endswith("VM"):
                 chain = chain.split("VM")[0] + "VM"
 
-                vm_name = chain
+            vm_name = chain
 
-                result = virshdomstate(vm_name)
-
-                if result == None or len(result) == 0:
-                    logging.debug("chain " + chain + " does not correspond to a vm, cleaning up ebtable rules")
-                    cleanup.append(vm_name)
-                    continue
-                if not (result == "running" or result == "paused"):
-                    logging.debug("vm " + vm_name + " is not running or paused, cleaning up ebtable rules")
-                    cleanup.append(vm_name)
+            if not vm_name in results:
+                logging.debug("chain " + chain + " does not correspond to a vm or vm is not running or paused, cleaning up ebtable rules")
+                cleanup.append(vm_name)
 
         for vmname in cleanup:
             destroy_network_rules_for_vm(vmname)
