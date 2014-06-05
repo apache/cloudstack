@@ -101,6 +101,12 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
     @Override
     public Boolean isVmSnapshotEnabled(HypervisorType hypervisorType, String hypervisorVersion) {
         HypervisorCapabilitiesVO result = getCapabilities(hypervisorType, hypervisorVersion);
-        return result.getVmSnapshotEnabled();
+        // if default capability profile not present for any hypervisor type result will be null.
+        // So returning vm snapshot not supported if there is no default capability profile for hypervisor.
+        if (result != null) {
+            return result.getVmSnapshotEnabled();
+        } else {
+            return false;
+        }
     }
 }
