@@ -45,7 +45,7 @@ import com.cloud.utils.component.AdapterBase;
 @Local(value = {BackoffAlgorithm.class})
 public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm, ConstantTimeBackoffMBean {
     long _time;
-    private final ConcurrentHashMap<String, Thread> _asleep = new ConcurrentHashMap<String, Thread>();
+    private final Map<String, Thread> _asleep = new ConcurrentHashMap<String, Thread>();
     private final static Log LOG = LogFactory.getLog(ConstantTimeBackoff.class);
 
     @Override
