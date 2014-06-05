@@ -901,6 +901,14 @@
                                                     });
                                                 }
 
+                                              
+                                                var drModuleIncluded = isModuleIncluded("dr");
+                                                var volumeDrEnabled = false;                                               
+                                                if (drModuleIncluded) {
+                                                    volumeDrEnabled = cloudStack.dr.sharedFunctions.isVolumeDrEnabled(args.context.volumes[0]);                                                    
+                                                }    
+                                                
+                                                
                                                 $(['Running', 'Stopped']).each(function() {
                                                     $.ajax({
                                                         url: createURL('listVirtualMachines'),
@@ -910,11 +918,21 @@
                                                         async: false,
                                                         success: function(json) {
                                                             var instanceObjs = json.listvirtualmachinesresponse.virtualmachine;
-                                                            $(instanceObjs).each(function() {
-                                                                items.push({
-                                                                    id: this.id,
-                                                                    description: this.displayname ? this.displayname : this.name
-                                                                });
+                                                            $(instanceObjs).each(function() {                                                               
+                                                                if (drModuleIncluded) {
+                                                                    var vmDrEnabled = cloudStack.dr.sharedFunctions.isVmDrEnabled(this);
+                                                                    if (vmDrEnabled == volumeDrEnabled) {
+                                                                        items.push({
+                                                                            id: this.id,
+                                                                            description: this.displayname ? this.displayname : this.name
+                                                                        });
+                                                                    } 
+                                                                } else {
+                                                                    items.push({
+                                                                        id: this.id,
+                                                                        description: this.displayname ? this.displayname : this.name
+                                                                    });
+                                                                }                                                                
                                                             });
                                                         }
                                                     });
@@ -1989,7 +2007,7 @@
         }
 
         if (jsonObj.state != "Creating") {
-            if (jsonObj.type == "ROOT") {
+            if (jsonObj.type == "ROOT") {                
                 if (jsonObj.vmstate == "Stopped") {
                     allowedActions.push("createTemplate");
                 }
