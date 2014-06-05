@@ -71,6 +71,7 @@ class DBDeployer(object):
     success = False
     magicString = 'This_is_a_magic_string_i_think_no_one_will_duplicate'
     tmpMysqlFile = os.path.join(os.path.expanduser('~/'), 'cloudstackmysql.tmp.sql')
+    mysqlBinPath = None
 
     def preRun(self):
         def backUpDbDotProperties():
@@ -138,9 +139,12 @@ class DBDeployer(object):
 
         kwargs['port'] = self.port
         kwargs['host'] = self.host
-
+        if self.mysqlBinPath is not None:
+          mysqlPath = '"' + self.mysqlBinPath + os.sep + "mysql" + '"'
+        else:
+          mysqlPath = "mysql"
         try:
-            mysqlCmds = ['mysql', '--user=%s'%kwargs['user'], '--host=%s'%kwargs['host'], '--port=%s'%kwargs['port']]
+            mysqlCmds = [mysqlPath, '--user=%s'%kwargs['user'], '--host=%s'%kwargs['host'], '--port=%s'%kwargs['port']]
             if kwargs.has_key('passwd'):
                 mysqlCmds.append('--password=%s'%kwargs['passwd'])
             file(self.tmpMysqlFile, 'w').write(text)
@@ -462,6 +466,8 @@ for example:
               self.encryptionKeyFile = self.options.encryptionKeyFile
             if self.options.encryptionJarPath:
               self.encryptionJarPath = self.options.encryptionJarPath
+            if self.options.mysqlbinpath:
+              self.mysqlBinPath = self.options.mysqlbinpath
 
         def parseUserAndPassword(cred):
             stuff = cred.split(':')
@@ -582,6 +588,7 @@ for example:
         self.parser.add_option("-f", "--db-files-path", action="store", dest="dbFilesPath", help="The path to find sql files to create initial database(s)")
         self.parser.add_option("-j", "--encryption-jar-path", action="store", dest="encryptionJarPath", help="The path to the jasypt library to be used to encrypt the values in db.properties")
         self.parser.add_option("-n", "--encryption-key-file", action="store", dest="encryptionKeyFile", help="The name of the file in which encryption key to be generated")
+        self.parser.add_option("-b", "--mysql-bin-path", action="store", dest="mysqlbinpath", help="The mysql installed bin path")
 
         (self.options, self.args) = self.parser.parse_args()
         parseCasualCredit()
