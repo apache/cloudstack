@@ -2546,7 +2546,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (vmTypeStr != null) {
-            sc.addAnd("vm_type", SearchCriteria.Op.EQ, vmTypeStr);
+            sc.addAnd("vmType", SearchCriteria.Op.EQ, vmTypeStr);
         }
 
         return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
