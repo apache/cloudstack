@@ -184,6 +184,7 @@
                                 // Make copy of previous row, in case data is needed
                                 $prevRow = $instanceRow.clone();
                                 if (multiSelect) {
+                                    $prevRow.find('.quick-view').addClass('loading-overlay');
                                     $.each($prevRow, function(index, elem) {
                                         $(elem).data($($instanceRow[index]).data());
                                     });
@@ -363,6 +364,9 @@
                                 );
                             },
                             error: function(message) {
+                                $instanceRow.removeClass('loading');
+                                $instanceRow.find('td.quick-view').removeClass('loading-overlay');
+                                
                                 if (!isHeader) {
                                     if (($.isPlainObject(args.action.createForm) && args.action.addRow != 'false') ||
                                         (!args.action.createForm && args.action.addRow == 'true')) {
