@@ -1662,6 +1662,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (volume.getInstanceId() != null)
             vm = _vmInstanceDao.findById(volume.getInstanceId());
 
+        if (volume.getHypervisorType() == HypervisorType.Hyperv) {
+            throw new InvalidParameterValueException("Volume Snapshots are not supported on Hypervisor Type : Hyper-V");
+        }
         if (vm != null) {
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
