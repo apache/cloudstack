@@ -1119,6 +1119,16 @@ cloudStack.converters = {
     }
 }
 
+function isModuleIncluded(moduleName) {    
+    for(var moduleIndex = 0; moduleIndex < cloudStack.modules.length; moduleIndex++) {
+        if (cloudStack.modules[moduleIndex] == moduleName) {
+            return true;            
+            break;            
+        }
+    }    
+    return false;
+}
+
 //data parameter passed to API call in listView
 
 function listViewDataProvider(args, data, options) {
