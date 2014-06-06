@@ -1878,6 +1878,9 @@
                                             jsonObj.xenserverToolsVersion61plus = false;
                                     }
                                     
+                                    //if DR module is included                                   
+                                    addExtraPropertiesIfDrModuleIncluded(jsonObj, "UserVM");
+                                                                        
                                     args.response.success({
                                         actionFilter: vmActionfilter,
                                         data: jsonObj
