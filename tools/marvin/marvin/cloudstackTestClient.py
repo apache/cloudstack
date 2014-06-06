@@ -25,6 +25,7 @@ from marvin.configGenerator import ConfigManager
 from marvin.cloudstackException import GetDetailExceptionInfo
 from marvin.lib.utils import (random_gen, validateList)
 from marvin.cloudstackAPI.cloudstackAPIClient import CloudStackAPIClient
+import copy
 
 class CSTestClient(object):
 
@@ -82,8 +83,7 @@ class CSTestClient(object):
                 Tests are to Run
         @Output : Returns the Parsed Test Data Dictionary
         '''
-        out = self.__parsedTestDataConfig
-        return out
+        return copy.deepcopy(self.__parsedTestDataConfig)
 
     def getZoneForTests(self):
         '''

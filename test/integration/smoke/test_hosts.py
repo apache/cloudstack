@@ -52,7 +52,7 @@ class TestHosts(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["selfservice"])
+    #@attr(tags=["selfservice"])
     def test_01_clusters(self):
         """Test Add clusters & hosts - simulator
 

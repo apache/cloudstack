@@ -531,29 +531,19 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         self.vm_to_migrate.migrate(self.apiclient, migrate_host.id)
 
-        list_vm_response = VirtualMachine.list(
-                                            self.apiclient,
-                                            id=self.vm_to_migrate.id
-                                            )
-        self.assertNotEqual(
-                            list_vm_response,
-                            None,
-                            "Check virtual machine is listed"
-                        )
-
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-                            vm_response.id,
-                            self.vm_to_migrate.id,
-                            "Check virtual machine ID of migrated VM"
-                        )
-
-        self.assertEqual(
-                            vm_response.hostid,
-                            migrate_host.id,
-                            "Check destination hostID of migrated VM"
-                        )
+        retries_cnt = 3
+        while retries_cnt >=0:
+            list_vm_response = VirtualMachine.list(self.apiclient,
+                                                   id=self.vm_to_migrate.id)
+            self.assertNotEqual(
+                                list_vm_response,
+                                None,
+                                "Check virtual machine is listed"
+                               )
+            vm_response = list_vm_response[0]
+            self.assertEqual(vm_response.id,self.vm_to_migrate.id,"Check virtual machine ID of migrated VM")
+            self.assertEqual(vm_response.hostid,migrate_host.id,"Check destination hostID of migrated VM")
+            retries_cnt = retries_cnt - 1
         return
 
     @attr(configuration = "expunge.interval")
@@ -592,19 +582,15 @@ class TestVMLifeCycle(cloudstackTestCase):
                                                 self.apiclient,
                                                 id=self.small_virtual_machine.id
                                                 )
-            if list_vm_response:
-                time.sleep(expunge_cycle)
-                wait_time = wait_time - expunge_cycle
-            else:
+            if not list_vm_response:
                 break
+            self.debug("Waiting for VM to expunge")
+            time.sleep(expunge_cycle)
+            wait_time = wait_time - expunge_cycle
 
         self.debug("listVirtualMachines response: %s" % list_vm_response)
 
-        self.assertEqual(
-                        list_vm_response,
-                        None,
-                        "Check Expunged virtual machine is in listVirtualMachines response"
-                    )
+        self.assertEqual(list_vm_response,None,"Check Expunged virtual machine is in listVirtualMachines response")
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "provisioning"])
