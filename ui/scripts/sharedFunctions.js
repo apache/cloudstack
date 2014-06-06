@@ -51,8 +51,6 @@ var pageSize = 20;
 
 var drModuleIncluded = false;
 
-var rootAccountId = 1;
-
 //async action
 var pollAsyncJobResult = function(args) {
     $.ajax({
@@ -1183,10 +1181,7 @@ var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {
     jsonObj.networkofferingidText = jsonObj.networkofferingid;
 
     if (jsonObj.acltype == "Domain") {
-        if (jsonObj.domainid == rootAccountId)
-            jsonObj.scope = "All";
-        else
-            jsonObj.scope = "Domain (" + jsonObj.domain + ")";
+        jsonObj.scope = "Domain (" + jsonObj.domain + ")";
     } else if (jsonObj.acltype == "Account") {
         if (jsonObj.project != null)
             jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.project + ")";
