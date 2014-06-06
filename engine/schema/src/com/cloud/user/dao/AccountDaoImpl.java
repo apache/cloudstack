@@ -278,4 +278,20 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         return customSearch(sc, null);
     }
 
+    @Override
+    public long getDomainIdForGivenAccountId(long id) {
+        long domain_id = -1;
+        try {
+            AccountVO account_vo = findById(id);
+            domain_id = account_vo.getDomainId();
+        }
+        catch (Exception e) {
+            s_logger.warn("getDomainIdForGivenAccountId: Exception :" + e.getMessage());
+        }
+        finally {
+            return domain_id;
+        }
+    }
+
+
 }
