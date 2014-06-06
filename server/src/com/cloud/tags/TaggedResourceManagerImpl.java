@@ -25,6 +25,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
@@ -33,7 +35,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.domain.Domain;
 import com.cloud.domain.PartOf;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -136,6 +137,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     ResourceTagJoinDao _resourceTagJoinDao;
     @Inject
     DomainManager _domainMgr;
+    @Inject
+    AccountDao _accountDao;
 
 
     @Override
@@ -185,10 +188,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             accountId = Account.ACCOUNT_ID_SYSTEM;
         }
 
-        if (domainId == null) {
-            domainId = Domain.ROOT_DOMAIN;
+        if ( ((accountId != null) && (domainId == -1)) || (domainId == null) )
+        {
+            domainId = _accountDao.getDomainIdForGivenAccountId(accountId);
         }
-
         return new Pair<Long, Long>(accountId, domainId);
     }
 
@@ -226,6 +229,11 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                         Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
                         Long domainId = accountDomainPair.second();
                         Long accountId = accountDomainPair.first();
+
+                        if ((domainId != null) && (domainId == -1))
+                        {
+                           throw new CloudRuntimeException("Invalid DomainId : -1");
+                        }
                         if (accountId != null) {
                             _accountMgr.checkAccess(caller, null, false, _accountMgr.getAccount(accountId));
                         } else if (domainId != null && !_accountMgr.isNormalUser(caller.getId())) {
