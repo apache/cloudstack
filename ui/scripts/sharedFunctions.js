@@ -49,6 +49,8 @@ var md5HashedLogin = false;
 var pageSize = 20;
 //var pageSize = 1; //for testing only
 
+var drModuleIncluded = false;
+
 var rootAccountId = 1;
 
 //async action
