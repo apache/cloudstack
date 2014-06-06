@@ -490,5 +490,8 @@
         }
 
         document.title = _l('label.app.name');
+               
+        // set value to global variable
+        drModuleIncluded = isModuleIncluded("dr");     
     });
 })(cloudStack, jQuery);

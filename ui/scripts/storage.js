@@ -901,13 +901,10 @@
                                                     });
                                                 }
 
-                                              
-                                                var drModuleIncluded = isModuleIncluded("dr");
                                                 var volumeDrEnabled = false;                                               
                                                 if (drModuleIncluded) {
                                                     volumeDrEnabled = cloudStack.dr.sharedFunctions.isVolumeDrEnabled(args.context.volumes[0]);                                                    
                                                 }    
-                                                
                                                 
                                                 $(['Running', 'Stopped']).each(function() {
                                                     $.ajax({
