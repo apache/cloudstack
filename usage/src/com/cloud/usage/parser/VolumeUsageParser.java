@@ -85,7 +85,7 @@ public class VolumeUsageParser {
             long zoneId = usageVol.getZoneId();
             Long templateId = usageVol.getTemplateId();
             long size = usageVol.getSize();
-            String key = ""+volId;
+            String key = volId + "-" + doId + "-" + size;
 
             diskOfferingMap.put(key, new VolInfo(volId, zoneId, doId, templateId, size));
             
