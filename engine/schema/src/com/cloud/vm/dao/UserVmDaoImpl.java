@@ -301,6 +301,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         if (UserVmSearch == null) {
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+            nicSearch.and("removed", nicSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
             nicSearch.and().op("ip4Address", nicSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);
             nicSearch.or("ip6Address", nicSearch.entity().getIp6Address(), SearchCriteria.Op.NNULL);
             nicSearch.cp();
