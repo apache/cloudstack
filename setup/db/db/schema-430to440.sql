@@ -220,7 +220,7 @@ CREATE VIEW `cloud`.`volume_view` AS
             left join
         `cloud`.`cluster` ON storage_pool.cluster_id = cluster.id
             left join
-        `cloud`.`vm_template` ON volumes.template_id = vm_template.id 
+        `cloud`.`vm_template` ON volumes.template_id = vm_template.id
             left join
         `cloud`.`vm_template` iso ON iso.id = volumes.iso_id
             left join
@@ -1705,3 +1705,24 @@ alter table `cloud`.`vlan` add column created datetime NULL COMMENT 'date create
 alter table `cloud`.`user_ip_address` drop key public_ip_address;
 alter table `cloud`.`user_ip_address` add UNIQUE KEY public_ip_address (public_ip_address,source_network_id, removed);
 
+
+CREATE TABLE `cloud`.`load_balancer_stickiness_policy_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `lb_policy_id` bigint unsigned NOT NULL COMMENT 'resource id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_lb_stickiness_policy_details__lb_stickiness_policy_id` FOREIGN KEY `fk_lb_stickiness_policy_details__lb_stickiness_policy_id`(`lb_policy_id`) REFERENCES `load_balancer_stickiness_policies`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE `cloud`.`load_balancer_healthcheck_policy_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `lb_policy_id` bigint NOT NULL COMMENT 'resource id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_lb_healthcheck_policy_details__lb_healthcheck_policy_id` FOREIGN KEY `fk_lb_healthcheck_policy_details__lb_healthcheck_policy_id`(`lb_policy_id`) REFERENCES `load_balancer_healthcheck_policies`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
