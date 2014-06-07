@@ -21,10 +21,11 @@ package org.apache.cloudstack.framework.async;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
-import net.sf.cglib.proxy.Callback;
-import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
@@ -39,6 +40,7 @@ public class AsyncCallbackDispatcher<T, R> implements AsyncCompletionCallback {
     private Object _contextObject;
     private Object _resultObject;
     private AsyncCallbackDriver _driver = new InplaceAsyncCallbackDriver();
+    private static Map<Class, Enhancer> enMap = new HashMap<Class, Enhancer>();
 
     private AsyncCallbackDispatcher(T target) {
         assert (target != null);
@@ -58,39 +60,45 @@ public class AsyncCallbackDispatcher<T, R> implements AsyncCompletionCallback {
 
     @SuppressWarnings("unchecked")
     public T getTarget() {
-        Enhancer en = new Enhancer();
-
         Class<?> clz = _targetObject.getClass();
         String clzName = clz.getName();
         if (clzName.contains("EnhancerByCloudStack"))
             clz = clz.getSuperclass();
 
-        en.setSuperclass(clz);
-        en.setCallbacks(new Callback[] {new MethodInterceptor() {
-            @Override
-            public Object intercept(Object arg0, Method arg1, Object[] arg2, MethodProxy arg3) throws Throwable {
-                _callbackMethod = arg1;
-                _callbackMethod.setAccessible(true);
-                return null;
+
+        Enhancer en = null;
+        synchronized (enMap) {
+            en = enMap.get(clz);
+            if (en == null) {
+                en = new Enhancer();
+
+                en.setSuperclass(clz);
+                en.setCallback(new MethodInterceptor() {
+                    @Override
+                    public Object intercept(Object arg0, Method arg1, Object[] arg2, MethodProxy arg3) throws Throwable {
+                        return null;
+                        }
+                    });
+                enMap.put(clz, en);
             }
-        }, new MethodInterceptor() {
-            @Override
-            public Object intercept(Object arg0, Method arg1, Object[] arg2, MethodProxy arg3) throws Throwable {
-                return null;
-            }
-        }});
-        en.setCallbackFilter(new CallbackFilter() {
-            @Override
-            public int accept(Method method) {
-                if (method.getParameterTypes().length == 0 && method.getName().equals("finalize")) {
-                    return 1;
-                }
-                return 0;
-            }
-        });
+        }
 
         try {
-            return (T)en.create();
+            T t = (T)en.create();
+            Factory factory = (Factory)t;
+            factory.setCallback(0, new MethodInterceptor() {
+                @Override
+                public Object intercept(Object arg0, Method arg1, Object[] arg2, MethodProxy arg3) throws Throwable {
+                    if (arg1.getParameterTypes().length == 0 && arg1.getName().equals("finalize")) {
+                        return null;
+                    } else {
+                        _callbackMethod = arg1;
+                        _callbackMethod.setAccessible(true);
+                        return null;
+                    }
+                }
+            });
+            return t;
         } catch (Throwable e) {
             s_logger.error("Unexpected exception", e);
         }
