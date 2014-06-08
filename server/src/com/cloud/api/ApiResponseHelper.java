@@ -3306,6 +3306,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             //Hypervisor Type
             usageRecResponse.setType(usageRecord.getType());
+            //Dynamic compute offerings details
+            usageRecResponse.setCpuNumber(usageRecord.getCpuCores());
+            usageRecResponse.setCpuSpeed(usageRecord.getCpuSpeed());
+            usageRecResponse.setMemory(usageRecord.getMemory());
 
         } else if (usageRecord.getUsageType() == UsageTypes.IP_ADDRESS) {
             //isSourceNAT

@@ -42,8 +42,8 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
         + "WHERE account_id = ? and vm_instance_id = ? and usage_type = ? and end_date IS NULL";
     protected static final String DELETE_USAGE_INSTANCE_SQL = "DELETE FROM usage_vm_instance WHERE account_id = ? and vm_instance_id = ? and usage_type = ?";
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT =
-        "SELECT usage_type, zone_id, account_id, vm_instance_id, vm_name, service_offering_id, template_id, hypervisor_type, start_date, end_date "
-            + "FROM usage_vm_instance " + "WHERE account_id = ? AND ((end_date IS NULL) OR (start_date BETWEEN ? AND ?) OR "
+        "SELECT usage_type, zone_id, account_id, vm_instance_id, vm_name, cpu_speed, cpu_cores, memory, service_offering_id, template_id, hypervisor_type, start_date, end_date "
+            + "FROM usage_vm_instance WHERE account_id = ? AND ((end_date IS NULL) OR (start_date BETWEEN ? AND ?) OR "
             + "      (end_date BETWEEN ? AND ?) OR ((start_date <= ?) AND (end_date >= ?)))";
 
     public UsageVMInstanceDaoImpl() {
@@ -113,11 +113,23 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
                 long r_accountId = rs.getLong(3);
                 long r_vmId = rs.getLong(4);
                 String r_vmName = rs.getString(5);
-                long r_soId = rs.getLong(6);
-                long r_tId = rs.getLong(7);
-                String hypervisorType = rs.getString(8);
-                String r_startDate = rs.getString(9);
-                String r_endDate = rs.getString(10);
+                Long r_cpuSpeed = rs.getLong(6);
+                if (rs.wasNull()) {
+                    r_cpuSpeed = null;
+                }
+                Long r_cpuCores = rs.getLong(7);
+                if (rs.wasNull()) {
+                    r_cpuCores = null;
+                }
+                Long r_memory = rs.getLong(8);
+                if (rs.wasNull()) {
+                    r_memory = null;
+                }
+                long r_soId = rs.getLong(9);
+                long r_tId = rs.getLong(10);
+                String hypervisorType = rs.getString(11);
+                String r_startDate = rs.getString(12);
+                String r_endDate = rs.getString(13);
                 Date instanceStartDate = null;
                 Date instanceEndDate = null;
                 if (r_startDate != null) {
@@ -127,7 +139,7 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
                     instanceEndDate = DateUtil.parseDateString(s_gmtTimeZone, r_endDate);
                 }
                 UsageVMInstanceVO usageInstance =
-                    new UsageVMInstanceVO(r_usageType, r_zoneId, r_accountId, r_vmId, r_vmName, r_soId, r_tId, hypervisorType, instanceStartDate, instanceEndDate);
+                    new UsageVMInstanceVO(r_usageType, r_zoneId, r_accountId, r_vmId, r_vmName, r_soId, r_tId, r_cpuSpeed, r_cpuCores, r_memory, hypervisorType, instanceStartDate, instanceEndDate);
                 usageInstances.add(usageInstance);
             }
         } catch (Exception ex) {
