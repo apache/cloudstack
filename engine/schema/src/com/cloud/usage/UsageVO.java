@@ -65,6 +65,15 @@ public class UsageVO implements Usage, InternalIdentity {
     @Column(name = "vm_name")
     private String vmName = null;
 
+    @Column(name = "cpu_cores")
+    private Long cpuCores = null;
+
+    @Column(name = "memory")
+    private Long memory = null;
+
+    @Column(name = "cpu_speed")
+    private Long cpuSpeed = null;
+
     @Column(name = "offering_id")
     private Long offeringId = null;
 
@@ -171,6 +180,28 @@ public class UsageVO implements Usage, InternalIdentity {
         this.endDate = endDate;
     }
 
+    public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long vmId, String vmName,
+            Long cpuCores, Long cpuSpeed, Long memory, Long offeringId, Long templateId, Long usageId, Date startDate, Date endDate, String type) {
+        this.zoneId = zoneId;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.description = description;
+        this.usageDisplay = usageDisplay;
+        this.usageType = usageType;
+        this.rawUsage = rawUsage;
+        this.vmInstanceId = vmId;
+        this.vmName = vmName;
+        this.cpuCores = cpuCores;
+        this.cpuSpeed = cpuSpeed;
+        this.memory = memory;
+        this.offeringId = offeringId;
+        this.templateId = templateId;
+        this.usageId = usageId;
+        this.type = type;
+        this.startDate = startDate;
+        this.endDate = endDate;
+    }
+
     //IPAddress Usage
     public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long usageId, long size,
             String type, Date startDate, Date endDate) {
@@ -236,6 +267,21 @@ public class UsageVO implements Usage, InternalIdentity {
     @Override
     public String getVmName() {
         return vmName;
+    }
+
+    @Override
+    public Long getCpuCores() {
+        return cpuCores;
+    }
+
+    @Override
+    public Long getCpuSpeed() {
+        return cpuSpeed;
+    }
+
+    @Override
+    public Long getMemory() {
+        return memory;
     }
 
     @Override
