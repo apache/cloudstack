@@ -101,6 +101,18 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     @Param(description = "virtual size of resource")
     private Long virtualSize;
 
+    @SerializedName(ApiConstants.CPU_NUMBER)
+    @Param(description = "number of cpu of resource")
+    private Long cpuNumber;
+
+    @SerializedName(ApiConstants.CPU_SPEED)
+    @Param(description = "speed of each cpu of resource")
+    private Long cpuSpeed;
+
+    @SerializedName(ApiConstants.MEMORY)
+    @Param(description = "memory allocated for the resource")
+    private Long memory;
+
     @SerializedName(ApiConstants.START_DATE)
     @Param(description = "start date of the usage record")
     private String startDate;
@@ -228,5 +240,17 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
 
     public void setVirtualSize(Long virtualSize) {
         this.virtualSize = virtualSize;
+    }
+
+    public void setCpuNumber(Long cpuNumber) {
+        this.cpuNumber = cpuNumber;
+    }
+
+    public void setCpuSpeed(Long cpuSpeed) {
+        this.cpuSpeed = cpuSpeed;
+    }
+
+    public void setMemory(Long memory) {
+        this.memory = memory;
     }
 }

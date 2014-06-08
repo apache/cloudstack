@@ -461,6 +461,11 @@ CREATE VIEW `cloud`.`user_vm_view` AS
            left join
         `cloud`.`user_vm_details` `custom_ram_size`  ON (((`custom_ram_size`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_ram_size`.`name` = 'memory')));
 
+ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `cpu_speed` INT(10) UNSIGNED NULL  COMMENT 'speed per core in Mhz',
+    ADD COLUMN `cpu_cores` INT(10) UNSIGNED NULL  COMMENT 'number of cpu cores',
+    ADD COLUMN  `memory` INT(10) UNSIGNED NULL  COMMENT 'memory in MB';
+
+
 -- ACL DB schema
 CREATE TABLE `cloud`.`iam_group` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
