@@ -146,7 +146,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             self.account
         ]
 
-    @attr(tags = ['advanced', 'simulator', 'basic', 'vgpu', 'provisioning'])
+        @attr(tags = ['advanced', 'simulator', 'basic', 'vgpu', 'provisioning'], BugId="CLOUDSTACK-6876")
     def test_deploy_vgpu_enabled_vm(self):
         """Test Deploy Virtual Machine
 
