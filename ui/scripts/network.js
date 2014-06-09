@@ -1383,6 +1383,10 @@
                                         success: function(json) {
                                             var jsonObj = json.listnetworksresponse.network[0];
                                             addExtraPropertiesToGuestNetworkObject(jsonObj);
+                                                                                        
+                                            //if DR module is included                                   
+                                            addExtraPropertiesIfDrModuleIncluded(jsonObj, "Network");                                                            
+                                                                                        
                                             args.response.success({
                                                 actionFilter: cloudStack.actionFilter.guestNetwork,
                                                 data: jsonObj
