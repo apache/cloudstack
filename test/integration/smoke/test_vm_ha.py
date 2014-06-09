@@ -145,7 +145,7 @@ class TestDeployVMHA(cloudstackTestCase):
         ]
         self.cleanup = self.cleanup + self.mock_checkonhost_list
 
-    @attr(tags = ['selfservice'])
+    @attr(tags = ['selfservice'],BugId="CLOUDSTACK-6873")
     def test_vm_ha(self):
         """Test VM HA
 
