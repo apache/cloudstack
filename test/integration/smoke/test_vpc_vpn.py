@@ -227,7 +227,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         )
         cls.cleanup = [cls.account]
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced", "selfservice"], BugId="CLOUDSTACK-6879")
     def test_vpc_site2site_vpn(self):
         """Test VPN in VPC"""
 
