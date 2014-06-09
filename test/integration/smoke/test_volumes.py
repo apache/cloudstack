@@ -753,7 +753,7 @@ class TestVolumes(cloudstackTestCase):
             time.sleep(30)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke","basic", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke","basic", "selfservice"], BugId="CLOUDSTACK-6875")
     def test_09_delete_detached_volume(self):
         """Delete a Volume unattached to an VM
         """
