@@ -81,7 +81,7 @@ class TestSecStorageServices(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg", "selfservice"],BugId="CLOUDSTACK-6877")
     def test_01_sys_vm_start(self):
         """Test system VM start
         """
