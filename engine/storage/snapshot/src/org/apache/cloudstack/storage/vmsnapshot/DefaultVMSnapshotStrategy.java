@@ -138,7 +138,11 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             GuestOSHypervisorVO guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
 
             CreateVMSnapshotCommand ccmd = new CreateVMSnapshotCommand(userVm.getInstanceName(), target, volumeTOs, guestOS.getDisplayName(), userVm.getState());
-            ccmd.setPlatformEmulator(guestOsMapping.getGuestOsName());
+            if (guestOsMapping == null) {
+                ccmd.setPlatformEmulator(null);
+            } else {
+                ccmd.setPlatformEmulator(guestOsMapping.getGuestOsName());
+            }
             ccmd.setWait(_wait);
 
             answer = (CreateVMSnapshotAnswer)agentMgr.send(hostId, ccmd);
@@ -349,6 +353,12 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             RevertToVMSnapshotCommand revertToSnapshotCommand = new RevertToVMSnapshotCommand(vmInstanceName, vmSnapshotTO, volumeTOs, guestOS.getDisplayName());
             HostVO host = hostDao.findById(hostId);
             GuestOSHypervisorVO guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
+            RevertToVMSnapshotCommand revertToSnapshotCommand = new RevertToVMSnapshotCommand(vmInstanceName, vmSnapshotTO, volumeTOs, guestOS.getDisplayName());
+            if (guestOsMapping == null) {
+                revertToSnapshotCommand.setPlatformEmulator(null);
+            } else {
+                revertToSnapshotCommand.setPlatformEmulator(guestOsMapping.getGuestOsName());
+            }
 
             RevertToVMSnapshotAnswer answer = (RevertToVMSnapshotAnswer)agentMgr.send(hostId, revertToSnapshotCommand);
             if (answer != null && answer.getResult()) {
