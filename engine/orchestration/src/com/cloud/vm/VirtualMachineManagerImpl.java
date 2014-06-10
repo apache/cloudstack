@@ -773,8 +773,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 orchestrateStart(vmUuid, params, planToDeploy, planner);
             } finally {
-                if (VmJobEnabled.value())
+                if (placeHolder != null) {
                     _workJobDao.expunge(placeHolder.getId());
+                }
             }
         } else {
             Outcome<VirtualMachine> outcome = startVmThroughJobQueue(vmUuid, params, planToDeploy, planner);
@@ -1350,8 +1351,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 orchestrateStop(vmUuid, cleanUpEvenIfUnableToStop);
             } finally {
-                if (VmJobEnabled.value())
+                if (placeHolder != null) {
                     _workJobDao.expunge(placeHolder.getId());
+                }
             }
 
         } else {
@@ -1449,7 +1451,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to transition the state but we're moving on because it's forced stop");
             }
-            if (state == State.Starting || state == State.Migrating) {
+            if ((state == State.Starting) || (state == State.Migrating) || (state == State.Stopping)) {
                 if (work != null) {
                     doCleanup = true;
                 } else {
@@ -1458,8 +1460,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                     throw new CloudRuntimeException("Work item not found, We cannot stop " + vm + " when it is in state " + vm.getState());
                 }
-            } else if (state == State.Stopping) {
-                doCleanup = true;
             }
 
             if (doCleanup) {
@@ -1679,8 +1679,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 orchestrateStorageMigration(vmUuid, destPool);
             } finally {
-                if (VmJobEnabled.value())
+                if (placeHolder != null) {
                     _workJobDao.expunge(placeHolder.getId());
+                }
             }
         } else {
             Outcome<VirtualMachine> outcome = migrateVmStorageThroughJobQueue(vmUuid, destPool);
@@ -1773,8 +1774,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 orchestrateMigrate(vmUuid, srcHostId, dest);
             } finally {
-                if (VmJobEnabled.value())
+                if (placeHolder != null) {
                     _workJobDao.expunge(placeHolder.getId());
+                }
             }
         } else {
             Outcome<VirtualMachine> outcome = migrateVmThroughJobQueue(vmUuid, srcHostId, dest);
@@ -2071,8 +2073,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 orchestrateMigrateWithStorage(vmUuid, srcHostId, destHostId, volumeToPool);
             } finally {
-                if (VmJobEnabled.value())
+                if (placeHolder != null) {
                     _workJobDao.expunge(placeHolder.getId());
+                }
             }
 
         } else {
@@ -2417,8 +2420,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 orchestrateReboot(vmUuid, params);
             } finally {
-                if (VmJobEnabled.value())
+                if (placeHolder != null) {
                     _workJobDao.expunge(placeHolder.getId());
+                }
             }
         } else {
             Outcome<VirtualMachine> outcome = rebootVmThroughJobQueue(vmUuid, params);
@@ -3230,12 +3234,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         public String hostUuid;
         public VMInstanceVO vm;
 
-        @SuppressWarnings("unchecked")
         public AgentVmInfo(String name, VMInstanceVO vm, State state, String host) {
-            name = name;
-            state = state;
-            vm = vm;
-            hostUuid = host;
+            this.name = name;
+            this.state = state;
+            this.vm = vm;
+            this.hostUuid = host;
         }
 
         public AgentVmInfo(String name, VMInstanceVO vm, State state) {
@@ -3340,8 +3343,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 return orchestrateAddVmToNetwork(vm, network, requested);
             } finally {
-                if (VmJobEnabled.value())
+                if (placeHolder != null) {
                     _workJobDao.expunge(placeHolder.getId());
+                }
             }
         } else {
             Outcome<VirtualMachine> outcome = addVmToNetworkThroughJobQueue(vm, network, requested);
@@ -3351,7 +3355,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (java.util.concurrent.ExecutionException e) {
-                throw new RuntimeException("Execution excetion", e);
+                throw new RuntimeException("Execution exception", e);
             }
 
             Object jobException = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -3454,8 +3458,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 return orchestrateRemoveNicFromVm(vm, nic);
             } finally {
-                if (VmJobEnabled.value())
+                if (placeHolder != null) {
                     _workJobDao.expunge(placeHolder.getId());
+                }
             }
 
         } else {
@@ -3706,8 +3711,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 orchestrateMigrateForScale(vmUuid, srcHostId, dest, oldSvcOfferingId);
             } finally {
-                if (VmJobEnabled.value())
+                if (placeHolder != null) {
                     _workJobDao.expunge(placeHolder.getId());
+                }
             }
         } else {
             Outcome<VirtualMachine> outcome = migrateVmForScaleThroughJobQueue(vmUuid, srcHostId, dest, oldSvcOfferingId);
@@ -3970,8 +3976,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 return orchestrateReConfigureVm(vmUuid, oldServiceOffering, reconfiguringOnExistingHost);
             } finally {
-                if (VmJobEnabled.value())
+                if (placeHolder != null) {
                     _workJobDao.expunge(placeHolder.getId());
+                }
             }
         } else {
             Outcome<VirtualMachine> outcome = reconfigureVmThroughJobQueue(vmUuid, oldServiceOffering, reconfiguringOnExistingHost);
@@ -4023,7 +4030,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         work.setStep(Step.Prepare);
         work.setResourceType(ItWorkVO.ResourceType.Host);
         work.setResourceId(vm.getHostId());
-        work = _workDao.persist(work);
+        _workDao.persist(work);
         boolean success = false;
         try {
             if (reconfiguringOnExistingHost) {
@@ -4045,8 +4052,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         } catch (AgentUnavailableException e) {
             throw e;
         } finally {
-            // work.setStep(Step.Done);
-            //_workDao.update(work.getId(), work);
             if (!success) {
                 _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId()); // release the new capacity
                 vm.setServiceOfferingId(oldServiceOffering.getId());
