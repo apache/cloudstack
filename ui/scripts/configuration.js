@@ -2926,8 +2926,10 @@
                                             inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = 'internal';
                                             serviceCapabilityIndex++;
                                         } 
-                                    } else if (value != '') { // Normal data
+                                    } else if (value != '') { // normal data (serviceData.length ==1), e.g. "name", "displayText", "networkRate", "guestIpType", "lbType" (unwanted), "availability" (unwated when value is "Optional"), "egresspolicy", "state" (unwanted), "status" (unwanted), "allocationstate" (unwanted) 
+                                        if (!(key ==  "lbType"  || (key == "availability" && value == "Optional") || key == "state" || key == "status" || key == "allocationstate")) {
                                         inputData[key] = value;
+                                    }
                                     }
                                 });
 
@@ -3008,9 +3010,6 @@
                                     serviceProviderIndex++;
                                 });
 
-                                if (args.$form.find('.form-item[rel=availability]').css("display") == "none")
-                                    inputData['availability'] = 'Optional';
-
                                 if (args.$form.find('.form-item[rel=egresspolicy]').is(':visible')) {
                                     inputData['egressdefaultpolicy'] = formData.egresspolicy === 'ALLOW' ? true : false;
                                 } else {
@@ -3025,8 +3024,7 @@
                                 $.ajax({
                                     url: createURL('createNetworkOffering'),
                                     data: inputData,
-                                    dataType: 'json',
-                                    async: true,
+                                    type: "POST", //use POST instead of GET since the API call might be overlong and exceed size limit
                                     success: function(data) {
                                         var item = data.createnetworkofferingresponse.networkoffering;
 
