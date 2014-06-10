@@ -702,12 +702,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 return "Invalid scope id provided for the parameter " + name;
             }
         }
+        Class<?> type = null;
         Config c = Config.getConfig(name);
         if (c == null) {
-            s_logger.warn("Did not find configuration " + name + " in Config.java. Perhaps moved to ConfigDepot?");
-            return null;
+            s_logger.warn("Did not find configuration " + name + " in Config.java. Perhaps moved to ConfigDepot");
+            ConfigKey<?> configKey = _configDepot.get(name);
+            if(configKey == null) {
+                s_logger.warn("Did not find configuration " + name + " in ConfigDepot too.");
+                return null;
+            }
+            type = configKey.type();
+        } else {
+            type = c.getType();
         }
-        Class<?> type = c.getType();
 
         if (value == null) {
             if (type.equals(Boolean.class)) {
@@ -764,6 +771,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 s_logger.error("There was an error trying to parse the float value for:" + name);
                 throw new InvalidParameterValueException("There was an error trying to parse the float value for:" + name);
             }
+        }
+
+        if(c == null ) {
+            //range validation has to be done per case basis, for now
+            //return in case of Configkey parameters
+            return null;
         }
 
         String range = c.getRange();
