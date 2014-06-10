@@ -306,6 +306,10 @@
                                                 description: 'VHD'
                                             });
                                             items.push({
+                                                id: 'VHDX',
+                                                description: 'VHDX'
+                                            });
+                                            items.push({
                                                 id: 'OVA',
                                                 description: 'OVA'
                                             });
