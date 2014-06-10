@@ -773,7 +773,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             throw new CloudRuntimeException("Volume shouldn't be null " + volume.getId());
         }
         VolumeVO volVO = _volsDao.findById(vol.getId());
-        volVO.setFormat(getSupportedImageFormatForCluster(rootDiskHyperType));
+        if (volVO.getFormat() == null) {
+            volVO.setFormat(getSupportedImageFormatForCluster(rootDiskHyperType));
+        }
         _volsDao.update(volVO.getId(), volVO);
         return volFactory.getVolume(volVO.getId());
     }
