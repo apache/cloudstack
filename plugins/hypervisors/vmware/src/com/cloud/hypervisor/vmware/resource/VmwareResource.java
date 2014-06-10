@@ -38,6 +38,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -238,7 +239,6 @@ import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostResourceSummary;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.hypervisor.vmware.util.VmwareGuestOsMapper;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -1394,7 +1394,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         tearDownVm(vmMo);
                     }else if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(),
                             getReservedCpuMHZ(vmSpec), vmSpec.getLimitCpuUse(), (int)(vmSpec.getMaxRam() / (1024 * 1024)), getReservedMemoryMb(vmSpec),
-                            translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), rootDiskDataStoreDetails.first(), false)) {
+                            translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value(), rootDiskDataStoreDetails.first(), false)) {
                         throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
                     }
                 }
@@ -1418,7 +1418,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value();
+            String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
 
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(),
                     getReservedCpuMHZ(vmSpec), (int)(vmSpec.getMaxRam() / (1024 * 1024)), getReservedMemoryMb(vmSpec),
@@ -4374,13 +4374,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private VirtualMachineGuestOsIdentifier translateGuestOsIdentifier(String cpuArchitecture, String cloudGuestOs) {
+    private VirtualMachineGuestOsIdentifier translateGuestOsIdentifier(String cpuArchitecture, String guestOs, String cloudGuestOs) {
         if (cpuArchitecture == null) {
-            s_logger.warn("CPU arch is not set, default to i386. guest os: " + cloudGuestOs);
+            s_logger.warn("CPU arch is not set, default to i386. guest os: " + guestOs);
             cpuArchitecture = "i386";
         }
 
-        VirtualMachineGuestOsIdentifier identifier = VmwareGuestOsMapper.getGuestOsIdentifier(cloudGuestOs);
+        if(cloudGuestOs == null) {
+            s_logger.warn("Guest OS mapping name is not set for guest os: " + guestOs);
+        }
+
+        VirtualMachineGuestOsIdentifier identifier = null;
+        try {
+            if (cloudGuestOs != null) {
+                identifier = VirtualMachineGuestOsIdentifier.fromValue(cloudGuestOs);
+                s_logger.debug("Using mapping name : " + identifier.toString());
+            }
+        } catch (IllegalArgumentException e) {
+            s_logger.warn("Unable to find Guest OS Identifier in VMware for mapping name: " + cloudGuestOs + ". Continuing with defaults.");
+        }
         if (identifier != null) {
             return identifier;
         }
