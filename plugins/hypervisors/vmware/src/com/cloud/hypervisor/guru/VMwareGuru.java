@@ -81,11 +81,13 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
@@ -111,6 +113,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private NetworkDao _networkDao;
     @Inject
     private GuestOSDao _guestOsDao;
+    @Inject
+    GuestOSHypervisorDao _guestOsHypervisorDao;
     @Inject
     private HostDao _hostDao;
     @Inject
@@ -309,6 +313,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());
         to.setHostName(vm.getHostName());
+        HostVO host = _hostDao.findById(vm.getVirtualMachine().getHostId());
+        GuestOSHypervisorVO guestOsMapping = _guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), getHypervisorType().toString(), host.getHypervisorVersion());
+        if (guestOsMapping == null) {
+            to.setPlatformEmulator(null);
+        } else {
+            to.setPlatformEmulator(guestOsMapping.getGuestOsName());
+        }
         return to;
     }
 
