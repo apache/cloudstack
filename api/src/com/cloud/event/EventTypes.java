@@ -20,12 +20,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.cloud.network.IpAddress;
+import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.server.ResourceTag;
 import com.cloud.vm.ConsoleProxy;
 import com.cloud.vm.SecondaryStorageVm;
@@ -572,7 +574,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, FirewallRule.class);
         entityEventDetails.put(EVENT_REMOVE_FROM_LOAD_BALANCER_RULE, FirewallRule.class);
         entityEventDetails.put(EVENT_LOAD_BALANCER_CREATE, LoadBalancer.class);
-        entityEventDetails.put(EVENT_LOAD_BALANCER_DELETE, LoadBalancer.class);
+        entityEventDetails.put(EVENT_LOAD_BALANCER_DELETE, FirewallRule.class);
         entityEventDetails.put(EVENT_LB_STICKINESSPOLICY_CREATE, StickinessPolicy.class);
         entityEventDetails.put(EVENT_LB_STICKINESSPOLICY_UPDATE, StickinessPolicy.class);
         entityEventDetails.put(EVENT_LB_STICKINESSPOLICY_DELETE, StickinessPolicy.class);
@@ -720,12 +722,12 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VPN_USER_REMOVE, RemoteAccessVpn.class);
         entityEventDetails.put(EVENT_S2S_VPN_GATEWAY_CREATE, Site2SiteVpnGateway.class);
         entityEventDetails.put(EVENT_S2S_VPN_GATEWAY_DELETE, Site2SiteVpnGateway.class);
-        entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_CREATE, RemoteAccessVpn.class);
-        entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_DELETE, RemoteAccessVpn.class);
-        entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_UPDATE, RemoteAccessVpn.class);
-        entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_CREATE, RemoteAccessVpn.class);
-        entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_DELETE, RemoteAccessVpn.class);
-        entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_RESET, RemoteAccessVpn.class);
+        entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_CREATE, Site2SiteCustomerGateway.class);
+        entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_DELETE, Site2SiteCustomerGateway.class);
+        entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_UPDATE, Site2SiteCustomerGateway.class);
+        entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_CREATE, Site2SiteVpnConnection.class);
+        entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_DELETE, Site2SiteVpnConnection.class);
+        entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_RESET, Site2SiteVpnConnection.class);
 
         // Custom certificates
         entityEventDetails.put(EVENT_UPLOAD_CUSTOM_CERTIFICATE, "Certificate");
