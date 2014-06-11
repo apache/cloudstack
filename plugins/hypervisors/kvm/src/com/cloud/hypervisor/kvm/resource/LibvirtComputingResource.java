@@ -3977,7 +3977,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if ((volumeObjectTO.getIopsWriteRate() != null) && (volumeObjectTO.getIopsWriteRate() > 0))
                     disk.setIopsWriteRate(volumeObjectTO.getIopsWriteRate());
                 if (volumeObjectTO.getCacheMode() != null)
-                    disk.setCacheMode(DiskDef.diskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString()));
+                    disk.setCacheMode(DiskDef.diskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString().toUpperCase()));
             }
             vm.getDevices().addDevice(disk);
         }
@@ -4128,7 +4128,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     diskdef.setIopsWriteRate(iopsWriteRate);
 
                 if (cacheMode != null) {
-                    diskdef.setCacheMode(DiskDef.diskCacheMode.valueOf(cacheMode));
+                    diskdef.setCacheMode(DiskDef.diskCacheMode.valueOf(cacheMode.toUpperCase()));
                 }
             }
 
