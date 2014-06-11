@@ -326,14 +326,14 @@ test_data = {
         }
     },
     "shared_network_offering_all_services": {
-            "name":"shaared network offering with services enabled",
-            "displaytext": "Shard network offering",
+            "name": "shared network offering with services enabled",
+            "displaytext": "Shared network offering",
             "guestiptype": "Shared",
             "supportedservices": "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat",
-            "specifyVlan" : "False",
-            "specifyIpRanges" : "False",
+            "specifyVlan": "False",
+            "specifyIpRanges": "False",
             "traffictype": "GUEST",
-            "serviceProviderList" : {
+            "serviceProviderList": {
                 "Dhcp": "VirtualRouter",
                 "Dns": "VirtualRouter",
                 "UserData": "VirtualRouter",
