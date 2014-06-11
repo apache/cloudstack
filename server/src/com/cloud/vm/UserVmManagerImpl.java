@@ -2901,6 +2901,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         .getLimitCpuUse(), owner.getDomainId(), owner.getId(), offering.getId(), userData, hostName, diskOfferingId);
                 vm.setUuid(uuidName);
                 vm.setDynamicallyScalable(template.isDynamicallyScalable());
+
+                Map<String, String> details = template.getDetails();
+                if (details != null && !details.isEmpty()) {
+                    vm.details.putAll(details);
+                }
+
                 if (sshPublicKey != null) {
                     vm.setDetail("SSH.PublicKey", sshPublicKey);
                 }
@@ -2972,11 +2978,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         vm.setDetail("firmware", "efi");
                         s_logger.info("guestOS is OSX : overwrite root disk controller to scsi, use smc and efi");
                     }
-                }
-
-                Map<String, String> details = template.getDetails();
-                if (details != null && !details.isEmpty()) {
-                    vm.details.putAll(details);
                 }
 
                 _vmDao.persist(vm);
