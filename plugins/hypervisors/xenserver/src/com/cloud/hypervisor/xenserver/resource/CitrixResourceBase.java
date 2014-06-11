@@ -16,6 +16,77 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeoutException;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
+import com.trilead.ssh2.SCPClient;
+import com.xensource.xenapi.Bond;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Console;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.HostCpu;
+import com.xensource.xenapi.HostMetrics;
+import com.xensource.xenapi.Network;
+import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.PIF;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Task;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.VmPowerState;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VBDMetrics;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VGPU;
+import com.xensource.xenapi.VIF;
+import com.xensource.xenapi.VLAN;
+import com.xensource.xenapi.VM;
+import com.xensource.xenapi.VMGuestMetrics;
+import com.xensource.xenapi.XenAPIObject;
+
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -175,73 +246,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.snapshot.VMSnapshot;
-import com.trilead.ssh2.SCPClient;
-import com.xensource.xenapi.Bond;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Console;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.HostCpu;
-import com.xensource.xenapi.HostMetrics;
-import com.xensource.xenapi.Network;
-import com.xensource.xenapi.PBD;
-import com.xensource.xenapi.PIF;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.Task;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.VmPowerState;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VBDMetrics;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VGPU;
-import com.xensource.xenapi.VIF;
-import com.xensource.xenapi.VLAN;
-import com.xensource.xenapi.VM;
-import com.xensource.xenapi.VMGuestMetrics;
-import com.xensource.xenapi.XenAPIObject;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import java.util.concurrent.TimeoutException;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Queue;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process
@@ -1067,7 +1071,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 //TODO: Should make this error not fatal?
                 //Can Concurrent VM shutdown/migration/reboot events can cause this method
                 //to be executed on a bridge which has already been removed?
-                throw new CloudRuntimeException("Unable to remove OVS bridge " + bridge + ":" + res);
+                throw new CloudRuntimeException("Unable to remove OVS bridge " + bridge + ":" + result);
             }
             return;
         } catch (Exception e) {
@@ -1087,13 +1091,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         BroadcastDomainType type = nic.getBroadcastType();
         if (uri != null && uri.toString().contains("untagged")) {
             return network.getNetwork();
-        } else if (type == BroadcastDomainType.Vlan) {
+        } else if (uri != null && type == BroadcastDomainType.Vlan) {
             assert (BroadcastDomainType.getSchemeValue(uri) == BroadcastDomainType.Vlan);
             long vlan = Long.parseLong(BroadcastDomainType.getValue(uri));
             return enableVlanNetwork(conn, vlan, network);
         } else if (type == BroadcastDomainType.Native || type == BroadcastDomainType.LinkLocal) {
             return network.getNetwork();
-        } else if (type == BroadcastDomainType.Vswitch) {
+        } else if (uri != null && type == BroadcastDomainType.Vswitch) {
             String header = uri.toString().substring(Networks.BroadcastDomainType.Vswitch.scheme().length() + "://".length());
             if (header.startsWith("vlan")) {
                 _isOvs = true;
@@ -1111,7 +1115,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } else if (type == BroadcastDomainType.Lswitch) {
             // Nicira Logical Switch
             return network.getNetwork();
-        } else if (type == BroadcastDomainType.Pvlan) {
+        } else if (uri != null && type == BroadcastDomainType.Pvlan) {
             assert BroadcastDomainType.getSchemeValue(uri) == BroadcastDomainType.Pvlan;
             // should we consider moving this NetUtils method to BroadcastDomainType?
             long vlan = Long.parseLong(NetUtils.getPrimaryPvlanFromUri(uri));
@@ -1125,13 +1129,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (broadcastUri.contains(".")) {
             String[] parts = broadcastUri.split("\\.");
             return "OVS-DR-VPC-Bridge"+parts[0];
-         } else {
+        } else {
             try {
                 return "OVSTunnel" + broadcastUri;
             } catch (Exception e) {
                 return null;
             }
-         }
+        }
     }
 
     protected VIF createVif(Connection conn, String vmName, VM vm, VirtualMachineTO vmSpec, NicTO nic) throws XmlRpcException, XenAPIException {
@@ -5063,11 +5067,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             if (srr.shared) {
                 if (SRType.NFS.equals(srr.type) ){
-                       Map<String, String> smConfig = srr.smConfig;
-                       if( !smConfig.containsKey("nosubdir")) {
-                           smConfig.put("nosubdir", "true");
-                           sr.setSmConfig(conn,smConfig);
-                       }
+                    Map<String, String> smConfig = srr.smConfig;
+                    if( !smConfig.containsKey("nosubdir")) {
+                        smConfig.put("nosubdir", "true");
+                        sr.setSmConfig(conn,smConfig);
+                    }
                 }
 
                 Host host = Host.getByUuid(conn, _host.uuid);
@@ -5310,7 +5314,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             String result = callHostPlugin(conn, "ovstunnel", "configure_ovs_bridge_for_network_topology", "bridge",
                     bridgeName, "config", cmd.getVpcConfigInJson(), "host-id", ((Long)cmd.getHostId()).toString(),
                     "seq-no", Long.toString(sequenceNo));
-                if (result.startsWith("SUCCESS")) {
+            if (result.startsWith("SUCCESS")) {
                 return new Answer(cmd, true, result);
             } else {
                 return new Answer(cmd, false, result);
