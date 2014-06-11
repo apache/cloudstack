@@ -1700,7 +1700,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     }
                 }
             }
-            if(cmd.getDetails() != null) {
+            if (cmd.getDetails() != null) {
+                details.remove("Encrypted.Password"); // new password will be generated during vm deployment from password enabled template
                 details.putAll(cmd.getDetails());
             }
             if( !details.isEmpty()) {
