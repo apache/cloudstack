@@ -83,11 +83,11 @@
                 select: function(args) {
                     args.response.success({
                         data: [{
-                            name: 'label.allow',
-                            description: 'label.allow'
+                            name: 'Allow',
+                            description: 'Allow'
                         }, {
-                            name: 'label.deny',
-                            description: 'label.deny'
+                            name: 'Deny',
+                            description: 'Deny'
                         }]
                     });
                 }
