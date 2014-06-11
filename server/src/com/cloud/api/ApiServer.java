@@ -617,7 +617,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 params.put("id", objectId.toString());
                 Class entityClass = EventTypes.getEntityClassForEvent(createCmd.getEventType());
                 if (entityClass != null)
-                    ctx.putContextParameter(entityClass.getName(), objectId);
+                    ctx.putContextParameter(entityClass.getName(), objectUuid);
             } else {
                 // Extract the uuid before params are processed and id reflects internal db id
                 objectUuid = params.get(ApiConstants.ID);
@@ -638,12 +638,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             long startEventId = ctx.getStartEventId();
             asyncCmd.setStartEventId(startEventId);
-
-            // Add the resource id in the call context, also add some other first class object ids (for now vm) if available.
-            // TODO - this should be done for all the uuids passed in the cmd - so should be moved where uuid to id conversion happens.
-            if (EventTypes.getEntityForEvent(asyncCmd.getEventType()) != null) {
-                ctx.putContextParameter(EventTypes.getEntityForEvent(asyncCmd.getEventType()), objectUuid);
-            }
 
             // save the scheduled event
             final Long eventId =

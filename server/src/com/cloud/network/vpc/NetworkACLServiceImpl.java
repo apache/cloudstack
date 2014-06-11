@@ -206,6 +206,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_DELETE, eventDescription = "Deleting Network ACL List", async = true)
     public boolean deleteNetworkACL(long id) {
         Account caller = CallContext.current().getCallingAccount();
         NetworkACL acl = _networkACLDao.findById(id);

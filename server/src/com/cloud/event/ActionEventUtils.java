@@ -206,8 +206,7 @@ public class ActionEventUtils {
             //Get uuid from id
             if(context.getContextParameter(entityClass.getName()) != null){
                 try {
-                    final Object objVO = s_entityMgr.findByIdIncludingRemoved(entityClass, getInternalId(context.getContextParameter(entityClass.getName())));
-                    entityUuid = ((Identity)objVO).getUuid();
+                    entityUuid = getEntityUuid(entityClass, context.getContextParameter(entityClass.getName()));
                 } catch (Exception e){
                     s_logger.debug("Caught exception while finding entityUUID, moving on");
                 }
@@ -250,17 +249,27 @@ public class ActionEventUtils {
         }
     }
 
-    private static Long getInternalId(Object internalIdObj){
-        Long internalId = null;
+    private static String getEntityUuid(Class entityType, Object entityId){
 
-        // In case its an async job the value would be a string because of json deserialization
-        if(internalIdObj instanceof String){
-            internalId = Long.valueOf((String) internalIdObj);
-        }else if (internalIdObj instanceof Long){
-            internalId = (Long) internalIdObj;
+        // entityId can be internal db id or UUID so accordingly call findbyId or return uuid directly
+
+        if (entityId instanceof Long){
+            // Its internal db id - use findById
+            final Object objVO = s_entityMgr.findById(entityType, (Long)entityId);
+            return ((Identity)objVO).getUuid();
+        } else if(entityId instanceof String){
+            try{
+                // In case its an async job the internal db id would be a string because of json deserialization
+                Long internalId = Long.valueOf((String) entityId);
+                final Object objVO = s_entityMgr.findById(entityType, internalId);
+                return ((Identity)objVO).getUuid();
+            } catch (NumberFormatException e){
+                // It is uuid - so return it
+                return (String)entityId;
+            }
         }
 
-        return internalId;
+        return null;
     }
 
     private static long getDomainId(long accountId) {
@@ -282,8 +291,7 @@ public class ActionEventUtils {
                 Object key = entry.getKey();
                 Class clz = Class.forName((String)key);
                 if(clz instanceof Class && Identity.class.isAssignableFrom(clz)){
-                    final Object objVO = s_entityMgr.findById(clz, getInternalId(entry.getValue()));
-                    String uuid = ((Identity) objVO).getUuid();
+                    String uuid = getEntityUuid(clz, entry.getValue());
                     eventDescription.put(ReflectUtil.getEntityName(clz), uuid);
                 }
             }
