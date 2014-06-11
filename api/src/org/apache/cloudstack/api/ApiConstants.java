@@ -58,6 +58,7 @@ public class ApiConstants {
     public static final String CPU_SPEED = "cpuspeed";
     public static final String CREATED = "created";
     public static final String CTX_ACCOUNT_ID = "ctxaccountid";
+    public static final String CTX_DETAILS = "ctxDetails";
     public static final String CTX_USER_ID = "ctxuserid";
     public static final String CTXSTARTEVENTID = "ctxstarteventid";
     public static final String CTX_START_EVENT_ID = "ctxStartEventId";
