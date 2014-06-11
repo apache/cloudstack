@@ -128,32 +128,6 @@ namespace HypervResource
             }
         }
 
-        public static void ConnectToRemote(string remoteUNC, string domain, string username, string password)
-        {
-            NETRESOURCE nr = new NETRESOURCE();
-            nr.dwType = RESOURCETYPE_DISK;
-            nr.lpRemoteName = Utils.NormalizePath(remoteUNC);
-            if (domain != null)
-            {
-                username = domain + @"\" + username;
-            }
-
-            int ret = WNetUseConnection(IntPtr.Zero, nr, password, username, 0, null, null, null);
-            if (ret != NO_ERROR)
-            {
-                throw new ArgumentException("net use of share " + remoteUNC + "failed with "+ getErrorForNumber(ret));
-            }
-        }
-
-        public static void DisconnectRemote(string remoteUNC)
-        {
-            int ret = WNetCancelConnection2(remoteUNC, CONNECT_UPDATE_PROFILE, false);
-            if (ret != NO_ERROR)
-            {
-                throw new ArgumentException("net disconnect of share " + remoteUNC + "failed with " + getErrorForNumber(ret));
-            }
-        }
-
         public static void GetShareDetails(string remoteUNC, out long capacity, out long available)
         {
             ulong freeBytesAvailable;
@@ -227,13 +201,6 @@ namespace HypervResource
 
         [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public extern static bool DuplicateToken(IntPtr existingTokenHandle, int SECURITY_IMPERSONATION_LEVEL, ref IntPtr duplicateTokenHandle);
-
-        [DllImport("Mpr.dll")]
-        private static extern int WNetUseConnection(IntPtr hwndOwner, NETRESOURCE lpNetResource, string lpPassword, string lpUserID, int dwFlags,
-            string lpAccessName, string lpBufferSize, string lpResult);
-
-        [DllImport("Mpr.dll")]
-        private static extern int WNetCancelConnection2(string lpName, int dwFlags, bool fForce);
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         private static extern bool GetDiskFreeSpaceEx(string lpDirectoryName,

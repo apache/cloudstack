@@ -236,7 +236,6 @@ namespace HypervResource
                     {
                         TemplateObjectTO dataStore = disk.templateObjectTO;
                         NFSTO share = dataStore.nfsDataStoreTO;
-                        Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
                         string diskPath = Utils.NormalizePath(Path.Combine(share.UncPath, dataStore.path));
                         wmiCallsV2.AttachIso(vmName, diskPath);
                         result = true;
@@ -244,11 +243,6 @@ namespace HypervResource
                     else if (disk.type.Equals("DATADISK"))
                     {
                         VolumeObjectTO volume = disk.volumeObjectTO;
-                        PrimaryDataStoreTO primary = volume.primaryDataStore;
-                        if (!primary.isLocal)
-                        {
-                            Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
-                        }
                         string diskPath = Utils.NormalizePath(volume.FullFileName);
                         wmiCallsV2.AttachDisk(vmName, diskPath, disk.diskSequence);
                         result = true;
@@ -989,7 +983,6 @@ namespace HypervResource
                     hostPath = Utils.NormalizePath(share.UncPath);
 
                     // Check access to share.
-                    Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
                     Utils.GetShareDetails(share.UncPath, out capacityBytes, out availableBytes);
                     config.setPrimaryStorage((string)cmd.pool.uuid, hostPath);
                 }
@@ -1281,7 +1274,6 @@ namespace HypervResource
                     {
                         volumePath = @"\\" + primary.uri.Host + primary.uri.LocalPath + @"\" + volumeName;
                         volumePath = Utils.NormalizePath(volumePath);
-                        Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
                     }
                     volume.path = volume.uuid;
                     wmiCallsV2.CreateDynamicVirtualHardDisk(volumeSize, volumePath);
@@ -1554,17 +1546,10 @@ namespace HypervResource
                         if (destTemplateObjectTO.primaryDataStore != null)
                         {
                             destFile = destTemplateObjectTO.FullFileName;
-                            if (!destTemplateObjectTO.primaryDataStore.isLocal)
-                            {
-                                PrimaryDataStoreTO primary = destTemplateObjectTO.primaryDataStore;
-                                Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
-                            }
                         }
                         else if (destTemplateObjectTO.nfsDataStoreTO != null)
                         {
                             destFile = destTemplateObjectTO.FullFileName;
-                            NFSTO store = destTemplateObjectTO.nfsDataStoreTO;
-                            Utils.ConnectToRemote(store.UncPath, store.Domain, store.User, store.Password);
                         }
                     }
 
