@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.vpc;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -37,10 +38,14 @@ public class CreateVPCCmdByAdmin extends CreateVPCCmd {
     @Override
     public void execute() {
         Vpc vpc = null;
+        boolean success = true;
         try {
-             if (_vpcService.startVpc(getEntityId(), true)) {
-                vpc = _entityMgr.findById(Vpc.class, getEntityId());
+            if (isStart()) {
+                success = _vpcService.startVpc(getEntityId(), true);
+            } else {
+                s_logger.debug("Not starting VPC as " + ApiConstants.START + "=false was passed to the API");
              }
+            vpc = _entityMgr.findById(Vpc.class, getEntityId());
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
