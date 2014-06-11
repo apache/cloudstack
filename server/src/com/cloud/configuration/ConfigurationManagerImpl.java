@@ -948,9 +948,7 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
         }
 
         // Check if the IP range is valid
-        if (startIp != null || endIp != null) {
-            checkIpRange(startIp, endIp, cidrAddress, cidrSize);
-        }
+        checkIpRange(startIp, endIp, cidrAddress, cidrSize);
 
         // Check if the IP range overlaps with the public ip
         checkOverlapPublicIpRange(zoneId, startIp, endIp);
@@ -1011,8 +1009,8 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 // Delete private ip addresses for the pod if there are any
-                List<DataCenterIpAddressVO> privateIps = _privateIpAddressDao.listByPodIdDcId(Long.valueOf(podId),
-                        pod.getDataCenterId());
+                List<DataCenterIpAddressVO> privateIps = _privateIpAddressDao.listByPodIdDcId(podId, pod.getDataCenterId());
+                        
                 if (!privateIps.isEmpty()) {
                     if (!(_privateIpAddressDao.deleteIpAddressByPod(podId))) {
                         throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
@@ -1534,12 +1532,7 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
     @ActionEvent(eventType = EventTypes.EVENT_ZONE_DELETE, eventDescription = "deleting zone", async = false)
     public boolean deleteZone(DeleteZoneCmd cmd) {
 
-        Long userId = CallContext.current().getCallingUserId();
         final Long zoneId = cmd.getId();
-
-        if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
 
         // Make sure the zone exists
         if (!validZone(zoneId)) {
@@ -2083,7 +2076,6 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
             }
         } else {
             allowNetworkRate = true;
-            ;
         }
 
         if (cmd.getNetworkRate() != null && !allowNetworkRate) {
