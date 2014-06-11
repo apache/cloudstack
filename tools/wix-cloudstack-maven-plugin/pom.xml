@@ -11,12 +11,13 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>Wix-cloudstack-maven-plugin</artifactId>
-  <name>Wix-cloudstack-maven-plugin</name>
+  <name>Apache CloudStack - Wix Maven Plugin</name>
   <packaging>maven-plugin</packaging>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
     <version>4.5.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
   </parent>
 
   <dependencies>
