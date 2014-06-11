@@ -2402,9 +2402,9 @@
                                         }
 
                                         if (args.$form.find('.form-item[rel=\"service.Firewall.isEnabled\"] input[type=checkbox]').is(':checked') == true) {
-                                            args.$form.find('.form-item[rel=\"egresspolicy\"]').css('display', 'inline-block');
+                                            args.$form.find('.form-item[rel=\"egressdefaultpolicy\"]').css('display', 'inline-block');
                                         } else {
-                                            args.$form.find('.form-item[rel=\"egresspolicy\"]').css('display', 'none');
+                                            args.$form.find('.form-item[rel=\"egressdefaultpolicy\"]').css('display', 'none');
                                         }
 
                                         //show LB Isolation dropdown only when (1)LB Service is checked (2)Service Provider is Netscaler OR F5
@@ -2827,6 +2827,7 @@
                                     conservemode: {
                                         label: 'label.conserve.mode',
                                         isBoolean: true,
+                                        isChecked: true,
                                         docID: 'helpNetworkOfferingConserveMode'
                                     },
 
@@ -2851,7 +2852,7 @@
                                         }
                                     },
 
-                                    egresspolicy: {
+                                    egressdefaultpolicy: {
                                         label: 'label.default.egress.policy',
                                         isHidden: true,
                                         select: function(args) {
@@ -2926,8 +2927,8 @@
                                             inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = 'internal';
                                             serviceCapabilityIndex++;
                                         } 
-                                    } else if (value != '') { // normal data (serviceData.length ==1), e.g. "name", "displayText", "networkRate", "guestIpType", "lbType" (unwanted), "availability" (unwated when value is "Optional"), "egresspolicy", "state" (unwanted), "status" (unwanted), "allocationstate" (unwanted) 
-                                        if (!(key ==  "lbType"  || (key == "availability" && value == "Optional") || key == "state" || key == "status" || key == "allocationstate")) {
+                                    } else if (value != '') { // normal data (serviceData.length ==1), e.g. "name", "displayText", "networkRate", "guestIpType", "lbType" (unwanted), "availability" (unwated when value is "Optional"), "egressdefaultpolicy", "state" (unwanted), "status" (unwanted), "allocationstate" (unwanted) 
+                                        if (!(key ==  "lbType"  || (key == "availability" && value == "Optional") || key == "state" || key == "status" || key == "allocationstate" || key == "useVpc" )) {
                                         inputData[key] = value;
                                     }
                                     }
@@ -2977,27 +2978,27 @@
                                 if (inputData['guestIpType'] == "Shared") { //specifyVlan checkbox is disabled, so inputData won't include specifyVlan
                                     inputData['specifyVlan'] = true; //hardcode inputData['specifyVlan']
                                     inputData['specifyIpRanges'] = true;
-                                    inputData['isPersistent'] = false;
+                                    delete inputData.isPersistent; //if Persistent checkbox is unchecked, do not pass isPersistent parameter to API call since we need to keep API call's size as small as possible (p.s. isPersistent is defaulted as false at server-side)                                          
                                 } else if (inputData['guestIpType'] == "Isolated") { //specifyVlan checkbox is shown
-                                    inputData['specifyIpRanges'] = false;
+                                    //inputData['specifyIpRanges'] = false;
+                                    delete inputData.specifyIpRanges; //if specifyIpRanges should be false, do not pass specifyIpRanges parameter to API call since we need to keep API call's size as small as possible (p.s. specifyIpRanges is defaulted as false at server-side)                                          
 
                                     if (inputData['specifyVlan'] == 'on') { //specifyVlan checkbox is checked
                                         inputData['specifyVlan'] = true;
                                     } else { //specifyVlan checkbox is unchecked
-                                        inputData['specifyVlan'] = false;
-
+                                        delete inputData.specifyVlan; //if specifyVlan checkbox is unchecked, do not pass specifyVlan parameter to API call since we need to keep API call's size as small as possible (p.s. specifyVlan is defaulted as false at server-side)                                        
                                     }
 
                                     if (inputData['isPersistent'] == 'on') { //It is a persistent network
                                         inputData['isPersistent'] = true;
                                     } else { //Isolated Network with Non-persistent network
-                                        inputData['isPersistent'] = false;
+                                        delete inputData.isPersistent; //if Persistent checkbox is unchecked, do not pass isPersistent parameter to API call since we need to keep API call's size as small as possible (p.s. isPersistent is defaulted as false at server-side)                                          
                                     }
                                 }
 
 
                                 if (inputData['conservemode'] == 'on') {
-                                    inputData['conservemode'] = true;
+                                    delete inputData.conservemode; //if ConserveMode checkbox is checked, do not pass conservemode parameter to API call since we need to keep API call's size as small as possible (p.s. conservemode is defaulted as true at server-side)
                                 } else {
                                     inputData['conservemode'] = false;
                                 }
@@ -3010,10 +3011,14 @@
                                     serviceProviderIndex++;
                                 });
 
-                                if (args.$form.find('.form-item[rel=egresspolicy]').is(':visible')) {
-                                    inputData['egressdefaultpolicy'] = formData.egresspolicy === 'ALLOW' ? true : false;
+                                if (args.$form.find('.form-item[rel=egressdefaultpolicy]').is(':visible')) {
+                                    if (formData.egressdefaultpolicy === 'ALLOW') {
+                                        delete inputData.egressdefaultpolicy; //do not pass egressdefaultpolicy to API call  since we need to keep API call's size as small as possible (p.s. egressdefaultpolicy is defaulted as true at server-side)
+                                    } else {
+                                        inputData['egressdefaultpolicy'] = false;
+                                    }
                                 } else {
-                                    delete inputData.egresspolicy;
+                                    delete inputData.egressdefaultpolicy;
                                 }
 
                                 if (args.$form.find('.form-item[rel=serviceofferingid]').css("display") == "none")
