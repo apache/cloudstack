@@ -427,7 +427,7 @@ public class ParamProcessWorker implements DispatchWorker {
             }
             // Return on first non-null Id for the uuid entity
             if (internalId != null){
-                CallContext.current().putContextParameter(entity.getName(), internalId);
+                CallContext.current().putContextParameter(entity.getName(), uuid);
                 break;
             }
         }

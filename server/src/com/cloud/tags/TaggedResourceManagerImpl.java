@@ -106,7 +106,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         s_typeMap.put(ResourceObjectType.Project, ProjectVO.class);
         s_typeMap.put(ResourceObjectType.Vpc, VpcVO.class);
         s_typeMap.put(ResourceObjectType.Nic, NicVO.class);
-        s_typeMap.put(ResourceObjectType.NetworkACL, NetworkACLVO.class);
+        s_typeMap.put(ResourceObjectType.NetworkACL, NetworkACLItemVO.class);
         s_typeMap.put(ResourceObjectType.StaticRoute, StaticRouteVO.class);
         s_typeMap.put(ResourceObjectType.VMSnapshot, VMSnapshotVO.class);
         s_typeMap.put(ResourceObjectType.RemoteAccessVpn, RemoteAccessVpnVO.class);
@@ -114,7 +114,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         s_typeMap.put(ResourceObjectType.ServiceOffering, ServiceOfferingVO.class);
         s_typeMap.put(ResourceObjectType.Storage, StoragePoolVO.class);
         s_typeMap.put(ResourceObjectType.PrivateGateway, RemoteAccessVpnVO.class);
-        s_typeMap.put(ResourceObjectType.NetworkACLList, NetworkACLItemVO.class);
+        s_typeMap.put(ResourceObjectType.NetworkACLList, NetworkACLVO.class);
         s_typeMap.put(ResourceObjectType.VpnGateway, Site2SiteVpnGatewayVO.class);
         s_typeMap.put(ResourceObjectType.CustomerGateway, Site2SiteCustomerGatewayVO.class);
         s_typeMap.put(ResourceObjectType.VpnConnection, Site2SiteVpnConnectionVO.class);

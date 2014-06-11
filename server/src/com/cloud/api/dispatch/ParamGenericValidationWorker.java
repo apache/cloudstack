@@ -63,6 +63,7 @@ public class ParamGenericValidationWorker implements DispatchWorker {
         defaultParamNames.add(ApiConstants.CTX_ACCOUNT_ID);
         defaultParamNames.add(ApiConstants.CTX_START_EVENT_ID);
         defaultParamNames.add(ApiConstants.CTX_USER_ID);
+        defaultParamNames.add(ApiConstants.CTX_DETAILS);
         defaultParamNames.add(ApiConstants.UUID);
         defaultParamNames.add(ApiConstants.ID);
         defaultParamNames.add("_");

@@ -271,7 +271,6 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_DELETE, eventDescription = "revoking network acl", async = true)
     public boolean revokeNetworkACLItem(long ruleId) {
 
         NetworkACLItemVO rule = _networkACLItemDao.findById(ruleId);
