@@ -62,6 +62,7 @@
     <Property Id="DB_USERNAME" Value="cloud" />
     <Property Id="DB_PASSWORD" Value="cloud" Hidden="yes"/>
     <Property Id="DB_HOSTNAME" Value="localhost" />
+    <Property Id="DB_PORT" Value="3306" />
     <Property Id="DB_ROOT_PASSWORD" Hidden="yes"/>
 
     <Directory Id='TARGETDIR' Name='SourceDir'>
@@ -257,6 +258,7 @@
     <CustomAction Id="GenerateSSLKey" Directory='CSMANAGEMENT'
       ExeCommand='[PYTHON_HOME]\python "[CSMANAGEMENT]\webapps\client\WEB-INF\classes\scripts\common\keys\ssl-keys.py" "[CSMANAGEMENT]\lib"'
       Execute="deferred" Return="check" />
+    <CustomAction Id="DbHostWithPort" Execute="immediate" Property="DB_HOSTNAME" Value="[DB_HOSTNAME]:[DB_PORT]" />
     <CustomAction Id="DeployDB" Directory='CSMANAGEMENT'
       ExeCommand='[PYTHON_HOME]\python "[INSTALLDIR]\scripts\cloud-setup-databases" [DB_USERNAME]:[DB_PASSWORD]@[DB_HOSTNAME] --deploy-as=root:[DB_ROOT_PASSWORD] -c "[CSMANAGEMENT]\lib" -f "[CSMANAGEMENT]\setup" -j "[CSMANAGEMENT]\webapps\client\WEB-INF\lib\jasypt-1.9.0.jar" -n "[CSMANAGEMENT]\lib\key" -b "[MYSQL]\bin"'
       Execute="deferred" Return="check" Impersonate="no"/>
@@ -277,6 +279,7 @@
       </Custom>
       <Custom Action="CopySitePackages" After="GenerateSSLKey">NOT Installed</Custom>
       <Custom Action="DeleteDirectory" After="CopySitePackages">NOT Installed</Custom>
+      <Custom Action="DbHostWithPort" After="InstallFiles"><![CDATA[DB_PORT]]></Custom>
       <Custom Action="DeployDB" After="DeleteDirectory">(NOT Installed) AND (CREATE_DATABASE = "1")
       </Custom>
       <Custom Action="SetupDatabases" After="DeleteDirectory">(NOT Installed) AND (<![CDATA[CREATE_DATABASE <> "1"]]>)

@@ -27,6 +27,7 @@
   <String Id="DbUserNameLabel">User Name</String>
   <String Id="DbPasswordLabel">Password</String>
   <String Id="DbRootPasswordLabel">Root Password</String>
+  <String Id="DbServerPortLabel">Port</String>
   <String Id="CreateDBCheckBoxLabel">Create Cloud Stack Database</String>
   <String Id="GenerateSSLKey">Generating SSL Keys which is needed to talk to Management Server.</String>
   <String Id="DeployDB">Creating Database and needed Schemas for management server.</String>
