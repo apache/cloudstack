@@ -740,6 +740,13 @@ test_data = {
         "ostype": "CentOS 5.3 (64-bit)",
         "templatefilter": 'self',
     },
+    "templateregister": {
+        "displaytext": "xs",
+        "name": "xs",
+        "passwordenabled": False,
+        "url": "http://10.147.28.7/templates/ttylinux_pv.vhd",
+        "format": "VHD"
+    },
     "security_group": {"name": "custom_Sec_Grp"},
     "ingress_rule": {
         "protocol": "TCP",

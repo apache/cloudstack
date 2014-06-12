@@ -15,42 +15,19 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (createVolume,
-                                  createTemplate)
-from marvin.lib.base import (Volume,
-                             Iso,
-                             VirtualMachine,
-                             Template,
-                             Snapshot,
-                             SecurityGroup,
-                             Account,
-                             Zone,
-                             Network,
-                             NetworkOffering,
-                             DiskOffering,
-                             ServiceOffering,
-                             VmSnapshot,
-                             SnapshotPolicy,
-                             SSHKeyPair,
-                             Resources,
-                             Configurations,
-                             VpnCustomerGateway,
-                             Hypervisor,
-                             VpcOffering,
-                             VPC,
-                             NetworkACL)
-from marvin.lib.common import (get_zone,
-                               get_domain,
-                               get_template,
-                               list_os_types)
-from marvin.lib.utils import (validateList,
-                              cleanup_resources,
-                              random_gen)
-from marvin.codes import (PASS, FAIL, EMPTY_LIST)
+# Import Local Modules
+from marvin.cloudstackTestCase import *
+from marvin.cloudstackException import *
+from marvin.cloudstackAPI import *
+from marvin.sshClient import SshClient
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
+from marvin.lib.utils import checkVolumeSize
+from marvin.codes import SUCCESS
 from nose.plugins.attrib import attr
-import time
+from time import sleep
+from ctypes.wintypes import BOOLEAN
 
 class TestTemplates(cloudstackTestCase):
 
@@ -91,7 +68,7 @@ class TestTemplates(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        #Clean up, terminate the created resources
+        # Clean up, terminate the created resources
         cleanup_resources(self.apiClient, self.cleanup)
         return
 
@@ -168,14 +145,12 @@ class TestTemplates(cloudstackTestCase):
                           list_templates_before,
                           "Templates listed for newly created User"
                           )
-        self.services["template"]["url"] = "http://10.147.28.7/templates/ttylinux_pv.vhd"
-        self.services["template"]["format"] = "VHD"
-        self.services["template"]["ostype"] = self.services["ostype"]
+        self.services["templateregister"]["ostype"] = self.services["ostype"]
         # Creating pagesize + 1 number of Templates
         for i in range(0, (self.services["pagesize"] + 1)):
             template_created = Template.register(
                                                  self.userapiclient,
-                                                 self.services["template"],
+                                                 self.services["templateregister"],
                                                  self.zone.id,
                                                  hypervisor=self.hypervisor
                                                  )
@@ -290,9 +265,7 @@ class TestTemplates(cloudstackTestCase):
                           list_templates_page2,
                           "Templates not deleted from page 2"
                           )
-        del self.services["template"]["url"]
-        del self.services["template"]["format"]
-        del self.services["template"]["ostype"]
+        del self.services["templateregister"]["ostype"]
         return
 
     @attr(tags=["advanced", "basic", "provisioning"])
@@ -322,14 +295,12 @@ class TestTemplates(cloudstackTestCase):
                           list_templates_before,
                           "Templates listed for newly created User"
                           )
-        self.services["template"]["url"] = "http://10.147.28.7/templates/ttylinux_pv.vhd"
-        self.services["template"]["format"] = "VHD"
-        self.services["template"]["ostype"] = self.services["ostype"]
-        self.services["template"]["isextractable"] = True
+        self.services["templateregister"]["ostype"] = self.services["ostype"]
+        self.services["templateregister"]["isextractable"] = True
         # Creating aTemplate
         template_created = Template.register(
                                              self.userapiclient,
-                                             self.services["template"],
+                                             self.services["templateregister"],
                                              self.zone.id,
                                              hypervisor=self.hypervisor
                                              )
@@ -410,10 +381,8 @@ class TestTemplates(cloudstackTestCase):
                           download_template.id,
                           "Download Template details are not same as Template created"
                           )
-        del self.services["template"]["url"]
-        del self.services["template"]["format"]
-        del self.services["template"]["ostype"]
-        del self.services["template"]["isextractable"]
+        del self.services["templateregister"]["ostype"]
+        del self.services["templateregister"]["isextractable"]
         return
 
     @attr(tags=["advanced", "basic", "provisioning"])
@@ -451,13 +420,11 @@ class TestTemplates(cloudstackTestCase):
                           list_templates_before,
                           "Templates listed for newly created User"
                           )
-        self.services["template"]["url"] = "http://10.147.28.7/templates/ttylinux_pv.vhd"
-        self.services["template"]["format"] = "VHD"
-        self.services["template"]["ostype"] = self.services["ostype"]
+        self.services["templateregister"]["ostype"] = self.services["ostype"]
         # Creating aTemplate
         template_created = Template.register(
                                              self.userapiclient,
-                                             self.services["template"],
+                                             self.services["templateregister"],
                                              self.zone.id,
                                              hypervisor=self.hypervisor
                                              )
@@ -727,9 +694,7 @@ class TestTemplates(cloudstackTestCase):
                          edit_template_status,
                          "Edited Template details are not as expected"
                          )
-        del self.services["template"]["url"]
-        del self.services["template"]["format"]
-        del self.services["template"]["ostype"]
+        del self.services["templateregister"]["ostype"]
         return
 
     @attr(tags=["advanced", "basic", "provisioning"])
@@ -768,7 +733,7 @@ class TestTemplates(cloudstackTestCase):
                           "Failed to list Zones"
                           )
         if not len(zones_list) > 1:
-            self.fail("Enough zones doesnot exists to copy template")
+            raise unittest.SkipTest("Enough zones doesnot exists to copy template")
         else:
             # Listing all the Templates for a User in Zone 1
             list_templates_zone1 = Template.list(
@@ -794,10 +759,8 @@ class TestTemplates(cloudstackTestCase):
                               list_templates_zone2,
                               "Templates listed for newly created User in Zone2"
                               )
-            self.services["template"]["url"] = "http://10.147.28.7/templates/ttylinux_pv.vhd"
-            self.services["template"]["format"] = "VHD"
-            self.services["template"]["ostype"] = self.services["ostype"]
-            #Listing Hypervisors in Zone 1
+            self.services["templateregister"]["ostype"] = self.services["ostype"]
+            # Listing Hypervisors in Zone 1
             hypervisor_list = Hypervisor.list(
                                               self.apiClient,
                                               zoneid=zones_list[0].id
@@ -811,7 +774,7 @@ class TestTemplates(cloudstackTestCase):
             # Creating aTemplate in Zone 1
             template_created = Template.register(
                                                  self.userapiclient,
-                                                 self.services["template"],
+                                                 self.services["templateregister"],
                                                  zones_list[0].id,
                                                  hypervisor=hypervisor_list[0].name
                                                  )
@@ -938,7 +901,5 @@ class TestTemplates(cloudstackTestCase):
                               list_templates_zone2[0].isready,
                               "Failed to copy Template"
                               )
-        del self.services["template"]["url"]
-        del self.services["template"]["format"]
-        del self.services["template"]["ostype"]
+        del self.services["templateregister"]["ostype"]
         return
