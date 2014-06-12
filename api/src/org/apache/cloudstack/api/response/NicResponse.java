@@ -98,6 +98,14 @@ public class NicResponse extends BaseResponse {
     @Param(description = "device id for the network when plugged into the virtual machine", since = "4.4")
     private String deviceId;
 
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    @Param(description = "Id of the vm to which the nic belongs")
+    private String vmId;
+
+    public void setVmId(String vmId) {
+        this.vmId = vmId;
+    }
+
     public String getId() {
         return id;
     }
