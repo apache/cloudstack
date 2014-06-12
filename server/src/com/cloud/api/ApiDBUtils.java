@@ -900,7 +900,11 @@ public class ApiDBUtils {
     }
 
     public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
-        return s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
+        DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
+        if (off.getType() == DiskOfferingVO.Type.Disk) {
+            return off;
+        }
+        return null;
     }
 
     public static DomainVO findDomainById(Long domainId) {

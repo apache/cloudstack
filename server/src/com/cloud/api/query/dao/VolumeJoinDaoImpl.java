@@ -22,13 +22,12 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
@@ -154,19 +153,28 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         // DiskOfferingVO diskOffering =
         // ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
         if (volume.getDiskOfferingId() > 0) {
+            boolean isServiceOffering = false;
             if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-                volResponse.setServiceOfferingId(volume.getDiskOfferingUuid());
+                isServiceOffering = true;
             } else {
-                volResponse.setDiskOfferingId(volume.getDiskOfferingUuid());
+                // can't rely on the fact that the volume is the datadisk as it might have been created as a root, and
+                // then detached later
+                long offeringId = volume.getDiskOfferingId();
+                if (ApiDBUtils.findDiskOfferingById(offeringId) == null) {
+                    isServiceOffering = true;
+                }
             }
 
-            if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
+            if (isServiceOffering) {
+                volResponse.setServiceOfferingId(volume.getDiskOfferingUuid());
                 volResponse.setServiceOfferingName(volume.getDiskOfferingName());
                 volResponse.setServiceOfferingDisplayText(volume.getDiskOfferingDisplayText());
             } else {
+                volResponse.setDiskOfferingId(volume.getDiskOfferingUuid());
                 volResponse.setDiskOfferingName(volume.getDiskOfferingName());
                 volResponse.setDiskOfferingDisplayText(volume.getDiskOfferingDisplayText());
             }
+
             volResponse.setStorageType(volume.isUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
             volResponse.setBytesReadRate(volume.getBytesReadRate());
             volResponse.setBytesWriteRate(volume.getBytesReadRate());
