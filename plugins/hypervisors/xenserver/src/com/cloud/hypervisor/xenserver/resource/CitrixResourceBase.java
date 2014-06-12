@@ -898,7 +898,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      * if you create a network then create bridge by brctl or openvswitch yourself,
      * then you will get an expection that is "REQUIRED_NETWROK" when you start a
      * vm with this network. The soultion is, create a vif of dom0 and plug it in
-     * network, xenserver will create the bridge on behalf of you
+     * network, xenserver will create the bridge on behalf of you. But we can not keep the dom0 vif for the entire
+     * existence of network, as we will seen reach max VIF (8) that can be conencted to a domain. So as soon as we have
+     * one more VIF for any of the VM, delete dom0 VIF so that we can scale beyond 8 networks on a host.
      * @throws XmlRpcException
      * @throws XenAPIException
      */
@@ -917,7 +919,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         }
 
-        if (dom0vif == null) {
+        int domuVifCount=0;
+        Set<VIF> domUVifs = nw.getVIFs(conn);
+        Host host = Host.getByUuid(conn, _host.uuid);
+        for (VIF vif : domUVifs) {
+            vif.getRecord(conn);
+            if (vif.getVM(conn).getResidentOn(conn).equals(host)) {
+                domuVifCount++;
+            }
+        }
+
+        if (dom0vif == null && domuVifCount == 0) {
             s_logger.debug("Create a vif on dom0 for " + networkDesc);
             VIF.Record vifr = new VIF.Record();
             vifr.VM = dom0;
@@ -943,6 +955,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 // though an exception is thrown here, VIF actually gets plugged-in to dom0, so just ignore the exception
             }
             dom0vif.unplug(conn);
+        }
+
+        if (dom0vif != null && domuVifCount > 1) {
+            // now that there is at least one more VIF (other than dom0 vif) destroy dom0 VIF
+            dom0vif.destroy(conn);
         }
     }
 
