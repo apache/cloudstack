@@ -687,7 +687,7 @@ def cleanup_rules():
     try:
         chainscmd = """iptables-save | awk '{for(i=1;i<=NF;i++){ if($i ~ /[i|r|s|v]-[0-9]/){print $i} } }'"""
         chains = execute(chainscmd).split('\n')
-        cleanup = []
+        cleanup = set()
         results = []
         results = virshlist('paused', 'running')
         for chain in chains:
@@ -704,7 +704,7 @@ def cleanup_rules():
 
             if not vm_name in results:
                 logging.debug("chain " + chain + " does not correspond to a vm or vm is not running or paused, cleaning up iptable rules")
-                cleanup.append(vm_name)
+                cleanup.add(vm_name)
 
         chainscmd = """ebtables-save | awk '{for(i=1;i<=NF;i++){ if($i ~ /[i|r|s|v]-[0-9]/){print $i} } }'"""
         chains = execute(chainscmd).split('\n')
@@ -720,9 +720,8 @@ def cleanup_rules():
 
             if not vm_name in results:
                 logging.debug("chain " + chain + " does not correspond to a vm or vm is not running or paused, cleaning up ebtable rules")
-                cleanup.append(vm_name)
+                cleanup.add(vm_name)
 
-        cleanup = list(set(cleanup))
 
         for vmname in cleanup:
             destroy_network_rules_for_vm(vmname)
