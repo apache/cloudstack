@@ -444,14 +444,12 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     @Override
     public boolean releaseLockAsLastResortAndIReallyKnowWhatIAmDoing(String key) {
         s_logger.info("Releasing a lock from JMX lck-" + key);
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = _concierge.conn().prepareStatement(RELEASE_LOCK_SQL);
+        try(PreparedStatement pstmt = _concierge.conn().prepareStatement(RELEASE_LOCK_SQL);) {
             pstmt.setString(1, key);
             int rows = pstmt.executeUpdate();
             return rows > 0;
-        } catch (SQLException e) {
-            s_logger.error("Unable to release lock " + key, e);
+        } catch (Exception e) {
+            s_logger.error("releaseLockAsLastResortAndIReallyKnowWhatIAmDoing : Exception: " +  e.getMessage());
             return false;
         }
     }

@@ -237,8 +237,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     }
 
     protected void runScript(Connection conn, File file) {
-        try {
-            FileReader reader = new FileReader(file);
+
+        try(FileReader reader = new FileReader(file);) {
             ScriptRunner runner = new ScriptRunner(conn, false, true);
             runner.runScript(reader);
         } catch (FileNotFoundException e) {
@@ -251,6 +251,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             s_logger.error("Unable to execute upgrade script: " + file.getAbsolutePath(), e);
             throw new CloudRuntimeException("Unable to execute upgrade script: " + file.getAbsolutePath(), e);
         }
+
     }
 
     protected void upgrade(String dbVersion, String currentVersion) {
@@ -314,10 +315,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                     // we don't have VersionDao in 2.1.x
                     upgradeVersion = false;
                 } else if (upgrade.getUpgradedVersion().equals("2.2.4")) {
-                    try {
+                    try(PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM version WHERE version='2.2.4'");
+                        ResultSet rs = pstmt.executeQuery();) {
                         // specifically for domain vlan update from 2.1.8 to 2.2.4
-                        PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM version WHERE version='2.2.4'");
-                        ResultSet rs = pstmt.executeQuery();
                         if (rs.next()) {
                             upgradeVersion = false;
                         }

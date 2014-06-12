@@ -170,9 +170,7 @@ public class UsageSanityChecker {
     }
 
     protected void readLastCheckId(){
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new FileReader(lastCheckFile));
+        try(BufferedReader reader = new BufferedReader(new FileReader(lastCheckFile));) {
             String lastIdText = null;
             lastId = -1;
             if ((reader != null) && (lastIdText = reader.readLine()) != null) {
@@ -180,42 +178,33 @@ public class UsageSanityChecker {
             }
         } catch (IOException e) {
             s_logger.error(e);
-        } finally {
-            try {
-                reader.close();
-            } catch (IOException e) {
-                s_logger.error(e);
-            }
         }
     }
 
     protected void readMaxId() throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement("select max(id) from cloud_usage.cloud_usage");
-        ResultSet rs = pstmt.executeQuery();
-        maxId = -1;
-        if (rs.next() && (rs.getInt(1) > 0)) {
-            maxId = rs.getInt(1);
-            lastCheckId += " and cu.id <= ?";
+        try(PreparedStatement pstmt = conn.prepareStatement("select max(id) from cloud_usage.cloud_usage");
+            ResultSet rs = pstmt.executeQuery();)
+        {
+            maxId = -1;
+            if (rs.next() && (rs.getInt(1) > 0)) {
+                maxId = rs.getInt(1);
+                lastCheckId += " and cu.id <= ?";
+            }
+        }
+        catch (Exception e)
+        {
+           s_logger.error("readMaxId: Exception :"+ e.getMessage());
         }
     }
 
     protected void updateNewMaxId() {
-        FileWriter fstream = null;
-        try {
-            fstream = new FileWriter(lastCheckFile);
-            BufferedWriter out = new BufferedWriter(fstream);
+
+        try(FileWriter fstream = new FileWriter(lastCheckFile);
+        BufferedWriter out = new BufferedWriter(fstream);
+        ) {
             out.write("" + maxId);
-            out.close();
         } catch (IOException e) {
-            // Error while writing last check id
-        } finally {
-            if (fstream != null) {
-                try {
-                    fstream.close();
-                } catch (IOException e) {
-                    s_logger.error(e);
-                }
-            }
+            s_logger.error("updateMaxId: Exception :"+ e.getMessage());
         }
     }
 

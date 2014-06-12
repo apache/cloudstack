@@ -75,81 +75,106 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
     }
 
     private Boolean checkDuplicateHostWithTheSameLocalStorage() {
+
         TransactionLegacy txn = TransactionLegacy.open("Integrity");
-        txn.start();
         try {
-            Connection conn;
-            try {
-                conn = txn.getConnection();
-                PreparedStatement pstmt =
-                    conn.prepareStatement("SELECT pool_id FROM host INNER JOIN storage_pool_host_ref INNER JOIN storage_pool WHERE storage_pool.id = storage_pool_host_ref.pool_id and storage_pool.pool_type='LVM' AND host.id=storage_pool_host_ref.host_id AND host.removed IS NULL group by pool_id having count(*) > 1");
-                ResultSet rs = pstmt.executeQuery();
-
-                boolean noDuplicate = true;
-                StringBuffer helpInfo = new StringBuffer();
-                String note =
-                    "DATABASE INTEGRITY ERROR\nManagement server detected there are some hosts connect to the same loacal storage, please contact CloudStack support team for solution. Below are detialed info, please attach all of them to CloudStack support. Thank you\n";
-                helpInfo.append(note);
-                while (rs.next()) {
-                    long poolId = rs.getLong(1);
-                    pstmt =
-                        conn.prepareStatement("select id, status, removed, private_ip_address from host where id in (select host_id from storage_pool_host_ref where pool_id=?)");
-                    pstmt.setLong(1, poolId);
-                    ResultSet dhrs = pstmt.executeQuery();
-                    String help = formatDuplicateHostToReadText(poolId, dhrs);
-                    helpInfo.append(help);
-                    helpInfo.append("\n");
-                    noDuplicate = false;
-                }
-
-                if (noDuplicate) {
-                    s_logger.debug("No duplicate hosts with the same local storage found in database");
-                } else {
-                    s_logger.error(helpInfo.toString());
-                }
-
-                return noDuplicate;
-            } catch (SQLException e) {
-                s_logger.error("Unable to check duplicate hosts with the same local storage in database", e);
-                throw new CloudRuntimeException("Unable to check duplicate hosts with the same local storage in database", e);
+            txn.start();
+            Connection conn = txn.getConnection();
+            try (PreparedStatement pstmt =
+                             conn.prepareStatement("SELECT pool_id FROM host INNER JOIN storage_pool_host_ref INNER JOIN storage_pool WHERE storage_pool.id = storage_pool_host_ref.pool_id and storage_pool.pool_type='LVM' AND host.id=storage_pool_host_ref.host_id AND host.removed IS NULL group by pool_id having count(*) > 1");
+                 ResultSet rs = pstmt.executeQuery();)
+            {
+                    boolean noDuplicate = true;
+                    StringBuffer helpInfo = new StringBuffer();
+                    String note =
+                        "DATABASE INTEGRITY ERROR\nManagement server detected there are some hosts connect to the same loacal storage, please contact CloudStack support team for solution. Below are detialed info, please attach all of them to CloudStack support. Thank you\n";
+                    helpInfo.append(note);
+                    while (rs.next()) {
+                        try ( PreparedStatement sel_pstmt =
+                                conn.prepareStatement("select id, status, removed, private_ip_address from host where id in (select host_id from storage_pool_host_ref where pool_id=?)");
+                        ){
+                                long poolId = rs.getLong(1);
+                                pstmt.setLong(1, poolId);
+                                try(ResultSet dhrs = sel_pstmt.executeQuery();) {
+                                    String help = formatDuplicateHostToReadText(poolId, dhrs);
+                                    helpInfo.append(help);
+                                    helpInfo.append("\n");
+                                    noDuplicate = false;
+                                }
+                                catch (Exception e)
+                                {
+                                    s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
+                                    throw new CloudRuntimeException("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage(),e);
+                                }
+                        }
+                        catch (Exception e)
+                        {
+                                s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
+                                throw new CloudRuntimeException("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage(),e);
+                        }
+                    }
+                    if (noDuplicate) {
+                        s_logger.debug("No duplicate hosts with the same local storage found in database");
+                    } else {
+                        s_logger.error(helpInfo.toString());
+                    }
+                    txn.commit();
+                    return noDuplicate;
+            }catch (Exception e)
+            {
+                  s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
+                  throw new CloudRuntimeException("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage(),e);
             }
-        } finally {
-            txn.commit();
-            txn.close();
+        }
+        catch (Exception e)
+        {
+            s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
+            throw new CloudRuntimeException("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage(),e);
+        }
+        finally
+        {
+            try {
+                if (txn != null) {
+                    txn.close();
+                }
+            }catch(Exception e)
+            {
+                s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception:"+ e.getMessage());
+            }
         }
     }
 
     private boolean check21to22PremiumUprage(Connection conn) throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement("show tables in cloud_usage");
-        ResultSet rs = pstmt.executeQuery();
-        int num = 0;
-
-        while (rs.next()) {
-            String tableName = rs.getString(1);
-            if (tableName.equalsIgnoreCase("usage_event") || tableName.equalsIgnoreCase("usage_port_forwarding") || tableName.equalsIgnoreCase("usage_network_offering")) {
-                num++;
-                s_logger.debug("Checking 21to22PremiumUprage table " + tableName + " found");
+        try (PreparedStatement pstmt = conn.prepareStatement("show tables in cloud_usage");
+             ResultSet rs = pstmt.executeQuery();) {
+            int num = 0;
+            while (rs.next()) {
+                String tableName = rs.getString(1);
+                if (tableName.equalsIgnoreCase("usage_event") || tableName.equalsIgnoreCase("usage_port_forwarding") || tableName.equalsIgnoreCase("usage_network_offering")) {
+                    num++;
+                    s_logger.debug("Checking 21to22PremiumUprage table " + tableName + " found");
+                }
+                if (num == 3) {
+                    return true;
+                }
             }
-            if (num == 3) {
-                return true;
-            }
+            return false;
         }
-
-        return false;
     }
 
     private boolean isColumnExisted(Connection conn, String dbName, String tableName, String column) throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement(String.format("describe %1$s.%2$s", dbName, tableName));
-        ResultSet rs = pstmt.executeQuery();
-        boolean found = false;
-        while (rs.next()) {
-            if (column.equalsIgnoreCase(rs.getString(1))) {
-                s_logger.debug(String.format("Column %1$s.%2$s.%3$s found", dbName, tableName, column));
-                found = true;
-                break;
+        try (PreparedStatement pstmt = conn.prepareStatement(String.format("describe %1$s.%2$s", dbName, tableName));
+             ResultSet rs = pstmt.executeQuery();) {
+            boolean found = false;
+            while (rs.next()) {
+                if (column.equalsIgnoreCase(rs.getString(1))) {
+                    s_logger.debug(String.format("Column %1$s.%2$s.%3$s found", dbName, tableName, column));
+                    found = true;
+                    break;
+                }
             }
+            return found;
         }
-        return found;
     }
 
     private boolean check221to222PremiumUprage(Connection conn) throws SQLException {
@@ -174,22 +199,23 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
 
     private boolean checkMissedPremiumUpgradeFor228() {
         TransactionLegacy txn = TransactionLegacy.open("Integrity");
-        txn.start();
         try {
-            String dbVersion = _dao.getCurrentVersion();
-
-            if (dbVersion == null)
-                return false;
-
-            if (Version.compare(Version.trimToPatch(dbVersion), Version.trimToPatch("2.2.8")) != 0) {
-                return true;
-            }
-
-            Connection conn;
-            try {
-                conn = txn.getConnection();
+            txn.start();
+            Connection conn = txn.getConnection();
+            try (
                 PreparedStatement pstmt = conn.prepareStatement("show databases");
-                ResultSet rs = pstmt.executeQuery();
+                ResultSet rs = pstmt.executeQuery();) {
+                String dbVersion = _dao.getCurrentVersion();
+
+                if (dbVersion == null) {
+                    txn.commit();
+                    return false;
+                }
+
+                if (Version.compare(Version.trimToPatch(dbVersion), Version.trimToPatch("2.2.8")) != 0) {
+                    txn.commit();
+                    return true;
+                }
                 boolean hasUsage = false;
                 while (rs.next()) {
                     String dbName = rs.getString(1);
@@ -198,35 +224,46 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
                         break;
                     }
                 }
-
                 if (!hasUsage) {
                     s_logger.debug("No cloud_usage found in database, no need to check missed premium upgrade");
+                    txn.commit();
                     return true;
                 }
-
                 if (!check21to22PremiumUprage(conn)) {
                     s_logger.error("21to22 premium upgrade missed");
+                    txn.commit();
                     return false;
                 }
-
                 if (!check221to222PremiumUprage(conn)) {
                     s_logger.error("221to222 premium upgrade missed");
+                    txn.commit();
                     return false;
                 }
-
                 if (!check222to224PremiumUpgrade(conn)) {
                     s_logger.error("222to224 premium upgrade missed");
+                    txn.commit();
                     return false;
                 }
-
+                txn.commit();
                 return true;
-            } catch (SQLException e) {
-                s_logger.error("Unable to check missed premiumg upgrade");
-                throw new CloudRuntimeException("Unable to check missed premiumg upgrade");
+            } catch (Exception e) {
+                s_logger.error("checkMissedPremiumUpgradeFor228: Exception:" + e.getMessage());
+                throw new CloudRuntimeException("checkMissedPremiumUpgradeFor228: Exception:" + e.getMessage(), e);
             }
-        } finally {
-            txn.commit();
-            txn.close();
+        }catch (Exception e) {
+            s_logger.error("checkMissedPremiumUpgradeFor228: Exception:"+ e.getMessage());
+            throw new CloudRuntimeException("checkMissedPremiumUpgradeFor228: Exception:" + e.getMessage(),e);
+        }
+        finally
+        {
+            try {
+                if (txn != null) {
+                    txn.close();
+                }
+            }catch(Exception e)
+            {
+                s_logger.error("checkMissedPremiumUpgradeFor228: Exception:"+ e.getMessage());
+            }
         }
     }
 
