@@ -724,8 +724,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     public VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, Volume rootVolumeOfVm, VolumeInfo volume, HypervisorType rootDiskHyperType) throws NoTransitionException {
         VirtualMachineTemplate rootDiskTmplt = _entityMgr.findById(VirtualMachineTemplate.class, vm.getTemplateId());
         DataCenter dcVO = _entityMgr.findById(DataCenter.class, vm.getDataCenterId());
-        Pod pod = _entityMgr.findById(Pod.class, vm.getPodIdToDeployIn());
         StoragePoolVO rootDiskPool = _storagePoolDao.findById(rootVolumeOfVm.getPoolId());
+        Pod pod = _entityMgr.findById(Pod.class, rootDiskPool.getPodId());
         ServiceOffering svo = _entityMgr.findById(ServiceOffering.class, vm.getServiceOfferingId());
         DiskOffering diskVO = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
         Long clusterId = (rootDiskPool == null ? null : rootDiskPool.getClusterId());
