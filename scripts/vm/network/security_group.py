@@ -722,6 +722,8 @@ def cleanup_rules():
                 logging.debug("chain " + chain + " does not correspond to a vm or vm is not running or paused, cleaning up ebtable rules")
                 cleanup.append(vm_name)
 
+        cleanup = list(set(cleanup))
+
         for vmname in cleanup:
             destroy_network_rules_for_vm(vmname)
 
