@@ -16,25 +16,26 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
-import org.apache.log4j.Logger;
-
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.vpc.Vpc;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
-
-import com.cloud.event.EventTypes;
-import com.cloud.network.Site2SiteVpnGateway;
-import com.cloud.network.vpc.Vpc;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 @APICommand(name = "createVpnGateway", description = "Creates site to site vpn local gateway", responseObject = Site2SiteVpnGatewayResponse.class, entityType = {Site2SiteVpnGateway.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateVpnGatewayCmd extends BaseAsyncCmd {
+public class CreateVpnGatewayCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVpnGatewayCmd.class.getName());
 
     private static final String s_name = "createvpngatewayresponse";
@@ -101,8 +102,8 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        Site2SiteVpnGateway result;
-        result = _s2sVpnService.createVpnGateway(this);
+        CallContext.current().setEventDetails("VPN gateway Id: " + getEntityId());
+        Site2SiteVpnGateway result = _s2sVpnService.getVpnGateway(getEntityId());
         if (result != null) {
             Site2SiteVpnGatewayResponse response = _responseGenerator.createSite2SiteVpnGatewayResponse(result);
             response.setResponseName(getCommandName());
@@ -120,5 +121,16 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     @Override
     public Long getSyncObjId() {
         return getVpcId();
+    }
+
+    @Override
+    public void create() throws ResourceAllocationException {
+        Site2SiteVpnGateway result = _s2sVpnService.createVpnGateway(this);
+        if (result != null) {
+            setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create VPN gateway");
+        }
     }
 }
