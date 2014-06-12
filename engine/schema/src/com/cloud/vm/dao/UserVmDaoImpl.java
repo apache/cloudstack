@@ -360,58 +360,84 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     @Override
     public List<Long> listPodIdsHavingVmsforAccount(long zoneId, long accountId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
+        String sql = LIST_PODS_HAVING_VMS_FOR_ACCOUNT;
 
-        try {
-            String sql = LIST_PODS_HAVING_VMS_FOR_ACCOUNT;
-            pstmt = txn.prepareAutoCloseStatement(sql);
+        try(PreparedStatement pstmt = txn.prepareStatement(sql)) {
             pstmt.setLong(1, zoneId);
             pstmt.setLong(2, accountId);
-
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                result.add(rs.getLong(1));
+            try(ResultSet rs = pstmt.executeQuery();)
+            {
+                while (rs.next()) {
+                    result.add(rs.getLong(1));
+                }
             }
+            catch (Exception e) {
+                s_logger.error("listPodIdsHavingVmsforAccount:Exception: " +  e.getMessage());
+                throw new CloudRuntimeException("listPodIdsHavingVmsforAccount:Exception: " + e.getMessage(), e);
+            }
+            txn.commit();
             return result;
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + LIST_PODS_HAVING_VMS_FOR_ACCOUNT, e);
-        } catch (Throwable e) {
-            throw new CloudRuntimeException("Caught: " + LIST_PODS_HAVING_VMS_FOR_ACCOUNT, e);
+        } catch (Exception e) {
+            s_logger.error("listPodIdsHavingVmsforAccount:Exception : " +  e.getMessage());
+            throw new CloudRuntimeException("listPodIdsHavingVmsforAccount:Exception: " + e.getMessage(), e);
         }
+        finally {
+            try{
+                if (txn != null)
+                {
+                    txn.close();
+                }
+            }
+            catch (Exception e)
+            {
+                s_logger.error("listVmDetails:Exception:" + e.getMessage());
+            }
+        }
+
     }
 
     @Override
     public Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> userVmDataHash) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-
         try {
             int curr_index = 0;
-
             List<UserVmData> userVmDataList = new ArrayList(userVmDataHash.values());
-
-            if (userVmDataList.size() > VM_DETAILS_BATCH_SIZE) {
-                pstmt = txn.prepareStatement(VM_DETAILS + getQueryBatchAppender(VM_DETAILS_BATCH_SIZE));
-                while ((curr_index + VM_DETAILS_BATCH_SIZE) <= userVmDataList.size()) {
-                    // set the vars value
-                    for (int k = 1, j = curr_index; j < curr_index + VM_DETAILS_BATCH_SIZE; j++, k++) {
-                        pstmt.setLong(k, userVmDataList.get(j).getId());
-                    }
-                    ResultSet rs = pstmt.executeQuery();
-                    while (rs.next()) {
-                        long vm_id = rs.getLong("vm_instance.id");
-                        //check if the entry is already there
-                        UserVmData uvm = userVmDataHash.get(vm_id);
-                        if (uvm == null) {
-                            uvm = new UserVmData();
-                            uvm.setId(vm_id);
+            if (userVmDataList.size() > VM_DETAILS_BATCH_SIZE)
+            {
+                try (PreparedStatement pstmt = txn.prepareStatement(VM_DETAILS + getQueryBatchAppender(VM_DETAILS_BATCH_SIZE));)
+                {
+                    while ((curr_index + VM_DETAILS_BATCH_SIZE) <= userVmDataList.size()) {
+                        // set the vars value
+                        for (int k = 1, j = curr_index; j < curr_index + VM_DETAILS_BATCH_SIZE; j++, k++) {
+                            pstmt.setLong(k, userVmDataList.get(j).getId());
                         }
-                        // initialize the data with this row
-                        setUserVmData(uvm, rs);
+                        try(ResultSet rs = pstmt.executeQuery();)
+                        {
+                            while (rs.next()) {
+                                long vm_id = rs.getLong("vm_instance.id");
+                                //check if the entry is already there
+                                UserVmData uvm = userVmDataHash.get(vm_id);
+                                if (uvm == null) {
+                                    uvm = new UserVmData();
+                                    uvm.setId(vm_id);
+                                }
+                                // initialize the data with this row
+                                setUserVmData(uvm, rs);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            s_logger.error("listVmDetails:Exception:" + e.getMessage());
+                            throw new CloudRuntimeException("listVmDetails: Exception:" + e.getMessage(),e);
+                        }
+                        curr_index += VM_DETAILS_BATCH_SIZE;
                     }
-                    rs.close();
-                    curr_index += VM_DETAILS_BATCH_SIZE;
+                }
+                catch (Exception e)
+                {
+                    s_logger.error("listVmDetails:Exception:" + e.getMessage());
+                    throw new CloudRuntimeException("listVmDetails: Exception:" + e.getMessage(),e);
                 }
                 if (pstmt != null)
                     pstmt.close();
@@ -419,34 +445,56 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
             if (curr_index < userVmDataList.size()) {
                 int batch_size = (userVmDataList.size() - curr_index);
-                pstmt = txn.prepareStatement(VM_DETAILS + getQueryBatchAppender(batch_size));
-                // set the vars value
-                for (int k = 1, j = curr_index; j < curr_index + batch_size; j++, k++) {
-                    pstmt.setLong(k, userVmDataList.get(j).getId());
-                }
-                ResultSet rs = pstmt.executeQuery();
-                while (rs.next()) {
-                    long vm_id = rs.getLong("vm_instance.id");
-                    //check if the entry is already there
-                    UserVmData uvm = userVmDataHash.get(vm_id);
-                    if (uvm == null) {
-                        uvm = new UserVmData();
-                        uvm.setId(vm_id);
+                try (PreparedStatement vm_details_pstmt = txn.prepareStatement(VM_DETAILS + getQueryBatchAppender(batch_size)))
+                {
+                    // set the vars value
+                    for (int k = 1, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                        vm_details_pstmt.setLong(k, userVmDataList.get(j).getId());
                     }
-                    // initialize the data with this row
-                    setUserVmData(uvm, rs);
+                    try(ResultSet rs = vm_details_pstmt.executeQuery();) {
+                        while (rs.next()) {
+                            long vm_id = rs.getLong("vm_instance.id");
+                            //check if the entry is already there
+                            UserVmData uvm = userVmDataHash.get(vm_id);
+                            if (uvm == null) {
+                                uvm = new UserVmData();
+                                uvm.setId(vm_id);
+                            }
+                            // initialize the data with this row
+                            setUserVmData(uvm, rs);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        s_logger.error("listVmDetails: Exception:" + e.getMessage());
+                        throw new CloudRuntimeException("listVmDetails: Exception:" + e.getMessage(),e);
+                    }
                 }
-                rs.close();
+                catch (Exception e)
+                {
+                    s_logger.error("listVmDetails:Exception:" + e.getMessage());
+                    throw new CloudRuntimeException("listVmDetails: Exception:" + e.getMessage(),e);
+                }
             }
-
-            if (pstmt != null)
-                pstmt.close();
+            txn.commit();
             return userVmDataHash;
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + VM_DETAILS, e);
-        } catch (Throwable e) {
-            throw new CloudRuntimeException("Caught: " + VM_DETAILS, e);
+        } catch (Exception e) {
+            s_logger.error("listVmDetails:Exception:" + e.getMessage());
+            throw new CloudRuntimeException("listVmDetails:Exception : ", e);
         }
+        finally {
+            try{
+                if (txn != null)
+                {
+                    txn.close();
+                }
+            }
+            catch (Exception e)
+            {
+                s_logger.error("listVmDetails:Exception:" + e.getMessage());
+            }
+        }
+
     }
 
     public static UserVmData setUserVmData(UserVmData userVmData, ResultSet rs) throws SQLException {
