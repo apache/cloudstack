@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#Import Local Modules
+# Import Local Modules
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackException import *
 from marvin.cloudstackAPI import *
@@ -27,6 +27,7 @@ from marvin.lib.utils import checkVolumeSize
 from marvin.codes import SUCCESS
 from nose.plugins.attrib import attr
 from time import sleep
+from ctypes.wintypes import BOOLEAN
 
 class TestIpAddresses(cloudstackTestCase):
 
@@ -37,6 +38,7 @@ class TestIpAddresses(cloudstackTestCase):
             cls.testClient = super(TestIpAddresses, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
+            cls.hypervisor = cls.testClient.getHypervisorInfo()
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
             cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -51,7 +53,7 @@ class TestIpAddresses(cloudstackTestCase):
             else:
                 cls.storagetype = 'shared'
                 cls.services["service_offerings"]["tiny"]["storagetype"] = 'shared'
-   
+
             cls.services['mode'] = cls.zone.networktype
             cls.services["virtual_machine"]["hypervisor"] = cls.testClient.getHypervisorInfo()
             cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -62,15 +64,7 @@ class TestIpAddresses(cloudstackTestCase):
                                                           )
             cls._cleanup.append(cls.service_offering)
             cls.services['mode'] = cls.zone.networktype
-            cls.account = Account.create(
-                                cls.api_client,
-                                cls.services["account"],
-                                domainid=cls.domain.id
-                                )
-            # Getting authentication for user in newly created Account
-            cls.user = cls.account.user[0]
-            cls.userapiclient = cls.testClient.getUserApiClient(cls.user.username, cls.domain.name)
-            cls._cleanup.append(cls.account)
+
         except Exception as e:
             cls.tearDownClass()
             raise Exception("Warning: Exception in setup : %s" % e)
@@ -80,9 +74,18 @@ class TestIpAddresses(cloudstackTestCase):
 
         self.apiClient = self.testClient.getApiClient()
         self.cleanup = []
+        self.account = Account.create(
+                                self.apiClient,
+                                self.services["account"],
+                                domainid=self.domain.id
+                                )
+        # Getting authentication for user in newly created Account
+        self.user = self.account.user[0]
+        self.userapiclient = self.testClient.getUserApiClient(self.user.username, self.domain.name)
+#         self.cleanup.append(self.account)
 
     def tearDown(self):
-        #Clean up, terminate the created volumes
+        # Clean up, terminate the created volumes
         cleanup_resources(self.apiClient, self.cleanup)
         return
 
@@ -125,7 +128,7 @@ class TestIpAddresses(cloudstackTestCase):
 
     @attr(tags=["advanced", "provisioning"])
     def test_01_list_ipaddresses_pagination(self):
-        """  
+        """
         @summary: Test List IP Addresses pagination
         @Steps:
         Step1: Creating a network for the user
@@ -209,7 +212,7 @@ class TestIpAddresses(cloudstackTestCase):
                           list_ipaddresses_before,
                           "IP Addresses listed for newly created user"
                           )
-        # Associating (pagesize + 1) number of IP Addresses    
+        # Associating (pagesize + 1) number of IP Addresses
         for i in range(0, (self.services["pagesize"] + 1)):
             ipaddress = PublicIPAddress.create(
                                                self.userapiclient,
@@ -220,7 +223,7 @@ class TestIpAddresses(cloudstackTestCase):
                                  ipaddress,
                                  "Failed to Associate IP Address"
                                  )
-       
+
         # Listing all the IP Addresses for a user
         list_ipaddresses_after = PublicIPAddress.list(
                                                       self.userapiclient,
@@ -290,11 +293,12 @@ class TestIpAddresses(cloudstackTestCase):
                           list_ipaddress_page2,
                           "Disassociation of IP Address Failed"
                           )
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_02_list_ipaddresses_byid(self):
-        """  
+        """
         @summary: Test List IP Addresses details by ID
         @Steps:
         Step1: Creating a network for the user
@@ -391,7 +395,7 @@ class TestIpAddresses(cloudstackTestCase):
                           list_ipaddresses_before,
                           "IP Addresses listed for newly created user"
                           )
-        # Associating an IP Addresses to Network created 
+        # Associating an IP Addresses to Network created
         associated_ipaddress = PublicIPAddress.create(
                                                       self.userapiclient,
                                                       services=self.services["network"],
@@ -464,11 +468,12 @@ class TestIpAddresses(cloudstackTestCase):
                          ipaddress_status,
                          "Listed IP Address details are not as expected"
                          )
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_03_associate_ipaddress_for_vpc(self):
-        """  
+        """
         @summary: Test to Associate IP Address for VPC
         @Steps:
         Step1: Creating a VPC for the user
@@ -507,12 +512,12 @@ class TestIpAddresses(cloudstackTestCase):
                              "VPC Creation Failed"
                              )
         self.cleanup.append(vpc_created)
-        # Listing the vpc for a user after creating a vpc       
+        # Listing the vpc for a user after creating a vpc
         list_vpc_after = VPC.list(self.userapiclient)
         status = validateList(list_vpc_after)
         self.assertEquals(
-                          PASS, 
-                          status[0], 
+                          PASS,
+                          status[0],
                           "list VPC not as expected"
                           )
         # Verifying the list vpc size is increased by 1
@@ -537,7 +542,7 @@ class TestIpAddresses(cloudstackTestCase):
                           len(list_ipaddresses_before),
                           "Failed to List VPC IP Address"
                           )
-        # Associating an IP Addresses to VPC created 
+        # Associating an IP Addresses to VPC created
         associated_ipaddress = PublicIPAddress.create(
                                                       self.userapiclient,
                                                       services=self.services["network"],
@@ -615,11 +620,12 @@ class TestIpAddresses(cloudstackTestCase):
                          ipaddress_status,
                          "Listed IP Address details are not as expected"
                          )
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_04_create_delete_lbrule_fornonvpc(self):
-        """  
+        """
         @summary: Test to list, create and delete Load Balancer Rule for IP Address associated to Non VPC network
         @Steps:
         Step1: Creating a Network for the user
@@ -682,7 +688,7 @@ class TestIpAddresses(cloudstackTestCase):
                           list_ipaddresses_before,
                           "IP Addresses listed for newly created User"
                           )
-        # Associating an IP Addresses to Network created 
+        # Associating an IP Addresses to Network created
         associated_ipaddress = PublicIPAddress.create(
                                                       self.userapiclient,
                                                       services=self.services["network"],
@@ -785,11 +791,12 @@ class TestIpAddresses(cloudstackTestCase):
                           list_lbrules_after,
                           "Failed to delete Load Balancer Rule"
                           )
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_05_create_delete_lbrule_forvpc(self):
-        """  
+        """
         @summary: Test to list, create and delete Load Balancer Rule for IP Address associated to VPC
         @Steps:
         Step1: Creating a VPC for the user
@@ -829,12 +836,12 @@ class TestIpAddresses(cloudstackTestCase):
                              vpc_created,
                              "VPC Creation Failed"
                              )
-        # Listing the vpc for a user after creating a vpc       
+        # Listing the vpc for a user after creating a vpc
         list_vpc_after = VPC.list(self.userapiclient)
         status = validateList(list_vpc_after)
         self.assertEquals(
-                          PASS, 
-                          status[0], 
+                          PASS,
+                          status[0],
                           "list VPC not as expected"
                           )
         # Verifying the list vpc size is increased by 1
@@ -843,25 +850,25 @@ class TestIpAddresses(cloudstackTestCase):
                           len(list_vpc_after),
                           "list VPC not equal as expected"
                           )
-        #List network offering for vpc = true
+        # List network offering for vpc = true
         network_offering_vpc_true_list = NetworkOffering.list(
                                                               self.userapiclient,
-                                                              forvpc = "true",
-                                                              zoneid = self.zone.id,
-                                                              supportedServices = "Lb",
-                                                              state = "Enabled"
+                                                              forvpc="true",
+                                                              zoneid=self.zone.id,
+                                                              supportedServices="Lb",
+                                                              state="Enabled"
                                                               )
         status = validateList(network_offering_vpc_true_list)
-        self.assertEquals(PASS, status[0], "Default network offering not present for vpc = true with Lb") 
-        # Creating network under VPC  
+        self.assertEquals(PASS, status[0], "Default network offering not present for vpc = true with Lb")
+        # Creating network under VPC
         network_created = Network.create(
                                          self.userapiclient,
                                          self.services["ntwk"],
-                                         networkofferingid = network_offering_vpc_true_list[0].id,
-                                         vpcid = vpc_created.id,
+                                         networkofferingid=network_offering_vpc_true_list[0].id,
+                                         vpcid=vpc_created.id,
                                          zoneid=self.zone.id,
-                                         gateway= self.services["ntwk"]["gateway"],
-                                         netmask = self.services["ntwk"]["netmask"]
+                                         gateway=self.services["ntwk"]["gateway"],
+                                         netmask=self.services["ntwk"]["netmask"]
                                      )
         self.cleanup.append(network_created)
         self.assertIsNotNone(
@@ -876,8 +883,8 @@ class TestIpAddresses(cloudstackTestCase):
                                                        )
         status = validateList(list_ipaddresses_before)
         self.assertEquals(
-                          PASS, 
-                          status[0], 
+                          PASS,
+                          status[0],
                           "list IP Addresses not as expected"
                           )
         # Verifying the list vpc size is increased by 1
@@ -886,7 +893,7 @@ class TestIpAddresses(cloudstackTestCase):
                           len(list_ipaddresses_before),
                           "list IP Addresses not equal as expected"
                           )
-        # Associating an IP Addresses to VPC created 
+        # Associating an IP Addresses to VPC created
         associated_ipaddress = PublicIPAddress.create(
                                                       self.userapiclient,
                                                       services=self.services["network"],
@@ -990,11 +997,12 @@ class TestIpAddresses(cloudstackTestCase):
                           list_lbrules_after,
                           "Failed to delete Load Balancer Rule"
                           )
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_06_update_lbrule_name(self):
-        """  
+        """
         @summary: Test to Update Load Balancer Rule Name for IP Address associated to Non VPC network
         @Steps:
         Step1: Creating a Network for the user
@@ -1073,7 +1081,7 @@ class TestIpAddresses(cloudstackTestCase):
                           list_ipaddresses_before,
                           "IP Addresses listed for newly created User"
                           )
-        # Associating an IP Addresses to Network created 
+        # Associating an IP Addresses to Network created
         associated_ipaddress = PublicIPAddress.create(
                                                       self.userapiclient,
                                                       services=self.services["network"],
@@ -1186,11 +1194,12 @@ class TestIpAddresses(cloudstackTestCase):
                          lbrule_status,
                          "Updated Load Balancer Rule details are not as expected"
                          )
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_07_assign_remove_lbrule_toinstance(self):
-        """  
+        """
         @summary: Test to Assign and Remove Load Balancer Rule to an Instance
         @Steps:
         Step1: Creating a Network for the user
@@ -1260,7 +1269,7 @@ class TestIpAddresses(cloudstackTestCase):
                           list_ipaddresses_before,
                           "IP Addresses listed for newly created User"
                           )
-        # Associating an IP Addresses to Network created 
+        # Associating an IP Addresses to Network created
         associated_ipaddress = PublicIPAddress.create(
                                                       self.userapiclient,
                                                       services=self.services["network"],
@@ -1501,11 +1510,12 @@ class TestIpAddresses(cloudstackTestCase):
         # Destroying the VM Launched
         vm_created.delete(self.userapiclient)
         vm_created.expung(self.apiClient)
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_08_list_create_delete_lbsticky_policy(self):
-        """  
+        """
         @summary: Test to List, Create, Delete Load Balancer Stickyness Policy
         @Steps:
         Step1: Creating a Network for the user
@@ -1586,7 +1596,7 @@ class TestIpAddresses(cloudstackTestCase):
                           list_ipaddresses_before,
                           "IP Addresses listed for newly created User"
                           )
-        # Associating an IP Addresses to Network created 
+        # Associating an IP Addresses to Network created
         associated_ipaddress = PublicIPAddress.create(
                                                       self.userapiclient,
                                                       services=self.services["network"],
@@ -1700,7 +1710,7 @@ class TestIpAddresses(cloudstackTestCase):
                          True,
                          lbstickypolicy_status,
                          "Created Load Balancer Sticky Policy details are not as expected"
-                         )        
+                         )
         # Listing Load Balancer Stickyness Policies for LB Rule
         list_lbstickypolicy_after = LoadBalancerRule.listStickyPolicies(
                                                                         self.userapiclient,
@@ -1737,11 +1747,12 @@ class TestIpAddresses(cloudstackTestCase):
                           len(list_lbstickypolicy_after[0].stickinesspolicy),
                           "Sticky Policy listed for newly created Load Balancer Rule"
                           )
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_09_create_delete_portforwarding_fornonvpc(self):
-        """  
+        """
         @summary: Test to list, create and delete Port Forwarding for IP Address associated to Non VPC network
         @Steps:
         Step1: Creating a Network for the user
@@ -1804,7 +1815,7 @@ class TestIpAddresses(cloudstackTestCase):
                           list_ipaddresses_before,
                           "IP Addresses listed for newly created User"
                           )
-        # Associating an IP Addresses to Network created 
+        # Associating an IP Addresses to Network created
         associated_ipaddress = PublicIPAddress.create(
                                                       self.userapiclient,
                                                       services=self.services["network"],
@@ -1960,11 +1971,12 @@ class TestIpAddresses(cloudstackTestCase):
         # Destroying the VM Launched
         vm_created.delete(self.userapiclient)
         vm_created.expung(self.apiClient)
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_10_create_delete_portforwarding_forvpc(self):
-        """  
+        """
         @summary: Test to list, create and delete Port Forwarding Rule for IP Address associated to VPC
         @Steps:
         Step1: Creating a VPC for the user
@@ -2006,12 +2018,12 @@ class TestIpAddresses(cloudstackTestCase):
                              vpc_created,
                              "VPC Creation Failed"
                              )
-        # Listing the vpc for a user after creating a vpc       
+        # Listing the vpc for a user after creating a vpc
         list_vpc_after = VPC.list(self.userapiclient)
         status = validateList(list_vpc_after)
         self.assertEquals(
-                          PASS, 
-                          status[0], 
+                          PASS,
+                          status[0],
                           "list VPC not as expected"
                           )
         # Verifying the list vpc size is increased by 1
@@ -2020,25 +2032,25 @@ class TestIpAddresses(cloudstackTestCase):
                           len(list_vpc_after),
                           "list VPC not equal as expected"
                           )
-        #List network offering for vpc = true
+        # List network offering for vpc = true
         network_offering_vpc_true_list = NetworkOffering.list(
                                                               self.userapiclient,
-                                                              forvpc = "true",
-                                                              zoneid = self.zone.id,
-                                                              supportedServices = "SourceNat,PortForwarding",
-                                                              state = "Enabled"
+                                                              forvpc="true",
+                                                              zoneid=self.zone.id,
+                                                              supportedServices="SourceNat,PortForwarding",
+                                                              state="Enabled"
                                                               )
         status = validateList(network_offering_vpc_true_list)
-        self.assertEquals(PASS, status[0], "Default network offering not present for vpc = true with PortForwarding") 
-        # Creating network under VPC  
+        self.assertEquals(PASS, status[0], "Default network offering not present for vpc = true with PortForwarding")
+        # Creating network under VPC
         network_created = Network.create(
                                          self.userapiclient,
                                          self.services["ntwk"],
-                                         networkofferingid = network_offering_vpc_true_list[0].id,
-                                         vpcid = vpc_created.id,
+                                         networkofferingid=network_offering_vpc_true_list[0].id,
+                                         vpcid=vpc_created.id,
                                          zoneid=self.zone.id,
-                                         gateway= self.services["ntwk"]["gateway"],
-                                         netmask = self.services["ntwk"]["netmask"]
+                                         gateway=self.services["ntwk"]["gateway"],
+                                         netmask=self.services["ntwk"]["netmask"]
                                          )
         self.assertIsNotNone(
                              network_created,
@@ -2051,8 +2063,8 @@ class TestIpAddresses(cloudstackTestCase):
                                                        )
         status = validateList(list_ipaddresses_before)
         self.assertEquals(
-                          PASS, 
-                          status[0], 
+                          PASS,
+                          status[0],
                           "list IP Addresses not as expected"
                           )
         # Verifying the list vpc size is increased by 1
@@ -2061,7 +2073,7 @@ class TestIpAddresses(cloudstackTestCase):
                           len(list_ipaddresses_before),
                           "list IP Addresses not equal as expected"
                           )
-        # Associating an IP Addresses to VPC created 
+        # Associating an IP Addresses to VPC created
         associated_ipaddress = PublicIPAddress.create(
                                                       self.userapiclient,
                                                       services=self.services["network"],
@@ -2183,11 +2195,12 @@ class TestIpAddresses(cloudstackTestCase):
         # Destroying the VM Launched
         vm_created.delete(self.userapiclient)
         vm_created.expung(self.apiClient)
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_11_create_delete_firewallrule(self):
-        """  
+        """
         @summary: Test to list, create and delete Firewall Rule for IP Address associated to Non VPC network
         @Steps:
         Step1: Creating a Network for the user
@@ -2250,7 +2263,7 @@ class TestIpAddresses(cloudstackTestCase):
                           list_ipaddresses_before,
                           "IP Addresses listed for newly created User"
                           )
-        # Associating an IP Addresses to Network created 
+        # Associating an IP Addresses to Network created
         associated_ipaddress = PublicIPAddress.create(
                                                       self.userapiclient,
                                                       services=self.services["network"],
@@ -2357,11 +2370,12 @@ class TestIpAddresses(cloudstackTestCase):
                           list_firewalls_after,
                           "Failed to create Firewall Rule"
                           )
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_12_create_delete_remoteaccessvpn(self):
-        """  
+        """
         @summary: Test to list, create and delete Remote Access VPNs
         @Steps:
         Step1: Creating a Network for the user
@@ -2424,7 +2438,7 @@ class TestIpAddresses(cloudstackTestCase):
                           list_ipaddresses_before,
                           "IP Addresses listed for newly created User"
                           )
-        # Associating an IP Addresses to Network created 
+        # Associating an IP Addresses to Network created
         associated_ipaddress = PublicIPAddress.create(
                                                       self.userapiclient,
                                                       services=self.services["network"],
@@ -2528,11 +2542,12 @@ class TestIpAddresses(cloudstackTestCase):
                           list_vpns_after,
                           "Failed to create Remote Access VPN"
                           )
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_13_add_remove_vpnusers(self):
-        """  
+        """
         @summary: Test to list, add and remove VPN Users
         @Steps:
         Step1: Creating a Network for the user
@@ -2597,7 +2612,7 @@ class TestIpAddresses(cloudstackTestCase):
                           list_ipaddresses_before,
                           "IP Addresses listed for newly created User"
                           )
-        # Associating an IP Addresses to Network created 
+        # Associating an IP Addresses to Network created
         associated_ipaddress = PublicIPAddress.create(
                                                       self.userapiclient,
                                                       services=self.services["network"],
@@ -2738,11 +2753,12 @@ class TestIpAddresses(cloudstackTestCase):
         # Destroying the VM
         vm_created.delete(self.userapiclient)
         vm_created.expung(self.apiClient)
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_14_enable_disable_staticnat_fornonvpc(self):
-        """  
+        """
         @summary: Test to Enable and Disable StaticNat for IP Address associated to Non VPC Network
         @Steps:
         Step1: Creating a Network for the user
@@ -2803,7 +2819,7 @@ class TestIpAddresses(cloudstackTestCase):
                           list_ipaddresses_before,
                           "IP Addresses listed for newly created User"
                           )
-        # Associating an IP Addresses to Network created 
+        # Associating an IP Addresses to Network created
         associated_ipaddress1 = PublicIPAddress.create(
                                                        self.userapiclient,
                                                        services=self.services["network"],
@@ -2813,7 +2829,7 @@ class TestIpAddresses(cloudstackTestCase):
                              associated_ipaddress1,
                              "Failed to Associate IP Address"
                              )
-        # Associating another IP Addresses to Network created 
+        # Associating another IP Addresses to Network created
         associated_ipaddress2 = PublicIPAddress.create(
                                                        self.userapiclient,
                                                        services=self.services["network"],
@@ -2913,11 +2929,12 @@ class TestIpAddresses(cloudstackTestCase):
         # Destroying the VM
         vm_created.delete(self.userapiclient)
         vm_created.expung(self.apiClient)
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_15_enable_disable_staticnat_forvpc(self):
-        """  
+        """
         @summary: Test to Enable and Disable StaticNat for IP Address associated to VPC Network
         @Steps:
         Step1: Creating a VPC
@@ -2955,12 +2972,12 @@ class TestIpAddresses(cloudstackTestCase):
                              vpc_created,
                              "VPC Creation Failed"
                              )
-        # Listing the vpc for a user after creating a vpc       
+        # Listing the vpc for a user after creating a vpc
         list_vpc_after = VPC.list(self.userapiclient)
         status = validateList(list_vpc_after)
         self.assertEquals(
-                          PASS, 
-                          status[0], 
+                          PASS,
+                          status[0],
                           "list VPC not as expected"
                           )
         # Verifying the list vpc size is increased by 1
@@ -2969,25 +2986,25 @@ class TestIpAddresses(cloudstackTestCase):
                           len(list_vpc_after),
                           "list VPC not equal as expected"
                           )
-        #List network offering for vpc = true
+        # List network offering for vpc = true
         network_offering_vpc_true_list = NetworkOffering.list(
                                                               self.userapiclient,
-                                                              forvpc = "true",
-                                                              zoneid = self.zone.id,
-                                                              supportedServices = "SourceNat,PortForwarding,StaticNat",
-                                                              state = "Enabled"
+                                                              forvpc="true",
+                                                              zoneid=self.zone.id,
+                                                              supportedServices="SourceNat,PortForwarding,StaticNat",
+                                                              state="Enabled"
                                                               )
         status = validateList(network_offering_vpc_true_list)
-        self.assertEquals(PASS, status[0], "Default network offering not present for vpc = true with PortForwarding") 
-        # Creating network under VPC  
+        self.assertEquals(PASS, status[0], "Default network offering not present for vpc = true with PortForwarding")
+        # Creating network under VPC
         network_created = Network.create(
                                          self.userapiclient,
                                          self.services["ntwk"],
-                                         networkofferingid = network_offering_vpc_true_list[0].id,
-                                         vpcid = vpc_created.id,
+                                         networkofferingid=network_offering_vpc_true_list[0].id,
+                                         vpcid=vpc_created.id,
                                          zoneid=self.zone.id,
-                                         gateway= self.services["ntwk"]["gateway"],
-                                         netmask = self.services["ntwk"]["netmask"]
+                                         gateway=self.services["ntwk"]["gateway"],
+                                         netmask=self.services["ntwk"]["netmask"]
                                          )
         self.assertIsNotNone(
                              network_created,
@@ -3000,8 +3017,8 @@ class TestIpAddresses(cloudstackTestCase):
                                                        )
         status = validateList(list_ipaddresses_before)
         self.assertEquals(
-                          PASS, 
-                          status[0], 
+                          PASS,
+                          status[0],
                           "list IP Addresses not as expected"
                           )
         # Verifying the list vpc size is increased by 1
@@ -3010,7 +3027,7 @@ class TestIpAddresses(cloudstackTestCase):
                           len(list_ipaddresses_before),
                           "list IP Addresses not equal as expected"
                           )
-        # Associating an IP Addresses to VPC created 
+        # Associating an IP Addresses to VPC created
         associated_ipaddress = PublicIPAddress.create(
                                                       self.userapiclient,
                                                       services=self.services["network"],
@@ -3113,11 +3130,12 @@ class TestIpAddresses(cloudstackTestCase):
         # Destroying the VM
         vm_created.delete(self.userapiclient)
         vm_created.expung(self.apiClient)
+        self.cleanup.append(self.account)
         return
-  
+
     @attr(tags=["advanced", "provisioning"])
     def test_16_create_delete_ipforwardingrule(self):
-        """  
+        """
         @summary: Test to list, create and delete IP Forwarding Rules for IP Address
         @Steps:
         Step1: Creating a Network for the user
@@ -3183,7 +3201,7 @@ class TestIpAddresses(cloudstackTestCase):
                           list_ipaddresses_before,
                           "IP Addresses listed for newly created User"
                           )
-        # Associating an IP Addresses to Network created 
+        # Associating an IP Addresses to Network created
         associated_ipaddress1 = PublicIPAddress.create(
                                                        self.userapiclient,
                                                        services=self.services["network"],
@@ -3193,7 +3211,7 @@ class TestIpAddresses(cloudstackTestCase):
                              associated_ipaddress1,
                              "Failed to Associate IP Address"
                              )
-        # Associating another IP Addresses to Network created 
+        # Associating another IP Addresses to Network created
         associated_ipaddress2 = PublicIPAddress.create(
                                                        self.userapiclient,
                                                        services=self.services["network"],
@@ -3320,11 +3338,12 @@ class TestIpAddresses(cloudstackTestCase):
         # Destroying the VM
         vm_created.delete(self.userapiclient)
         vm_created.expung(self.apiClient)
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_17_create_update_autoscalepolicy(self):
-        """  
+        """
         @summary: Test to list, create and update Autoscale Policy
         @Steps:
         Step1: Creating a Network Offering for Supported Service LB with Netscaler
@@ -3346,238 +3365,264 @@ class TestIpAddresses(cloudstackTestCase):
         Step17: Updating Autoscale Policy created in step13 with condition2
         Step18: Verifying Autoscale policy is updated with condition2
         """
-        # Listing Network Offerings
-        list_nwoff_before = NetworkOffering.list(
-                                                 self.apiClient,
-                                                 forvpc="false",
-                                                 guestiptype="Isolated",
-                                                 state="Enabled",
-                                                 supportedservices="SourceNat,Lb",
-                                                 zoneid=self.zone.id
-                                                 )
-        # Creating Network Offerign with LB as Netscalar
-        nwoff_created = NetworkOffering.create(
-                                               self.apiClient,
-                                               self.services["nw_off_isolated_netscaler"]
-                                               )
-        self.assertIsNotNone(
-                             nwoff_created,
-                             "Failed to Create Network Offering with LB sercvice for Netscaler"
-                             )
-        # Enable Network offering
-        nwoff_created.update(self.apiClient, state='Enabled')
-        # Listing Network Offerings again
-        list_nwoff_after = NetworkOffering.list(
-                                                self.apiClient,
-                                                forvpc="false",
-                                                guestiptype="Isolated",
-                                                state="Enabled",
-                                                supportedservices="SourceNat,Lb",
-                                                zoneid=self.zone.id
-                                                )
-        self.assertEquals(
-                          len(list_nwoff_before)+1,
-                          len(list_nwoff_after),
-                          "Failed to create Network Offering"
-                          )
-        # Creating a Network Using the Network Offering
-        network = Network.create(
-                                  self.userapiclient,
-                                  self.services["network"],
-                                  accountid=self.account.name,
-                                  domainid=self.domain.id,
-                                  networkofferingid=nwoff_created.id,
-                                  zoneid=self.zone.id
-                                  )
-        self.assertIsNotNone(
-                             network,
-                             "Network creation failed"
-                             )
-        self.cleanup.append(network)
-        self.cleanup.append(nwoff_created)
-        # Launching a Virtual Machine
-        vm_created = VirtualMachine.create(
-                                           self.userapiclient,
-                                           self.services["virtual_machine"],
-                                           accountid=self.account.name,
-                                           domainid=self.account.domainid,
-                                           networkids=network.id,
-                                           serviceofferingid=self.service_offering.id,
-                                           )
-        self.assertIsNotNone(
-                             vm_created,
-                             "Failed to launch a VM under network created"
-                             )
-        # Listing all the IP Addresses for a user
-        list_ipaddresses_before = PublicIPAddress.list(
-                                                       self.userapiclient,
-                                                       listall=self.services["listall"]
-                                                       )
-        status = validateList(list_ipaddresses_before)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "IP Addresses Association Failed while launching a VM"
-                          )
-        # Verifying the length of the list is 1
-        self.assertEqual(
-                         1,
-                         len(list_ipaddresses_before),
-                         "IP Addresses Association Failed while launching a VM"
-                         )
-        # Associating an IP Addresses to Network created 
-        associated_ipaddress = PublicIPAddress.create(
-                                                       self.userapiclient,
-                                                       services=self.services["network"],
-                                                       networkid=network.id
-                                                       )
-        self.assertIsNotNone(
-                             associated_ipaddress,
-                             "Failed to Associate IP Address"
-                             )
-        # Listing all the IP Addresses for a user
-        list_ipaddresses_after = PublicIPAddress.list(
-                                                      self.userapiclient,
-                                                      listall=self.services["listall"]
-                                                      )
-        status = validateList(list_ipaddresses_after)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "IP Addresses Association Failed"
-                          )
-        # Verifying the length of the list is 1
-        self.assertEqual(
-                         2,
-                         len(list_ipaddresses_after),
-                         "Number of IP Addresses associated are not matching expected"
-                         )
-        # Listing Counters
-        list_counters = Autoscale.listCounters(
-                                               self.userapiclient,
-                                               )
-        status = validateList(list_counters)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list counters"
-                          )
-        #  Listing Conditions
-        list_conditions_before = Autoscale.listConditions(
-                                                          self.userapiclient,
-                                                          listall=self.services["listall"],
-                                                          account=self.account.name,
-                                                          domainid=self.domain.id
-                                                          )
-        self.assertIsNone(
-                          list_conditions_before,
-                          "Listed Conditions for newly created user"
-                          )
-        # Creating first Condition
-        condition_created1 = Autoscale.createCondition(
-                                                      self.userapiclient,
-                                                      counterid=list_counters[0].id,
-                                                      relationaloperator='GT',
-                                                      threshold='1000'
-                                                      )
-        self.assertIsNotNone(
-                             condition_created1,
-                             "Failed to create Condition"
-                             )
-        # Creating second Condition
-        condition_created2 = Autoscale.createCondition(
-                                                      self.userapiclient,
-                                                      counterid=list_counters[0].id,
-                                                      relationaloperator='GT',
-                                                      threshold='1500'
-                                                      )
-        self.assertIsNotNone(
-                             condition_created2,
-                             "Failed to create Condition"
-                             )
-        # Listing Conditions again
-        list_conditions_after = Autoscale.listConditions(
-                                                         self.userapiclient,
-                                                         listall=self.services["listall"],
-                                                         account=self.account.name,
-                                                         domainid=self.domain.id
-                                                         )
-        status = validateList(list_conditions_after)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list Conditions after creation"
-                          )
-        # Listing Autoscale policies
-        list_autoscalepolicies_before = Autoscale.listAutoscalePolicies(
-                                                                        self.userapiclient,
-                                                                        listall=self.services["listall"]
-                                                                        )
-        # Verifying no Autoscale policies are listed
-        self.assertIsNone(
-                          list_autoscalepolicies_before,
-                          "Autoscale policies listed"
-                          )
-        # Creating Autoscale Policy
-        autoscalepolicy_created = Autoscale.createAutoscalePolicy(
-                                                                  self.userapiclient,
-                                                                  action='scaleup',
-                                                                  conditionids=condition_created1.id,
-                                                                  duration='100',
-                                                                  quiettime='100'
-                                                                  )
-        self.assertIsNotNone(
-                             autoscalepolicy_created,
-                             "Failed to create Autoscale VM Policy"
-                             )
-        # Verifying autoscalepolicy is created using condition1
-        self.assertEquals(
-                          condition_created1.id,
-                          autoscalepolicy_created.conditions[0].id,
-                          "Autoscale Policy not created by given condition"
-                          )
-        # Listing Autoscale policies
-        list_autoscalepolicies_after = Autoscale.listAutoscalePolicies(
-                                                                       self.userapiclient,
-                                                                       listall=self.services["listall"]
+        if self.hypervisor.lower() == 'kvm':
+            raise unittest.SkipTest("ScaleVM is not supported on KVM. Hence, skipping the test")
+
+        list_physical_networks = PhysicalNetwork.list(
+                                                     self.apiClient,
+                                                     zoneid=self.zone.id
+                                                     )
+        physical_networks_size = 0
+        if list_physical_networks is not None:
+            physical_networks_size = len(list_physical_networks)
+
+        run_flag = False
+        for i in range(0, len(list_physical_networks)):
+            list_network_serviceprovider = NetworkServiceProvider.list(
+                                                                       self.apiClient,
+                                                                       physicalnetworkid=list_physical_networks[i].id
                                                                        )
-        status = validateList(list_autoscalepolicies_after)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list Autoscale Policy after creation"
-                          )
-        self.assertEquals(
-                          1,
-                          len(list_autoscalepolicies_after),
-                          "Autoscale Policies count is not matching"
-                          )
-        # Updating Autoscale Policy
-        autoscalepolicy_updated = Autoscale.updateAutoscalePolicy(
-                                                                  self.userapiclient,
-                                                                  id=autoscalepolicy_created.id,
-                                                                  conditionids=condition_created2.id,
-                                                                  duration='100',
-                                                                  quiettime='100'
-                                                                  )
-        self.assertIsNotNone(
-                             autoscalepolicy_updated,
-                             "Failed to update Autoscale Policy"
+            for j in range(0, len(list_network_serviceprovider)):
+                if((list_network_serviceprovider[j].name == 'Netscaler') and (list_network_serviceprovider[j].state == 'Enabled')):
+                    run_flag = True
+                    break
+
+        if(run_flag == False):
+            self.debug("Netscaler is not enabled and auto scale VM is applicable only for Netscaler")
+        else:
+            # Listing Network Offerings
+            list_nwoff_before = NetworkOffering.list(
+                                                     self.apiClient,
+                                                     forvpc="false",
+                                                     guestiptype="Isolated",
+                                                     state="Enabled",
+                                                     supportedservices="SourceNat,Lb",
+                                                     zoneid=self.zone.id
+                                                     )
+            # Creating Network Offerign with LB as Netscalar
+            nwoff_created = NetworkOffering.create(
+                                                   self.apiClient,
+                                                   self.services["nw_off_isolated_netscaler"]
+                                                   )
+            self.assertIsNotNone(
+                                 nwoff_created,
+                                 "Failed to Create Network Offering with LB sercvice for Netscaler"
+                                 )
+            # Enable Network offering
+            nwoff_created.update(self.apiClient, state='Enabled')
+            # Listing Network Offerings again
+            list_nwoff_after = NetworkOffering.list(
+                                                    self.apiClient,
+                                                    forvpc="false",
+                                                    guestiptype="Isolated",
+                                                    state="Enabled",
+                                                    supportedservices="SourceNat,Lb",
+                                                    zoneid=self.zone.id
+                                                    )
+            self.assertEquals(
+                              len(list_nwoff_before) + 1,
+                              len(list_nwoff_after),
+                              "Failed to create Network Offering"
+                              )
+            # Creating a Network Using the Network Offering
+            network = Network.create(
+                                      self.userapiclient,
+                                      self.services["network"],
+                                      accountid=self.account.name,
+                                      domainid=self.domain.id,
+                                      networkofferingid=nwoff_created.id,
+                                      zoneid=self.zone.id
+                                      )
+            self.assertIsNotNone(
+                                 network,
+                                 "Network creation failed"
+                                 )
+            self.cleanup.append(network)
+            self.cleanup.append(nwoff_created)
+            # Launching a Virtual Machine
+            vm_created = VirtualMachine.create(
+                                               self.userapiclient,
+                                               self.services["virtual_machine"],
+                                               accountid=self.account.name,
+                                               domainid=self.account.domainid,
+                                               networkids=network.id,
+                                               serviceofferingid=self.service_offering.id,
+                                               )
+            self.assertIsNotNone(
+                                 vm_created,
+                                 "Failed to launch a VM under network created"
+                                 )
+            # Listing all the IP Addresses for a user
+            list_ipaddresses_before = PublicIPAddress.list(
+                                                           self.userapiclient,
+                                                           listall=self.services["listall"]
+                                                           )
+            status = validateList(list_ipaddresses_before)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "IP Addresses Association Failed while launching a VM"
+                              )
+            # Verifying the length of the list is 1
+            self.assertEqual(
+                             1,
+                             len(list_ipaddresses_before),
+                             "IP Addresses Association Failed while launching a VM"
                              )
-        # Verifying the Autoscale Policy is updated
-        self.assertEquals(
-                          condition_created2.id,
-                          autoscalepolicy_updated.conditions[0].id,
-                          "Autoscale Policy not updated to given condition"
-                          )
-        # Destroying the VM
-        vm_created.delete(self.userapiclient)
-        vm_created.expung(self.apiClient)
+            # Associating an IP Addresses to Network created
+            associated_ipaddress = PublicIPAddress.create(
+                                                           self.userapiclient,
+                                                           services=self.services["network"],
+                                                           networkid=network.id
+                                                           )
+            self.assertIsNotNone(
+                                 associated_ipaddress,
+                                 "Failed to Associate IP Address"
+                                 )
+            # Listing all the IP Addresses for a user
+            list_ipaddresses_after = PublicIPAddress.list(
+                                                          self.userapiclient,
+                                                          listall=self.services["listall"]
+                                                          )
+            status = validateList(list_ipaddresses_after)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "IP Addresses Association Failed"
+                              )
+            # Verifying the length of the list is 1
+            self.assertEqual(
+                             2,
+                             len(list_ipaddresses_after),
+                             "Number of IP Addresses associated are not matching expected"
+                             )
+            # Listing Counters
+            list_counters = Autoscale.listCounters(
+                                                   self.userapiclient,
+                                                   )
+            status = validateList(list_counters)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "Failed to list counters"
+                              )
+            #  Listing Conditions
+            list_conditions_before = Autoscale.listConditions(
+                                                              self.userapiclient,
+                                                              listall=self.services["listall"],
+                                                              account=self.account.name,
+                                                              domainid=self.domain.id
+                                                              )
+            self.assertIsNone(
+                              list_conditions_before,
+                              "Listed Conditions for newly created user"
+                              )
+            # Creating first Condition
+            condition_created1 = Autoscale.createCondition(
+                                                          self.userapiclient,
+                                                          counterid=list_counters[0].id,
+                                                          relationaloperator='GT',
+                                                          threshold='1000'
+                                                          )
+            self.assertIsNotNone(
+                                 condition_created1,
+                                 "Failed to create Condition"
+                                 )
+            # Creating second Condition
+            condition_created2 = Autoscale.createCondition(
+                                                          self.userapiclient,
+                                                          counterid=list_counters[0].id,
+                                                          relationaloperator='GT',
+                                                          threshold='1500'
+                                                          )
+            self.assertIsNotNone(
+                                 condition_created2,
+                                 "Failed to create Condition"
+                                 )
+            # Listing Conditions again
+            list_conditions_after = Autoscale.listConditions(
+                                                             self.userapiclient,
+                                                             listall=self.services["listall"],
+                                                             account=self.account.name,
+                                                             domainid=self.domain.id
+                                                             )
+            status = validateList(list_conditions_after)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "Failed to list Conditions after creation"
+                              )
+            # Listing Autoscale policies
+            list_autoscalepolicies_before = Autoscale.listAutoscalePolicies(
+                                                                            self.userapiclient,
+                                                                            listall=self.services["listall"]
+                                                                            )
+            # Verifying no Autoscale policies are listed
+            self.assertIsNone(
+                              list_autoscalepolicies_before,
+                              "Autoscale policies listed"
+                              )
+            # Creating Autoscale Policy
+            autoscalepolicy_created = Autoscale.createAutoscalePolicy(
+                                                                      self.userapiclient,
+                                                                      action='scaleup',
+                                                                      conditionids=condition_created1.id,
+                                                                      duration='100',
+                                                                      quiettime='100'
+                                                                      )
+            self.assertIsNotNone(
+                                 autoscalepolicy_created,
+                                 "Failed to create Autoscale VM Policy"
+                                 )
+            # Verifying autoscalepolicy is created using condition1
+            self.assertEquals(
+                              condition_created1.id,
+                              autoscalepolicy_created.conditions[0].id,
+                              "Autoscale Policy not created by given condition"
+                              )
+            # Listing Autoscale policies
+            list_autoscalepolicies_after = Autoscale.listAutoscalePolicies(
+                                                                           self.userapiclient,
+                                                                           listall=self.services["listall"]
+                                                                           )
+            status = validateList(list_autoscalepolicies_after)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "Failed to list Autoscale Policy after creation"
+                              )
+            self.assertEquals(
+                              1,
+                              len(list_autoscalepolicies_after),
+                              "Autoscale Policies count is not matching"
+                              )
+            # Updating Autoscale Policy
+            autoscalepolicy_updated = Autoscale.updateAutoscalePolicy(
+                                                                      self.userapiclient,
+                                                                      id=autoscalepolicy_created.id,
+                                                                      conditionids=condition_created2.id,
+                                                                      duration='100',
+                                                                      quiettime='100'
+                                                                      )
+            self.assertIsNotNone(
+                                 autoscalepolicy_updated,
+                                 "Failed to update Autoscale Policy"
+                                 )
+            # Verifying the Autoscale Policy is updated
+            self.assertEquals(
+                              condition_created2.id,
+                              autoscalepolicy_updated.conditions[0].id,
+                              "Autoscale Policy not updated to given condition"
+                              )
+            # Destroying the VM
+            vm_created.delete(self.userapiclient)
+            vm_created.expung(self.apiClient)
+        self.cleanup.append(self.account)
         return
- 
+
     @attr(tags=["advanced", "provisioning"])
     def test_18_create_update_autoscaleprofiles(self):
-        """  
+        """
         @summary: Test to list, create and update Autoscale VM Profiles
         @Steps:
         Step1: Creating a Network Offering for Supported Service LB with Netscaler
@@ -3597,277 +3642,303 @@ class TestIpAddresses(cloudstackTestCase):
         Step15: Updating Autoscale VM profile with destroy vm grace period
         Step16: Verifying that Autoscale VM is updated
         """
-        # Listing Network Offerings
-        list_nwoff_before = NetworkOffering.list(
-                                                 self.apiClient,
-                                                 forvpc="false",
-                                                 guestiptype="Isolated",
-                                                 state="Enabled",
-                                                 supportedservices="SourceNat,Lb",
-                                                 zoneid=self.zone.id
-                                                 )
-        # Creating Network Offerign with LB as Netscalar
-        nwoff_created = NetworkOffering.create(
-                                               self.apiClient,
-                                               self.services["nw_off_isolated_netscaler"]
+        if self.hypervisor.lower() == 'kvm':
+            raise unittest.SkipTest("ScaleVM is not supported on KVM. Hence, skipping the test")
+
+        list_physical_networks = PhysicalNetwork.list(
+                                                     self.apiClient,
+                                                     zoneid=self.zone.id
+                                                     )
+        physical_networks_size = 0
+        if list_physical_networks is not None:
+            physical_networks_size = len(list_physical_networks)
+
+        run_flag = False
+        for i in range(0, len(list_physical_networks)):
+            list_network_serviceprovider = NetworkServiceProvider.list(
+                                                                       self.apiClient,
+                                                                       physicalnetworkid=list_physical_networks[i].id
+                                                                       )
+            for j in range(0, len(list_network_serviceprovider)):
+                if((list_network_serviceprovider[j].name == 'Netscaler') and (list_network_serviceprovider[j].state == 'Enabled')):
+                    run_flag = True
+                    break
+
+        if(run_flag == False):
+            self.debug("Netscaler is not enabled and auto scale VM is applicable only for Netscaler")
+        else:
+            # Listing Network Offerings
+            list_nwoff_before = NetworkOffering.list(
+                                                     self.apiClient,
+                                                     forvpc="false",
+                                                     guestiptype="Isolated",
+                                                     state="Enabled",
+                                                     supportedservices="SourceNat,Lb",
+                                                     zoneid=self.zone.id
+                                                     )
+            # Creating Network Offerign with LB as Netscalar
+            nwoff_created = NetworkOffering.create(
+                                                   self.apiClient,
+                                                   self.services["nw_off_isolated_netscaler"]
+                                                   )
+            self.assertIsNotNone(
+                                 nwoff_created,
+                                 "Failed to Create Network Offering with LB sercvice for Netscaler"
+                                 )
+            # Enable Network offering
+            nwoff_created.update(self.apiClient, state='Enabled')
+            # Listing Network Offerings again
+            list_nwoff_after = NetworkOffering.list(
+                                                    self.apiClient,
+                                                    forvpc="false",
+                                                    guestiptype="Isolated",
+                                                    state="Enabled",
+                                                    supportedservices="SourceNat,Lb",
+                                                    zoneid=self.zone.id
+                                                    )
+            self.assertEquals(
+                              len(list_nwoff_before) + 1,
+                              len(list_nwoff_after),
+                              "Failed to create Network Offering"
+                              )
+            # Creating a Network Using the Network Offering
+            network = Network.create(
+                                      self.userapiclient,
+                                      self.services["network"],
+                                      accountid=self.account.name,
+                                      domainid=self.domain.id,
+                                      networkofferingid=nwoff_created.id,
+                                      zoneid=self.zone.id
+                                      )
+            self.assertIsNotNone(
+                                 network,
+                                 "Network creation failed"
+                                 )
+            self.cleanup.append(network)
+            self.cleanup.append(nwoff_created)
+            # Launching a Virtual Machine
+            vm_created = VirtualMachine.create(
+                                               self.userapiclient,
+                                               self.services["virtual_machine"],
+                                               accountid=self.account.name,
+                                               domainid=self.account.domainid,
+                                               networkids=network.id,
+                                               serviceofferingid=self.service_offering.id,
                                                )
-        self.assertIsNotNone(
-                             nwoff_created,
-                             "Failed to Create Network Offering with LB sercvice for Netscaler"
+            self.assertIsNotNone(
+                                 vm_created,
+                                 "Failed to launch a VM under network created"
+                                 )
+            # Listing all the IP Addresses for a user
+            list_ipaddresses_before = PublicIPAddress.list(
+                                                           self.userapiclient,
+                                                           listall=self.services["listall"]
+                                                           )
+            status = validateList(list_ipaddresses_before)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "IP Addresses Association Failed while launching a VM"
+                              )
+            # Verifying the length of the list is 1
+            self.assertEqual(
+                             1,
+                             len(list_ipaddresses_before),
+                             "IP Addresses Association Failed while launching a VM"
                              )
-        # Enable Network offering
-        nwoff_created.update(self.apiClient, state='Enabled')
-        # Listing Network Offerings again
-        list_nwoff_after = NetworkOffering.list(
-                                                self.apiClient,
-                                                forvpc="false",
-                                                guestiptype="Isolated",
-                                                state="Enabled",
-                                                supportedservices="SourceNat,Lb",
-                                                zoneid=self.zone.id
-                                                )
-        self.assertEquals(
-                          len(list_nwoff_before)+1,
-                          len(list_nwoff_after),
-                          "Failed to create Network Offering"
-                          )
-        # Creating a Network Using the Network Offering
-        network = Network.create(
-                                  self.userapiclient,
-                                  self.services["network"],
-                                  accountid=self.account.name,
-                                  domainid=self.domain.id,
-                                  networkofferingid=nwoff_created.id,
-                                  zoneid=self.zone.id
-                                  )
-        self.assertIsNotNone(
-                             network,
-                             "Network creation failed"
-                             )
-        self.cleanup.append(network)
-        self.cleanup.append(nwoff_created)
-        # Launching a Virtual Machine
-        vm_created = VirtualMachine.create(
-                                           self.userapiclient,
-                                           self.services["virtual_machine"],
-                                           accountid=self.account.name,
-                                           domainid=self.account.domainid,
-                                           networkids=network.id,
-                                           serviceofferingid=self.service_offering.id,
-                                           )
-        self.assertIsNotNone(
-                             vm_created,
-                             "Failed to launch a VM under network created"
-                             )
-        # Listing all the IP Addresses for a user
-        list_ipaddresses_before = PublicIPAddress.list(
-                                                       self.userapiclient,
-                                                       listall=self.services["listall"]
-                                                       )
-        status = validateList(list_ipaddresses_before)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "IP Addresses Association Failed while launching a VM"
-                          )
-        # Verifying the length of the list is 1
-        self.assertEqual(
-                         1,
-                         len(list_ipaddresses_before),
-                         "IP Addresses Association Failed while launching a VM"
-                         )
-        # Associating an IP Addresses to Network created 
-        associated_ipaddress = PublicIPAddress.create(
-                                                       self.userapiclient,
-                                                       services=self.services["network"],
-                                                       networkid=network.id
-                                                       )
-        self.assertIsNotNone(
-                             associated_ipaddress,
-                             "Failed to Associate IP Address"
-                             )
-        # Listing all the IP Addresses for a user
-        list_ipaddresses_after = PublicIPAddress.list(
-                                                      self.userapiclient,
-                                                      listall=self.services["listall"]
-                                                      )
-        status = validateList(list_ipaddresses_after)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "IP Addresses Association Failed"
-                          )
-        # Verifying the length of the list is 1
-        self.assertEqual(
-                         2,
-                         len(list_ipaddresses_after),
-                         "Number of IP Addresses associated are not matching expected"
-                         )
-        # Listing Service Offerings
-        list_service_offerings = ServiceOffering.list(
-                                                      self.userapiclient,
-                                                      listall=self.services["listall"],
-                                                      issystem='false'
-                                                      )
-        status = validateList(list_service_offerings)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list Service Offerings"
-                          )
-        # Listing Users
-        list_users = User.list(
-                               self.apiClient,
-                               listall=self.services["listall"],
-                               account=self.account.name,
-                               domainid=self.domain.id
-                               )
-        status = validateList(list_users)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list Users"
-                          )
-        # Listing Featured Templates
-        list_templates_featured = Template.list(
-                                                self.userapiclient,
-                                                listall=self.services["listall"],
-                                                templatefilter="featured",
-                                                zoneid=self.zone.id
-                                                )
-        status = validateList(list_templates_featured)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list Featured Templates"
-                          )
-        # Listing Community Templates
-        list_templates_community = Template.list(
-                                                self.userapiclient,
-                                                listall=self.services["listall"],
-                                                templatefilter="community",
-                                                zoneid=self.zone.id
-                                                )
-        self.assertIsNone(
-                          list_templates_community,
-                          "Community Templates listed for newly created User"
-                          )
-        # Listing selfexecutable Templates
-        list_templates_selfexecutable = Template.list(
-                                                self.userapiclient,
-                                                listall=self.services["listall"],
-                                                templatefilter="selfexecutable",
-                                                zoneid=self.zone.id
-                                                )
-        self.assertIsNone(
-                          list_templates_selfexecutable,
-                          "Self Executable Templates listed for newly created User"
-                          )
-        # Listing Autoscale VM Profiles
-        list_autoscalevm_profiles_before = Autoscale.listAutoscaleVmPofiles(
-                                                                            self.userapiclient,
-                                                                            listall=self.services["listall"]
-                                                                            )
-        self.assertIsNone(
-                          list_autoscalevm_profiles_before,
-                          "Autoscale VM Profiles listed"
-                          )
-        # Creating Autoscale VM Profile
-        counterparam = { "snmpcommunity": "public", "snmpport": "161"}
-        autoscalevm_profile = Autoscale.createAutoscaleVmProfile(
-                                                                 self.userapiclient,
-                                                                 serviceofferingid=list_service_offerings[0].id,
-                                                                 zoneid=self.zone.id,
-                                                                 templateid=list_templates_featured[0].id,
-                                                                 autoscaleuserid=list_users[0].id,
-                                                                 destroyvmgraceperiod='100',
-                                                                 counterparam=counterparam
-                                                                 )
-        self.assertIsNotNone(
-                             autoscalevm_profile,
-                             "Failed to create Autoscale VM Profile"
-                             )
-        # Listing Autoscale VM Profiles
-        list_autoscalevm_profiles_after = Autoscale.listAutoscaleVmPofiles(
-                                                                           self.userapiclient,
-                                                                           listall=self.services["listall"]
-                                                                           )
-        status = validateList(list_autoscalevm_profiles_after)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list Autoscale VM Profile after creation"
-                          )
-        # Verifying only 1 autoscale vm profile is created
-        self.assertEquals(
-                          1,
-                          len(list_autoscalevm_profiles_after),
-                          "Count of Autoscale VM profiles listed is not matching"
-                          )
-        # Listing the Autoscale VM Profile by id
-        list_autoscalvmprofile = Autoscale.listAutoscaleVmPofiles(
-                                                                  self.userapiclient,
-                                                                  listall=self.services["listall"],
-                                                                  id=autoscalevm_profile.id
-                                                                  )
-        status = validateList(list_autoscalvmprofile)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list Autoscale VM Profile by Id after creation"
-                          )
-        # Verifying details of the listed Autoscale VM Profile
-        # Creating expected and actual values dictionaries
-        expected_dict = {
-                         "id":autoscalevm_profile.id,
-                         "account":self.account.name,
-                         "domainid":self.domain.id,
-                         "autoscaleuserid":list_users[0].id,
-                         "serviceofferingid":list_service_offerings[0].id,
-                         "zoneid":self.zone.id,
-                         "templateid":list_templates_featured[0].id,
-                         "destroyvmgraceperiod":autoscalevm_profile.destroyvmgraceperiod
-                         }
-        actual_dict = {
-                       "id":list_autoscalvmprofile[0].id,
-                       "account":list_autoscalvmprofile[0].account,
-                       "domainid":list_autoscalvmprofile[0].domainid,
-                       "autoscaleuserid":list_autoscalvmprofile[0].autoscaleuserid,
-                       "serviceofferingid":list_autoscalvmprofile[0].serviceofferingid,
-                       "zoneid":list_autoscalvmprofile[0].zoneid,
-                       "templateid":list_autoscalvmprofile[0].templateid,
-                       "destroyvmgraceperiod":list_autoscalvmprofile[0].destroyvmgraceperiod
-                       }
-        autoscalevm_profile_status = self.__verify_values(
-                                                          expected_dict,
-                                                          actual_dict
+            # Associating an IP Addresses to Network created
+            associated_ipaddress = PublicIPAddress.create(
+                                                           self.userapiclient,
+                                                           services=self.services["network"],
+                                                           networkid=network.id
+                                                           )
+            self.assertIsNotNone(
+                                 associated_ipaddress,
+                                 "Failed to Associate IP Address"
+                                 )
+            # Listing all the IP Addresses for a user
+            list_ipaddresses_after = PublicIPAddress.list(
+                                                          self.userapiclient,
+                                                          listall=self.services["listall"]
                                                           )
-        self.assertEqual(
-                         True,
-                         autoscalevm_profile_status,
-                         "Created Autoscale VM Profile details are not as expected"
-                         )
-        # Updating destroyvmgrageperiod for created Autoscale VM Profile
-        autoscalevm_profile_updated = Autoscale.updateAutoscaleVMProfile(
-                                                                         self.userapiclient,
-                                                                         id=autoscalevm_profile.id,
-                                                                         autoscaleuserid=list_users[0].id,
-                                                                         destroyvmgraceperiod='200',
-                                                                         templateid=list_templates_featured[0].id,
-                                                                         )
-        self.assertIsNotNone(
-                             autoscalevm_profile_updated,
-                             "Failed to update Autoscale VM Profile"
+            status = validateList(list_ipaddresses_after)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "IP Addresses Association Failed"
+                              )
+            # Verifying the length of the list is 1
+            self.assertEqual(
+                             2,
+                             len(list_ipaddresses_after),
+                             "Number of IP Addresses associated are not matching expected"
                              )
-        # Verifyign that Destroy VM Graceperiod is updated in autoscale VM Profile
-        self.assertEquals(
-                          200,
-                          autoscalevm_profile_updated.destroyvmgraceperiod,
-                          "Failed to update destroy vm grace period"
-                          )
-        # Destroying the VM
-        vm_created.delete(self.userapiclient)
-        vm_created.expung(self.apiClient)
+            # Listing Service Offerings
+            list_service_offerings = ServiceOffering.list(
+                                                          self.userapiclient,
+                                                          listall=self.services["listall"],
+                                                          issystem='false'
+                                                          )
+            status = validateList(list_service_offerings)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "Failed to list Service Offerings"
+                              )
+            # Listing Users
+            list_users = User.list(
+                                   self.apiClient,
+                                   listall=self.services["listall"],
+                                   account=self.account.name,
+                                   domainid=self.domain.id
+                                   )
+            status = validateList(list_users)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "Failed to list Users"
+                              )
+            # Listing Featured Templates
+            list_templates_featured = Template.list(
+                                                    self.userapiclient,
+                                                    listall=self.services["listall"],
+                                                    templatefilter="featured",
+                                                    zoneid=self.zone.id
+                                                    )
+            status = validateList(list_templates_featured)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "Failed to list Featured Templates"
+                              )
+            # Listing Community Templates
+            list_templates_community = Template.list(
+                                                    self.userapiclient,
+                                                    listall=self.services["listall"],
+                                                    templatefilter="community",
+                                                    zoneid=self.zone.id
+                                                    )
+            self.assertIsNone(
+                              list_templates_community,
+                              "Community Templates listed for newly created User"
+                              )
+            # Listing selfexecutable Templates
+            list_templates_selfexecutable = Template.list(
+                                                    self.userapiclient,
+                                                    listall=self.services["listall"],
+                                                    templatefilter="selfexecutable",
+                                                    zoneid=self.zone.id
+                                                    )
+            self.assertIsNone(
+                              list_templates_selfexecutable,
+                              "Self Executable Templates listed for newly created User"
+                              )
+            # Listing Autoscale VM Profiles
+            list_autoscalevm_profiles_before = Autoscale.listAutoscaleVmPofiles(
+                                                                                self.userapiclient,
+                                                                                listall=self.services["listall"]
+                                                                                )
+            self.assertIsNone(
+                              list_autoscalevm_profiles_before,
+                              "Autoscale VM Profiles listed"
+                              )
+            # Creating Autoscale VM Profile
+            counterparam = { "snmpcommunity": "public", "snmpport": "161"}
+            autoscalevm_profile = Autoscale.createAutoscaleVmProfile(
+                                                                     self.userapiclient,
+                                                                     serviceofferingid=list_service_offerings[0].id,
+                                                                     zoneid=self.zone.id,
+                                                                     templateid=list_templates_featured[0].id,
+                                                                     autoscaleuserid=list_users[0].id,
+                                                                     destroyvmgraceperiod='100',
+                                                                     counterparam=counterparam
+                                                                     )
+            self.assertIsNotNone(
+                                 autoscalevm_profile,
+                                 "Failed to create Autoscale VM Profile"
+                                 )
+            # Listing Autoscale VM Profiles
+            list_autoscalevm_profiles_after = Autoscale.listAutoscaleVmPofiles(
+                                                                               self.userapiclient,
+                                                                               listall=self.services["listall"]
+                                                                               )
+            status = validateList(list_autoscalevm_profiles_after)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "Failed to list Autoscale VM Profile after creation"
+                              )
+            # Verifying only 1 autoscale vm profile is created
+            self.assertEquals(
+                              1,
+                              len(list_autoscalevm_profiles_after),
+                              "Count of Autoscale VM profiles listed is not matching"
+                              )
+            # Listing the Autoscale VM Profile by id
+            list_autoscalvmprofile = Autoscale.listAutoscaleVmPofiles(
+                                                                      self.userapiclient,
+                                                                      listall=self.services["listall"],
+                                                                      id=autoscalevm_profile.id
+                                                                      )
+            status = validateList(list_autoscalvmprofile)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "Failed to list Autoscale VM Profile by Id after creation"
+                              )
+            # Verifying details of the listed Autoscale VM Profile
+            # Creating expected and actual values dictionaries
+            expected_dict = {
+                             "id":autoscalevm_profile.id,
+                             "account":self.account.name,
+                             "domainid":self.domain.id,
+                             "autoscaleuserid":list_users[0].id,
+                             "serviceofferingid":list_service_offerings[0].id,
+                             "zoneid":self.zone.id,
+                             "templateid":list_templates_featured[0].id,
+                             "destroyvmgraceperiod":autoscalevm_profile.destroyvmgraceperiod
+                             }
+            actual_dict = {
+                           "id":list_autoscalvmprofile[0].id,
+                           "account":list_autoscalvmprofile[0].account,
+                           "domainid":list_autoscalvmprofile[0].domainid,
+                           "autoscaleuserid":list_autoscalvmprofile[0].autoscaleuserid,
+                           "serviceofferingid":list_autoscalvmprofile[0].serviceofferingid,
+                           "zoneid":list_autoscalvmprofile[0].zoneid,
+                           "templateid":list_autoscalvmprofile[0].templateid,
+                           "destroyvmgraceperiod":list_autoscalvmprofile[0].destroyvmgraceperiod
+                           }
+            autoscalevm_profile_status = self.__verify_values(
+                                                              expected_dict,
+                                                              actual_dict
+                                                              )
+            self.assertEqual(
+                             True,
+                             autoscalevm_profile_status,
+                             "Created Autoscale VM Profile details are not as expected"
+                             )
+            # Updating destroyvmgrageperiod for created Autoscale VM Profile
+            autoscalevm_profile_updated = Autoscale.updateAutoscaleVMProfile(
+                                                                             self.userapiclient,
+                                                                             id=autoscalevm_profile.id,
+                                                                             autoscaleuserid=list_users[0].id,
+                                                                             destroyvmgraceperiod='200',
+                                                                             templateid=list_templates_featured[0].id,
+                                                                             )
+            self.assertIsNotNone(
+                                 autoscalevm_profile_updated,
+                                 "Failed to update Autoscale VM Profile"
+                                 )
+            # Verifyign that Destroy VM Graceperiod is updated in autoscale VM Profile
+            self.assertEquals(
+                              200,
+                              autoscalevm_profile_updated.destroyvmgraceperiod,
+                              "Failed to update destroy vm grace period"
+                              )
+            # Destroying the VM
+            vm_created.delete(self.userapiclient)
+            vm_created.expung(self.apiClient)
+        self.cleanup.append(self.account)
         return
 
     @attr(tags=["advanced", "provisioning"])
@@ -3890,303 +3961,328 @@ class TestIpAddresses(cloudstackTestCase):
         Step13: Updating Autoscale VM group and verifying it was updated
         Step14: Enabling Autoscale VM group and verifying it was enabled
         """
-        # Listing Network Offerings
-        list_nwoff_before = NetworkOffering.list(
-                                                 self.apiClient,
-                                                 forvpc="false",
-                                                 guestiptype="Isolated",
-                                                 state="Enabled",
-                                                 supportedservices="SourceNat,Lb",
-                                                 zoneid=self.zone.id
-                                                 )
-        # Creating Network Offerign with LB as Netscalar
-        nwoff_created = NetworkOffering.create(
-                                               self.apiClient,
-                                               self.services["nw_off_isolated_netscaler"]
-                                               )
-        self.assertIsNotNone(
-                             nwoff_created,
-                             "Failed to Create Network Offering with LB sercvice for Netscaler"
-                             )
-        # Enable Network offering
-        nwoff_created.update(self.apiClient, state='Enabled')
-        # Listing Network Offerings again
-        list_nwoff_after = NetworkOffering.list(
-                                                self.apiClient,
-                                                forvpc="false",
-                                                guestiptype="Isolated",
-                                                state="Enabled",
-                                                supportedservices="SourceNat,Lb",
-                                                zoneid=self.zone.id
-                                                )
-        self.assertEquals(
-                          len(list_nwoff_before)+1,
-                          len(list_nwoff_after),
-                          "Failed to create Network Offering"
-                          )
-        # Creating a Network Using the Network Offering
-        network = Network.create(
-                                  self.userapiclient,
-                                  self.services["network"],
-                                  accountid=self.account.name,
-                                  domainid=self.domain.id,
-                                  networkofferingid=nwoff_created.id,
-                                  zoneid=self.zone.id
-                                  )
-        self.assertIsNotNone(
-                             network,
-                             "Network creation failed"
-                             )
-        self.cleanup.append(network)
-        self.cleanup.append(nwoff_created)
-        # Launching a Virtual Machine
-        vm_created = VirtualMachine.create(
-                                           self.userapiclient,
-                                           self.services["virtual_machine"],
-                                           accountid=self.account.name,
-                                           domainid=self.account.domainid,
-                                           networkids=network.id,
-                                           serviceofferingid=self.service_offering.id,
-                                           )
-        self.assertIsNotNone(
-                             vm_created,
-                             "Failed to launch a VM under network created"
-                             )
-        # Listing all the IP Addresses for a user
-        list_ipaddresses_before = PublicIPAddress.list(
-                                                       self.userapiclient,
-                                                       listall=self.services["listall"]
-                                                       )
-        status = validateList(list_ipaddresses_before)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "IP Addresses Association Failed while launching a VM"
-                          )
-        # Verifying the length of the list is 1
-        self.assertEqual(
-                         1,
-                         len(list_ipaddresses_before),
-                         "IP Addresses Association Failed while launching a VM"
-                         )
-        # Associating an IP Addresses to Network created 
-        associated_ipaddress = PublicIPAddress.create(
-                                                       self.userapiclient,
-                                                       services=self.services["network"],
-                                                       networkid=network.id
-                                                       )
-        self.assertIsNotNone(
-                             associated_ipaddress,
-                             "Failed to Associate IP Address"
-                             )
-        # Listing all the IP Addresses for a user
-        list_ipaddresses_after = PublicIPAddress.list(
-                                                      self.userapiclient,
-                                                      listall=self.services["listall"]
-                                                      )
-        status = validateList(list_ipaddresses_after)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "IP Addresses Association Failed"
-                          )
-        # Verifying the length of the list is 1
-        self.assertEqual(
-                         2,
-                         len(list_ipaddresses_after),
-                         "Number of IP Addresses associated are not matching expected"
-                         )
-        # Listing Users
-        list_users = User.list(
-                               self.apiClient,
-                               listall=self.services["listall"],
-                               account=self.account.name,
-                               domainid=self.domain.id
-                               )
-        status = validateList(list_users)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list Users"
-                          )
-        # Listing counters
-        list_counters = Autoscale.listCounters(self.userapiclient)
-        status = validateList(list_counters)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list Counters"
-                          )
-        # Create Condition for scaleup Vm Policy
-        condition_scaleup = Autoscale.createCondition(
-                                                      self.userapiclient,
-                                                      counterid=list_counters[0].id,
-                                                      relationaloperator='GT',
-                                                      threshold='40'
-                                                      )
-        self.assertIsNotNone(
-                             condition_scaleup,
-                             "Failed to create Scaleup Condition"
-                             )
-        # Creating scaleup Vm Policy
-        scaleup_policy = Autoscale.createAutoscalePolicy(
-                                                         self.userapiclient,
-                                                         action='scaleup',
-                                                         conditionids=condition_scaleup.id,
-                                                         duration='40',
-                                                         quiettime='300'
-                                                         )
-        self.assertIsNotNone(
-                             scaleup_policy,
-                             "Failed to create Scaleup VM Policy"
-                             )
-        # Create Condition for scaledown Vm Policy
-        condition_scaledown = Autoscale.createCondition(
-                                                        self.userapiclient,
-                                                        counterid=list_counters[0].id,
-                                                        relationaloperator='GT',
-                                                        threshold='10'
-                                                        )
-        self.assertIsNotNone(
-                             condition_scaledown,
-                             "Failed to create Scaledown Condition"
-                             )
-        # Creating scaledown Vm Policy
-        scaledown_policy = Autoscale.createAutoscalePolicy(
-                                                         self.userapiclient,
-                                                         action='scaledown',
-                                                         conditionids=condition_scaledown.id,
-                                                         duration='40',
-                                                         quiettime='300'
-                                                         )
-        self.assertIsNotNone(
-                             scaledown_policy,
-                             "Failed to create Scaledown VM Policy"
-                             )
-        counterparam = { "snmpcommunity": "public", "snmpport": "161"}
-        # Create Autoscale VM Profile
-        vmprofile = Autoscale.createAutoscaleVmProfile(
-                                                       self.userapiclient,
-                                                       serviceofferingid=self.service_offering.id,
-                                                       zoneid=self.zone.id,
-                                                       templateid=self.template.id,
-                                                       autoscaleuserid=list_users[0].id,
-                                                       destroyvmgraceperiod='30',
-                                                       counterparam=counterparam
-                                                       )
-        self.assertIsNotNone(
-                             vmprofile,
-                             "Failed to create Autoscale Vm Profile"
-                             )
-        self.services["lbrule"]["openfirewall"] = False
-        # Creating Load Balancer Rule
-        lbrule = LoadBalancerRule.create(
-                                         self.userapiclient,
-                                         self.services["lbrule"],
-                                         ipaddressid=associated_ipaddress.ipaddress.id,
-                                         accountid=self.account.name,
-                                         networkid=network.id,
-                                         domainid=self.domain.id
-                                         )
-        self.assertIsNotNone(
-                             lbrule,
-                             "Failed to create Load Balancer Rule"
-                             )
-        # Listing Autoscale VM Groups
-        list_vmgroup_before = Autoscale.listAutoscaleVmGroup(
-                                                             self.userapiclient,
-                                                             listall=self.services["listall"],
-                                                             lbruleid=lbrule.id
-                                                             )
-        # Verifying No Autoscale VM Groups are listed
-        self.assertIsNone(
-                          list_vmgroup_before,
-                          "Listed Autoscale VM Groups for newly created LB Rule"
-                          )
-        # Creating Autoscale VM Group
-        vmgroup = Autoscale.createAutoscaleVmGroup(
-                                                   self.userapiclient,
-                                                   lbruleid=lbrule.id,
-                                                   minmembers='3',
-                                                   maxmembers='10',
-                                                   scaledownpolicyids=scaledown_policy.id,
-                                                   scaleuppolicyids=scaleup_policy.id,
-                                                   vmprofileid=vmprofile.id,
-                                                   interval='30'
+        if self.hypervisor.lower() == 'kvm':
+            raise unittest.SkipTest("ScaleVM is not supported on KVM. Hence, skipping the test")
+
+        list_physical_networks = PhysicalNetwork.list(
+                                                     self.apiClient,
+                                                     zoneid=self.zone.id
+                                                     )
+        physical_networks_size = 0
+        if list_physical_networks is not None:
+            physical_networks_size = len(list_physical_networks)
+
+        run_flag = False
+        for i in range(0, len(list_physical_networks)):
+            list_network_serviceprovider = NetworkServiceProvider.list(
+                                                                       self.apiClient,
+                                                                       physicalnetworkid=list_physical_networks[i].id
+                                                                       )
+            for j in range(0, len(list_network_serviceprovider)):
+                if((list_network_serviceprovider[j].name == 'Netscaler') and (list_network_serviceprovider[j].state == 'Enabled')):
+                    run_flag = True
+                    break
+
+        if(run_flag == False):
+            self.debug("Netscaler is not enabled and auto scale VM is applicable only for Netscaler")
+        else:
+            # Listing Network Offerings
+            list_nwoff_before = NetworkOffering.list(
+                                                     self.apiClient,
+                                                     forvpc="false",
+                                                     guestiptype="Isolated",
+                                                     state="Enabled",
+                                                     supportedservices="SourceNat,Lb",
+                                                     zoneid=self.zone.id
+                                                     )
+            # Creating Network Offerign with LB as Netscalar
+            nwoff_created = NetworkOffering.create(
+                                                   self.apiClient,
+                                                   self.services["nw_off_isolated_netscaler"]
                                                    )
-        self.assertIsNotNone(
-                             vmgroup,
-                             "Failed to create Autoscale VM Group"
+            self.assertIsNotNone(
+                                 nwoff_created,
+                                 "Failed to Create Network Offering with LB sercvice for Netscaler"
+                                 )
+            # Enable Network offering
+            nwoff_created.update(self.apiClient, state='Enabled')
+            # Listing Network Offerings again
+            list_nwoff_after = NetworkOffering.list(
+                                                    self.apiClient,
+                                                    forvpc="false",
+                                                    guestiptype="Isolated",
+                                                    state="Enabled",
+                                                    supportedservices="SourceNat,Lb",
+                                                    zoneid=self.zone.id
+                                                    )
+            self.assertEquals(
+                              len(list_nwoff_before) + 1,
+                              len(list_nwoff_after),
+                              "Failed to create Network Offering"
+                              )
+            # Creating a Network Using the Network Offering
+            network = Network.create(
+                                      self.userapiclient,
+                                      self.services["network"],
+                                      accountid=self.account.name,
+                                      domainid=self.domain.id,
+                                      networkofferingid=nwoff_created.id,
+                                      zoneid=self.zone.id
+                                      )
+            self.assertIsNotNone(
+                                 network,
+                                 "Network creation failed"
+                                 )
+            self.cleanup.append(network)
+    #         self.cleanup.append(nwoff_created)
+            # Launching a Virtual Machine
+            vm_created = VirtualMachine.create(
+                                               self.userapiclient,
+                                               self.services["virtual_machine"],
+                                               accountid=self.account.name,
+                                               domainid=self.account.domainid,
+                                               networkids=network.id,
+                                               serviceofferingid=self.service_offering.id,
+                                               )
+            self.assertIsNotNone(
+                                 vm_created,
+                                 "Failed to launch a VM under network created"
+                                 )
+            # Listing all the IP Addresses for a user
+            list_ipaddresses_before = PublicIPAddress.list(
+                                                           self.userapiclient,
+                                                           listall=self.services["listall"]
+                                                           )
+            status = validateList(list_ipaddresses_before)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "IP Addresses Association Failed while launching a VM"
+                              )
+            # Verifying the length of the list is 1
+            self.assertEqual(
+                             1,
+                             len(list_ipaddresses_before),
+                             "IP Addresses Association Failed while launching a VM"
                              )
-        # Listing Autoscale VM Groups
-        list_vmgroup_after = Autoscale.listAutoscaleVmGroup(
-                                                            self.userapiclient,
-                                                            listall=self.services["listall"],
-                                                            lbruleid=lbrule.id
-                                                            )
-        status = validateList(list_vmgroup_after)
-        self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list Autoscale VM group after creation"
-                          )
-        # Verifying only 1 Autoscale VM group is listed
-        self.assertEquals(
-                          1,
-                          len(list_vmgroup_after),
-                          "Autoscale VM group list count is not matching"
-                          )
-        # Disabling Autoscale VM group
-        vmgroup_disabled = Autoscale.disableAutoscaleVmGroup(
+            # Associating an IP Addresses to Network created
+            associated_ipaddress = PublicIPAddress.create(
+                                                           self.userapiclient,
+                                                           services=self.services["network"],
+                                                           networkid=network.id
+                                                           )
+            self.assertIsNotNone(
+                                 associated_ipaddress,
+                                 "Failed to Associate IP Address"
+                                 )
+            # Listing all the IP Addresses for a user
+            list_ipaddresses_after = PublicIPAddress.list(
+                                                          self.userapiclient,
+                                                          listall=self.services["listall"]
+                                                          )
+            status = validateList(list_ipaddresses_after)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "IP Addresses Association Failed"
+                              )
+            # Verifying the length of the list is 1
+            self.assertEqual(
+                             2,
+                             len(list_ipaddresses_after),
+                             "Number of IP Addresses associated are not matching expected"
+                             )
+            # Listing Users
+            list_users = User.list(
+                                   self.apiClient,
+                                   listall=self.services["listall"],
+                                   account=self.account.name,
+                                   domainid=self.domain.id
+                                   )
+            status = validateList(list_users)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "Failed to list Users"
+                              )
+            # Listing counters
+            list_counters = Autoscale.listCounters(self.userapiclient)
+            status = validateList(list_counters)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "Failed to list Counters"
+                              )
+            # Create Condition for scaleup Vm Policy
+            condition_scaleup = Autoscale.createCondition(
+                                                          self.userapiclient,
+                                                          counterid=list_counters[0].id,
+                                                          relationaloperator='GT',
+                                                          threshold='40'
+                                                          )
+            self.assertIsNotNone(
+                                 condition_scaleup,
+                                 "Failed to create Scaleup Condition"
+                                 )
+            # Creating scaleup Vm Policy
+            scaleup_policy = Autoscale.createAutoscalePolicy(
                                                              self.userapiclient,
-                                                             id=vmgroup.id
+                                                             action='scaleup',
+                                                             conditionids=condition_scaleup.id,
+                                                             duration='40',
+                                                             quiettime='300'
                                                              )
-        self.assertIsNotNone(
-                             vmgroup_disabled,
-                             "Failed to disable Autoscale VM group"
-                             )
-        # Verifyign the state of the VM Group afte renabling
-        self.assertEquals(
-                          "disabled",
-                          vmgroup_disabled.state,
-                          "Disabled VM Group state is not matching"
-                          )
-        # Updating Autoscale VM Group
-        vmgroup_updated = Autoscale.updateAutoscaleVMGroup(
+            self.assertIsNotNone(
+                                 scaleup_policy,
+                                 "Failed to create Scaleup VM Policy"
+                                 )
+            # Create Condition for scaledown Vm Policy
+            condition_scaledown = Autoscale.createCondition(
+                                                            self.userapiclient,
+                                                            counterid=list_counters[0].id,
+                                                            relationaloperator='GT',
+                                                            threshold='10'
+                                                            )
+            self.assertIsNotNone(
+                                 condition_scaledown,
+                                 "Failed to create Scaledown Condition"
+                                 )
+            # Creating scaledown Vm Policy
+            scaledown_policy = Autoscale.createAutoscalePolicy(
+                                                             self.userapiclient,
+                                                             action='scaledown',
+                                                             conditionids=condition_scaledown.id,
+                                                             duration='40',
+                                                             quiettime='300'
+                                                             )
+            self.assertIsNotNone(
+                                 scaledown_policy,
+                                 "Failed to create Scaledown VM Policy"
+                                 )
+            counterparam = { "snmpcommunity": "public", "snmpport": "161"}
+            # Create Autoscale VM Profile
+            vmprofile = Autoscale.createAutoscaleVmProfile(
                                                            self.userapiclient,
-                                                           id=vmgroup.id,
-                                                           minmembers='3',
-                                                           maxmembers='10',
-                                                           scaledownpolicyids=scaledown_policy.id,
-                                                           scaleuppolicyids=scaleup_policy.id,
-                                                           interval='40'
+                                                           serviceofferingid=self.service_offering.id,
+                                                           zoneid=self.zone.id,
+                                                           templateid=self.template.id,
+                                                           autoscaleuserid=list_users[0].id,
+                                                           destroyvmgraceperiod='30',
+                                                           counterparam=counterparam
                                                            )
-        self.assertIsNotNone(
-                             vmgroup_updated,
-                             "Failed to update Autoscale VM group"
-                             )
-        self.assertEquals(
-                          40,
-                          vmgroup_updated.interval,
-                          "Updated Autoscale VM group interval value is not matching"
-                          )
-        # Enabling Autoscale VM group
-        vmgroup_enabled = Autoscale.enableAutoscaleVmGroup(
-                                                           self.userapiclient,
-                                                           id=vmgroup.id
-                                                           )
-        self.assertIsNotNone(
-                             vmgroup_enabled,
-                             "Failed to enable Autoscale VM group"
-                             )
-        # Verifyign the state of the VM Group afte renabling
-        self.assertEquals(
-                          "enabled",
-                          vmgroup_enabled.state,
-                          "Enabled VM Group state is not matching"
-                          )
-        # Destroying the VM
-        vm_created.delete(self.userapiclient)
-        vm_created.expung(self.apiClient)
+            self.assertIsNotNone(
+                                 vmprofile,
+                                 "Failed to create Autoscale Vm Profile"
+                                 )
+            self.services["lbrule"]["openfirewall"] = False
+            # Creating Load Balancer Rule
+            lbrule = LoadBalancerRule.create(
+                                             self.userapiclient,
+                                             self.services["lbrule"],
+                                             ipaddressid=associated_ipaddress.ipaddress.id,
+                                             accountid=self.account.name,
+                                             networkid=network.id,
+                                             domainid=self.domain.id
+                                             )
+            self.assertIsNotNone(
+                                 lbrule,
+                                 "Failed to create Load Balancer Rule"
+                                 )
+            # Listing Autoscale VM Groups
+            list_vmgroup_before = Autoscale.listAutoscaleVmGroup(
+                                                                 self.userapiclient,
+                                                                 listall=self.services["listall"],
+                                                                 lbruleid=lbrule.id
+                                                                 )
+            # Verifying No Autoscale VM Groups are listed
+            self.assertIsNone(
+                              list_vmgroup_before,
+                              "Listed Autoscale VM Groups for newly created LB Rule"
+                              )
+            # Creating Autoscale VM Group
+            vmgroup = Autoscale.createAutoscaleVmGroup(
+                                                       self.userapiclient,
+                                                       lbruleid=lbrule.id,
+                                                       minmembers='3',
+                                                       maxmembers='10',
+                                                       scaledownpolicyids=scaledown_policy.id,
+                                                       scaleuppolicyids=scaleup_policy.id,
+                                                       vmprofileid=vmprofile.id,
+                                                       interval='30'
+                                                       )
+            self.assertIsNotNone(
+                                 vmgroup,
+                                 "Failed to create Autoscale VM Group"
+                                 )
+            # Listing Autoscale VM Groups
+            list_vmgroup_after = Autoscale.listAutoscaleVmGroup(
+                                                                self.userapiclient,
+                                                                listall=self.services["listall"],
+                                                                lbruleid=lbrule.id
+                                                                )
+            status = validateList(list_vmgroup_after)
+            self.assertEquals(
+                              PASS,
+                              status[0],
+                              "Failed to list Autoscale VM group after creation"
+                              )
+            # Verifying only 1 Autoscale VM group is listed
+            self.assertEquals(
+                              1,
+                              len(list_vmgroup_after),
+                              "Autoscale VM group list count is not matching"
+                              )
+            # Disabling Autoscale VM group
+            vmgroup_disabled = Autoscale.disableAutoscaleVmGroup(
+                                                                 self.userapiclient,
+                                                                 id=vmgroup.id
+                                                                 )
+            self.assertIsNotNone(
+                                 vmgroup_disabled,
+                                 "Failed to disable Autoscale VM group"
+                                 )
+            # Verifyign the state of the VM Group afte renabling
+            self.assertEquals(
+                              "disabled",
+                              vmgroup_disabled.state,
+                              "Disabled VM Group state is not matching"
+                              )
+            # Updating Autoscale VM Group
+            vmgroup_updated = Autoscale.updateAutoscaleVMGroup(
+                                                               self.userapiclient,
+                                                               id=vmgroup.id,
+                                                               minmembers='3',
+                                                               maxmembers='10',
+                                                               scaledownpolicyids=scaledown_policy.id,
+                                                               scaleuppolicyids=scaleup_policy.id,
+                                                               interval='40'
+                                                               )
+            self.assertIsNotNone(
+                                 vmgroup_updated,
+                                 "Failed to update Autoscale VM group"
+                                 )
+            self.assertEquals(
+                              40,
+                              vmgroup_updated.interval,
+                              "Updated Autoscale VM group interval value is not matching"
+                              )
+            # Enabling Autoscale VM group
+            vmgroup_enabled = Autoscale.enableAutoscaleVmGroup(
+                                                               self.userapiclient,
+                                                               id=vmgroup.id
+                                                               )
+            self.assertIsNotNone(
+                                 vmgroup_enabled,
+                                 "Failed to enable Autoscale VM group"
+                                 )
+            # Verifyign the state of the VM Group afte renabling
+            self.assertEquals(
+                              "enabled",
+                              vmgroup_enabled.state,
+                              "Enabled VM Group state is not matching"
+                              )
+            # Destroying the VM
+            vm_created.delete(self.userapiclient)
+            vm_created.expung(self.apiClient)
+        self.cleanup.append(self.account)
         return
-        

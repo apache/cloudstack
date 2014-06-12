@@ -15,52 +15,30 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (createVolume,
-                                  createTemplate)
-from marvin.lib.base import (Volume,
-                             Iso,
-                             VirtualMachine,
-                             Template,
-                             Snapshot,
-                             SecurityGroup,
-                             Account,
-                             Zone,
-                             Network,
-                             NetworkOffering,
-                             DiskOffering,
-                             ServiceOffering,
-                             VmSnapshot,
-                             SnapshotPolicy,
-                             SSHKeyPair,
-                             Resources,
-                             Configurations,
-                             VpnCustomerGateway,
-                             Hypervisor,
-                             VpcOffering,
-                             VPC,
-                             NetworkACL)
-from marvin.lib.common import (get_zone,
-                               get_domain,
-                               get_template,
-                               list_os_types)
-from marvin.lib.utils import (validateList,
-                              cleanup_resources,
-                              random_gen)
-from marvin.codes import (PASS, FAIL, EMPTY_LIST)
+# Import Local Modules
+from marvin.cloudstackTestCase import *
+from marvin.cloudstackException import *
+from marvin.cloudstackAPI import *
+from marvin.sshClient import SshClient
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
+from marvin.lib.utils import checkVolumeSize
+from marvin.codes import SUCCESS
 from nose.plugins.attrib import attr
-import time
+from time import sleep
+from ctypes.wintypes import BOOLEAN
 
 class TestListInstances(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
         try:
-            cls._cleanup = []        
+            cls._cleanup = []
             cls.testClient = super(TestListInstances, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
+            cls.hypervisor = cls.testClient.getHypervisorInfo()
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
             cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -101,7 +79,7 @@ class TestListInstances(cloudstackTestCase):
             cls.user = cls.account.user[0]
             cls.userapiclient = cls.testClient.getUserApiClient(cls.user.username, cls.domain.name)
             # Updating resource Limits
-            for i in range(0,12):
+            for i in range(0, 12):
                 Resources.updateLimit(
                                       cls.api_client,
                                       account=cls.account.name,
@@ -124,7 +102,7 @@ class TestListInstances(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        #Clean up, terminate the created resources
+        # Clean up, terminate the created resources
         cleanup_resources(self.apiClient, self.cleanup)
         return
 
@@ -194,7 +172,7 @@ class TestListInstances(cloudstackTestCase):
                           list_instances_before,
                           "Virtual Machine already exists for newly created user"
                           )
-        # If number of instances are less than (pagesize + 1), then creating them    
+        # If number of instances are less than (pagesize + 1), then creating them
         for i in range(0, (self.services["pagesize"] + 1)):
             vm_created = VirtualMachine.create(
                                                self.userapiclient,
@@ -216,7 +194,7 @@ class TestListInstances(cloudstackTestCase):
                              "Newly created VM name and the test data VM name are not matching"
                              )
 
-        # Listing all the instances again after creating VM's        
+        # Listing all the instances again after creating VM's
         list_instances_after = VirtualMachine.list(self.userapiclient, listall=self.services["listall"])
         status = validateList(list_instances_after)
         self.assertEquals(
@@ -301,7 +279,7 @@ class TestListInstances(cloudstackTestCase):
                         "VM was not deleted"
                         )
         return
- 
+
     @attr(tags=["advanced", "basic", "selfservice"])
     def test_02_list_Running_vm(self):
         """  
@@ -363,7 +341,7 @@ class TestListInstances(cloudstackTestCase):
                           )
         running_vm = list_running_vms_after[0]
 
-        #Creating expected and actual values dictionaries
+        # Creating expected and actual values dictionaries
         expected_dict = {
                          "id":vm_created.id,
                          "name":vm_created.name,
@@ -456,7 +434,7 @@ class TestListInstances(cloudstackTestCase):
                           "Stopped VM list count is not matching"
                           )
         stopped_vm = list_stopped_vms_after[0]
-        #Creating expected and actual values dictionaries
+        # Creating expected and actual values dictionaries
         expected_dict = {
                          "id":vm_created.id,
                          "name":vm_created.name,
@@ -564,7 +542,7 @@ class TestListInstances(cloudstackTestCase):
                           "Destroyed VM list count is not matching"
                           )
         destroyed_vm = list_destroyed_vms_admin[0]
-        #Creating expected and actual values dictionaries
+        # Creating expected and actual values dictionaries
         expected_dict = {
                          "id":vm_created.id,
                          "name":vm_created.name,
@@ -666,7 +644,7 @@ class TestListInstances(cloudstackTestCase):
                           "Listing of VM by Id failed"
                           )
         listed_vm = list_vm_byid[0]
-        #Creating expected and actual values dictionaries
+        # Creating expected and actual values dictionaries
         expected_dict = {
                          "id":vm_created.id,
                          "name":vm_created.name,
@@ -782,7 +760,7 @@ class TestListInstances(cloudstackTestCase):
                           "VM list by full name count is not matching"
                           )
         # Verifying that the details of the listed VM are same as the VM created above
-        #Creating expected and actual values dictionaries
+        # Creating expected and actual values dictionaries
         expected_dict = {
                          "id":vms[0].id,
                          "name":vms[0].name,
@@ -916,7 +894,7 @@ class TestListInstances(cloudstackTestCase):
                           "Count of VM list by name and state is not matching"
                           )
         # Verifying that the details of the listed VM are same as the VM created above
-        #Creating expected and actual values dictionaries
+        # Creating expected and actual values dictionaries
         expected_dict = {
                          "id":vm_created.id,
                          "name":vm_created.name,
@@ -1068,7 +1046,7 @@ class TestListInstances(cloudstackTestCase):
                               )
             listed_vm = list_vms_after[0]
             # Verifying that the details of the Listed VM are same as the VM deployed above
-            #Creating expected and actual values dictionaries
+            # Creating expected and actual values dictionaries
             expected_dict = {
                                "id":vm_created.id,
                                "name":vm_created.name,
@@ -1235,7 +1213,7 @@ class TestListInstances(cloudstackTestCase):
                               )
             listed_vm = list_vms[0]
             # Verifying that the details of the Listed VM are same as the VM deployed above
-            #Creating expected and actual values dictionaries
+            # Creating expected and actual values dictionaries
             expected_dict = {
                              "id":vm_created.id,
                              "name":vm_created.name,
@@ -1388,7 +1366,7 @@ class TestListInstances(cloudstackTestCase):
                           )
         listed_vm = list_vms[0]
         # Verifying that the details of the Listed VM are same as the VM deployed above
-        #Creating expected and actual values dictionaries
+        # Creating expected and actual values dictionaries
         expected_dict = {
                          "id":vm_created.id,
                          "name":vm_created.name,
@@ -1456,7 +1434,7 @@ class TestListInstances(cloudstackTestCase):
                           )
         listed_vm = list_vms[0]
         # Verifying that the details of the Listed VM are same as the VM deployed above
-        #Creating expected and actual values dictionaries
+        # Creating expected and actual values dictionaries
         expected_dict = {
                          "id":vm_created.id,
                          "name":vm_created.name,
@@ -1899,7 +1877,7 @@ class TestInstances(cloudstackTestCase):
             cls.testClient = super(TestInstances, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
-
+            cls.hypervisor = cls.testClient.getHypervisorInfo()
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
             cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -1941,7 +1919,7 @@ class TestInstances(cloudstackTestCase):
             cls.user = cls.account.user[0]
             cls.userapiclient = cls.testClient.getUserApiClient(cls.user.username, cls.domain.name)
             # Updating resource Limits
-            for i in range(0,12):
+            for i in range(0, 12):
                 Resources.updateLimit(
                                       cls.api_client,
                                       account=cls.account.name,
@@ -1963,7 +1941,7 @@ class TestInstances(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        #Clean up, terminate the created resources
+        # Clean up, terminate the created resources
         cleanup_resources(self.apiClient, self.cleanup)
         return
 
@@ -2024,6 +2002,8 @@ class TestInstances(cloudstackTestCase):
         Step10: Detaching the ISO attached in step8
         Step11: Verifying that detached ISO details are not associated with VM
         """
+        if self.hypervisor.lower() == 'kvm':
+            raise unittest.SkipTest("VM Snapshot is not supported on KVM. Hence, skipping the test")
         # Listing all the VM's for a User
         list_vms_before = VirtualMachine.list(
                                               self.userapiclient,
@@ -2154,6 +2134,8 @@ class TestInstances(cloudstackTestCase):
         Step12: Listing all the VM snapshots in Page 2 with page size
         Step13: Verifying that size of the list is 0
         """
+        if self.hypervisor.lower() == 'kvm':
+            raise unittest.SkipTest("VM Snapshot is not supported on KVM. Hence, skipping the test")
         # Listing all the VM's for a User
         list_vms_before = VirtualMachine.list(
                                               self.userapiclient,
@@ -2309,6 +2291,8 @@ class TestInstances(cloudstackTestCase):
         Step10: Verifying that only 1 VM snapshot is having current flag set as true.
         Step11: Verifying that the VM Snapshot with current flag set to true is the reverted snapshot in Step 8
         """
+        if self.hypervisor.lower() == 'kvm':
+            raise unittest.SkipTest("VM Snapshot is not supported on KVM. Hence, skipping the test")
         # Listing all the VM's for a User
         list_vms_before = VirtualMachine.list(
                                               self.userapiclient,
@@ -2624,6 +2608,32 @@ class TestInstances(cloudstackTestCase):
                           list_volumes_page2,
                           "Volumes listed in page 2"
                           )
+        # Listing all the volumes for a VM again in page 1
+        list_volumes_page1 = Volume.list(
+                                         self.userapiclient,
+                                         listall=self.services["listall"],
+                                         virtualmachineid=vm_created.id,
+                                         page=1,
+                                         pagesize=self.services["pagesize"]
+                                         )
+        status = validateList(list_volumes_page1)
+        self.assertEquals(
+                          PASS,
+                          status[0],
+                          "Volumes not listed in page1"
+                          )
+        # Verifying that list size is equal to page size
+        self.assertEquals(
+                          self.services["pagesize"],
+                          len(list_volumes_page1),
+                          "VM's volume count is not matching in page 1"
+                          )
+        # Detaching all the volumes attached from VM
+        for i in range(0, len(list_volumes_page1)):
+            vm_created.detach_volume(
+                                     self.userapiclient,
+                                     list_volumes_page1[i]
+                                     )
         return
 
     @attr(tags=["advanced", "basic", "provisioning"])
@@ -2641,6 +2651,8 @@ class TestInstances(cloudstackTestCase):
         Step5: Perform change service (scale up) the Running VM deployed in step1
         Step6: Verifying that VM's service offerings is changed
         """
+        if self.hypervisor.lower() == 'kvm':
+            raise unittest.SkipTest("ScaleVM is not supported on KVM. Hence, skipping the test")
         # Checking if Dynamic scaling of VM is supported or not
         list_config = Configurations.list(
                                           self.apiClient,

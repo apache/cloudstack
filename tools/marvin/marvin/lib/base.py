@@ -1562,7 +1562,7 @@ class StaticNATRule:
         return
 
     @classmethod
-    def disable(cls, apiclient, ipaddressid, virtualmachineid):
+    def disable(cls, apiclient, ipaddressid, virtualmachineid=None):
         """Disables Static NAT rule"""
 
         cmd = disableStaticNat.disableStaticNatCmd()

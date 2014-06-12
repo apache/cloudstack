@@ -15,42 +15,19 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (createVolume,
-                                  createTemplate)
-from marvin.lib.base import (Volume,
-                             Iso,
-                             VirtualMachine,
-                             Template,
-                             Snapshot,
-                             SecurityGroup,
-                             Account,
-                             Zone,
-                             Network,
-                             NetworkOffering,
-                             DiskOffering,
-                             ServiceOffering,
-                             VmSnapshot,
-                             SnapshotPolicy,
-                             SSHKeyPair,
-                             Resources,
-                             Configurations,
-                             VpnCustomerGateway,
-                             Hypervisor,
-                             VpcOffering,
-                             VPC,
-                             NetworkACL)
-from marvin.lib.common import (get_zone,
-                               get_domain,
-                               get_template,
-                               list_os_types)
-from marvin.lib.utils import (validateList,
-                              cleanup_resources,
-                              random_gen)
-from marvin.codes import (PASS, FAIL, EMPTY_LIST)
+# Import Local Modules
+from marvin.cloudstackTestCase import *
+from marvin.cloudstackException import *
+from marvin.cloudstackAPI import *
+from marvin.sshClient import SshClient
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
+from marvin.lib.utils import checkVolumeSize
+from marvin.codes import SUCCESS
 from nose.plugins.attrib import attr
-import time
+from time import sleep
+from ctypes.wintypes import BOOLEAN
 
 class TestSnapshots(cloudstackTestCase):
 
@@ -61,6 +38,7 @@ class TestSnapshots(cloudstackTestCase):
             cls.testClient = super(TestSnapshots, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
+            cls.hypervisor = cls.testClient.getHypervisorInfo()
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
             cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -123,7 +101,7 @@ class TestSnapshots(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        #Clean up, terminate the created resources
+        # Clean up, terminate the created resources
         cleanup_resources(self.apiClient, self.cleanup)
         return
 
@@ -387,7 +365,7 @@ class TestSnapshots(cloudstackTestCase):
                           "Size of the list volume snapshot by Id is not matching"
                           )
         # Verifying details of the listed snapshot to be same as snapshot created above
-        #Creating expected and actual values dictionaries
+        # Creating expected and actual values dictionaries
         expected_dict = {
                          "id":snapshot_created.id,
                          "name":snapshot_created.name,
@@ -435,6 +413,8 @@ class TestSnapshots(cloudstackTestCase):
         Step11: Listing all the volume snapshots in page2
         Step12: Verifying that list size is 0
         """
+        if self.hypervisor.lower() == 'kvm':
+            raise unittest.SkipTest("VM Snapshot is not supported on KVM. Hence, skipping the test")
         # Listing all the VM snapshots for a User
         list_vm_snaps_before = VmSnapshot.list(
                                                self.userapiclient,
@@ -529,7 +509,7 @@ class TestSnapshots(cloudstackTestCase):
                           "VM snapshot not deleted from page 2"
                           )
         # Deleting all the existing VM snapshots
-        list_vm_snaps =  VmSnapshot.list(
+        list_vm_snaps = VmSnapshot.list(
                                          self.userapiclient,
                                          listall=self.services["listall"],
                                          )
@@ -567,6 +547,8 @@ class TestSnapshots(cloudstackTestCase):
         Step7: Verifying that list size is 1
         Step8: Verifying details of the listed VM snapshot
         """
+        if self.hypervisor.lower() == 'kvm':
+            raise unittest.SkipTest("VM Snapshot is not supported on KVM. Hence, skipping the test")
         # Listing all the VM snapshots for a User
         list_vm_snaps_before = VmSnapshot.list(
                                                self.userapiclient,
@@ -622,7 +604,7 @@ class TestSnapshots(cloudstackTestCase):
                           "Size of the list vm snapshot by Id is not matching"
                           )
         # Verifying details of the listed snapshot to be same as snapshot created above
-        #Creating expected and actual values dictionaries
+        # Creating expected and actual values dictionaries
         expected_dict = {
                          "id":snapshot_created.id,
                          "name":snapshot_created.name,
