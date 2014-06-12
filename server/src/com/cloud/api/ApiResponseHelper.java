@@ -3573,9 +3573,15 @@ public class ApiResponseHelper implements ResponseGenerator {
     public NicResponse createNicResponse(Nic result) {
         NicResponse response = new NicResponse();
         NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, result.getInstanceId());
 
         response.setId(result.getUuid());
         response.setNetworkid(network.getUuid());
+
+        if (vm != null) {
+            response.setVmId(vm.getUuid());
+        }
+
         response.setIpaddress(result.getIp4Address());
 
         if (result.getSecondaryIp()) {
