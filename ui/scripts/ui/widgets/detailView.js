@@ -1465,7 +1465,12 @@
             }
         }
 
-        $detailView.tabs();
+        $detailView.tabs({
+            select: function() {
+                // Cleanup old tab content
+                $detailView.find('.detail-group').children().remove();
+            }
+        });
 
         return $detailView;
     };
