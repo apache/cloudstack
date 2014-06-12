@@ -160,7 +160,7 @@ class TestSecStorageServices(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg", "selfservice"], BugId="CLOUDSTACK-6773, CLOUDSTACK-6777")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg", "selfservice"])
     def test_02_sys_template_ready(self):
         """Test system templates are ready
         """
