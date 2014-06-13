@@ -1447,6 +1447,7 @@ class TestVpnUsage(cloudstackTestCase):
         cls.services["server"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = template.id
+        cls._cleanup = []
 
         # Create Service offerings, VMs etc
         cls.account = Account.create(
@@ -1455,6 +1456,7 @@ class TestVpnUsage(cloudstackTestCase):
                             admin=True,
                             domainid=cls.domain.id
                             )
+        cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
 
@@ -1462,6 +1464,7 @@ class TestVpnUsage(cloudstackTestCase):
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls._cleanup.append(cls.sevice_offering)
         cls.virtual_machine = VirtualMachine.create(
                                 cls.api_client,
                                 cls.services["server"],
@@ -1477,10 +1480,6 @@ class TestVpnUsage(cloudstackTestCase):
                                            domainid=cls.virtual_machine.domainid,
                                            services=cls.services["server"]
                                            )
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.account,
-                        ]
         return
 
     @classmethod

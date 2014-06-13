@@ -1474,6 +1474,7 @@ class TestProjectSuspendActivate(cloudstackTestCase):
         cls._cleanup = [
                         cls.project,
                         cls.account,
+                        cls.user,
                         cls.disk_offering,
                         cls.service_offering
                         ]

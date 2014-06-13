@@ -173,8 +173,6 @@ class TestSnapshotLimit(cloudstackTestCase):
             cls.tearDownClass()
             unittest.SkipTest("setupClass fails for %s" % cls.__name__)
             raise e
-        else:
-            cls._cleanup.remove(cls.account)
         return
 
     @classmethod

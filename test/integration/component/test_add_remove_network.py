@@ -936,22 +936,25 @@ class TestUpdateVirtualMachineNIC(cloudstackTestCase):
         # Create Accounts & networks
         cls.services["isolated_network"]["zoneid"] = cls.zone.id
         cls.services["shared_network"]["zoneid"] = cls.zone.id
+        cls._cleanup = []
 
         cls.account = Account.create(cls.api_client,cls.services["account"],domainid = cls.domain.id)
+        cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(cls.api_client,cls.services["service_offering"])
+        cls._cleanup.append(cls.service_offering)
 
         cls.virtual_machine = VirtualMachine.create(cls.api_client,cls.services["virtual_machine"],
                                                     accountid=cls.account.name,domainid=cls.account.domainid,
                                                     serviceofferingid=cls.service_offering.id,
                                                     mode=cls.zone.networktype)
         # Create Shared Network Offering
-        cls.isolated_network_offering = NetworkOffering.create(cls.api_client,cls.services["isolated_network_offering"],)
+        cls.isolated_network_offering = NetworkOffering.create(cls.api_client,cls.services["isolated_network_offering"])
+        cls._cleanup.append(cls.isolated_network_offering)
         # Enable Isolated Network offering
         cls.isolated_network_offering.update(cls.api_client, state='Enabled')
         cls.isolated_network = Network.create(cls.api_client,cls.services["isolated_network"],cls.account.name,
                                               cls.account.domainid,networkofferingid=cls.isolated_network_offering.id)
-        cls._cleanup = [cls.account,cls.service_offering,cls.isolated_network_offering,]
         return
 
     def setUp(self):
