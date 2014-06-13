@@ -906,7 +906,7 @@
                                                 }
 
                                                 var volumeDrEnabled = false;                                               
-                                                if (drModuleIncluded) {
+                                                if (isModuleIncluded("dr")) {
                                                     volumeDrEnabled = cloudStack.dr.sharedFunctions.isVolumeDrEnabled(args.context.volumes[0]);                                                    
                                                 }    
                                                 
@@ -920,7 +920,7 @@
                                                         success: function(json) {
                                                             var instanceObjs = json.listvirtualmachinesresponse.virtualmachine;
                                                             $(instanceObjs).each(function() {
-                                                                if (drModuleIncluded) {
+                                                                if (isModuleIncluded("dr")) {
                                                                     var vmDrEnabled = cloudStack.dr.sharedFunctions.isVmDrEnabled(this);
                                                                     if (vmDrEnabled == volumeDrEnabled) {
                                                                 items.push({

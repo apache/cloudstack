@@ -49,8 +49,6 @@ var md5HashedLogin = false;
 var pageSize = 20;
 //var pageSize = 1; //for testing only
 
-var drModuleIncluded = false;
-
 //async action
 var pollAsyncJobResult = function(args) {
     $.ajax({
@@ -1176,7 +1174,7 @@ function listViewDataProvider(args, data, options) {
 }
 
 var addExtraPropertiesIfDrModuleIncluded = function(jsonObj, resourceType) {      
-    if (drModuleIncluded) {
+    if (isModuleIncluded("dr")) {
         $.ajax({
             url: createURL("listResourceDetails"),
             data: {
