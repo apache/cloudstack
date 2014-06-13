@@ -189,7 +189,12 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
             return;
         }
 
-        super.shutdown(profile, offering);
+        if (profile.getBroadcastDomainType() == BroadcastDomainType.Vswitch ) {
+            s_logger.debug("Releasing vnet for the network id=" + profile.getId());
+            _dcDao.releaseVnet(BroadcastDomainType.getValue(profile.getBroadcastUri()), profile.getDataCenterId(), profile.getPhysicalNetworkId(),
+                    profile.getAccountId(), profile.getReservationId());
+        }
+        profile.setBroadcastUri(null);
     }
 
     @Override
