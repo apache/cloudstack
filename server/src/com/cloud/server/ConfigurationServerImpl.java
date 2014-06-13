@@ -745,12 +745,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             // FIXME: take a global database lock here for safety.
             boolean onWindows = isOnWindows();
             if(!onWindows) {
-              Script.runSimpleBashScript("if [ -f " + privkeyfile + " ]; then rm -f " + privkeyfile + "; fi; ssh-keygen -t rsa -N '' -f " + privkeyfile + " -q");
+                Script.runSimpleBashScript("if [ -f " + privkeyfile + " ]; then rm -f " + privkeyfile + "; fi; ssh-keygen -t rsa -N '' -f " + privkeyfile + " -q");
             }
 
             byte[] arr1 = new byte[4094]; // configuration table column value size
-            try {
-                new DataInputStream(new FileInputStream(privkeyfile)).readFully(arr1);
+            try (DataInputStream dis = new DataInputStream(new FileInputStream(privkeyfile))) {
+                dis.readFully(arr1);
             } catch (EOFException e) {
             } catch (Exception e) {
                 s_logger.error("Cannot read the private key file", e);
@@ -758,8 +758,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             }
             String privateKey = new String(arr1).trim();
             byte[] arr2 = new byte[4094]; // configuration table column value size
-            try {
-                new DataInputStream(new FileInputStream(pubkeyfile)).readFully(arr2);
+            try (DataInputStream dis = new DataInputStream(new FileInputStream(pubkeyfile))) {
+                dis.readFully(arr2);
             } catch (EOFException e) {
             } catch (Exception e) {
                 s_logger.warn("Cannot read the public key file", e);
@@ -893,9 +893,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
         Script command = null;
         if(isOnWindows()) {
-          command = new Script("python", s_logger);
+            command = new Script("python", s_logger);
         } else {
-          command = new Script("/bin/bash", s_logger);
+            command = new Script("/bin/bash", s_logger);
         }
         command.add(scriptPath);
         command.add(publicKeyPath);
@@ -911,20 +911,20 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     }
 
     protected String getInjectScript() {
-      String injectScript = null;
-      boolean onWindows = isOnWindows();
-      if(onWindows) {
-        injectScript = "scripts/vm/systemvm/injectkeys.py";
-      } else {
-        injectScript = "scripts/vm/systemvm/injectkeys.sh";
-      }
-      return injectScript;
+        String injectScript = null;
+        boolean onWindows = isOnWindows();
+        if(onWindows) {
+            injectScript = "scripts/vm/systemvm/injectkeys.py";
+        } else {
+            injectScript = "scripts/vm/systemvm/injectkeys.sh";
+        }
+        return injectScript;
     }
 
     protected boolean isOnWindows() {
-      String os = System.getProperty("os.name", "generic").toLowerCase();
-      boolean onWindows = (os != null && os.startsWith("windows"));
-      return onWindows;
+        String os = System.getProperty("os.name", "generic").toLowerCase();
+        boolean onWindows = (os != null && os.startsWith("windows"));
+        return onWindows;
     }
 
     @DB
@@ -1186,9 +1186,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
                 // Offering #5
                 NetworkOfferingVO defaultNetscalerNetworkOffering =
-                    new NetworkOfferingVO(NetworkOffering.DefaultSharedEIPandELBNetworkOffering,
-                        "Offering for Shared networks with Elastic IP and Elastic LB capabilities", TrafficType.Guest, false, true, null, null, true,
-                        Availability.Optional, null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false, true, true, false, false, false);
+                        new NetworkOfferingVO(NetworkOffering.DefaultSharedEIPandELBNetworkOffering,
+                                "Offering for Shared networks with Elastic IP and Elastic LB capabilities", TrafficType.Guest, false, true, null, null, true,
+                                Availability.Optional, null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false, true, true, false, false, false);
 
                 defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
                 defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);

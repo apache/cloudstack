@@ -40,7 +40,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     private static final Logger s_logger = Logger.getLogger(Merovingian2.class);
 
     private static final String ACQUIRE_SQL =
-        "INSERT INTO op_lock (op_lock.key, op_lock.mac, op_lock.ip, op_lock.thread, op_lock.acquired_on, waiters) VALUES (?, ?, ?, ?, ?, 1)";
+            "INSERT INTO op_lock (op_lock.key, op_lock.mac, op_lock.ip, op_lock.thread, op_lock.acquired_on, waiters) VALUES (?, ?, ?, ?, ?, 1)";
     private static final String INCREMENT_SQL = "UPDATE op_lock SET waiters=waiters+1 where op_lock.key=? AND op_lock.mac=? AND op_lock.ip=? AND op_lock.thread=?";
     private static final String SELECT_SQL = "SELECT op_lock.key, mac, ip, thread, acquired_on, waiters FROM op_lock";
     private static final String INQUIRE_SQL = SELECT_SQL + " WHERE op_lock.key=?";
@@ -428,7 +428,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             pstmt.setInt(3, threadId);
             int rows = pstmt.executeUpdate();
             assert (false) : "Abandon hope, all ye who enter here....There were still " + rows + ":" + c +
-                " locks not released when the transaction ended, check for lock not released or @DB is not added to the code that using the locks!";
+            " locks not released when the transaction ended, check for lock not released or @DB is not added to the code that using the locks!";
         } catch (SQLException e) {
             throw new CloudRuntimeException("Can't clear locks " + pstmt, e);
         } finally {
@@ -444,9 +444,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     @Override
     public boolean releaseLockAsLastResortAndIReallyKnowWhatIAmDoing(String key) {
         s_logger.info("Releasing a lock from JMX lck-" + key);
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = _concierge.conn().prepareStatement(RELEASE_LOCK_SQL);
+        try (PreparedStatement pstmt = _concierge.conn().prepareStatement(RELEASE_LOCK_SQL)) {
             pstmt.setString(1, key);
             int rows = pstmt.executeUpdate();
             return rows > 0;
