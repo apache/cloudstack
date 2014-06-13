@@ -90,24 +90,10 @@ def main(command, vif_raw):
     # find xs network for this bridge, verify is used for ovs tunnel network
     xs_nw_uuid = pluginlib.do_cmd([pluginlib.XE_PATH, "network-list",
 								   "bridge=%s" % bridge, "--minimal"])
-    ovs_tunnel_network = False
-    try:
-        ovs_tunnel_network = pluginlib.do_cmd([pluginlib.XE_PATH,"network-param-get",
-						       "uuid=%s" % xs_nw_uuid,
-						       "param-name=other-config",
-						       "param-key=is-ovs-tun-network", "--minimal"])
-    except:
-        pass
 
-    ovs_vpc_distributed_vr_network = False
-    try:
-        ovs_vpc_distributed_vr_network = pluginlib.do_cmd([pluginlib.XE_PATH,"network-param-get",
-						       "uuid=%s" % xs_nw_uuid,
-						       "param-name=other-config",
-						       "param-key=is-ovs-vpc-distributed-vr-network", "--minimal"])
-    except:
-        pass
+    ovs_tunnel_network = pluginlib.is_regular_tunnel_network(xs_nw_uuid)
 
+    # handle case where network is reguar tunnel network
     if ovs_tunnel_network == 'True':
         vlan = pluginlib.do_cmd([pluginlib.VSCTL_PATH, 'br-to-vlan', bridge])
         if vlan != '0':
@@ -137,6 +123,7 @@ def main(command, vif_raw):
 
 
     # handle case where bridge is setup for VPC which is enabled for distributed routing
+    ovs_vpc_distributed_vr_network = pluginlib.is_vpc_network_with_distributed_routing(xs_nw_uuid)
     if ovs_vpc_distributed_vr_network == 'True':
         vlan = pluginlib.do_cmd([pluginlib.VSCTL_PATH, 'br-to-vlan', bridge])
         if vlan != '0':
