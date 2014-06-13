@@ -152,10 +152,10 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             msg="Both VMs of affinity group %s are on the same host" % self.ag.name)
 
 
-        @classmethod
-        def tearDownClass(cls):
-            try:
-                #Clean up, terminate the created templates
-                cleanup_resources(cls.apiclient, cls._cleanup)
-            except Exception as e:
-                raise Exception("Warning: Exception during cleanup : %s" % e)
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Clean up, terminate the created templates
+            cleanup_resources(cls.apiclient, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
