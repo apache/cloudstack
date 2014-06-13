@@ -1173,32 +1173,6 @@ function listViewDataProvider(args, data, options) {
     return data;
 }
 
-var addExtraPropertiesIfDrModuleIncluded = function(jsonObj, resourceType) {      
-    if (isModuleIncluded("dr")) {
-        $.ajax({
-            url: createURL("listResourceDetails"),
-            data: {
-                resourceid: jsonObj.id,
-                resourcetype: resourceType
-            },
-            async: false,
-            success: function(json) {    
-                var drFieldNameArray = [];
-                var resourcedetails = json.listresourcedetailsresponse.resourcedetail;
-                if (resourcedetails != undefined) {
-                    for (var i = 0; i < resourcedetails.length; i++) {                                                        
-                        if (resourcedetails[i].key.indexOf("DR_") > -1) {     
-                            drFieldNameArray.push(resourcedetails[i].key);
-                            jsonObj[resourcedetails[i].key] = resourcedetails[i].value;                                                                                                                   
-                        }
-                    }
-                }                  
-                jsonObj["drFieldNameArray"] = drFieldNameArray;
-            }
-        });
-    }    
-}
-
 //used by infrastructure page and network page
 var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {
     jsonObj.networkdomaintext = jsonObj.networkdomain;
