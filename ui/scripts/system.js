@@ -1954,9 +1954,10 @@
                                                         success: function (json) {
                                                             selectedGuestNetworkObj = json.listnetworksresponse.network[0];
                                                             addExtraPropertiesToGuestNetworkObject(selectedGuestNetworkObj);
-                                                                                                                        
-                                                            //if DR module is included                                   
-                                                            addExtraPropertiesIfDrModuleIncluded(selectedGuestNetworkObj, "Network");                                                            
+                                                                                                           
+                                                            if (isModuleIncluded("dr")) {
+                                                                cloudStack.dr.sharedFunctions.addExtraProperties(selectedGuestNetworkObj, "Network");  
+                                                            }
                                                             
                                                             args.response.success({
                                                                 actionFilter: cloudStack.actionFilter.guestNetwork,
@@ -7594,9 +7595,10 @@
                                                         }
                                                         //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});
                                                     });
-                                                    
-                                                    //if DR module is included                                   
-                                                    addExtraPropertiesIfDrModuleIncluded(selectedZoneObj, "Zone");
+                                                                                                       
+                                                    if (isModuleIncluded("dr")) {
+                                                        cloudStack.dr.sharedFunctions.addExtraProperties(selectedZoneObj, "Zone");
+                                                    }
                                                     
                                                     args.response.success({
                                                         actionFilter: zoneActionfilter,

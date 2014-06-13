@@ -1499,8 +1499,9 @@
                                         success: function(json) {
                                             var jsonObj = json.listvolumesresponse.volume[0];
                                             
-                                            //if DR module is included                                   
-                                            addExtraPropertiesIfDrModuleIncluded(jsonObj, "Volume");
+                                            if (isModuleIncluded("dr")) {
+                                                cloudStack.dr.sharedFunctions.addExtraProperties(jsonObj, "Volume");
+                                            }                                            
                                             
                                             args.response.success({
                                                 actionFilter: volumeActionfilter,
