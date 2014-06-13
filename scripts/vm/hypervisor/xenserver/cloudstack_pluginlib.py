@@ -420,23 +420,9 @@ def create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host, network_uuid):
         # find xs network for this bridge, verify is used for ovs tunnel network
         xs_nw_uuid = do_cmd([XE_PATH, "network-list",
 								   "bridge=%s" % bridge, "--minimal"])
-        ovs_tunnel_network = False
-        try:
-            ovs_tunnel_network = do_cmd([XE_PATH,"network-param-get",
-						       "uuid=%s" % xs_nw_uuid,
-						       "param-name=other-config",
-						       "param-key=is-ovs-tun-network", "--minimal"])
-        except:
-            pass
 
-        ovs_vpc_distributed_vr_network = False
-        try:
-            ovs_vpc_distributed_vr_network = do_cmd([XE_PATH,"network-param-get",
-                           "uuid=%s" % xs_nw_uuid,
-                           "param-name=other-config",
-                           "param-key=is-ovs-vpc-distributed-vr-network", "--minimal"])
-        except:
-            pass
+        ovs_tunnel_network = is_regular_tunnel_network(xs_nw_uuid)
+        ovs_vpc_distributed_vr_network = is_vpc_network_with_distributed_routing(xs_nw_uuid)
 
         if ovs_tunnel_network == 'True':
             # add flow entryies for dropping broadcast coming in from gre tunnel
@@ -868,3 +854,37 @@ def update_flooding_rules_on_port_plug_unplug(bridge, interface, command, if_net
                         bridge + " when interface " + " %s" %interface + " is %s" %command
         logging.debug(error_message + " due to " + str(e))
         raise error_message
+
+
+def is_regular_tunnel_network(xs_nw_uuid):
+    cmd = [XE_PATH,"network-param-get", "uuid=%s" % xs_nw_uuid, "param-name=other-config",
+                            "param-key=is-ovs-tun-network", "--minimal"]
+    logging.debug("Executing:%s", cmd)
+    pipe = subprocess.PIPE
+    proc = subprocess.Popen(cmd, shell=False, stdin=pipe, stdout=pipe,
+                            stderr=pipe, close_fds=True)
+    ret_code = proc.wait()
+    if ret_code:
+        return False
+
+    output = proc.stdout.read()
+    if output.endswith('\n'):
+        output = output[:-1]
+    return output
+
+
+def is_vpc_network_with_distributed_routing(xs_nw_uuid):
+    cmd = [XE_PATH,"network-param-get", "uuid=%s" % xs_nw_uuid, "param-name=other-config",
+                            "param-key=is-ovs-vpc-distributed-vr-network", "--minimal"]
+    logging.debug("Executing:%s", cmd)
+    pipe = subprocess.PIPE
+    proc = subprocess.Popen(cmd, shell=False, stdin=pipe, stdout=pipe,
+                            stderr=pipe, close_fds=True)
+    ret_code = proc.wait()
+    if ret_code:
+        return False
+
+    output = proc.stdout.read()
+    if output.endswith('\n'):
+        output = output[:-1]
+    return output
