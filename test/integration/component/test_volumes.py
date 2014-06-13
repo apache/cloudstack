@@ -1041,6 +1041,7 @@ class TestVolumes(cloudstackTestCase):
             name="NROOT",
             parentdomainid=self.domain.id
         )
+        self.cleanup.append(dom)
         self.assertTrue(dom is not None, msg="Domain creation failed")
 
         domuser = Account.create(
@@ -1049,6 +1050,7 @@ class TestVolumes(cloudstackTestCase):
             admin=False,
             domainid=dom.id
         )
+        self.cleanup.insert(-2, domuser)
         self.assertTrue(domuser is not None)
 
         domapiclient = self.testClient.getUserApiClient(UserName=domuser.name, DomainName=dom.name)
