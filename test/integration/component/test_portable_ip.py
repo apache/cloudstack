@@ -37,10 +37,11 @@ from marvin.lib.common import (get_zone,
                                get_domain,
                                get_region,
                                get_pod,
-                               isIpInDesiredState)
+                               isIpInDesiredState,
+                               getPortableIpRangeServices)
 from netaddr import IPAddress
 from marvin.sshClient import SshClient
-
+from marvin.codes import FAILED
 from nose.plugins.attrib import attr
 
 class Services:
@@ -142,15 +143,7 @@ class Services:
                                   "publicport": 22,
                                   "protocol": 'TCP',
                         },
-                        "ostype": 'CentOS 5.3 (64-bit)',
-                        "portableIpRange": {
-                            "gateway" : "10.223.252.195",
-                            "netmask" : "255.255.255.192",
-                            "startip" : "10.223.252.196",
-                            "endip"   : "10.223.252.197",
-                            "vlan"    : "1001"
-                        }
-
+                        "ostype": 'CentOS 5.3 (64-bit)'
           }
 
 class TestCreatePortablePublicIpRanges(cloudstackTestCase):
@@ -208,8 +201,8 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
         # 1. Create new portable ip range with root admin api
         # 2. Portable ip range should be created successfully
 
-        portable_ip_range_services = self.services["portableIpRange"]
-        if portable_ip_range_services is None:
+        portable_ip_range_services = getPortableIpRangeServices(self.config)
+        if portable_ip_range_services is FAILED:
             self.skipTest('Failed to read config values related to portable ip range')
 
         portable_ip_range_services["regionid"] = self.region.id
@@ -231,9 +224,9 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
         # 1. Create new portable ip range with non root admin api client
         # 2. Portable ip range should not be created
 
-        portable_ip_range_services = self.services["portableIpRange"]
+        portable_ip_range_services = getPortableIpRangeServices(self.config)
 
-        if portable_ip_range_services is None:
+        if portable_ip_range_services is FAILED:
             self.skipTest('Failed to read config values related to portable ip range')
 
         try:
@@ -267,9 +260,9 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
         # 1. Try to create new portable ip range with invalid region id
         # 2. Portable ip range creation should fail
 
-        portable_ip_range_services = self.services["portableIpRange"]
+        portable_ip_range_services = getPortableIpRangeServices(self.config)
 
-        if portable_ip_range_services is None:
+        if portable_ip_range_services is FAILED:
             self.skipTest('Failed to read config values related to portable ip range')
 
         portable_ip_range_services["regionid"] = -1
@@ -321,9 +314,9 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
 
-        portable_ip_range_services = self.services["portableIpRange"]
+        portable_ip_range_services = getPortableIpRangeServices(self.config)
 
-        if portable_ip_range_services is None:
+        if portable_ip_range_services is FAILED:
             self.skipTest('Failed to read config values related to portable ip range')
 
         portable_ip_range_services["regionid"] = self.region.id
@@ -480,9 +473,9 @@ class TestListPortablePublicIpRanges(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
 
         #create new portable ip range
-        self.portable_ip_range_services = self.services["portableIpRange"]
+        self.portable_ip_range_services = getPortableIpRangeServices(self.config)
 
-        if self.portable_ip_range_services is None:
+        if self.portable_ip_range_services is FAILED:
             self.skipTest('Failed to read config values related to portable ip range')
 
         self.portable_ip_range_services["regionid"] = self.region.id
@@ -643,9 +636,9 @@ class TestAssociatePublicIp(cloudstackTestCase):
 
         self.cleanup = []
 
-        portable_ip_range_services = self.services["portableIpRange"]
+        portable_ip_range_services = getPortableIpRangeServices(self.config)
 
-        if portable_ip_range_services is None:
+        if portable_ip_range_services is FAILED:
             self.skipTest('Failed to read config values related to portable ip range')
 
         portable_ip_range_services["regionid"] = self.region.id
@@ -978,9 +971,9 @@ class TestDisassociatePublicIp(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
-        portable_ip_range_services = self.services["portableIpRange"]
+        portable_ip_range_services = getPortableIpRangeServices(self.config)
 
-        if portable_ip_range_services is None:
+        if portable_ip_range_services is FAILED:
             self.skipTest('Failed to read config values related to portable ip range')
 
         portable_ip_range_services["regionid"] = self.region.id
@@ -1172,8 +1165,8 @@ class TestDeleteAccount(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
 
-        portable_ip_range_services = self.services["portableIpRange"]
-        if portable_ip_range_services is None:
+        portable_ip_range_services = getPortableIpRangeServices(self.config)
+        if portable_ip_range_services is FAILED:
             self.skipTest('Failed to read config values related to portable ip range')
 
         self.cleanup = []
@@ -1432,9 +1425,9 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
 
         #create new portable ip range
-        self.portable_ip_range_services = self.services["portableIpRange"]
+        self.portable_ip_range_services = getPortableIpRangeServices(self.config)
 
-        if self.portable_ip_range_services is None:
+        if self.portable_ip_range_services is FAILED:
             self.skipTest('Failed to read config values related to portable ip range')
 
         self.portable_ip_range_services["regionid"] = self.region.id
