@@ -162,15 +162,18 @@ public class NetUtils {
             Pattern pattern = Pattern.compile("\\s*0.0.0.0\\s*0.0.0.0\\s*(\\S*)\\s*(\\S*)\\s*");
             try {
                 Process result = Runtime.getRuntime().exec("route print -4");
-                BufferedReader output = new BufferedReader(new InputStreamReader(result.getInputStream()));
+                try(BufferedReader output = new BufferedReader(new InputStreamReader(result.getInputStream()));) {
 
-                String line = output.readLine();
-                while (line != null) {
-                    Matcher matcher = pattern.matcher(line);
-                    if (matcher.find()) {
-                        return matcher.group(2);
+                    String line = output.readLine();
+                    while (line != null) {
+                        Matcher matcher = pattern.matcher(line);
+                        if (matcher.find()) {
+                            return matcher.group(2);
+                        }
+                        line = output.readLine();
                     }
-                    line = output.readLine();
+                }catch (Exception e) {
+                    s_logger.error("getDefaultHostIp:Exception:"+e.getMessage());
                 }
             } catch (Exception e) {
             }

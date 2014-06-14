@@ -183,7 +183,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
             long domainId, long accountId, boolean haEnabled) {
         this.id = id;
-        hostName = name != null ? name : uuid;
+        this.hostName = name != null ? name : uuid;
         if (vmTemplateId != null) {
             templateId = vmTemplateId;
         }
@@ -191,19 +191,19 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.type = type;
         this.guestOSId = guestOSId;
         this.haEnabled = haEnabled;
-        vncPassword = Long.toHexString(new Random().nextLong());
-        state = State.Stopped;
+        this.vncPassword = Long.toHexString(new Random().nextLong());
+        this.state = State.Stopped;
         this.accountId = accountId;
         this.domainId = domainId;
         this.serviceOfferingId = serviceOfferingId;
         this.hypervisorType = hypervisorType;
-        limitCpuUse = false;
+        this.limitCpuUse = false;
     }
 
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
             long domainId, long accountId, boolean haEnabled, boolean limitResourceUse, Long diskOfferingId) {
         this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
-        limitCpuUse = limitResourceUse;
+        this.limitCpuUse = limitResourceUse;
         this.diskOfferingId = diskOfferingId;
     }
 
