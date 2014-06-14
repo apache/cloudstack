@@ -116,8 +116,6 @@ public class Upgrade421to430 implements DbUpgrade {
     }
 
     private void encryptLdapConfigParams(Connection conn) {
-        PreparedStatement pstmt = null;
-
         String[][] ldapParams = { {"ldap.user.object", "inetOrgPerson", "Sets the object type of users within LDAP"},
                 {"ldap.username.attribute", "uid", "Sets the username attribute used within LDAP"}, {"ldap.email.attribute", "mail", "Sets the email attribute used within LDAP"},
                 {"ldap.firstname.attribute", "givenname", "Sets the firstname attribute used within LDAP"},
@@ -129,77 +127,82 @@ public class Upgrade421to430 implements DbUpgrade {
                 + "?) ON DUPLICATE KEY UPDATE category='Secure';";
 
         try {
-
-            for (String[] ldapParam : ldapParams) {
-                String name = ldapParam[0];
-                String value = ldapParam[1];
-                String desc = ldapParam[2];
-                String encryptedValue = DBEncryptionUtil.encrypt(value);
-                pstmt = conn.prepareStatement(insertSql);
-                pstmt.setString(1, name);
-                pstmt.setBytes(2, encryptedValue.getBytes("UTF-8"));
-                pstmt.setString(3, desc);
-                pstmt.executeUpdate();
+            String port;
+            int portNumber = 0;
+            String hostname = null;
+            try ( PreparedStatement pstmt = conn.prepareStatement(insertSql);) {
+                 for (String[] ldapParam : ldapParams) {
+                     String name = ldapParam[0];
+                     String value = ldapParam[1];
+                     String desc = ldapParam[2];
+                     String encryptedValue = DBEncryptionUtil.encrypt(value);
+                     pstmt.setString(1, name);
+                     pstmt.setBytes(2, encryptedValue.getBytes("UTF-8"));
+                     pstmt.setString(3, desc);
+                     pstmt.executeUpdate();
+                 }
+             }catch (Exception e) {
+                s_logger.error("encryptLdapConfigParams:Exception:"+e.getMessage());
+                throw new CloudRuntimeException("encryptLdapConfigParams:Exception:"+e.getMessage(), e);
             }
-
             /**
              * if encrypted, decrypt the ldap hostname and port and then update as they are not encrypted now.
              */
-            pstmt = conn.prepareStatement("SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.hostname'");
-            ResultSet resultSet = pstmt.executeQuery();
-            String hostname = null;
-            String port;
-            int portNumber = 0;
-            if (resultSet.next()) {
-                hostname = DBEncryptionUtil.decrypt(resultSet.getString(1));
+            try(PreparedStatement sel_ldap_hostname_pstmt = conn.prepareStatement("SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.hostname'");
+                ResultSet resultSet = sel_ldap_hostname_pstmt.executeQuery();) {
+                if (resultSet.next()) {
+                    hostname = DBEncryptionUtil.decrypt(resultSet.getString(1));
+                }
+            }catch (Exception e) {
+                s_logger.error("encryptLdapConfigParams:Exception:"+e.getMessage());
+                throw new CloudRuntimeException("encryptLdapConfigParams:Exception:"+e.getMessage(), e);
             }
 
-            pstmt = conn.prepareStatement("SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.port'");
-            resultSet = pstmt.executeQuery();
-            if (resultSet.next()) {
-                port = DBEncryptionUtil.decrypt(resultSet.getString(1));
-                if (StringUtils.isNotBlank(port)) {
-                    portNumber = Integer.valueOf(port);
+            try( PreparedStatement sel_ldap_port_pstmt = conn.prepareStatement("SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.port'");
+                 ResultSet resultSet = sel_ldap_port_pstmt.executeQuery();)
+            {
+                if (resultSet.next()) {
+                    port = DBEncryptionUtil.decrypt(resultSet.getString(1));
+                    if (StringUtils.isNotBlank(port)) {
+                        portNumber = Integer.valueOf(port);
+                    }
                 }
+            }catch (Exception e) {
+                s_logger.error("encryptLdapConfigParams:Exception:"+e.getMessage());
+                throw new CloudRuntimeException("encryptLdapConfigParams:Exception:"+e.getMessage(), e);
             }
 
             if (StringUtils.isNotBlank(hostname)) {
-                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ldap_configuration`(hostname, port) VALUES(?,?)");
-                pstmt.setString(1, hostname);
-                if (portNumber != 0) {
-                    pstmt.setInt(2, portNumber);
-                } else {
-                    pstmt.setNull(2, Types.INTEGER);
+                try(PreparedStatement insert_pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ldap_configuration`(hostname, port) VALUES(?,?)");)
+                {
+                    insert_pstmt.setString(1, hostname);
+                    if (portNumber != 0) {
+                        insert_pstmt.setInt(2, portNumber);
+                    } else {
+                        insert_pstmt.setNull(2, Types.INTEGER);
+                    }
+                    insert_pstmt.executeUpdate();
+                }catch (Exception e) {
+                    s_logger.error("encryptLdapConfigParams:Exception:"+e.getMessage());
+                    throw new CloudRuntimeException("encryptLdapConfigParams:Exception:"+e.getMessage(), e);
                 }
-                pstmt.executeUpdate();
             }
-
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to insert ldap configuration values ", e);
-        } catch (UnsupportedEncodingException e) {
-            throw new CloudRuntimeException("Unable to insert ldap configuration values ", e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+        } catch (Exception e) {
+            s_logger.error("encryptLdapConfigParams:Exception:"+e.getMessage());
+            throw new CloudRuntimeException("encryptLdapConfigParams:Exception:"+e.getMessage(), e);
         }
         s_logger.debug("Done encrypting ldap Config values");
 
     }
 
     private void updateSystemVmTemplates(Connection conn) {
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
         s_logger.debug("Updating System Vm template IDs");
         try{
             //Get all hypervisors in use
             Set<Hypervisor.HypervisorType> hypervisorsListInUse = new HashSet<Hypervisor.HypervisorType>();
-            try {
-                pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null");
-                rs = pstmt.executeQuery();
+            try(PreparedStatement  pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null");
+                ResultSet rs = pstmt.executeQuery();
+            ) {
                 while(rs.next()){
                     switch (Hypervisor.HypervisorType.getType(rs.getString(1))) {
                         case XenServer: hypervisorsListInUse.add(Hypervisor.HypervisorType.XenServer);
@@ -214,8 +217,9 @@ public class Upgrade421to430 implements DbUpgrade {
                             break;
                     }
                 }
-            } catch (SQLException e) {
-                throw new CloudRuntimeException("Error while listing hypervisors in use", e);
+            } catch (Exception e) {
+                s_logger.error("updateSystemVmTemplates:Exception:"+e.getMessage());
+                throw new CloudRuntimeException("updateSystemVmTemplates:Exception:"+e.getMessage(), e);
             }
 
             Map<Hypervisor.HypervisorType, String> NewTemplateNameList = new HashMap<Hypervisor.HypervisorType, String>(){
@@ -256,77 +260,98 @@ public class Upgrade421to430 implements DbUpgrade {
 
             for (Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName : NewTemplateNameList.entrySet()){
                 s_logger.debug("Updating " + hypervisorAndTemplateName.getKey() + " System Vms");
-                try {
-                    //Get 4.3.0 system Vm template Id for corresponding hypervisor
-                    pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = ? and removed is null order by id desc limit 1");
-                    pstmt.setString(1, hypervisorAndTemplateName.getValue());
-                    rs = pstmt.executeQuery();
-                    if(rs.next()){
-                        long templateId = rs.getLong(1);
-                        rs.close();
-                        pstmt.close();
-//                        // Mark the old system templates as removed
+                try (PreparedStatement pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = ? and removed is null order by id desc limit 1");)
+                {
+                        //Get 4.3.0 system Vm template Id for corresponding hypervisor
+                        long templateId = -1;
+                        pstmt.setString(1, hypervisorAndTemplateName.getValue());
+                        try(ResultSet rs = pstmt.executeQuery();)
+                        {
+                            if(rs.next()) {
+                                templateId = rs.getLong(1);
+                            }
+                        }catch (Exception e)
+                        {
+                            s_logger.error("updateSystemVmTemplates:Exception:"+e.getMessage());
+                            throw new CloudRuntimeException("updateSystemVmTemplates:Exception:"+e.getMessage(), e);
+                        }
+//                       // Mark the old system templates as removed
 //                        pstmt = conn.prepareStatement("UPDATE `cloud`.`vm_template` SET removed = now() WHERE hypervisor_type = ? AND type = 'SYSTEM' AND removed is null");
 //                        pstmt.setString(1, hypervisorAndTemplateName.getKey().toString());
 //                        pstmt.executeUpdate();
 //                        pstmt.close();
                         // change template type to SYSTEM
-                        pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
-                        pstmt.setLong(1, templateId);
-                        pstmt.executeUpdate();
-                        pstmt.close();
-                        // update templete ID of system Vms
-                        pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = ?");
-                        pstmt.setLong(1, templateId);
-                        pstmt.setString(2, hypervisorAndTemplateName.getKey().toString());
-                        pstmt.executeUpdate();
-                        pstmt.close();
-                        // Change value of global configuration parameter router.template.* for the corresponding hypervisor
-                        pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = ?");
-                        pstmt.setString(1, hypervisorAndTemplateName.getValue());
-                        pstmt.setString(2, routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()));
-                        pstmt.executeUpdate();
-                        pstmt.close();
-                    } else {
-                        if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())){
-                            throw new CloudRuntimeException("4.3.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. Cannot upgrade system Vms");
+                        if (templateId != -1)
+                        {
+                            try(PreparedStatement templ_type_pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");)
+                            {
+                                templ_type_pstmt.setLong(1, templateId);
+                                templ_type_pstmt.executeUpdate();
+                            }
+                            catch (Exception e)
+                            {
+                                s_logger.error("updateSystemVmTemplates:Exception:"+e.getMessage());
+                                throw new CloudRuntimeException("updateSystemVmTemplates:Exception:"+e.getMessage(), e);
+                            }
+                            // update templete ID of system Vms
+                            try(PreparedStatement update_templ_id_pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = ?");)
+                            {
+                                update_templ_id_pstmt.setLong(1, templateId);
+                                update_templ_id_pstmt.setString(2, hypervisorAndTemplateName.getKey().toString());
+                                update_templ_id_pstmt.executeUpdate();
+                            }catch (Exception e)
+                            {
+                                s_logger.error("updateSystemVmTemplates:Exception:"+e.getMessage());
+                                throw new CloudRuntimeException("updateSystemVmTemplates:Exception:"+e.getMessage(), e);
+                            }
+
+                            // Change value of global configuration parameter router.template.* for the corresponding hypervisor
+                            try(PreparedStatement update_pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = ?");) {
+                                update_pstmt.setString(1, hypervisorAndTemplateName.getValue());
+                                update_pstmt.setString(2, routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()));
+                                update_pstmt.executeUpdate();
+                            }catch (Exception e)
+                            {
+                                s_logger.error("updateSystemVmTemplates:Exception:"+e.getMessage());
+                                throw new CloudRuntimeException("updateSystemVmTemplates:Exception:"+e.getMessage(), e);
+                            }
+
                         } else {
-                            s_logger.warn("4.3.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. " + hypervisorAndTemplateName.getKey() + " hypervisor is not used, so not failing upgrade");
-                            // Update the latest template URLs for corresponding hypervisor
-                            pstmt = conn.prepareStatement("UPDATE `cloud`.`vm_template` SET url = ? , checksum = ? WHERE hypervisor_type = ? AND type = 'SYSTEM' AND removed is null order by id desc limit 1");
-                            pstmt.setString(1, newTemplateUrl.get(hypervisorAndTemplateName.getKey()));
-                            pstmt.setString(2, newTemplateChecksum.get(hypervisorAndTemplateName.getKey()));
-                            pstmt.setString(3, hypervisorAndTemplateName.getKey().toString());
-                            pstmt.executeUpdate();
-                            pstmt.close();
+                            if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())){
+                                throw new CloudRuntimeException("4.3.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. Cannot upgrade system Vms");
+                            } else {
+                                s_logger.warn("4.3.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. " + hypervisorAndTemplateName.getKey() + " hypervisor is not used, so not failing upgrade");
+                                // Update the latest template URLs for corresponding hypervisor
+                                try(PreparedStatement update_templ_url_pstmt = conn.prepareStatement("UPDATE `cloud`.`vm_template` SET url = ? , checksum = ? WHERE hypervisor_type = ? AND type = 'SYSTEM' AND removed is null order by id desc limit 1");) {
+                                    update_templ_url_pstmt.setString(1, newTemplateUrl.get(hypervisorAndTemplateName.getKey()));
+                                    update_templ_url_pstmt.setString(2, newTemplateChecksum.get(hypervisorAndTemplateName.getKey()));
+                                    update_templ_url_pstmt.setString(3, hypervisorAndTemplateName.getKey().toString());
+                                    update_templ_url_pstmt.executeUpdate();
+                                }catch (Exception e)
+                                {
+                                    s_logger.error("updateSystemVmTemplates:Exception:"+e.getMessage());
+                                    throw new CloudRuntimeException("updateSystemVmTemplates:Exception:"+e.getMessage(), e);
+                                }
+                            }
                         }
-                    }
                 } catch (SQLException e) {
+                    s_logger.error("updateSystemVmTemplates:Exception:"+e.getMessage());
                     throw new CloudRuntimeException("Error while updating "+ hypervisorAndTemplateName.getKey() +" systemVm template", e);
                 }
             }
             s_logger.debug("Updating System Vm Template IDs Complete");
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+        }
+        catch (Exception e) {
+            s_logger.error("updateSystemVmTemplates:Exception:"+e.getMessage());
+            throw new CloudRuntimeException("updateSystemVmTemplates:Exception:"+e.getMessage(), e);
         }
     }
 
     private void encryptImageStoreDetails(Connection conn) {
         s_logger.debug("Encrypting image store details");
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = conn.prepareStatement("select id, value from `cloud`.`image_store_details` where name = 'key' or name = 'secretkey'");
-            rs = pstmt.executeQuery();
+        try (PreparedStatement sel_image_store_det_pstmt = conn.prepareStatement("select id, value from `cloud`.`image_store_details` where name = 'key' or name = 'secretkey'");
+             ResultSet rs = sel_image_store_det_pstmt.executeQuery();)
+        {
             while (rs.next()) {
                 long id = rs.getLong(1);
                 String value = rs.getString(2);
@@ -334,26 +359,21 @@ public class Upgrade421to430 implements DbUpgrade {
                     continue;
                 }
                 String encryptedValue = DBEncryptionUtil.encrypt(value);
-                pstmt = conn.prepareStatement("update `cloud`.`image_store_details` set value=? where id=?");
-                pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
-                pstmt.setLong(2, id);
-                pstmt.executeUpdate();
+                try( PreparedStatement update_image_store_det_pstmt = conn.prepareStatement("update `cloud`.`image_store_details` set value=? where id=?");) {
+                    update_image_store_det_pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
+                    update_image_store_det_pstmt.setLong(2, id);
+                    update_image_store_det_pstmt.executeUpdate();
+                }catch (UnsupportedEncodingException e) {
+                    s_logger.error("encryptImageStoreDetails:Exception:" + e.getMessage());
+                    throw new CloudRuntimeException("encryptImageStoreDetails:Exception:" + e.getMessage(),e);
+                }
             }
         } catch (SQLException e) {
+            s_logger.error("encryptImageStoreDetails:Exception:"+e.getMessage());
             throw new CloudRuntimeException("Unable encrypt image_store_details values ", e);
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
+            s_logger.error("encryptImageStoreDetails:Exception:"+e.getMessage());
             throw new CloudRuntimeException("Unable encrypt image_store_details values ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         s_logger.debug("Done encrypting image_store_details");
     }

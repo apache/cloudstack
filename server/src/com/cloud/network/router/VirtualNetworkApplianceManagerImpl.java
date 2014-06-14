@@ -609,7 +609,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         if (router.isStopPending()) {
             s_logger.info("Clear the stop pending flag of router " + router.getHostName() + " after stop router successfully");
             router.setStopPending(false);
-            router = _routerDao.persist(router);
+            _routerDao.persist(router);
             virtualRouter.setStopPending(false);
         }
         return virtualRouter;
@@ -658,7 +658,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         _accountMgr.checkAccess(caller, null, true, router);
 
         // Can reboot domain router only in Running state
-        if (router == null || router.getState() != State.Running) {
+        if (router.getState() != State.Running) {
             s_logger.warn("Unable to reboot, virtual router is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to reboot domR, it is not in right state " + router.getState(), DataCenter.class, router.getDataCenterId());
         }
@@ -1113,7 +1113,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 for (final Site2SiteVpnConnectionVO conn : conns) {
                     final Site2SiteVpnConnectionVO lock = _s2sVpnConnectionDao.acquireInLockTable(conn.getId());
                     if (lock == null) {
-                        throw new CloudRuntimeException("Unable to acquire lock on " + lock);
+                        throw new CloudRuntimeException("updateSite2SiteVpnConnectionState: Unable to acquire lock");
                     }
                     try {
                         if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected) {
@@ -1415,7 +1415,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
                     GetRouterAlertsCommand command = null;
                     if (opRouterMonitorServiceVO == null) {
-                        command = new GetRouterAlertsCommand(new String("1970-01-01 00:00:00")); // To avoid sending null value
+                        String date_str = "1970-01-01 00:00:00";
+                        command = new GetRouterAlertsCommand(date_str); // To avoid sending null value
                     } else {
                         command = new GetRouterAlertsCommand(opRouterMonitorServiceVO.getLastAlertTimestamp());
                     }
@@ -2846,7 +2847,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer)cmds.getAnswer("getDomRVersion");
             router.setTemplateVersion(versionAnswer.getTemplateVersion());
             router.setScriptsVersion(versionAnswer.getScriptsVersion());
-            router = _routerDao.persist(router, guestNetworks);
+            _routerDao.persist(router, guestNetworks);
         }
 
         return result;
