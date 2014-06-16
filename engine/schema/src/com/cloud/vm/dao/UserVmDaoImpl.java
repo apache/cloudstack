@@ -439,8 +439,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                     s_logger.error("listVmDetails:Exception:" + e.getMessage());
                     throw new CloudRuntimeException("listVmDetails: Exception:" + e.getMessage(),e);
                 }
-                if (pstmt != null)
-                    pstmt.close();
             }
 
             if (curr_index < userVmDataList.size()) {
