@@ -28,19 +28,19 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
-import org.apache.cloudstack.storage.datastore.driver.SolidfirePrimaryDataStoreDriver;
+import org.apache.cloudstack.storage.datastore.driver.SolidFirePrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.lifecycle.SolidFirePrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 
 import com.cloud.utils.component.ComponentContext;
 
 @Component
-public class SolidfirePrimaryDataStoreProvider implements PrimaryDataStoreProvider {
+public class SolidFirePrimaryDataStoreProvider implements PrimaryDataStoreProvider {
     private DataStoreLifeCycle lifecycle;
     private PrimaryDataStoreDriver driver;
     private HypervisorHostListener listener;
 
-    SolidfirePrimaryDataStoreProvider() {
+    SolidFirePrimaryDataStoreProvider() {
     }
 
     @Override
@@ -66,7 +66,7 @@ public class SolidfirePrimaryDataStoreProvider implements PrimaryDataStoreProvid
     @Override
     public boolean configure(Map<String, Object> params) {
         lifecycle = ComponentContext.inject(SolidFirePrimaryDataStoreLifeCycle.class);
-        driver = ComponentContext.inject(SolidfirePrimaryDataStoreDriver.class);
+        driver = ComponentContext.inject(SolidFirePrimaryDataStoreDriver.class);
         listener = ComponentContext.inject(SolidFireHostListener.class);
 
         return true;

@@ -58,7 +58,7 @@ import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 
-public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
+public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Inject private AccountDao _accountDao;
     @Inject private AccountDetailsDao _accountDetailsDao;
     @Inject private ClusterDetailsDao _clusterDetailsDao;
