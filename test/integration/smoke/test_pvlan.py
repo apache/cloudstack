@@ -45,7 +45,7 @@ class TestPVLAN(cloudstackTestCase):
         cls.zone = get_zone(cls.apiClient, cls.testClient.getZoneForTests())
         cls.zoneId = cls.zone.id
 
-    @attr(tags = ["advanced", "selfservice"])
+    @attr(tags = ["advanced"], required_hardware="false")
     def test_create_pvlan_network(self):
         self.debug("Test create pvlan network")
         createNetworkCmd = createNetwork.createNetworkCmd()

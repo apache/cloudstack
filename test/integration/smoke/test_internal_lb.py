@@ -56,7 +56,7 @@ class TestInternalLb(cloudstackTestCase):
                           cls.account.id))
         cls.cleanup = [cls.account]
 
-    @attr(tags=["smoke", "advanced", "provisioning"])
+    @attr(tags=["smoke", "advanced"], required_hardware="true")
     def test_internallb(self):
         """Test create, delete, assign, remove of internal loadbalancer
         """   

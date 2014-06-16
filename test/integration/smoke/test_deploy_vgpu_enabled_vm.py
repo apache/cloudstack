@@ -18,7 +18,7 @@
 #Test from the Marvin - Testing in Python wiki
 
 #All tests inherit from cloudstackTestCase
-from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 
 #Import Integration Libraries
 
@@ -29,121 +29,56 @@ from marvin.lib.base import Account, VirtualMachine, ServiceOffering
 from marvin.lib.utils import cleanup_resources
 
 #common - commonly used methods for all tests are listed here
-from marvin.lib.common import get_zone, get_domain, get_template
+from marvin.lib.common import get_zone, get_domain, get_template, list_hosts
 
-from marvin.codes import FAILED
+from marvin.sshClient import SshClient
+
+from marvin.codes import FAILED, XEN_SERVER
 
 from nose.plugins.attrib import attr
 
-
-class Services:
-    """Test VM Life Cycle Services
-    """
-
-    def __init__(self):
-        self.services = {
-                "disk_offering":{
-                    "displaytext": "Small",
-                    "name": "Small",
-                    "disksize": 1
-                },
-                "account": {
-                    "email": "test@test.com",
-                    "firstname": "Test",
-                    "lastname": "User",
-                    "username": "test",
-                    # Random characters are appended in create account to
-                    # ensure unique username generated each time
-                    "password": "password",
-                },
-                "vgpu260q":   # Create a virtual machine instance with vgpu type as 260q
-                {
-                    "displayname": "testserver",
-                    "username": "root", # VM creds for SSH
-                    "password": "password",
-                    "ssh_port": 22,
-                    "hypervisor": 'XenServer',
-                    "privateport": 22,
-                    "publicport": 22,
-                    "protocol": 'TCP',
-                },
-                "vgpu140q":   # Create a virtual machine instance with vgpu type as 140q
-                {
-                    "displayname": "testserver",
-                    "username": "root",
-                    "password": "password",
-                    "ssh_port": 22,
-                    "hypervisor": 'XenServer',
-                    "privateport": 22,
-                    "publicport": 22,
-                    "protocol": 'TCP',
-                },
-                "service_offerings":
-                {
-                 "vgpu260qwin":
-                   {
-                        "name": "Windows Instance with vGPU260Q",
-                        "displaytext": "Windows Instance with vGPU260Q",
-                        "cpunumber": 2,
-                        "cpuspeed": 1600, # in MHz
-                        "memory": 3072, # In MBs
-                    },
-                 "vgpu140qwin":
-                    {
-                     # Small service offering ID to for change VM
-                     # service offering from medium to small
-                        "name": "Windows Instance with vGPU140Q",
-                        "displaytext": "Windows Instance with vGPU140Q",
-                        "cpunumber": 2,
-                        "cpuspeed": 1600,
-                        "memory": 3072,
-                    }
-                },
-            "diskdevice": ['/dev/vdc',  '/dev/vdb', '/dev/hdb', '/dev/hdc', '/dev/xvdd', '/dev/cdrom', '/dev/sr0', '/dev/cdrom1' ],
-            # Disk device where ISO is attached to instance
-            "mount_dir": "/mnt/tmp",
-            "sleep": 60,
-            "timeout": 10,
-            #Migrate VM to hostid
-            "ostype": 'Windows 7 (32-bit)',
-            # CentOS 5.3 (64-bit)
-        }
-
-
 class TestDeployvGPUenabledVM(cloudstackTestCase):
-    """Test deploy a vGPU enabled VM into a user account
     """
+    Test deploy a vGPU enabled VM into a user account
+    """
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestDeployvGPUenabledVM, cls).getClsTestClient()
+        #Need to add check whether zone containing the xen hypervisor or not as well
+        hypervisor = testClient.getHypervisorInfo()
+        if hypervisor.lower() != XEN_SERVER.lower():
+            raise unittest.skipTest("GPU feature is supported only on XenServer")
+
 
     def setUp(self):
-        self.services = Services().services
+        self.testdata = self.testClient.getParsedTestDataConfig()["vgpu"]
         self.apiclient = self.testClient.getApiClient()
 
         # Get Zone, Domain and Default Built-in template
         self.domain = get_domain(self.apiclient)
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
-        self.services["mode"] = self.zone.networktype
+        self.testdata["mode"] = self.zone.networktype
         # Before running this test, register a windows template with ostype as 'Windows 7 (32-bit)'
-        self.services["ostype"] = 'Windows 7 (32-bit)'
-        self.template = get_template(self.apiclient, self.zone.id, self.services["ostype"])
+        self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
 
         if self.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % self.services["ostype"]
+            assert False, "get_template() failed to return template with description %s" % self.testdata["ostype"]
         #create a user account
         self.account = Account.create(
             self.apiclient,
-            self.services["account"],
+            self.testdata["account"],
             domainid=self.domain.id
         )
 
-        self.services["vgpu260q"]["zoneid"] = self.zone.id
-        self.services["vgpu260q"]["template"] = self.template.id
+        self.testdata["vgpu260q"]["zoneid"] = self.zone.id
+        self.testdata["vgpu260q"]["template"] = self.template.id
 
-        self.services["vgpu140q"]["zoneid"] = self.zone.id
-        self.services["vgpu140q"]["template"] = self.template.id
+        self.testdata["vgpu140q"]["zoneid"] = self.zone.id
+        self.testdata["vgpu140q"]["template"] = self.template.id
         #create a service offering
         self.service_offering = ServiceOffering.create(
                 self.apiclient,
-                self.services["service_offerings"]["vgpu260qwin"],
+                self.testdata["service_offerings"]["vgpu260qwin"],
                 serviceofferingdetails={'pciDevice': 'VGPU'}
         )
         #build cleanup list
@@ -152,7 +87,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             self.account
         ]
 
-        @attr(tags = ['advanced', 'simulator', 'basic', 'vgpu', 'provisioning'], BugId="CLOUDSTACK-6876")
+    @attr(tags = ['advanced', 'basic', 'vgpu'], required_hardware="true",  BugId="CLOUDSTACK-6876")
     def test_deploy_vgpu_enabled_vm(self):
         """Test Deploy Virtual Machine
 
@@ -163,11 +98,11 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
         """
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
-            self.services["vgpu260q"],
+            self.testdata["vgpu260q"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
-            mode=self.services['mode']
+            mode=self.testdata['mode']
         )
 
         list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
@@ -204,13 +139,13 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             "Running",
             msg="VM is not in Running state"
         )
-        list_hosts = list_hosts(
+        hosts = list_hosts(
                self.apiclient,
                id=vm.hostid
                )
-        hostip = list_hosts[0].ipaddress
+        hostip = hosts[0].ipaddress
         try:
-            sshClient = SshClient(host=hostip, port=22, user='root',passwd=self.services["host_password"])
+            sshClient = SshClient(host=hostip, port=22, user='root',passwd=self.testdata["host_password"])
             res = sshClient.execute("xe vgpu-list vm-name-label=%s params=type-uuid %s" % (
                                    vm.instancename
                                  ))

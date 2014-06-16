@@ -75,7 +75,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         ]
         return
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
+    @attr(tags=["basic", "advanced", "multihost"], required_hardware="false")
     def test_DeployVmAntiAffinityGroup(self):
         """
         test DeployVM in anti-affinity groups

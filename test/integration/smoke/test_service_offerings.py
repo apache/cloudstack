@@ -54,7 +54,7 @@ class TestCreateServiceOffering(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")
     def test_01_create_service_offering(self):
         """Test to create service offering"""
 
@@ -205,7 +205,7 @@ class TestServiceOfferings(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")
     def test_02_edit_service_offering(self):
         """Test to update existing service offering"""
 
@@ -256,7 +256,7 @@ class TestServiceOfferings(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")
     def test_03_delete_service_offering(self):
         """Test to delete service offering"""
 
@@ -282,7 +282,7 @@ class TestServiceOfferings(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "provisioning"])
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_04_change_offering_small(self):
         """Test to change service to a small capacity
         """
