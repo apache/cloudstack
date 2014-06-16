@@ -32,7 +32,7 @@ class TestUpdateConfigWithScope(cloudstackTestCase):
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
 
-    @attr(tags=["simulator", "devcloud", "basic", "advanced", "selfservice"])
+    @attr(tags=["devcloud", "basic", "advanced"], required_hardware="false")
     def test_UpdateConfigParamWithScope(self):
         """
         test update configuration setting at zone level scope

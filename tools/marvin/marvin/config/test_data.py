@@ -889,4 +889,72 @@ test_data = {
         "name": "hostantiaffinity",
         "type": "host anti-affinity",
     },
+    "vgpu":{
+        "disk_offering":{
+                    "displaytext": "Small",
+                    "name": "Small",
+                    "disksize": 1
+        },
+        "account": {
+                    "email": "test@test.com",
+                    "firstname": "Test",
+                    "lastname": "User",
+                    "username": "test",
+                    # Random characters are appended in create account to
+                    # ensure unique username generated each time
+                    "password": "password",
+        },
+        "vgpu260q":   # Create a virtual machine instance with vgpu type as 260q
+        {
+                    "displayname": "testserver",
+                    "username": "root", # VM creds for SSH
+                    "password": "password",
+                    "ssh_port": 22,
+                    "hypervisor": 'XenServer',
+                    "privateport": 22,
+                    "publicport": 22,
+                    "protocol": 'TCP',
+                },
+                "vgpu140q":   # Create a virtual machine instance with vgpu type as 140q
+                {
+                    "displayname": "testserver",
+                    "username": "root",
+                    "password": "password",
+                    "ssh_port": 22,
+                    "hypervisor": 'XenServer',
+                    "privateport": 22,
+                    "publicport": 22,
+                    "protocol": 'TCP',
+                },
+                "service_offerings":
+                {
+                 "vgpu260qwin":
+                   {
+                        "name": "Windows Instance with vGPU260Q",
+                        "displaytext": "Windows Instance with vGPU260Q",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600, # in MHz
+                        "memory": 3072, # In MBs
+                    },
+                 "vgpu140qwin":
+                    {
+                     # Small service offering ID to for change VM
+                     # service offering from medium to small
+                        "name": "Windows Instance with vGPU140Q",
+                        "displaytext": "Windows Instance with vGPU140Q",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,
+                        "memory": 3072,
+                    }
+                },
+            "diskdevice": ['/dev/vdc',  '/dev/vdb', '/dev/hdb', '/dev/hdc', '/dev/xvdd', '/dev/cdrom', '/dev/sr0', '/dev/cdrom1' ],
+            # Disk device where ISO is attached to instance
+            "mount_dir": "/mnt/tmp",
+            "sleep": 60,
+            "timeout": 10,
+            #Migrate VM to hostid
+            "ostype": 'Windows 7 (32-bit)',
+            # CentOS 5.3 (64-bit)
+    }
+
 }

@@ -60,7 +60,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             cls.account
         ]
 
-    @attr(tags=["simulator", "advanced", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
     def test_deployvm_firstfit(self):
         """Test to deploy vm with a first fit offering
         """
@@ -104,7 +104,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             msg="VM is not in Running state"
         )
 
-    @attr(tags=["simulator", "advanced", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
     def test_deployvm_userdispersing(self):
         """Test deploy VMs using user dispersion planner
         """
@@ -163,7 +163,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             self.debug("VMs (%s, %s) meant to be dispersed are deployed in the same cluster %s" % (
             vm1.id, vm2.id, vm1clusterid))
 
-    @attr(tags=["simulator", "advanced", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
     def test_deployvm_userconcentrated(self):
         """Test deploy VMs using user concentrated planner
         """

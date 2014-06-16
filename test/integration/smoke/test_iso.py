@@ -75,7 +75,7 @@ class TestCreateIso(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns"], required_hardware="false")
     def test_01_create_iso(self):
         """Test create public & private ISO
         """
@@ -229,7 +229,7 @@ class TestISO(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
     def test_02_edit_iso(self):
         """Test Edit ISO
         """
@@ -294,7 +294,7 @@ class TestISO(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns"], required_hardware="false")
     def test_03_delete_iso(self):
         """Test delete ISO
         """
@@ -321,8 +321,8 @@ class TestISO(cloudstackTestCase):
                          "Check if ISO exists in ListIsos"
                          )
         return
-
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "provisioning"])
+    
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns"], required_hardware="true")
     def test_04_extract_Iso(self):
         "Test for extract ISO"
 

@@ -32,7 +32,7 @@ class TestUpdateOverProvision(cloudstackTestCase):
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
 
-    @attr(tags=["simulator", "devcloud", "basic", "advanced", "selfservice"])
+    @attr(tags=["devcloud", "basic", "advanced"], required_hardware="false")
     def test_UpdateStorageOverProvisioningFactor(self):
         """
         test update configuration setting at storage scope

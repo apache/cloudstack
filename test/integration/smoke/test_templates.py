@@ -144,7 +144,7 @@ class TestCreateTemplate(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_01_create_template(self):
         """Test create public & private template
         """
@@ -340,7 +340,7 @@ class TestTemplates(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice", "test"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_02_edit_template(self):
         """Test Edit template
         """
@@ -423,7 +423,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_03_delete_template(self):
         """Test delete template
         """
@@ -452,7 +452,7 @@ class TestTemplates(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_04_extract_template(self):
         "Test for extract template"
 
@@ -503,7 +503,7 @@ class TestTemplates(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_05_template_permissions(self):
         """Update & Test for template permissions"""
 
@@ -556,7 +556,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "multizone", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "multizone"], required_hardware="true")
     def test_06_copy_template(self):
         """Test for copy template from one zone to another"""
 
@@ -647,7 +647,7 @@ class TestTemplates(cloudstackTestCase):
         self.apiclient.deleteTemplate(cmd)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_07_list_public_templates(self):
         """Test only public templates are visible to normal user"""
 
@@ -679,7 +679,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_08_list_system_templates(self):
         """Test System templates are not visible to normal user"""
 
