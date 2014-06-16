@@ -39,7 +39,7 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.privateGwId = None
 
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_privategw_acl(self):
         #TODO: SIMENH: add a new test to verification of ACL rules
 

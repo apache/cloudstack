@@ -75,7 +75,7 @@ class TestCreateIso(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"], BugId="CLOUDSTACK-6769, CLOUDSTACK-6774")
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"], BugId="CLOUDSTACK-6769, CLOUDSTACK-6774", required_hardware="false")
     def test_01_create_iso(self):
         """Test create public & private ISO
         """

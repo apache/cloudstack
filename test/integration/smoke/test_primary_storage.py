@@ -51,7 +51,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice"], BugId="CLOUDSTACK-6770")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], BugId="CLOUDSTACK-6770", required_hardware="false")
     def test_01_primary_storage_nfs(self):
         """Test primary storage pools - XEN, KVM, VMWare
         """
@@ -144,7 +144,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             return
 
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice"], BugId="CLOUDSTACK-6770")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], BugId="CLOUDSTACK-6770", required_hardware="false")
     def test_01_primary_storage_iscsi(self):
         """Test primary storage pools - XEN, KVM, VMWare
         """

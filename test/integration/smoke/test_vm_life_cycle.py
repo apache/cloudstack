@@ -115,7 +115,7 @@ class TestDeployVM(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
 
 
-    @attr(tags = ["simulator", "devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_deploy_vm(self):
         """Test Deploy Virtual Machine
         """
@@ -161,7 +161,7 @@ class TestDeployVM(cloudstackTestCase):
         return
 
 
-    @attr(tags = ["simulator", "advanced"])
+    @attr(tags = ["advanced"], required_hardware="false")
     def test_advZoneVirtualRouter(self):
         #TODO: SIMENH: duplicate test, remove it
         """
@@ -183,8 +183,8 @@ class TestDeployVM(cloudstackTestCase):
         self.assertIsNotNone(router.publicip, msg="Router has no public ip")
         self.assertIsNotNone(router.guestipaddress, msg="Router has no guest ip")
 
-    @attr(hypervisor = ["simulator"])
-    @attr(mode = ["basic"])
+
+    @attr(mode = ["basic"], required_hardware="false")
     def test_basicZoneVirtualRouter(self):
         #TODO: SIMENH: duplicate test, remove it
         """
@@ -304,7 +304,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         return
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_01_stop_vm(self):
         """Test Stop Virtual Machine
         """
@@ -319,7 +319,7 @@ class TestVMLifeCycle(cloudstackTestCase):
             self.fail("Failed to stop VM: %s" % e)
         return
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_02_start_vm(self):
         """Test Start Virtual Machine
         """
@@ -357,7 +357,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_03_reboot_vm(self):
         """Test Reboot Virtual Machine
         """
@@ -394,7 +394,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         return
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_06_destroy_vm(self):
         """Test destroy Virtual Machine
         """
@@ -430,7 +430,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_07_restore_vm(self):
         #TODO: SIMENH: add another test the data on the restored VM.
         """Test recover Virtual Machine
@@ -471,7 +471,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "multihost", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "multihost"], required_hardware="false")
     def test_08_migrate_vm(self):
         """Test migrate VM
         """
@@ -548,7 +548,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @attr(configuration = "expunge.interval")
     @attr(configuration = "expunge.delay")
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"],BugId="CLOUDSTACK-6738")
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], BugId="CLOUDSTACK-6738", required_hardware="false")
     def test_09_expunge_vm(self):
         """Test destroy(expunge) Virtual Machine
         """
@@ -593,7 +593,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.assertEqual(list_vm_response,None,"Check Expunged virtual machine is in listVirtualMachines response")
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_10_attachAndDetach_iso(self):
         """Test for attach and detach ISO to virtual machine"""
 
