@@ -88,7 +88,7 @@
 
                 // Make sure the master checkbox is unselected
                 if (multiSelect) {
-                    $listView.find('input.multiSelectMasterCheckbox').attr('checked', false);
+                    $instanceRow.closest('.list-view').find('input.multiSelectMasterCheckbox').attr('checked', false);
                 }
 
                 var externalLinkAction = action.externalLink;
@@ -1078,7 +1078,7 @@
                         var enabled = checked || (numRowsChecked > 0);
                         toggleMultiSelectActions(enabled);
 
-                        $listView.find('input.multiSelectMasterCheckbox').attr('checked', (numRows === numRowsChecked));
+                        $td.closest('.list-view').find('input.multiSelectMasterCheckbox').attr('checked', (numRows === numRowsChecked));
                     });
 
                 $td.append(
