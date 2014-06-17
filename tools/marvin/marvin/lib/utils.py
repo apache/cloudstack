@@ -315,7 +315,7 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     nfsurl = secondaryStore.url
     from urllib2 import urlparse
     parse_url = urlparse.urlsplit(nfsurl, scheme='nfs')
-    host, path = parse_url.netloc, parse_url.path
+    host, path = str(parse_url.netloc), str(parse_url.path)
 
     if not config.mgtSvr:
         raise Exception("Your marvin configuration does not contain mgmt server credentials")
@@ -328,17 +328,24 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
             user,
             passwd
         )
+
+        pathSeparator = "" #used to form host:dir format
+        if not host.endswith(':'):
+            pathSeparator= ":"
+
         cmds = [
-                "mkdir -p %s /mnt/tmp",
-                "mount -t %s %s%s /mnt/tmp" % (
-                    'nfs',
-                    host,
-                    path,
-                    ),
-                "test -f %s && echo 'snapshot exists'" % (
-                    os.path.join("/mnt/tmp", snapshotPath)
-                    ),
-            ]
+
+            "mkdir -p %s /mnt/tmp",
+            "mount -t %s %s%s%s /mnt/tmp" % (
+                'nfs',
+                host,
+                pathSeparator,
+                path,
+            ),
+            "test -f %s && echo 'snapshot exists'" % (
+                os.path.join("/mnt/tmp", snapshotPath)
+            ),
+        ]
 
         for c in cmds:
             result = ssh_client.execute(c)
