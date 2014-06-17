@@ -897,76 +897,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException("Unsupported network type: " + type);
     }
 
-    /**
-     * This is a tricky to create network in xenserver.
-     * if you create a network then create bridge by brctl or openvswitch yourself,
-     * then you will get an expection that is "REQUIRED_NETWROK" when you start a
-     * vm with this network. The soultion is, create a vif of dom0 and plug it in
-     * network, xenserver will create the bridge on behalf of you. But we can not keep the dom0 vif for the entire
-     * existence of network, as we will seen reach max VIF (8) that can be conencted to a domain. So as soon as we have
-     * one more VIF for any of the VM, delete dom0 VIF so that we can scale beyond 8 networks on a host.
-     * @throws XmlRpcException
-     * @throws XenAPIException
-     */
-    private void enableXenServerNetwork(Connection conn, Network nw, String vifNameLabel, String networkDesc) throws XenAPIException, XmlRpcException {
-        /* Make sure there is a physical bridge on this network */
-        VIF dom0vif = null;
-        Pair<VM, VM.Record> vm = getControlDomain(conn);
-        VM dom0 = vm.first();
-        // Create a VIF unless there's not already another VIF
-        Set<VIF> dom0Vifs = dom0.getVIFs(conn);
-        for (VIF vif : dom0Vifs) {
-            vif.getRecord(conn);
-            if (vif.getNetwork(conn).getUuid(conn).equals(nw.getUuid(conn))) {
-                dom0vif = vif;
-                s_logger.debug("A VIF for dom0 has already been found - No need to create one");
-            }
-        }
-
-        int domuVifCount=0;
-        Set<VIF> domUVifs = nw.getVIFs(conn);
-        Host host = Host.getByUuid(conn, _host.uuid);
-        for (VIF vif : domUVifs) {
-            vif.getRecord(conn);
-            if (vif.getVM(conn).getResidentOn(conn).equals(host)) {
-                domuVifCount++;
-            }
-        }
-
-        if (dom0vif == null && domuVifCount == 0) {
-            s_logger.debug("Create a vif on dom0 for " + networkDesc);
-            VIF.Record vifr = new VIF.Record();
-            vifr.VM = dom0;
-            vifr.device = getLowestAvailableVIFDeviceNum(conn, dom0);
-            if (vifr.device == null) {
-                s_logger.debug("Failed to create " + networkDesc + ", no vif available");
-                return;
-            }
-            Map<String, String> config = new HashMap<String, String>();
-            config.put("nameLabel", vifNameLabel);
-            vifr.otherConfig = config;
-            vifr.MAC = "FE:FF:FF:FF:FF:FF";
-            vifr.network = nw;
-
-            vifr.lockingMode = Types.VifLockingMode.NETWORK_DEFAULT;
-            dom0vif = VIF.create(conn, vifr);
-            synchronized (_tmpDom0Vif) {
-                _tmpDom0Vif.add(dom0vif);
-            }
-            try {
-                dom0vif.plug(conn);
-            } catch (Exception e) {
-                // though an exception is thrown here, VIF actually gets plugged-in to dom0, so just ignore the exception
-            }
-            dom0vif.unplug(conn);
-        }
-
-        if (dom0vif != null && domuVifCount > 1) {
-            // now that there is at least one more VIF (other than dom0 vif) destroy dom0 VIF
-            dom0vif.destroy(conn);
-        }
-    }
-
     private synchronized Network setupvSwitchNetwork(Connection conn) {
         try {
             if (_host.vswitchNetwork == null) {
@@ -982,8 +912,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } else {
                     vswitchNw = networks.iterator().next();
                 }
-                if (!is_xcp())
-                    enableXenServerNetwork(conn, vswitchNw, "vswitch", "vswitch network");
                 _host.vswitchNetwork = vswitchNw;
             }
             return _host.vswitchNetwork;
@@ -1007,21 +935,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Network.Record rec = new Network.Record();
             Set<Network> networks = Network.getByNameLabel(conn, nwName);
 
-
             if (networks.size() == 0) {
                 rec.nameDescription = "tunnel network id# " + nwName;
                 rec.nameLabel = nwName;
                 //Initialize the ovs-host-setup to avoid error when doing get-param in plugin
                 Map<String, String> otherConfig = new HashMap<String, String>();
                 otherConfig.put("ovs-host-setup", "");
+                // Mark 'internal network' as shared so bridge gets automatically created on each host in the cluster
+                // when VM with vif connected to this internal network is started
+                otherConfig.put("assume_network_is_shared", "true");
                 rec.otherConfig = otherConfig;
                 nw = Network.create(conn, rec);
-                // Plug dom0 vif only when creating network
-                enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + nwName);
                 s_logger.debug("### Xen Server network for tunnels created:" + nwName);
             } else {
                 nw = networks.iterator().next();
-                enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + nwName);
                 s_logger.debug("Xen Server network for tunnels found:" + nwName);
             }
             return nw;
@@ -1052,9 +979,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     }
                 }
             }
+
             if (!configured) {
-                // Plug dom0 vif only if not done before for network and host
-                enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + bridgeName);
                 String result;
                 if (bridgeName.startsWith("OVS-DR-VPC-Bridge")) {
                     result = callHostPlugin(conn, "ovstunnel", "setup_ovs_bridge_for_distributed_routing", "bridge", bridge,
