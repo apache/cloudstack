@@ -560,6 +560,10 @@ public class EventTypes {
         entityEventDetails.put(EVENT_NET_RULE_MODIFY, FirewallRule.class);
         entityEventDetails.put(EVENT_FIREWALL_OPEN, FirewallRule.class);
         entityEventDetails.put(EVENT_FIREWALL_CLOSE, FirewallRule.class);
+        entityEventDetails.put(EVENT_FIREWALL_EGRESS_OPEN, FirewallRule.class);
+        entityEventDetails.put(EVENT_FIREWALL_EGRESS_CLOSE, FirewallRule.class);
+        entityEventDetails.put(EVENT_FIREWALL_EGRESS_UPDATE, FirewallRule.class);
+
 
         // Load Balancers
         entityEventDetails.put(EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, FirewallRule.class);
