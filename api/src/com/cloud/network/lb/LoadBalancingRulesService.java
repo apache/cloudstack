@@ -159,4 +159,6 @@ public interface LoadBalancingRulesService {
     StickinessPolicy updateLBStickinessPolicy(long id, String customId, Boolean forDisplay);
 
     HealthCheckPolicy updateLBHealthCheckPolicy(long id, String customId, Boolean forDisplay);
+
+    LoadBalancer findLbByStickinessId(long stickinessPolicyId);
 }

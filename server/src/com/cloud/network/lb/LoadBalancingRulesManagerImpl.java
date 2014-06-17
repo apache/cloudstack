@@ -2213,16 +2213,24 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public List<LBStickinessPolicyVO> searchForLBStickinessPolicies(ListLBStickinessPoliciesCmd cmd) throws PermissionDeniedException {
         Account caller = CallContext.current().getCallingAccount();
         Long loadBalancerId = cmd.getLbRuleId();
-        boolean forDisplay = cmd.getDisplay();
+        Long stickinessId = cmd.getId();
 
-        LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
+        boolean forDisplay = cmd.getDisplay();
+        LoadBalancerVO loadBalancer = null;
+
+        if (loadBalancerId == null) {
+            loadBalancer = findLbByStickinessId(stickinessId);
+        } else {
+            loadBalancer = _lbDao.findById(loadBalancerId);
+        }
+
         if (loadBalancer == null) {
             return null;
         }
 
         _accountMgr.checkAccess(caller, null, true, loadBalancer);
 
-        List<LBStickinessPolicyVO> sDbpolicies = _lb2stickinesspoliciesDao.listByLoadBalancerIdAndDisplayFlag(cmd.getLbRuleId(), forDisplay);
+        List<LBStickinessPolicyVO> sDbpolicies = _lb2stickinesspoliciesDao.listByLoadBalancerIdAndDisplayFlag(loadBalancer.getId(), forDisplay);
 
         return sDbpolicies;
     }
@@ -2360,6 +2368,16 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     public LoadBalancerVO findById(long lbId) {
         return _lbDao.findById(lbId);
+    }
+
+    @Override
+    public LoadBalancerVO findLbByStickinessId(long stickinessPolicyId) {
+        LBStickinessPolicyVO stickinessPolicy = _lb2stickinesspoliciesDao.findById(stickinessPolicyId);
+
+        if (stickinessPolicy == null) {
+            return null;
+        }
+        return _lbDao.findById(stickinessPolicy.getLoadBalancerId());
     }
 
     @Override
