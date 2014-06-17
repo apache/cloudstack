@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -47,9 +48,15 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.LBID,
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
-               required = true,
                description = "the ID of the load balancer rule")
     private Long lbRuleId;
+
+    @Parameter(name = ApiConstants.ID,
+            type = CommandType.UUID,
+            entityType = LBStickinessResponse.class,
+            description = "the ID of the load balancer stickiness policy")
+    private Long id;
+
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
@@ -59,6 +66,10 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
     // ///////////////////////////////////////////////////
     public Long getLbRuleId() {
         return lbRuleId;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public boolean getDisplay() {
@@ -79,8 +90,28 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
 
     @Override
     public void execute() {
+
+        LoadBalancer lb = null;
+        if (lbRuleId == null && id == null) {
+            throw new InvalidParameterValueException("LB rule id and stickiness policy id can't be null");
+        }
+
+        if (id != null) {
+            lb = _lbService.findLbByStickinessId(id);
+            if (lb == null) {
+                throw new InvalidParameterValueException("stickiness policy id doesn't exist");
+            }
+
+            if ((lbRuleId != null) && (lbRuleId != lb.getId())) {
+                throw new InvalidParameterValueException("stickiness policy id doesn't belong to lbId" + lbRuleId);
+            }
+        }
+
+        if (lbRuleId != null && lb != null) {
+            lb = _lbService.findById(getLbRuleId());
+        }
+
         List<LBStickinessResponse> spResponses = new ArrayList<LBStickinessResponse>();
-        LoadBalancer lb = _lbService.findById(getLbRuleId());
         ListResponse<LBStickinessResponse> response = new ListResponse<LBStickinessResponse>();
 
         if (lb != null) {
