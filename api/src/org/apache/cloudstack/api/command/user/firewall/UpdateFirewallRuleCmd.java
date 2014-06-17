@@ -79,7 +79,7 @@ public class UpdateFirewallRuleCmd extends BaseAsyncCustomIdCmd {
     @Override
     public void execute() throws ResourceUnavailableException {
         CallContext.current().setEventDetails("Rule Id: " + id);
-        FirewallRule rule = _firewallService.updateFirewallRule(id, this.getCustomId(), getDisplay());
+        FirewallRule rule = _firewallService.updateIngressFirewallRule(id, this.getCustomId(), getDisplay());
 
         FirewallResponse fwResponse = new FirewallResponse();
         if (rule != null) {

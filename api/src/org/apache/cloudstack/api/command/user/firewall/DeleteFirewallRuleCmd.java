@@ -96,7 +96,7 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException {
         CallContext.current().setEventDetails("Rule Id: " + id);
-        boolean result = _firewallService.revokeFirewallRule(id, true);
+        boolean result = _firewallService.revokeIngressFwRule(id, true);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

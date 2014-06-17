@@ -126,6 +126,10 @@ public class EventTypes {
     public static final String EVENT_FIREWALL_CLOSE = "FIREWALL.CLOSE";
     public static final String EVENT_FIREWALL_UPDATE = "FIREWALL.UPDATE";
 
+    public static final String EVENT_FIREWALL_EGRESS_OPEN = "FIREWALL.EGRESS.OPEN";
+    public static final String EVENT_FIREWALL_EGRESS_CLOSE = "FIREWALL.EGRESS.CLOSE";
+    public static final String EVENT_FIREWALL_EGRESS_UPDATE = "FIREWALL.EGRESS.UPDATE";
+
     //NIC Events
     public static final String EVENT_NIC_CREATE = "NIC.CREATE";
     public static final String EVENT_NIC_DELETE = "NIC.DELETE";
@@ -546,12 +550,17 @@ public class EventTypes {
         entityEventDetails.put(EVENT_NETWORK_UPDATE, Network.class);
         entityEventDetails.put(EVENT_NETWORK_RESTART, Network.class);
         entityEventDetails.put(EVENT_NET_IP_ASSIGN, PublicIpAddress.class);
+        entityEventDetails.put(EVENT_PORTABLE_IP_ASSIGN, PublicIpAddress.class);
+        entityEventDetails.put(EVENT_PORTABLE_IP_RELEASE, PublicIpAddress.class);
         entityEventDetails.put(EVENT_NET_IP_RELEASE, PublicIpAddress.class);
-        entityEventDetails.put(EVENT_NET_RULE_ADD, Network.class);
-        entityEventDetails.put(EVENT_NET_RULE_DELETE, Network.class);
-        entityEventDetails.put(EVENT_NET_RULE_MODIFY, Network.class);
-        entityEventDetails.put(EVENT_FIREWALL_OPEN, Network.class);
-        entityEventDetails.put(EVENT_FIREWALL_CLOSE, Network.class);
+        entityEventDetails.put(EVENT_NET_RULE_ADD, FirewallRule.class);
+        entityEventDetails.put(EVENT_NET_RULE_DELETE, FirewallRule.class);
+        entityEventDetails.put(EVENT_NET_RULE_MODIFY, FirewallRule.class);
+        entityEventDetails.put(EVENT_FIREWALL_OPEN, FirewallRule.class);
+        entityEventDetails.put(EVENT_FIREWALL_CLOSE, FirewallRule.class);
+        entityEventDetails.put(EVENT_FIREWALL_EGRESS_OPEN, FirewallRule.class);
+        entityEventDetails.put(EVENT_FIREWALL_EGRESS_CLOSE, FirewallRule.class);
+        entityEventDetails.put(EVENT_FIREWALL_EGRESS_UPDATE, FirewallRule.class);
 
         // Load Balancers
         entityEventDetails.put(EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, FirewallRule.class);
