@@ -1504,9 +1504,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return false;
         }
 
-        // Only SolidFire-type primary storage is using/setting IOPS.
+        // Only IOPS guaranteed primary storage like SolidFire is using/setting IOPS.
         // This check returns true for storage that does not specify IOPS.
         if (pool.getCapacityIops() == null ) {
+            s_logger.info("Storage pool " + pool.getName() + " (" + pool.getId() + ") does not supply Iops capacity, assuming enough capacity");
             return true;
         }
 
@@ -1532,12 +1533,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         long futureIops = currentIops + requestedIops;
-
-        // getCapacityIops returns a Long so we need to check for null
-        if (pool.getCapacityIops() == null) {
-            s_logger.warn("Storage pool " + pool.getName() + " (" + pool.getId() + ") does not supply Iops capacity, assuming enough capacity");
-            return true;
-        }
 
         return futureIops <= pool.getCapacityIops();
     }
