@@ -78,7 +78,7 @@ public class UpdateEgressFirewallRuleCmd extends BaseAsyncCustomIdCmd {
     @Override
     public void execute() throws ResourceUnavailableException {
         CallContext.current().setEventDetails("Rule Id: " + id);
-        FirewallRule rule = _firewallService.updateFirewallRule(id, this.getCustomId(), getDisplay());
+        FirewallRule rule = _firewallService.updateEgressFirewallRule(id, this.getCustomId(), getDisplay());
 
         FirewallResponse fwResponse = new FirewallResponse();
         if (rule != null) {
@@ -97,7 +97,7 @@ public class UpdateEgressFirewallRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_FIREWALL_UPDATE;
+        return EventTypes.EVENT_FIREWALL_EGRESS_UPDATE;
 
     }
 

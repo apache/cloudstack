@@ -154,7 +154,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
             fwResponse.setResponseName(getCommandName());
         } finally {
             if (!success || rule == null) {
-                _firewallService.revokeFirewallRule(getEntityId(), true);
+                _firewallService.revokeEgressFirewallRule(getEntityId(), true);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create firewall rule");
             }
         }
@@ -270,7 +270,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_FIREWALL_OPEN;
+        return EventTypes.EVENT_FIREWALL_EGRESS_OPEN;
     }
 
     @Override
