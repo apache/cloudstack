@@ -134,7 +134,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         FirewallRule rule = _entityMgr.findById(FirewallRule.class, getEntityId());
         try {
             CallContext.current().setEventDetails("Rule Id: " + getEntityId());
-            success = _firewallService.applyIngressFirewallRules(rule.getSourceIpAddressId(), callerContext.getCallingAccount());
+            success = _firewallService.applyIngressFwRules(rule.getSourceIpAddressId(), callerContext.getCallingAccount());
 
             // State is different after the rule is applied, so get new object here
             rule = _entityMgr.findById(FirewallRule.class, getEntityId());
@@ -146,7 +146,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
             fwResponse.setResponseName(getCommandName());
         } finally {
             if (!success || rule == null) {
-                _firewallService.revokeFirewallRule(getEntityId(), true);
+                _firewallService.revokeIngressFwRule(getEntityId(), true);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create firewall rule");
             }
         }

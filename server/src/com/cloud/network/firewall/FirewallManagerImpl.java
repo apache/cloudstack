@@ -161,7 +161,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewall rule", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_EGRESS_OPEN, eventDescription = "creating egress firewall rule for network", create = true)
     public FirewallRule createEgressFirewallRule(FirewallRule rule) throws NetworkRuleConflictException {
         Account caller = CallContext.current().getCallingAccount();
 
@@ -613,12 +613,19 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewall rule", async = true)
+    public boolean applyIngressFwRules(long ipId, Account caller) throws ResourceUnavailableException {
+        return applyIngressFirewallRules(ipId, caller);
+    }
+
+    @Override
     public boolean applyIngressFirewallRules(long ipId, Account caller) throws ResourceUnavailableException {
         List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(ipId, Purpose.Firewall);
         return applyFirewallRules(rules, false, caller);
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_EGRESS_OPEN, eventDescription = "creating egress firewall rule", async = true)
     public boolean applyEgressFirewallRules(FirewallRule rule, Account caller) throws ResourceUnavailableException {
                 List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), Purpose.Firewall, FirewallRule.TrafficType.Egress);
                 return applyFirewallRules(rules, false, caller);
@@ -719,7 +726,21 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_CLOSE, eventDescription = "revoking firewall rule", async = true)
-    public boolean revokeFirewallRule(long ruleId, boolean apply) {
+    public boolean revokeIngressFwRule(long ruleId, boolean apply) {
+        return revokeIngressFirewallRule(ruleId, apply);
+    }
+
+
+    @Override
+    public boolean revokeIngressFirewallRule(long ruleId, boolean apply) {
+        Account caller = CallContext.current().getCallingAccount();
+        long userId = CallContext.current().getCallingUserId();
+        return revokeFirewallRule(ruleId, apply, caller, userId);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_EGRESS_CLOSE, eventDescription = "revoking egress firewall rule", async = true)
+    public boolean revokeEgressFirewallRule(long ruleId, boolean apply) {
         Account caller = CallContext.current().getCallingAccount();
         long userId = CallContext.current().getCallingUserId();
         return revokeFirewallRule(ruleId, apply, caller, userId);
@@ -727,7 +748,14 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_UPDATE, eventDescription = "updating firewall rule", async = true)
-    public FirewallRule updateFirewallRule(long ruleId, String customId, Boolean forDisplay) {
+    public FirewallRule updateIngressFirewallRule(long ruleId, String customId, Boolean forDisplay) {
+        Account caller = CallContext.current().getCallingAccount();
+        return updateFirewallRule(ruleId, customId, caller, forDisplay);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_EGRESS_UPDATE, eventDescription = "updating egress firewall rule", async = true)
+    public FirewallRule updateEgressFirewallRule(long ruleId, String customId, Boolean forDisplay) {
         Account caller = CallContext.current().getCallingAccount();
         return updateFirewallRule(ruleId, customId, caller, forDisplay);
     }
@@ -881,7 +909,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
 
         s_logger.debug("Revoking Firewall rule id=" + fwRule.getId() + " as a part of rule delete id=" + ruleId + " with apply=" + apply);
-        return revokeFirewallRule(fwRule.getId(), apply);
+        return revokeIngressFirewallRule(fwRule.getId(), apply);
 
     }
 
