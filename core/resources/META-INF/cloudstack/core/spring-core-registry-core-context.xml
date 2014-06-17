@@ -75,6 +75,7 @@
         <property name="orderConfigDefault"
             value="FirstFitPlanner,UserDispersingPlanner,UserConcentratedPodPlanner,ImplicitDedicationPlanner,BareMetalPlanner" />
         <property name="excludeKey" value="deployment.planners.exclude" />
+	<property name="excludeDefault" value="SkipHeuresticsPlanner" />
     </bean>
 
     <bean id="haPlannersRegistry"
@@ -89,6 +90,8 @@
 
     <bean id="hostAllocatorsRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+	<property name="orderConfigKey" value="host.allocators.order" />
+        <property name="orderConfigDefault" value="FirstFitRouting" />
         <property name="excludeKey" value="host.allocators.exclude" />
         <property name="excludeDefault"
             value="RandomAllocator,TestingAllocator,FirstFitAllocator,RecreateHostAllocator" />
