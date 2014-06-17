@@ -770,6 +770,7 @@ test_data = {
         "ispublic": True,
         "isextractable": True,
         "mode": "HTTP_DOWNLOAD",
+        "templatefilter": "self"
     },
     "templatefilter": 'self',
 
