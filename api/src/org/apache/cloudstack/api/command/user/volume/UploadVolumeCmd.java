@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -89,6 +90,9 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Upload volume for the project")
     private Long projectId;
 
+    @Parameter(name = ApiConstants.DISK_OFFERING_ID, required = false, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "the ID of the disk offering. This must be a custom sized offering since during uploadVolume volume size is unknown.")
+    private Long diskOfferingId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -123,6 +127,10 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
 
     public String getImageStoreUuid() {
         return imageStoreUuid;
+    }
+
+    public Long getDiskOfferingId() {
+        return diskOfferingId;
     }
 
     /////////////////////////////////////////////////////

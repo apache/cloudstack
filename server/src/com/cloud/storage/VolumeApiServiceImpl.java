@@ -254,12 +254,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         String volumeName = cmd.getVolumeName();
         String url = cmd.getUrl();
         String format = cmd.getFormat();
+        Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
         DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
 
-        validateVolume(caller, ownerId, zoneId, volumeName, url, format);
+        validateVolume(caller, ownerId, zoneId, volumeName, url, format, diskOfferingId);
 
-        VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, cmd.getFormat());
+        VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, cmd.getFormat(), diskOfferingId);
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
 
@@ -270,13 +271,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return volume;
     }
 
-    private boolean validateVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url, String format) throws ResourceAllocationException {
+    private boolean validateVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url,
+            String format, Long diskOfferingId) throws ResourceAllocationException {
 
         // permission check
-        _accountMgr.checkAccess(caller, null, true, _accountMgr.getActiveAccountById(ownerId));
+        Account volumeOwner = _accountMgr.getActiveAccountById(ownerId);
+        _accountMgr.checkAccess(caller, null, true, volumeOwner);
 
         // Check that the resource limit for volumes won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.volume);
+        _resourceLimitMgr.checkResourceLimit(volumeOwner, ResourceType.volume);
 
         // Verify that zone exists
         DataCenterVO zone = _dcDao.findById(zoneId);
@@ -323,8 +326,27 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
         UriUtils.validateUrl(url);
 
+
         // Check that the resource limit for secondary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+
+        // Check that the the disk offering specified is valid
+        if (diskOfferingId != null) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+            if ((diskOffering == null) || diskOffering.getRemoved() != null
+                    || !DiskOfferingVO.Type.Disk.equals(diskOffering.getType())) {
+                throw new InvalidParameterValueException("Please specify a valid disk offering.");
+            }
+            if (!diskOffering.isCustomized()) {
+                throw new InvalidParameterValueException("Please specify a custom sized disk offering.");
+            }
+
+            if (diskOffering.getDomainId() == null) {
+                // do nothing as offering is public
+            } else {
+                _configMgr.checkDiskOfferingAccess(volumeOwner, diskOffering);
+            }
+        }
 
         return false;
     }
@@ -334,7 +356,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @DB
-    protected VolumeVO persistVolume(final Account owner, final Long zoneId, final String volumeName, final String url, final String format) {
+    protected VolumeVO persistVolume(final Account owner, final Long zoneId, final String volumeName, final String url,
+            final String format, final Long diskOfferingId) {
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
@@ -346,8 +369,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 // TODO Decide if this is valid or whether  throwing a CloudRuntimeException is more appropriate
                 volume.setAccountId((owner == null) ? Account.ACCOUNT_ID_SYSTEM : owner.getAccountId());
                 volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
-        long diskOfferingId = _diskOfferingDao.findByUniqueName("Cloud.com-Custom").getId();
-        volume.setDiskOfferingId(diskOfferingId);
+
+                if (diskOfferingId == null) {
+                    long defaultDiskOfferingId = _diskOfferingDao.findByUniqueName("Cloud.com-Custom").getId();
+                    volume.setDiskOfferingId(defaultDiskOfferingId);
+                } else {
+                    volume.setDiskOfferingId(diskOfferingId);
+                }
         // volume.setSize(size);
         volume.setInstanceId(null);
         volume.setUpdated(new Date());
