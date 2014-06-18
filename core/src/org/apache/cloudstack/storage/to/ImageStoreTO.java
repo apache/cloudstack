@@ -27,6 +27,7 @@ public class ImageStoreTO implements DataStoreTO {
     private String providerName;
     private DataStoreRole role;
     private String uuid;
+    private static final String pathSeparator = "/";
 
     public ImageStoreTO() {
 
@@ -97,5 +98,10 @@ public class ImageStoreTO implements DataStoreTO {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public String getPathSeparator() {
+        return pathSeparator;
     }
 }

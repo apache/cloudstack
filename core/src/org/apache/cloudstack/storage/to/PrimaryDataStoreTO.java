@@ -46,6 +46,7 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     private int port;
     private final String url;
     private Map<String, String> details;
+    private static final String pathSeparator = "/";
 
     public PrimaryDataStoreTO(PrimaryDataStore dataStore) {
         this.uuid = dataStore.getUuid();
@@ -120,6 +121,11 @@ public class PrimaryDataStoreTO implements DataStoreTO {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    @Override
+    public String getPathSeparator() {
+        return pathSeparator;
     }
 
     @Override

@@ -26,6 +26,7 @@ public class SwiftTO implements DataStoreTO, SwiftUtil.SwiftClientCfg {
 
     String userName;
     String key;
+    private static final String pathSeparator = "/";
 
     public SwiftTO() {
     }
@@ -75,5 +76,10 @@ public class SwiftTO implements DataStoreTO, SwiftUtil.SwiftClientCfg {
     @Override
     public String getUuid() {
         return null;
+    }
+
+    @Override
+    public String getPathSeparator() {
+        return pathSeparator;
     }
 }

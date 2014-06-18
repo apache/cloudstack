@@ -109,7 +109,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 return new AttachAnswer("Can't attach a iso which is not created on nfs: ");
             }
             NfsTO nfsStore = (NfsTO) store;
-            isoURL = nfsStore.getUrl() + File.separator + data.getPath();
+            isoURL = nfsStore.getUrl() + nfsStore.getPathSeparator() + data.getPath();
         }
 
         String vmName = cmd.getVmName();
@@ -290,7 +290,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 return new AttachAnswer("Can't attach a iso which is not created on nfs: ");
             }
             NfsTO nfsStore = (NfsTO) store;
-            isoURL = nfsStore.getUrl() + File.separator + data.getPath();
+            isoURL = nfsStore.getUrl() + nfsStore.getPathSeparator() + data.getPath();
         }
 
         try {
@@ -933,7 +933,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 SR primaryStoragePool = hypervisorResource.getStorageRepository(conn, destVolume.getDataStore().getUuid());
                 String srUuid = primaryStoragePool.getUuid(conn);
                 URI uri = new URI(nfsStore.getUrl());
-                String volumePath = uri.getHost() + ":" + uri.getPath() + File.separator + srcVolume.getPath();
+                String volumePath = uri.getHost() + ":" + uri.getPath() + nfsStore.getPathSeparator() + srcVolume.getPath();
                 String uuid = copy_vhd_from_secondarystorage(conn, volumePath, srUuid, wait);
                 VolumeObjectTO newVol = new VolumeObjectTO();
                 newVol.setPath(uuid);
@@ -970,7 +970,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 }
 
                 // Create a SR for the volume UUID folder
-                secondaryStorage = hypervisorResource.createNfsSRbyURI(conn, new URI(nfsStore.getUrl() + File.separator + destVolume.getPath()), false);
+                secondaryStorage = hypervisorResource.createNfsSRbyURI(conn, new URI(nfsStore.getUrl() + nfsStore.getPathSeparator() + destVolume.getPath()), false);
                 // Look up the volume on the source primary storage pool
                 VDI srcVdi = getVDIbyUuid(conn, srcVolume.getPath());
                 // Copy the volume to secondary storage
@@ -978,7 +978,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 String destVolumeUUID = destVdi.getUuid(conn);
 
                 VolumeObjectTO newVol = new VolumeObjectTO();
-                newVol.setPath(destVolume.getPath() + File.separator + destVolumeUUID + ".vhd");
+                newVol.setPath(destVolume.getPath() + nfsStore.getPathSeparator() + destVolumeUUID + ".vhd");
                 newVol.setSize(srcVolume.getSize());
                 return new CopyCmdAnswer(newVol);
             } catch (Exception e) {
@@ -1282,7 +1282,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                         }
                         // finalPath = folder + File.separator + snapshotBackupUuid;
                     } else {
-                        finalPath = folder + File.separator + snapshotBackupUuid;
+                        finalPath = folder + cacheStore.getPathSeparator() + snapshotBackupUuid;
                     }
 
                 } finally {
@@ -1310,7 +1310,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                     String[] tmp = results.split("#");
                     snapshotBackupUuid = tmp[1];
                     physicalSize = Long.parseLong(tmp[2]);
-                    finalPath = folder + File.separator + snapshotBackupUuid;
+                    finalPath = folder + cacheStore.getPathSeparator() + snapshotBackupUuid;
                 }
             }
             // delete primary snapshots with only the last one left
@@ -1461,13 +1461,13 @@ public class XenServerStorageProcessor implements StorageProcessor {
             }
             // Get the absolute path of the snapshot on the secondary storage.
             String snapshotInstallPath = snapshot.getPath();
-            int index = snapshotInstallPath.lastIndexOf(File.separator);
+            int index = snapshotInstallPath.lastIndexOf(nfsImageStore.getPathSeparator());
             String snapshotName = snapshotInstallPath.substring(index + 1);
 
             if (!snapshotName.startsWith("VHD-") && !snapshotName.endsWith(".vhd")) {
                 snapshotInstallPath = snapshotInstallPath + ".vhd";
             }
-            URI snapshotURI = new URI(secondaryStorageUrl + File.separator + snapshotInstallPath);
+            URI snapshotURI = new URI(secondaryStorageUrl + nfsImageStore.getPathSeparator() + snapshotInstallPath);
             String snapshotPath = snapshotURI.getHost() + ":" + snapshotURI.getPath();
             String srUuid = primaryStorageSR.getUuid(conn);
             volumeUUID = copy_vhd_from_secondarystorage(conn, snapshotPath, srUuid, wait);
