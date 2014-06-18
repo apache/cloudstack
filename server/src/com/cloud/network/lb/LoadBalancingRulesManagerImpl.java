@@ -2231,15 +2231,18 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public List<LBHealthCheckPolicyVO> searchForLBHealthCheckPolicies(ListLBHealthCheckPoliciesCmd cmd) throws PermissionDeniedException {
         Account caller = CallContext.current().getCallingAccount();
         Long loadBalancerId = cmd.getLbRuleId();
+        Long policyId = cmd.getId();
         boolean forDisplay = cmd.getDisplay();
-
+        if(loadBalancerId == null) {
+            loadBalancerId = findLBIdByHealtCheckPolicyId(policyId);
+        }
         LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
             return null;
         }
 
         _accountMgr.checkAccess(caller, null, true, loadBalancer);
-        List<LBHealthCheckPolicyVO> hcDbpolicies = _lb2healthcheckDao.listByLoadBalancerIdAndDisplayFlag(cmd.getLbRuleId(), forDisplay);
+        List<LBHealthCheckPolicyVO> hcDbpolicies = _lb2healthcheckDao.listByLoadBalancerIdAndDisplayFlag(loadBalancerId, forDisplay);
 
         return hcDbpolicies;
     }
@@ -2525,6 +2528,15 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         _lb2healthcheckDao.update(id, policy);
         return _lb2healthcheckDao.findById(id);
+    }
+
+    @Override
+    public Long findLBIdByHealtCheckPolicyId(long lbHealthCheckPolicy) {
+        LBHealthCheckPolicyVO policy= _lb2healthcheckDao.findById(lbHealthCheckPolicy);
+        if(policy != null) {
+            return policy.getLoadBalancerId();
+        }
+        return null;
     }
 
 }
