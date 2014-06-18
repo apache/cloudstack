@@ -835,9 +835,11 @@
                 });
 
             $.each(actions, function(key, value) {
-                if ($.inArray(key, allowedActions) == -1 ||
+                if ((!value.preFilter && $.inArray(key, allowedActions) == -1) ||
+                    (value.preFilter && !value.preFilter({ context: options.context })) ||
                     (options.ignoreAddAction && key == 'add') ||
                     (key == 'edit' && options.compact)) {
+
                     return true;
                 }
 
