@@ -28,7 +28,10 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
 
@@ -36,6 +39,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.commons.lang.StringUtils;
@@ -99,6 +103,8 @@ public class SolidFireUtil {
     public static final String DATASTORE_NAME = "datastoreName";
     public static final String IQN = "iqn";
 
+    public static final long MAX_IOPS_PER_VOLUME = 100000;
+
     private static final int DEFAULT_MANAGEMENT_PORT = 443;
     private static final int DEFAULT_STORAGE_PORT = 3260;
 
@@ -154,6 +160,30 @@ public class SolidFireUtil {
 
     public static String getSolidFireAccountName(String csAccountUuid, long csAccountId) {
         return "CloudStack_" + csAccountUuid + "_" + csAccountId;
+    }
+
+    public static void updateCsDbWithSolidFireIopsInfo(long storagePoolId, PrimaryDataStoreDao primaryDataStoreDao, StoragePoolDetailsDao storagePoolDetailsDao,
+            long minIops, long maxIops, long burstIops) {
+        Map<String, String> existingDetails = storagePoolDetailsDao.listDetailsKeyPairs(storagePoolId);
+        Set<String> existingKeys = existingDetails.keySet();
+
+        Map<String, String> existingDetailsToKeep = new HashMap<String, String>();
+
+        for (String existingKey : existingKeys) {
+            String existingValue = existingDetails.get(existingKey);
+
+            if (!SolidFireUtil.MIN_IOPS.equalsIgnoreCase(existingValue) &&
+                    !SolidFireUtil.MAX_IOPS.equalsIgnoreCase(existingValue) &&
+                    !SolidFireUtil.BURST_IOPS.equalsIgnoreCase(existingValue)) {
+                existingDetailsToKeep.put(existingKey, existingValue);
+            }
+        }
+
+        existingDetailsToKeep.put(SolidFireUtil.MIN_IOPS, String.valueOf(minIops));
+        existingDetailsToKeep.put(SolidFireUtil.MAX_IOPS, String.valueOf(maxIops));
+        existingDetailsToKeep.put(SolidFireUtil.BURST_IOPS, String.valueOf(burstIops));
+
+        primaryDataStoreDao.updateDetails(storagePoolId, existingDetailsToKeep);
     }
 
     public static void updateCsDbWithSolidFireAccountInfo(long csAccountId, SolidFireUtil.SolidFireAccount sfAccount,
@@ -402,11 +432,13 @@ public class SolidFireUtil {
     }
 
     public static long createSolidFireVolume(SolidFireConnection sfConnection, String strSfVolumeName, long lSfAccountId, long lTotalSize,
-            boolean bEnable512e, final String strCloudStackVolumeSize, long lMinIops, long lMaxIops, long lBurstIops)
+            boolean bEnable512e, String strCloudStackVolumeSize, long minIops, long maxIops, long burstIops)
     {
         final Gson gson = new GsonBuilder().create();
 
-        VolumeToCreate volumeToCreate = new VolumeToCreate(strSfVolumeName, lSfAccountId, lTotalSize, bEnable512e, strCloudStackVolumeSize, lMinIops, lMaxIops, lBurstIops);
+        Object volumeToCreate = strCloudStackVolumeSize != null && strCloudStackVolumeSize.trim().length() > 0 ?
+                new VolumeToCreateWithCloudStackVolumeSize(strSfVolumeName, lSfAccountId, lTotalSize, bEnable512e, strCloudStackVolumeSize, minIops, maxIops, burstIops) :
+                new VolumeToCreate(strSfVolumeName, lSfAccountId, lTotalSize, bEnable512e, minIops, maxIops, burstIops);
 
         String strVolumeToCreateJson = gson.toJson(volumeToCreate);
 
@@ -417,6 +449,23 @@ public class SolidFireUtil {
         verifyResult(volumeCreateResult.result, strVolumeCreateResultJson, gson);
 
         return volumeCreateResult.result.volumeID;
+    }
+
+    public static void modifySolidFireVolume(SolidFireConnection sfConnection, long volumeId, long totalSize, long minIops, long maxIops, long burstIops)
+    {
+        final Gson gson = new GsonBuilder().create();
+
+        VolumeToModify volumeToModify = new VolumeToModify(volumeId, totalSize, minIops, maxIops, burstIops);
+
+        String strVolumeToModifyJson = gson.toJson(volumeToModify);
+
+        String strVolumeModifyResultJson = executeJsonRpc(sfConnection, strVolumeToModifyJson);
+
+        JsonError jsonError = gson.fromJson(strVolumeModifyResultJson, JsonError.class);
+
+        if (jsonError.error != null) {
+            throw new IllegalStateException(jsonError.error.message);
+        }
     }
 
     public static SolidFireVolume getSolidFireVolume(SolidFireConnection sfConnection, long lVolumeId)
@@ -868,12 +917,12 @@ public class SolidFireUtil {
     }
 
     @SuppressWarnings("unused")
-    private static final class VolumeToCreate {
+    private static final class VolumeToCreateWithCloudStackVolumeSize {
         private final String method = "CreateVolume";
         private final VolumeToCreateParams params;
 
-        private VolumeToCreate(final String strVolumeName, final long lAccountId, final long lTotalSize, final boolean bEnable512e, final String strCloudStackVolumeSize,
-                final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS) {
+        private VolumeToCreateWithCloudStackVolumeSize(final String strVolumeName, final long lAccountId, final long lTotalSize,
+                final boolean bEnable512e, final String strCloudStackVolumeSize, final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS) {
             params = new VolumeToCreateParams(strVolumeName, lAccountId, lTotalSize, bEnable512e, strCloudStackVolumeSize, lMinIOPS, lMaxIOPS, lBurstIOPS);
         }
 
@@ -914,6 +963,87 @@ public class SolidFireUtil {
                     maxIOPS = lMaxIOPS;
                     burstIOPS = lBurstIOPS;
                 }
+            }
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static final class VolumeToCreate {
+        private final String method = "CreateVolume";
+        private final VolumeToCreateParams params;
+
+        private VolumeToCreate(final String strVolumeName, final long lAccountId, final long lTotalSize, final boolean bEnable512e,
+                final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS) {
+            params = new VolumeToCreateParams(strVolumeName, lAccountId, lTotalSize, bEnable512e, lMinIOPS, lMaxIOPS, lBurstIOPS);
+        }
+
+        private static final class VolumeToCreateParams {
+            private final String name;
+            private final long accountID;
+            private final long totalSize;
+            private final boolean enable512e;
+            private final VolumeToCreateParamsQoS qos;
+
+            private VolumeToCreateParams(final String strVolumeName, final long lAccountId, final long lTotalSize, final boolean bEnable512e,
+                    final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS) {
+                name = strVolumeName;
+                accountID = lAccountId;
+                totalSize = lTotalSize;
+                enable512e = bEnable512e;
+
+                qos = new VolumeToCreateParamsQoS(lMinIOPS, lMaxIOPS, lBurstIOPS);
+            }
+
+            private static final class VolumeToCreateParamsQoS {
+                private final long minIOPS;
+                private final long maxIOPS;
+                private final long burstIOPS;
+
+                private VolumeToCreateParamsQoS(final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS) {
+                    minIOPS = lMinIOPS;
+                    maxIOPS = lMaxIOPS;
+                    burstIOPS = lBurstIOPS;
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static final class VolumeToModify
+    {
+        private final String method = "ModifyVolume";
+        private final VolumeToModifyParams params;
+
+        private VolumeToModify(final long lVolumeId, final long lTotalSize, final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS)
+        {
+            params = new VolumeToModifyParams(lVolumeId, lTotalSize, lMinIOPS, lMaxIOPS, lBurstIOPS);
+        }
+
+        private static final class VolumeToModifyParams
+        {
+            private final long volumeID;
+            private final long totalSize;
+            private final VolumeToModifyParamsQoS qos;
+
+            private VolumeToModifyParams(final long lVolumeId, final long lTotalSize, final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS)
+            {
+                volumeID = lVolumeId;
+
+                totalSize = lTotalSize;
+
+                qos = new VolumeToModifyParamsQoS(lMinIOPS, lMaxIOPS, lBurstIOPS);
+            }
+        }
+
+        private static final class VolumeToModifyParamsQoS {
+            private final long minIOPS;
+            private final long maxIOPS;
+            private final long burstIOPS;
+
+            private VolumeToModifyParamsQoS(final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS) {
+                minIOPS = lMinIOPS;
+                maxIOPS = lMaxIOPS;
+                burstIOPS = lBurstIOPS;
             }
         }
     }
@@ -1376,8 +1506,8 @@ public class SolidFireUtil {
         return iCode >= 200 && iCode < 300;
     }
 
-    private static void verifyResult(Object obj, String strJson, Gson gson) throws IllegalStateException {
-        if (obj != null) {
+    private static void verifyResult(Object result, String strJson, Gson gson) throws IllegalStateException {
+        if (result != null) {
             return;
         }
 

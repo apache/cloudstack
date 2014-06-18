@@ -514,7 +514,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     }
 
-    private long getUsedBytes(StoragePoolVO pool) {
+    @Override
+    public long getUsedBytes(StoragePoolVO pool) {
         long usedBytes = 0;
 
         List<VolumeVO> volumes = _volumeDao.findByPoolId(pool.getId(), null);
@@ -539,6 +540,21 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         }
 
         return usedBytes;
+    }
+
+    @Override
+    public long getUsedIops(StoragePoolVO pool) {
+        long usedIops = 0;
+
+        List<VolumeVO> volumes = _volumeDao.findByPoolId(pool.getId(), null);
+
+        if (volumes != null && volumes.size() > 0) {
+            for (VolumeVO volume : volumes) {
+                usedIops += volume.getMinIops();
+            }
+        }
+
+        return usedIops;
     }
 
     @Override

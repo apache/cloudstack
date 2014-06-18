@@ -525,4 +525,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         return false;
     }
 
+    @Override
+    public void updateStoragePool(StoragePool storagePool, Map<String, String> details) {
+    }
 }

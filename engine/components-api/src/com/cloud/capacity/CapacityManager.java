@@ -102,4 +102,8 @@ public interface CapacityManager {
     boolean checkIfClusterCrossesThreshold(Long clusterId, Integer cpuRequested, long ramRequested);
 
     float getClusterOverProvisioningFactor(Long clusterId, short capacityType);
+
+    long getUsedBytes(StoragePoolVO pool);
+
+    long getUsedIops(StoragePoolVO pool);
 }
