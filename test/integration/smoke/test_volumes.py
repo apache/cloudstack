@@ -545,7 +545,7 @@ class TestVolumes(cloudstackTestCase):
         # first, an invalid id
         cmd                = resizeVolume.resizeVolumeCmd()
         cmd.id             = "invalid id"
-        cmd.diskofferingid = self.services['resizeddiskofferingid']
+        cmd.diskofferingid = self.services['customresizeddiskofferingid']
         success            = False
         try:
             response = self.apiClient.resizeVolume(cmd)
@@ -677,7 +677,7 @@ class TestVolumes(cloudstackTestCase):
 
         cmd                = resizeVolume.resizeVolumeCmd()
         cmd.id             = self.volume.id
-        cmd.diskofferingid = self.services['resizeddiskofferingid']
+        cmd.diskofferingid = self.services['customresizeddiskofferingid']
 
         self.apiClient.resizeVolume(cmd)
 
