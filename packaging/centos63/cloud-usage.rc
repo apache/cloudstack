@@ -46,15 +46,31 @@ USER=cloud
 unset OPTIONS
 [ -r /etc/sysconfig/default/"$SHORTNAME" ] && source /etc/sysconfig/default/"$SHORTNAME"
 
-# The first existing directory is used for JAVA_HOME (if JAVA_HOME is not defined in $DEFAULT)
-JDK_DIRS="/usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-openjdk-i386 /usr/lib/jvm/java-6-openjdk-amd64 /usr/lib/jvm/java-6-sun /usr/lib/jvm/jre-1.6.0 /usr/lib/j2sdk1.5-sun /usr/lib/jre-openjdk"
+setJavaHome() {
+  # use $JAVA_HOME if defined
+  if [ -n "$JAVA_HOME" ] ; then
+    return
+  fi
 
-for jdir in $JDK_DIRS; do
-    if [ -r "$jdir/bin/java" -a -z "${JAVA_HOME}" ]; then
-        JAVA_HOME="$jdir"
-    fi
-done
-export JAVA_HOME
+  # try javac first
+  java=$(which javac 2>/dev/null || :)
+
+  # try java if javac is not found
+  if [ -z "$java" ] ; then
+    java=$(which java 2>/dev/null || :)
+  fi
+
+  if [ -n "$java" ] ; then
+    JAVA_HOME=$(dirname $(dirname $(readlink -e $java)))
+    export JAVA_HOME
+    return
+  fi
+
+  # didnt find java home. exiting with error
+  exit 1
+}
+
+setJavaHome
 
 SCP=""
 DCP=""
