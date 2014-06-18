@@ -47,14 +47,6 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
     @Inject
     DataStoreManager dataStoreMgr;
 
-    @Override
-    protected boolean filter(ExcludeList avoid, StoragePool pool, DiskProfile dskCh, DeploymentPlan plan) {
-        Volume volume = _volumeDao.findById(dskCh.getVolumeId());
-        List<Volume> requestVolumes = new ArrayList<Volume>();
-        requestVolumes.add(volume);
-
-        return storageMgr.storagePoolHasEnoughIops(requestVolumes, pool) && storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool);
-    }
 
     @Override
     protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
