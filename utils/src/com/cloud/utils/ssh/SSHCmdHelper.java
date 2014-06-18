@@ -155,8 +155,15 @@ public class SSHCmdHelper {
             String result = sbResult.toString();
             if (result != null && !result.isEmpty())
                 s_logger.debug(cmd + " output:" + result);
-
-             return sshSession.getExitStatus();
+            // exit status delivery might get delayed
+            for(int i = 0 ; i<10 ; i++ ) {
+                Integer status = sshSession.getExitStatus();
+                if( status != null ) {
+                    return status;
+                }
+                Thread.sleep(100);
+            }
+            return -1;
         } catch (Exception e) {
             s_logger.debug("Ssh executed failed", e);
             throw new SshException("Ssh executed failed " + e.getMessage());
