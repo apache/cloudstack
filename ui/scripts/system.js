@@ -15436,17 +15436,19 @@
                                         dependsOn: 'clusterId',
                                         select: function (args) {
                                             var clusterId = args.clusterId;
-                                            if (clusterId == null)
+                                            if (clusterId == null || clusterId.length == 0) {
+                                            	args.response.success({
+                                                    data: []
+                                                });
                                             return;
-                                            var items =[];
+                                            }
+                                            
                                             $(clusterObjs).each(function () {
                                                 if (this.id == clusterId) {
                                                     selectedClusterObj = this;
                                                     return false; //break the $.each() loop
                                                 }
                                             });
-                                            if (selectedClusterObj == null)
-                                            return;
                                             
                                             if (selectedClusterObj.hypervisortype == "KVM") {
                                                 var items =[];
