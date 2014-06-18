@@ -196,10 +196,13 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
         # Create Accounts & networks
         cls.services["isolated_network"]["zoneid"] = cls.zone.id
         cls.services["shared_network"]["zoneid"] = cls.zone.id
+        cls._cleanup = []
 
         cls.account = Account.create(cls.api_client, cls.services["account"], domainid = cls.domain.id)
+        cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(cls.api_client,cls.services["service_offering"])
+        cls._cleanup.append(cls.service_offering)
 
         cls.virtual_machine = VirtualMachine.create(cls.api_client, cls.services["virtual_machine"],accountid=cls.account.name,
                                                     domainid=cls.account.domainid, serviceofferingid=cls.service_offering.id,
@@ -207,6 +210,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         # Create Shared Network Offering
         cls.isolated_network_offering = NetworkOffering.create(cls.api_client, cls.services["isolated_network_offering"])
+        cls._cleanup.append(cls.isolated_network_offering)
         # Enable Isolated Network offering
         cls.isolated_network_offering.update(cls.api_client, state='Enabled')
 
@@ -230,9 +234,8 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         cls.shared_network = Network.create(cls.api_client,cls.services["shared_network"],cls.account.name,
                                             cls.account.domainid,networkofferingid=cls.shared_network_offering.id)
-
-        cls._cleanup = [cls.account,cls.service_offering,cls.shared_network,cls.isolated_network_offering,
-                        cls.shared_network_offering]
+        cls._cleanup.append(cls.shared_network)
+        cls._cleanup.append(cls.shared_network_offering)
         return
 
     def setUp(self):
@@ -600,36 +603,39 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         network = None #The network which we are adding to the vm
 
-        self.child_domain_1 = Domain.create(self.apiclient,
+        try:
+            tempCleanupList = []
+            self.child_domain_1 = Domain.create(self.apiclient,
                                             services=self.services["domain"],
                                             parentdomainid=self.domain.id)
+            tempCleanupList.append(self.child_domain_1)
 
-        self.child_do_admin_1 = Account.create(
+            self.child_do_admin_1 = Account.create(
                                 self.apiclient,
                                 self.services["account"],
                                 admin=True,
                                 domainid=self.child_domain_1.id
                                 )
+            tempCleanupList.append(self.child_do_admin_1)
 
-        self.debug("Creating a domain under: %s" % self.domain.name)
-
-        self.child_domain_2 = Domain.create(self.apiclient,
+            self.child_domain_2 = Domain.create(self.apiclient,
                                               services=self.services["domain"],
                                               parentdomainid=self.domain.id)
+            tempCleanupList.append(self.child_domain_2)
 
-        self.child_do_admin_2 = Account.create(
+            self.child_do_admin_2 = Account.create(
                                     self.apiclient,
                                     self.services["account"],
                                     admin=True,
                                     domainid=self.child_domain_2.id)
+            tempCleanupList.append(self.child_do_admin_2)
+        except Exception as e:
+            tempCleanupList.reverse()
+            self.cleanup += tempCleanupList
+            self.fail(e)
 
         network = Network.create(self.api_client,self.services["isolated_network"],self.child_do_admin_1.name,
                                      self.child_do_admin_1.domainid,networkofferingid=self.isolated_network_offering.id)
-
-        self.cleanup.append(self.child_do_admin_1)
-        self.cleanup.append(self.child_domain_1)
-        self.cleanup.append(self.child_do_admin_2)
-        self.cleanup.append(self.child_domain_2)
 
         virtual_machine = VirtualMachine.create(self.apiclient, self.services["virtual_machine"],accountid=self.child_do_admin_2.name,
                                                     domainid=self.child_do_admin_2.domainid, serviceofferingid=self.service_offering.id,
@@ -661,12 +667,9 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
                                 self.services["account"],
                                 domainid=self.domain.id
                                 )
-        self.debug("create account %s" % account_1.name)
-
         self.cleanup.append(account_1)
 
         self.debug("setting network limit of account: %s as 1" % account_1.name)
-
         update_resource_limit(
                               self.apiclient,
                               6, # Network
@@ -742,22 +745,25 @@ class TestRemoveNetworkFromVirtualMachine(cloudstackTestCase):
         # Create Accounts & networks
         cls.services["isolated_network"]["zoneid"] = cls.zone.id
         cls.services["shared_network"]["zoneid"] = cls.zone.id
+        cls._cleanup = []
 
         cls.account = Account.create(cls.api_client,cls.services["account"],domainid = cls.domain.id)
+        cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(cls.api_client,cls.services["service_offering"])
+        cls._cleanup.append(cls.service_offering)
 
         cls.virtual_machine = VirtualMachine.create(cls.api_client,cls.services["virtual_machine"],accountid=cls.account.name,
                                                     domainid=cls.account.domainid,serviceofferingid=cls.service_offering.id,
                                                     mode=cls.zone.networktype)
         # Create Shared Network Offering
         cls.isolated_network_offering = NetworkOffering.create(cls.api_client,cls.services["isolated_network_offering"])
+        cls._cleanup.append(cls.isolated_network_offering)
+
         # Enable Isolated Network offering
         cls.isolated_network_offering.update(cls.api_client, state='Enabled')
         cls.isolated_network = Network.create(cls.api_client,cls.services["isolated_network"],cls.account.name,
                                               cls.account.domainid,networkofferingid=cls.isolated_network_offering.id)
-
-        cls._cleanup = [cls.account,cls.service_offering,cls.isolated_network_offering,]
         return
 
     def setUp(self):
@@ -1139,21 +1145,25 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
         cls.services["virtual_machine"]["template"] = template.id
         # Create Accounts & networks
         cls.services["isolated_network"]["zoneid"] = cls.zone.id
+        cls._cleanup = []
         cls.account = Account.create(cls.api_client,cls.services["account"],domainid = cls.domain.id)
+        cls._cleanup.append(cls.account)
+
         cls.service_offering = ServiceOffering.create(cls.api_client,cls.services["service_offering"])
+        cls._cleanup.append(cls.service_offering)
 
         cls.virtual_machine = VirtualMachine.create(cls.api_client,cls.services["virtual_machine"],
                                                     accountid=cls.account.name,domainid=cls.account.domainid,
                                                     serviceofferingid=cls.service_offering.id,mode=cls.zone.networktype)
         # Create Shared Network Offering
         cls.isolated_network_offering = NetworkOffering.create(cls.api_client,cls.services["isolated_network_offering"],)
+        cls._cleanup.append(cls.isolated_network_offering)
+
         # Enable Isolated Network offering
         cls.isolated_network_offering.update(cls.api_client, state='Enabled')
 
         cls.isolated_network = Network.create(cls.api_client,cls.services["isolated_network"],cls.account.name,
                                               cls.account.domainid,networkofferingid=cls.isolated_network_offering.id)
-
-        cls._cleanup = [cls.account,cls.service_offering,cls.isolated_network_offering,]
         return
 
     def setUp(self):
@@ -1376,9 +1386,14 @@ class TestFailureScenariosRemoveNicFromVM(cloudstackTestCase):
         # Create Accounts & networks
         cls.services["isolated_network"]["zoneid"] = cls.zone.id
         cls.services["shared_network"]["zoneid"] = cls.zone.id
+        cls._cleanup = []
 
         cls.account = Account.create(cls.api_client,cls.services["account"],domainid = cls.domain.id)
+        cls.append(cls.account)
+
         cls.service_offering = ServiceOffering.create(cls.api_client,cls.services["service_offering"])
+        cls._cleanup.append(cls.service_offering)
+
         cls.virtual_machine = VirtualMachine.create(cls.api_client,cls.services["virtual_machine"],
                                                     accountid=cls.account.name,domainid=cls.account.domainid,
                                                     serviceofferingid=cls.service_offering.id,
@@ -1386,6 +1401,7 @@ class TestFailureScenariosRemoveNicFromVM(cloudstackTestCase):
 
         # Create Shared Network Offering
         cls.isolated_network_offering = NetworkOffering.create(cls.api_client, cls.services["isolated_network_offering"],)
+        cls._cleanup.append(cls.isolated_network_offering)
         # Enable Isolated Network offering
         cls.isolated_network_offering.update(cls.api_client, state='Enabled')
         cls.isolated_network = Network.create(cls.api_client,cls.services["isolated_network"],cls.account.name,
@@ -1393,8 +1409,6 @@ class TestFailureScenariosRemoveNicFromVM(cloudstackTestCase):
 
         # Add network to VM
         cls.virtual_machine.add_nic(cls.api_client, cls.isolated_network.id)
-
-        cls._cleanup = [cls.account,cls.service_offering,cls.isolated_network_offering,]
         return
 
     def setUp(self):
@@ -1556,10 +1570,13 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
         # Create Accounts & networks
         cls.services["isolated_network"]["zoneid"] = cls.zone.id
         cls.services["shared_network"]["zoneid"] = cls.zone.id
+        cls._cleanup = []
 
         cls.account = Account.create(cls.api_client, cls.services["account"], domainid = cls.domain.id)
+        cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offering"])
+        cls._cleanup.append(cls.service_offering)
 
         cls.virtual_machine = VirtualMachine.create(cls.api_client,cls.services["virtual_machine"],
                                                     accountid=cls.account.name,domainid=cls.account.domainid,
@@ -1569,6 +1586,7 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
 
         # Create Shared Network Offering
         cls.isolated_network_offering = NetworkOffering.create(cls.api_client, cls.services["isolated_network_offering"],)
+        cls._cleanup.append(cls.isolated_network_offering)
         # Enable Isolated Network offering
         cls.isolated_network_offering.update(cls.api_client, state='Enabled')
 
@@ -1576,8 +1594,6 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
                                               cls.account.name,cls.account.domainid,
                                               networkofferingid=cls.isolated_network_offering.id)
         cls.virtual_machine.add_nic(cls.api_client, cls.isolated_network.id)
-        cls._cleanup = [cls.account,cls.service_offering,
-                        cls.isolated_network_offering,]
         return
 
     def setUp(self):
@@ -1711,8 +1727,6 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
 
         self.debug("Creating new account")
         account = Account.create(self.apiclient,self.services["account"],domainid = self.domain.id)
-        self.debug("Created account %s" % account.name)
-
         self.cleanup.append(account)
 
         self.debug("Creating virtual machine in the account %s" % account.name)

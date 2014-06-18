@@ -113,11 +113,14 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         cls.services["template"] = cls.template.id
         cls.services["zoneid"] = cls.zone.id
 
+        cls._cleanup = []
+
         cls.account = Account.create(
             cls.api_client,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
         cls.services["domainid"] = cls.domain.id
@@ -126,11 +129,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
-
-        cls._cleanup = [
-            cls.service_offering,
-            cls.account,
-        ]
+        cls._cleanup.append(cls.service_offering)
         return
 
     def setUp(self):
@@ -221,10 +220,9 @@ class TestCreateAffinityGroup(cloudstackTestCase):
 
         self.user = Account.create(self.api_client, self.services["new_account"],
                                   domainid=self.domain.id)
+        self.cleanup.append(self.user)
 
         userapiclient = self.testClient.getUserApiClient(self.user.name, self.domain.name)
-
-        self.cleanup.append(self.user)
         aff_grp = self.create_aff_grp(api_client=userapiclient, aff_grp=self.services["host_anti_affinity"],
                             acc=self.user.name, domainid=self.domain.id)
         aff_grp.delete(userapiclient)
@@ -309,11 +307,14 @@ class TestListAffinityGroups(cloudstackTestCase):
         cls.services["template"] = cls.template.id
         cls.services["zoneid"] = cls.zone.id
 
+        cls._cleanup = []
+
         cls.account = Account.create(
             cls.api_client,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
         cls.services["domainid"] = cls.domain.id
@@ -322,12 +323,7 @@ class TestListAffinityGroups(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
-
-        cls.__cleanup = [
-            cls.service_offering,
-            cls.account,
-        ]
-
+        cls._cleanup.append(cls.service_offering)
         # Create multiple Affinity Groups
         return
 
@@ -558,11 +554,14 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         cls.services["template"] = cls.template.id
         cls.services["zoneid"] = cls.zone.id
 
+        cls._cleanup = []
+
         cls.account = Account.create(
             cls.api_client,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
         cls.services["domainid"] = cls.domain.id
@@ -571,12 +570,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
-
-        cls.__cleanup = [
-            cls.service_offering,
-            cls.account,
-        ]
-
+        cls._cleanup.append(cls.service_offering)
         # Create multiple Affinity Groups
         return
 
@@ -831,11 +825,14 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
         cls.services["template"] = cls.template.id
         cls.services["zoneid"] = cls.zone.id
 
+        cls._cleanup = []
+
         cls.account = Account.create(
             cls.api_client,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
         cls.services["domainid"] = cls.domain.id
@@ -844,12 +841,7 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
-
-        cls.__cleanup = [
-            cls.service_offering,
-            cls.account,
-        ]
-
+        cls._cleanup.append(cls.service_offering)
         # Create multiple Affinity Groups
         return
 
@@ -1118,11 +1110,14 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         cls.services["template"] = cls.template.id
         cls.services["zoneid"] = cls.zone.id
 
+        cls._cleanup = []
+
         cls.account = Account.create(
             cls.api_client,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
         cls.services["domainid"] = cls.domain.id
@@ -1131,13 +1126,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
-
-        cls.__cleanup = [
-            cls.service_offering,
-            cls.account,
-        ]
-
-        # Create multiple Affinity Groups
+        cls._cleanup.append(cls.service_offering)
         return
 
     def setUp(self):
@@ -1468,11 +1457,14 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         cls.services["template"] = cls.template.id
         cls.services["zoneid"] = cls.zone.id
 
+        cls._cleanup = []
+
         cls.account = Account.create(
             cls.api_client,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
         cls.services["domainid"] = cls.domain.id
@@ -1481,13 +1473,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
-
-        cls.__cleanup = [
-            cls.service_offering,
-            cls.account,
-        ]
-
-        # Create multiple Affinity Groups
+        cls._cleanup.append(cls.service_offering)
         return
 
     def setUp(self):
