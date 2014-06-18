@@ -161,4 +161,6 @@ public interface LoadBalancingRulesService {
     HealthCheckPolicy updateLBHealthCheckPolicy(long id, String customId, Boolean forDisplay);
 
     LoadBalancer findLbByStickinessId(long stickinessPolicyId);
+
+    Long findLBIdByHealtCheckPolicyId(long lbHealthCheckPolicy);
 }
