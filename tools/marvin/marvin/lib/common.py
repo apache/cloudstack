@@ -1322,7 +1322,7 @@ def isVmExpunged(apiclient, vmid, projectid=None, timeout=600):
             timeout -= 60
             time.sleep(60)
         except Exception:
-           vmExpunged = True
+            vmExpunged = True
             break
      #end while
     return vmExpunged
