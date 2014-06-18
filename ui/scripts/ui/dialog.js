@@ -271,6 +271,11 @@
                         context: args.context,
                         response: {
                             success: function(args) {
+                            	if (args.data == undefined || args.data.length == 0) {
+                            		var $option = $('<option>')
+                                    .appendTo($input)                                    
+                                    .html("");
+                            	} else {
                                 $(args.data).each(function() {
                                     var id;
                                     if (field.valueField)
@@ -290,6 +295,7 @@
                                             .data('json-obj', this)
                                             .html(_s(desc));
                                 });
+                            	}
 
                                 if (field.defaultValue) {
                                     $input.val(_s(strOrFunc(field.defaultValue, args.data)));
