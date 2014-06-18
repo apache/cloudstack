@@ -178,6 +178,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Journal;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
+import com.cloud.utils.ReflectionUse;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
@@ -3238,7 +3239,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             this.name = name;
             this.state = state;
             this.vm = vm;
-            this.hostUuid = host;
+            hostUuid = host;
         }
 
         public AgentVmInfo(String name, VMInstanceVO vm, State state) {
@@ -5124,6 +5125,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new VmJobVirtualMachineOutcome((VmWorkJobVO)result[0], vm.getId());
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateStart(VmWorkStart work) throws Exception {
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
@@ -5135,6 +5137,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateStop(VmWorkStop work) throws Exception {
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
@@ -5146,6 +5149,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateMigrate(VmWorkMigrate work) throws Exception {
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
@@ -5157,6 +5161,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateMigrateAway(VmWorkMigrateAway work) throws Exception {
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
@@ -5174,6 +5179,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateMigrateWithStorage(VmWorkMigrateWithStorage work) throws Exception {
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
@@ -5187,6 +5193,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateMigrateForScale(VmWorkMigrateForScale work) throws Exception {
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
@@ -5200,6 +5207,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateReboot(VmWorkReboot work) throws Exception {
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
@@ -5210,6 +5218,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateAddVmToNetwork(VmWorkAddVmToNetwork work) throws Exception {
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
@@ -5224,6 +5233,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(nic));
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateRemoveNicFromVm(VmWorkRemoveNicFromVm work) throws Exception {
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
@@ -5236,6 +5246,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _jobMgr.marshallResultObject(result));
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateRemoveVmFromNetwork(VmWorkRemoveVmFromNetwork work) throws Exception {
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
@@ -5248,6 +5259,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _jobMgr.marshallResultObject(result));
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateReconfigure(VmWorkReconfigure work) throws Exception {
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
@@ -5262,6 +5274,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateStorageMigration(VmWorkStorageMigration work) throws Exception {
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {

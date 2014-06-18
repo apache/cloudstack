@@ -73,6 +73,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
+import com.cloud.utils.ReflectionUse;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.EntityManager;
@@ -1043,23 +1044,27 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 vmId);
     }
 
+    @ReflectionUse
     public Pair<JobInfo.Status, String> orchestrateCreateVMSnapshot(VmWorkCreateVMSnapshot work) throws Exception {
         VMSnapshot snapshot = orchestrateCreateVMSnapshot(work.getVmId(), work.getVmSnapshotId(), work.isQuiesceVm());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
                 _jobMgr.marshallResultObject(new Long(snapshot.getId())));
     }
 
+    @ReflectionUse
     public Pair<JobInfo.Status, String> orchestrateDeleteVMSnapshot(VmWorkDeleteVMSnapshot work) {
         boolean result = orchestrateDeleteVMSnapshot(work.getVmSnapshotId());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
                 _jobMgr.marshallResultObject(result));
     }
 
+    @ReflectionUse
     public Pair<JobInfo.Status, String> orchestrateRevertToVMSnapshot(VmWorkRevertToVMSnapshot work) throws Exception {
         orchestrateRevertToVMSnapshot(work.getVmSnapshotId());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
 
+    @ReflectionUse
     public Pair<JobInfo.Status, String> orchestrateDeleteAllVMSnapshots(VmWorkDeleteAllVMSnapshots work) {
         boolean result = orchestrateDeleteAllVMSnapshots(work.getVmId(), work.getSnapshotType());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,

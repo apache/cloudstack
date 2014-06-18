@@ -120,6 +120,7 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
+import com.cloud.utils.ReflectionUse;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -2479,6 +2480,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 snapshotId);
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateAttachVolumeToVM(VmWorkAttachVolume work) throws Exception {
         Volume vol = orchestrateAttachVolumeToVM(work.getVmId(), work.getVolumeId(), work.getDeviceId());
 
@@ -2486,12 +2488,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _jobMgr.marshallResultObject(new Long(vol.getId())));
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateDetachVolumeFromVM(VmWorkDetachVolume work) throws Exception {
         Volume vol = orchestrateDetachVolumeFromVM(work.getVmId(), work.getVolumeId());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
                 _jobMgr.marshallResultObject(new Long(vol.getId())));
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateResizeVolume(VmWorkResizeVolume work) throws Exception {
         Volume vol = orchestrateResizeVolume(work.getVolumeId(), work.getCurrentSize(), work.getNewSize(),
                 work.getNewServiceOfferingId(), work.isShrinkOk());
@@ -2499,12 +2503,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _jobMgr.marshallResultObject(new Long(vol.getId())));
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateMigrateVolume(VmWorkMigrateVolume work) throws Exception {
         Volume newVol = orchestrateMigrateVolume(work.getVolumeId(), work.getDestPoolId(), work.isLiveMigrate());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
                 _jobMgr.marshallResultObject(new Long(newVol.getId())));
     }
 
+    @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateTakeVolumeSnapshot(VmWorkTakeVolumeSnapshot work) throws Exception {
         Account account = _accountDao.findById(work.getAccountId());
         orchestrateTakeVolumeSnapshot(work.getVolumeId(), work.getPolicyId(), work.getSnapshotId(),
