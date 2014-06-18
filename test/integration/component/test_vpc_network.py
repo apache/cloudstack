@@ -294,8 +294,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        self.cleanup.insert(0, self.account)
+        self.cleanup = [self.account, ]
         return
 
     def tearDown(self):
@@ -1056,8 +1055,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        self.cleanup.insert(0, self.account)
+        self.cleanup = [self.account, ]
         return
 
     def tearDown(self):
@@ -1516,6 +1514,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                 )
+        self.cleanup.append(account)
 
         # Creating network using the network offering created
         self.debug("Creating network from diff account than VPC")
@@ -1584,8 +1583,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        self.cleanup.insert(0, self.account)
+        self.cleanup = [self.account, ]
         return
 
     def tearDown(self):
