@@ -235,6 +235,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
                             self.services["account"],
                             domainid=self.domain.id
                             )
+            self.cleanup.append(self.account)
 
             self.api_client_user = self.testClient.getUserApiClient(
                                             UserName=self.account.name,
@@ -597,6 +598,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
                             domainid=cls.domain.id,
                             admin=True
                             )
+        cls._cleanup = [cls.account, ]
 
         cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
@@ -615,8 +617,6 @@ class TestAssociatePublicIp(cloudstackTestCase):
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
                                     )
-
-        cls._cleanup = [cls.account]
         return
 
     @classmethod
@@ -907,6 +907,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
+        cls._cleanup = []
 
         cls.account = Account.create(
                             cls.api_client,
@@ -914,11 +915,13 @@ class TestDisassociatePublicIp(cloudstackTestCase):
                             domainid=cls.domain.id,
                             admin=True
                             )
+        cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
@@ -928,6 +931,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
 
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
+        cls._cleanup.append(cls.network_offering)
 
         cls.network = Network.create(
                                     cls.api_client,
@@ -947,12 +951,6 @@ class TestDisassociatePublicIp(cloudstackTestCase):
                                                     networkids = [cls.network.id],
                                                     mode=cls.services['mode']
                                                     )
-
-        cls._cleanup = [
-                        cls.account,
-                        cls.service_offering,
-                        cls.network_offering
-                       ]
         return
 
     @classmethod
@@ -1177,6 +1175,7 @@ class TestDeleteAccount(cloudstackTestCase):
                             domainid=self.domain.id,
                             admin=True
                             )
+            self.cleanup.append(self.account)
             portable_ip_range_services["regionid"] = self.region.id
             #create new portable ip range
             new_portable_ip_range = PortablePublicIpRange.create(self.apiclient,
@@ -1200,7 +1199,6 @@ class TestDeleteAccount(cloudstackTestCase):
                                     )
             self.cleanup.append(self.network_offering)
         except Exception as e:
-            self.cleanup.append(self.account)
             self.fail("Exception in setupClass: %s" % e)
         return
 
@@ -1353,6 +1351,8 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
         cls.services["vm2"]["zoneid"] = cls.zone.id
         cls.services["vm2"]["template"] = template.id
 
+        cls._cleanup = []
+
         # Set Zones and Network offerings
         cls.account = Account.create(
                             cls.api_client,
@@ -1360,12 +1360,14 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
                             domainid=cls.domain.id,
                             admin=True
                             )
+        cls._cleanup.append(cls.account)
 
         cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
                                             conservemode=False
                                             )
+        cls._cleanup.append(cls.network_offering)
 
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
@@ -1407,8 +1409,6 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
                                             serviceofferingid=cls.service_offering.id,
                                             networkids = [cls.network2.id],
                                             )
-        cls._cleanup = [cls.account, cls.network_offering]
-
         return
 
     @classmethod
