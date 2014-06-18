@@ -1748,6 +1748,7 @@
             $.each(listViewData.actions, function(actionName, action) {
                 if (!action.isHeader || (
                     action.preFilter && !action.preFilter({
+                        id: listViewData.id,
                         context: $listView.data('view-args').context ? $listView.data('view-args').context : cloudStack.context
                     })
                 )) return true;
