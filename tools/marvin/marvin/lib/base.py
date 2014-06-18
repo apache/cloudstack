@@ -20,11 +20,10 @@
 """
 
 import marvin
-from utils import is_server_ssh_ready, random_gen
 from marvin.cloudstackAPI import *
 from marvin.codes import (FAILED, FAIL, PASS, RUNNING, STOPPED,
                           STARTING, DESTROYED, EXPUNGING,
-                          STOPPING)
+                          STOPPING, BACKED_UP, BACKING_UP)
 from marvin.cloudstackException import GetDetailExceptionInfo
 from marvin.lib.utils import validateList, is_server_ssh_ready, random_gen
 # Import System modules
@@ -946,6 +945,12 @@ class Volume:
 class Snapshot:
     """Manage Snapshot Lifecycle
     """
+    '''Class level variables'''
+    # Variables denoting possible Snapshot states - start
+    BACKED_UP = BACKED_UP
+    BACKING_UP = BACKING_UP
+    # Variables denoting possible Snapshot states - end
+
     def __init__(self, items):
         self.__dict__.update(items)
 
@@ -979,6 +984,31 @@ class Snapshot:
             cmd.listall = True
         return(apiclient.listSnapshots(cmd))
 
+    def validateState(self, apiclient, snapshotstate, timeout=600):
+        """Check if snapshot is in required state
+           returnValue: List[Result, Reason]
+                 @Result: PASS if snapshot is in required state,
+                          else FAIL
+                 @Reason: Reason for failure in case Result is FAIL
+        """
+        isSnapshotInRequiredState = False
+        try:
+            while timeout >= 0:
+                snapshots = Snapshot.list(apiclient, id=self.id)
+                assert validateList(snapshots)[0] == PASS, "snapshots list\
+                        validation failed"
+                if str(snapshots[0].state).lower() == snapshotstate:
+                    isSnapshotInRequiredState = True
+                    break
+                timeout -= 60
+                time.sleep(60)
+            #end while
+            if isSnapshotInRequiredState:
+                return[PASS, None]
+            else:
+                raise Exception("Snapshot not in required state")
+        except Exception as e:
+            return [FAIL, e]
 
 class Template:
     """Manage template life cycle"""

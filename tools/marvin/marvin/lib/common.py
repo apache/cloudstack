@@ -62,12 +62,29 @@ from marvin.cloudstackAPI import (listConfigurations,
 
 
 from marvin.sshClient import SshClient
-from marvin.codes import (PASS, ISOLATED_NETWORK, VPC_NETWORK,
-                          BASIC_ZONE, FAIL, NAT_RULE, STATIC_NAT_RULE, FAILED)
+from marvin.codes import (PASS, FAILED, ISOLATED_NETWORK, VPC_NETWORK,
+                          BASIC_ZONE, FAIL, NAT_RULE, STATIC_NAT_RULE,
+                          RESOURCE_PRIMARY_STORAGE, RESOURCE_SECONDARY_STORAGE,
+                          RESOURCE_CPU, RESOURCE_MEMORY)
+from marvin.lib.utils import (validateList, xsplit, get_process_status)
+from marvin.lib.base import (PhysicalNetwork,
+                             PublicIPAddress,
+                             NetworkOffering,
+                             NATRule,
+                             StaticNATRule,
+                             Volume,
+                             Account,
+                             Project,
+                             Snapshot,
+                             NetScaler,
+                             VirtualMachine,
+                             FireWallRule,
+                             Template,
+                             Network,
+                             Host,
+                             Resources,
+                             Configurations)
 import random
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.codes import PASS
 
 
 # Import System modules
@@ -1182,3 +1199,111 @@ def getPortableIpRangeServices(config):
         services = FAILED
 
     return services
+
+
+def uploadVolume(apiclient, zoneid, account, services):
+    try:
+        # Upload the volume
+        volume = Volume.upload(apiclient, services["volume"],
+                                   zoneid=zoneid, account=account.name,
+                                   domainid=account.domainid, url=services["url"])
+
+        volume.wait_for_upload(apiclient)
+
+        # Check List Volume response for newly created volume
+        volumes = Volume.list(apiclient, id=volume.id,
+                                  zoneid=zoneid, listall=True)
+        validationresult = validateList(volumes)
+        assert validationresult[0] == PASS,\
+                            "volumes list validation failed: %s" % validationresult[2]
+        assert str(volumes[0].state).lower() == "uploaded",\
+                    "Volume state should be 'uploaded' but it is %s" % volumes[0].state
+    except Exception as e:
+        return [FAIL, e]
+    return [PASS, volume]
+
+def matchResourceCount(apiclient, expectedCount, resourceType,
+                              accountid=None, projectid=None):
+    """Match the resource count of account/project with the expected
+    resource count"""
+    try:
+        resourceholderlist = None
+        if accountid:
+            resourceholderlist = Account.list(apiclient, id=accountid)
+        elif projectid:
+            resourceholderlist = Project.list(apiclient, id=projectid, listall=True)
+        validationresult = validateList(resourceholderlist)
+        assert validationresult[0] == PASS,\
+               "accounts list validation failed"
+        if resourceType == RESOURCE_PRIMARY_STORAGE:
+            resourceCount = resourceholderlist[0].primarystoragetotal
+        elif resourceType == RESOURCE_SECONDARY_STORAGE:
+            resourceCount = resourceholderlist[0].secondarystoragetotal
+        elif resourceType == RESOURCE_CPU:
+            resourceCount = resourceholderlist[0].cputotal
+        elif resourceType == RESOURCE_MEMORY:
+            resourceCount = resourceholderlist[0].memorytotal
+        assert str(resourceCount) == str(expectedCount),\
+                "Resource count %s should match with the expected resource count %s" %\
+                (resourceCount, expectedCount)
+    except Exception as e:
+        return [FAIL, e]
+    return [PASS, None]
+
+def createSnapshotFromVirtualMachineVolume(apiclient, account, vmid):
+    """Create snapshot from volume"""
+
+    try:
+        volumes = Volume.list(apiclient, account=account.name,
+                              domainid=account.domainid, virtualmachineid=vmid)
+        validationresult = validateList(volumes)
+        assert validateList(volumes)[0] == PASS,\
+                            "List volumes should return a valid response"
+        snapshot = Snapshot.create(apiclient, volume_id=volumes[0].id,
+                                   account=account.name, domainid=account.domainid)
+        snapshots = Snapshot.list(apiclient, id=snapshot.id,
+                                      listall=True)
+        validationresult = validateList(snapshots)
+        assert validationresult[0] == PASS,\
+               "List snapshot should return a valid list"
+    except Exception as e:
+       return[FAIL, e]
+    return [PASS, snapshot]
+
+def isVmExpunged(apiclient, vmid, projectid=None, timeout=600):
+    """Verify if VM is expunged or not"""
+    vmExpunged= False
+    while timeout>=0:
+        try:
+            vms = VirtualMachine.list(apiclient, id=vmid, projectid=projectid)
+            if vms is None:
+                vmExpunged = True
+                break
+            timeout -= 60
+            time.sleep(60)
+        except Exception:
+            vmExpunged = True
+            break
+     #end while
+    return vmExpunged
+
+def isDomainResourceCountEqualToExpectedCount(apiclient, domainid, expectedcount,
+                                              resourcetype):
+    """Get the resource count of specific domain and match
+    it with the expected count
+    Return list [isExceptionOccured, reasonForException, isResourceCountEqual]"""
+    isResourceCountEqual = False
+    isExceptionOccured = False
+    reasonForException = None
+    try:
+        response = Resources.updateCount(apiclient, domainid=domainid,
+                                         resourcetype=resourcetype)
+    except Exception as e:
+        reasonForException = "Failed while updating resource count: %s" % e
+        isExceptionOccured = True
+        return [isExceptionOccured, reasonForException, isResourceCountEqual]
+
+    resourcecount = (response[0].resourcecount / (1024**3))
+    if resourcecount == expectedcount:
+        isResourceCountEqual = True
+    return [isExceptionOccured, reasonForException, isResourceCountEqual]
