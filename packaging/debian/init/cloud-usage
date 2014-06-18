@@ -42,15 +42,31 @@ DAEMON="/usr/bin/jsvc"
 unset OPTIONS
 [ -r /etc/default/"$SHORTNAME" ] && source /etc/default/"$SHORTNAME"
 
-# The first existing directory is used for JAVA_HOME (if JAVA_HOME is not defined in $DEFAULT)
-JDK_DIRS="/usr/lib/jvm/java-7-openjdk-amd64 /usr/lib/jvm/java-7-openjdk-i386 /usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-openjdk-i386 /usr/lib/jvm/java-6-openjdk-amd64 /usr/lib/jvm/java-6-sun"
+setJavaHome() {
+  # use $JAVA_HOME if defined
+  if [ -n "$JAVA_HOME" ] ; then
+    return
+  fi
 
-for jdir in $JDK_DIRS; do
-    if [ -r "$jdir/bin/java" -a -z "${JAVA_HOME}" ]; then
-        JAVA_HOME="$jdir"
-    fi
-done
-export JAVA_HOME
+  # try javac first
+  java=$(which javac 2>/dev/null || :)
+
+  # try java if javac is not found
+  if [ -z "$java" ] ; then
+    java=$(which java 2>/dev/null || :)
+  fi
+
+  if [ -n "$java" ] ; then
+    JAVA_HOME=$(dirname $(dirname $(readlink -e $java)))
+    export JAVA_HOME
+    return
+  fi
+
+  # didnt find java home. exiting with error
+  exit 1
+}
+
+setJavaHome
 
 UCP=`ls /usr/share/cloudstack-usage/lib/*.jar | tr '\n' ':' | sed s'/.$//'`
 PCP=`ls /usr/share/cloudstack-usage/plugins/*.jar 2>/dev/null | tr '\n' ':' | sed s'/.$//'`
