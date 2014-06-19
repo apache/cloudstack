@@ -2727,8 +2727,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean securityGroupEnabled = false;
         boolean vpcNetwork = false;
         for (NetworkVO network : networkList) {
-            if ((network.getDataCenterId() != zone.getId()) && !network.isStrechedL2Network()) {
-                throw new InvalidParameterValueException("Network id=" + network.getId() + " doesn't belong to zone " + zone.getId());
+            if ((network.getDataCenterId() != zone.getId())) {
+                if (!network.isStrechedL2Network()) {
+                    throw new InvalidParameterValueException("Network id=" + network.getId() +
+                            " doesn't belong to zone " + zone.getId());
+                }
+
+                NetworkOffering ntwkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+                Long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), ntwkOffering.getTags(),
+                        ntwkOffering.getTrafficType());
+                if (physicalNetworkId == null) {
+                    s_logger.warn("Network id " + network.getId() + " could not be streched to the zone " + zone.getId()
+                            + " as valid phyical network could not be found");
+                    throw new InvalidParameterValueException("Network in which is VM getting deployed could not be" +
+                            " streched to the zone.");
+                }
+
+                String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Connectivity);
+                if (!_networkModel.isProviderEnabledInPhysicalNetwork(physicalNetworkId, provider)) {
+                    s_logger.warn("Network id " + network.getId() + " could not be streched to the zone " +zone.getId()
+                            + " as Connectivity service provider is not enabled in the zone " + zone.getId());
+                    throw new InvalidParameterValueException("Network in which is VM getting deployed could not be" +
+                            " streched to the zone.");
+                }
             }
 
             //relax the check if the caller is admin account
