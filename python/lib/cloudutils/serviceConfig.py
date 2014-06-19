@@ -671,6 +671,7 @@ class cloudAgentConfig(serviceCfgBase):
             cfo.addEntry("zone", self.syscfg.env.zone)
             cfo.addEntry("pod", self.syscfg.env.pod)
             cfo.addEntry("cluster", self.syscfg.env.cluster)
+            cfo.addEntry("hypervisor.type", self.syscfg.env.hypervisor)
             cfo.addEntry("port", "8250")
             cfo.addEntry("private.network.device", self.syscfg.env.nics[0])
             cfo.addEntry("public.network.device", self.syscfg.env.nics[1])

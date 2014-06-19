@@ -203,6 +203,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             parameters += " --pubNic=" + kvmPublicNic;
             parameters += " --prvNic=" + kvmPrivateNic;
             parameters += " --guestNic=" + kvmGuestNic;
+            parameters += " --hypervisor=" + cluster.getHypervisorType().toString().toLowerCase();
 
             SSHCmdHelper.sshExecuteCmd(sshConnection, "cloudstack-setup-agent " + parameters, 3);
 
