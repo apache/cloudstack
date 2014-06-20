@@ -340,12 +340,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String downloadPath = determineStorageTemplatePath(storagePath, destPath);
             final File downloadDirectory = _storage.getFile(downloadPath);
 
-            if (!downloadDirectory.mkdirs()) {
-                final String errMsg = "Unable to create directory " + downloadPath + " to copy from S3 to cache.";
-                s_logger.error(errMsg);
-                return new CopyCmdAnswer(errMsg);
-            } else {
+            if (downloadDirectory.exists()) {
                 s_logger.debug("Directory " + downloadPath + " already exists");
+            } else {
+                if (!downloadDirectory.mkdirs()) {
+                    final String errMsg = "Unable to create directory " + downloadPath + " to copy from S3 to cache.";
+                    s_logger.error(errMsg);
+                    return new CopyCmdAnswer(errMsg);
+                }
             }
 
             File destFile = S3Utils.getFile(s3, s3.getBucketName(), srcData.getPath(), downloadDirectory, new FileNamingStrategy() {
