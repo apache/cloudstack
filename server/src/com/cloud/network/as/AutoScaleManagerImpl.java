@@ -108,6 +108,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -370,7 +371,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
          * For ex. if projectId is given as a string instead of an long value, this
          * will be throwing an error.
          */
-        dispatchChainFactory.getStandardDispatchChain().dispatch(new DispatchTask(new DeployVMCmd(), deployParams));
+        dispatchChainFactory.getStandardDispatchChain().dispatch(new DispatchTask(ComponentContext.inject(DeployVMCmd.class), deployParams));
 
         AutoScaleVmProfileVO profileVO =
             new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
