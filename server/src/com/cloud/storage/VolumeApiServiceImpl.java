@@ -1972,7 +1972,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
                 if (storeForDataStoreScope.getScopeId().equals(vmClusterId)) {
                     return false;
-            }
+                } else {
+                    return true;
+                }
             } else if (storeForDataStoreScope.getScopeType() == ScopeType.HOST
                     && (storeForRootStoreScope.getScopeType() == ScopeType.CLUSTER || storeForRootStoreScope.getScopeType() == ScopeType.ZONE)) {
                 Long hostId = _vmInstanceDao.findById(rootVolumeOfVm.getInstanceId()).getHostId();
