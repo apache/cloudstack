@@ -3300,7 +3300,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             this.name = name;
             this.state = state;
             this.vm = vm;
-            this.hostUuid = host;
+            hostUuid = host;
         }
 
         public AgentVmInfo(String name, VMInstanceVO vm, State state) {
