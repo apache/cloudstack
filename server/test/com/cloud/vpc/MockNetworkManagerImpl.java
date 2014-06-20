@@ -404,11 +404,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#addTrafficTypeToPhysicalNetwork(java.lang.Long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+     * @see com.cloud.network.NetworkService#addTrafficTypeToPhysicalNetwork(java.lang.Long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
     public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, String xenLabel, String kvmLabel, String vmwareLabel,
-        String simulatorLabel, String vlan, String hypervLabel) {
+        String simulatorLabel, String vlan, String hypervLabel, String ovm3Label) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -426,7 +426,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      * @see com.cloud.network.NetworkService#updatePhysicalNetworkTrafficType(java.lang.Long, java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
-    public PhysicalNetworkTrafficType updatePhysicalNetworkTrafficType(Long id, String xenLabel, String kvmLabel, String vmwareLabel, String hypervLabel) {
+    public PhysicalNetworkTrafficType updatePhysicalNetworkTrafficType(Long id, String xenLabel, String kvmLabel, String vmwareLabel, String hypervLabel, String ovm3Label) {
         // TODO Auto-generated method stub
         return null;
     }

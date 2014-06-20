@@ -286,7 +286,14 @@ public class SnapshotObject implements SnapshotInfo {
             } else if (answer instanceof CopyCmdAnswer) {
                 SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CopyCmdAnswer)answer).getNewData();
                 snapshotStore.setInstallPath(snapshotTO.getPath());
-                snapshotStore.setSize(snapshotTO.getPhysicalSize());
+                // DEBUG [o.a.c.s.s.SnapshotServiceImpl] (Job-Executor-10:ctx-edd5ff44 ctx-822f2b0b) Failed to update snapshot state
+                // java.lang.NullPointerException
+                //         at org.apache.cloudstack.storage.snapshot.SnapshotObject.processEvent(SnapshotObject.java:289)
+                if (snapshotTO.getPhysicalSize() == null) {
+                    snapshotStore.setSize(0L);
+                } else {
+                    snapshotStore.setSize(snapshotTO.getPhysicalSize());
+                }
                 if (snapshotTO.getParentSnapshotPath() == null) {
                     snapshotStore.setParentSnapshotId(0L);
                 }

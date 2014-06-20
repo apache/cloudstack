@@ -1211,5 +1211,17 @@ cloudStack.docs = {
     helpLdapGroupName: {
         desc: 'The group name from which you want to import LDAP users',
         externalLink: ''
+    },
+    helpOvm3pool: {
+        desc: 'Pool the Ovm3 nodes in this cluster, required for vm node migrations',
+        externalLink: ''
+    },
+    helpOvm3cluster: {
+        desc: 'Use the native Ovm3 OCFS2 clustering, required for native HA and requires pooling',
+        externalLink: ''
+    },
+    helpOvm3Vip: {
+        desc: 'The VIP used by the pool and cluster',
+        externalLink: ''
     }
 };

@@ -2631,6 +2631,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 result = false;
             }
         } else {
+            s_logger.warn("answer was null or no CHeckAnswerwhile ssh to the VM: " + answer.getDetails());
             result = false;
         }
         if (result == false) {
@@ -2653,6 +2654,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
 
         if (!result) {
+            s_logger.warn("no result while ssh to the VM");
             return result;
         }
 
@@ -2663,11 +2665,13 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 s_logger.warn("Unable to get the template/scripts version of router " + router.getInstanceName() + " due to: " + versionAnswer.getDetails());
                 result = false;
             } else {
+                s_logger.warn("Domrversion for VM: " + versionAnswer.getTemplateVersion());
                 router.setTemplateVersion(versionAnswer.getTemplateVersion());
                 router.setScriptsVersion(versionAnswer.getScriptsVersion());
                 router = _routerDao.persist(router, guestNetworks);
             }
         } else {
+            s_logger.warn("no domrversion for VM: " + answer.getDetails());
             result = false;
         }
 

@@ -82,6 +82,10 @@ public class ClusterResponse extends BaseResponse {
     @Param(description = "The memory overcommit ratio of the cluster")
     private String memoryovercommitratio;
 
+    @SerializedName("ovm3vip")
+    @Param(description = "Ovm3 VIP to use for pooling and/or clustering")
+    private String ovm3vip;
+
     public String getId() {
         return id;
     }
@@ -184,5 +188,13 @@ public class ClusterResponse extends BaseResponse {
 
     public String getMemoryOvercommitRatio() {
         return memoryovercommitratio;
+    }
+
+    public void setOvm3Vip(String ovm3vip) {
+        this.ovm3vip = ovm3vip;
+    }
+
+    public String getOvm3Vip() {
+        return ovm3vip;
     }
 }

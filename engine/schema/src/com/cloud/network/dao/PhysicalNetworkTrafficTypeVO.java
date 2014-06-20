@@ -54,6 +54,10 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
     @Column(name = "kvm_network_label")
     private String kvmNetworkLabel;
 
+    /* should perhaps have it's own label ? */
+    @Column(name = "ovm_network_label")
+    private String ovm3NetworkLabel;
+
     @Column(name = "vmware_network_label")
     private String vmwareNetworkLabel;
 
@@ -70,7 +74,7 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
     }
 
     public PhysicalNetworkTrafficTypeVO(long physicalNetworkId, TrafficType trafficType, String xenLabel, String kvmLabel, String vmwareLabel, String simulatorLabel,
-            String vlan, String hypervLabel) {
+            String vlan, String hypervLabel, String ovm3Label) {
         this.physicalNetworkId = physicalNetworkId;
         this.trafficType = trafficType;
         this.xenNetworkLabel = xenLabel;
@@ -78,6 +82,7 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
         this.vmwareNetworkLabel = vmwareLabel;
         this.simulatorNetworkLabel = simulatorLabel;
         this.hypervNetworkLabel = hypervLabel;
+        this.ovm3NetworkLabel = ovm3Label;
         this.setVlan(vlan);
         this.uuid = UUID.randomUUID().toString();
     }
@@ -160,4 +165,13 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
         return hypervNetworkLabel;
     }
 
+    public void setOvm3NetworkLabel(String ovm3NetworkLabel) {
+        this.ovm3NetworkLabel = ovm3NetworkLabel;
+
+    }
+
+    @Override
+    public String getOvm3NetworkLabel() {
+        return ovm3NetworkLabel;
+    }
 }
