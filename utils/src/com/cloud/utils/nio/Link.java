@@ -32,6 +32,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.security.KeyStore;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -46,6 +47,7 @@ import javax.net.ssl.TrustManagerFactory;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.db.DbProperties;
 
 /**
  */
@@ -412,7 +414,8 @@ public class Link {
 
         File confFile = PropertiesUtil.findConfigFile("db.properties");
         if (null != confFile && !isClient) {
-            char[] passphrase = "vmops.com".toCharArray();
+            final Properties dbProps = DbProperties.getDbProperties();
+            char[] passphrase = dbProps.getProperty("db.cloud.keyStorePassphrase").toCharArray();
             String confPath = confFile.getParent();
             String keystorePath = confPath + "/cloud.keystore";
             if (new File(keystorePath).exists()) {
