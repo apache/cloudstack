@@ -621,9 +621,16 @@ class TestVolumes(cloudstackTestCase):
         # resize the data disk
         self.debug("Resize Volume ID: %s" % self.volume.id)
 
+        self.services["disk_offering"]["disksize"] = 20
+        disk_offering_20_GB = DiskOffering.create(
+                                    self.apiclient,
+                                    self.services["disk_offering"]
+                                    )
+        self.cleanup.append(disk_offering_20_GB)
+
         cmd                = resizeVolume.resizeVolumeCmd()
         cmd.id             = self.volume.id
-        cmd.diskofferingid = self.services['customresizeddiskofferingid']
+        cmd.diskofferingid = disk_offering_20_GB.id
 
         self.apiClient.resizeVolume(cmd)
 
@@ -636,7 +643,7 @@ class TestVolumes(cloudstackTestCase):
                                                 type='DATADISK'
                                                 )
             for vol in list_volume_response:
-                if vol.id == self.volume.id and vol.size == 3221225472L and vol.state == 'Ready':
+                if vol.id == self.volume.id and int(vol.size) == (int(disk_offering_20_GB.disksize) * (1024** 3)) and vol.state == 'Ready':
                     success = True
             if success:
                 break
@@ -650,22 +657,16 @@ class TestVolumes(cloudstackTestCase):
                          "Check if the data volume resized appropriately"
                          )
 
-        # resize the root disk
-        self.debug("Resize Root for : %s" % self.virtual_machine.id)
-
-        # get root vol from created vm
-        list_volume_response = Volume.list(
-                                            self.apiClient,
-                                            virtualmachineid=self.virtual_machine.id,
-                                            type='ROOT',
-                                            listall=True
-                                            )
-
-        rootvolume = list_volume_response[0]
+        self.services["disk_offering"]["disksize"] = 10
+        disk_offering_10_GB = DiskOffering.create(
+                                    self.apiclient,
+                                    self.services["disk_offering"]
+                                    )
+        self.cleanup.append(disk_offering_10_GB)
 
         cmd                = resizeVolume.resizeVolumeCmd()
-        cmd.id             = rootvolume.id
-        cmd.size           = 10
+        cmd.id             = self.volume.id
+        cmd.diskofferingid = disk_offering_10_GB.id
         cmd.shrinkok       = "true"
 
         self.apiClient.resizeVolume(cmd)
@@ -675,10 +676,10 @@ class TestVolumes(cloudstackTestCase):
         while count < 3:
             list_volume_response = Volume.list(
                                                 self.apiClient,
-                                                id=rootvolume.id
+                                                id=self.volume.id
                                                 )
             for vol in list_volume_response:
-                if vol.id == rootvolume.id and vol.size == 10737418240L and vol.state == 'Ready':
+                if vol.id == self.volume.id and int(vol.size) == (int(disk_offering_10_GB.disksize) * (1024 ** 3)) and vol.state == 'Ready':
                     success = True
             if success:
                 break
