@@ -20,7 +20,6 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -37,6 +36,9 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -507,8 +509,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -1171,29 +1171,28 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         List<HostVO> allHosts = null;
         Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
-        boolean zoneWideStoragePool = false;
+
         if (canMigrateWithStorage) {
-            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, null, null, null, srcHost.getHypervisorType(),
-                    srcHost.getHypervisorVersion());
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, null, null, null,
+                    srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
             allHosts = allHostsPair.first();
             allHosts.remove(srcHost);
-
-            // Check if the host has storage pools for all the volumes of the vm to be migrated.
-            for (Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
-                Host host = iterator.next();
-                Map<Volume, List<StoragePool>> volumePools = findSuitablePoolsForVolumes(vmProfile, host);
-                if (volumePools.isEmpty()) {
-                    iterator.remove();
-                } else {
-                    if (srcHost.getHypervisorType() == HypervisorType.VMware || srcHost.getHypervisorType() == HypervisorType.KVM) {
-                        zoneWideStoragePool = checkForZoneWideStoragePool(volumePools);
-                    }
-                    if ((!host.getClusterId().equals(srcHost.getClusterId()) || usesLocal) && !zoneWideStoragePool) {
-                        requiresStorageMotion.put(host, true);
+            for (VolumeVO volume : volumes) {
+                Long volClusterId = _poolDao.findById(volume.getPoolId()).getClusterId();
+                // only check for volume which are not in zone wide primary store, as only those may require storage motion
+                if (volClusterId != null) {
+                    for (Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
+                        Host host = iterator.next();
+                        if (!host.getClusterId().equals(volClusterId) || usesLocal) {
+                            if (hasSuitablePoolsForVolume(volume, host, vmProfile)) {
+                                requiresStorageMotion.put(host, true);
+                            } else {
+                                iterator.remove();
+                            }
+                        }
                     }
                 }
             }
-
             plan = new DataCenterDeployment(srcHost.getDataCenterId(), null, null, null, null, null);
         } else {
             Long cluster = srcHost.getClusterId();
@@ -1244,50 +1243,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(otherHosts, suitableHosts, requiresStorageMotion);
     }
 
-    private boolean checkForZoneWideStoragePool(Map<Volume, List<StoragePool>> volumePools) {
-        boolean zoneWideStoragePool = false;
-        Collection<List<StoragePool>> pools = volumePools.values();
-        List<StoragePool> aggregatePoolList = new ArrayList<StoragePool>();
-        for (Iterator<List<StoragePool>> volumePoolsIter = pools.iterator(); volumePoolsIter.hasNext();) {
-            aggregatePoolList.addAll(volumePoolsIter.next());
-        }
-        for (StoragePool pool : aggregatePoolList) {
-            if (null == pool.getClusterId()) {
-                zoneWideStoragePool = true;
-                break;
-            }
-        }
-        return zoneWideStoragePool;
-    }
+    private boolean hasSuitablePoolsForVolume(VolumeVO volume, Host host, VirtualMachineProfile vmProfile) {
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, vmProfile.getHypervisorType());
+        DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), null, null);
+        ExcludeList avoid = new ExcludeList();
 
-    private Map<Volume, List<StoragePool>> findSuitablePoolsForVolumes(VirtualMachineProfile vmProfile, Host host) {
-        List<VolumeVO> volumes = _volumeDao.findCreatedByInstance(vmProfile.getId());
-        Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<Volume, List<StoragePool>>();
-
-        // For each volume find list of suitable storage pools by calling the allocators
-        for (VolumeVO volume : volumes) {
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-            DiskProfile diskProfile = new DiskProfile(volume, diskOffering, vmProfile.getHypervisorType());
-            DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), null, null);
-            ExcludeList avoid = new ExcludeList();
-
-            boolean foundPools = false;
-            for (StoragePoolAllocator allocator : _storagePoolAllocators) {
-                List<StoragePool> poolList = allocator.allocateToPool(diskProfile, vmProfile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL);
-                if (poolList != null && !poolList.isEmpty()) {
-                    suitableVolumeStoragePools.put(volume, poolList);
-                    foundPools = true;
-                    break;
-                }
-            }
-
-            if (!foundPools) {
-                suitableVolumeStoragePools.clear();
-                break;
+        for (StoragePoolAllocator allocator : _storagePoolAllocators) {
+            List<StoragePool> poolList = allocator.allocateToPool(diskProfile, vmProfile, plan, avoid, 1);
+            if (poolList != null && !poolList.isEmpty()) {
+                return true;
             }
         }
 
-        return suitableVolumeStoragePools;
+        return false;
     }
 
     @Override
