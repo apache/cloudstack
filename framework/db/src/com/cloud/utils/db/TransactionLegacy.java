@@ -793,7 +793,7 @@ public class TransactionLegacy implements Closeable {
             it.remove();
 
             try {
-                if (item.type == type && (ref == null || item.ref == ref)) {
+                if ( (type == null || type.equals(item.type)) && (ref == null || ref.equals(item.ref))) {
                     break;
                 }
 

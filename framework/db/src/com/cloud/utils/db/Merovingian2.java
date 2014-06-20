@@ -145,9 +145,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     }
 
     protected boolean increment(String key, String threadName, int threadId) {
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = _concierge.conn().prepareStatement(INCREMENT_SQL);
+      try (PreparedStatement pstmt = _concierge.conn().prepareStatement(INCREMENT_SQL);){
             pstmt.setString(1, key);
             pstmt.setLong(2, _msId);
             pstmt.setString(3, threadName);
@@ -162,24 +160,15 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
                 return true;
             }
             return false;
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to increment " + key, e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+        } catch (Exception e) {
+            s_logger.error("increment:Exception:"+e.getMessage());
+            throw new CloudRuntimeException("increment:Exception:"+e.getMessage(), e);
         }
     }
 
     protected boolean doAcquire(String key, String threadName, int threadId) {
-        PreparedStatement pstmt = null;
-
         long startTime = InaccurateClock.getTime();
-        try {
-            pstmt = _concierge.conn().prepareStatement(ACQUIRE_SQL);
+        try(PreparedStatement pstmt = _concierge.conn().prepareStatement(ACQUIRE_SQL);) {
             pstmt.setString(1, key);
             pstmt.setLong(2, _msId);
             pstmt.setString(3, threadName);
@@ -200,14 +189,8 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
                 }
             }
         } catch (SQLException e) {
+            s_logger.error("doAcquire:Exception:"+e.getMessage());
             throw new CloudRuntimeException("Unable to lock " + key + ".  Waited " + (InaccurateClock.getTime() - startTime), e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
 
         s_logger.trace("Unable to acquire lck-" + key);
@@ -215,30 +198,21 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     }
 
     protected Map<String, String> isLocked(String key) {
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = _concierge.conn().prepareStatement(INQUIRE_SQL);
+        try (PreparedStatement pstmt = _concierge.conn().prepareStatement(INQUIRE_SQL);){
             pstmt.setString(1, key);
-            rs = pstmt.executeQuery();
-            if (!rs.next()) {
-                return null;
+            try(ResultSet rs = pstmt.executeQuery();)
+            {
+                if (!rs.next()) {
+                    return null;
+                }
+                return toLock(rs);
+            }catch (SQLException e) {
+                s_logger.error("isLocked:Exception:"+e.getMessage());
+                throw new CloudRuntimeException("isLocked:Exception:"+e.getMessage(), e);
             }
-
-            return toLock(rs);
         } catch (SQLException e) {
-            throw new CloudRuntimeException("SQL Exception on inquiry", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-                s_logger.warn("Unexpected SQL exception " + e.getMessage(), e);
-            }
+            s_logger.error("isLocked:Exception:"+e.getMessage());
+            throw new CloudRuntimeException("isLocked:Exception:"+e.getMessage(), e);
         }
     }
 
@@ -249,33 +223,29 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     @Override
     public void cleanupForServer(long msId) {
         s_logger.info("Cleaning up locks for " + msId);
-        PreparedStatement pstmt = null;
         try {
             synchronized (_concierge.conn()) {
-                pstmt = _concierge.conn().prepareStatement(CLEANUP_MGMT_LOCKS_SQL);
-                pstmt.setLong(1, msId);
-                int rows = pstmt.executeUpdate();
-                s_logger.info("Released " + rows + " locks for " + msId);
-            }
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to clear the locks", e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
+                try(PreparedStatement pstmt = _concierge.conn().prepareStatement(CLEANUP_MGMT_LOCKS_SQL);) {
+                    pstmt.setLong(1, msId);
+                    int rows = pstmt.executeUpdate();
+                    s_logger.info("Released " + rows + " locks for " + msId);
+                }catch (Exception e) {
+                    s_logger.error("cleanupForServer:Exception:"+e.getMessage());
+                    throw new CloudRuntimeException("cleanupForServer:Exception:"+e.getMessage(), e);
                 }
-            } catch (SQLException e) {
             }
+        } catch (Exception e) {
+            s_logger.error("cleanupForServer:Exception:"+e.getMessage());
+            throw new CloudRuntimeException("cleanupForServer:Exception:"+e.getMessage(), e);
         }
     }
 
     public boolean release(String key) {
-        PreparedStatement pstmt = null;
         Thread th = Thread.currentThread();
         String threadName = th.getName();
         int threadId = System.identityHashCode(th);
-        try {
-            pstmt = _concierge.conn().prepareStatement(DECREMENT_SQL);
+        try (PreparedStatement pstmt = _concierge.conn().prepareStatement(DECREMENT_SQL);)
+        {
             pstmt.setString(1, key);
             pstmt.setLong(2, _msId);
             pstmt.setString(3, threadName);
@@ -287,29 +257,25 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
                 s_logger.trace("lck-" + key + " released");
             }
             if (rows == 1) {
-                pstmt.close();
-                pstmt = _concierge.conn().prepareStatement(RELEASE_SQL);
-                pstmt.setString(1, key);
-                pstmt.setLong(2, _msId);
-                int result = pstmt.executeUpdate();
-                if (result == 1 && s_logger.isTraceEnabled()) {
-                    s_logger.trace("lck-" + key + " removed");
+                try (PreparedStatement rel_sql_pstmt = _concierge.conn().prepareStatement(RELEASE_SQL);) {
+                    rel_sql_pstmt.setString(1, key);
+                    rel_sql_pstmt.setLong(2, _msId);
+                    int result = rel_sql_pstmt.executeUpdate();
+                    if (result == 1 && s_logger.isTraceEnabled()) {
+                        s_logger.trace("lck-" + key + " removed");
+                    }
+                    decrCount();
+                }catch (Exception e) {
+                    s_logger.error("release:Exception:"+ e.getMessage());
+                    throw new CloudRuntimeException("release:Exception:"+ e.getMessage(), e);
                 }
-                decrCount();
             } else if (rows < 1) {
                 s_logger.warn("Was unable to find lock for the key " + key + " and thread id " + threadId);
             }
-
             return rows == 1;
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to release " + key, e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+        } catch (Exception e) {
+            s_logger.error("release:Exception:"+ e.getMessage());
+            throw new CloudRuntimeException("release:Exception:"+ e.getMessage(), e);
         }
     }
 
@@ -334,27 +300,21 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     }
 
     protected List<Map<String, String>> getLocks(String sql, Long msId) {
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = _concierge.conn().prepareStatement(sql);
+        try (PreparedStatement pstmt = _concierge.conn().prepareStatement(sql);)
+        {
             if (msId != null) {
                 pstmt.setLong(1, msId);
             }
-            rs = pstmt.executeQuery();
-            return toLocks(rs);
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to retrieve locks ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
+            try(ResultSet rs = pstmt.executeQuery();)
+            {
+                return toLocks(rs);
+            }catch (Exception e) {
+                s_logger.error("getLocks:Exception:"+e.getMessage());
+                throw new CloudRuntimeException("getLocks:Exception:"+e.getMessage(), e);
             }
+       } catch (Exception e) {
+            s_logger.error("getLocks:Exception:"+e.getMessage());
+            throw new CloudRuntimeException("getLocks:Exception:"+e.getMessage(), e);
         }
     }
 
@@ -382,26 +342,19 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     }
 
     public List<Map<String, String>> getLocksAcquiredBy(long msId, String threadName) {
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = _concierge.conn().prepareStatement(SELECT_THREAD_LOCKS_SQL);
+        try (PreparedStatement pstmt = _concierge.conn().prepareStatement(SELECT_THREAD_LOCKS_SQL);){
             pstmt.setLong(1, msId);
             pstmt.setString(2, threadName);
-            rs = pstmt.executeQuery();
-            return toLocks(rs);
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Can't get locks " + pstmt, e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
+            try (ResultSet rs =pstmt.executeQuery();) {
+                return toLocks(rs);
             }
+            catch (Exception e) {
+                s_logger.error("getLocksAcquiredBy:Exception:"+e.getMessage());
+                throw new CloudRuntimeException("Can't get locks " + pstmt, e);
+            }
+        } catch (Exception e) {
+            s_logger.error("getLocksAcquiredBy:Exception:"+e.getMessage());
+            throw new CloudRuntimeException("getLocksAcquiredBy:Exception:"+e.getMessage(), e);
         }
     }
 
@@ -411,46 +364,37 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         if (count == null || count.count == 0) {
             return;
         }
-
         int c = count.count;
-
         count.count = 0;
 
         Thread th = Thread.currentThread();
         String threadName = th.getName();
         int threadId = System.identityHashCode(th);
-
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = _concierge.conn().prepareStatement(CLEANUP_THREAD_LOCKS_SQL);
+        try (PreparedStatement pstmt = _concierge.conn().prepareStatement(CLEANUP_THREAD_LOCKS_SQL);)
+        {
             pstmt.setLong(1, _msId);
             pstmt.setString(2, threadName);
             pstmt.setInt(3, threadId);
             int rows = pstmt.executeUpdate();
             assert (false) : "Abandon hope, all ye who enter here....There were still " + rows + ":" + c +
             " locks not released when the transaction ended, check for lock not released or @DB is not added to the code that using the locks!";
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Can't clear locks " + pstmt, e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+        } catch (Exception e) {
+            s_logger.error("cleanupThread:Exception:" +  e.getMessage());
+            throw new CloudRuntimeException("cleanupThread:Exception:" +  e.getMessage(), e);
         }
     }
 
     @Override
     public boolean releaseLockAsLastResortAndIReallyKnowWhatIAmDoing(String key) {
         s_logger.info("Releasing a lock from JMX lck-" + key);
-        try (PreparedStatement pstmt = _concierge.conn().prepareStatement(RELEASE_LOCK_SQL)) {
+        try (PreparedStatement pstmt = _concierge.conn().prepareStatement(RELEASE_LOCK_SQL);)
+        {
             pstmt.setString(1, key);
             int rows = pstmt.executeUpdate();
             return rows > 0;
-        } catch (SQLException e) {
-            s_logger.error("Unable to release lock " + key, e);
-            return false;
+        } catch (Exception e) {
+            s_logger.error("releaseLockAsLastResortAndIReallyKnowWhatIAmDoing : Exception: " +  e.getMessage());
+            return  false;
         }
     }
 

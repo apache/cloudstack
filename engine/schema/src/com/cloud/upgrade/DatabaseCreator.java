@@ -20,14 +20,13 @@ package com.cloud.upgrade;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.SQLException;
+import java.sql.DriverManager;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -75,13 +74,10 @@ public class DatabaseCreator {
 
     private static void runQuery(String host, String port, String rootPassword, String query, boolean dryRun) {
         System.out.println("============> Running query: " + query);
-        Connection conn = null;
-        try {
-            conn = DriverManager.getConnection(String.format("jdbc:mysql://%s:%s/", host, port), "root", rootPassword);
-            Statement stmt = conn.createStatement();
-            if (!dryRun)
+        try (Connection conn = DriverManager.getConnection(String.format("jdbc:mysql://%s:%s/", host, port), "root", rootPassword);
+             Statement stmt = conn.createStatement();){
+             if (!dryRun)
                 stmt.executeUpdate(query);
-            conn.close();
         } catch (SQLException e) {
             System.out.println("SQL exception in trying initDB: " + e);
             System.exit(1);
@@ -186,24 +182,23 @@ public class DatabaseCreator {
             }
 
             System.out.println("========> Processing SQL file at " + sqlScript.getAbsolutePath());
-            Connection conn = TransactionLegacy.getStandaloneConnection();
-            try {
-                FileReader reader = null;
-                try {
-                    reader = new FileReader(sqlScript);
-                } catch (FileNotFoundException e) {
-                    System.err.println("Unable to read " + sqlFile + ": " + e.getMessage());
-                    System.exit(1);
-                }
+
+            try(Connection conn = TransactionLegacy.getStandaloneConnection();
+                FileReader reader = new FileReader(sqlScript);
+            ) {
                 if (!dryRun)
                     runScript(conn, reader, sqlFile, verbosity);
-            } finally {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    System.err.println("Unable to close DB connection: " + e.getMessage());
-                }
+            }catch (SQLException e)
+            {
+                System.err.println("Sql Exception:" + e.getMessage());
+                System.exit(1);
             }
+            catch (IOException e)
+            {
+                System.err.println("File IO Exception : " + e.getMessage());
+                System.exit(1);
+            }
+
         }
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);

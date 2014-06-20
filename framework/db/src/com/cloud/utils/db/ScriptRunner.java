@@ -162,7 +162,7 @@ public class ScriptRunner {
                         }
                         println("");
                         while (rs.next()) {
-                            for (int i = 0; i < cols; i++) {
+                            for (int i = 1; i <= cols; i++) {
                                 String value = rs.getString(i);
                                 print(value + "\t");
                             }
