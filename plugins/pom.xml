@@ -50,6 +50,7 @@
     <module>dedicated-resources</module>
     <module>hypervisors/ovm</module>
     <module>hypervisors/xenserver</module>
+    <module>hypervisors/ovm3</module>
     <module>hypervisors/kvm</module>
     <module>event-bus/rabbitmq</module>
     <module>event-bus/inmemory</module>

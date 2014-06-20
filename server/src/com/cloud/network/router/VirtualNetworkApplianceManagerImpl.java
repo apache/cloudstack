@@ -2847,6 +2847,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             router.setTemplateVersion(versionAnswer.getTemplateVersion());
             router.setScriptsVersion(versionAnswer.getScriptsVersion());
             router = _routerDao.persist(router, guestNetworks);
+
         }
 
         return result;

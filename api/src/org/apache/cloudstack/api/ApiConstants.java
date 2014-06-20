@@ -379,6 +379,7 @@ public class ApiConstants {
     public static final String LOCAL_STORAGE_ENABLED = "localstorageenabled";
     public static final String GUEST_IP_TYPE = "guestiptype";
     public static final String XENSERVER_NETWORK_LABEL = "xenservernetworklabel";
+    public static final String OVM3_NETWORK_LABEL = "ovm3networklabel";
     public static final String KVM_NETWORK_LABEL = "kvmnetworklabel";
     public static final String VMWARE_NETWORK_LABEL = "vmwarenetworklabel";
     public static final String HYPERV_NETWORK_LABEL = "hypervnetworklabel";
@@ -461,6 +462,9 @@ public class ApiConstants {
     public static final String VSM_CONFIG_MODE = "vsmconfigmode";
     public static final String VSM_CONFIG_STATE = "vsmconfigstate";
     public static final String VSM_DEVICE_STATE = "vsmdevicestate";
+    public static final String OVM3_POOL = "ovm3pool";
+    public static final String OVM3_CLUSTER = "ovm3cluster";
+    public static final String OVM3_VIP = "ovm3vip";
     public static final String VCENTER = "vcenter";
     public static final String ADD_VSM_FLAG = "addvsmflag";
     public static final String END_POINT = "endpoint";

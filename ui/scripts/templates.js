@@ -382,6 +382,12 @@
                                                     id: 'RAW',
                                                     description: 'RAW'
                                                 });
+                                            } else if (args.hypervisor == "Ovm3") {
+                                                //formatSelect.append("<option value='RAW'>RAW</option>");
+                                                items.push({
+                                                    id: 'RAW',
+                                                    description: 'RAW'
+                                                });  
                                             } else if (args.hypervisor == "LXC") {
                                                 //formatSelect.append("<option value='TAR'>TAR</option>");
                                                 items.push({

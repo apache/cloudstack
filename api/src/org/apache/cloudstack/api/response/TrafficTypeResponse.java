@@ -48,6 +48,10 @@ public class TrafficTypeResponse extends BaseResponse {
     @Param(description = "The network name label of the physical device dedicated to this traffic on a KVM host")
     private String kvmNetworkLabel;
 
+    @SerializedName(ApiConstants.OVM3_NETWORK_LABEL)
+    @Param(description = "The network name of the physical device dedicated to this traffic on an OVM3 host")
+    private String ovm3NetworkLabel;
+
     @SerializedName(ApiConstants.VMWARE_NETWORK_LABEL)
     @Param(description = "The network name label of the physical device dedicated to this traffic on a VMware host")
     private String vmwareNetworkLabel;
@@ -93,6 +97,10 @@ public class TrafficTypeResponse extends BaseResponse {
         return kvmNetworkLabel;
     }
 
+    public String getOvm3Label() {
+        return ovm3NetworkLabel;
+    }
+
     public String getHypervLabel() {
         return hypervNetworkLabel;
     }
@@ -107,6 +115,10 @@ public class TrafficTypeResponse extends BaseResponse {
 
     public void setKvmLabel(String kvmLabel) {
         this.kvmNetworkLabel = kvmLabel;
+    }
+
+    public void setOvm3Label(String ovm3Label) {
+        this.ovm3NetworkLabel = ovm3Label;
     }
 
     public void setVmwareLabel(String vmwareNetworkLabel) {
