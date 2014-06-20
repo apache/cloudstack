@@ -41,6 +41,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -69,7 +71,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -162,6 +163,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -1826,8 +1828,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         if (fromHost.getClusterId().longValue() != dest.getCluster().getId()) {
-            s_logger.info("Source and destination host are not in same cluster, unable to migrate to host: " + dest.getHost().getId());
-            throw new CloudRuntimeException("Source and destination host are not in same cluster, unable to migrate to host: " + dest.getHost().getId());
+            List<VolumeVO> volumes = _volsDao.findCreatedByInstance(vm.getId());
+            for (VolumeVO volume : volumes) {
+                if (!(_storagePoolDao.findById(volume.getPoolId())).getScope().equals(ScopeType.ZONE)) {
+                    s_logger.info("Source and destination host are not in same cluster and all volumes are not on zone wide primary store, unable to migrate to host: "
+                            + dest.getHost().getId());
+                    throw new CloudRuntimeException(
+                            "Source and destination host are not in same cluster and all volumes are not on zone wide primary store, unable to migrate to host: "
+                                    + dest.getHost().getId());
+                }
+            }
         }
 
         VirtualMachineGuru vmGuru = getVmGuru(vm);
@@ -3284,9 +3294,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         @SuppressWarnings("unchecked")
         public AgentVmInfo(String name, VMInstanceVO vm, State state, String host) {
-            name = name;
-            state = state;
-            vm = vm;
+            this.name = name;
+            this.state = state;
+            this.vm = vm;
             hostUuid = host;
         }
 
