@@ -16,19 +16,31 @@
 # under the License.
 
 # Import Local Modules
-from marvin.codes import FAILED
+from marvin.codes import FAILED, KVM
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import startVirtualMachine
+from marvin.lib.utils import random_gen, cleanup_resources
+from marvin.lib.base import (Account,
+                             ServiceOffering,
+                             VirtualMachine,
+                             VmSnapshot)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               list_virtual_machines)
+import time
 
 class TestVmSnapshot(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-	testClient = super(TestVmSnapshot, cls).getClsTestClient()
+        testClient = super(TestVmSnapshot, cls).getClsTestClient()
+
+        hypervisor = testClient.getHypervisorInfo()
+        if hypervisor.lower() == KVM.lower():
+            raise unittest.SkipTest("VM snapshot feature is not supported on KVM")
+
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
