@@ -19,6 +19,14 @@
 
 package com.cloud.utils.net;
 
+import com.googlecode.ipv6.IPv6Address;
+import org.apache.log4j.Logger;
+import org.junit.Test;
+
+import java.math.BigInteger;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -30,15 +38,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-
-import java.math.BigInteger;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import org.apache.log4j.Logger;
-import org.junit.Test;
-
-import com.googlecode.ipv6.IPv6Address;
 
 public class NetUtilsTest {
 
@@ -196,6 +195,12 @@ public class NetUtilsTest {
         assertTrue(NetUtils.isIp6RangeOverlap("1234:5678::f-1234:5678::ffff", "1234:5678::2-1234:5678::f"));
         assertFalse(NetUtils.isIp6RangeOverlap("1234:5678::f-1234:5678::ffff", "1234:5678::2-1234:5678::e"));
         assertFalse(NetUtils.isIp6RangeOverlap("1234:5678::f-1234:5678::f", "1234:5678::2-1234:5678::e"));
+    }
+
+    @Test
+    public void testStandardizeIp6Address() {
+        assertEquals(NetUtils.standardizeIp6Address("1234:0000:0000:5678:0000:000:ABCD:0001"), "1234::5678:0:0:abcd:1");
+        assertEquals(NetUtils.standardizeIp6Cidr("1234:0000:0000:5678:0000:000:ABCD:0001/64"), "1234::5678:0:0:0:0/64");
     }
 
     @Test
