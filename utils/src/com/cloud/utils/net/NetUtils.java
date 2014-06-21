@@ -19,6 +19,16 @@
 
 package com.cloud.utils.net;
 
+import com.cloud.utils.IteratorUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.script.Script;
+import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6AddressRange;
+import com.googlecode.ipv6.IPv6Network;
+import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.net.util.SubnetUtils;
+import org.apache.log4j.Logger;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -40,17 +50,6 @@ import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.lang.SystemUtils;
-import org.apache.commons.net.util.SubnetUtils;
-import org.apache.log4j.Logger;
-
-import com.cloud.utils.IteratorUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.script.Script;
-import com.googlecode.ipv6.IPv6Address;
-import com.googlecode.ipv6.IPv6AddressRange;
-import com.googlecode.ipv6.IPv6Network;
 
 public class NetUtils {
     protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
@@ -1370,6 +1369,14 @@ public class NetUtils {
             resultIp = result.toString();
         }
         return resultIp;
+    }
+
+    public static String standardizeIp6Address(String ip6Addr) {
+        return IPv6Address.fromString(ip6Addr).toString();
+    }
+
+    public static String standardizeIp6Cidr(String ip6Cidr){
+        return IPv6Network.fromString(ip6Cidr).toString();
     }
 
     static final String VLAN_PREFIX = "vlan://";
