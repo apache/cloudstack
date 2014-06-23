@@ -216,6 +216,7 @@ class primaryStorage(object):
     def __init__(self):
         self.name = None
         self.url = None
+        self.details = None
 
 
 class secondaryStorage(object):
