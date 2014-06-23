@@ -2295,17 +2295,22 @@ public class VirtualMachineMO extends BaseMO {
     public int getNextDeviceNumber(int controllerKey) throws Exception {
         List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
 
-        int deviceNumber = -1;
+        List<Integer> existingUnitNumbers = new ArrayList<Integer>();
+        int deviceNumber = 0;
         if (devices != null && devices.size() > 0) {
             for (VirtualDevice device : devices) {
                 if (device.getControllerKey() != null && device.getControllerKey().intValue() == controllerKey) {
-                    if (device.getUnitNumber() != null && device.getUnitNumber().intValue() > deviceNumber) {
-                        deviceNumber = device.getUnitNumber().intValue();
-                    }
+                    existingUnitNumbers.add(device.getUnitNumber());
                 }
             }
         }
-        return ++deviceNumber;
+        while (true) {
+            if (!existingUnitNumbers.contains(Integer.valueOf(deviceNumber))) {
+                break;
+            }
+            ++deviceNumber;
+        }
+        return deviceNumber;
     }
 
     private List<VirtualDevice> getNicDevices(boolean sorted) throws Exception {
