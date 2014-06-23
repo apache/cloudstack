@@ -27,11 +27,12 @@ import java.util.Random;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -171,10 +172,17 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         }
 
         Long clusterId = pool.getClusterId();
-        ClusterVO cluster = _clusterDao.findById(clusterId);
-        if (!(cluster.getHypervisorType() == dskCh.getHypervisorType())) {
+        if (clusterId != null) {
+            ClusterVO cluster = _clusterDao.findById(clusterId);
+            if (!(cluster.getHypervisorType() == dskCh.getHypervisorType())) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("StoragePool's Cluster does not have required hypervisorType, skipping this pool");
+                }
+                return false;
+            }
+        } else if (pool.getHypervisor() != null && !(pool.getHypervisor() == dskCh.getHypervisorType())) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("StoragePool's Cluster does not have required hypervisorType, skipping this pool");
+                s_logger.debug("StoragePool does not have required hypervisorType, skipping this pool");
             }
             return false;
         }
