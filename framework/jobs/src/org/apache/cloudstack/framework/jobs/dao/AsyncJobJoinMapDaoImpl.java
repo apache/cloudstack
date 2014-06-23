@@ -214,12 +214,14 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
         List<Long> standaloneList = new ArrayList<Long>();
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         String sql = "SELECT job_id FROM async_job_join_map WHERE join_job_id = ? AND job_id NOT IN (SELECT content_id FROM sync_queue_item)";
-        try {
-            PreparedStatement pstmt = txn.prepareStatement(sql);
+        try (PreparedStatement pstmt = txn.prepareStatement(sql);){
             pstmt.setLong(1, joinedJobId);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                standaloneList.add(rs.getLong(1));
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    standaloneList.add(rs.getLong(1));
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to execute " + sql, e);
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to execute " + sql, e);
@@ -231,23 +233,26 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
     public List<Long> findJobsToWakeBetween(Date cutDate) {
         List<Long> standaloneList = new ArrayList<Long>();
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        try {
-            String sql = "SELECT job_id FROM async_job_join_map WHERE next_wakeup < ? AND expiration > ? AND job_id NOT IN (SELECT content_id FROM sync_queue_item)";
-            PreparedStatement pstmt = txn.prepareStatement(sql);
+        String sql = "SELECT job_id FROM async_job_join_map WHERE next_wakeup < ? AND expiration > ? AND job_id NOT IN (SELECT content_id FROM sync_queue_item)";
+        try (PreparedStatement pstmt = txn.prepareStatement(sql);){
             pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
             pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                standaloneList.add(rs.getLong(1));
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    standaloneList.add(rs.getLong(1));
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to handle SQL exception", e);
             }
-
             // update for next wake-up
             sql = "UPDATE async_job_join_map SET next_wakeup=DATE_ADD(next_wakeup, INTERVAL wakeup_interval SECOND) WHERE next_wakeup < ? AND expiration > ?";
-            pstmt = txn.prepareStatement(sql);
-            pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
-            pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
-            pstmt.executeUpdate();
-
+            try(PreparedStatement update_pstmt = txn.prepareStatement(sql);) {
+                update_pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
+                update_pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
+                update_pstmt.executeUpdate();
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to handle SQL exception", e);
+            }
             return standaloneList;
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to handle SQL exception", e);
