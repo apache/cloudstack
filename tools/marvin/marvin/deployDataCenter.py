@@ -236,7 +236,9 @@ class DeployDataCenters(object):
                 return
             for primary in primaryStorages:
                 primarycmd = createStoragePool.createStoragePoolCmd()
-                primarycmd.details = primary.details
+                if primary.details:
+                    for key, value in vars(primary.details).iteritems():
+                        primarycmd.details.append({ key: value})
                 primarycmd.name = primary.name
                 primarycmd.podid = podId
                 primarycmd.tags = primary.tags
@@ -333,14 +335,13 @@ class DeployDataCenters(object):
                 secondarycmd.provider = secondary.provider
                 secondarycmd.details = []
 
-                if secondarycmd.provider == 'S3' \
-                        or secondarycmd.provider == "Swift":
+                if secondarycmd.provider.lower() in ('s3', "swift", "smb"):
                     for key, value in vars(secondary.details).iteritems():
                         secondarycmd.details.append({
                                                     'key': key,
                                                     'value': value
                                                     })
-                if secondarycmd.provider == "NFS":
+                if secondarycmd.provider.lower() in ("nfs", "smb"):
                     secondarycmd.zoneid = zoneId
                 ret = self.__apiClient.addImageStore(secondarycmd)
                 if ret.id:
