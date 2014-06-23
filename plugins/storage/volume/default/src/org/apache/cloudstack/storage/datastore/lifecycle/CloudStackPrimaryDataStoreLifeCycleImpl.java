@@ -255,7 +255,6 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                 if (clusterId == null) {
                     throw new IllegalArgumentException("IscsiLUN need to have clusters specified");
                 }
-                hostPath = hostPath.replaceFirst("/", "");
                 parameters.setType(StoragePoolType.IscsiLUN);
                 parameters.setHost(storageHost);
                 parameters.setPort(port);
