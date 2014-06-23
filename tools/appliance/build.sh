@@ -115,5 +115,10 @@ vboxmanage clonehd $hdd_uuid $appliance-$branch-hyperv.vhd --format VHD
 zip $appliance-$branch-hyperv.vhd.zip $appliance-$branch-hyperv.vhd
 echo "$appliance exported for HyperV: dist/$appliance-$branch-hyperv.vhd"
 
+#export for ovm
+qemu-img convert -f vpc -O raw $appliance-$branch-ovm.vhd $appliance-$branch-ovm.raw
+bzip2 $appliance-$branch-ovm.raw
+echo "$appliance exported for ovm: dist/$appliance-$branch-ovm.raw.bz2"
+
 mv *-hyperv.vhd *-hyperv.vhd.zip *.bz2 *.ova dist/
 
