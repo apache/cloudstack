@@ -39,7 +39,8 @@ public class DatabaseAccessObject {
             pstmt.executeUpdate();
             s_logger.debug("Key " + key + " is dropped successfully from the table " + tableName);
         } catch (SQLException e) {
-            s_logger.warn("dropKey:Exception:"+e.getMessage());
+            s_logger.warn("Ignored SQL Exception when trying to drop " + (isForeignKey ? "foreign " : "") + "key " + key + " on table "  + tableName, e);
+
         }
     }
 
@@ -47,8 +48,8 @@ public class DatabaseAccessObject {
         try(PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP PRIMARY KEY ");) {
             pstmt.executeUpdate();
             s_logger.debug("Primary key is dropped successfully from the table " + tableName);
-        } catch (Exception e) {
-            s_logger.warn("dropPrimaryKey:Exception:"+e.getMessage());
+        } catch (SQLException e) {
+            s_logger.warn("Ignored SQL Exception when trying to drop primary key on table " + tableName, e);
         }
     }
 
@@ -56,8 +57,8 @@ public class DatabaseAccessObject {
         try (PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP COLUMN " + columnName);){
             pstmt.executeUpdate();
             s_logger.debug("Column " + columnName + " is dropped successfully from the table " + tableName);
-        } catch (Exception e) {
-            s_logger.warn("dropColumn:Exception:"+e.getMessage());
+        } catch (SQLException e) {
+            s_logger.warn("Unable to drop column " + columnName + " due to exception", e);
         }
     }
 
@@ -66,8 +67,8 @@ public class DatabaseAccessObject {
         try (PreparedStatement pstmt = conn.prepareStatement("SELECT " + columnName + " FROM " + tableName);){
             pstmt.executeQuery();
             columnExists = true;
-        } catch (Exception e) {
-            s_logger.warn("columnExists:Exception:"+e.getMessage());
+        } catch (SQLException e) {
+            s_logger.warn("Field " + columnName + " doesn't exist in " + tableName, e);
         }
         return columnExists;
     }
