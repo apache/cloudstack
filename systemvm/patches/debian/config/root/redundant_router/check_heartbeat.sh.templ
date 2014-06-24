@@ -17,12 +17,27 @@
 # under the License.
 
 
+STRIKE_FILE="[RROUTER_BIN_PATH]/keepalived.strikes"
+
 if [ -e [RROUTER_BIN_PATH]/keepalived.ts2 ]
 then
     lasttime=$(cat [RROUTER_BIN_PATH]/keepalived.ts2)
     thistime=$(cat [RROUTER_BIN_PATH]/keepalived.ts)
     diff=$(($thistime - $lasttime))
+    s=0
     if [ $diff -lt 30 ]
+    then
+        if [ -e $STRIKE_FILE ]
+        then
+            s=`cat $STRIKE_FILE 2>/dev/null`
+        fi
+        s=$(($s+1))
+        echo $s > $STRIKE_FILE
+    else
+        rm $STRIKE_FILE
+    fi
+    #3 strikes rule
+    if [ $s -gt 2 ]
     then
         echo Keepalived process is dead! >> [RROUTER_LOG]
         [RROUTER_BIN_PATH]/services.sh stop >> [RROUTER_LOG] 2>&1
