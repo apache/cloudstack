@@ -586,7 +586,7 @@ class VirtualMachine:
                 validationresult = validateList(vms)
                 if validationresult[0] == FAIL:
                     raise Exception("VM list validation failed: %s" % validationresult[2])
-                elif str(vms[0].state).lower() == str(state).lower():
+                elif str(vms[0].state).lower().decode("string_escape") == str(state).lower():
                     returnValue = [PASS, None]
                     break
             except Exception as e:

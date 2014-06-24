@@ -750,7 +750,8 @@ class TestReleaseIP(cloudstackTestCase):
         ip_addrs = list_publicIP(
                                     self.apiclient,
                                     account=self.account.name,
-                                    domainid=self.account.domainid
+                                    domainid=self.account.domainid,
+                                    issourcenat=False
                                   )
         try:
             self.ip_addr = ip_addrs[0]
@@ -779,7 +780,7 @@ class TestReleaseIP(cloudstackTestCase):
     def tearDown(self):
         cleanup_resources(self.apiclient, self.cleanup)
 
-    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false", BugId="CLOUDSTACK-6984")
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_releaseIP(self):
         """Test for release public IP address"""
 
@@ -787,21 +788,22 @@ class TestReleaseIP(cloudstackTestCase):
 
         self.ip_address.delete(self.apiclient)
 
-        # Sleep to ensure that deleted state is reflected in other calls 
-        time.sleep(self.services["sleep"])
+        retriesCount = 10
+        isIpAddressDisassociated = False
 
-        # ListPublicIpAddresses should not list deleted Public IP address
-        list_pub_ip_addr_resp = list_publicIP(
+        while retriesCount > 0:
+            listResponse = list_publicIP(
                                     self.apiclient,
                                     id=self.ip_addr.id
-                                  )
-        self.debug("List Public IP response" + str(list_pub_ip_addr_resp))
+                                    )
+            if listResponse is None:
+                isIpAddressDisassociated = True
+                break
+            retriesCount -= 1
+            time.sleep(60)
+        # End while
 
-        self.assertEqual(
-                     list_pub_ip_addr_resp,
-                     None,
-                    "Check if disassociated IP Address is no longer available"
-                   )
+        self.assertTrue(isIpAddressDisassociated, "Failed to disassociate IP address")
 
         # ListPortForwardingRules should not list
         # associated rules with Public IP address
