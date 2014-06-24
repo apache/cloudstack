@@ -107,7 +107,7 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
             }
         }
 
-        if (lbRuleId != null && lb != null) {
+        if (lbRuleId != null && lb == null) {
             lb = _lbService.findById(getLbRuleId());
         }
 
