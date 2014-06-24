@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,7 +44,8 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createEgressFirewallRule", description = "Creates a egress firewall rule for a given network ", responseObject = FirewallResponse.class)
+@APICommand(name = "createEgressFirewallRule", description = "Creates a egress firewall rule for a given network ", responseObject = FirewallResponse.class, entityType = {FirewallRule.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements FirewallRule {
     public static final Logger s_logger = Logger.getLogger(CreateEgressFirewallRuleCmd.class.getName());
 
@@ -83,6 +85,9 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "type of firewallrule: system/user")
     private String type;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -149,7 +154,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
             fwResponse.setResponseName(getCommandName());
         } finally {
             if (!success || rule == null) {
-                _firewallService.revokeFirewallRule(getEntityId(), true);
+                _firewallService.revokeEgressFirewallRule(getEntityId(), true);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create firewall rule");
             }
         }
@@ -221,8 +226,8 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
     @Override
     public long getDomainId() {
         Network network = _networkService.getNetwork(networkId);
-        return network.getDomainId();
-    }
+            return  network.getDomainId();
+        }
 
     @Override
     public void create() {
@@ -249,9 +254,9 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
         }
 
         if (getVpcId() != null) {
-            throw new InvalidParameterValueException("Unable to create firewall rule for the network id=" + networkId +
-                " as firewall egress rule can be created only for non vpc networks.");
-        }
+                throw new  InvalidParameterValueException("Unable to create firewall rule for the network id=" + networkId +
+                        " as firewall egress rule can be created only for non vpc networks.");
+            }
 
         try {
             FirewallRule result = _firewallService.createEgressFirewallRule(this);
@@ -265,13 +270,13 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_FIREWALL_OPEN;
+        return EventTypes.EVENT_FIREWALL_EGRESS_OPEN;
     }
 
     @Override
     public String getEventDescription() {
-        Network network = _networkService.getNetwork(networkId);
-        return ("Creating firewall rule for network: " + network + " for protocol:" + this.getProtocol());
+         Network network = _networkService.getNetwork(networkId);
+        return ("Creating firewall rule for network: " + network + " for protocol:" + getProtocol());
     }
 
     @Override
@@ -287,7 +292,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
     @Override
     public Long getSyncObjId() {
-        return getNetworkId();
+                return  getNetworkId();
     }
 
     @Override
@@ -332,13 +337,27 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
     @Override
     public TrafficType getTrafficType() {
-        return TrafficType.Egress;
+           return TrafficType.Egress;
     }
 
     @Override
     public String getUuid() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if (display != null) {
+            return display;
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return FirewallRule.class;
     }
 
 }

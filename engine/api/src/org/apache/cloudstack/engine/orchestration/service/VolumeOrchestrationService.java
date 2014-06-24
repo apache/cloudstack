@@ -21,6 +21,7 @@ package org.apache.cloudstack.engine.orchestration.service;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -86,13 +87,15 @@ public interface VolumeOrchestrationService {
 
     void destroyVolume(Volume volume);
 
-    DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, VirtualMachine vm, VirtualMachineTemplate template, Account owner);
+    DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner);
 
-    VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, Volume rootVolumeOfVm, VolumeInfo volume, HypervisorType rootDiskHyperType) throws NoTransitionException;
+    VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, VolumeInfo volume, HypervisorType rootDiskHyperType, StoragePool storagePool) throws NoTransitionException;
 
     void release(VirtualMachineProfile profile);
 
     void cleanupVolumes(long vmId) throws ConcurrentOperationException;
+
+    void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore);
 
     void disconnectVolumesFromHost(long vmId, long hostId);
 
@@ -106,7 +109,7 @@ public interface VolumeOrchestrationService {
 
     boolean canVmRestartOnAnotherServer(long vmId);
 
-    DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, VirtualMachineTemplate template, VirtualMachine vm,
+    DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
         Account owner);
 
     String getVmNameFromVolumeId(long volumeId);
@@ -118,4 +121,5 @@ public interface VolumeOrchestrationService {
     StoragePool findStoragePool(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Set<StoragePool> avoid);
 
     void updateVolumeDiskChain(long volumeId, String path, String chainInfo);
+
 }

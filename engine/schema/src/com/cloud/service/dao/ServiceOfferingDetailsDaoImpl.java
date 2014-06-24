@@ -29,8 +29,8 @@ import com.cloud.service.ServiceOfferingDetailsVO;
 public class ServiceOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<ServiceOfferingDetailsVO> implements ServiceOfferingDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new ServiceOfferingDetailsVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new ServiceOfferingDetailsVO(resourceId, key, value, display));
     }
 
 }

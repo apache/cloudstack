@@ -43,7 +43,8 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "addIpToNic", description = "Assigns secondary IP to NIC", responseObject = NicSecondaryIpResponse.class)
+@APICommand(name = "addIpToNic", description = "Assigns secondary IP to NIC", responseObject = NicSecondaryIpResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddIpToVmNicCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddIpToVmNicCmd.class.getName());
     private static final String s_name = "addiptovmnicresponse";
@@ -91,6 +92,12 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
         return dc.getNetworkType();
     }
 
+    private boolean isZoneSGEnabled() {
+        Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
+        DataCenter dc = _entityMgr.findById(DataCenter.class, ntwk.getDataCenterId());
+        return dc.isSecurityGroupEnabled();
+    }
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_NET_IP_ASSIGN;
@@ -130,12 +137,12 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
         try {
             result = _networkService.allocateSecondaryGuestIP(getNicId(), getIpaddress());
         } catch (InsufficientAddressCapacityException e) {
-            throw new InvalidParameterValueException("Allocating guest ip for nic failed");
+            throw new InvalidParameterValueException("Allocating guest ip for nic failed : " + e.getMessage());
         }
 
         if (result != null) {
             secondaryIp = result.getIp4Address();
-            if (getNetworkType() == NetworkType.Basic) {
+            if (isZoneSGEnabled()) {
                 // add security group rules for the secondary ip addresses
                 boolean success = false;
                 success = _securityGroupService.securityGroupRulesForVmSecIp(getNicId(), secondaryIp, true);

@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -24,12 +24,17 @@ using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace HypervResource
 {
     public class Utils
     {
         private static ILog s_logger = LogManager.GetLogger(typeof(Utils));
+
+        private const string TASK_PREFIX = "cloudstack-heartbeat-";
+        private const string BATCH_FILE = "heartbeat.bat";
 
         /// <summary>
         /// Associate CloudStack object's content with a fully qualified type name.
@@ -83,7 +88,7 @@ namespace HypervResource
             {
                 IntPtr token = IntPtr.Zero;
 
-                bool isSuccess = LogonUser(cifsShareDetails.User, cifsShareDetails.Domain, cifsShareDetails.Password, LOGON32_LOGON_NEW_CREDENTIALS, LOGON32_PROVIDER_DEFAULT, ref token);
+                LogonUser(cifsShareDetails.User, cifsShareDetails.Domain, cifsShareDetails.Password, LOGON32_LOGON_NEW_CREDENTIALS, LOGON32_PROVIDER_DEFAULT, ref token);
                 using (WindowsImpersonationContext remoteIdentity = new WindowsIdentity(token).Impersonate())
                 {
                     String dest = "";
@@ -123,32 +128,6 @@ namespace HypervResource
             }
         }
 
-        public static void ConnectToRemote(string remoteUNC, string domain, string username, string password)
-        {
-            NETRESOURCE nr = new NETRESOURCE();
-            nr.dwType = RESOURCETYPE_DISK;
-            nr.lpRemoteName = Utils.NormalizePath(remoteUNC);
-            if (domain != null)
-            {
-                username = domain + @"\" + username;
-            }
-
-            int ret = WNetUseConnection(IntPtr.Zero, nr, password, username, 0, null, null, null);
-            if (ret != NO_ERROR)
-            {
-                throw new ArgumentException("net use of share " + remoteUNC + "failed with "+ getErrorForNumber(ret));
-            }
-        }
-
-        public static void DisconnectRemote(string remoteUNC)
-        {
-            int ret = WNetCancelConnection2(remoteUNC, CONNECT_UPDATE_PROFILE, false);
-            if (ret != NO_ERROR)
-            {
-                throw new ArgumentException("net disconnect of share " + remoteUNC + "failed with " + getErrorForNumber(ret));
-            }
-        }
-
         public static void GetShareDetails(string remoteUNC, out long capacity, out long available)
         {
             ulong freeBytesAvailable;
@@ -164,6 +143,54 @@ namespace HypervResource
             capacity = totalNumberOfBytes > 0 ? (long)totalNumberOfBytes : 0;
         }
 
+        public static string CleanString(string stringToClean)
+        {
+            string cleanString = null;
+            string regexQueryString = "(&|%26)?(password|accesskey|secretkey|Password)(=|%3D).*?(?=(%26|[&'\"]))";
+            string regexJson = "\"(password|accesskey|secretkey|Password)\":\\s?\".*?\",?";
+            cleanString = System.Text.RegularExpressions.Regex.Replace(stringToClean, regexQueryString, "");
+            cleanString = System.Text.RegularExpressions.Regex.Replace(cleanString, regexJson, "");
+            return cleanString;
+        }
+
+        public static void AddHeartBeatTask(string poolGuid, string poolPath, string hostPrivateIp)
+        {
+            string taskName = TASK_PREFIX + poolGuid;
+            UriBuilder uri = new UriBuilder(Assembly.GetExecutingAssembly().CodeBase);
+            string alocation = Uri.UnescapeDataString(uri.Path);
+            string batchFileLocation = Path.Combine(Path.GetDirectoryName(alocation), BATCH_FILE);
+            string hbFile = Path.Combine(poolPath, "hb-" + hostPrivateIp);
+            ExecuteTask("schtasks.exe", "/Create /RU \"SYSTEM\" /SC MINUTE /MO 1 /TN " + taskName + " /F /TR \"" + batchFileLocation + " " + hbFile + "\"");
+        }
+
+        public static void RemoveHeartBeatTask(string poolGuid)
+        {
+            string taskName = TASK_PREFIX + poolGuid;
+            ExecuteTask("schtasks.exe", "/Delete /TN " + taskName + " /F");
+        }
+
+        public static void ExecuteTask(string command, string args)
+        {
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.CreateNoWindow = false;
+            startInfo.UseShellExecute = true;
+            startInfo.FileName = command;
+            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            startInfo.Arguments = args;
+
+            try
+            {
+                using (Process exeProcess = Process.Start(startInfo))
+                {
+                    exeProcess.WaitForExit();
+                }
+            }
+            catch (Exception e)
+            {
+                s_logger.Error("Error occurred in deleting or adding a scheduled task " + e.Message);
+            }
+        }
+
         // from http://stackoverflow.com/a/2541569/939250
         #region imports
         [DllImport("advapi32.dll", SetLastError = true)]
@@ -174,13 +201,6 @@ namespace HypervResource
 
         [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public extern static bool DuplicateToken(IntPtr existingTokenHandle, int SECURITY_IMPERSONATION_LEVEL, ref IntPtr duplicateTokenHandle);
-
-        [DllImport("Mpr.dll")]
-        private static extern int WNetUseConnection(IntPtr hwndOwner, NETRESOURCE lpNetResource, string lpPassword, string lpUserID, int dwFlags,
-            string lpAccessName, string lpBufferSize, string lpResult);
-
-        [DllImport("Mpr.dll")]
-        private static extern int WNetCancelConnection2(string lpName, int dwFlags, bool fForce);
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         private static extern bool GetDiskFreeSpaceEx(string lpDirectoryName,

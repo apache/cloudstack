@@ -19,9 +19,9 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.utils import cleanup_resources, validateList
-from marvin.integration.lib.base import (VirtualMachine,
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.utils import cleanup_resources, validateList
+from marvin.lib.base import (VirtualMachine,
                                          NATRule,
                                          LoadBalancerRule,
                                          StaticNATRule,
@@ -35,15 +35,16 @@ from marvin.integration.lib.base import (VirtualMachine,
                                          Account,
                                          ServiceOffering,
                                          Host)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            get_free_vlan,
                                            wait_for_cleanup,
                                            list_virtual_machines,
-                                           list_hosts)
+                                           list_hosts,
+                                           findSuitableHostForMigration)
 
-from marvin.codes import PASS
+from marvin.codes import PASS, ERROR_NO_HOST_FOR_MIGRATION
 
 import time
 
@@ -211,14 +212,13 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVMLifeCycleVPC,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVMLifeCycleVPC, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -715,34 +715,12 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         #    works as expected.
         # 3. Make sure that we are able to access google.com from this user Vm
 
-        vm_list = VirtualMachine.list(self.apiclient, id=self.vm_1.id)
-        self.assertEqual(validateList(vm_list)[0], PASS, "vm list validation failed, vm list is %s" % vm_list)
-
-        vm_hostid = vm_list[0].hostid
-
-        self.debug("Checking if the host is available for migration?")
-        hosts = Host.list(
-                          self.apiclient,
-                          zoneid=self.zone.id,
-                          type='Routing'
-                          )
-
-        self.assertEqual(
-                         isinstance(hosts, list),
-                         True,
-                         "List hosts should return a valid list"
-                         )
-        if len(hosts) < 2:
-            raise unittest.SkipTest(
-            "No host available for migration. Test requires atleast 2 hosts")
-
-        # Remove the host of current VM from the hosts list
-        hosts[:] = [host for host in hosts if host.id != vm_hostid]
-
-        host = hosts[0]
-
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
+
+        host = findSuitableHostForMigration(self.apiclient, self.vm_1.id)
+        if host is None:
+            self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
 
         self.debug("Migrating VM-ID: %s to Host: %s" % (
                                                         self.vm_1.id,
@@ -894,14 +872,13 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVMLifeCycleSharedNwVPC,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVMLifeCycleSharedNwVPC, cls).getClsTestClient()
+	cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1279,24 +1256,6 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
 
-        self.debug("Check if the instance is in stopped state?")
-        vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  id=self.vm_2.id,
-                                  listall=True
-                                  )
-        self.assertEqual(
-                         isinstance(vms, list),
-                         True,
-                         "List virtual machines should return a valid list"
-                         )
-        vm = vms[0]
-        self.assertEqual(
-                         vm.state,
-                         "Stopped",
-                         "Virtual machine should be in stopped state"
-                         )
-
         self.debug("Validating if network rules are coonfigured properly?")
         self.validate_network_rules()
         return
@@ -1506,29 +1465,12 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         #    works as expected.
         # 3. Make sure that we are able to access google.com from this user Vm
 
-        self.debug("Checking if the host is available for migration?")
-        hosts = Host.list(
-                          self.apiclient,
-                          zoneid=self.zone.id,
-                          type='Routing'
-                          )
-
-        self.assertEqual(
-                         isinstance(hosts, list),
-                         True,
-                         "List hosts should return a valid list"
-                         )
-        if len(hosts) < 2:
-            raise unittest.SkipTest(
-            "No host available for migration. Test requires atleast 2 hosts")
-
-        # Remove the host of current VM from the hosts list
-        hosts[:] = [host for host in hosts if host.id != self.vm_1.hostid]
-
-        host = hosts[0]
-
         self.debug("Validating if network rules are coonfigured properly?")
         self.validate_network_rules()
+
+        host = findSuitableHostForMigration(self.apiclient, self.vm_1.id)
+        if host is None:
+            self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
 
         self.debug("Migrating VM-ID: %s to Host: %s" % (
                                                         self.vm_1.id,
@@ -1698,14 +1640,13 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVMLifeCycleBothIsolated,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVMLifeCycleBothIsolated, cls).getClsTestClient()
+	cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -2033,14 +1974,13 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVMLifeCycleStoppedVPCVR,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVMLifeCycleStoppedVPCVR, cls).getClsTestClient()
+	cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -2559,29 +2499,12 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         #    works as expected.
         # 3. Make sure that we are able to access google.com from this user Vm
 
-        self.debug("Checking if the host is available for migration?")
-        hosts = Host.list(
-                          self.apiclient,
-                          zoneid=self.zone.id,
-                          type='Routing'
-                          )
-
-        self.assertEqual(
-                         isinstance(hosts, list),
-                         True,
-                         "List hosts should return a valid list"
-                         )
-        if len(hosts) < 2:
-            raise unittest.SkipTest(
-            "No host available for migration. Test requires atleast 2 hosts")
-
-        # Remove the host of current VM from the hosts list
-        hosts[:] = [host for host in hosts if host.id != self.vm_1.hostid]
-
-        host = hosts[0]
-
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
+
+        host = findSuitableHostForMigration(self.apiclient, self.vm_1.id)
+        if host is None:
+            self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
 
         self.debug("Migrating VM-ID: %s on Host: %s to Host: %s" % (
                                                         self.vm_1.id,
@@ -2736,14 +2659,13 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
     def setUpClass(cls):
         try:
 
-            cls.api_client = super(
-                               TestVMLifeCycleDiffHosts,
-                               cls
-                               ).getClsTestClient().getApiClient()
+            cls.testClient = super(TestVMLifeCycleDiffHosts, cls).getClsTestClient()
+	    cls.api_client = cls.testClient.getApiClient()
+
             cls.services = Services().services
             # Get Zone, Domain and templates
-            cls.domain = get_domain(cls.api_client, cls.services)
-            cls.zone = get_zone(cls.api_client, cls.services)
+            cls.domain = get_domain(cls.api_client)
+            cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
             cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -3159,35 +3081,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                                                 self.account.name)
         try:
             self.vm_1.stop(self.apiclient)
-
-            list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.vm_1.id
-                                                 )
-
-            vm_response = list_vm_response[0]
-
-            self.assertEqual(
-                    vm_response.state,
-                    'Stopped',
-                    "VM state should be stopped"
-                    )
-
             self.vm_2.stop(self.apiclient)
-
-            list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.vm_2.id
-                                                 )
-
-            vm_response = list_vm_response[0]
-
-            self.assertEqual(
-                    vm_response.state,
-                    'Stopped',
-                    "VM state should be stopped"
-                    )
-
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
 
@@ -3459,27 +3353,12 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         #    works as expected.
         # 3. Make sure that we are able to access google.com from this user Vm
 
-        self.debug("Checking if the host is available for migration?")
-        hosts = Host.listForMigration(
-                          self.apiclient,
-                          virtualmachineid=self.vm_1.id,
-                          )
-        self.debug("Hosts vm can be migrated to are : %s" %(hosts))
-        self.assertEqual(
-                         isinstance(hosts, list),
-                         True,
-                         "List hosts should return a valid list"
-                         )
-        # Remove the host of current VM from the hosts list
-        hosts[:] = [host for host in hosts if host.id != self.vm_1.hostid]
-        if len(hosts) <= 0:
-            self.skipTest(
-            "No host available for migration. Test requires atleast 2 hosts tagged with host1")
-
-        host = hosts[0]
-
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
+
+        host = findSuitableHostForMigration(self.apiclient, self.vm_1.id)
+        if host is None:
+            self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
 
         self.debug("Migrating VM-ID: %s to Host: %s" % (
                                                         self.vm_1.id,

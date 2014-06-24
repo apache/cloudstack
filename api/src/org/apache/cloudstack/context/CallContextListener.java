@@ -32,10 +32,9 @@ public class CallContextListener implements ManagedContextListener<Object> {
 
     @Override
     public Object onEnterContext(boolean reentry) {
-        if (!reentry) {
+        if (!reentry && CallContext.current() == null) {
             CallContext.registerSystemCallContextOnceOnly();
         }
-
         return null;
     }
 

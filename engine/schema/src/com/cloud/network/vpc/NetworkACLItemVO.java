@@ -16,9 +16,10 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -29,6 +30,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
@@ -36,6 +38,11 @@ import com.cloud.utils.net.NetUtils;
 @Entity
 @Table(name = "network_acl_item")
 public class NetworkACLItemVO implements NetworkACLItem {
+
+    /**
+     *
+     */
+    private static final long serialVersionUID = 2790623532888742060L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -71,8 +78,11 @@ public class NetworkACLItemVO implements NetworkACLItem {
     @Enumerated(value = EnumType.STRING)
     TrafficType trafficType;
 
-    @Column(name = "cidr")
-    String sourceCidrs;
+    // This is a delayed load value.  If the value is null,
+    // then this field has not been loaded yet.
+    // Call the NetworkACLItem dao to load it.
+    @Transient
+    List<String> sourceCidrs;
 
     @Column(name = "uuid")
     String uuid;
@@ -84,53 +94,36 @@ public class NetworkACLItemVO implements NetworkACLItem {
     @Enumerated(value = EnumType.STRING)
     Action action;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public NetworkACLItemVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public NetworkACLItemVO(Integer portStart, Integer portEnd, String protocol, long aclId, List<String> sourceCidrs, Integer icmpCode, Integer icmpType,
             TrafficType trafficType, Action action, int number) {
-        this.sourcePortStart = portStart;
-        this.sourcePortEnd = portEnd;
+        sourcePortStart = portStart;
+        sourcePortEnd = portEnd;
         this.protocol = protocol;
         this.aclId = aclId;
-        this.state = State.Staged;
+        state = State.Staged;
         this.icmpCode = icmpCode;
         this.icmpType = icmpType;
         setSourceCidrList(sourceCidrs);
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.trafficType = trafficType;
         this.action = action;
         this.number = number;
     }
 
     public void setSourceCidrList(List<String> sourceCidrs) {
-        if (sourceCidrs == null) {
-            this.sourceCidrs = null;
-        } else {
-            StringBuilder sb = new StringBuilder();
-            for (String cidr : sourceCidrs) {
-                if (sb.length() != 0) {
-                    sb.append(",");
-                }
-                sb.append(cidr);
-            }
-            this.sourceCidrs = sb.toString();
-        }
+        this.sourceCidrs = sourceCidrs;
     }
 
     @Override
     public List<String> getSourceCidrList() {
-        if (sourceCidrs == null || sourceCidrs.isEmpty()) {
-            return null;
-        } else {
-            List<String> cidrList = new ArrayList<String>();
-            String[] cidrs = sourceCidrs.split(",");
-            for (String cidr : cidrs) {
-                cidrList.add(cidr);
-            }
-            return cidrList;
-        }
+        return sourceCidrs;
     }
 
     @Override
@@ -188,7 +181,7 @@ public class NetworkACLItemVO implements NetworkACLItem {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     @Override
@@ -231,7 +224,12 @@ public class NetworkACLItemVO implements NetworkACLItem {
     }
 
     public void setSourceCidrs(String sourceCidrs) {
-        this.sourceCidrs = sourceCidrs;
+        List<String> srcCidrs = new LinkedList<String>();
+        StringTokenizer st = new StringTokenizer(sourceCidrs,",;");
+        while(st.hasMoreTokens()) {
+            srcCidrs.add(st.nextToken());
+        }
+        this.sourceCidrs = srcCidrs;
     }
 
     public void setNumber(int number) {
@@ -240,5 +238,18 @@ public class NetworkACLItemVO implements NetworkACLItem {
 
     public void setAction(Action action) {
         this.action = action;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 }

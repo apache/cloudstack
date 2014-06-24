@@ -31,7 +31,8 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.vm.InstanceGroup;
 
-@APICommand(name = "createInstanceGroup", description = "Creates a vm group", responseObject = InstanceGroupResponse.class)
+@APICommand(name = "createInstanceGroup", description = "Creates a vm group", responseObject = InstanceGroupResponse.class, entityType = {InstanceGroup.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVMGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVMGroupCmd.class.getName());
 
@@ -89,7 +90,7 @@ public class CreateVMGroupCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -103,7 +104,7 @@ public class CreateVMGroupCmd extends BaseCmd {
         if (result != null) {
             InstanceGroupResponse response = _responseGenerator.createInstanceGroupResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vm instance group");
         }

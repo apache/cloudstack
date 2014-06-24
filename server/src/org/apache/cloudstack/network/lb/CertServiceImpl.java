@@ -18,8 +18,6 @@ package org.apache.cloudstack.network.lb;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
@@ -53,18 +51,17 @@ import javax.crypto.NoSuchPaddingException;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PasswordFinder;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
 import org.apache.cloudstack.api.response.SslCertResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PasswordFinder;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -109,10 +106,10 @@ public class CertServiceImpl implements CertService {
     public SslCertResponse uploadSslCert(UploadSslCertCmd certCmd) {
         try {
 
-            String cert = URLDecoder.decode(certCmd.getCert(), "UTF-8");
-            String key = URLDecoder.decode(certCmd.getKey(), "UTF-8");
+            String cert = certCmd.getCert();
+            String key = certCmd.getKey();
             String password = certCmd.getPassword();
-            String chain = certCmd.getChain() == null ? null : URLDecoder.decode(certCmd.getChain(), "UTF-8");
+            String chain = certCmd.getChain();
 
             validate(cert, key, password, chain);
             s_logger.debug("Certificate Validation succeeded");
@@ -127,8 +124,8 @@ public class CertServiceImpl implements CertService {
 
             return createCertResponse(certVO, null);
 
-        } catch (UnsupportedEncodingException e) {
-            throw new CloudRuntimeException("Error decoding certificate data");
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Error parsing certificate data " + e.getMessage());
         }
 
     }
@@ -147,7 +144,7 @@ public class CertServiceImpl implements CertService {
         if (certVO == null) {
             throw new InvalidParameterValueException("Invalid certificate id: " + certId);
         }
-        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, certVO);
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, true, certVO);
 
         List<LoadBalancerCertMapVO> lbCertRule = _lbCertDao.listByCertId(certId);
 
@@ -191,7 +188,7 @@ public class CertServiceImpl implements CertService {
                 throw new InvalidParameterValueException("Invalid certificate id: " + certId);
             }
 
-            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ListEntry, true, certVO);
+            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, certVO);
 
             certLbMap = _lbCertDao.listByCertId(certId);
 
@@ -206,14 +203,15 @@ public class CertServiceImpl implements CertService {
                 throw new InvalidParameterValueException("found no loadbalancer  wth id: " + lbRuleId);
             }
 
-            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ListEntry, true, lb);
+            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, lb);
 
             // get the cert id
             LoadBalancerCertMapVO lbCertMapRule;
             lbCertMapRule = _lbCertDao.findByLbRuleId(lbRuleId);
 
             if (lbCertMapRule == null) {
-                throw new InvalidParameterValueException("No certificate bound to loadbalancer id: " + lbRuleId);
+                s_logger.debug("No certificate bound to loadbalancer id: " + lbRuleId);
+                return certResponseList;
             }
 
             certVO = _sslCertDao.findById(lbCertMapRule.getCertId());
@@ -228,7 +226,7 @@ public class CertServiceImpl implements CertService {
         List<SslCertVO> certVOList = _sslCertDao.listByAccountId(accountId);
         if (certVOList == null || certVOList.isEmpty())
             return certResponseList;
-        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ListEntry, true, certVOList.get(0));
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, certVOList.get(0));
 
         for (SslCertVO cert : certVOList) {
             certLbMap = _lbCertDao.listByCertId(cert.getId());
@@ -428,7 +426,7 @@ public class CertServiceImpl implements CertService {
         try {
             return (Certificate)certPem.readObject();
         } catch (Exception e) {
-            throw new InvalidParameterValueException("Invalid Certificate format. Expected X509 certificate");
+            throw new InvalidParameterValueException("Invalid Certificate format. Expected X509 certificate. Failed due to " + e.getMessage());
         } finally {
             IOUtils.closeQuietly(certPem);
         }
@@ -486,7 +484,7 @@ public class CertServiceImpl implements CertService {
         char[] password;
 
         KeyPassword(char[] word) {
-            this.password = word;
+            password = word;
         }
 
         @Override

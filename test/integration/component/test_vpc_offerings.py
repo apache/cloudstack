@@ -23,9 +23,9 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from marvin.sshClient import SshClient
 import datetime
 
@@ -137,14 +137,13 @@ class TestVPCOffering(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVPCOffering,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPCOffering, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -235,7 +234,7 @@ class TestVPCOffering(cloudstackTestCase):
         self.debug("VPC network created successfully - %s" % network.name)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_01_create_vpc_offering(self):
         """ Test create VPC offering
         """
@@ -255,7 +254,7 @@ class TestVPCOffering(cloudstackTestCase):
         self.validate_vpc_offering(vpc_off)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioning"])
     def test_02_deploy_vms_in_vpc_nw(self):
         """Test deploy virtual machines in VPC networks"""
 
@@ -457,7 +456,7 @@ class TestVPCOffering(cloudstackTestCase):
         # TODO: Remote Access VPN is not yet supported in VPC
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_03_vpc_off_without_lb(self):
         """Test VPC offering without load balancing service"""
 
@@ -578,7 +577,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_04_vpc_off_without_static_nat(self):
         """Test VPC offering without static NAT service"""
 
@@ -697,7 +696,7 @@ class TestVPCOffering(cloudstackTestCase):
                               )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_05_vpc_off_without_pf(self):
         """Test VPC offering without port forwarding service"""
 
@@ -815,7 +814,7 @@ class TestVPCOffering(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_06_vpc_off_invalid_services(self):
         """Test VPC offering with invalid services"""
 
@@ -847,7 +846,7 @@ class TestVPCOffering(cloudstackTestCase):
             self.fail("Failed to create the VPC offering - %s" % e)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_07_update_vpc_off(self):
         """Test update VPC offering"""
 
@@ -936,7 +935,7 @@ class TestVPCOffering(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_08_list_vpc_off(self):
         """Test list VPC offering"""
 

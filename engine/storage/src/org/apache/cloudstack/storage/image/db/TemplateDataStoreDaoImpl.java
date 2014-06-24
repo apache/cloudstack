@@ -63,6 +63,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     private SearchBuilder<TemplateDataStoreVO> storeTemplateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeTemplateStateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeTemplateDownloadStatusSearch;
+    private SearchBuilder<TemplateDataStoreVO> downloadTemplateSearch;
 
     @Inject
     private DataStoreManager _storeMgr;
@@ -130,6 +131,11 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         storeTemplateSearch.and("template_id", storeTemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
         storeTemplateSearch.and("destroyed", storeTemplateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         storeTemplateSearch.done();
+
+        downloadTemplateSearch = createSearchBuilder();
+        downloadTemplateSearch.and("download_url", downloadTemplateSearch.entity().getExtractUrl(), Op.NNULL);
+        downloadTemplateSearch.and("destroyed", downloadTemplateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        downloadTemplateSearch.done();
 
         return true;
     }
@@ -400,6 +406,22 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         return null;
     }
 
+    @Override
+    public TemplateDataStoreVO findByTemplateZoneReady(long templateId, Long zoneId) {
+        List<DataStore> imgStores = null;
+        imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        if (imgStores != null) {
+            Collections.shuffle(imgStores);
+            for (DataStore store : imgStores) {
+                List<TemplateDataStoreVO> sRes = listByTemplateStoreStatus(templateId, store.getId(), State.Ready);
+                if (sRes != null && sRes.size() > 0) {
+                    return sRes.get(0);
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * Duplicate all image cache store entries
      */
@@ -470,6 +492,13 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
             }
         }
 
+    }
+
+    @Override
+    public List<TemplateDataStoreVO> listTemplateDownloadUrls() {
+        SearchCriteria<TemplateDataStoreVO> sc = downloadTemplateSearch.create();
+        sc.setParameters("destroyed", false);
+        return listBy(sc);
     }
 
 }

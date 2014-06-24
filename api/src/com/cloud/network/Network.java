@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -34,7 +35,7 @@ import com.cloud.utils.fsm.StateObject;
 /**
  * owned by an account.
  */
-public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity, Serializable {
+public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity, Serializable, Displayable {
 
     public enum GuestType {
         Shared, Isolated
@@ -57,7 +58,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service PortForwarding = new Service("PortForwarding");
         public static final Service SecurityGroup = new Service("SecurityGroup");
         public static final Service NetworkACL = new Service("NetworkACL", Capability.SupportedProtocols);
-        public static final Service Connectivity = new Service("Connectivity");
+        public static final Service Connectivity = new Service("Connectivity", Capability.DistributedRouter, Capability.RegionLevelVpc, Capability.StretchedL2Subnet);
 
         private final String name;
         private final Capability[] caps;
@@ -112,7 +113,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         private static List<Provider> supportedProviders = new ArrayList<Provider>();
 
         public static final Provider VirtualRouter = new Provider("VirtualRouter", false);
-        public static final Provider JuniperContrail = new Provider("JuniperContrail", false);
+        public static final Provider JuniperContrailRouter = new Provider("JuniperContrailRouter", false);
+        public static final Provider JuniperContrailVpcRouter = new Provider("JuniperContrailVpcRouter", false);
         public static final Provider JuniperSRX = new Provider("JuniperSRX", true);
         public static final Provider PaloAlto = new Provider("PaloAlto", true);
         public static final Provider F5BigIp = new Provider("F5BigIp", true);
@@ -185,6 +187,9 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability SslTermination = new Capability("SslTermination");
         public static final Capability LbSchemes = new Capability("LbSchemes");
         public static final Capability DhcpAccrossMultipleSubnets = new Capability("DhcpAccrossMultipleSubnets");
+        public static final Capability DistributedRouter = new Capability("DistributedRouter");
+        public static final Capability StretchedL2Subnet = new Capability("StretchedL2Subnet");
+        public static final Capability RegionLevelVpc = new Capability("RegionLevelVpc");
 
         private final String name;
 
@@ -323,7 +328,10 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     boolean getSpecifyIpRanges();
 
+    @Deprecated
     boolean getDisplayNetwork();
+
+    boolean isDisplay();
 
     String getGuruName();
 
@@ -335,4 +343,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     Long getNetworkACLId();
 
     void setNetworkACLId(Long networkACLId);
+
+    boolean isStrechedL2Network();
 }

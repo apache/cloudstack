@@ -63,6 +63,9 @@ import common.adapter.AwtCanvasAdapter;
 
 public class RdpClient extends PipelineImpl {
 
+    AwtMouseEventSource mouseEventSource = null;
+    AwtKeyEventSource keyEventSource = null;
+
     /**
      * Name of last OneTimePacket in handshake sequence.
      */
@@ -333,8 +336,8 @@ public class RdpClient extends PipelineImpl {
         // Main network
         //
 
-        AwtMouseEventSource mouseEventSource = new AwtMouseEventSource("mouse");
-        AwtKeyEventSource keyEventSource = new AwtKeyEventSource("keyboard");
+        mouseEventSource = new AwtMouseEventSource("mouse");
+        keyEventSource = new AwtKeyEventSource("keyboard");
 
         // Subscribe packet sender to various events
         canvas.addMouseListener(mouseEventSource);
@@ -389,5 +392,13 @@ public class RdpClient extends PipelineImpl {
         link("client_fastpath_queue", "client_fastpath_queue< queue");
         link("client_x224_data_queue", "client_tpkt_queue", "client_tpkt_queue< queue");
 
+    }
+
+    public AwtMouseEventSource getMouseEventSource() {
+        return mouseEventSource;
+    }
+
+    public AwtKeyEventSource getKeyEventSource() {
+        return keyEventSource;
     }
 }

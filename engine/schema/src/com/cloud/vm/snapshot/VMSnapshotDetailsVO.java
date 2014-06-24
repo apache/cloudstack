@@ -44,14 +44,17 @@ public class VMSnapshotDetailsVO implements ResourceDetail {
     @Column(name = "value")
     String value;
 
-    public VMSnapshotDetailsVO() {
+    @Column(name = "display")
+    private boolean display = true;
 
+    public VMSnapshotDetailsVO() {
     }
 
-    public VMSnapshotDetailsVO(long vmSnapshotId, String name, String value) {
+    public VMSnapshotDetailsVO(long vmSnapshotId, String name, String value, boolean display) {
         this.resourceId = vmSnapshotId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override
@@ -76,6 +79,6 @@ public class VMSnapshotDetailsVO implements ResourceDetail {
 
     @Override
     public boolean isDisplay() {
-        return false;
+        return display;
     }
 }

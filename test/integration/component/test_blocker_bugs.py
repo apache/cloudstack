@@ -16,15 +16,30 @@
 # under the License.
 """ Tests for Blocker bugs
 """
-import marvin
 from nose.plugins.attrib import attr
-from marvin.integration.lib.base import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.common import *
+from marvin.lib.base import (Snapshot,
+                             Template,
+                             Domain,
+                             Account,
+                             ServiceOffering,
+                             Network,
+                             VirtualMachine,
+                             PublicIPAddress,
+                             StaticNATRule,
+                             FireWallRule,
+                             Volume)
+from marvin.lib.utils import cleanup_resources, validateList
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               list_routers,
+                               get_builtin_template_info)
 
 #Import Local Modules
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import restartNetwork
+from marvin.codes import PASS
+import time
 
 
 class Services:
@@ -95,8 +110,8 @@ class Services:
 class TestTemplate(cloudstackTestCase):
 
     def setUp(self):
-
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         return
@@ -110,12 +125,13 @@ class TestTemplate(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestTemplate, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestTemplate, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["template"]["zoneid"] = cls.zone.id
@@ -149,7 +165,7 @@ class TestTemplate(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg", "provisioning"])
     def test_01_create_template(self):
         """TS_BUG_002-Test to create and deploy VM using password enabled template
         """
@@ -173,7 +189,8 @@ class TestTemplate(cloudstackTestCase):
                                         self.services["template"],
                                         zoneid=self.zone.id,
                                         account=self.account.name,
-                                        domainid=self.account.domainid
+                                        domainid=self.account.domainid,
+                                        hypervisor=self.hypervisor
                                         )
         self.debug(
                 "Registered a template of format: %s with ID: %s" % (
@@ -242,12 +259,14 @@ class TestNATRules(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestNATRules, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cls.testClient = super(TestNATRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
@@ -308,7 +327,7 @@ class TestNATRules(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_01_firewall_rules_port_fw(self):
         """"Checking firewall rules deletion after static NAT disable"""
 
@@ -448,10 +467,12 @@ class TestRouters(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestRouters, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRouters, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -515,7 +536,7 @@ class TestRouters(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_01_list_routers_admin(self):
         """TS_BUG_007-Check listRouters() using Admin User
         """
@@ -573,11 +594,13 @@ class TestRouterRestart(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestRouterRestart, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRouterRestart, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
@@ -630,7 +653,7 @@ class TestRouterRestart(cloudstackTestCase):
         # No need
         return
 
-    @attr(tags = ["advanced", "advancedns", "eip"])
+    @attr(tags=["advanced", "advancedns", "eip", "selfservice"])
     def test_01_restart_network_cleanup(self):
         """TS_BUG_008-Test restart network
         """
@@ -706,12 +729,14 @@ class TestTemplates(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.services = Services().services
-        cls.api_client = super(TestTemplates, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestTemplates, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        # Get Zone, templates etc
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
+
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -720,20 +745,24 @@ class TestTemplates(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.account = Account.create(
+        cls._cleanup = []
+        try:
+            cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
+            cls._cleanup.append(cls.account)
 
-        cls.services["account"] = cls.account.name
-        cls.service_offering = ServiceOffering.create(
+            cls.services["account"] = cls.account.name
+            cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"],
                                         )
+            cls._cleanup.append(cls.service_offering)
 
-        # create virtual machine
-        cls.virtual_machine = VirtualMachine.create(
+            # create virtual machine
+            cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
@@ -741,27 +770,20 @@ class TestTemplates(cloudstackTestCase):
                                     domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     )
-        #Stop virtual machine
-        cls.virtual_machine.stop(cls.api_client)
+            #Stop virtual machine
+            cls.virtual_machine.stop(cls.api_client)
 
-        #Wait before server has be successfully stopped
-        time.sleep(30)
-        list_volume = Volume.list(
+            listvolumes = Volume.list(
                                    cls.api_client,
                                    virtualmachineid=cls.virtual_machine.id,
                                    type='ROOT',
                                    listall=True
                                    )
-        try:
-            if isinstance(list_volume, list):
-                cls.volume = list_volume[0]
+            assert validateList(listvolumes)[0] == PASS, "volumes list is empty"
+            cls.volume = listvolumes[0]
         except Exception as e:
-            raise Exception("Warning: Exception during setup : %s" % e)
-
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.account,
-                        ]
+            cls.tearDownClass()
+            raise unittest.SkipTest("Exception in setUpClass: %s" % e)
 
     @classmethod
     def tearDownClass(cls):
@@ -793,7 +815,7 @@ class TestTemplates(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "basic", "sg", "eip"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg", "eip", "provisioning"])
     def test_01_check_template_size(self):
         """TS_BUG_009-Test the size of template created from root disk
         """
@@ -821,7 +843,7 @@ class TestTemplates(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "basic", "sg", "eip"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg", "eip", "provisioning"])
     def test_02_check_size_snapshotTemplate(self):
         """TS_BUG_010-Test check size of snapshot and template
         """
@@ -902,7 +924,7 @@ class TestTemplates(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "basic", "sg", "eip"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg", "eip", "provisioning"])
     def test_03_reuse_template_name(self):
         """TS_BUG_011-Test Reusing deleted template name
         """

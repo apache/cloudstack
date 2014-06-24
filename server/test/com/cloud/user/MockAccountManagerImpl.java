@@ -120,7 +120,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public boolean isAdmin(short accountType) {
+    public boolean isAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -162,7 +162,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public boolean isRootAdmin(short accountType) {
+    public boolean isRootAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -224,6 +224,13 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         // TODO Auto-generated method stub
     }
 
+
+    @Override
+    public UserAccount getUserAccountById(Long userId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     @Override
     public void logoutUser(long userId) {
         // TODO Auto-generated method stub
@@ -252,33 +259,32 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
 
     @Override
     public void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-        ListProjectResourcesCriteria listProjectResourcesCriteria) {
+            ListProjectResourcesCriteria listProjectResourcesCriteria) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
     public void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-        ListProjectResourcesCriteria listProjectResourcesCriteria) {
+            ListProjectResourcesCriteria listProjectResourcesCriteria) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
-    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts,
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation) {
+    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation) {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-        ListProjectResourcesCriteria listProjectResourcesCriteria) {
+    public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
+            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-        ListProjectResourcesCriteria listProjectResourcesCriteria) {
+    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc, Long domainId,
+            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
         // TODO Auto-generated method stub
     }
 
@@ -321,5 +327,36 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public boolean isDomainAdmin(Long accountId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean isNormalUser(long accountId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public List<String> listAclGroupsByAccount(Long accountId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
+            ControlledEntity... entities) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 
 }

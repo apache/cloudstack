@@ -65,20 +65,23 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     @Column(name = "vpc_id")
     private Long vpcId;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public RemoteAccessVpnVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
-    public RemoteAccessVpnVO(long accountId, long domainId, Long networkId, long publicIpId, Long vpcId, String localIp, String ipRange, String presharedKey) {
+    public RemoteAccessVpnVO(long accountId, long domainId, Long networkId, long publicIpId, Long vpcId, String localIp, String ipRange,  String presharedKey) {
         this.accountId = accountId;
-        this.serverAddressId = publicIpId;
+        serverAddressId = publicIpId;
         this.ipRange = ipRange;
-        this.ipsecPresharedKey = presharedKey;
+        ipsecPresharedKey = presharedKey;
         this.localIp = localIp;
         this.domainId = domainId;
         this.networkId = networkId;
-        this.state = State.Added;
-        this.uuid = UUID.randomUUID().toString();
+        state = State.Added;
+        uuid = UUID.randomUUID().toString();
         this.vpcId = vpcId;
     }
 
@@ -147,5 +150,23 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     @Override
     public Long getVpcId() {
         return vpcId;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return RemoteAccessVpn.class;
     }
 }

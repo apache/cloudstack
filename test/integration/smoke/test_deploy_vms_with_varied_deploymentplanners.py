@@ -15,39 +15,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import Account, VirtualMachine, ServiceOffering, Host, Cluster
-from marvin.integration.lib.common import get_zone, get_domain, get_template
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.base import Account, VirtualMachine, ServiceOffering, Host, Cluster
+from marvin.lib.common import get_zone, get_domain, get_template
+from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
-
-class Services:
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                # Random characters are appended for unique
-                # username
-                "password": "password",
-            },
-            "service_offering": {
-                "name": "Planner Service Offering",
-                "displaytext": "Planner Service Offering",
-                "cpunumber": 1,
-                "cpuspeed": 100,
-                # in MHz
-                "memory": 128,
-                # In MBs
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            "virtual_machine": {
-                "hypervisor": "XenServer",
-            }
-        }
-
 
 class TestDeployVmWithVariedPlanners(cloudstackTestCase):
     """ Test to create services offerings for deployment planners
@@ -56,16 +29,22 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apiclient = super(TestDeployVmWithVariedPlanners, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        testClient = super(TestDeployVmWithVariedPlanners, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.apiclient, cls.services)
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.template = get_template(
             cls.apiclient,
             cls.zone.id,
             cls.services["ostype"]
         )
+
+        if cls.template == FAILED:
+            assert false, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["template"] = cls.template.id
         cls.services["zoneid"] = cls.zone.id
@@ -75,21 +54,20 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
-        cls.services["account"] = cls.account.name
         cls.hosts = Host.list(cls.apiclient, type='Routing')
         cls.clusters = Cluster.list(cls.apiclient)
         cls.cleanup = [
             cls.account
         ]
 
-    @attr(tags=["simulator", "advanced", "basic", "sg"])
+    @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
     def test_deployvm_firstfit(self):
         """Test to deploy vm with a first fit offering
         """
         #FIXME: How do we know that first fit actually happened?
         self.service_offering_firstfit = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offering"],
+            self.services["service_offerings"],
             deploymentplanner='FirstFitPlanner'
         )
 
@@ -126,13 +104,13 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             msg="VM is not in Running state"
         )
 
-    @attr(tags=["simulator", "advanced", "basic", "sg"])
+    @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
     def test_deployvm_userdispersing(self):
         """Test deploy VMs using user dispersion planner
         """
         self.service_offering_userdispersing = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offering"],
+            self.services["service_offerings"],
             deploymentplanner='UserDispersingPlanner'
         )
 
@@ -185,13 +163,13 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             self.debug("VMs (%s, %s) meant to be dispersed are deployed in the same cluster %s" % (
             vm1.id, vm2.id, vm1clusterid))
 
-    @attr(tags=["simulator", "advanced", "basic", "sg"])
+    @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
     def test_deployvm_userconcentrated(self):
         """Test deploy VMs using user concentrated planner
         """
         self.service_offering_userconcentrated = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offering"],
+            self.services["service_offerings"],
             deploymentplanner='UserConcentratedPodPlanner'
         )
 

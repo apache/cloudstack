@@ -29,11 +29,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -356,7 +355,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
                 try {
                     Account caller = CallContext.current().getCallingAccount();
                     long callerUserId = CallContext.current().getCallingUserId();
-                    outsideIp = _ipAddrMgr.allocateIp(owner, false, caller, callerUserId, zone);
+                    outsideIp = _ipAddrMgr.allocateIp(owner, false, caller, callerUserId, zone, true);
                 } catch (ResourceAllocationException e) {
                     s_logger.error("Unable to allocate additional public Ip address. Exception details " + e);
                     throw new CloudRuntimeException("Unable to allocate additional public Ip address. Exception details " + e);

@@ -20,6 +20,9 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,11 +42,17 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "createPortForwardingRule", description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class)
+
+@APICommand(name = "createPortForwardingRule", description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class, entityType = {FirewallRule.class,
+        VirtualMachine.class, IpAddress.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
     public static final Logger s_logger = Logger.getLogger(CreatePortForwardingRuleCmd.class.getName());
 
@@ -53,23 +62,24 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.IP_ADDRESS_ID,
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
-               required = true,
-               description = "the IP address id of the port forwarding rule")
+            required = true,
+    description = "the IP address id of the port forwarding rule")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.PRIVATE_START_PORT,
                type = CommandType.INTEGER,
                required = true,
-               description = "the starting port of port forwarding rule's private port range")
+            description = "the starting port of port forwarding rule's private port range")
     private Integer privateStartPort;
 
     @Parameter(name = ApiConstants.PROTOCOL,
                type = CommandType.STRING,
                required = true,
-               description = "the protocol for the port fowarding rule. Valid values are TCP or UDP.")
+            description = "the protocol for the port fowarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
     @Parameter(name = ApiConstants.PRIVATE_END_PORT,
@@ -81,7 +91,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Parameter(name = ApiConstants.PUBLIC_START_PORT,
                type = CommandType.INTEGER,
                required = true,
-               description = "the starting port of port forwarding rule's public port range")
+            description = "the starting port of port forwarding rule's public port range")
     private Integer publicStartPort;
 
     @Parameter(name = ApiConstants.PUBLIC_END_PORT,
@@ -90,11 +100,12 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
                description = "the ending port of port forwarding rule's private port range")
     private Integer publicEndPort;
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
-               required = true,
-               description = "the ID of the virtual machine for the port forwarding rule")
+            required = true,
+                description = "the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
 
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
@@ -114,8 +125,11 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Parameter(name = ApiConstants.VM_GUEST_IP,
                type = CommandType.STRING,
                required = false,
-               description = "VM guest nic Secondary ip address for the port forwarding rule")
+    description = "VM guest nic Secondary ip address for the port forwarding rule")
     private String vmSecondaryIp;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -281,7 +295,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         }
         if (ntwkId == null) {
             throw new InvalidParameterValueException("Unable to create port forwarding rule for the ipAddress id=" + ipAddressId +
-                " as ip is not associated with any network and no networkId is passed in");
+                    " as ip is not associated with any network and no networkId is passed in");
         }
         return ntwkId;
     }
@@ -334,13 +348,13 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
         Ip privateIp = getVmSecondaryIp();
         if (privateIp != null) {
-            if (!privateIp.isIp4()) {
+            if (!NetUtils.isValidIp(privateIp.toString())) {
                 throw new InvalidParameterValueException("Invalid vm ip address");
             }
         }
 
         try {
-            PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId, privateIp, getOpenFirewall());
+            PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId, privateIp, getOpenFirewall(), isDisplay());
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException ex) {
@@ -413,6 +427,20 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Override
     public TrafficType getTrafficType() {
         return null;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if (display != null) {
+            return display;
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return FirewallRule.class;
     }
 
 }

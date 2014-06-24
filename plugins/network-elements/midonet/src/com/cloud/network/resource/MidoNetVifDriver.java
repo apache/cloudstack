@@ -103,7 +103,7 @@ public class MidoNetVifDriver extends VifDriverBase {
     }
 
     @Override
-    public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType) throws InternalErrorException, LibvirtException {
+    public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType, String nicAdapter) throws InternalErrorException, LibvirtException {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("nic=" + nic);
@@ -146,7 +146,7 @@ public class MidoNetVifDriver extends VifDriverBase {
                 }
             }
 
-            intf.defEthernet(tapName, nic.getMac(), getGuestNicModel(guestOsType), "");
+            intf.defEthernet(tapName, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), "");
 
         } else {
             throw new InternalErrorException("Only NICs of BroadcastDomain type Mido are supported by the MidoNetVifDriver");

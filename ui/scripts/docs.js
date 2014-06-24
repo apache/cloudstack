@@ -218,6 +218,10 @@ cloudStack.docs = {
         desc: 'Type of disk for the VM. Local storage is attached to the hypervisor host where the VM is running. Shared storage is accessible via NFS.',
         externalLink: ''
     },
+    helpComputeOfferingProvisioningType: {
+        desc: 'Provisioning type to create a volume. Thin and sparse is lazy allocation. fat is eager allocation.',
+        externalLink: ''
+    },
     helpComputeOfferingCPUCores: {
         desc: 'The number of cores which should be allocated to a VM with this offering',
         externalLink: ''
@@ -282,6 +286,10 @@ cloudStack.docs = {
         desc: 'A short description of the offering that can be displayed to users',
         externalLink: ''
     },
+    helpDiskOfferingProvisioningType: {
+        desc: 'Provisioning type to create a volume. Thin and sparse is lazy allocation. fat is eager allocation.',
+        externalLink: ''
+    },
     helpDiskOfferingStorageType: {
         desc: 'Type of disk for the VM. Local is attached to the hypervisor host where the VM is running. Shared is storage accessible via NFS.',
         externalLink: ''
@@ -327,7 +335,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpDiskOfferingHypervisorSnapshotReserve: {
-        desc: 'Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware) (Ex. The value 25 means 25%.)).',
+        desc: 'Hypervisor snapshot reserve space as a percent of a volume (for managed storage using XenServer or VMware) (Ex. The value 25 means 25%.)).',
     },
     helpDiskOfferingCacheMode: {
         desc: 'The write caching mode to use for disks created with this disk offering. This can improve write performance.',
@@ -627,7 +635,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpPrimaryStorageProtocol: {
-        desc: 'For XenServer, choose NFS, iSCSI, or PreSetup. For KVM, choose NFS or SharedMountPoint. For vSphere, choose VMFS (iSCSI or FiberChannel) or NFS.',
+        desc: 'For XenServer, choose NFS, iSCSI, or PreSetup. For KVM, choose NFS or SharedMountPoint. For vSphere, choose VMFS (iSCSI or FiberChannel) or NFS. For Hyper-V, choose SMB/CIFS',
         externalLink: ''
     },
     helpPrimaryStorageServer: {
@@ -1197,7 +1205,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpUploadVolumeFormat: {
-        desc: 'The disk image format of the volume. XenServer is VHD, VMware is OVA, and KVM is QCOW2.',
+        desc: 'The disk image format of the volume. XenServer is VHD, VMware is OVA, and KVM is QCOW2. Hyper-V is VHD.',
         externalLink: ''
     },
     helpUploadVolumeURL: {
@@ -1222,6 +1230,14 @@ cloudStack.docs = {
     },
     helpOvm3Vip: {
         desc: 'The VIP used by the pool and cluster',
+        externalLink: ''
+    },
+    helpVpcOfferingName: {
+        desc: 'Any desired name for the VPC offering',
+        externalLink: ''
+    },
+    helpVpcOfferingDescription: {
+        desc: 'A short description of the offering that can be displayed to users',
         externalLink: ''
     }
 };

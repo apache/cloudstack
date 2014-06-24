@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -134,6 +135,10 @@ public class HostResponse extends BaseResponse {
     @SerializedName("memoryused")
     @Param(description = "the amount of the host's memory currently used")
     private Long memoryUsed;
+
+    @SerializedName(ApiConstants.GPUGROUP)
+    @Param(description = "GPU cards present in the host", responseObject = GpuResponse.class, since = "4.4")
+    private List<GpuResponse> gpuGroup;
 
     @SerializedName("disksizetotal")
     @Param(description = "the total disk size of the host")
@@ -318,6 +323,10 @@ public class HostResponse extends BaseResponse {
 
     public void setMemoryUsed(Long memoryUsed) {
         this.memoryUsed = memoryUsed;
+    }
+
+    public void setGpuGroups(List<GpuResponse> gpuGroup) {
+        this.gpuGroup = gpuGroup;
     }
 
     public void setDiskSizeTotal(Long diskSizeTotal) {

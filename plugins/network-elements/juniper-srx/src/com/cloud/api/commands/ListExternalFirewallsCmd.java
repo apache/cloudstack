@@ -35,7 +35,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.host.Host;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 
-@APICommand(name = "listExternalFirewalls", description = "List external firewall appliances.", responseObject = ExternalFirewallResponse.class)
+@APICommand(name = "listExternalFirewalls", description = "List external firewall appliances.", responseObject = ExternalFirewallResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListExternalFirewallsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
     private static final String s_name = "listexternalfirewallsresponse";

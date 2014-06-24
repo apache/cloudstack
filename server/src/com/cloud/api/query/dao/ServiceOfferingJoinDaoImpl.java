@@ -59,6 +59,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setDefaultUse(offering.isDefaultUse());
         offeringResponse.setSystemVmType(offering.getSystemVmType());
         offeringResponse.setDisplayText(offering.getDisplayText());
+        offeringResponse.setProvisioningType(offering.getProvisioningType().toString());
         offeringResponse.setCpuNumber(offering.getCpu());
         offeringResponse.setCpuSpeed(offering.getSpeed());
         offeringResponse.setMemory(offering.getRamSize());
@@ -73,6 +74,10 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setNetworkRate(offering.getRateMbps());
         offeringResponse.setHostTag(offering.getHostTag());
         offeringResponse.setDeploymentPlanner(offering.getDeploymentPlanner());
+        offeringResponse.setCustomizedIops(offering.isCustomizedIops());
+        offeringResponse.setMinIops(offering.getMinIops());
+        offeringResponse.setMaxIops(offering.getMaxIops());
+        offeringResponse.setHypervisorSnapshotReserve(offering.getHypervisorSnapshotReserve());
         offeringResponse.setBytesReadRate(offering.getBytesReadRate());
         offeringResponse.setBytesWriteRate(offering.getBytesWriteRate());
         offeringResponse.setIopsReadRate(offering.getIopsReadRate());

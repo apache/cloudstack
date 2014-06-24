@@ -27,7 +27,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "listEventTypes", description = "List Event Types", responseObject = EventTypeResponse.class)
+@APICommand(name = "listEventTypes", description = "List Event Types", responseObject = EventTypeResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListEventTypesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListEventTypesCmd.class.getName());
     private static final String s_name = "listeventtypesresponse";

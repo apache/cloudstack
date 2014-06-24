@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,28 +15,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.nicira;
 
 import java.util.List;
 
-/**
- *
- */
-public class LogicalRouterPort {
-    private String displayName;
-    private List<NiciraNvpTag> tags;
+public class LogicalRouterPort extends BaseNiciraNamedEntity {
     private Integer portno;
     private boolean adminStatusEnabled;
     private List<String> ipAddresses;
     private String macAddress;
     private final String type = "LogicalRouterPortConfig";
-    private String uuid;
 
     public int getPortno() {
         return portno;
     }
 
-    public void setPortno(int portno) {
+    public void setPortno(final int portno) {
         this.portno = portno;
     }
 
@@ -43,7 +40,7 @@ public class LogicalRouterPort {
         return adminStatusEnabled;
     }
 
-    public void setAdminStatusEnabled(boolean adminStatusEnabled) {
+    public void setAdminStatusEnabled(final boolean adminStatusEnabled) {
         this.adminStatusEnabled = adminStatusEnabled;
     }
 
@@ -51,7 +48,7 @@ public class LogicalRouterPort {
         return ipAddresses;
     }
 
-    public void setIpAddresses(List<String> ipAddresses) {
+    public void setIpAddresses(final List<String> ipAddresses) {
         this.ipAddresses = ipAddresses;
     }
 
@@ -59,32 +56,7 @@ public class LogicalRouterPort {
         return macAddress;
     }
 
-    public void setMacAddress(String macAddress) {
+    public void setMacAddress(final String macAddress) {
         this.macAddress = macAddress;
     }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public List<NiciraNvpTag> getTags() {
-        return tags;
-    }
-
-    public void setTags(List<NiciraNvpTag> tags) {
-        this.tags = tags;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
 }

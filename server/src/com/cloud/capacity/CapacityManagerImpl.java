@@ -182,12 +182,21 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @DB
     @Override
     public boolean releaseVmCapacity(VirtualMachine vm, final boolean moveFromReserved, final boolean moveToReservered, final Long hostId) {
+        if (hostId == null) {
+            return true;
+        }
+
         final ServiceOfferingVO svo = _offeringsDao.findById(vm.getId(), vm.getServiceOfferingId());
         CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, Capacity.CAPACITY_TYPE_CPU);
         CapacityVO capacityMemory = _capacityDao.findByHostIdType(hostId, Capacity.CAPACITY_TYPE_MEMORY);
         Long clusterId = null;
         if (hostId != null) {
             HostVO host = _hostDao.findById(hostId);
+            if (host == null) {
+                s_logger.warn("Host " + hostId + " no long exist anymore!");
+                return true;
+            }
+
             clusterId = host.getClusterId();
         }
         if (capacityCpu == null || capacityMemory == null || svo == null) {
@@ -539,7 +548,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         // if the storage pool is managed, the used bytes can be larger than the sum of the sizes of all of the non-destroyed volumes
         // in this case, call getUsedBytes(StoragePoolVO)
         if (pool.isManaged()) {
-            totalAllocatedSize = getUsedBytes(pool);
+            return getUsedBytes(pool);
         }
         else {
             // Get size for all the non-destroyed volumes

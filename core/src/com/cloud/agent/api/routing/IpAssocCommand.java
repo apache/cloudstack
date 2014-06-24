@@ -38,4 +38,8 @@ public class IpAssocCommand extends NetworkElementCommand {
         return ipAddresses;
     }
 
+    @Override
+    public int getAnswersCount() {
+        return ipAddresses.length;
+    }
 }

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.simulator;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,6 +26,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -53,6 +56,16 @@ public class MockConfigurationVO implements InternalIdentity {
 
     @Column(name = "values")
     private String values;
+
+    @Column(name="count")
+    private Integer count;
+
+    @Column(name="json_response")
+    private String jsonResponse;
+
+    @Column(name="removed")
+    @Temporal(value=TemporalType.TIMESTAMP)
+    private Date removed;
 
     @Override
     public long getId() {
@@ -119,5 +132,25 @@ public class MockConfigurationVO implements InternalIdentity {
 
     public void setValues(String values) {
         this.values = values;
+    }
+
+    public Integer getCount() {
+        return this.count;
+    }
+
+    public void setCount(Integer count) {
+        this.count = count;
+    }
+
+    public String getJsonResponse() {
+        return this.jsonResponse;
+    }
+
+    public void setJsonResponse(String jsonResponse) {
+        this.jsonResponse = jsonResponse;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
     }
 }

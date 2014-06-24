@@ -36,6 +36,7 @@
          * Dialog with form
          */
         createForm: function(args) {
+            var cancel = args.cancel;
             var $formContainer = $('<div>').addClass('form-container');
             var $form = $('<form>').appendTo($formContainer)
                     .submit(function() {
@@ -69,6 +70,11 @@
                 return key;
             });
 
+            $(window).trigger('cloudStack.createForm.makeFields', {
+                $form: $form,
+                fields: args.form.fields
+            });
+
             var ret = function() {
                 $('.overlay').remove();
 
@@ -85,6 +91,10 @@
                                 context: args.context
                             });
                         }
+
+                        $(window).trigger('cloudStack.createForm.open', {
+                          $form: $form
+                        });
                     },
                     buttons: [{
                         text: createLabel ? createLabel : _l('label.ok'),
@@ -113,6 +123,10 @@
                             $(this).dialog('destroy');
 
                             $('.hovered-elem').hide();
+
+                            if (cancel) {
+                                cancel();
+                            }
                         }
                     }]
                 }).closest('.ui-dialog').overlay();
@@ -209,7 +223,10 @@
                     });
 
                     if ($dependsOn.is('[type=checkbox]')) {
-                        var isReverse = args.form.fields[dependsOn].isReverse;
+                        
+                        var isReverse = false;
+                        if (args.form.fields[dependsOn])
+                            isReverse = args.form.fields[dependsOn].isReverse;
 
                         // Checkbox
                         $dependsOn.bind('click', function(event) {
@@ -254,24 +271,31 @@
                         context: args.context,
                         response: {
                             success: function(args) {
+                            	if (args.data == undefined || args.data.length == 0) {
+                            		var $option = $('<option>')
+                                    .appendTo($input)                                    
+                                    .html("");
+                            	} else {
                                 $(args.data).each(function() {
                                     var id;
                                     if (field.valueField)
                                         id = this[field.valueField];
                                     else
                                         id = this.id !== undefined ? this.id : this.name;
-                                    var description = this.description;
 
+                                    var desc;
                                     if (args.descriptionField)
-                                        description = this[args.descriptionField];
+                                        desc = this[args.descriptionField];
                                     else
-                                        description = this.description;
+                                        desc = _l(this.description);
 
                                     var $option = $('<option>')
                                             .appendTo($input)
                                             .val(_s(id))
-                                            .html(_s(description));
+                                            .data('json-obj', this)
+                                            .html(_s(desc));
                                 });
+                            	}
 
                                 if (field.defaultValue) {
                                     $input.val(_s(strOrFunc(field.defaultValue, args.data)));

@@ -23,6 +23,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -45,6 +46,9 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     @Column(name = "display_text")
     private String displayText;
+
+    @Column(name = "provisioning_type")
+    Storage.ProvisioningType provisioningType;
 
     @Column(name = "disk_size")
     long diskSize;
@@ -69,6 +73,9 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     @Column(name = "max_iops")
     private Long maxIops;
+
+    @Column(name = "hv_ss_reserve")
+    private Integer hypervisorSnapshotReserve;
 
     @Column(name = "sort_key")
     int sortKey;
@@ -133,6 +140,10 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
         return displayText;
     }
 
+    public Storage.ProvisioningType getProvisioningType(){
+        return provisioningType;
+    }
+
     public long getDiskSize() {
         return diskSize;
     }
@@ -165,8 +176,8 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
         return maxIops;
     }
 
-    public void setMaxIops(Long maxIops) {
-        this.maxIops = maxIops;
+    public Integer getHypervisorSnapshotReserve() {
+        return hypervisorSnapshotReserve;
     }
 
     public String getCacheMode() {

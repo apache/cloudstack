@@ -129,4 +129,6 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     Integer getConcurrentConnections();
 
     boolean isKeepAliveEnabled();
+
+    boolean getSupportsStrechedL2();
 }

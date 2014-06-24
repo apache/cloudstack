@@ -41,16 +41,17 @@ import com.cloud.utils.net.Ip;
 public interface LoadBalancingRulesService {
     /**
      * Create a load balancer rule from the given ipAddress/port to the given private port
-     *
      * @param openFirewall
      *            TODO
+     * @param forDisplay TODO
      * @param cmd
      *            the command specifying the ip address, public port, protocol, private port, and algorithm
+     *
      * @return the newly created LoadBalancerVO if successful, null otherwise
      * @throws InsufficientAddressCapacityException
      */
     LoadBalancer createPublicLoadBalancerRule(String xId, String name, String description, int srcPortStart, int srcPortEnd, int defPortStart, int defPortEnd,
-        Long ipAddrId, String protocol, String algorithm, long networkId, long lbOwnerId, boolean openFirewall, String lbProtocol) throws NetworkRuleConflictException,
+        Long ipAddrId, String protocol, String algorithm, long networkId, long lbOwnerId, boolean openFirewall, String lbProtocol, Boolean forDisplay) throws NetworkRuleConflictException,
         InsufficientAddressCapacityException;
 
     LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd);
@@ -91,13 +92,13 @@ public interface LoadBalancingRulesService {
     boolean deleteLBHealthCheckPolicy(long healthCheckPolicyId, boolean apply);
 
     /**
-     * Assign a virtual machine, or list of virtual machines, to a load balancer.
+     * Assign a virtual machine or list of virtual machines, or Map of <vmId vmIp> to a load balancer.
      */
-    boolean assignToLoadBalancer(long lbRuleId, List<Long> vmIds);
+    boolean assignToLoadBalancer(long lbRuleId, List<Long> vmIds, Map<Long, List<String>> vmIdIpMap);
 
     boolean assignSSLCertToLoadBalancerRule(Long lbRuleId, String certName, String publicCert, String privateKey);
 
-    boolean removeFromLoadBalancer(long lbRuleId, List<Long> vmIds);
+    boolean removeFromLoadBalancer(long lbRuleId, List<Long> vmIds,   Map<Long, List<String>> vmIdIpMap);
 
     boolean applyLoadBalancerConfig(long lbRuleId) throws ResourceUnavailableException;
 
@@ -150,4 +151,14 @@ public interface LoadBalancingRulesService {
     public void updateLBHealthChecks(Scheme scheme) throws ResourceUnavailableException;
 
     Map<Ip, UserVm> getLbInstances(long lbId);
+
+    boolean isLbRuleMappedToVmGuestIp(String vmSecondaryIp);
+
+    List<String> listLbVmIpAddress(long id, long vmId);
+
+    StickinessPolicy updateLBStickinessPolicy(long id, String customId, Boolean forDisplay);
+
+    HealthCheckPolicy updateLBHealthCheckPolicy(long id, String customId, Boolean forDisplay);
+
+    LoadBalancer findLbByStickinessId(long stickinessPolicyId);
 }

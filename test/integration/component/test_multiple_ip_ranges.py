@@ -18,10 +18,10 @@
 """
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.cloudstackException import cloudstackAPIException
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.cloudstackException import CloudstackAPIException
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from netaddr import *
 
 from nose.plugins.attrib import attr
@@ -78,12 +78,14 @@ class TestMultipleIpRanges(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestMultipleIpRanges, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestMultipleIpRanges, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.pod = get_pod(cls.api_client, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -296,7 +298,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         #listing vlan ip ranges with the id should through exception , if not mark the test case as failed
         try:
             new_vlan.list(self.apiclient, id=new_vlan.vlan.id)
-        except cloudstackAPIException as cs:
+        except CloudstackAPIException as cs:
             self.debug(cs.errorMsg)
             self.assertTrue(cs.errorMsg.find("entity does not exist")>0, msg="Failed to delete IP range")
         return
@@ -387,7 +389,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
 	self.debug("Adding overlapped ip range")
         try:
             new_vlan2 = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
-        except cloudstackAPIException as cs:
+        except CloudstackAPIException as cs:
             self.debug(cs.errorMsg)
             self.assertTrue(cs.errorMsg.find("already has IPs that overlap with the new range")>0, msg="Fail:CS allowed adding overlapped ip ranges in guest cidr")
             return
@@ -443,7 +445,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
 	self.debug("Adding ip range overlapped with two cidrs")
         try:
             new_vlan3 = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
-        except cloudstackAPIException as cs:
+        except CloudstackAPIException as cs:
             self.debug(cs.errorMsg)
             self.assertTrue(cs.errorMsg.find("already has IPs that overlap with the new range")>0, msg="Fail:CS allowed adding overlapped ip ranges in guest cidr")
             return
@@ -496,7 +498,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
 	self.debug("Adding IP range super set to existing CIDR")
         try:
             new_vlan2 = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
-        except cloudstackAPIException as cs:
+        except CloudstackAPIException as cs:
             self.debug(cs.errorMsg)
             self.assertTrue(cs.errorMsg.find("superset")>0, msg="Fail: CS allowed adding ip range superset to existing CIDR")
             return
@@ -549,7 +551,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
 	self.debug("Adding ip range subset to existing cidr")
         try:
             new_vlan2 = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
-        except cloudstackAPIException as cs:
+        except CloudstackAPIException as cs:
             self.debug(cs.errorMsg)
             self.assertTrue(cs.errorMsg.find("subset")>0, msg="Fail: CS allowed adding ip range subset to existing CIDR")
             return

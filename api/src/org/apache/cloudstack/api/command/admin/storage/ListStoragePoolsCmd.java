@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-@APICommand(name = "listStoragePools", description = "Lists storage pools.", responseObject = StoragePoolResponse.class)
+@APICommand(name = "listStoragePools", description = "Lists storage pools.", responseObject = StoragePoolResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListStoragePoolsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStoragePoolsCmd.class.getName());
 

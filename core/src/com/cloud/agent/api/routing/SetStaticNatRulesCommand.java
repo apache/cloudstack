@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.agent.api.routing;
 
-import java.util.List;
-
 import com.cloud.agent.api.to.StaticNatRuleTO;
+
+import java.util.List;
 
 public class SetStaticNatRulesCommand extends NetworkElementCommand {
 
@@ -43,5 +43,10 @@ public class SetStaticNatRulesCommand extends NetworkElementCommand {
 
     public Long getVpcId() {
         return vpcId;
+    }
+
+    @Override
+    public int getAnswersCount() {
+        return rules.length;
     }
 }

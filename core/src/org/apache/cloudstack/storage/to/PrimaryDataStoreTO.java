@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
+import java.util.Map;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 
 import com.cloud.agent.api.to.DataStoreTO;
@@ -23,6 +25,17 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public class PrimaryDataStoreTO implements DataStoreTO {
+    public static final String MANAGED = PrimaryDataStore.MANAGED;
+    public static final String STORAGE_HOST = PrimaryDataStore.STORAGE_HOST;
+    public static final String STORAGE_PORT = PrimaryDataStore.STORAGE_PORT;
+    public static final String MANAGED_STORE_TARGET = PrimaryDataStore.MANAGED_STORE_TARGET;
+    public static final String MANAGED_STORE_TARGET_ROOT_VOLUME = PrimaryDataStore.MANAGED_STORE_TARGET_ROOT_VOLUME;
+    public static final String CHAP_INITIATOR_USERNAME = PrimaryDataStore.CHAP_INITIATOR_USERNAME;
+    public static final String CHAP_INITIATOR_SECRET = PrimaryDataStore.CHAP_INITIATOR_SECRET;
+    public static final String CHAP_TARGET_USERNAME = PrimaryDataStore.CHAP_TARGET_USERNAME;
+    public static final String CHAP_TARGET_SECRET = PrimaryDataStore.CHAP_TARGET_SECRET;
+    public static final String VOLUME_SIZE = PrimaryDataStore.VOLUME_SIZE;
+
     private final String uuid;
     private final String name;
     private String type;
@@ -32,6 +45,8 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     private String path;
     private int port;
     private final String url;
+    private Map<String, String> details;
+    private static final String pathSeparator = "/";
 
     public PrimaryDataStoreTO(PrimaryDataStore dataStore) {
         this.uuid = dataStore.getUuid();
@@ -42,6 +57,7 @@ public class PrimaryDataStoreTO implements DataStoreTO {
         this.setPath(dataStore.getPath());
         this.setPort(dataStore.getPort());
         this.url = dataStore.getUri();
+        this.details = dataStore.getDetails();
     }
 
     public long getId() {
@@ -56,6 +72,10 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     @Override
     public String getUrl() {
         return this.url;
+    }
+
+    public Map<String, String> getDetails() {
+        return this.details;
     }
 
     public String getName() {
@@ -101,6 +121,11 @@ public class PrimaryDataStoreTO implements DataStoreTO {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    @Override
+    public String getPathSeparator() {
+        return pathSeparator;
     }
 
     @Override

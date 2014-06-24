@@ -18,14 +18,23 @@
 """ P1 tests for network offering
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-import datetime
+from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import (cleanup_resources)
+from marvin.lib.base import (VirtualMachine,
+                             Account,
+                             Network,
+                             LoadBalancerRule,
+                             PublicIPAddress,
+                             FireWallRule,
+                             NATRule,
+                             Vpn,
+                             ServiceOffering,
+                             NetworkOffering)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template)
 
 
 class Services:
@@ -160,14 +169,13 @@ class TestNOVirtualRouter(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestNOVirtualRouter,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestNOVirtualRouter, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -215,7 +223,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_01_network_off_without_conserve_mode(self):
         """Test Network offering with Conserve mode off and VR - All services
         """
@@ -460,7 +468,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                             )
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_02_network_off_with_conserve_mode(self):
         """Test Network offering with Conserve mode ON and VR - All services
         """
@@ -701,7 +709,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
         # User should be able to enable VPN on source NAT
         self.debug("Created VPN with source NAT IP: %s" % src_nat.ipaddress)
         # Assign VPN to source NAT
-        vpn = Vpn.create(
+        Vpn.create(
                         self.apiclient,
                         src_nat.id,
                         account=self.account.name,
@@ -733,14 +741,13 @@ class TestNetworkUpgrade(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestNetworkUpgrade,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestNetworkUpgrade, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -798,7 +805,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advancedns"])
+    @attr(tags=["advancedns", "provisioning"])
     def test_01_nwupgrade_netscaler_conserve_on(self):
         """Test Nw upgrade to netscaler lb service and conserve mode ON
         """
@@ -944,7 +951,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
 
         # Assign VPN to source NAT
         self.debug("Enabling VPN on source NAT")
-        vpn = Vpn.create(
+        Vpn.create(
                         self.apiclient,
                         src_nat.id,
                         account=self.account.name,
@@ -998,7 +1005,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advancedns"])
+    @attr(tags=["advancedns", "provisioning"])
     def test_02_nwupgrade_netscaler_conserve_off(self):
         """Test Nw upgrade to netscaler lb service and conserve mode OFF
         """
@@ -1144,7 +1151,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
 
         # Assign VPN to source NAT
         self.debug("Enabling VPN on source NAT")
-        vpn = Vpn.create(
+        Vpn.create(
                         self.apiclient,
                         src_nat.id,
                         account=self.account.name,
@@ -1181,14 +1188,13 @@ class TestNetworkUpgrade(cloudstackTestCase):
 class TestNOWithOnlySourceNAT(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.apiclient = super(
-            TestNOWithOnlySourceNAT,
-            cls
-        ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestNOWithOnlySourceNAT, cls).getClsTestClient()
+        cls.apiclient = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.apiclient, cls.services)
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
             cls.apiclient,
@@ -1218,7 +1224,7 @@ class TestNOWithOnlySourceNAT(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_create_network_with_snat(self):
         """Test to create a network with SourceNAT service only"""
 
@@ -1265,7 +1271,7 @@ class TestNOWithOnlySourceNAT(cloudstackTestCase):
 
         self.debug("Deploying VM in account: %s on the network %s" % (self.account.name, self.network.id))
         # Spawn an instance in that network
-        virtual_machine = VirtualMachine.create(
+        VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
             accountid=self.account.name,

@@ -79,6 +79,8 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     ClusterDao _clusterDao;
     @Inject
     ClusterVSMMapDao _clusterVSMDao;
+    @Inject
+    ManagementService _mgr;
 
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
@@ -190,7 +192,8 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
         // Else if there is only a zoneId defined, get a list of all vmware clusters
         // in the zone, and then for each cluster, pull the VSM and prepare a list.
         if (zoneId != null && zoneId.longValue() != 0) {
-            ManagementService ref = cmd.getMgmtServiceRef();
+            ManagementService ref = _mgr;
+            ;
             List<? extends Cluster> clusterList = ref.searchForClusters(zoneId, cmd.getStartIndex(), cmd.getPageSizeVal(), "VMware");
 
             if (clusterList.size() == 0) {
@@ -268,8 +271,6 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
                 _clusterDao.remove(clusterId);
                 throw new CloudRuntimeException(msg);
             }
-
-            Transaction txn;
 
             // If VSM already exists and is mapped to a cluster, fail this operation.
             vsm = _vsmDao.getVSMbyIpaddress(vsmIp);

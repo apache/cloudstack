@@ -16,15 +16,6 @@
 // under the License.
 package com.cloud.configuration;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.StringTokenizer;
-
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.config.ConfigKey;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
@@ -38,6 +29,14 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.StringTokenizer;
 
 public enum Config {
 
@@ -402,6 +401,16 @@ public enum Config {
             "10",
             "The maximum number of subnets per customer gateway",
             null),
+    MaxNumberOfSecondaryIPsPerNIC(
+            "Network", ManagementServer.class, Integer.class,
+            "vm.network.nic.max.secondary.ipaddresses", "256",
+            "Specify the number of secondary ip addresses per nic per vm", null),
+
+    EnableServiceMonitoring(
+            "Network", ManagementServer.class, Boolean.class,
+            "network.router.enableserviceMonitoring", "false",
+            "service monitoring in router enable/disable option, default false", null),
+
 
     // Console Proxy
     ConsoleProxyCapacityStandby(
@@ -429,7 +438,7 @@ public enum Config {
             "Console proxy command port that is used to communicate with management server",
             null),
     ConsoleProxyRestart("Console Proxy", AgentManager.class, Boolean.class, "consoleproxy.restart", "true", "Console proxy restart flag, defaulted to true", null),
-    ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "realhostip.com", "Console proxy url domain", null),
+    ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "", "Console proxy url domain", null),
     ConsoleProxyLoadscanInterval(
             "Console Proxy",
             AgentManager.class,
@@ -673,7 +682,7 @@ public enum Config {
             null),
     StorageCleanupEnabled("Advanced", StorageManager.class, Boolean.class, "storage.cleanup.enabled", "true", "Enables/disables the storage cleanup thread.", null),
     UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait (in seconds) before alerting on a updating agent", null),
-    XapiWait("Advanced", AgentManager.class, Integer.class, "xapiwait", "600", "Time (in seconds) to wait for XAPI to return", null),
+    XapiWait("Advanced", AgentManager.class, Integer.class, "xapiwait", "60", "Time (in seconds) to wait for XAPI to return", null),
     MigrateWait("Advanced", AgentManager.class, Integer.class, "migratewait", "3600", "Time (in seconds) to wait for VM migrate finish", null),
     HAWorkers("Advanced", AgentManager.class, Integer.class, "ha.workers", "5", "Number of ha worker threads.", null),
     MountParent(
@@ -692,7 +701,7 @@ public enum Config {
             "system.vm.use.local.storage",
             "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.",
-            null),
+            null, ConfigKey.Scope.Zone.toString()),
     SystemVMAutoReserveCapacity(
             "Advanced",
             ManagementServer.class,
@@ -772,7 +781,7 @@ public enum Config {
             ManagementServer.class,
             String.class,
             "secstorage.ssl.cert.domain",
-            "realhostip.com",
+            "",
             "SSL certificate used to encrypt copy traffic between zones",
             null),
     SecStorageCapacityStandby(
@@ -981,7 +990,6 @@ public enum Config {
             "FirstFitPlanner",
             "'FirstFitPlanner', 'UserDispersingPlanner', 'UserConcentratedPodPlanner': DeploymentPlanner heuristic that will be used for VM deployment.",
             null),
-    EndpointeUrl("Advanced", ManagementServer.class, String.class, "endpointe.url", "http://localhost:8080/client/api", "Endpointe Url", null),
     ElasticLoadBalancerEnabled(
             "Advanced",
             ManagementServer.class,
@@ -1076,17 +1084,17 @@ public enum Config {
     Ovm3StorageNetwork("Hidden", ManagementServer.class, String.class, "ovm3.storage.network.device", null, "Specify the storage bridge on host for storage network", null),
 
     // XenServer
-    XenPublicNetwork(
+    XenServerPublicNetwork(
             "Hidden",
             ManagementServer.class,
             String.class,
-            "xen.public.network.device",
+            "xenserver.public.network.device",
             null,
             "[ONLY IF THE PUBLIC NETWORK IS ON A DEDICATED NIC]:The network name label of the physical device dedicated to the public network on a XenServer host",
             null),
-    XenStorageNetwork1("Hidden", ManagementServer.class, String.class, "xen.storage.network.device1", null, "Specify when there are storage networks", null),
-    XenStorageNetwork2("Hidden", ManagementServer.class, String.class, "xen.storage.network.device2", null, "Specify when there are storage networks", null),
-    XenPrivateNetwork("Hidden", ManagementServer.class, String.class, "xen.private.network.device", null, "Specify when the private network name is different", null),
+    XenServerStorageNetwork1("Hidden", ManagementServer.class, String.class, "xenserver.storage.network.device1", null, "Specify when there are storage networks", null),
+    XenServerStorageNetwork2("Hidden", ManagementServer.class, String.class, "xenserver.storage.network.device2", null, "Specify when there are storage networks", null),
+    XenServerPrivateNetwork("Hidden", ManagementServer.class, String.class, "xenserver.private.network.device", null, "Specify when the private network name is different", null),
     NetworkGuestCidrLimit(
             "Network",
             NetworkOrchestrationService.class,
@@ -1095,32 +1103,32 @@ public enum Config {
             "22",
             "size limit for guest cidr; can't be less than this value",
             null),
-    XenSetupMultipath("Advanced", ManagementServer.class, String.class, "xen.setup.multipath", "false", "Setup the host to do multipath", null),
-    XenBondStorageNic("Advanced", ManagementServer.class, String.class, "xen.bond.storage.nics", null, "Attempt to bond the two networks if found", null),
-    XenHeartBeatInterval(
+    XenServerSetupMultipath("Advanced", ManagementServer.class, String.class, "xenserver.setup.multipath", "false", "Setup the host to do multipath", null),
+    XenServerBondStorageNic("Advanced", ManagementServer.class, String.class, "xenserver.bond.storage.nics", null, "Attempt to bond the two networks if found", null),
+    XenServerHeartBeatInterval(
             "Advanced",
             ManagementServer.class,
             Integer.class,
-            "xen.heartbeat.interval",
+            "xenserver.heartbeat.interval",
             "60",
             "heartbeat to use when implementing XenServer Self Fencing",
             null),
-    XenGuestNetwork("Hidden", ManagementServer.class, String.class, "xen.guest.network.device", null, "Specify for guest network name label", null),
-    XenMaxNics("Advanced", AgentManager.class, Integer.class, "xen.nics.max", "7", "Maximum allowed nics for Vms created on Xen", null),
-    XenPVdriverVersion(
+    XenServerGuestNetwork("Hidden", ManagementServer.class, String.class, "xenserver.guest.network.device", null, "Specify for guest network name label", null),
+    XenServerMaxNics("Advanced", AgentManager.class, Integer.class, "xenserver.nics.max", "7", "Maximum allowed nics for Vms created on XenServer", null),
+    XenServerPVdriverVersion(
             "Advanced",
             ManagementServer.class,
             String.class,
-            "xen.pvdriver.version",
+            "xenserver.pvdriver.version",
             "xenserver61",
             "default Xen PV driver version for registered template, valid value:xenserver56,xenserver61 ",
             "xenserver56,xenserver61"),
     XenServerHotFix("Advanced",
             ManagementServer.class,
             Boolean.class,
-            "xen.hotfix.enabled",
+            "xenserver.hotfix.enabled",
             "false",
-            "Enable/Disable xenserver hot fix",
+            "Enable/Disable XenServer hot fix",
             null),
 
     // VMware
@@ -1363,7 +1371,7 @@ public enum Config {
             "Hidden",
             ManagementServer.class,
             Boolean.class,
-            "xen.create.pools.in.pod",
+            "xenserver.create.pools.in.pod",
             "false",
             "Should we automatically add XenServers into pools that are inside a Pod",
             null),
@@ -1378,9 +1386,6 @@ public enum Config {
             "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.",
             null),
     //NetworkType("Hidden", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
-    HashKey("Hidden", ManagementServer.class, String.class, "security.hash.key", null, "for generic key-ed hash", null),
-    EncryptionKey("Hidden", ManagementServer.class, String.class, "security.encryption.key", null, "base64 encoded key data", null),
-    EncryptionIV("Hidden", ManagementServer.class, String.class, "security.encryption.iv", null, "base64 encoded IV data", null),
     RouterRamSize("Hidden", NetworkOrchestrationService.class, Integer.class, "router.ram.size", "128", "Default RAM for router VM (in MB).", null),
 
     DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
@@ -1898,7 +1903,30 @@ public enum Config {
             "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack",
             null),
 
-    ManagementServerVendor("Advanced", ManagementServer.class, String.class, "mgt.server.vendor", "ACS", "the vendor of management server", null);
+    RedundantRouterVrrpInterval(
+            "Advanced",
+            NetworkOrchestrationService.class,
+            Integer.class,
+            "router.redundant.vrrp.interval",
+            "1",
+            "seconds between VRRP broadcast. It would 3 times broadcast fail to trigger fail-over mechanism of redundant router",
+            null),
+
+    RouterAggregationCommandEachTimeout(
+            "Advanced",
+            NetworkOrchestrationService.class,
+            Integer.class,
+            "router.aggregation.command.each.timeout",
+            "3",
+            "timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ",
+            null),
+
+    ManagementServerVendor("Advanced", ManagementServer.class, String.class, "mgt.server.vendor", "ACS", "the vendor of management server", null),
+    PublishActionEvent("Advanced", ManagementServer.class, Boolean.class, "publish.action.events", "true", "enable or disable publishing of action events on the event bus", null),
+    PublishAlertEvent("Advanced", ManagementServer.class, Boolean.class, "publish.alert.events", "true", "enable or disable publishing of alert events on the event bus", null),
+    PublishResourceStateEvent("Advanced", ManagementServer.class, Boolean.class, "publish.resource.state.events", "true", "enable or disable publishing of alert events on the event bus", null),
+    PublishUsageEvent("Advanced", ManagementServer.class, Boolean.class, "publish.usage.events", "true", "enable or disable publishing of usage events on the event bus", null),
+    PublishAsynJobEvent("Advanced", ManagementServer.class, Boolean.class, "publish.async.job.events", "true", "enable or disable publishing of usage events on the event bus", null);
 
     private final String _category;
     private final Class<?> _componentClass;

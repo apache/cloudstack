@@ -24,16 +24,17 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageStats;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -60,7 +61,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         spIdSearch.and("id", spIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         spIdSearch.done();
 
-        this._count = "select count(distinct id) from storage_pool_view WHERE ";
+        _count = "select count(distinct id) from storage_pool_view WHERE ";
     }
 
     @Override
@@ -69,7 +70,10 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setId(pool.getUuid());
         poolResponse.setName(pool.getName());
         poolResponse.setState(pool.getStatus());
-        poolResponse.setPath(pool.getPath());
+        String path = pool.getPath();
+        //cifs store may contain password entry, remove the password
+        path = StringUtils.cleanString(path);
+        poolResponse.setPath(path);
         poolResponse.setIpAddress(pool.getHostAddress());
         poolResponse.setZoneId(pool.getZoneUuid());
         poolResponse.setZoneName(pool.getZoneName());
@@ -99,6 +103,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setClusterId(pool.getClusterUuid());
         poolResponse.setClusterName(pool.getClusterName());
         poolResponse.setTags(pool.getTag());
+        poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
 
         // set async job
         if (pool.getJobId() != null) {
@@ -129,7 +134,10 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setId(pool.getUuid());
         poolResponse.setName(pool.getName());
         poolResponse.setState(pool.getStatus());
-        poolResponse.setPath(pool.getPath());
+        String path = pool.getPath();
+        //cifs store may contain password entry, remove the password
+        path = StringUtils.cleanString(path);
+        poolResponse.setPath(path);
         poolResponse.setIpAddress(pool.getHostAddress());
         poolResponse.setZoneId(pool.getZoneUuid());
         poolResponse.setZoneName(pool.getZoneName());
@@ -149,6 +157,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
         poolResponse.setCapacityIops(pool.getCapacityIops());
+        poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
 
         // TODO: StatsCollector does not persist data
         StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());

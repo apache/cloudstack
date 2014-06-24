@@ -42,4 +42,8 @@ public final class DeleteCommand extends Command implements StorageSubSystemComm
         return this.data;
     }
 
+    @Override
+    public void setExecuteInSequence(boolean inSeq) {
+
+    }
 }

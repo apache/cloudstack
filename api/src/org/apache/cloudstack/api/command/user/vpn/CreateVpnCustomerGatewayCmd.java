@@ -31,7 +31,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteCustomerGateway;
 
-@APICommand(name = "createVpnCustomerGateway", description = "Creates site to site vpn customer gateway", responseObject = Site2SiteCustomerGatewayResponse.class)
+@APICommand(name = "createVpnCustomerGateway", description = "Creates site to site vpn customer gateway", responseObject = Site2SiteCustomerGatewayResponse.class, entityType = {Site2SiteCustomerGateway.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVpnCustomerGatewayCmd.class.getName());
 
@@ -142,7 +143,7 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, null, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, null, true);
         if (accountId == null) {
             accountId = CallContext.current().getCallingAccount().getId();
         }
@@ -165,7 +166,7 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
         if (result != null) {
             Site2SiteCustomerGatewayResponse response = _responseGenerator.createSite2SiteCustomerGatewayResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create customer VPN gateway");
         }

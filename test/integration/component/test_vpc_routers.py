@@ -22,9 +22,9 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 import datetime
 
 
@@ -169,16 +169,15 @@ class TestVPCRoutersBasic(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apiclient = super(
-                               TestVPCRoutersBasic,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPCRoutersBasic, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.apiclient, cls.services)
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
-                            cls.apiclient,
+                            cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
@@ -186,16 +185,16 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         cls.services["virtual_machine"]["template"] = cls.template.id
 
         cls.service_offering = ServiceOffering.create(
-                                            cls.apiclient,
+                                            cls.api_client,
                                             cls.services["service_offering"]
                                             )
         cls.vpc_off = VpcOffering.create(
-                                     cls.apiclient,
+                                     cls.api_client,
                                      cls.services["vpc_offering"]
                                      )
-        cls.vpc_off.update(cls.apiclient, state='Enabled')
+        cls.vpc_off.update(cls.api_client, state='Enabled')
         cls.account = Account.create(
-                                     cls.apiclient,
+                                     cls.api_client,
                                      cls.services["account"],
                                      admin=True,
                                      domainid=cls.domain.id
@@ -203,13 +202,13 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         cls._cleanup = [cls.account]
         cls._cleanup.append(cls.vpc_off)
         #cls.debug("Enabling the VPC offering created")
-        cls.vpc_off.update(cls.apiclient, state='Enabled')
+        cls.vpc_off.update(cls.api_client, state='Enabled')
 
         #cls.debug("creating a VPC network in the account: %s" %
                                                    # cls.account.name)
         cls.services["vpc"]["cidr"] = '10.1.1.1/16'
         cls.vpc = VPC.create(
-                         cls.apiclient,
+                         cls.api_client,
                          cls.services["vpc"],
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
@@ -224,13 +223,13 @@ class TestVPCRoutersBasic(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             #Cleanup resources used
-            cleanup_resources(cls.apiclient, cls._cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
+        self.api_client = self.testClient.getApiClient()
         
         return
 
@@ -242,7 +241,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
 
         self.debug("Check if the VPC offering is created successfully?")
         vpc_offs = VpcOffering.list(
-                                    self.apiclient,
+                                    self.api_client,
                                     id=vpc_offering.id
                                     )
         self.assertEqual(
@@ -265,7 +264,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
 
         self.debug("Check if the VPC network is created successfully?")
         vpc_networks = VPC.list(
-                                    self.apiclient,
+                                    self.api_client,
                                     id=network.id
                           )
         self.assertEqual(
@@ -291,7 +290,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         """ Migrate the router """
 
         self.debug("Checking if the host is available for migration?")
-        hosts = Host.list(self.apiclient, zoneid=self.zone.id, type='Routing')
+        hosts = Host.list(self.api_client, zoneid=self.zone.id, type='Routing')
 
         self.assertEqual(
                          isinstance(hosts, list),
@@ -319,7 +318,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
             cmd.isAsync = "false"
             cmd.hostid = host.id
             cmd.virtualmachineid = router.id
-            self.apiclient.migrateSystemVm(cmd)
+            self.api_client.migrateSystemVm(cmd)
 
         except Exception as e:
             self.fail("Failed to migrate instance, %s" % e)
@@ -329,7 +328,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         
         #List routers to check state of router
         router_response = list_routers(
-                                    self.apiclient,
+                                    self.api_client,
                                     id=router.id
                                     )
         self.assertEqual(
@@ -343,7 +342,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
                          " still %s" % (host.id, router.hostid))
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_01_stop_start_router_after_creating_vpc(self):
         """ Test to stop and start router after creation of VPC
         """
@@ -358,7 +357,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
 
 	    # Stop the VPC Router
         routers = Router.list(
-                              self.apiclient,
+                              self.api_client,
                               account=self.account.name,
                               domainid=self.account.domainid,
                               listall=True
@@ -374,11 +373,11 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         #Stop the router
         cmd = stopRouter.stopRouterCmd()
         cmd.id = router.id
-        self.apiclient.stopRouter(cmd)
+        self.api_client.stopRouter(cmd)
 	
 	    #List routers to check state of router
         router_response = list_routers(
-                                    self.apiclient,
+                                    self.api_client,
                                     id=router.id
                                     )
         self.assertEqual(
@@ -399,11 +398,11 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         self.debug("Starting the router with ID: %s" % router.id)
         cmd = startRouter.startRouterCmd()
         cmd.id = router.id
-        self.apiclient.startRouter(cmd)
+        self.api_client.startRouter(cmd)
 
 	    #List routers to check state of router
         router_response = list_routers(
-                                    self.apiclient,
+                                    self.api_client,
                                     id=router.id
                                     )
         self.assertEqual(
@@ -421,7 +420,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_02_reboot_router_after_creating_vpc(self):
         """ Test to reboot the router after creating a VPC
         """
@@ -433,7 +432,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         self.validate_vpc_offering(self.vpc_off)
         self.validate_vpc_network(self.vpc)
         routers = Router.list(
-                              self.apiclient,
+                              self.api_client,
                               account=self.account.name,
                               domainid=self.account.domainid,
                               listall=True
@@ -449,11 +448,11 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         #Reboot the router
         cmd = rebootRouter.rebootRouterCmd()
         cmd.id = router.id
-        self.apiclient.rebootRouter(cmd)
+        self.api_client.rebootRouter(cmd)
 
         #List routers to check state of router
         router_response = list_routers(
-                                    self.apiclient,
+                                    self.api_client,
                                     id=router.id
                                     )
         self.assertEqual(
@@ -470,7 +469,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         return
 
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioning"])
     def test_03_migrate_router_after_creating_vpc(self):
         """ Test migration of router to another host after creating VPC """
 
@@ -478,7 +477,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         self.validate_vpc_network(self.vpc)
 
         routers = Router.list(
-                              self.apiclient,
+                              self.api_client,
                               account=self.account.name,
                               domainid=self.account.domainid,
                               listall=True
@@ -491,7 +490,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         self.migrate_router(routers[0])
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_04_change_service_offerring_vpc(self):
         """ Tests to change service offering of the Router after
             creating a vpc
@@ -505,7 +504,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         self.validate_vpc_network(self.vpc)
 
         routers = Router.list(
-                              self.apiclient,
+                              self.api_client,
                               account=self.account.name,
                               domainid=self.account.domainid,
                               listall=True
@@ -521,15 +520,15 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         self.debug("Stopping the router with ID: %s" % router.id)
         cmd = stopRouter.stopRouterCmd()
         cmd.id = router.id
-        self.apiclient.stopRouter(cmd)
+        self.api_client.stopRouter(cmd)
 
         service_offering = ServiceOffering.create(
-                                                  self.apiclient,
+                                                  self.api_client,
                                                   self.services["service_offering_new"]
                                                  )
         self.debug("Changing service offering for the Router %s" % router.id)
         try: 
-            router = Router.change_service_offering(self.apiclient,
+            router = Router.change_service_offering(self.api_client,
 				                           router.id,
 				                           service_offering.id
 				                          )
@@ -538,7 +537,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
  
         self.debug("Router %s" % router)  
         routers = Router.list(
-                              self.apiclient,
+                              self.api_client,
                               account=self.account.name,
                               domainid=self.account.domainid,
                               listall=True
@@ -552,7 +551,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
                         ) 
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_05_destroy_router_after_creating_vpc(self):
         """ Test to destroy the router after creating a VPC
 	    """
@@ -562,7 +561,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         self.validate_vpc_offering(self.vpc_off)
         self.validate_vpc_network(self.vpc)
         routers = Router.list(
-                              self.apiclient,
+                              self.api_client,
                               account=self.account.name,
                               domainid=self.account.domainid,
                               listall=True
@@ -573,12 +572,12 @@ class TestVPCRoutersBasic(cloudstackTestCase):
                          "List Routers should return a valid list"
                          )
      
-        Router.destroy( self.apiclient,
+        Router.destroy( self.api_client,
 		        id=routers[0].id
 		      )
 		
         routers = Router.list(
-                              self.apiclient,
+                              self.api_client,
                               account=self.account.name,
                               domainid=self.account.domainid,
                               listall=True
@@ -594,17 +593,16 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apiclient = super(
-                               TestVPCRouterOneNetwork,
-                               cls
-                               ).getClsTestClient().getApiClient()
         cls._cleanup = []
+        cls.testClient = super(TestVPCRouterOneNetwork, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.apiclient, cls.services)
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
-                            cls.apiclient,
+                            cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
@@ -612,19 +610,19 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         cls.services["virtual_machine"]["template"] = cls.template.id
 
         cls.service_offering = ServiceOffering.create(
-                                            cls.apiclient,
+                                            cls.api_client,
                                             cls.services["service_offering"]
                                             )
         cls._cleanup.append(cls.service_offering)
         cls.vpc_off = VpcOffering.create(
-                                     cls.apiclient,
+                                     cls.api_client,
                                      cls.services["vpc_offering"]
                                      )
-        cls.vpc_off.update(cls.apiclient, state='Enabled')
+        cls.vpc_off.update(cls.api_client, state='Enabled')
         cls._cleanup.append(cls.vpc_off)
 
         cls.account = Account.create(
-                                     cls.apiclient,
+                                     cls.api_client,
                                      cls.services["account"],
                                      admin=True,
                                      domainid=cls.domain.id
@@ -633,7 +631,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
         cls.services["vpc"]["cidr"] = '10.1.1.1/16'
         cls.vpc = VPC.create(
-                         cls.apiclient,
+                         cls.api_client,
                          cls.services["vpc"],
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
@@ -642,7 +640,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                          )
 
         private_gateway = PrivateGateway.create(
-                                                cls.apiclient,
+                                                cls.api_client,
                                                 gateway='10.1.3.1',
                                                 ipaddress='10.1.3.100',
                                                 netmask='255.255.255.0',
@@ -650,34 +648,34 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                                 vpcid=cls.vpc.id
                                                 )
         cls.gateways = PrivateGateway.list(
-                                       cls.apiclient,
+                                       cls.api_client,
                                        id=private_gateway.id,
                                        listall=True
                                        )
 
         static_route = StaticRoute.create(
-                                          cls.apiclient,
+                                          cls.api_client,
                                           cidr='11.1.1.1/24',
                                           gatewayid=private_gateway.id
                                           )
         cls.static_routes = StaticRoute.list(
-                                       cls.apiclient,
+                                       cls.api_client,
                                        id=static_route.id,
                                        listall=True
                                        )
     
         cls.nw_off = NetworkOffering.create(
-                                            cls.apiclient,
+                                            cls.api_client,
                                             cls.services["network_offering"],
                                             conservemode=False
                                             )
         # Enable Network offering
-        cls.nw_off.update(cls.apiclient, state='Enabled')
+        cls.nw_off.update(cls.api_client, state='Enabled')
         cls._cleanup.append(cls.nw_off)
 
         # Creating network using the network offering created
         cls.network_1 = Network.create(
-                                cls.apiclient,
+                                cls.api_client,
                                 cls.services["network"],
                                 accountid=cls.account.name,
                                 domainid=cls.account.domainid,
@@ -689,7 +687,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
         # Spawn an instance in that network
         vm_1 = VirtualMachine.create(
-                                  cls.apiclient,
+                                  cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
                                   domainid=cls.account.domainid,
@@ -697,7 +695,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                   networkids=[str(cls.network_1.id)]
                                   )
         vm_2 = VirtualMachine.create(
-                                  cls.apiclient,
+                                  cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
                                   domainid=cls.account.domainid,
@@ -707,7 +705,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
         # Spawn an instance in that network
         vm_3 = VirtualMachine.create(
-                                  cls.apiclient,
+                                  cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
                                   domainid=cls.account.domainid,
@@ -716,14 +714,14 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                   )
 
         vms = VirtualMachine.list(
-                                  cls.apiclient,
+                                  cls.api_client,
                                   account=cls.account.name,
                                   domainid=cls.account.domainid,
                                   listall=True
                                   )
 
         public_ip_1 = PublicIPAddress.create(
-                                cls.apiclient,
+                                cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.domainid,
@@ -732,7 +730,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                 )
 
         nat_rule = NATRule.create(
-                                  cls.apiclient,
+                                  cls.api_client,
                                   vm_1,
                                   cls.services["natrule"],
                                   ipaddressid=public_ip_1.ipaddress.id,
@@ -742,14 +740,14 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                   )
 
         nwacl_nat = NetworkACL.create(
-                                         cls.apiclient,
+                                         cls.api_client,
                                          networkid=cls.network_1.id,
                                          services=cls.services["natrule"],
                                          traffictype='Ingress'
                                          )
 
         public_ip_2 = PublicIPAddress.create(
-                                cls.apiclient,
+                                cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.domainid,
@@ -758,7 +756,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                 )
         try:
             StaticNATRule.enable(
-                              cls.apiclient,
+                              cls.api_client,
                               ipaddressid=public_ip_2.ipaddress.id,
                               virtualmachineid=vm_2.id,
                               networkid=cls.network_1.id
@@ -768,7 +766,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                         public_ip_2.ipaddress.ipaddress, e))
 
         public_ips = PublicIPAddress.list(
-                                    cls.apiclient,
+                                    cls.api_client,
                                     networkid=cls.network_1.id,
                                     listall=True,
                                     isstaticnat=True,
@@ -776,7 +774,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                     domainid=cls.account.domainid
                                   )
         public_ip_3 = PublicIPAddress.create(
-                                cls.apiclient,
+                                cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.domainid,
@@ -785,7 +783,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                 )
 
         lb_rule = LoadBalancerRule.create(
-                                    cls.apiclient,
+                                    cls.api_client,
                                     cls.services["lbrule"],
                                     ipaddressid=public_ip_3.ipaddress.id,
                                     accountid=cls.account.name,
@@ -794,17 +792,17 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                     domainid=cls.account.domainid
                                 )
 
-        lb_rule.assign(cls.apiclient, [vm_3])
+        lb_rule.assign(cls.api_client, [vm_3])
 
         nwacl_lb = NetworkACL.create(
-                                cls.apiclient,
+                                cls.api_client,
                                 networkid=cls.network_1.id,
                                 services=cls.services["lbrule"],
                                 traffictype='Ingress'
                                 )
 
         nwacl_internet_1 = NetworkACL.create(
-                                cls.apiclient,
+                                cls.api_client,
                                 networkid=cls.network_1.id,
                                 services=cls.services["http_rule"],
                                 traffictype='Egress'
@@ -814,20 +812,20 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             #Cleanup resources used
-            cleanup_resources(cls.apiclient, cls._cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
+        self.api_client = self.testClient.getApiClient()
         self.cleanup = []
         return
 
     def tearDown(self):
         try:
             #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.api_client, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
        
@@ -838,7 +836,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
         self.debug("Check if the VPC offering is created successfully?")
         vpc_offs = VpcOffering.list(
-                                    self.apiclient,
+                                    self.api_client,
                                     id=vpc_offering.id
                                     )
         self.assertEqual(
@@ -861,7 +859,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
         self.debug("Check if the VPC network is created successfully?")
         vpc_networks = VPC.list(
-                                    self.apiclient,
+                                    self.api_client,
                                     id=network.id
                           )
         self.assertEqual(
@@ -887,13 +885,13 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         """ Validate network rules
         """
         vms = VirtualMachine.list(
-                                  self.apiclient,
+                                  self.api_client,
                                   account=self.account.name,
                                   domainid=self.account.domainid,
                                   listall=True
                                   )
         public_ips = PublicIPAddress.list(
-                                          self.apiclient,
+                                          self.api_client,
                                           account=self.account.name,
                                           domainid=self.account.domainid,
                                           listall=True
@@ -927,7 +925,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         """ Migrate the router """
 
         self.debug("Checking if the host is available for migration?")
-        hosts = Host.list(self.apiclient, zoneid=self.zone.id, type='Routing')
+        hosts = Host.list(self.api_client, zoneid=self.zone.id, type='Routing')
 
         self.assertEqual(
                          isinstance(hosts, list),
@@ -955,7 +953,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
             cmd.isAsync = "false"
             cmd.hostid = host.id
             cmd.virtualmachineid = router.id
-            self.apiclient.migrateSystemVm(cmd)
+            self.api_client.migrateSystemVm(cmd)
 
         except Exception as e:
             self.fail("Failed to migrate instance, %s" % e)
@@ -965,7 +963,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         
         #List routers to check state of router
         router_response = list_routers(
-                                    self.apiclient,
+                                    self.api_client,
                                     id=router.id
                                     )
         self.assertEqual(
@@ -980,7 +978,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         return
 
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioining"])
     def test_01_start_stop_router_after_addition_of_one_guest_network(self):
         """ Test start/stop of router after addition of one guest network
 	    """
@@ -1012,7 +1010,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
         # Stop the VPC Router
         routers = Router.list(
-                              self.apiclient,
+                              self.api_client,
                               account=self.account.name,
                               domainid=self.account.domainid,
                               listall=True
@@ -1028,11 +1026,11 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         #Stop the router
         cmd = stopRouter.stopRouterCmd()
         cmd.id = router.id
-        self.apiclient.stopRouter(cmd)
+        self.api_client.stopRouter(cmd)
 	
         #List routers to check state of router
         router_response = list_routers(
-                                    self.apiclient,
+                                    self.api_client,
                                     id=router.id
                                     )
         self.assertEqual(
@@ -1053,11 +1051,11 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         self.debug("Starting the router with ID: %s" % router.id)
         cmd = startRouter.startRouterCmd()
         cmd.id = router.id
-        self.apiclient.startRouter(cmd)
+        self.api_client.startRouter(cmd)
 
         #List routers to check state of router
         router_response = list_routers(
-                                    self.apiclient,
+                                    self.api_client,
                                     id=router.id
                                     )
         self.assertEqual(
@@ -1075,7 +1073,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_02_reboot_router_after_addition_of_one_guest_network(self):
         """ Test reboot of router after addition of one guest network
 	    """
@@ -1106,7 +1104,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                         )
 
         routers = Router.list(
-                              self.apiclient,
+                              self.api_client,
                               account=self.account.name,
                               domainid=self.account.domainid,
                               listall=True
@@ -1122,11 +1120,11 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         #Reboot the router
         cmd = rebootRouter.rebootRouterCmd()
         cmd.id = router.id
-        self.apiclient.rebootRouter(cmd)
+        self.api_client.rebootRouter(cmd)
 
         #List routers to check state of router
         router_response = list_routers(
-                                    self.apiclient,
+                                    self.api_client,
                                     id=router.id
                                     )
         self.assertEqual(
@@ -1142,7 +1140,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioning"])
     def test_03_migrate_router_after_addition_of_one_guest_network(self):
         """ Test migrate of router after addition of one guest network
 	    """
@@ -1172,7 +1170,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                         "List static route should return a valid response"
                         )
         routers = Router.list(
-                              self.apiclient,
+                              self.api_client,
                               account=self.account.name,
                               domainid=self.account.domainid,
                               listall=True
@@ -1185,7 +1183,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         self.migrate_router(routers[0])
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_04_chg_srv_off_router_after_addition_of_one_guest_network(self):
         """ Test to change service offering of router after addition of one guest network
 	    """
@@ -1216,7 +1214,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                         )
  
         routers = Router.list(
-                              self.apiclient,
+                              self.api_client,
                               account=self.account.name,
                               domainid=self.account.domainid,
                               listall=True
@@ -1232,15 +1230,15 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         self.debug("Stopping the router with ID: %s" % router.id)
         cmd = stopRouter.stopRouterCmd()
         cmd.id = router.id
-        self.apiclient.stopRouter(cmd)
+        self.api_client.stopRouter(cmd)
 
         service_offering = ServiceOffering.create(
-                                                  self.apiclient,
+                                                  self.api_client,
                                                   self.services["service_offering_new"]
                                                  )
         self.debug("Changing service offering for the Router %s" % router.id)
         try: 
-            router = Router.change_service_offering(self.apiclient,
+            router = Router.change_service_offering(self.api_client,
 				                           router.id,
 				                           service_offering.id
 				                          )
@@ -1249,7 +1247,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
  
         self.debug("Router %s" % router)  
         routers = Router.list(
-                              self.apiclient,
+                              self.api_client,
                               account=self.account.name,
                               domainid=self.account.domainid,
                               listall=True
@@ -1263,7 +1261,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                         ) 
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_05_destroy_router_after_addition_of_one_guest_network(self):
         """ Test destroy of router after addition of one guest network
         """
@@ -1294,7 +1292,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                         )
 
         routers = Router.list(
-                              self.apiclient,
+                              self.api_client,
                               account=self.account.name,
                               domainid=self.account.domainid,
                               listall=True
@@ -1305,12 +1303,12 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                          "List Routers should return a valid list"
                          )
      
-        Router.destroy( self.apiclient,
+        Router.destroy( self.api_client,
 		        id=routers[0].id
 		      )
 		
         routers = Router.list(
-                              self.apiclient,
+                              self.api_client,
                               account=self.account.name,
                               domainid=self.account.domainid,
                               listall=True

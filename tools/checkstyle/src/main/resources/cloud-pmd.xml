@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<ruleset name="Maven Ruleset"
+  xmlns="http://pmd.sf.net/ruleset/1.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd"
+  xsi:noNamespaceSchemaLocation="http://pmd.sf.net/ruleset_xml_schema.xsd">
+  
+  <description>
+    Ruleset that brings all the rulesets we want from the pmd jar, because
+    the maven-pmd-plugin doesn't find them otherwise. This is also the place
+    to add our own future rulesets, if any.
+  </description>
+  
+  <rule ref="rulesets/java/basic.xml"/>
+  <rule ref="rulesets/java/braces.xml"/>
+  <rule ref="rulesets/java/clone.xml"/>
+  <rule ref="rulesets/java/codesize.xml"/>
+  <rule ref="rulesets/java/comments.xml">
+    <!-- We shouldn't limit the number of lines in the header of a class -->
+    <exclude name="CommentSize"/>
+    <exclude name="CommentRequired" />
+  </rule>
+  <rule ref="rulesets/java/controversial.xml">
+    <!-- The rule is good, but is not properly applied. It forces you to statically declare it as ConcurrentHashMap -->
+    <exclude name="UseConcurrentHashMap"/>
+    <exclude name="CallSuperInConstructor"/>
+    <exclude name="AtLeastOneConstructor"/>
+    <exclude name="AssignmentInOperand"/>
+    <exclude name="NullAssignment"/>
+    <exclude name="DataflowAnomalyAnalysis" />
+    <exclude name="UseObjectForClearerAPI" />
+  </rule>
+  <rule ref="rulesets/java/coupling.xml">
+    <exclude name="ExcessiveImports" />
+    <exclude name="LawOfDemeter"/>
+  </rule>
+  <rule ref="rulesets/java/design.xml">
+    <exclude name="ConstructorCallsOverridableMethod"/>
+    <exclude name="AbstractClassWithoutAbstractMethod"/>
+    <exclude name="AvoidSynchronizedAtMethodLevel"/>
+  </rule>
+  <rule ref="rulesets/java/empty.xml"/>
+  <rule ref="rulesets/java/finalizers.xml"/>
+  <rule ref="rulesets/java/imports.xml"/>
+  <rule ref="rulesets/java/j2ee.xml"/>
+  <rule ref="rulesets/java/junit.xml"/>
+  <rule ref="rulesets/java/logging-java.xml"/>
+  <rule ref="rulesets/java/naming.xml">
+    <exclude name="ShortVariable"/>
+    <exclude name="AbstractNaming"/>
+  </rule>
+  <rule ref="rulesets/java/naming.xml/LongVariable">
+    <properties>
+      <property name="minimum" value="32"/>
+    </properties>
+  </rule>
+  <rule ref="rulesets/java/optimizations.xml"/>
+  <rule ref="rulesets/java/strictexception.xml"/>
+  <rule ref="rulesets/java/strings.xml"/>
+  <rule ref="rulesets/java/sunsecure.xml"/>
+  <rule ref="rulesets/java/typeresolution.xml"/>
+  <rule ref="rulesets/java/unnecessary.xml"/>
+  <rule ref="rulesets/java/unusedcode.xml"/>
+</ruleset>

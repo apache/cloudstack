@@ -88,7 +88,7 @@
 
                 // Make sure the master checkbox is unselected
                 if (multiSelect) {
-                    $('div.list-view').find('input.multiSelectMasterCheckbox').attr('checked', false);
+                    $instanceRow.closest('.list-view').find('input.multiSelectMasterCheckbox').attr('checked', false);
                 }
 
                 var externalLinkAction = action.externalLink;
@@ -184,6 +184,7 @@
                                 // Make copy of previous row, in case data is needed
                                 $prevRow = $instanceRow.clone();
                                 if (multiSelect) {
+                                    $prevRow.find('.quick-view').addClass('loading-overlay');
                                     $.each($prevRow, function(index, elem) {
                                         $(elem).data($($instanceRow[index]).data());
                                     });
@@ -363,6 +364,9 @@
                                 );
                             },
                             error: function(message) {
+                                $instanceRow.removeClass('loading');
+                                $instanceRow.find('td.quick-view').removeClass('loading-overlay');
+                                
                                 if (!isHeader) {
                                     if (($.isPlainObject(args.action.createForm) && args.action.addRow != 'false') ||
                                         (!args.action.createForm && args.action.addRow == 'true')) {
@@ -877,7 +881,7 @@
                 $('<div>').attr({
                     id: 'advanced_search'
                 })
-                .addClass('button search')
+                .addClass('button search advanced-search')
                 .append($('<div>').addClass('icon'))
             );
         }
@@ -899,6 +903,7 @@
                 return true;
 
             if (action.type == 'radio') {
+                $td.closest('.list-view').addClass('list-view-select');
                 $td.append(
                     $('<div></div>')
                     .addClass('action')
@@ -918,6 +923,7 @@
 
                 return true;
             } else if (action.type == 'checkbox') {
+                $td.closest('.list-view').addClass('list-view-select');
                 $td.append(
                     $('<div></div>')
                     .addClass('action')
@@ -1072,7 +1078,7 @@
                         var enabled = checked || (numRowsChecked > 0);
                         toggleMultiSelectActions(enabled);
 
-                        $('input.multiSelectMasterCheckbox').attr('checked', (numRows === numRowsChecked));
+                        $td.closest('.list-view').find('input.multiSelectMasterCheckbox').attr('checked', (numRows === numRowsChecked));
                     });
 
                 $td.append(
@@ -1115,9 +1121,23 @@
                     createEditField($td).appendTo($td);
                 } else {
                     $td.html('');
-                    $td.append(
-                        $('<span></span>').html(_s(content))
-                    );
+
+                    if ($.isArray(content)) {
+                        var $ul = $('<ul>');
+
+                        $(content).map(function (index, contentItem) {
+                            var $li = $('<li>');
+
+                            $li.append('<span>').text(contentItem.toString());
+                            $li.appendTo($ul);
+                        });
+
+                        $ul.appendTo($td);
+                    } else {
+                        $td.append(
+                            $('<span>').html(_s(content))
+                        );
+                    }
                 }
 
                 $td.attr('title', _s(content));
@@ -1180,8 +1200,17 @@
                                 if (actionName == 'moveDrag') return false;
 
                                 rowActions[actionName]($tr);
+                                var map1 = {};
                                 $tr.closest('tbody').find('tr').each(function() {
+                                	/* 
+                                	 * fire only one sorting API call(updateXXXXXXX&sortKey=n&id=UUID) for items who have the same UUID. 
+                                	 * e.g. An Template/ISO of multiple zones have the same UUID.
+                                	 */
+                                	var objId = $(this).data('json-obj').id;
+                                	if(!(objId in map1)) { 
                                     sort($(this), action);
+                                		map1[objId] = 1;
+                                	}                                       
                                 });
                                 $tr.closest('.data-table').dataTable('selectRow', $tr.index());
 
@@ -1201,9 +1230,17 @@
                         },
                         stop: function(event, ui) {
                             rowActions._std($tr, function() {});
-
+                            var map1 = {};
                             $tr.closest('tbody').find('tr').each(function() {
+                            	/* 
+                            	 * fire only one sorting API call(updateXXXXXXX&sortKey=n&id=UUID) for items who have the same UUID. 
+                            	 * e.g. An Template/ISO of multiple zones have the same UUID.
+                            	 */
+                            	var objId = $(this).data('json-obj').id;
+                            	if(!(objId in map1)) { 
                                 sort($(this), reorder.moveDrag);
+                            	    map1[objId] = 1;
+                            	}
                             });
                         }
                     });
@@ -1258,20 +1295,28 @@
                         allowedActions: allowedActions
                     }
                 );
-
-                $listView.trigger('cloudStack.listView.addRow', {
-                    $tr: $tr
-                });
             }
 
-            // Add sub-select
+          $tr.closest('.list-view').trigger('cloudStack.listView.addRow', {
+            $tr: $tr
+          });
+
+          // Add sub-select
             if (subselect) {
                 var $td = $tr.find('td.first');
                 var $select = $('<div></div>').addClass('subselect').append(
-                    $('<span>').html(_l(subselect.label)),
-                    $('<select>')
+                    $('<span>').html(_l(subselect.label))
                 ).hide();
                 var $selectionArea = $tr.find('td:last').find('input');
+
+                if (subselect.isMultiple) {
+                    $select.append(
+                        $('<select multiple>'),
+                        $('<span>').addClass('info').html(_l('message.listView.subselect.multi'))
+                    );
+                } else {
+                  $select.append($('<select>'));
+                }
 
                 $td.append($select);
 
@@ -1292,6 +1337,7 @@
                                             var $option = $('<option>');
 
                                             $option.attr('value', item.id);
+                                            $option.attr('title', item.description);
                                             $option.append(item.description);
                                             $option.appendTo($select.find('select'));
                                         });
@@ -1300,6 +1346,7 @@
                                         $select.hide();
                                     }
 
+                                    $select.find('option:first').attr('selected', 'selected'); 
                                     $listView.find('.data-table').dataTable('refresh');
                                 }
                             }
@@ -1382,7 +1429,7 @@
                                         },
                                         onPerformAction: function() {
                                             $tr.addClass('loading').find('td:last').prepend($('<div>').addClass('loading'));
-                                            $quickViewTooltip.hide();
+                                            $quickViewTooltip.detach();
                                         },
                                         onActionComplete: function() {
                                             if (listViewArgs.onActionComplete) {
@@ -1701,6 +1748,7 @@
             $.each(listViewData.actions, function(actionName, action) {
                 if (!action.isHeader || (
                     action.preFilter && !action.preFilter({
+                        id: listViewData.id,
                         context: $listView.data('view-args').context ? $listView.data('view-args').context : cloudStack.context
                     })
                 )) return true;
@@ -1872,11 +1920,11 @@
         };
 
         var closeAdvancedSearch = function() {
-            $('#advanced_search .form-container:visible').remove();
+            $listView.find('.advanced-search .form-container:visible').remove();
         };
 
-        $listView.find('.button.search#advanced_search .icon').bind('click', function(event) {
-            if ($('#advanced_search .form-container:visible').size()) {
+        $listView.find('.advanced-search .icon').bind('click', function(event) {
+            if ($listView.find('.advanced-search .form-container:visible').size()) {
                 closeAdvancedSearch();
 
                 return false;
@@ -1897,7 +1945,7 @@
             var $formContainer = form.$formContainer;
             var $form = $formContainer.find('form');
 
-            $formContainer.hide().appendTo('#advanced_search').show();
+            $formContainer.hide().appendTo($listView.find('.advanced-search')).show();
             $form.find('.form-item:first input').focus();
             $form.find('input[type=submit]')
                 .show()
@@ -1990,7 +2038,7 @@
             var jsonObj = $target.closest('tr').data('jsonObj');
             var detailViewArgs;
             var detailViewPresent = ($target.closest('div.data-table tr td.first').size() &&
-                listViewData.detailView && !$target.closest('div.edit').size());
+                listViewData.detailView && !$target.closest('div.edit').size()) && !listViewData.detailView.noPanelView;
             var uiCustom = args.uiCustom == true ? true : false;
 
             // Click on first item will trigger detail view (if present)

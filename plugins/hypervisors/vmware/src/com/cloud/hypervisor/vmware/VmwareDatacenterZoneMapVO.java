@@ -32,6 +32,8 @@ import javax.persistence.Table;
 @Table(name = "vmware_data_center_zone_map")
 public class VmwareDatacenterZoneMapVO implements VmwareDatacenterZoneMap {
 
+    private static final long serialVersionUID = -2155826205976479040L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

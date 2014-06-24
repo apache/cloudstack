@@ -27,4 +27,9 @@ public class GetDomRVersionCmd extends NetworkElementCommand {
     public GetDomRVersionCmd() {
         super();
     }
+
+    @Override
+    public boolean isQuery() {
+        return true;
+    }
 }

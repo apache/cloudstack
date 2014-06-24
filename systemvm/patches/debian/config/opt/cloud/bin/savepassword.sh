@@ -52,7 +52,7 @@ done
 
 [ -f $PASSWD_FILE ] ||  touch $PASSWD_FILE
 
-sed -i /$VM_IP/d $PASSWD_FILE
+sed -i /$VM_IP=/d $PASSWD_FILE
 
 ps aux | grep serve_password.sh |grep -v grep 2>&1 > /dev/null
 if [ $? -eq 0 ]

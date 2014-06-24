@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
+import java.util.Properties;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -31,6 +32,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.db.DbProperties;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
@@ -52,7 +54,8 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
             try {
                 s_logger.info("Initializing SSL from built-in default certificate");
 
-                char[] passphrase = "vmops.com".toCharArray();
+                final Properties dbProps = DbProperties.getDbProperties();
+                char[] passphrase = dbProps.getProperty("db.cloud.keyStorePassphrase").toCharArray();
                 KeyStore ks = KeyStore.getInstance("JKS");
 
                 ks.load(new FileInputStream("certs/realhostip.keystore"), passphrase);

@@ -37,7 +37,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 
-@APICommand(name = "createTags", description = "Creates resource tag(s)", responseObject = SuccessResponse.class, since = "4.0.0")
+@APICommand(name = "createTags", description = "Creates resource tag(s)", responseObject = SuccessResponse.class, since = "4.0.0", entityType = {ResourceTag.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTagsCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTagsCmd.class.getName());
 
@@ -117,7 +118,7 @@ public class CreateTagsCmd extends BaseAsyncCmd {
 
         if (tags != null && !tags.isEmpty()) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create tags");
         }

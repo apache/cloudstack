@@ -36,7 +36,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.lb.CertService;
 
-@APICommand(name = "uploadSslCert", description = "Upload a certificate to cloudstack", responseObject = SslCertResponse.class)
+@APICommand(name = "uploadSslCert", description = "Upload a certificate to cloudstack", responseObject = SslCertResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UploadSslCertCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UploadSslCertCmd.class.getName());
 

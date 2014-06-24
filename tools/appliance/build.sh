@@ -26,7 +26,17 @@ else
 fi
 
 build_date=`date +%Y-%m-%d`
-branch="master"
+
+# set fixed or leave empty to use git to determine
+branch=
+
+if [ -z "$branch" ] ; then
+  branch=`git status | grep '# On branch' | awk '{print $4}'`
+fi
+
+if [ -z "$branch" ] ; then
+    branch=unknown
+fi
 rootdir=$PWD
 
 # Initialize veewee and dependencies
@@ -46,7 +56,7 @@ done
 # Get appliance uuids
 machine_uuid=`vboxmanage showvminfo $appliance | grep UUID | head -1 | awk '{print $2}'`
 hdd_uuid=`vboxmanage showvminfo $appliance | grep vdi | head -1 | awk '{print $8}' | cut -d ')' -f 1`
-hdd_path=`vboxmanage list hdds | grep "$appliance\/" | grep vdi | cut -c 14-`
+hdd_path=`vboxmanage list hdds | grep "$appliance\/" | grep vdi | cut -c 14- | sed 's/^ *//'`
 
 # Remove any shared folder
 shared_folders=`vboxmanage showvminfo $appliance | grep Name | grep Host`
@@ -60,21 +70,21 @@ done
 vboxmanage modifyhd $hdd_uuid --compact
 
 # Start exporting
-rm -fr dist *.ova *.vhd *.vdi *.qcow* *.bz2
+rm -fr dist *.ova *.vhd *.vdi *.qcow* *.bz2 *.vmdk *.ovf
 mkdir dist
 
-# Export for Xen
+# Export for XenServer
 which faketime >/dev/null 2>&1 && which vhd-util >/dev/null 2>&1
 if [ $? == 0 ]; then
   set -e
   vboxmanage internalcommands converttoraw -format vdi "$hdd_path" img.raw
-  faketime '2010-01-01' vhd-util convert -s 0 -t 1 -i img.raw -o stagefixed.vhd
-  faketime '2010-01-01' vhd-util convert -s 1 -t 2 -i stagefixed.vhd -o $appliance-$build_date-$branch-xen.vhd
+  vhd-util convert -s 0 -t 1 -i img.raw -o stagefixed.vhd
+  faketime '2010-01-01' vhd-util convert -s 1 -t 2 -i stagefixed.vhd -o $appliance-$branch-xen.vhd
   rm *.bak
-  bzip2 $appliance-$build_date-$branch-xen.vhd
-  echo "$appliance exported for Xen: dist/$appliance-$build_date-$branch-xen.vhd.bz2"
+  bzip2 $appliance-$branch-xen.vhd
+  echo "$appliance exported for XenServer: dist/$appliance-$branch-xen.vhd.bz2"
 else
-  echo "** Skipping $appliance export for Xen: faketime or vhd-util command is missing. **"
+  echo "** Skipping $appliance export for XenServer: faketime or vhd-util command is missing. **"
   echo "** faketime source code is available from https://github.com/wolfcw/libfaketime **"
 fi
 
@@ -83,23 +93,27 @@ set -e
 
 # Export for KVM
 vboxmanage internalcommands converttoraw -format vdi "$hdd_path" raw.img
-qemu-img convert -f raw -c -O qcow2 raw.img $appliance-$build_date-$branch-kvm.qcow2
+qemu-img convert -f raw -c -O qcow2 raw.img $appliance-$branch-kvm.qcow2
 rm raw.img
-bzip2 $appliance-$build_date-$branch-kvm.qcow2
-echo "$appliance exported for KVM: dist/$appliance-$build_date-$branch-kvm.qcow2.bz2"
+bzip2 $appliance-$branch-kvm.qcow2
+echo "$appliance exported for KVM: dist/$appliance-$branch-kvm.qcow2.bz2"
 
 # Export both ova and vmdk for VMWare
-vboxmanage clonehd $hdd_uuid $appliance-$build_date-$branch-vmware.vmdk --format VMDK
-bzip2 $appliance-$build_date-$branch-vmware.vmdk
-echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware.vmdk.bz2"
-vboxmanage export $machine_uuid --output $appliance-$build_date-$branch-vmware.ova
-echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware.ova"
+vboxmanage clonehd $hdd_uuid $appliance-$branch-vmware.vmdk --format VMDK
+bzip2 $appliance-$branch-vmware.vmdk
+echo "$appliance exported for VMWare: dist/$appliance-$branch-vmware.vmdk.bz2"
+vboxmanage export $machine_uuid --output $appliance-$branch-vmware.ovf
+mv $appliance-$branch-vmware.ovf $appliance-$branch-vmware.ovf-orig
+java -cp convert Convert convert_ovf_vbox_to_esx.xslt $appliance-$branch-vmware.ovf-orig $appliance-$branch-vmware.ovf
+tar -cf $appliance-$branch-vmware.ova $appliance-$branch-vmware.ovf $appliance-$branch-vmware-disk[0-9].vmdk
+rm -f $appliance-$branch-vmware.ovf $appliance-$branch-vmware.ovf-orig $appliance-$branch-vmware-disk[0-9].vmdk
+echo "$appliance exported for VMWare: dist/$appliance-$branch-vmware.ova"
 
 # Export for HyperV
-vboxmanage clonehd $hdd_uuid $appliance-$build_date-$branch-hyperv.vhd --format VHD
-# HyperV doesn't support import a zipped image from S3
-#bzip2 $appliance-$build_date-$branch-hyperv.vhd
-echo "$appliance exported for HyperV: dist/$appliance-$build_date-$branch-hyperv.vhd"
+vboxmanage clonehd $hdd_uuid $appliance-$branch-hyperv.vhd --format VHD
+# HyperV doesn't support import a zipped image from S3, but we create a zipped version to save space on the jenkins box
+zip $appliance-$branch-hyperv.vhd.zip $appliance-$branch-hyperv.vhd
+echo "$appliance exported for HyperV: dist/$appliance-$branch-hyperv.vhd"
 
-mv *-hyperv.vhd *.bz2 *.ova dist/
+mv *-hyperv.vhd *-hyperv.vhd.zip *.bz2 *.ova dist/
 

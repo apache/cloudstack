@@ -92,27 +92,38 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
             } else if (srcData.getObjectType() == DataObjectType.TEMPLATE) {
                 // sync template from NFS cache to S3 in NFS migration to S3 case
                 storageManager.createOvaForTemplate((TemplateObjectTO)srcData);
-            } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
-                //create template from snapshot on src at first, then copy it to s3
-                TemplateObjectTO cacheTemplate = (TemplateObjectTO)destData;
-                cacheTemplate.setDataStore(srcDataStore);
-                CopyCmdAnswer answer = (CopyCmdAnswer)processor.createTemplateFromSnapshot(cmd);
-                if (!answer.getResult()) {
-                    return answer;
+            } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT) {
+                // pack ova first
+                // sync snapshot from NFS cache to S3 in NFS migration to S3 case
+                String parentPath = storageResource.getRootDir(srcDataStore.getUrl());
+                SnapshotObjectTO snap = (SnapshotObjectTO)srcData;
+                String path = snap.getPath();
+                int index = path.lastIndexOf(File.separator);
+                String name = path.substring(index + 1);
+                String snapDir = path.substring(0, index);
+                storageManager.createOva(parentPath + File.separator + snapDir, name);
+                if (destData.getObjectType() == DataObjectType.TEMPLATE) {
+                    //create template from snapshot on src at first, then copy it to s3
+                    TemplateObjectTO cacheTemplate = (TemplateObjectTO)destData;
+                    cacheTemplate.setDataStore(srcDataStore);
+                    CopyCmdAnswer answer = (CopyCmdAnswer)processor.createTemplateFromSnapshot(cmd);
+                    if (!answer.getResult()) {
+                        return answer;
+                    }
+                    cacheTemplate.setDataStore(destDataStore);
+                    TemplateObjectTO template = (TemplateObjectTO)answer.getNewData();
+                    template.setDataStore(srcDataStore);
+                    CopyCommand newCmd = new CopyCommand(template, destData, cmd.getWait(), cmd.executeInSequence());
+                    Answer result = storageResource.defaultAction(newCmd);
+                    //clean up template data on staging area
+                    try {
+                        DeleteCommand deleteCommand = new DeleteCommand(template);
+                        storageResource.defaultAction(deleteCommand);
+                    } catch (Exception e) {
+                        s_logger.debug("Failed to clean up staging area:", e);
+                    }
+                    return result;
                 }
-                cacheTemplate.setDataStore(destDataStore);
-                TemplateObjectTO template = (TemplateObjectTO)answer.getNewData();
-                template.setDataStore(srcDataStore);
-                CopyCommand newCmd = new CopyCommand(template, destData, cmd.getWait(), cmd.executeInSequence());
-                Answer result = storageResource.defaultAction(newCmd);
-                //clean up template data on staging area
-                try {
-                    DeleteCommand deleteCommand = new DeleteCommand(template);
-                    storageResource.defaultAction(deleteCommand);
-                } catch (Exception e) {
-                    s_logger.debug("Failed to clean up staging area:", e);
-                }
-                return result;
             }
             needDelegation = true;
         }

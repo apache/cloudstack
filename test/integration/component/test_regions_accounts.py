@@ -17,9 +17,9 @@
 
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 
 class Services:
@@ -57,11 +57,11 @@ class TestRegionsAccounts(cloudstackTestCase):
     def setUpClass(cls):
         cls.api_client = super(TestRegionsAccounts, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
-        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
         cls.cleanup = []
         return
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_createAccountWithUUID(self):
         """Test for creating account by passing id parameter
 
@@ -101,7 +101,7 @@ class TestRegionsAccounts(cloudstackTestCase):
         self.cleanup.append(account)
         return
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_createUserWithUUID(self):
         """Test for creating User by passing id parameter
 
@@ -152,7 +152,7 @@ class TestRegionsAccounts(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_createdomainWithUUID(self):
         """Test for creating Domain by passing id parameter
 

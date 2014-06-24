@@ -15,154 +15,86 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from marvin.codes import FAILED
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 #Import System modules
 import time
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test Network Services
-    """
-
-    def __init__(self):
-        self.services = {
-                            "ostype": "CentOS 5.3 (64-bit)",
-                            # Cent OS 5.3 (64 bit)
-                            "lb_switch_wait": 10,
-                            # Time interval after which LB switches the requests
-                            "sleep": 60,
-                            "timeout":10,
-                            "network_offering": {
-                                    "name": 'Test Network offering',
-                                    "displaytext": 'Test Network offering',
-                                    "guestiptype": 'Isolated',
-                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
-                                    "traffictype": 'GUEST',
-                                    "availability": 'Optional',
-                                    "serviceProviderList" : {
-                                            "Dhcp": 'VirtualRouter',
-                                            "Dns": 'VirtualRouter',
-                                            "SourceNat": 'VirtualRouter',
-                                            "PortForwarding": 'VirtualRouter',
-                                        },
-                                },
-                            "network": {
-                                  "name": "Test Network",
-                                  "displaytext": "Test Network",
-                                },
-                            "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,
-                                    # in MHz
-                                    "memory": 256,
-                                    # In MBs
-                                    },
-                            "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    "password": "password",
-                                    },
-                            "server":
-                                    {
-                                    "displayname": "Small Instance",
-                                    "username": "root",
-                                    "password": "password",
-                                    "hypervisor": 'XenServer',
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "ssh_port": 22,
-                                    "protocol": 'TCP',
-                                },
-                        "natrule":
-                                {
-                                    "privateport": 22,
-                                    "publicport": 2222,
-                                    "protocol": "TCP"
-                                },
-                        "lbrule":
-                                {
-                                    "name": "SSH",
-                                    "alg": "roundrobin",
-                                    # Algorithm used for load balancing
-                                    "privateport": 22,
-                                    "publicport": 2222,
-                                    "protocol": 'TCP'
-                                }
-                        }
-
 class TestLoadBalance(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestLoadBalance, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        testClient = super(TestLoadBalance, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient() 
+        cls.services = testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
-        cls.services["server"]["zoneid"] = cls.zone.id
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+        
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         #Create an account, network, VM and IP addresses
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             admin=True,
                             domainid=cls.domain.id
                             )
         cls.service_offering = ServiceOffering.create(
-                                        cls.api_client,
-                                        cls.services["service_offering"]
+                                        cls.apiclient,
+                                        cls.services["service_offerings"]
                                         )
         cls.vm_1 = VirtualMachine.create(
-                                    cls.api_client,
-                                    cls.services["server"],
+                                    cls.apiclient,
+                                    cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.vm_2 = VirtualMachine.create(
-                                    cls.api_client,
-                                    cls.services["server"],
+                                    cls.apiclient,
+                                    cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.vm_3 = VirtualMachine.create(
-                                    cls.api_client,
-                                    cls.services["server"],
+                                    cls.apiclient,
+                                    cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.non_src_nat_ip = PublicIPAddress.create(
-                                            cls.api_client,
+                                            cls.apiclient,
                                             cls.account.name,
                                             cls.zone.id,
                                             cls.account.domainid,
-                                            cls.services["server"]
+                                            cls.services["virtual_machine"]
                                             )
         # Open up firewall port for SSH
         cls.fw_rule = FireWallRule.create(
-                            cls.api_client,
+                            cls.apiclient,
                             ipaddressid=cls.non_src_nat_ip.ipaddress.id,
                             protocol=cls.services["lbrule"]["protocol"],
                             cidrlist=['0.0.0.0/0'],
@@ -185,7 +117,7 @@ class TestLoadBalance(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cleanup_resources(cls.api_client, cls._cleanup)
+        cleanup_resources(cls.apiclient, cls._cleanup)
         return
 
     def try_ssh(self, ip_addr, hostnames):
@@ -208,10 +140,10 @@ class TestLoadBalance(cloudstackTestCase):
         except Exception as e:
             self.fail("%s: SSH failed for VM with IP Address: %s" %
                                     (e, ip_addr))
-        time.sleep(self.services["lb_switch_wait"])
+        time.sleep(10)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_01_create_lb_rule_src_nat(self):
         """Test to create Load balancing rule with source NAT"""
 
@@ -371,7 +303,7 @@ class TestLoadBalance(cloudstackTestCase):
             self.try_ssh(src_nat_ip_addr.ipaddress, hostnames)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_02_create_lb_rule_non_nat(self):
         """Test to create Load balancing rule with non source NAT"""
 
@@ -489,7 +421,7 @@ class TestLoadBalance(cloudstackTestCase):
             self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_assign_and_removal_lb(self):
         """Test for assign & removing load balancing rule"""
 

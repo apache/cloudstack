@@ -105,4 +105,12 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
      * @return the scope of the storage pool where the volume is present (ZONE/CLUSTER)
      */
     ScopeType getVolumeStoragePoolScope(long volumeId);
+
+    /***
+     * Updates the destVol uuid with srcVol uuid and sets the srcVol uuid as null.
+     * @param srcVolId
+     * @param destVolId
+     * @return returns true if transaction is successful.
+     */
+    boolean updateUuid(long srcVolId, long destVolId);
 }

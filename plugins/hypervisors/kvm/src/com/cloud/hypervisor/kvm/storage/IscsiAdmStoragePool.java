@@ -19,6 +19,7 @@ package com.cloud.hypervisor.kvm.storage;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 import com.cloud.storage.Storage.StoragePoolType;
@@ -86,7 +87,7 @@ public class IscsiAdmStoragePool implements KVMStoragePool {
     // from LibvirtComputingResource.createDiskFromTemplate(KVMPhysicalDisk, String, PhysicalDiskFormat, long, KVMStoragePool)
     // does not apply for iScsiAdmStoragePool
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, PhysicalDiskFormat format, long size) {
+    public KVMPhysicalDisk createPhysicalDisk(String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
         throw new UnsupportedOperationException("Creating a physical disk is not supported.");
     }
 
@@ -94,7 +95,7 @@ public class IscsiAdmStoragePool implements KVMStoragePool {
     // from KVMStorageProcessor.createVolume(CreateObjectCommand)
     // does not apply for iScsiAdmStoragePool
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, long size) {
+    public KVMPhysicalDisk createPhysicalDisk(String name, Storage.ProvisioningType provisioningType, long size) {
         throw new UnsupportedOperationException("Creating a physical disk is not supported.");
     }
 

@@ -81,11 +81,11 @@ public class DefaultHostListener implements HypervisorHostListener {
         }
 
         StoragePoolVO poolVO = this.primaryStoreDao.findById(poolId);
-        poolVO.setUsedBytes(mspAnswer.getPoolInfo().getAvailableBytes());
+        poolVO.setUsedBytes(mspAnswer.getPoolInfo().getCapacityBytes() - mspAnswer.getPoolInfo().getAvailableBytes());
         poolVO.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
         primaryStoreDao.update(pool.getId(), poolVO);
 
-        s_logger.info("Connection established between " + pool + " host + " + hostId);
+        s_logger.info("Connection established between storage pool " + pool + " and host " + hostId);
         return true;
     }
 

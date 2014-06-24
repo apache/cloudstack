@@ -31,14 +31,13 @@ import com.cloud.network.MonitoringService;
 @Table(name = "monitoring_services")
 public class MonitoringServiceVO implements MonitoringService {
 
-    public MonitoringServiceVO(String service, String processname, String serviceName, String servicePath, String pidFile, boolean defaultService) {
+    public MonitoringServiceVO(String service, String processName, String serviceName, String servicePath, String servicePidFile, boolean defaultService) {
         this.service = service;
-        this.processname = processname;
-        this.servicename = serviceName;
+        this.processName = processName;
+        this.serviceName = serviceName;
         this.servicePath = servicePath;
-        this.servicePidFile = pidFile;
+        this.servicePidFile = servicePidFile;
         this.defaultService = defaultService;
-
     }
 
     protected MonitoringServiceVO() {
@@ -53,10 +52,10 @@ public class MonitoringServiceVO implements MonitoringService {
     String service;
 
     @Column(name = "process_name", updatable = false)
-    String processname;
+    String processName;
 
     @Column(name = "service_name", updatable = false)
-    String servicename;
+    String serviceName;
 
     @Column(name = "service_path", updatable = false)
     private String servicePath;
@@ -77,23 +76,22 @@ public class MonitoringServiceVO implements MonitoringService {
 
     @Override
     public String getService() {
-        return this.service;
+        return service;
     }
 
     @Override
     public String getServiceName() {
-        return this.servicename;  //To change body of implemented methods use File | Settings | File Templates.
+        return serviceName;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
-    public String getPidFile() {
-        return this.servicePidFile;
-
+    public String getServicePidFile() {
+        return servicePidFile;
     }
 
     @Override
     public String getServicePath() {
-        return this.servicePidFile;
+        return servicePidFile;
     }
 
     @Override
@@ -115,7 +113,12 @@ public class MonitoringServiceVO implements MonitoringService {
         return defaultService;
     }
 
-    public String getProcessname() {
-        return processname;
+    public String getProcessName() {
+        return processName;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return MonitoringService.class;
     }
 }

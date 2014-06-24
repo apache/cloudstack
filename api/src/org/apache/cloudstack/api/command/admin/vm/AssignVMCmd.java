@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -33,12 +34,15 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "assignVirtualMachine",
             description = "Change ownership of a VM from one account to another. This API is available for Basic zones with security groups and Advanced zones with guest networks. A root administrator can reassign a VM from any account to any other account in any domain. A domain administrator can reassign a VM to any account in the same domain.",
             responseObject = UserVmResponse.class,
-            since = "3.0.0")
-public class AssignVMCmd extends BaseCmd {
+        since = "3.0.0", entityType = {VirtualMachine.class},
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = true)
+public class AssignVMCmd extends BaseCmd  {
     public static final Logger s_logger = Logger.getLogger(AssignVMCmd.class.getName());
 
     private static final String s_name = "assignvirtualmachineresponse";
@@ -118,7 +122,7 @@ public class AssignVMCmd extends BaseCmd {
             if (userVm == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm");
             }
-            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", userVm).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", userVm).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (Exception e) {

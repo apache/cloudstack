@@ -340,8 +340,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
             vmDao = ComponentContext.getComponent(VMInstanceDao.class);
             final List<? extends VMInstanceVO> vms = vmDao.listByHostId(hostId);
             for (VMInstanceVO vm : vms) {
-                states.put(vm.getInstanceName(), new HostVmStateReportEntry(vm.getState() == State.Running ? PowerState.PowerOn : PowerState.PowerOff, "host-" + hostId,
-                    null));
+                states.put(vm.getInstanceName(), new HostVmStateReportEntry(vm.getState() == State.Running ? PowerState.PowerOn : PowerState.PowerOff, "host-" + hostId));
             }
         }
         /*

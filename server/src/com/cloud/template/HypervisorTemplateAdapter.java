@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.template;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.ejb.Local;
@@ -44,6 +44,8 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 
@@ -67,8 +69,10 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = TemplateAdapter.class)
@@ -95,6 +99,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     EndPointSelector _epSelector;
     @Inject
     DataCenterDao _dcDao;
+    @Inject
+    MessageBus _messageBus;
 
     @Override
     public String getName() {
@@ -122,20 +128,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
-        String path = null;
-        try {
-            URL str = new URL(url);
-            path = str.getPath();
-        } catch (MalformedURLException ex) {
-            throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is invalid");
-        }
-
-        try {
-            checkFormat(cmd.getFormat(), url);
-        } catch (InvalidParameterValueException ex) {
-            checkFormat(cmd.getFormat(), path);
-        }
-
         UriUtils.validateUrl(url);
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
@@ -219,7 +211,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
         }
 
-        Collections.shuffle(imageStores);// For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
+        Set<Long> zoneSet = new HashSet<Long>();
+        Collections.shuffle(imageStores); // For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
         for (DataStore imageStore : imageStores) {
             // skip data stores for a disabled zone
             Long zoneId = imageStore.getScope().getScopeId();
@@ -235,6 +228,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     s_logger.info("Zone " + zoneId + " is disabled, so skip downloading template to its image store " + imageStore.getId());
                     continue;
                 }
+
+                // We want to download private template to one of the image store in a zone
+                if(isPrivateTemplate(template) && zoneSet.contains(zoneId)){
+                    continue;
+                }else {
+                    zoneSet.add(zoneId);
+                }
+
             }
 
             TemplateInfo tmpl = imageFactory.getTemplate(template.getId(), imageStore);
@@ -243,13 +244,19 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             caller.setCallback(caller.getTarget().createTemplateAsyncCallBack(null, null));
             caller.setContext(context);
             imageService.createTemplateAsync(tmpl, imageStore, caller);
-            if (!(profile.getIsPublic() || profile.getFeatured())) {  // If private template then break
-                break;
-            }
         }
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
 
         return template;
+    }
+
+    private boolean isPrivateTemplate(VMTemplateVO template){
+
+        // if public OR featured OR system template
+        if(template.isPublicTemplate() || template.isFeatured() || template.getTemplateType() == TemplateType.SYSTEM)
+            return false;
+        else
+            return true;
     }
 
     private class CreateTemplateContext<T> extends AsyncRpcContext<T> {
@@ -267,6 +274,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateInfo template = context.template;
         if (result.isSuccess()) {
             VMTemplateVO tmplt = _tmpltDao.findById(template.getId());
+            // need to grant permission for public templates
+            if (tmplt.isPublicTemplate()) {
+                _messageBus.publish(_name, TemplateManager.MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT, PublishScope.LOCAL, tmplt.getId());
+            }
             long accountId = tmplt.getAccountId();
             if (template.getSize() != null) {
                 // publish usage event
@@ -372,6 +383,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             }
         }
         if (success) {
+            if ((imageStores.size() > 1) && (profile.getZoneId() != null)) {
+                //if template is stored in more than one image stores, and the zone id is not null, then don't delete other templates.
+                return success;
+            }
+
             // delete all cache entries for this template
             List<TemplateInfo> cacheTmpls = imageFactory.listTemplateOnCache(template.getId());
             for (TemplateInfo tmplOnCache : cacheTmpls) {
@@ -382,15 +398,22 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             // find all eligible image stores for this template
             List<DataStore> iStores = templateMgr.getImageStoreByTemplate(template.getId(), null);
             if (iStores == null || iStores.size() == 0) {
-                // remove template from vm_templates table
-                if (_tmpltDao.remove(template.getId())) {
+                // Mark template as Inactive.
+                template.setState(VirtualMachineTemplate.State.Inactive);
+                _tmpltDao.update(template.getId(), template);
+
                     // Decrement the number of templates and total secondary storage
                     // space used by the account
                     Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
                     _resourceLimitMgr.decrementResourceCount(template.getAccountId(), ResourceType.template);
                     _resourceLimitMgr.recalculateResourceCount(template.getAccountId(), account.getDomainId(), ResourceType.secondary_storage.getOrdinal());
-                }
+
             }
+
+            // remove its related ACL permission
+            Pair<Class<?>, Long> tmplt = new Pair<Class<?>, Long>(VirtualMachineTemplate.class, template.getId());
+            _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, tmplt);
+
         }
         return success;
 

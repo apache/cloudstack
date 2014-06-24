@@ -243,35 +243,36 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
         // List<VMInstanceVO> vms = _vmInstanceDao.listByLastHostId(hostId);
         List<VMInstanceVO> vms = null;
         long usedCapacity = 0;
-        for (VMInstanceVO vm : vms) {
-            if (skipCalculation(vm)) {
-                continue;
-            }
-
-            ServiceOffering so = null;
-
-            if (vm.getType() == VirtualMachine.Type.User) {
-                UserVmVO userVm = _vmDao.findById(vm.getId());
-                if (userVm == null) {
+        if (vms != null) {
+            for (VMInstanceVO vm : vms) {
+                if (skipCalculation(vm)) {
                     continue;
                 }
-            }
 
-            so = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+                ServiceOffering so = null;
 
-            if (capacityType == Capacity.CAPACITY_TYPE_MEMORY) {
-                usedCapacity += so.getRamSize() * 1024L * 1024L;
-
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Counting memory capacity used by vm: " + vm.getId() + ", size: " + so.getRamSize() + "MB, host: " + hostId + ", currently counted: " +
-                        usedCapacity + " Bytes");
+                if (vm.getType() == VirtualMachine.Type.User) {
+                    UserVmVO userVm = _vmDao.findById(vm.getId());
+                    if (userVm == null) {
+                        continue;
+                    }
                 }
-            } else if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
-                usedCapacity += so.getCpu() * so.getSpeed();
 
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Counting cpu capacity used by vm: " + vm.getId() + ", cpu: " + so.getCpu() + ", speed: " + so.getSpeed() + ", currently counted: " +
-                        usedCapacity + " Bytes");
+                so = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+                if (capacityType == Capacity.CAPACITY_TYPE_MEMORY) {
+                    usedCapacity += so.getRamSize() * 1024L * 1024L;
+
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Counting memory capacity used by vm: " + vm.getId() + ", size: " + so.getRamSize() + "MB, host: " + hostId + ", currently counted: " +
+                                usedCapacity + " Bytes");
+                    }
+                } else if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
+                    usedCapacity += so.getCpu() * so.getSpeed();
+
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Counting cpu capacity used by vm: " + vm.getId() + ", cpu: " + so.getCpu() + ", speed: " + so.getSpeed() + ", currently counted: " +
+                                usedCapacity + " Bytes");
+                    }
                 }
             }
         }

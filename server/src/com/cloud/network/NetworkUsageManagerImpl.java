@@ -57,6 +57,7 @@ import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -115,6 +116,8 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
     DataCenterDao _dcDao;
     @Inject
     HostDetailsDao _detailsDao;
+    @Inject
+    HostGpuGroupsDao _hostGpuGroupsDao;
     @Inject
     AccountManager _accountMgr;
     @Inject
@@ -537,6 +540,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         long hostId = host.getId();
         _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.Remove);
         _detailsDao.deleteDetails(hostId);
+        _hostGpuGroupsDao.deleteGpuEntries(hostId);
         host.setGuid(null);
         _hostDao.update(hostId, host);
         _hostDao.remove(hostId);

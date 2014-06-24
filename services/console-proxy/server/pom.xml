@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack-service-console-proxy</artifactId>
-    <version>4.4.0-SNAPSHOT</version>
+    <version>4.5.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <dependencies>
@@ -42,6 +42,11 @@
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-utils</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>rdpclient</groupId>
+      <artifactId>cloudstack-service-console-proxy-rdpclient</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

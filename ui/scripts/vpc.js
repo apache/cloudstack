@@ -66,7 +66,7 @@
         fields: {
 
             'number': {
-                label: 'Rule Number',
+                label: 'label.rule.number',
                 edit: true,
                 isEditable: true
 
@@ -78,7 +78,7 @@
                 isEditable: true
             },
             action: {
-                label: 'Action',
+                label: 'label.action',
                 isEditable: true,
                 select: function(args) {
                     args.response.success({
@@ -1926,14 +1926,14 @@
                             docID: 'helpVPCGatewayNetmask'
                         },
                         sourceNat: {
-                            label: 'Source NAT',
+                            label: 'label.source.nat',
                             isBoolean: true,
                             isChecked: false
 
                         },
 
                         aclid: {
-                            label: 'ACL',
+                            label: 'label.acl',
                             select: function(args) {
                                 $.ajax({
                                     url: createURL('listNetworkACLLists'),
@@ -3955,13 +3955,51 @@
                                         }
                                     });
                                 }
+                            },
 
+                            zoneid: {
+                                label: 'label.zone',
+                                validation: {
+                                    required: true 
+                                },
+                                isHidden: true,
+
+                                select: function(args) {
+                                    //var $zoneSelect = $(".ui-dialog-content").find('select.zoneid');
+                                    var $zoneSelect = args.$select.closest('form').find('[rel=zoneid]');
+                                    if (!args.context.regions) {
+                                        $zoneSelect.hide();
+
+                                        args.response.success({
+                                            data: []
+                                        });
+                                    }
+                                    else {
+                                        $zoneSelect.css('display', 'inline-block');
+                                        $.ajax({
+                                            url: createURL('listZones'),
+                                            success: function(json) {
+                                               var zones = $.grep(json.listzonesresponse.zone, function(zone) {
+                                                   return (zone.networktype == 'Advanced');
+                                               });
+
+                                               args.response.success({
+                                                   data: $.map(zones, function(zone) {
+                                                       return {
+                                                           id: zone.id,
+                                                           description: zone.name
+                                                       };
+                                                   })
+                                               });
+                                            }
+                                        });
+                                    }
+                                }
                             }
                         }
                     },
                     action: function(args) {
                         var dataObj = {
-                            zoneId: args.context.vpc[0].zoneid,
                             vpcid: args.context.vpc[0].id,
                             domainid: args.context.vpc[0].domainid,
                             account: args.context.vpc[0].account,
@@ -3971,6 +4009,16 @@
                             gateway: args.data.gateway,
                             netmask: args.data.netmask
                         };
+
+                        if (args.context.regions)
+                            $.extend(dataObj, {
+                                zoneId: args.data.zoneid
+                        })
+                        else
+                            $.extend(dataObj, {
+                                zoneId: args.context.vpc[0].zoneid
+                        });
+
 
                         if (args.data.aclid != '')
                             $.extend(dataObj, {

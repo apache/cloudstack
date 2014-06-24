@@ -29,7 +29,9 @@ import com.cloud.network.Networks;
 @APICommand(name = "listNetworkIsolationMethods",
             description = "Lists supported methods of network isolation",
             responseObject = IsolationMethodResponse.class,
-            since = "4.2.0")
+            since = "4.2.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class ListNetworkIsolationMethodsCmd extends BaseListCmd {
 
     private static final String s_name = "listnetworkisolationmethodsresponse";

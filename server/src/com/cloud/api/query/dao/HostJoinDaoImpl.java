@@ -31,12 +31,16 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
+import org.apache.cloudstack.api.response.GpuResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.VgpuResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.gpu.HostGpuGroupsVO;
+import com.cloud.gpu.VGPUTypesVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.storage.StorageStats;
@@ -92,6 +96,33 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setVersion(host.getVersion());
         hostResponse.setCreated(host.getCreated());
 
+        List<HostGpuGroupsVO> gpuGroups = ApiDBUtils.getGpuGroups(host.getId());
+        if (gpuGroups != null && !gpuGroups.isEmpty()) {
+            List<GpuResponse> gpus = new ArrayList<GpuResponse>();
+            for (HostGpuGroupsVO entry : gpuGroups) {
+                GpuResponse gpuResponse = new GpuResponse();
+                gpuResponse.setGpuGroupName(entry.getGroupName());
+                List<VGPUTypesVO> vgpuTypes = ApiDBUtils.getVgpus(entry.getId());
+                if (vgpuTypes != null && !vgpuTypes.isEmpty()) {
+                    List<VgpuResponse> vgpus = new ArrayList<VgpuResponse>();
+                    for (VGPUTypesVO vgpuType : vgpuTypes) {
+                        VgpuResponse vgpuResponse = new VgpuResponse();
+                        vgpuResponse.setName(vgpuType.getVgpuType());
+                        vgpuResponse.setVideoRam(vgpuType.getVideoRam());
+                        vgpuResponse.setMaxHeads(vgpuType.getMaxHeads());
+                        vgpuResponse.setMaxResolutionX(vgpuType.getMaxResolutionX());
+                        vgpuResponse.setMaxResolutionY(vgpuType.getMaxResolutionY());
+                        vgpuResponse.setMaxVgpuPerPgpu(vgpuType.getMaxVgpuPerPgpu());
+                        vgpuResponse.setRemainingCapacity(vgpuType.getRemainingCapacity());
+                        vgpuResponse.setmaxCapacity(vgpuType.getMaxCapacity());
+                        vgpus.add(vgpuResponse);
+                    }
+                    gpuResponse.setVgpu(vgpus);
+                }
+                gpus.add(gpuResponse);
+            }
+            hostResponse.setGpuGroups(gpus);
+        }
         if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity) || details.contains(HostDetails.stats) || details.contains(HostDetails.events)) {
 
             hostResponse.setOsCategoryId(host.getOsCategoryUuid());

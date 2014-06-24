@@ -20,11 +20,11 @@
 #Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
-from marvin.cloudstackException import cloudstackAPIException
+from marvin.cloudstackException import CloudstackAPIException
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 
 
 class Services:
@@ -175,14 +175,13 @@ class TestVPC(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVPC,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPC, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -286,7 +285,7 @@ class TestVPC(cloudstackTestCase):
         return
 
     #list_vpc_apis should be the first case otherwise the vpc counts would be wrong
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_01_list_vpc_apis(self):
         """ Test list VPC APIs
         """
@@ -465,7 +464,7 @@ class TestVPC(cloudstackTestCase):
                             )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_02_restart_vpc_no_networks(self):
         """ Test restart VPC having no networks
         """
@@ -496,7 +495,7 @@ class TestVPC(cloudstackTestCase):
         self.validate_vpc_network(vpc, state='Enabled')
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_03_restart_vpc_with_networks(self):
         """ Test restart VPC having networks
         """
@@ -581,7 +580,7 @@ class TestVPC(cloudstackTestCase):
         self.validate_vpc_network(vpc, state='Enabled')
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_04_delete_vpc_no_networks(self):
         """ Test delete VPC having no networks
         """
@@ -621,7 +620,7 @@ class TestVPC(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_05_delete_vpc_with_networks(self):
         """ Test delete VPC having networks
         """
@@ -752,7 +751,7 @@ class TestVPC(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_06_list_vpc_apis_admin(self):
         """ Test list VPC APIs for different user roles
         """
@@ -812,7 +811,7 @@ class TestVPC(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "intervlan", "multiple"])
+    @attr(tags=["advanced", "intervlan", "multiple", "provisioning"])
     def test_07_restart_network_vm_running(self):
         """ Test Restart VPC when there are multiple networks associated
         """
@@ -1161,7 +1160,7 @@ class TestVPC(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioning"])
     def test_08_delete_vpc(self):
         """ Test vpc deletion after account deletion
         """
@@ -1527,7 +1526,7 @@ class TestVPC(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_09_vpc_create(self):
         """ Test to create vpc and verify VPC state, VR and SourceNatIP
         """
@@ -1588,7 +1587,7 @@ class TestVPC(cloudstackTestCase):
              "Source Nat IP address was not allocated to VR"
             )
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_10_nonoverlaping_cidrs(self):
         """ Test creation of multiple VPCs with non-overlapping CIDRs
         """
@@ -1640,7 +1639,7 @@ class TestVPC(cloudstackTestCase):
             assert("VPC created with overlapping CIDR")
         return
     
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioning"])
     def test_11_deploy_vm_wo_network_netdomain(self):
         """ Test deployment of vm in a VPC without network domain
         """
@@ -1794,7 +1793,7 @@ class TestVPC(cloudstackTestCase):
                           (vm_domain, expected_netdomain)
                         )
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_12_deploy_vm_with_netdomain(self):
         """ Test deployment of vm in a VPC with network domain
         """
@@ -1849,7 +1848,7 @@ class TestVPC(cloudstackTestCase):
                                 networkdomain='test.netdomain'
                                 )
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioning"])
     def test_13_deploy_vm_with_vpc_netdomain(self):
         """ Test deployment of vm in a VPC with network domain
         """
@@ -1914,7 +1913,7 @@ class TestVPC(cloudstackTestCase):
 
         self.validate_vm_netdomain(virtual_machine, vpc, network, netdomain)
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_14_deploy_vm_1(self):
         """ Test vm deploy in network by a user where VPC was created without account/domain ID
         """
@@ -1934,10 +1933,10 @@ class TestVPC(cloudstackTestCase):
         self.debug("creating a VPC network in the account: %s" %
                                                     user.name)
 
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=user.name,
                                         DomainName=user.domain,
-                                        acctType=0)
+                                        type=0)
 
 
         vpc = VPC.create(
@@ -1990,7 +1989,7 @@ class TestVPC(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_15_deploy_vm_2(self):
         """ Test deployment of vm in a network in a domain admin account where VPC is created without account/domain ID
         """
@@ -2017,8 +2016,8 @@ class TestVPC(cloudstackTestCase):
 
         #0 - User, 1 - Root Admin, 2 - Domain Admin
         userapiclient = self.testClient.getUserApiClient(
-                                account=user.name,
-                                domain=self.services["domain"]["name"],
+                                UserName=user.name,
+                                DomainName=self.services["domain"]["name"],
                                 type=2)
 
         vpc = VPC.create(
@@ -2071,7 +2070,7 @@ class TestVPC(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_16_deploy_vm_for_user_by_admin(self):
         """ Test deployment of vm in a network by root admin for user.
         """
@@ -2092,8 +2091,8 @@ class TestVPC(cloudstackTestCase):
                                                     user.name)
 
         userapiclient = self.testClient.getUserApiClient(
-                                        account=user.name,
-                                        domain=user.domain,
+                                        UserName=user.name,
+                                        DomainName=user.domain,
                                         type=0)
 
         vpc = VPC.create(
@@ -2148,7 +2147,7 @@ class TestVPC(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_17_deploy_vm_for_user_by_domain_admin(self):
         """ Test deployment of vm in a network by domain admin for user.
         """
@@ -2171,8 +2170,8 @@ class TestVPC(cloudstackTestCase):
         self.debug("Created account: %s" % domain_admin.name)
         self.cleanup.append(domain_admin)
         da_apiclient = self.testClient.getUserApiClient(
-                                        account=domain_admin.name,
-                                        domain=domain_admin.domain,
+                                        UserName=domain_admin.name,
+                                        DomainName=domain_admin.domain,
                                         type=2)
 
         user = Account.create(
@@ -2188,11 +2187,11 @@ class TestVPC(cloudstackTestCase):
 
         #0 - User, 1 - Root Admin, 2 - Domain Admin
         userapiclient = self.testClient.getUserApiClient(
-                                        account=user.name,
-                                        domain=user.domain,
+                                        UserName=user.name,
+                                        DomainName=user.domain,
                                         type=0)
 
-        with self.assertRaises(cloudstackAPIException):
+        with self.assertRaises(CloudstackAPIException):
             vpc = VPC.create(
                              da_apiclient,
                              self.services["vpc"],
@@ -2202,7 +2201,7 @@ class TestVPC(cloudstackTestCase):
                              zoneid=self.zone.id,
                              )
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_18_create_net_for_user_diff_domain_by_doadmin(self):
         """ Test creation of network by domain admin for user from different domain
         """
@@ -2222,8 +2221,8 @@ class TestVPC(cloudstackTestCase):
         self.debug("Created account: %s" % domain_admin.name)
         self.cleanup.append(domain_admin)
         da_apiclient = self.testClient.getUserApiClient(
-                                        account=domain_admin.name,
-                                        domain=self.services["domain"]["name"],
+                                        UserName=domain_admin.name,
+                                        DomainName=self.services["domain"]["name"],
                                         type=2)
 
         user = Account.create(
@@ -2239,8 +2238,8 @@ class TestVPC(cloudstackTestCase):
 
         #0 - User, 1 - Root Admin, 2 - Domain Admin
         userapiclient = self.testClient.getUserApiClient(
-                                        account=user.name,
-                                        domain=user.domain,
+                                        UserName=user.name,
+                                        DomainName=user.domain,
                                         type=0)
 
         vpc = VPC.create(
@@ -2279,7 +2278,7 @@ class TestVPC(cloudstackTestCase):
                                 vpcid=vpc.id
                                 )
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_19_create_vpc_wo_params(self):
         """ Test creation of VPC without mandatory parameters
         """
@@ -2339,7 +2338,7 @@ class TestVPC(cloudstackTestCase):
                              domainid=self.account.domainid
                              )
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_20_update_vpc_name_display_text(self):
         """ Test to verify updation of vpc name and display text
         """

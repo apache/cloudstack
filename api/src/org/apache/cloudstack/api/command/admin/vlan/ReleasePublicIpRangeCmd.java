@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.response.VlanIpRangeResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "releasePublicIpRange", description = "Releases a Public IP range back to the system pool", responseObject = SuccessResponse.class)
+@APICommand(name = "releasePublicIpRange", description = "Releases a Public IP range back to the system pool", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReleasePublicIpRangeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ReleasePublicIpRangeCmd.class.getName());
 

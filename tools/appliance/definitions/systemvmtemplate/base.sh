@@ -1,12 +1,14 @@
 # Update the box
-apt-get -y update
-#below are needed for ruby perhaps
-#apt-get -y install linux-headers-$(uname -r) build-essential
-#apt-get -y install zlib1g-dev libssl-dev libreadline-gplv2-dev
-apt-get -y install curl unzip
+
+export DEBIAN_FRONTEND=noninteractive
+export DEBIAN_PRIORITY=critical
+
+apt-get -q -y --force-yes update
+apt-get -q -y --force-yes install curl unzip
 apt-get clean
 
 # Set up sudo, TODO: Check security concerns
+echo 'vagrant ALL=NOPASSWD:/bin/chmod, /bin/cp, /bin/mkdir, /bin/mount, /bin/umount' > /etc/sudoers.d/vagrant
 echo 'cloud ALL=NOPASSWD:/bin/chmod, /bin/cp, /bin/mkdir, /bin/mount, /bin/umount' > /etc/sudoers.d/cloud
 
 # Tweak sshd to prevent DNS resolution (speed up logins)

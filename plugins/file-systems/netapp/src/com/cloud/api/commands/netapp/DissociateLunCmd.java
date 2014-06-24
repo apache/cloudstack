@@ -37,7 +37,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.api.response.netapp.DissociateLunCmdResponse;
 
-@APICommand(name = "dissociateLun", description = "Dissociate a LUN", responseObject = DissociateLunCmdResponse.class)
+@APICommand(name = "dissociateLun", description = "Dissociate a LUN", responseObject = DissociateLunCmdResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DissociateLunCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DissociateLunCmd.class.getName());
     private static final String s_name = "dissociatelunresponse";

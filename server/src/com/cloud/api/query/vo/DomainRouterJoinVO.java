@@ -31,6 +31,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
 @Entity
@@ -509,5 +510,10 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
     public VirtualRouter.Role getRole() {
         return role;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return VirtualMachine.class;
     }
 }

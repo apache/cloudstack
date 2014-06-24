@@ -107,6 +107,10 @@ public class StoragePoolResponse extends BaseResponse {
     @Param(description = "the scope of the storage pool")
     private String scope;
 
+    @SerializedName("overprovisionfactor")
+    @Param(description = "the overprovisionfactor for the storage pool", since = "4.4")
+    private String overProvisionFactor;
+
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the hypervisor type of the storage pool")
     private String hypervisor;
@@ -300,5 +304,9 @@ public class StoragePoolResponse extends BaseResponse {
 
     public void setSuitableForMigration(Boolean suitableForMigration) {
         this.suitableForMigration = suitableForMigration;
+    }
+
+    public void setOverProvisionFactor(String overProvisionFactor) {
+        this.overProvisionFactor = overProvisionFactor;
     }
 }

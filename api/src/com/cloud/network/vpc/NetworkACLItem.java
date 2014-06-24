@@ -18,9 +18,11 @@ package com.cloud.network.vpc;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.Displayable;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface NetworkACLItem extends InternalIdentity {
+public interface NetworkACLItem extends InternalIdentity, Identity, Displayable {
 
     String getUuid();
 
@@ -72,5 +74,8 @@ public interface NetworkACLItem extends InternalIdentity {
      * @return
      */
     TrafficType getTrafficType();
+
+    @Override
+    boolean isDisplay();
 
 }

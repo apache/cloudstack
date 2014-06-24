@@ -71,6 +71,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.ExceptionUtil;
 
 public class VmwareHelper {
+    @SuppressWarnings("unused")
     private static final Logger s_logger = Logger.getLogger(VmwareHelper.class);
 
     public static boolean isReservedScsiDeviceNumber(int deviceNumber) {
@@ -78,29 +79,29 @@ public class VmwareHelper {
     }
 
     public static VirtualDevice prepareNicDevice(VirtualMachineMO vmMo, ManagedObjectReference morNetwork, VirtualEthernetCardType deviceType, String portGroupName,
-        String macAddress, int deviceNumber, int contextNumber, boolean conntected, boolean connectOnStart) throws Exception {
+            String macAddress, int deviceNumber, int contextNumber, boolean conntected, boolean connectOnStart) throws Exception {
 
         VirtualEthernetCard nic;
         switch (deviceType) {
-            case E1000:
-                nic = new VirtualE1000();
-                break;
+        case E1000:
+            nic = new VirtualE1000();
+            break;
 
-            case PCNet32:
-                nic = new VirtualPCNet32();
-                break;
+        case PCNet32:
+            nic = new VirtualPCNet32();
+            break;
 
-            case Vmxnet2:
-                nic = new VirtualVmxnet2();
-                break;
+        case Vmxnet2:
+            nic = new VirtualVmxnet2();
+            break;
 
-            case Vmxnet3:
-                nic = new VirtualVmxnet3();
-                break;
+        case Vmxnet3:
+            nic = new VirtualVmxnet3();
+            break;
 
-            default:
-                assert (false);
-                nic = new VirtualE1000();
+        default:
+            assert (false);
+            nic = new VirtualE1000();
         }
 
         VirtualEthernetCardNetworkBackingInfo nicBacking = new VirtualEthernetCardNetworkBackingInfo();
@@ -121,29 +122,29 @@ public class VmwareHelper {
     }
 
     public static VirtualDevice prepareDvNicDevice(VirtualMachineMO vmMo, ManagedObjectReference morNetwork, VirtualEthernetCardType deviceType, String dvPortGroupName,
-        String dvSwitchUuid, String macAddress, int deviceNumber, int contextNumber, boolean conntected, boolean connectOnStart) throws Exception {
+            String dvSwitchUuid, String macAddress, int deviceNumber, int contextNumber, boolean conntected, boolean connectOnStart) throws Exception {
 
         VirtualEthernetCard nic;
         switch (deviceType) {
-            case E1000:
-                nic = new VirtualE1000();
-                break;
+        case E1000:
+            nic = new VirtualE1000();
+            break;
 
-            case PCNet32:
-                nic = new VirtualPCNet32();
-                break;
+        case PCNet32:
+            nic = new VirtualPCNet32();
+            break;
 
-            case Vmxnet2:
-                nic = new VirtualVmxnet2();
-                break;
+        case Vmxnet2:
+            nic = new VirtualVmxnet2();
+            break;
 
-            case Vmxnet3:
-                nic = new VirtualVmxnet3();
-                break;
+        case Vmxnet3:
+            nic = new VirtualVmxnet3();
+            break;
 
-            default:
-                assert (false);
-                nic = new VirtualE1000();
+        default:
+            assert (false);
+            nic = new VirtualE1000();
         }
 
         final VirtualEthernetCardDistributedVirtualPortBackingInfo dvPortBacking = new VirtualEthernetCardDistributedVirtualPortBackingInfo();
@@ -170,7 +171,7 @@ public class VmwareHelper {
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath
     public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, String vmdkDatastorePath, int sizeInMb, ManagedObjectReference morDs,
-        int deviceNumber, int contextNumber) throws Exception {
+            int deviceNumber, int contextNumber) throws Exception {
 
         VirtualDisk disk = new VirtualDisk();
 
@@ -206,7 +207,7 @@ public class VmwareHelper {
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath, create delta disk based on disk from template
     public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, String vmdkDatastorePath, int sizeInMb, ManagedObjectReference morDs,
-        VirtualDisk templateDisk, int deviceNumber, int contextNumber) throws Exception {
+            VirtualDisk templateDisk, int deviceNumber, int contextNumber) throws Exception {
 
         assert (templateDisk != null);
         VirtualDeviceBackingInfo parentBacking = templateDisk.getBacking();
@@ -277,7 +278,7 @@ public class VmwareHelper {
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath
     public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, VirtualDisk device, int controllerKey, String vmdkDatastorePathChain[],
-        ManagedObjectReference morDs, int deviceNumber, int contextNumber) throws Exception {
+            ManagedObjectReference morDs, int deviceNumber, int contextNumber) throws Exception {
 
         assert (vmdkDatastorePathChain != null);
         assert (vmdkDatastorePathChain.length >= 1);
@@ -325,8 +326,9 @@ public class VmwareHelper {
         return disk;
     }
 
+    @SuppressWarnings("unchecked")
     public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, Pair<String, ManagedObjectReference>[] vmdkDatastorePathChain,
-        int deviceNumber, int contextNumber) throws Exception {
+            int deviceNumber, int contextNumber) throws Exception {
 
         assert (vmdkDatastorePathChain != null);
         assert (vmdkDatastorePathChain.length >= 1);
@@ -385,6 +387,7 @@ public class VmwareHelper {
         backingInfo.setParent(parentBacking);
     }
 
+    @SuppressWarnings("unchecked")
     private static void setParentBackingInfo(VirtualDiskFlatVer2BackingInfo backingInfo, Pair<String, ManagedObjectReference>[] parentDatastorePathList) {
 
         VirtualDiskFlatVer2BackingInfo parentBacking = new VirtualDiskFlatVer2BackingInfo();
@@ -403,7 +406,7 @@ public class VmwareHelper {
     }
 
     public static Pair<VirtualDevice, Boolean> prepareIsoDevice(VirtualMachineMO vmMo, String isoDatastorePath, ManagedObjectReference morDs, boolean connect,
-        boolean connectAtBoot, int deviceNumber, int contextNumber) throws Exception {
+            boolean connectAtBoot, int deviceNumber, int contextNumber) throws Exception {
 
         boolean newCdRom = false;
         VirtualCdrom cdRom = (VirtualCdrom)vmMo.getIsoDevice();
@@ -549,7 +552,7 @@ public class VmwareHelper {
     }
 
     public static void setVmScaleUpConfig(VirtualMachineConfigSpec vmConfig, int cpuCount, int cpuSpeedMHz, int cpuReservedMhz, int memoryMB, int memoryReserveMB,
-        boolean limitCpuUse) {
+            boolean limitCpuUse) {
 
         // VM config for scaling up
         vmConfig.setMemoryMB((long)memoryMB);
@@ -573,7 +576,7 @@ public class VmwareHelper {
     }
 
     public static void setBasicVmConfig(VirtualMachineConfigSpec vmConfig, int cpuCount, int cpuSpeedMHz, int cpuReservedMhz, int memoryMB, int memoryReserveMB,
-        String guestOsIdentifier, boolean limitCpuUse) {
+            String guestOsIdentifier, boolean limitCpuUse) {
 
         // VM config basics
         vmConfig.setMemoryMB((long)memoryMB);
@@ -640,10 +643,10 @@ public class VmwareHelper {
         //TODO: in vim 5.1, exceptions do not have a base exception class, MethodFault becomes a FaultInfo that we can only get
         // from individual exception through getFaultInfo, so we have to use reflection here to get MethodFault information.
         try {
-            Class cls = e.getClass();
-            Method mth = cls.getDeclaredMethod("getFaultInfo", null);
+            Class<? extends Throwable> cls = e.getClass();
+            Method mth = cls.getDeclaredMethod("getFaultInfo", (Class<?>)null);
             if (mth != null) {
-                Object fault = mth.invoke(e, null);
+                Object fault = mth.invoke(e, (Object[])null);
                 if (fault instanceof MethodFault) {
                     final StringWriter writer = new StringWriter();
                     writer.append("Exception: " + fault.getClass().getName() + "\n");

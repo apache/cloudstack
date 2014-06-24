@@ -456,6 +456,13 @@
                 tooltip: '.tooltip-box'
             });
 
+            var removeCopyPasteIcons = function() {
+                $detailView.find('.copypasteactive').removeClass('copypasteactive').addClass('copypasteenabledvalue');
+                $detailView.find('td.value .copypasteicon').hide();
+            };
+
+            removeCopyPasteIcons();
+
             var convertInputs = function($inputs) {
                 // Save and turn back into labels
                 $inputs.each(function() {
@@ -606,11 +613,12 @@
                             return false;
                         }
                     }
+                    restoreCopyPasteIcons();
                     applyEdits($inputs, $editButton);
                 } else { // Cancel
+                    restoreCopyPasteIcons();
                     cancelEdits($inputs, $editButton);
                 }
-
                 return true;
             });
 
@@ -625,6 +633,9 @@
                 tooltip: '.tooltip-box'
             });
 
+            var restoreCopyPasteIcons = function() {
+                $detailView.find('td.value .copypasteicon').show();
+            };
 
             $detailView.find('td.value span').each(function() {
                 var name = $(this).closest('tr').data('detail-view-field');
@@ -716,7 +727,7 @@
     };
 
     var viewAll = function(viewAllID, options) {
-        var $detailView = $('div.detail-view:last');
+        var $detailView = $('div.detail-view:visible:last');
         var args = $detailView.data('view-args');
         var cloudStackArgs = $('[cloudstack-container]').data('cloudStack-args');
         var $browser = args.$browser;
@@ -824,9 +835,11 @@
                 });
 
             $.each(actions, function(key, value) {
-                if ($.inArray(key, allowedActions) == -1 ||
+                if ((!value.preFilter && $.inArray(key, allowedActions) == -1) ||
+                    (value.preFilter && !value.preFilter({ context: options.context })) ||
                     (options.ignoreAddAction && key == 'add') ||
                     (key == 'edit' && options.compact)) {
+
                     return true;
                 }
 
@@ -897,7 +910,7 @@
         var isOddRow = false; // Even/odd row coloring
         var $header;
         var detailViewArgs = $detailView.data('view-args');
-        var fields = tabData.fields;
+        var fields = tabData.fields.slice();
         var hiddenFields;
         var context = $.extend(true, {}, detailViewArgs ? detailViewArgs.context : cloudStack.context);
         var isMultiple = tabData.multiple || tabData.isMultiple;
@@ -929,9 +942,16 @@
 
         $detailGroups.append($('<div>').addClass('main-groups'));
 
+        $(window).trigger('cloudStack.detailView.makeFieldContent', {
+            fields: fields,
+            data: data,
+            detailViewArgs: detailViewArgs,
+            $detailView: $detailView,
+            $detailGroups: $detailGroups
+        });
+
         $(fields).each(function() {
             var fieldGroup = this;
-
             var $detailTable = $('<tbody></tbody>').appendTo(
                 $('<table></table>').appendTo(
                     $('<div></div>').addClass('detail-group').appendTo($detailGroups.find('.main-groups'))
@@ -944,7 +964,7 @@
                     return true;
                 }
 
-                var $detail = $('<tr></tr>').addClass(key).appendTo($detailTable);
+                var $detail = $('<tr></tr>').addClass(key + '-row').appendTo($detailTable);
                 var $name = $('<td></td>').addClass('name').appendTo($detail);
                 var $value = $('<span>').appendTo($('<td></td>').addClass('value').appendTo($detail));
                 var content = data[key];
@@ -979,9 +999,32 @@
 
                 $name.html(_l(value.label));
                 $value.html(_s(content));
+                $value.attr('title', _s(content));
 
                 // Set up validation metadata
                 $value.data('validation-rules', value.validation);
+
+                //add copypaste icon
+                if (value.isCopyPaste) {
+                    var $copyicon = $('<div>').addClass('copypasteicon').insertAfter($value);
+                    $value.addClass('copypasteenabledvalue');
+
+                    //set up copypaste eventhandler
+                    $copyicon.click(function() {
+                        //reset other values' formatting
+                        $(this).closest('table').find('span.copypasteactive').removeClass('copypasteactive').addClass('copypasteenabledvalue');
+                        //find the corresponding value
+                        var $correspValue = $(this).closest('tr').find('.value').find('span');
+                        $value.removeClass("copypasteenabledvalue").addClass("copypasteactive");
+                        var correspValueElem = $correspValue.get(0);
+                        //select the full value
+                        var range = document.createRange();
+                        range.selectNodeContents(correspValueElem);
+                        var selection = window.getSelection();
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    });
+                }
 
                 // Set up editable metadata
                 if (typeof(value.isEditable) == 'function')
@@ -1424,7 +1467,12 @@
             }
         }
 
-        $detailView.tabs();
+        $detailView.tabs({
+            select: function() {
+                // Cleanup old tab content
+                $detailView.find('.detail-group').children().remove();
+            }
+        });
 
         return $detailView;
     };
@@ -1486,7 +1534,8 @@
         }
 
         // Detail action
-        if ($target.closest('div.detail-view [detail-action], div.detail-view .action.text').size()) {
+        if ($target.closest('div.detail-view [detail-action], div.detail-view .action.text').size() &&
+            !$target.closest('.list-view').size()) {
             var $action = $target.closest('.action').find('[detail-action]');
             var actionName = $action.attr('detail-action');
             var actionCallback = $action.data('detail-view-action-callback');

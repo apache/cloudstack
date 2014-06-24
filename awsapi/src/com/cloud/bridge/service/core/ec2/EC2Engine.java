@@ -66,6 +66,7 @@ import com.cloud.stack.models.CloudStackPasswordData;
 import com.cloud.stack.models.CloudStackResourceLimit;
 import com.cloud.stack.models.CloudStackResourceTag;
 import com.cloud.stack.models.CloudStackSecurityGroup;
+import com.cloud.stack.models.CloudStackServiceOffering;
 import com.cloud.stack.models.CloudStackSnapshot;
 import com.cloud.stack.models.CloudStackTemplate;
 import com.cloud.stack.models.CloudStackTemplatePermission;
@@ -1414,7 +1415,7 @@ public class EC2Engine extends ManagerBase {
             if (request.getInstanceType() != null) {
                 instanceType = request.getInstanceType();
             }
-            CloudStackServiceOfferingVO svcOffering = getCSServiceOfferingId(instanceType);
+            CloudStackServiceOffering svcOffering = getCSServiceOfferingId(instanceType);
             if (svcOffering == null) {
                 logger.info("No ServiceOffering found to be defined by name, please contact the administrator " + instanceType);
                 throw new Exception("instanceType not found");
@@ -1609,7 +1610,7 @@ public class EC2Engine extends ManagerBase {
 
             if (request.getInstanceType() != null) {
                 String instanceType = request.getInstanceType();
-                CloudStackServiceOfferingVO svcOffering = getCSServiceOfferingId(instanceType);
+                CloudStackServiceOffering svcOffering = getCSServiceOfferingId(instanceType);
                 if (svcOffering == null)
                     throw new Exception("instanceType not found");
                 CloudStackUserVm userVm = getApi().changeServiceForVirtualMachine(instanceId, svcOffering.getId());
@@ -1783,11 +1784,12 @@ public class EC2Engine extends ManagerBase {
      *
      */
 
-    private CloudStackServiceOfferingVO getCSServiceOfferingId(String instanceType) throws Exception {
+    private CloudStackServiceOffering getCSServiceOfferingId(String instanceType) throws Exception {
         try {
             if (instanceType == null)
                 instanceType = "m1.small"; // default value
-            return scvoDao.getSvcOfferingByName(instanceType);
+            List<CloudStackServiceOffering> serviceOfferings = getApi().listServiceOfferings(null, null, false, null, instanceType, null, null);
+            return serviceOfferings.get(0);
         } catch (Exception e) {
             logger.error("Error while retrieving ServiceOffering information by name - ", e);
             throw new Exception("No ServiceOffering found to be defined by name");
@@ -2005,9 +2007,9 @@ public class EC2Engine extends ManagerBase {
                     ec2Image.setState(temp.getIsReady() ? "available" : "pending");
                     ec2Image.setDomainId(temp.getDomainId());
                     if (temp.getHyperVisor().equalsIgnoreCase("xenserver"))
-                        ec2Image.setHypervisor("xen");
+                        ec2Image.setHypervisor("xenserver");
                     else if (temp.getHyperVisor().equalsIgnoreCase("ovm"))
-                        ec2Image.setHypervisor("ovm"); // valid values for hypervisor is 'ovm' and 'xen'
+                        ec2Image.setHypervisor("ovm"); // valid values for hypervisor is 'ovm' and 'xenserver'
                     else
                         ec2Image.setHypervisor("");
                     if (temp.getDisplayText() == null)
@@ -2231,9 +2233,9 @@ public class EC2Engine extends ManagerBase {
             perm.setProtocol(rule.getProtocol());
             perm.setFromPort(rule.getStartPort());
             perm.setToPort(rule.getEndPort());
-            perm.setRuleId(rule.getRuleId() != null ? rule.getRuleId().toString() : new String());
-            perm.setIcmpCode(rule.getIcmpCode() != null ? rule.getIcmpCode().toString() : new String());
-            perm.setIcmpType(rule.getIcmpType() != null ? rule.getIcmpType().toString() : new String());
+            perm.setRuleId(rule.getRuleId() != null ? rule.getRuleId().toString() : "");
+            perm.setIcmpCode(rule.getIcmpCode() != null ? rule.getIcmpCode().toString() : "");
+            perm.setIcmpType(rule.getIcmpType() != null ? rule.getIcmpType().toString() : "");
             perm.setCIDR(rule.getCidr());
             perm.addIpRange(rule.getCidr());
 
@@ -2612,7 +2614,7 @@ public class EC2Engine extends ManagerBase {
      */
     private String mapToAmazonHypervisorType(String hypervisor) {
         if (hypervisor.equalsIgnoreCase("Xenserver"))
-            return ("xen");
+            return ("xenserver");
         else if (hypervisor.equalsIgnoreCase("Ovm"))
             return ("ovm");
         else

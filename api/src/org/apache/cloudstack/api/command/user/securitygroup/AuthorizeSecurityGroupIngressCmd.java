@@ -24,6 +24,8 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,12 +41,13 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.utils.StringUtils;
 
-@APICommand(name = "authorizeSecurityGroupIngress",
-            responseObject = SecurityGroupRuleResponse.class,
-            description = "Authorizes a particular ingress rule for this security group")
+@APICommand(name = "authorizeSecurityGroupIngress", responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular ingress rule for this security group", entityType = {SecurityGroup.class},
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
 public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupIngressCmd.class.getName());
@@ -88,15 +91,13 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "an optional project of the security group", entityType = ProjectResponse.class)
     private Long projectId;
 
-    @Parameter(name = ApiConstants.SECURITY_GROUP_ID,
-               type = CommandType.UUID,
-               description = "The ID of the security group. Mutually exclusive with securityGroupName parameter",
-               entityType = SecurityGroupResponse.class)
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.UUID, description="The ID of the security group. Mutually exclusive with securityGroupName parameter", entityType=SecurityGroupResponse.class)
     private Long securityGroupId;
 
-    @Parameter(name = ApiConstants.SECURITY_GROUP_NAME,
-               type = CommandType.STRING,
-               description = "The name of the security group. Mutually exclusive with securityGroupName parameter")
+    // This @ACL will not work, since we don't have a way to convert this parameter to the entity like securityGroupId.
+    //@ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, description="The name of the security group. Mutually exclusive with securityGroupName parameter")
     private String securityGroupName;
 
     /////////////////////////////////////////////////////
@@ -173,7 +174,7 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -220,7 +221,7 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
         List<? extends SecurityRule> ingressRules = _securityGroupService.authorizeSecurityGroupIngress(this);
         if (ingressRules != null && !ingressRules.isEmpty()) {
             SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponseFromSecurityGroupRule(ingressRules);
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to authorize security group ingress rule(s)");
         }

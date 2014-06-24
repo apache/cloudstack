@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -31,10 +32,13 @@ import com.cloud.utils.fsm.StateObject;
  * VirtualMachine describes the properties held by a virtual machine
  *
  */
-public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, InternalIdentity, StateObject<VirtualMachine.State> {
+public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, InternalIdentity, Displayable, StateObject<VirtualMachine.State> {
 
     public enum PowerState {
-        PowerUnknown, PowerOn, PowerOff,
+        PowerUnknown,
+        PowerOn,
+        PowerOff,
+        PowerReportMissing
     }
 
     public enum State {
@@ -99,6 +103,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             s_fsm.addTransition(State.Running, VirtualMachine.Event.StopRequested, State.Stopping);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportShutdowned, State.Stopped);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportMigrated, State.Running);
+            s_fsm.addTransition(State.Running, VirtualMachine.Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.MigrationRequested, State.Migrating);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationFailed, State.Running);
@@ -116,14 +121,17 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             s_fsm.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging);
 
+            s_fsm.addTransition(State.Starting, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
             s_fsm.addTransition(State.Stopping, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
+
             s_fsm.addTransition(State.Starting, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
             s_fsm.addTransition(State.Stopping, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
+            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
         }
 
         public static boolean isVmStarted(State oldState, Event e, State newState) {
@@ -313,5 +321,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
     Map<String, String> getDetails();
 
     long getUpdated();
+
+    @Override
+    boolean isDisplay();
 
 }

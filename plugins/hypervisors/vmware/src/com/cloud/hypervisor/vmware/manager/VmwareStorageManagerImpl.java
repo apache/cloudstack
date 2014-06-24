@@ -198,9 +198,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String installPath = volume.getPath();
         int index = installPath.lastIndexOf(File.separator);
         String volumeUuid = installPath.substring(index + 1);
-        String details = null;
-        boolean success = false;
-
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
         //The real volume path
         String volumePath = installPath + File.separator + volumeUuid + ".ova";
@@ -351,8 +348,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 }
 
                 snapshotBackupUuid =
-                    backupSnapshotToSecondaryStorage(vmMo, accountId, volumeId, cmd.getVolumePath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid, prevBackupUuid,
-                        hostService.getWorkerName(context, cmd, 1));
+                        backupSnapshotToSecondaryStorage(vmMo, accountId, volumeId, cmd.getVolumePath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid, prevBackupUuid,
+                                hostService.getWorkerName(context, cmd, 1));
 
                 success = (snapshotBackupUuid != null);
                 if (success) {
@@ -407,7 +404,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             if (vmMo == null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to find the owner VM for CreatePrivateTemplateFromVolumeCommand on host " + hyperHost.getHyperHostName() +
-                        ", try within datacenter");
+                            ", try within datacenter");
                 }
                 vmMo = hyperHost.findVmOnPeerHyperHost(cmd.getVmName());
 
@@ -419,8 +416,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
 
             Ternary<String, Long, Long> result =
-                createTemplateFromVolume(vmMo, accountId, templateId, cmd.getUniqueName(), secondaryStoragePoolURL, volumePath,
-                    hostService.getWorkerName(context, cmd, 0));
+                    createTemplateFromVolume(vmMo, accountId, templateId, cmd.getUniqueName(), secondaryStoragePoolURL, volumePath,
+                            hostService.getWorkerName(context, cmd, 0));
 
             return new CreatePrivateTemplateAnswer(cmd, true, null, result.first(), result.third(), result.second(), cmd.getUniqueName(), ImageFormat.OVA);
 
@@ -477,8 +474,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             Pair<String, String> result;
             if (cmd.toSecondaryStorage()) {
                 result =
-                    copyVolumeToSecStorage(hostService, hyperHost, cmd, vmName, volumeId, cmd.getPool().getUuid(), volumePath, secondaryStorageURL,
-                        hostService.getWorkerName(context, cmd, 0));
+                        copyVolumeToSecStorage(hostService, hyperHost, cmd, vmName, volumeId, cmd.getPool().getUuid(), volumePath, secondaryStorageURL,
+                                hostService.getWorkerName(context, cmd, 0));
             } else {
                 StorageFilerTO poolTO = cmd.getPool();
 
@@ -549,10 +546,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     // templateName: name in secondary storage
     // templateUuid: will be used at hypervisor layer
     private void copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
-        String templatePathAtSecondaryStorage, String templateName, String templateUuid) throws Exception {
+            String templatePathAtSecondaryStorage, String templateName, String templateUuid) throws Exception {
 
         s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " +
-            templatePathAtSecondaryStorage + ", templateName: " + templateName);
+                templatePathAtSecondaryStorage + ", templateName: " + templateName);
 
         String secondaryMountPoint = _mountService.getMountPoint(secondaryStorageUrl);
         s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
@@ -587,7 +584,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
         if (vmMo == null) {
             String msg =
-                "Failed to import OVA template. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage +
+                    "Failed to import OVA template. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage +
                     ", templateName: " + templateName + ", templateUuid: " + templateUuid;
             s_logger.error(msg);
             throw new Exception(msg);
@@ -605,7 +602,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     private Ternary<String, Long, Long> createTemplateFromVolume(VirtualMachineMO vmMo, long accountId, long templateId, String templateUniqueName, String secStorageUrl,
-        String volumePath, String workerVmName) throws Exception {
+            String volumePath, String workerVmName) throws Exception {
 
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
         String installPath = getTemplateRelativeDirInSecStorage(accountId, templateId);
@@ -670,7 +667,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     private Ternary<String, Long, Long> createTemplateFromSnapshot(long accountId, long templateId, String templateUniqueName, String secStorageUrl, long volumeId,
-        String backedUpSnapshotUuid) throws Exception {
+            String backedUpSnapshotUuid) throws Exception {
 
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
         String installPath = getTemplateRelativeDirInSecStorage(accountId, templateId);
@@ -854,14 +851,14 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     private String createVolumeFromSnapshot(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName, long accountId, long volumeId,
-        String secStorageUrl, String snapshotBackupUuid) throws Exception {
+            String secStorageUrl, String snapshotBackupUuid) throws Exception {
 
         restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secStorageUrl, getSnapshotRelativeDirInSecStorage(accountId, volumeId), snapshotBackupUuid);
         return null;
     }
 
     private void restoreVolumeFromSecStorage(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName, String secStorageUrl, String secStorageDir,
-        String backupName) throws Exception {
+            String backupName) throws Exception {
 
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
         String srcOVAFileName = secondaryMountPoint + "/" + secStorageDir + "/" + backupName + "." + ImageFormat.OVA.getFileExtension();
@@ -921,7 +918,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     private String backupSnapshotToSecondaryStorage(VirtualMachineMO vmMo, long accountId, long volumeId, String volumePath, String snapshotUuid, String secStorageUrl,
-        String prevSnapshotUuid, String prevBackupUuid, String workerVmName) throws Exception {
+            String prevSnapshotUuid, String prevBackupUuid, String workerVmName) throws Exception {
 
         String backupUuid = UUID.randomUUID().toString();
         exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, getSnapshotRelativeDirInSecStorage(accountId, volumeId), backupUuid, workerVmName);
@@ -929,7 +926,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     private void exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath, String secStorageUrl, String secStorageDir, String exportName,
-        String workerVmName) throws Exception {
+            String workerVmName) throws Exception {
 
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
         String exportPath = secondaryMountPoint + "/" + secStorageDir + "/" + exportName;
@@ -973,40 +970,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
     }
 
-    private String deleteSnapshotOnSecondaryStorge(long accountId, long volumeId, String secStorageUrl, String backupUuid) throws Exception {
-
-        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
-        String snapshotMountRoot = secondaryMountPoint + "/" + getSnapshotRelativeDirInSecStorage(accountId, volumeId);
-        File file = new File(snapshotMountRoot + "/" + backupUuid + ".ovf");
-        if (file.exists()) {
-            File snapshotdir = new File(snapshotMountRoot);
-            File[] ssfiles = snapshotdir.listFiles();
-            // List<String> filenames = new ArrayList<String>();
-            for (int i = 0; i < ssfiles.length; i++) {
-                String vmdkfile = ssfiles[i].getName();
-                if (vmdkfile.toLowerCase().startsWith(backupUuid) && vmdkfile.toLowerCase().endsWith(".vmdk")) {
-                    // filenames.add(vmdkfile);
-                    new File(vmdkfile).delete();
-                }
-            }
-            if (file.delete()) {
-                return null;
-            }
-        } else {
-            File file1 = new File(snapshotMountRoot + "/" + backupUuid + ".ova");
-            if (file1.exists()) {
-                if (file1.delete()) {
-                    return null;
-                }
-            } else {
-                return "Backup file does not exist. backupUuid: " + backupUuid;
-            }
-        }
-        return "Failed to delete snapshot backup file, backupUuid: " + backupUuid;
-    }
-
     private Pair<String, String> copyVolumeToSecStorage(VmwareHostService hostService, VmwareHypervisorHost hyperHost, CopyVolumeCommand cmd, String vmName,
-        long volumeId, String poolId, String volumePath, String secStorageUrl, String workerVmName) throws Exception {
+            long volumeId, String poolId, String volumePath, String secStorageUrl, String workerVmName) throws Exception {
 
         String volumeFolder = String.valueOf(volumeId) + "/";
         VirtualMachineMO workerVm = null;
@@ -1043,7 +1008,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             vmMo.createSnapshot(exportName, "Temporary snapshot for copy-volume command", false, false);
 
             exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, "volumes/" + volumeFolder, exportName,
-                hostService.getWorkerName(hyperHost.getContext(), cmd, 1));
+                    hostService.getWorkerName(hyperHost.getContext(), cmd, 1));
             return new Pair<String, String>(volumeFolder, exportName);
 
         } finally {
@@ -1066,7 +1031,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     private Pair<String, String> copyVolumeFromSecStorage(VmwareHypervisorHost hyperHost, long volumeId, DatastoreMO dsMo, String secStorageUrl, String exportName)
-        throws Exception {
+            throws Exception {
 
         String volumeFolder = String.valueOf(volumeId) + "/";
         String newVolume = UUID.randomUUID().toString().replaceAll("-", "");
@@ -1085,69 +1050,54 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         s_logger.info("getOVAfromMetaFile: " + metafileName);
         try {
             strm = new FileInputStream(ova_metafile);
-            if (null == strm) {
-                String msg = "Cannot read ova meta file.";
+
+            s_logger.info("loading properties from ova meta file: " + metafileName);
+            props = new Properties();
+            props.load(strm);
+            ovaFileName = props.getProperty("ova.filename");
+            s_logger.info("ovafilename: " + ovaFileName);
+            String ovfFileName = props.getProperty("ovf");
+            s_logger.info("ovffilename: " + ovfFileName);
+            int diskNum = Integer.parseInt(props.getProperty("numDisks"));
+            if (diskNum <= 0) {
+                String msg = "VMDK disk file number is 0. Error";
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
-
-            s_logger.info("loading properties from ova meta file: " + metafileName);
-            if (null != ova_metafile) {
-                props = new Properties();
-                props.load(strm);
-                if (props == null) {
-                    s_logger.info("getOVAfromMetaFile: props is null. ");
-                }
+            String[] disks = new String[diskNum];
+            for (int i = 0; i < diskNum; i++) {
+                // String diskNameKey = "disk" + Integer.toString(i+1) + ".name"; // Fang use this
+                String diskNameKey = "disk1.name";
+                disks[i] = props.getProperty(diskNameKey);
+                s_logger.info("diskname " + disks[i]);
             }
-            if (null != props) {
-                ovaFileName = props.getProperty("ova.filename");
-                s_logger.info("ovafilename: " + ovaFileName);
-                String ovfFileName = props.getProperty("ovf");
-                s_logger.info("ovffilename: " + ovfFileName);
-                int diskNum = Integer.parseInt(props.getProperty("numDisks"));
-                if (diskNum <= 0) {
-                    String msg = "VMDK disk file number is 0. Error";
-                    s_logger.error(msg);
-                    throw new Exception(msg);
-                }
-                String[] disks = new String[diskNum];
-                for (int i = 0; i < diskNum; i++) {
-                    // String diskNameKey = "disk" + Integer.toString(i+1) + ".name"; // Fang use this
-                    String diskNameKey = "disk1.name";
-                    disks[i] = props.getProperty(diskNameKey);
-                    s_logger.info("diskname " + disks[i]);
-                }
-                String exportDir = ova_metafile.getParent();
-                s_logger.info("exportDir: " + exportDir);
-                // Important! we need to sync file system before we can safely use tar to work around a linux kernal bug(or feature)
-                s_logger.info("Sync file system before we package OVA..., before tar ");
-                s_logger.info("ova: " + ovaFileName + ", ovf:" + ovfFileName + ", vmdk:" + disks[0] + ".");
-                Script commandSync = new Script(true, "sync", 0, s_logger);
-                commandSync.execute();
-                Script command = new Script(false, "tar", 0, s_logger);
-                command.setWorkDir(exportDir); // Fang: pass this in to the method?
-                command.add("-cf", ovaFileName);
-                command.add(ovfFileName); // OVF file should be the first file in OVA archive
-                for (String diskName : disks) {
-                    command.add(diskName);
-                }
-                command.execute();
-                s_logger.info("Package OVA for template in dir: " + exportDir + "cmd: " + command.toString());
-                // to be safe, physically test existence of the target OVA file
-                if ((new File(exportDir + ovaFileName)).exists()) {
-                    s_logger.info("ova file is created and ready to extract ");
-                    return (ovaFileName);
-                } else {
-                    String msg = exportDir + File.separator + ovaFileName + ".ova is not created as expected";
-                    s_logger.error(msg);
-                    throw new Exception(msg);
-                }
+            String exportDir = ova_metafile.getParent();
+            s_logger.info("exportDir: " + exportDir);
+            // Important! we need to sync file system before we can safely use tar to work around a linux kernal bug(or feature)
+            s_logger.info("Sync file system before we package OVA..., before tar ");
+            s_logger.info("ova: " + ovaFileName + ", ovf:" + ovfFileName + ", vmdk:" + disks[0] + ".");
+            Script commandSync = new Script(true, "sync", 0, s_logger);
+            commandSync.execute();
+            Script command = new Script(false, "tar", 0, s_logger);
+            command.setWorkDir(exportDir); // Fang: pass this in to the method?
+            command.add("-cf", ovaFileName);
+            command.add(ovfFileName); // OVF file should be the first file in OVA archive
+            for (String diskName : disks) {
+                command.add(diskName);
+            }
+            command.execute();
+            s_logger.info("Package OVA for template in dir: " + exportDir + "cmd: " + command.toString());
+            // to be safe, physically test existence of the target OVA file
+            if ((new File(exportDir + ovaFileName)).exists()) {
+                s_logger.info("ova file is created and ready to extract ");
+                return (ovaFileName);
             } else {
-                String msg = "Error reading the ova meta file: " + metafileName;
+                String msg = exportDir + File.separator + ovaFileName + ".ova is not created as expected";
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
         } catch (Exception e) {
+            s_logger.error("Exception in getOVAFromMetafile", e);
             return null;
             // Do something, re-throw the exception
         } finally {
@@ -1219,21 +1169,30 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         if (input == null) {
             return null;
         }
+
         String result = input;
-        if (result.endsWith(".vmdk")) { // get rid of vmdk file extension
-            result = result.substring(0, result.length() - (".vmdk").length());
+
+        final String fileType = ".vmdk";
+
+        if (result.endsWith(fileType)) {
+            // get rid of fileType
+            result = result.substring(0, result.length() - (fileType).length());
         }
-        if (result.split("-").length == 1) {
+
+        final String token = "-";
+
+        String[] str = result.split(token);
+        int length = str.length;
+
+        if (length == 1 || length == 2) {
             return result;
         }
-        if (result.split("-").length > 2) {
-            return result.split("-")[0] + "-" + result.split("-")[1];
+
+        if (length > 2) {
+            return str[0] + token + str[1];
         }
-        if (result.split("-").length == 2) {
-            return result.split("-")[0];
-        } else {
-            return result;
-        }
+
+        return result;
     }
 
     @Override
@@ -1252,7 +1211,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             // wait if there are already VM snapshot task running
             ManagedObjectReference taskmgr = context.getServiceContent().getTaskManager();
-            List<ManagedObjectReference> tasks = (ArrayList<ManagedObjectReference>)context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
+            List<ManagedObjectReference> tasks = context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
 
             for (ManagedObjectReference taskMor : tasks) {
                 TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
@@ -1465,7 +1424,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             // wait if there are already VM revert task running
             ManagedObjectReference taskmgr = context.getServiceContent().getTaskManager();
-            List<ManagedObjectReference> tasks = (ArrayList<ManagedObjectReference>)context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
+            List<ManagedObjectReference> tasks = context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
 
             for (ManagedObjectReference taskMor : tasks) {
                 TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));

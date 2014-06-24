@@ -17,12 +17,19 @@
 """ P1 tests for user provide hostname cases
 """
 #Import Local Modules
-import marvin
+
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.utils import (cleanup_resources,
+                              random_gen)
+from marvin.lib.base import (ServiceOffering,
+                             Configurations,
+                             VirtualMachine,
+                             Account)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               is_config_suitable)
 
 
 class Services:
@@ -94,13 +101,13 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestInstanceNameFlagTrue,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestInstanceNameFlagTrue, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, default template
-        cls.zone = get_zone(cls.api_client, cls.services)
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -108,12 +115,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
                             cls.services["ostype"]
                             )
 
-        # Create domains, account etc.
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
-
+        # Create account
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
@@ -157,7 +159,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
 
 
     @attr(configuration='vm.instancename.flag')
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
     def test_01_user_provided_hostname(self):
         """ Verify user provided hostname to an instance
         """
@@ -261,7 +263,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         return
 
     @attr(configuration='vm.instancename.flag')
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
     def test_02_instancename_from_default_configuration(self):
         """ Verify for globally set instancename
         """
@@ -372,7 +374,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         return
 
     @attr(configuration='vm.instancename.flag')
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
     def test_03_duplicate_name(self):
         """ Test the duplicate name when old VM is in non-expunged state
         """
@@ -432,7 +434,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         return
 
     @attr(configuration='vm.instancename.flag')
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
     def test_04_edit_display_name(self):
         """ Test Edit the Display name Through the UI.
         """
@@ -525,7 +527,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         return
 
     @attr(configuration='vm.instancename.flag')
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
     def test_05_unsupported_chars_in_display_name(self):
         """ Test Unsupported chars in the display name
             (eg: Spaces,Exclamation,yet to get unsupported chars from the dev)
@@ -561,13 +563,13 @@ class TestInstanceNameFlagFalse(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestInstanceNameFlagFalse,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestInstanceNameFlagFalse, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, default template
-        cls.zone = get_zone(cls.api_client, cls.services)
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.template = get_template(
                             cls.api_client,
@@ -575,12 +577,7 @@ class TestInstanceNameFlagFalse(cloudstackTestCase):
                             cls.services["ostype"]
                             )
 
-        # Create domains, account etc.
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
-
+        # Create account
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
@@ -622,7 +619,7 @@ class TestInstanceNameFlagFalse(cloudstackTestCase):
         return
 
     @attr(configuration='vm.instancename.flag')
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
     def test_01_custom_hostname_instancename_false(self):
         """ Verify custom hostname for the instance when
             vm.instancename.flag=false

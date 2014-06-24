@@ -22,6 +22,12 @@
     var step6ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group', 'select-advanced-sg'(advanced sg-enabled zone)
 
     cloudStack.instanceWizard = {
+        //min disk offering  size when custom disk size is used
+        minDiskOfferingSize: function() {
+            return g_capabilities.customdiskofferingminsize;
+        },
+
+        //max disk offering size when custom disk size is used
         maxDiskOfferingSize: function() {
             return g_capabilities.customdiskofferingmaxsize;
         },
@@ -239,7 +245,11 @@
                         templates: templatesObj,
                         hypervisors: hypervisorObjs
                     },
-                    customHidden: function(args) {                        
+                    customHidden: function(args) {
+                        ////
+                        return true; // Disabled -- not supported in backend right now
+                        ////
+                        
                         if (selectedTemplateOrIso == 'select-template') {
                             return false; //show Root Disk Size field
                         } else { //selectedTemplateOrIso == 'select-iso'
@@ -288,6 +298,9 @@
                     selectedHypervisor = args.currentData.hypervisorid;
                 }
 
+                // if the user is leveraging a template, then we can show custom IOPS, if applicable
+                var canShowCustomIopsForServiceOffering = (args.currentData["select-template"] != "select-iso" ? true : false);
+
                 $.ajax({
                     url: createURL("listServiceOfferings&issystem=false"),
                     dataType: "json",
@@ -295,8 +308,10 @@
                     success: function(json) {
                         serviceOfferingObjs = json.listserviceofferingsresponse.serviceoffering;
                         args.response.success({
+                            canShowCustomIops: canShowCustomIopsForServiceOffering,
                             customFlag: 'iscustomized',
                         	//customFlag: 'offerha', //for testing only
+                        	customIopsFlag: 'iscustomizediops',
                             data: {
                                 serviceOfferings: serviceOfferingObjs
                             }
@@ -317,9 +332,11 @@
                         args.response.success({
                             required: isRequred,
                             customFlag: 'iscustomized', // Field determines if custom slider is shown
+                            customIopsDoFlag: 'iscustomizediops',
                             data: {
                                 diskOfferings: diskOfferingObjs
-                            }
+                            },
+                            multiDisk: false
                         });
                     }
                 });
@@ -377,7 +394,7 @@
                         step6ContainerType = 'nothing-to-select';
                         $networkStep.find("#from_instance_page_1").hide();
                         $networkStep.find("#from_instance_page_2").hide();
-                        $networkStep.find("#from_vpc_tier").text("tier " + args.context.networks[0].name);
+                        $networkStep.find("#from_vpc_tier").prepend("tier " + _s(args.context.networks[0].name));
                         $networkStep.find("#from_vpc_tier").show();
                     } else { //from Instance page
                         if (selectedZoneObj.securitygroupsenabled != true) { // Advanced SG-disabled zone
@@ -613,21 +630,34 @@
             if (args.$wizard.find('input[name=compute-cpu-cores]').parent().parent().css('display') != 'none') {
 	            if (args.$wizard.find('input[name=compute-cpu-cores]').val().length > 0)  {   	            	
 	            	$.extend(deployVmData, {
-	            	    'customparameters[0].cpuNumber' : args.$wizard.find('input[name=compute-cpu-cores]').val()
+	            	    'details[0].cpuNumber' : args.$wizard.find('input[name=compute-cpu-cores]').val()
 	            	});
 	            }            
 	            if (args.$wizard.find('input[name=compute-cpu]').val().length > 0)  {    
 	            	$.extend(deployVmData, {
-	            	    'customparameters[0].cpuSpeed' : args.$wizard.find('input[name=compute-cpu]').val()
+	            	    'details[0].cpuSpeed' : args.$wizard.find('input[name=compute-cpu]').val()
 	            	});
 	            }            
 	            if (args.$wizard.find('input[name=compute-memory]').val().length > 0)  {     
 	            	$.extend(deployVmData, {
-	            	    'customparameters[0].memory' : args.$wizard.find('input[name=compute-memory]').val()
+	            	    'details[0].memory' : args.$wizard.find('input[name=compute-memory]').val()
 	            	});
 	            }               
             }
-            
+
+            if (args.$wizard.find('input[name=disk-min-iops]').parent().parent().css('display') != 'none') {
+	            if (args.$wizard.find('input[name=disk-min-iops]').val().length > 0) {
+	            	$.extend(deployVmData, {
+	            	    'details[0].minIops' : args.$wizard.find('input[name=disk-min-iops]').val()
+	            	});
+	            }
+	            if (args.$wizard.find('input[name=disk-max-iops]').val().length > 0) {
+	            	$.extend(deployVmData, {
+	            	    'details[0].maxIops' : args.$wizard.find('input[name=disk-max-iops]').val()
+	            	});
+	            }
+            }
+
             //step 4: select disk offering
             if (args.data.diskofferingid != null && args.data.diskofferingid != "0") {                
             	$.extend(deployVmData, {
@@ -638,6 +668,20 @@
                 	$.extend(deployVmData, {
                 		size : args.data.size
                 	});
+                }
+
+                if (selectedDiskOfferingObj.iscustomizediops == true) {
+	                if (args.$wizard.find('input[name=disk-min-iops-do]').val().length > 0) {
+	            	    $.extend(deployVmData, {
+	            	        'details[0].minIopsDo' : args.$wizard.find('input[name=disk-min-iops-do]').val()
+	            	    });
+	                }
+
+	                if (args.$wizard.find('input[name=disk-max-iops-do]').val().length > 0) {
+	            	    $.extend(deployVmData, {
+	            	        'details[0].maxIopsDo' : args.$wizard.find('input[name=disk-max-iops-do]').val()
+	            	    });
+	                }
                 }
             }
 
@@ -661,6 +705,7 @@
             //step 6: select network
             if (step6ContainerType == 'select-network' || step6ContainerType == 'select-advanced-sg') {
                 var array2 = [];
+                var array3 = [];                
                 var defaultNetworkId = args.data.defaultNetwork; //args.data.defaultNetwork might be equal to string "new-network" or a network ID
 
                 var checkedNetworkIdArray;
@@ -706,23 +751,62 @@
                 }
                 //create new network ends here
 
-                //add default network first
-                if (defaultNetworkId != null && defaultNetworkId.length > 0) {
-                    array2.push(defaultNetworkId);
-                }
 
-                //then, add other checked networks
+                if (defaultNetworkId == null) {
+                	cloudStack.dialog.notice({
+                        message: "Please select a default network in Network step."
+                    });    
+                	return;
+                }    
+                  
                 if (checkedNetworkIdArray.length > 0) {
                     for (var i = 0; i < checkedNetworkIdArray.length; i++) {
-                        if (checkedNetworkIdArray[i] != defaultNetworkId) //exclude defaultNetworkId that has been added to array2
+                    	if (checkedNetworkIdArray[i] == defaultNetworkId) { 
+                    		array2.unshift(defaultNetworkId); 
+                    		
+                    		var ipToNetwork = {
+                    			networkid: defaultNetworkId
+                    		};                    		                 		         
+                    		if (args.data["new-network"] == "create-new-network") {
+                    			if (args.data['new-network-ip'] != null && args.data['new-network-ip'].length > 0) {
+                    				$.extend(ipToNetwork, {
+                    					ip: args.data['new-network-ip']
+                    				});                    				
+                    			}
+                    		} else {
+                    			if (args.data["my-network-ips"][i] != null && args.data["my-network-ips"][i].length > 0) {
+                    				$.extend(ipToNetwork, {
+                    					ip: args.data["my-network-ips"][i]
+                    				});       
+                    			}
+                    		}
+                    		array3.unshift(ipToNetwork);    
+                    			
+                    	} else {                         
                             array2.push(checkedNetworkIdArray[i]);
+                            
+                            var ipToNetwork = {
+                        		networkid: checkedNetworkIdArray[i]
+                        	};                          	
+                        	if (args.data["my-network-ips"][i] != null && args.data["my-network-ips"][i].length > 0) {
+                        		$.extend(ipToNetwork, {
+                					ip: args.data["my-network-ips"][i]
+                				});      
+                        	}
+                        	array3.push(ipToNetwork);    
+                        }                    	
                     }
                 }
                 
-                $.extend(deployVmData, {
-                	networkids : array2.join(",")
-                });                
-                
+                //deployVmData.push("&networkIds=" + array2.join(","));  //ipToNetworkMap can't be specified along with networkIds or ipAddress
+                                            
+                for (var k = 0; k < array3.length; k++) {                	
+                	deployVmData["iptonetworklist[" + k + "].networkid"] = array3[k].networkid;                	
+                	if (array3[k].ip != undefined && array3[k].ip.length > 0) {                	    
+                		deployVmData["iptonetworklist[" + k + "].ip"] = array3[k].ip;                	   
+                	}
+                }                        
+               
             } else if (step6ContainerType == 'select-security-group') {
                 var checkedSecurityGroupIdArray;
                 if (typeof(args.data["security-groups"]) == "object" && args.data["security-groups"].length != null) { //args.data["security-groups"] is an array of string, e.g. ["2375f8cc-8a73-4b8d-9b26-50885a25ffe0", "27c60d2a-de7f-4bb7-96e5-a602cec681df","c6301d77-99b5-4e8a-85e2-3ea2ab31c342"],
@@ -773,10 +857,12 @@
                     });
                 }
             } else if (step6ContainerType == 'nothing-to-select') {
-                if (args.context.networks != null) { //from VPC tier                   
-                    $.extend(deployVmData, {
-                    	networkids : args.context.networks[0].id
-                    });                                        
+                if ("vpc" in args.context) { //from VPC tier    
+                    deployVmData["iptonetworklist[0].networkid"] = args.context.networks[0].id;            	
+                	if (args.data["vpc-specify-ip"] != undefined && args.data["vpc-specify-ip"].length > 0) {                	    
+                		deployVmData["iptonetworklist[0].ip"] = args.data["vpc-specify-ip"];              	   
+                	}
+                	
                     $.extend(deployVmData, {
                     	domainid : args.context.vpc[0].domainid
                     });

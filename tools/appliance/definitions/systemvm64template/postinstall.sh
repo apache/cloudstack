@@ -19,14 +19,13 @@ set -x
 
 ROOTPW=password
 HOSTNAME=systemvm
-CLOUDSTACK_RELEASE=4.3.0
+CLOUDSTACK_RELEASE=4.4.0
 
 add_backports () {
     sed -i '/backports/d' /etc/apt/sources.list
     echo 'deb http://http.us.debian.org/debian wheezy-backports main' >> /etc/apt/sources.list
     apt-get update
 }
-
 
 install_packages() {
   DEBIAN_FRONTEND=noninteractive
@@ -51,8 +50,8 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install nfs-common
   # nfs irqbalance
   apt-get --no-install-recommends -q -y --force-yes install irqbalance
-  
- # cifs client
+
+  # cifs client
   apt-get --no-install-recommends -q -y --force-yes install samba-common
   apt-get --no-install-recommends -q -y --force-yes install cifs-utils
 
@@ -68,19 +67,21 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install keepalived conntrackd ipvsadm libnetfilter-conntrack3 libnl1
   # ipcalc
   apt-get --no-install-recommends -q -y --force-yes install ipcalc
+  apt-get update
   # java
-  apt-get --no-install-recommends -q -y --force-yes install  default-jre-headless
+  apt-get --no-install-recommends -q -y --force-yes install  openjdk-7-jre-headless
 
   echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
   echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
   apt-get --no-install-recommends -q -y --force-yes install iptables-persistent
   
-  # Hyperv  kvp daemon
+  # Hyperv  kvp daemon - 64bit only
   # Download the hv kvp daemon 
   wget http://people.apache.org/~rajeshbattala/hv-kvp-daemon_3.1_amd64.deb
   dpkg -i hv-kvp-daemon_3.1_amd64.deb
+
   #libraries required for rdp client (Hyper-V) 
-   apt-get --no-install-recommends -q -y --force-yes install libtcnative-1 libssl-dev libapr1-dev
+  apt-get --no-install-recommends -q -y --force-yes install libtcnative-1 libssl-dev libapr1-dev
 
   # vmware tools
   apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
@@ -182,9 +183,26 @@ EOF
   locale-gen en_US.UTF-8
 }
 
+# This is actually a bug in the conntrackd package. The comment in the conf file says stats logging is off by default but the parameter is set to on.
+# After a couple weeks logrotate will rotate the conntrackd-stats.log file ans start conntracking even if we don't want it to (on non-redundant routers for instance).
+fix_conntrackd() {
+  sed -i '/Stats {/,/}/ s/LogFile on/LogFile off/' /etc/conntrackd/conntrackd.conf
+  rm -f /var/log/conntrackd-stats.log
+}
+
 fix_vhdutil() {
   wget --no-check-certificate http://download.cloud.com.s3.amazonaws.com/tools/vhd-util -O /bin/vhd-util
   chmod a+x /bin/vhd-util
+}
+
+# Preload these module otherwise the sysctl settings will not be set, and pasive ftp will not work.
+fix_modules() {
+  cat >> /etc/modules << EOF
+nf_conntrack_ipv4
+nf_conntrack
+nf_conntrack_ftp
+nf_nat_ftp
+EOF
 }
 
 do_fixes() {
@@ -193,7 +211,9 @@ do_fixes() {
   fix_acpid
   fix_hostname
   fix_locale
+  fix_conntrackd
   fix_vhdutil
+  fix_modules
 }
 
 configure_apache2() {
@@ -220,7 +240,7 @@ configure_services() {
   snapshot_dir="/opt/cloudstack*"
   cd /opt
   wget --no-check-certificate $snapshot_url -O cloudstack.tar.gz
-  tar -zxvf cloudstack.tar.gz
+  tar -zxvf cloudstack.tar.gz --wildcards 'cloudstack-HEAD-???????/systemvm'
   cp -rv $snapshot_dir/systemvm/patches/debian/config/* /
   cp -rv $snapshot_dir/systemvm/patches/debian/vpn/* /
   mkdir -p /usr/share/cloud/

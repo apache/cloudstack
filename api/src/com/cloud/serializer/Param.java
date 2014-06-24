@@ -19,6 +19,8 @@ package com.cloud.serializer;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+import org.apache.cloudstack.acl.RoleType;
+
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Param {
     String name() default "";
@@ -33,4 +35,6 @@ public @interface Param {
     boolean includeInApiDoc() default true;
 
     String since() default "";
+
+    RoleType[] authorized() default {};
 }

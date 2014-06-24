@@ -34,7 +34,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = "replaceNetworkACLList", description = "Replaces ACL associated with a Network or private gateway", responseObject = SuccessResponse.class)
+@APICommand(name = "replaceNetworkACLList", description = "Replaces ACL associated with a Network or private gateway", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReplaceNetworkACLListCmd.class.getName());
     private static final String s_name = "replacenetworkacllistresponse";

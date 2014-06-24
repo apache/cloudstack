@@ -1,12 +1,13 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils;
 
 import java.io.File;
@@ -26,7 +29,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.StringTokenizer;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -37,10 +43,14 @@ import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class UriUtils {
@@ -87,15 +97,12 @@ public class UriUtils {
 
         if (pathStart > 0) {
             String[] tokens = url.substring(pathStart + 1).split("/");
-            if (tokens != null) {
-                StringBuffer sb = new StringBuffer();
-                sb.append(url.substring(0, pathStart));
-                for (String token : tokens) {
-                    sb.append("/").append(URLEncoder.encode(token));
-                }
-
-                return sb.toString();
+            StringBuilder sb = new StringBuilder(url.substring(0, pathStart));
+            for (String token : tokens) {
+                sb.append("/").append(URLEncoder.encode(token));
             }
+
+            return sb.toString();
         }
 
         // no need to do URL component encoding
@@ -104,13 +111,7 @@ public class UriUtils {
 
     public static String getCifsUriParametersProblems(URI uri) {
         if (!UriUtils.hostAndPathPresent(uri)) {
-            String errMsg = "cifs URI missing host and/or path.  " + " Make sure it's of the format " + "cifs://hostname/path?user=<username>&password=<password>";
-            s_logger.warn(errMsg);
-            return errMsg;
-        }
-        if (!UriUtils.cifsCredentialsPresent(uri)) {
-            String errMsg =
-                "cifs URI missing user and password details. " + "Add them as query parameters, e.g. " + "cifs://example.com/some_share?user=foo&password=bar";
+            String errMsg = "cifs URI missing host and/or path. Make sure it's of the format cifs://hostname/path";
             s_logger.warn(errMsg);
             return errMsg;
         }
@@ -136,6 +137,63 @@ public class UriUtils {
             }
         }
         return (foundUser && foundPswd);
+    }
+
+    public static String getUpdateUri(String url, boolean encrypt) {
+        String updatedPath = null;
+        try {
+            String query = URIUtil.getQuery(url);
+            URIBuilder builder = new URIBuilder(url);
+            builder.removeQuery();
+
+            StringBuilder updatedQuery = new StringBuilder();
+            List<NameValuePair> queryParams = getUserDetails(query);
+            ListIterator<NameValuePair> iterator = queryParams.listIterator();
+            while (iterator.hasNext()) {
+                NameValuePair param = iterator.next();
+                String value = null;
+                if ("password".equalsIgnoreCase(param.getName()) &&
+                        param.getValue() != null) {
+                    value = encrypt ? DBEncryptionUtil.encrypt(param.getValue()) : DBEncryptionUtil.decrypt(param.getValue());
+                } else {
+                    value = param.getValue();
+                }
+
+                if (updatedQuery.length() == 0) {
+                    updatedQuery.append(param.getName()).append('=')
+                            .append(value);
+                } else {
+                    updatedQuery.append('&').append(param.getName())
+                            .append('=').append(value);
+                }
+            }
+
+            String schemeAndHost = "";
+            URI newUri = builder.build();
+            if (newUri.getScheme() != null) {
+                schemeAndHost = newUri.getScheme() + "://" + newUri.getHost();
+            }
+
+            updatedPath = schemeAndHost + newUri.getPath() + "?" + updatedQuery;
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException("Couldn't generate an updated uri. " + e.getMessage());
+        }
+
+        return updatedPath;
+    }
+
+    private static List<NameValuePair> getUserDetails(String query) {
+        List<NameValuePair> details = new ArrayList<NameValuePair>();
+        if (query != null && !query.isEmpty()) {
+            StringTokenizer allParams = new StringTokenizer(query, "&");
+            while (allParams.hasMoreTokens()) {
+                String param = allParams.nextToken();
+                details.add(new BasicNameValuePair(param.substring(0, param.indexOf("=")),
+                        param.substring(param.indexOf("=") + 1)));
+            }
+        }
+
+        return details;
     }
 
     // Get the size of a file from URL response header.

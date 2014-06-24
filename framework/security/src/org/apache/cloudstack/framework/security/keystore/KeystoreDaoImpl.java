@@ -38,6 +38,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements KeystoreDao {
     protected final SearchBuilder<KeystoreVO> FindByNameSearch;
     protected final SearchBuilder<KeystoreVO> CertChainSearch;
+    protected final SearchBuilder<KeystoreVO> CertChainSearchForDomainSuffix;
 
     public KeystoreDaoImpl() {
         FindByNameSearch = createSearchBuilder();
@@ -47,6 +48,11 @@ public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements
         CertChainSearch = createSearchBuilder();
         CertChainSearch.and("key", CertChainSearch.entity().getKey(), Op.NULL);
         CertChainSearch.done();
+
+        CertChainSearchForDomainSuffix = createSearchBuilder();
+        CertChainSearchForDomainSuffix.and("key", CertChainSearchForDomainSuffix.entity().getKey(), Op.NULL);
+        CertChainSearchForDomainSuffix.and("domainSuffix", CertChainSearchForDomainSuffix.entity().getDomainSuffix(), Op.EQ);
+        CertChainSearchForDomainSuffix.done();
     }
 
     @Override
@@ -61,6 +67,19 @@ public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements
                 return seq1.compareTo(seq2);
             }
         });
+        return ks;
+    }
+
+    @Override
+    public List<KeystoreVO> findCertChain(String domainSuffix) {
+        SearchCriteria<KeystoreVO> sc =  CertChainSearchForDomainSuffix.create();
+        sc.setParameters("domainSuffix", domainSuffix);
+        List<KeystoreVO> ks = listBy(sc);
+        Collections.sort(ks, new Comparator() { public int compare(Object o1, Object o2) {
+            Integer seq1 = ((KeystoreVO)o1).getIndex();
+            Integer seq2 = ((KeystoreVO)o2).getIndex();
+            return seq1.compareTo(seq2);
+        }});
         return ks;
     }
 

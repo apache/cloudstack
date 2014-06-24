@@ -55,6 +55,7 @@ public class CallContext {
     private String eventDescription;
     private String eventDetails;
     private String eventType;
+    private boolean isEventDisplayEnabled = true; // default to true unless specifically set
     private User user;
     private long userId;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
@@ -113,7 +114,20 @@ public class CallContext {
     }
 
     public static CallContext current() {
-        return s_currentContext.get();
+        CallContext context = s_currentContext.get();
+
+        // TODO other than async job and api dispatches, there are many system background running threads
+        // that do not setup CallContext at all, however, many places in code that are touched by these background tasks
+        // assume not-null CallContext. Following is a fix to address therefore caused NPE problems
+        //
+        // There are security implications with this. It assumes that all system background running threads are
+        // indeed have no problem in running under system context.
+        //
+        if (context == null) {
+            context = registerSystemCallContextOnceOnly();
+        }
+
+        return context;
     }
 
     /**
@@ -152,6 +166,14 @@ public class CallContext {
         s_currentContextStack.get().push(callingContext);
 
         return callingContext;
+    }
+
+    public static CallContext registerPlaceHolderContext() {
+        CallContext context = new CallContext(0, 0, UUID.randomUUID().toString());
+        s_currentContext.set(context);
+
+        s_currentContextStack.get().push(context);
+        return context;
     }
 
     public static CallContext register(User callingUser, Account callingAccount) {
@@ -228,7 +250,7 @@ public class CallContext {
         String sessionIdOnStack = null;
         String sessionIdPushedToNDC = "ctx-" + UuidUtils.first(contextId);
         while ((sessionIdOnStack = NDC.pop()) != null) {
-            if (sessionIdPushedToNDC.equals(sessionIdOnStack)) {
+            if (sessionIdOnStack.isEmpty() || sessionIdPushedToNDC.equals(sessionIdOnStack)) {
                 break;
             }
             if (s_logger.isTraceEnabled()) {
@@ -241,6 +263,8 @@ public class CallContext {
 
         if (!stack.isEmpty()) {
             s_currentContext.set(stack.peek());
+        } else {
+            s_currentContext.set(null);
         }
 
         return context;
@@ -288,6 +312,29 @@ public class CallContext {
 
     public void setEventDescription(String eventDescription) {
         this.eventDescription = eventDescription;
+    }
+
+    /**
+     * Whether to display the event to the end user.
+     * @return true - if the event is to be displayed to the end user, false otherwise.
+     */
+    public boolean isEventDisplayEnabled() {
+        return isEventDisplayEnabled;
+    }
+
+    public void setEventDisplayEnabled(boolean eventDisplayEnabled) {
+        isEventDisplayEnabled = eventDisplayEnabled;
+    }
+
+    public Map<Object, Object> getContextParameters() {
+        return context;
+    }
+
+    public void putContextParameters(Map<Object, Object> details){
+        if (details == null) return;
+        for(Object key : details.keySet()){
+            putContextParameter(key, details.get(key));
+        }
     }
 
     public static void setActionEventInfo(String eventType, String description) {

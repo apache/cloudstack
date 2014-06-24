@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,7 +41,9 @@ import com.cloud.network.rules.LoadBalancer;
 
 @APICommand(name = "createAutoScaleVmGroup",
             description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.",
-            responseObject = AutoScaleVmGroupResponse.class)
+        responseObject = AutoScaleVmGroupResponse.class, entityType = {AutoScaleVmGroup.class},
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAutoScaleVmGroupCmd.class.getName());
 
@@ -94,6 +97,9 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
                required = true,
                description = "the autoscale profile that contains information about the vms in the vm group.")
     private long profileId;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the group to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -178,12 +184,25 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
         return ApiCommandJobType.AutoScaleVmGroup;
     }
 
+    @Deprecated
+    public Boolean getDisplay() {
+        return display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if(display == null)
+            return true;
+        else
+            return display;
+    }
+
     @Override
     public void create() throws ResourceAllocationException {
         AutoScaleVmGroup result = _autoScaleService.createAutoScaleVmGroup(this);
         if (result != null) {
-            this.setEntityId(result.getId());
-            this.setEntityUuid(result.getUuid());
+            setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Vm Group");
         }

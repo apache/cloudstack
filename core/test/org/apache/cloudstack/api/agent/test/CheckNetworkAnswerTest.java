@@ -32,6 +32,7 @@ import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
@@ -184,7 +185,14 @@ public class CheckNetworkAnswerTest {
             public boolean isInMaintenance() {
                 // TODO Auto-generated method stub
                 return false;
-            };
+            }
+
+            @Override
+            public Hypervisor.HypervisorType getHypervisor() {
+                return null;  //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            ;
         };
 
         Long newSize = 4194304L;

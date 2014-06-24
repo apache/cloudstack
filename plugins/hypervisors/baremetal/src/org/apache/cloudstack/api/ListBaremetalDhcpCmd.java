@@ -34,7 +34,8 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = "listBaremetalDhcp", description = "list baremetal dhcp servers", responseObject = BaremetalDhcpResponse.class)
+@APICommand(name = "listBaremetalDhcp", description = "list baremetal dhcp servers", responseObject = BaremetalDhcpResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListBaremetalDhcpCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListBaremetalDhcpCmd.class);
     private static final String s_name = "listbaremetaldhcpresponse";

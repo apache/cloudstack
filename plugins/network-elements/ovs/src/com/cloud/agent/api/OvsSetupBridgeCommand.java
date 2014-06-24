@@ -19,7 +19,7 @@ package com.cloud.agent.api;
 
 
 public class OvsSetupBridgeCommand extends Command {
-    Integer key;
+    String name;
     Long hostId;
     Long networkId;
 
@@ -28,14 +28,14 @@ public class OvsSetupBridgeCommand extends Command {
         return true;
     }
 
-    public OvsSetupBridgeCommand(Integer key, Long hostId, Long networkId) {
-        this.key = key;
+    public OvsSetupBridgeCommand(String name, Long hostId, Long networkId) {
+        this.name = name;
         this.hostId = hostId;
         this.networkId = networkId;
     }
 
-    public Integer getKey() {
-        return key;
+    public String getBridgeName() {
+        return name;
     }
 
     public Long getHostId() {

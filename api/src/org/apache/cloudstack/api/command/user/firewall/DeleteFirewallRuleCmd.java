@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.user.firewall;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,7 +37,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
 
-@APICommand(name = "deleteFirewallRule", description = "Deletes a firewall rule", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteFirewallRule", description = "Deletes a firewall rule", responseObject = SuccessResponse.class, entityType = {FirewallRule.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteFirewallRuleCmd.class.getName());
     private static final String s_name = "deletefirewallruleresponse";
@@ -43,7 +46,7 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the firewall rule")
     private Long id;
 
@@ -93,11 +96,11 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException {
         CallContext.current().setEventDetails("Rule Id: " + id);
-        boolean result = _firewallService.revokeFirewallRule(id, true);
+        boolean result = _firewallService.revokeIngressFwRule(id, true);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete firewall rule");
         }

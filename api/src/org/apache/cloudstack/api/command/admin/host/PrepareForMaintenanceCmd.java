@@ -32,7 +32,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 
-@APICommand(name = "prepareHostForMaintenance", description = "Prepares a host for maintenance.", responseObject = HostResponse.class)
+@APICommand(name = "prepareHostForMaintenance", description = "Prepares a host for maintenance.", responseObject = HostResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(PrepareForMaintenanceCmd.class.getName());
 

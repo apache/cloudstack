@@ -40,7 +40,8 @@ import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "configureNetscalerLoadBalancer", responseObject = NetscalerLoadBalancerResponse.class, description = "configures a netscaler load balancer device")
+@APICommand(name = "configureNetscalerLoadBalancer", responseObject = NetscalerLoadBalancerResponse.class, description = "configures a netscaler load balancer device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigureNetscalerLoadBalancerCmd.class.getName());

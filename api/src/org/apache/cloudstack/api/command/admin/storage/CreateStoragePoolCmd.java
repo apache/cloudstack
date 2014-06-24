@@ -38,7 +38,8 @@ import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 
 @SuppressWarnings("rawtypes")
-@APICommand(name = "createStoragePool", description = "Creates a storage pool.", responseObject = StoragePoolResponse.class)
+@APICommand(name = "createStoragePool", description = "Creates a storage pool.", responseObject = StoragePoolResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateStoragePoolCmd.class.getName());
 

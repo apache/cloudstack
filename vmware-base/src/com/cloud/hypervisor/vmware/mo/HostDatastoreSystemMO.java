@@ -181,7 +181,7 @@ public class HostDatastoreSystemMO extends BaseMO {
     }
 
     public List<ManagedObjectReference> getDatastores() throws Exception {
-        return (List<ManagedObjectReference>)_context.getVimClient().getDynamicProperty(_mor, "datastore");
+        return _context.getVimClient().getDynamicProperty(_mor, "datastore");
     }
 
     public DatastoreInfo getDatastoreInfo(ManagedObjectReference morDatastore) throws Exception {

@@ -32,10 +32,11 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.offering.NetworkOffering;
 
-@APICommand(name = "listNetworkOfferings", description = "Lists all available network offerings.", responseObject = NetworkOfferingResponse.class)
+@APICommand(name = "listNetworkOfferings", description = "Lists all available network offerings.", responseObject = NetworkOfferingResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetworkOfferingsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkOfferingsCmd.class.getName());
-    private static final String Name = "listnetworkofferingsresponse";
+    private static final String s_name = "listnetworkofferingsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -181,7 +182,7 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return Name;
+        return s_name;
     }
 
     @Override

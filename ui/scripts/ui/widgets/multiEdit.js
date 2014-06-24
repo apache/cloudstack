@@ -196,11 +196,21 @@
                     } else if (field.addButton && !options.noSelect) {
                         if (options.multipleAdd) {
                             $addButton.click(function() {
+                                var context = $.extend(true, {}, options.context);
+
                                 if ($td.hasClass('disabled')) return false;
+
+                                var $subItems = $td.closest('.data-item').find('.expandable-listing tr');
+
+                                if ($subItems.size()) {
+                                    context.subItemData = $subItems.map(function() {
+                                        return $(this).data('json-obj');
+                                    });
+                                }
 
                                 _medit.vmList($multi,
                                     options.listView,
-                                    options.context,
+                                    context,
                                     options.multipleAdd, _l('label.add.vms'),
                                     addItemAction, {
                                         multiRule: multiRule
@@ -702,6 +712,7 @@
 
             itemRow: function(item, itemActions, multiRule, $tbody) {
                 var $tr = $('<tr>');
+                
                 var itemName = multiRule._itemName ? item[multiRule._itemName] : item.name;
                 var $itemName = $('<span>').html(_s(itemName));
 
@@ -716,6 +727,14 @@
                     });
                 });
 
+                                
+                var itemIp = multiRule._itemIp ? item[multiRule._itemIp] : null;
+                if (itemIp != null) {
+                	 var $itemIp = $('<span>').html(_s(itemIp));
+                     $tr.append($('<td>').addClass('state').appendTo($tr).append($itemIp));
+                }                        
+                
+                
                 var itemState = item._itemState ? item._itemState : item.state;
 
                 $tr.append($('<td>').addClass('state').appendTo($tr).append(
@@ -810,6 +829,8 @@
                 $(data).each(function() {
                     var field = this;
                     var $tr = _medit.multiItem.itemRow(field, itemActions, multiRule, $tbody).appendTo($tbody);
+
+                    $tr.data('json-obj', field);
 
                     cloudStack.evenOdd($tbody, 'tr', {
                         even: function($elem) {
@@ -927,7 +948,7 @@
                     response: {
                         success: function(args) {
                             $(args.data).each(function() {
-                                $('<option>').val(this.name).html(_s(this.description))
+                                $('<option>').val(this.name).html(_l(_s(this.description)))
                                     .appendTo($select);
                             });
                             _medit.refreshItemWidths($multi);

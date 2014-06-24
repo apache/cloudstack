@@ -16,10 +16,14 @@
 // under the License.
 package org.apache.cloudstack.framework.jobs.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
-
 import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO.Step;
@@ -31,13 +35,21 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.vm.VirtualMachine;
 
 public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implements VmWorkJobDao {
+    private static final Logger s_logger = Logger.getLogger(VmWorkJobDaoImpl.class);
 
     protected SearchBuilder<VmWorkJobVO> PendingWorkJobSearch;
     protected SearchBuilder<VmWorkJobVO> PendingWorkJobByCommandSearch;
-    protected SearchBuilder<VmWorkJobVO> ExpungeWorkJobSearch;
+    protected SearchBuilder<VmWorkJobVO> ExpungingWorkJobSearch;
+
+    @Inject
+    protected AsyncJobDao _baseJobDao;
 
     public VmWorkJobDaoImpl() {
     }
@@ -48,7 +60,6 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
         PendingWorkJobSearch.and("jobStatus", PendingWorkJobSearch.entity().getStatus(), Op.EQ);
         PendingWorkJobSearch.and("vmType", PendingWorkJobSearch.entity().getVmType(), Op.EQ);
         PendingWorkJobSearch.and("vmInstanceId", PendingWorkJobSearch.entity().getVmInstanceId(), Op.EQ);
-        PendingWorkJobSearch.and("step", PendingWorkJobSearch.entity().getStep(), Op.NEQ);
         PendingWorkJobSearch.done();
 
         PendingWorkJobByCommandSearch = createSearchBuilder();
@@ -59,10 +70,11 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
         PendingWorkJobByCommandSearch.and("cmd", PendingWorkJobByCommandSearch.entity().getCmd(), Op.EQ);
         PendingWorkJobByCommandSearch.done();
 
-        ExpungeWorkJobSearch = createSearchBuilder();
-        ExpungeWorkJobSearch.and("lastUpdated", ExpungeWorkJobSearch.entity().getLastUpdated(), Op.LT);
-        ExpungeWorkJobSearch.and("jobStatus", ExpungeWorkJobSearch.entity().getStatus(), Op.NEQ);
-        ExpungeWorkJobSearch.done();
+        ExpungingWorkJobSearch = createSearchBuilder();
+        ExpungingWorkJobSearch.and("jobStatus", ExpungingWorkJobSearch.entity().getStatus(), Op.NEQ);
+        ExpungingWorkJobSearch.and("cutDate", ExpungingWorkJobSearch.entity().getLastUpdated(), Op.LT);
+        ExpungingWorkJobSearch.and("dispatcher", ExpungingWorkJobSearch.entity().getDispatcher(), Op.EQ);
+        ExpungingWorkJobSearch.done();
     }
 
     @Override
@@ -115,11 +127,66 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
     }
 
     @Override
-    public void expungeCompletedWorkJobs(Date cutDate) {
-        SearchCriteria<VmWorkJobVO> sc = ExpungeWorkJobSearch.create();
-        sc.setParameters("lastUpdated", cutDate);
-        sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
+    public void expungeCompletedWorkJobs(final Date cutDate) {
+        // current DAO machenism does not support following usage
+        /*
+                SearchCriteria<VmWorkJobVO> sc = ExpungeWorkJobSearch.create();
+                sc.setParameters("lastUpdated",cutDate);
+                sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
 
-        expunge(sc);
+                expunge(sc);
+        */
+
+        // loop at application level to avoid mysql deadlock issues
+        SearchCriteria<VmWorkJobVO> sc = ExpungingWorkJobSearch.create();
+        sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
+        sc.setParameters("lastUpdated", cutDate);
+        sc.setParameters("dispatcher", "VmWorkJobDispatcher");
+        List<VmWorkJobVO> expungeList = listBy(sc);
+        for (VmWorkJobVO job : expungeList) {
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Expunge completed work job-" + job.getId());
+            expunge(job.getId());
+            _baseJobDao.expunge(job.getId());
+        }
+    }
+
+    @Override
+    public void expungeLeftoverWorkJobs(final long msid) {
+        // current DAO machenism does not support following usage
+        /*
+                SearchCriteria<VmWorkJobVO> sc = ExpungePlaceHolderWorkJobSearch.create();
+                sc.setParameters("dispatcher", "VmWorkJobPlaceHolder");
+                sc.setParameters("msid", msid);
+
+                expunge(sc);
+        */
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                TransactionLegacy txn = TransactionLegacy.currentTxn();
+
+                PreparedStatement pstmt = null;
+                try {
+                    pstmt = txn.prepareAutoCloseStatement(
+                            "DELETE FROM vm_work_job WHERE id IN (SELECT id FROM async_job WHERE (job_dispatcher='VmWorkJobPlaceHolder' OR job_dispatcher='VmWorkJobDispatcher') AND job_init_msid=?)");
+                    pstmt.setLong(1, msid);
+
+                    pstmt.execute();
+                } catch (SQLException e) {
+                } catch (Throwable e) {
+                }
+
+                try {
+                    pstmt = txn.prepareAutoCloseStatement(
+                            "DELETE FROM async_job WHERE (job_dispatcher='VmWorkJobPlaceHolder' OR job_dispatcher='VmWorkJobDispatcher') AND job_init_msid=?");
+                    pstmt.setLong(1, msid);
+
+                    pstmt.execute();
+                } catch (SQLException e) {
+                } catch (Throwable e) {
+                }
+            }
+        });
     }
 }

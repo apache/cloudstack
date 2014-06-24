@@ -42,7 +42,7 @@ Note, gem may require gcc-4.2, make sure link exists:
 
 # How to build SystemVMs automatically
 
-Just run build.sh, it will export archived appliances for KVM, Xen,
+Just run build.sh, it will export archived appliances for KVM, XenServer,
 VMWare and HyperV in `dist`:
 
     sh build.sh [systemvmtemplate|systemvmtemplate64]

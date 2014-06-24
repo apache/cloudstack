@@ -20,9 +20,12 @@ package com.cloud.agent.api;
 public class OvsCreateTunnelCommand extends Command {
     Integer key;
     String remoteIp;
+    String networkName;
     Long from;
     Long to;
     long networkId;
+
+    String networkUuid;
 
     // for debug info
     String fromIp;
@@ -33,13 +36,15 @@ public class OvsCreateTunnelCommand extends Command {
     }
 
     public OvsCreateTunnelCommand(String remoteIp, Integer key, Long from,
-            Long to, long networkId, String fromIp) {
+            Long to, long networkId, String fromIp, String networkName, String networkUuid) {
         this.remoteIp = remoteIp;
         this.key = key;
         this.from = from;
         this.to = to;
         this.networkId = networkId;
         this.fromIp = fromIp;
+        this.networkName = networkName;
+        this.networkUuid = networkUuid;
     }
 
     public Integer getKey() {
@@ -66,4 +71,16 @@ public class OvsCreateTunnelCommand extends Command {
         return fromIp;
     }
 
+    public String getNetworkName() {
+        return networkName;
+    }
+
+
+    public String getNetworkUuid() {
+        return networkUuid;
+    }
+
+    public void setNetworkUuid(String networkUuid) {
+        this.networkUuid = networkUuid;
+    }
 }

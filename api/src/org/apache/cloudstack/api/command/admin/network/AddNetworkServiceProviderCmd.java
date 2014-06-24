@@ -39,7 +39,9 @@ import com.cloud.user.Account;
 @APICommand(name = "addNetworkServiceProvider",
             description = "Adds a network serviceProvider to a physical network",
             responseObject = ProviderResponse.class,
-            since = "3.0.0")
+            since = "3.0.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddNetworkServiceProviderCmd.class.getName());
 

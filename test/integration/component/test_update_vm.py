@@ -17,9 +17,9 @@
 
 
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import Account, VirtualMachine, ServiceOffering
-from marvin.integration.lib.utils import cleanup_resources
-from marvin.integration.lib.common import get_zone, get_domain, get_template
+from marvin.lib.base import Account, VirtualMachine, ServiceOffering
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.common import get_zone, get_domain, get_template
 from nose.plugins.attrib import attr
 
 class TestData(object):
@@ -61,8 +61,8 @@ class TestUpdateVirtualMachine(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
 
         # Get Zone, Domain and Default Built-in template
-        self.domain = get_domain(self.apiclient, self.testdata)
-        self.zone = get_zone(self.apiclient, self.testdata)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.testdata["mode"] = self.zone.networktype
         self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
 
@@ -83,7 +83,7 @@ class TestUpdateVirtualMachine(cloudstackTestCase):
             self.account
         ]
 
-    @attr(tags = ['advanced', 'simulator', 'basic', 'sg'])
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "selfservice"])
     def test_update_vm_name(self):
         """Test Update VirtualMachine Name
 

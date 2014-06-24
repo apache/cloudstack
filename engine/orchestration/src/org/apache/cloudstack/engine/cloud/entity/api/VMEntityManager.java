@@ -21,6 +21,7 @@ import java.util.Map;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
 
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -35,7 +36,7 @@ public interface VMEntityManager {
 
     void saveVirtualMachine(VMEntityVO vmInstanceVO);
 
-    String reserveVirtualMachine(VMEntityVO vmEntityVO, String plannerToUse, DeploymentPlan plan, ExcludeList exclude) throws InsufficientCapacityException,
+    String reserveVirtualMachine(VMEntityVO vmEntityVO, DeploymentPlanner plannerToUse, DeploymentPlan plan, ExcludeList exclude) throws InsufficientCapacityException,
         ResourceUnavailableException;
 
     void deployVirtualMachine(String reservationId, VMEntityVO vmEntityVO, String caller, Map<VirtualMachineProfile.Param, Object> params)

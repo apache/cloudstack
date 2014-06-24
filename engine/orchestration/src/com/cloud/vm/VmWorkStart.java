@@ -21,10 +21,9 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
+import org.apache.log4j.Logger;
 
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlan;
@@ -46,6 +45,7 @@ public class VmWorkStart extends VmWork {
 
     String reservationId;
     String journalName;
+    String planner;
 
     // use serialization friendly map
     private Map<String, String> rawParams;
@@ -89,6 +89,14 @@ public class VmWorkStart extends VmWork {
             if (plan.getReservationContext() != null)
                 reservationId = plan.getReservationContext().getReservationId();
         }
+    }
+
+    public void setDeploymentPlanner(String planner) {
+        this.planner = planner;
+    }
+
+    public String getDeploymentPlanner() {
+        return this.planner;
     }
 
     public Map<String, String> getRawParams() {

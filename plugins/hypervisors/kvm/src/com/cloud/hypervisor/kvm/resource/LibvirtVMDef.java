@@ -162,6 +162,8 @@ public class LibvirtVMDef {
             }
             if (_memBalloning) {
                 resBuidler.append("<devices>\n" + "<memballoon model='virtio'/>\n" + "</devices>\n");
+            } else {
+                resBuidler.append("<devices>\n" + "<memballoon model='none'/>\n" + "</devices>\n");
             }
             if (_vcpu != -1) {
                 resBuidler.append("<vcpu>" + _vcpu + "</vcpu>\n");
@@ -240,6 +242,7 @@ public class LibvirtVMDef {
         private String _timerName;
         private String _tickPolicy;
         private String _track;
+        private boolean _noKvmClock = false;
 
         public ClockDef() {
             _offset = ClockOffset.UTC;
@@ -255,6 +258,11 @@ public class LibvirtVMDef {
             _track = track;
         }
 
+        public void setTimer(String timerName, String tickPolicy, String track, boolean noKvmClock) {
+            _noKvmClock = noKvmClock;
+            setTimer(timerName, tickPolicy, track);
+        }
+
         @Override
         public String toString() {
             StringBuilder clockBuilder = new StringBuilder();
@@ -266,20 +274,24 @@ public class LibvirtVMDef {
                 clockBuilder.append(_timerName);
                 clockBuilder.append("' ");
 
-                if (_tickPolicy != null) {
-                    clockBuilder.append("tickpolicy='");
-                    clockBuilder.append(_tickPolicy);
-                    clockBuilder.append("' ");
-                }
+                if (_timerName.equals("kvmclock") && _noKvmClock) {
+                    clockBuilder.append("present='no' />");
+                } else {
+                    if (_tickPolicy != null) {
+                        clockBuilder.append("tickpolicy='");
+                        clockBuilder.append(_tickPolicy);
+                        clockBuilder.append("' ");
+                    }
 
-                if (_track != null) {
-                    clockBuilder.append("track='");
-                    clockBuilder.append(_track);
-                    clockBuilder.append("' ");
-                }
+                    if (_track != null) {
+                        clockBuilder.append("track='");
+                        clockBuilder.append(_track);
+                        clockBuilder.append("' ");
+                    }
 
-                clockBuilder.append(">\n");
-                clockBuilder.append("</timer>\n");
+                    clockBuilder.append(">\n");
+                    clockBuilder.append("</timer>\n");
+                }
             }
             clockBuilder.append("</clock>\n");
             return clockBuilder.toString();
@@ -376,7 +388,7 @@ public class LibvirtVMDef {
         }
 
         public enum diskProtocol {
-            RBD("rbd"), SHEEPDOG("sheepdog");
+            RBD("rbd"), SHEEPDOG("sheepdog"), GLUSTER("gluster");
             String _diskProtocol;
 
             diskProtocol(String protocol) {
@@ -528,10 +540,10 @@ public class LibvirtVMDef {
         }
 
         public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort, String authUserName, String authSecretUUID, int devId, diskBus bus,
-            diskProtocol protocol) {
+            diskProtocol protocol, diskFmtType diskFmtType) {
             _diskType = diskType.NETWORK;
             _deviceType = deviceType.DISK;
-            _diskFmtType = diskFmtType.RAW;
+            _diskFmtType = diskFmtType;
             _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = diskName;
             _sourceHost = sourceHost;
@@ -544,10 +556,10 @@ public class LibvirtVMDef {
         }
 
         public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort, String authUserName, String authSecretUUID, String diskLabel, diskBus bus,
-            diskProtocol protocol) {
+            diskProtocol protocol, diskFmtType diskFmtType) {
             _diskType = diskType.NETWORK;
             _deviceType = deviceType.DISK;
-            _diskFmtType = diskFmtType.RAW;
+            _diskFmtType = diskFmtType;
             _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = diskName;
             _sourceHost = sourceHost;
@@ -583,6 +595,10 @@ public class LibvirtVMDef {
             return _diskLabel;
         }
 
+        public diskType getDiskType() {
+            return _diskType;
+        }
+
         public deviceType getDeviceType() {
             return _deviceType;
         }
@@ -593,6 +609,10 @@ public class LibvirtVMDef {
 
         public diskBus getBusType() {
             return _bus;
+        }
+
+        public diskFmtType getDiskFormatType() {
+            return _diskFmtType;
         }
 
         public int getDiskSeq() {
@@ -618,6 +638,10 @@ public class LibvirtVMDef {
 
         public void setCacheMode(diskCacheMode cacheMode) {
             _diskCacheMode = cacheMode;
+        }
+
+        public diskCacheMode getCacheMode() {
+            return _diskCacheMode;
         }
 
         @Override
@@ -650,7 +674,13 @@ public class LibvirtVMDef {
                 diskBuilder.append(" protocol='" + _diskProtocol + "'");
                 diskBuilder.append(" name='" + _sourcePath + "'");
                 diskBuilder.append(">\n");
-                diskBuilder.append("<host name='" + _sourceHost + "' port='" + _sourcePort + "'/>\n");
+                diskBuilder.append("<host name='");
+                diskBuilder.append(_sourceHost);
+                if (_sourcePort != 0) {
+                    diskBuilder.append("' port='");
+                    diskBuilder.append(_sourcePort);
+                }
+                diskBuilder.append("'/>\n");
                 diskBuilder.append("</source>\n");
                 if (_authUserName != null) {
                     diskBuilder.append("<auth username='" + _authUserName + "'>\n");
@@ -735,6 +765,7 @@ public class LibvirtVMDef {
         private String _virtualPortType;
         private String _virtualPortInterfaceId;
         private int _vlanTag = -1;
+        private boolean _pxeDisable = false;
 
         public void defBridgeNet(String brName, String targetBrName, String macAddr, nicModel model) {
             defBridgeNet(brName, targetBrName, macAddr, model, 0);
@@ -802,6 +833,10 @@ public class LibvirtVMDef {
             return _hostNetType;
         }
 
+        public void setPxeDisable(boolean pxeDisable) {
+            _pxeDisable = pxeDisable;
+        }
+
         public String getBrName() {
             return _sourceName;
         }
@@ -820,6 +855,10 @@ public class LibvirtVMDef {
 
         public String getMacAddress() {
             return _macAddr;
+        }
+
+        public nicModel getModel() {
+            return _model;
         }
 
         public void setVirtualPortType(String virtualPortType) {
@@ -874,6 +913,9 @@ public class LibvirtVMDef {
             }
             if (_scriptPath != null) {
                 netBuilder.append("<script path='" + _scriptPath + "'/>\n");
+            }
+            if (_pxeDisable) {
+                netBuilder.append("<rom bar='off' file='dummy'/>");
             }
             if (_virtualPortType != null) {
                 netBuilder.append("<virtualport type='" + _virtualPortType + "'>\n");

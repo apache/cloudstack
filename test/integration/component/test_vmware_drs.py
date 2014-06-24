@@ -23,19 +23,19 @@ from nose.plugins.attrib import attr
 
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 
-from marvin.integration.lib.base import (Account,
+from marvin.lib.base import (Account,
                                          AffinityGroup,
                                          Host,
                                          VirtualMachine,
                                          ServiceOffering)
 
-from marvin.integration.lib.common import (get_zone,
+from marvin.lib.common import (get_zone,
                                            get_template,
                                            get_domain,
                                            get_pod
                                            )
 
-from marvin.integration.lib.utils import (validateList,
+from marvin.lib.utils import (validateList,
                                           cleanup_resources,
                                           random_gen)
 
@@ -111,25 +111,16 @@ class TestVMPlacement(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-                               TestVMPlacement,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVMPlacement, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(
-                                cls.api_client,
-                                cls.services
-                            )
-        cls.zone = get_zone(
-                            cls.api_client,
-                            cls.services
-                            )
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.pod = get_pod(
                           cls.api_client,
-                          zoneid=cls.zone.id,
-                          services=cls.services
-                          )
+                          zone_id=cls.zone.id)
         cls.template = get_template(
                                     cls.api_client,
                                     cls.zone.id,
@@ -178,7 +169,7 @@ class TestVMPlacement(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "vmware", "multihost"])
+    @attr(tags=["advanced", "vmware", "multihost", "provisioning"])
     def test_vm_creation_in_fully_automated_mode(self):
         """ Test VM Creation in  automation mode = Fully automated
             This test requires following preconditions:
@@ -280,20 +271,13 @@ class TestAntiAffinityRules(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-                               TestAntiAffinityRules,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAntiAffinityRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(
-                                cls.api_client,
-                                cls.services
-                            )
-        cls.zone = get_zone(
-                            cls.api_client,
-                            cls.services
-                            )
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                                     cls.api_client,
                                     cls.zone.id,
@@ -352,7 +336,7 @@ class TestAntiAffinityRules(cloudstackTestCase):
         except Exception as e:
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
-    @attr(tags = ["advanced", "vmware", "multihost"])
+    @attr(tags=["advanced", "vmware", "multihost", "provisioning"])
     def test_vmware_anti_affinity(self):
         """ Test Set up anti-affinity rules
 
@@ -515,20 +499,13 @@ class TestAffinityRules(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-                               TestAffinityRules,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAffinityRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(
-                                cls.api_client,
-                                cls.services
-                            )
-        cls.zone = get_zone(
-                            cls.api_client,
-                            cls.services
-                            )
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                                     cls.api_client,
                                     cls.zone.id,
@@ -587,7 +564,7 @@ class TestAffinityRules(cloudstackTestCase):
         except Exception as e:
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
-    @attr(tags = ["advanced", "vmware", "multihost"])
+    @attr(tags=["advanced", "vmware", "multihost", "provisioning"])
     def test_vmware_affinity(self):
         """ Test Set up affinity rules
 

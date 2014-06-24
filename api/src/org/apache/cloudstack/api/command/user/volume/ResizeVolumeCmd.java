@@ -15,15 +15,17 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
-
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -37,7 +39,9 @@ import com.cloud.projects.Project;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "resizeVolume", description = "Resizes a volume", responseObject = VolumeResponse.class)
+
+@APICommand(name = "resizeVolume", description = "Resizes a volume", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {Volume.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ResizeVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ResizeVolumeCmd.class.getName());
 
@@ -47,7 +51,8 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, entityType = VolumeResponse.class, type = CommandType.UUID, description = "the ID of the disk volume")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name = ApiConstants.ID, entityType = VolumeResponse.class, required = true, type = CommandType.UUID, description = "the ID of the disk volume")
     private Long id;
 
     @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, required = false, description = "New volume size in G")
@@ -67,8 +72,13 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    //TODO use the method getId() instead of this one.
     public Long getEntityId() {
         return id;
+    }
+
+    public Long getId() {
+        return getEntityId();
     }
 
     public Long getSize() {
@@ -101,18 +111,18 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
         return "volume";
     }
 
-    @Override
+   @Override
     public long getEntityOwnerId() {
 
         Volume volume = _entityMgr.findById(Volume.class, getEntityId());
         if (volume == null) {
-            throw new InvalidParameterValueException("Unable to find volume by id=" + id);
+                throw new InvalidParameterValueException("Unable to find volume by id=" + id);
         }
 
         Account account = _accountService.getAccount(volume.getAccountId());
         //Can resize volumes for enabled projects/accounts only
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            Project project = _projectService.findByProjectAccountId(volume.getAccountId());
+                Project project = _projectService.findByProjectAccountId(volume.getAccountId());
             if (project.getState() != Project.State.Active) {
                 throw new PermissionDeniedException("Can't add resources to  project id=" + project.getId() + " in state=" + project.getState() +
                     " as it's no longer active");
@@ -139,10 +149,10 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
         CallContext.current().setEventDetails("Volume Id: " + getEntityId() + " to size " + getSize() + "G");
         Volume volume = _volumeService.resizeVolume(this);
         if (volume != null) {
-            VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
+            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, volume);
             //FIXME - have to be moved to ApiResponseHelper
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to resize volume");
         }

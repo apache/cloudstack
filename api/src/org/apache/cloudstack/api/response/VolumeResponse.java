@@ -20,14 +20,14 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import com.google.gson.annotations.SerializedName;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.cloud.storage.Volume;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Volume.class)
 @SuppressWarnings("unused")
@@ -60,6 +60,30 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @Param(description = "id of the virtual machine")
     private String virtualMachineId;
 
+    @SerializedName("isoid")
+    @Param(description = "the ID of the ISO attached to the virtual machine")
+    private String isoId;
+
+    @SerializedName("isoname")
+    @Param(description = "the name of the ISO attached to the virtual machine")
+    private String isoName;
+
+    @SerializedName("isodisplaytext")
+    @Param(description = "an alternate display text of the ISO attached to the virtual machine")
+    private String isoDisplayText;
+
+    @SerializedName(ApiConstants.TEMPLATE_ID)
+    @Param(description = "the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
+    private String templateId;
+
+    @SerializedName("templatename")
+    @Param(description = "the name of the template for the virtual machine")
+    private String templateName;
+
+    @SerializedName("templatedisplaytext")
+    @Param(description = " an alternate display text of the template for the virtual machine")
+    private String templateDisplayText;
+
     @SerializedName("vmname")
     @Param(description = "name of the virtual machine")
     private String virtualMachineName;
@@ -71,6 +95,10 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @SerializedName("vmstate")
     @Param(description = "state of the virtual machine")
     private String virtualMachineState;
+
+    @SerializedName(ApiConstants.PROVISIONINGTYPE)
+    @Param(description = "provisioning type used to create volumes.")
+    private String provisioningType;
 
     @SerializedName(ApiConstants.SIZE)
     @Param(description = "size of the disk volume")
@@ -189,16 +217,25 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     private Set<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.DISPLAY_VOLUME)
-    @Param(description = "an optional field whether to the display the volume to the end user or not.")
-    private Boolean displayVm;
+    @Param(description = "an optional field whether to the display the volume to the end user or not.", authorized = {RoleType.Admin})
+    private Boolean displayVolume;
 
     @SerializedName(ApiConstants.PATH)
-    @Param(description = "The path of the volume")
+    @Param(description = "the path of the volume")
     private String path;
 
     @SerializedName(ApiConstants.STORAGE_ID)
     @Param(description = "id of the primary storage hosting the disk volume; returned to admin user only", since = "4.3")
     private String storagePoolId;
+
+    @SerializedName(ApiConstants.CHAIN_INFO)
+    @Param(description = "the chain info of the volume", since = "4.4")
+    String chainInfo;
+
+    @SerializedName(ApiConstants.SNAPSHOT_QUIESCEVM)
+    @Param(description = "need quiesce vm or not when taking snapshot", since="4.3")
+    private boolean needQuiescevm;
+
 
     public String getPath() {
         return path;
@@ -267,6 +304,10 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
 
     public void setVirtualMachineState(String virtualMachineState) {
         this.virtualMachineState = virtualMachineState;
+    }
+
+    public void setProvisioningType(String provisioningType){
+        this.provisioningType = provisioningType;
     }
 
     public void setSize(Long size) {
@@ -406,15 +447,79 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
         this.tags.add(tag);
     }
 
-    public Boolean getDisplayVm() {
-        return displayVm;
-    }
-
-    public void setDisplayVm(Boolean displayVm) {
-        this.displayVm = displayVm;
+    public void setDisplayVolume(Boolean displayVm) {
+        this.displayVolume = displayVm;
     }
 
     public void setStoragePoolId(String storagePoolId) {
         this.storagePoolId = storagePoolId;
+    }
+
+    public String getChainInfo() {
+        return chainInfo;
+    }
+
+    public void setChainInfo(String chainInfo) {
+        this.chainInfo = chainInfo;
+    }
+
+    public String getStoragePoolId() {
+        return storagePoolId;
+    }
+
+    public void setNeedQuiescevm(boolean quiescevm) {
+        this.needQuiescevm = quiescevm;
+    }
+
+    public boolean isNeedQuiescevm() {
+        return this.needQuiescevm;
+    }
+
+    public String getIsoId() {
+        return isoId;
+    }
+
+    public void setIsoId(String isoId) {
+        this.isoId = isoId;
+    }
+
+    public String getIsoName() {
+        return isoName;
+    }
+
+    public void setIsoName(String isoName) {
+        this.isoName = isoName;
+    }
+
+    public String getIsoDisplayText() {
+        return isoDisplayText;
+    }
+
+    public void setIsoDisplayText(String isoDisplayText) {
+        this.isoDisplayText = isoDisplayText;
+    }
+
+    public String getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
+    }
+
+    public String getTemplateName() {
+        return templateName;
+    }
+
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
+    }
+
+    public String getTemplateDisplayText() {
+        return templateDisplayText;
+    }
+
+    public void setTemplateDisplayText(String templateDisplayText) {
+        this.templateDisplayText = templateDisplayText;
     }
 }

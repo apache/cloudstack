@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage;
 
+import org.apache.commons.lang.NotImplementedException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,27 +34,27 @@ public class Storage {
         VDI(true, true, false, "vdi"),
         TAR(false, false, false, "tar");
 
-        private final boolean thinProvisioned;
+        private final boolean supportThinProvisioning;
         private final boolean supportSparse;
         private final boolean supportSnapshot;
         private final String fileExtension;
 
-        private ImageFormat(boolean thinProvisioned, boolean supportSparse, boolean supportSnapshot) {
-            this.thinProvisioned = thinProvisioned;
+        private ImageFormat(boolean supportThinProvisioning, boolean supportSparse, boolean supportSnapshot) {
+            this.supportThinProvisioning = supportThinProvisioning;
             this.supportSparse = supportSparse;
             this.supportSnapshot = supportSnapshot;
             fileExtension = null;
         }
 
-        private ImageFormat(boolean thinProvisioned, boolean supportSparse, boolean supportSnapshot, String fileExtension) {
-            this.thinProvisioned = thinProvisioned;
+        private ImageFormat(boolean supportThinProvisioning, boolean supportSparse, boolean supportSnapshot, String fileExtension) {
+            this.supportThinProvisioning = supportThinProvisioning;
             this.supportSparse = supportSparse;
             this.supportSnapshot = supportSnapshot;
             this.fileExtension = fileExtension;
         }
 
-        public boolean isThinProvisioned() {
-            return thinProvisioned;
+        public boolean supportThinProvisioning() {
+            return supportThinProvisioning;
         }
 
         public boolean supportsSparse() {
@@ -72,6 +74,35 @@ public class Storage {
 
     }
 
+    public static enum ProvisioningType {
+        THIN("thin"),
+        SPARSE("sparse"),
+        FAT("fat");
+
+        private final String provisionType;
+
+        private ProvisioningType(String provisionType){
+            this.provisionType = provisionType;
+        }
+
+        public String toString(){
+            return this.provisionType;
+        }
+
+        public static ProvisioningType getProvisioningType(String provisioningType){
+
+            if(provisioningType.equals(THIN.provisionType)){
+                return ProvisioningType.THIN;
+            } else if(provisioningType.equals(SPARSE.provisionType)){
+                return ProvisioningType.SPARSE;
+            } else if (provisioningType.equals(FAT.provisionType)){
+                return ProvisioningType.FAT;
+            } else{
+                    throw new NotImplementedException();
+            }
+        }
+    }
+
     public static enum FileSystem {
         Unknown, ext3, ntfs, fat, fat32, ext2, ext4, cdfs, hpfs, ufs, hfs, hfsp
     }
@@ -86,7 +117,7 @@ public class Storage {
 
     public static enum StoragePoolType {
         Filesystem(false), // local directory
-        NetworkFilesystem(true), // NFS or CIFS
+        NetworkFilesystem(true), // NFS
         IscsiLUN(true), // shared LUN, with a clusterfs overlay
         Iscsi(true), // for e.g., ZFS Comstar
         ISO(false), // for iso image
@@ -97,7 +128,9 @@ public class Storage {
         VMFS(true), // VMware VMFS storage
         PreSetup(true), // for XenServer, Storage Pool is set up by customers.
         EXT(false), // XenServer local EXT SR
-        OCFS2(true);
+        OCFS2(true),
+        SMB(true),
+        Gluster(true);
 
         boolean shared;
 

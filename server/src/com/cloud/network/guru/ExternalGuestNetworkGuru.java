@@ -107,6 +107,10 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
 
+        if (_networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.Connectivity)) {
+            return null;
+        }
+
         NetworkVO config = (NetworkVO)super.design(offering, plan, userSpecified, owner);
         if (config == null) {
             return null;
@@ -122,6 +126,10 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context)
         throws InsufficientVirtualNetworkCapcityException {
         assert (config.getState() == State.Implementing) : "Why are we implementing " + config;
+
+        if (_networkModel.areServicesSupportedInNetwork(config.getId(), Network.Service.Connectivity)) {
+            return null;
+        }
 
         if (!_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             return super.implement(config, offering, dest, context);

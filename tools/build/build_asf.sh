@@ -19,7 +19,7 @@
 version='TESTBUILD'
 sourcedir=~/cloudstack/
 outputdir=/tmp/cloudstack-build/
-branch='master'
+branch='master' # DH(20140604): maybe change default to `git symbolic-ref --short HEAD`
 tag='no'
 certid='X'
 committosvn='X'
@@ -103,8 +103,9 @@ esac
 git clean -f
 
 #create a RC branch
-RELEASE_BRANCH="RC" + `date +%Y%m%dT%H%M`
+RELEASE_BRANCH="RC"`date +%Y%m%dT%H%M`
 git branch $branch-$RELEASE_BRANCH
+git checkout $branch-$RELEASE_BRANCH
 
 
 echo 'commit changes'

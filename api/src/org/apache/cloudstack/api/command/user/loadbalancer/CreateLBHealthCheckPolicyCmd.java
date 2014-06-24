@@ -16,8 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,6 +26,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -39,7 +39,9 @@ import com.cloud.user.Account;
 @APICommand(name = "createLBHealthCheckPolicy",
             description = "Creates a Load Balancer healthcheck policy ",
             responseObject = LBHealthCheckResponse.class,
-            since = "4.2.0")
+            since = "4.2.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
 public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateLBHealthCheckPolicyCmd.class.getName());
@@ -87,9 +89,26 @@ public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
                description = "Number of consecutive health check failures before declaring an instance unhealthy")
     private int unhealthyThreshold;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
+
+    @Deprecated
+    public Boolean getDisplay() {
+        return display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if(display == null)
+            return true;
+        else
+            return display;
+    }
 
     public Long getLbRuleId() {
         return lbRuleId;

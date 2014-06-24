@@ -27,7 +27,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -44,11 +44,13 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
+
 
 @Component
 @Local(value = {TemplateJoinDao.class})
@@ -57,7 +59,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
     public static final Logger s_logger = Logger.getLogger(TemplateJoinDaoImpl.class);
 
     @Inject
-    private ConfigurationDao _configDao;
+    private ConfigurationDao  _configDao;
+    @Inject
+    private AccountService _accountService;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -91,42 +95,32 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         activeTmpltSearch.done();
 
         // select distinct pair (template_id, zone_id)
-        this._count = "select count(distinct temp_zone_pair) from template_view WHERE ";
+        _count = "select count(distinct temp_zone_pair) from template_view WHERE ";
     }
 
     private String getTemplateStatus(TemplateJoinVO template) {
-        boolean isAdmin = false;
-        Account caller = CallContext.current().getCallingAccount();
-        if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
-            isAdmin = true;
-        }
-
-        // If the user is an Admin, add the template download status
         String templateStatus = null;
-        if (isAdmin || caller.getId() == template.getAccountId()) {
-            // add download status
-            if (template.getDownloadState() != Status.DOWNLOADED) {
-                templateStatus = "Processing";
-                if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
-                    if (template.getDownloadPercent() == 100) {
-                        templateStatus = "Installing Template";
-                    } else {
-                        templateStatus = template.getDownloadPercent() + "% Downloaded";
-                    }
+        if (template.getDownloadState() != Status.DOWNLOADED) {
+            templateStatus = "Processing";
+            if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+                if (template.getDownloadPercent() == 100) {
+                    templateStatus = "Installing Template";
                 } else {
-                    templateStatus = template.getErrorString();
+                    templateStatus = template.getDownloadPercent() + "% Downloaded";
                 }
-            } else if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
-                templateStatus = "Download Complete";
             } else {
-                templateStatus = "Successfully Installed";
+                templateStatus = template.getErrorString();
             }
+        } else if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+            templateStatus = "Download Complete";
+        } else {
+            templateStatus = "Successfully Installed";
         }
         return templateStatus;
     }
 
     @Override
-    public TemplateResponse newTemplateResponse(TemplateJoinVO template) {
+    public TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO template) {
         TemplateResponse templateResponse = new TemplateResponse();
         templateResponse.setId(template.getUuid());
         templateResponse.setName(template.getName());
@@ -163,9 +157,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         templateResponse.setDomainName(template.getDomainName());
 
         // If the user is an Admin, add the template download status
-        String templateStatus = getTemplateStatus(template);
-        if (templateStatus != null) {
-            templateResponse.setStatus(templateStatus);
+        if (view == ResponseView.Full) {
+            String templateStatus = getTemplateStatus(template);
+            if (templateStatus != null) {
+                templateResponse.setStatus(templateStatus);
+            }
         }
 
         if (template.getDataCenterId() > 0) {
@@ -248,7 +244,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
     }
 
     @Override
-    public TemplateResponse setTemplateResponse(TemplateResponse templateResponse, TemplateJoinVO template) {
+    public TemplateResponse setTemplateResponse(ResponseView view, TemplateResponse templateResponse, TemplateJoinVO template) {
 
         // update details map
         if (template.getDetailName() != null) {
@@ -306,7 +302,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
         Account caller = CallContext.current().getCallingAccount();
         boolean isAdmin = false;
-        if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
+        if ((caller == null) || _accountService.isAdmin(caller.getId())) {
             isAdmin = true;
         }
 
@@ -383,6 +379,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
             DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
         }
         // query details by batches
+        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+        isAscending = (isAscending == null ? true : isAscending);
+        Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", isAscending, null, null);
         List<TemplateJoinVO> uvList = new ArrayList<TemplateJoinVO>();
         // query details by batches
         int curr_index = 0;
@@ -397,7 +396,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
                     sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
                 }
                 sc.setParameters("tempZonePairIN", labels);
-                List<TemplateJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+                List<TemplateJoinVO> vms = searchIncludingRemoved(sc, searchFilter, null, false);
                 if (vms != null) {
                     uvList.addAll(vms);
                 }
@@ -415,7 +414,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
                 sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
             }
             sc.setParameters("tempZonePairIN", labels);
-            List<TemplateJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+            List<TemplateJoinVO> vms = searchIncludingRemoved(sc, searchFilter, null, false);
             if (vms != null) {
                 uvList.addAll(vms);
             }

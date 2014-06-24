@@ -37,7 +37,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.storage.ImageStore;
 import com.cloud.user.Account;
 
-@APICommand(name = "createSecondaryStagingStore", description = "create secondary staging store.", responseObject = ImageStoreResponse.class)
+@APICommand(name = "createSecondaryStagingStore", description = "create secondary staging store.", responseObject = ImageStoreResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateSecondaryStagingStoreCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddImageStoreCmd.class.getName());
     private static final String s_name = "createsecondarystagingstoreresponse";

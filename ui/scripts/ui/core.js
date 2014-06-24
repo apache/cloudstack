@@ -363,7 +363,7 @@
             function(value, element) {
                 return (value.indexOf("<") == -1 && value.indexOf(">") == -1);
             },
-            jQuery.format("Disallowed characters: <, >")
+            jQuery.format('message.disallowed.characters')
         );
 
         // Check for pending project invitations

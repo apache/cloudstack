@@ -26,6 +26,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 
 import com.cloud.agent.AgentManager;
@@ -45,7 +46,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.server.ManagementServer;
 import com.cloud.servlet.ConsoleProxyPasswordBasedEncryptor;
 import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.utils.Ternary;
@@ -65,17 +65,16 @@ public abstract class AgentHookBase implements AgentHook {
     ConfigurationDao _configDao;
     AgentManager _agentMgr;
     KeystoreManager _ksMgr;
-    ManagementServer _ms;
     final Random _random = new Random(System.currentTimeMillis());
-    private String _hashKey;
+    KeysManager _keysMgr;
 
-    public AgentHookBase(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, ManagementServer ms) {
-        this._instanceDao = instanceDao;
-        this._hostDao = hostDao;
-        this._agentMgr = agentMgr;
-        this._configDao = cfgDao;
-        this._ksMgr = ksMgr;
-        this._ms = ms;
+    public AgentHookBase(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, KeysManager keysMgr) {
+        _instanceDao = instanceDao;
+        _hostDao = hostDao;
+        _agentMgr = agentMgr;
+        _configDao = cfgDao;
+        _ksMgr = ksMgr;
+        _keysMgr = keysMgr;
     }
 
     @Override
@@ -230,15 +229,15 @@ public abstract class AgentHookBase implements AgentHook {
 
         // if we failed after reset, something is definitely wrong
         for (int i = 0; i < 2; i++) {
-            key = _ms.getEncryptionKey();
-            iv = _ms.getEncryptionIV();
+            key = _keysMgr.getEncryptionKey();
+            iv = _keysMgr.getEncryptionIV();
 
             keyIvPair = new ConsoleProxyPasswordBasedEncryptor.KeyIVPair(key, iv);
 
             if (keyIvPair.getIvBytes() == null || keyIvPair.getIvBytes().length != 16 || keyIvPair.getKeyBytes() == null || keyIvPair.getKeyBytes().length != 16) {
 
                 s_logger.warn("Console access AES KeyIV sanity check failed, reset and regenerate");
-                _ms.resetEncryptionKeyIV();
+                _keysMgr.resetEncryptionKeyIV();
             } else {
                 break;
             }

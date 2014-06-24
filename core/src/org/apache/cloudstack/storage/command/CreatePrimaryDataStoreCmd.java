@@ -35,4 +35,8 @@ public final class CreatePrimaryDataStoreCmd extends Command implements StorageS
         return false;
     }
 
+    @Override
+    public void setExecuteInSequence(boolean inSeq) {
+
+    }
 }

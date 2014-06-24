@@ -134,41 +134,6 @@ public class VmwareContextPool {
         };
     }
 
-    private void getIdleCheckContexts(List<VmwareContext> l, int batchSize) {
-        synchronized (this) {
-            for (Map.Entry<String, List<VmwareContext>> entry : _pool.entrySet()) {
-                if (entry.getValue() != null) {
-                    int count = 0;
-                    while (entry.getValue().size() > 0 && count < batchSize) {
-                        VmwareContext context = entry.getValue().remove(0);
-                        context.setPoolInfo(this, entry.getKey());
-                        l.add(context);
-                        count++;
-                    }
-                }
-            }
-        }
-    }
-
-    private void doIdleCheck() {
-        List<VmwareContext> l = new ArrayList<VmwareContext>();
-        int batchSize = (int)(_idleCheckIntervalMs / 1000);    // calculate batch size at 1 request/sec rate
-        getIdleCheckContexts(l, batchSize);
-
-        for (VmwareContext context : l) {
-            try {
-                context.idleCheck();
-
-                if (s_logger.isTraceEnabled())
-                    s_logger.trace("Recyle context after idle check");
-                returnContext(context);
-            } catch (Throwable e) {
-                s_logger.warn("Exception caught during VmwareContext idle check, close and discard the context", e);
-                context.close();
-            }
-        }
-    }
-
     private void getKeepAliveCheckContexts(List<VmwareContext> l, int batchSize) {
         synchronized (this) {
             int size = Math.min(_outstandingRegistry.size(), batchSize);

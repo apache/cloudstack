@@ -1,12 +1,13 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,9 +15,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.net;
 
+import com.cloud.utils.IteratorUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.script.Script;
+import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6AddressRange;
+import com.googlecode.ipv6.IPv6Network;
+import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.net.util.SubnetUtils;
+import org.apache.log4j.Logger;
+
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
@@ -36,17 +50,6 @@ import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.lang.SystemUtils;
-import org.apache.commons.net.util.SubnetUtils;
-import org.apache.log4j.Logger;
-
-import com.cloud.utils.IteratorUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.script.Script;
-import com.googlecode.ipv6.IPv6Address;
-import com.googlecode.ipv6.IPv6AddressRange;
-import com.googlecode.ipv6.IPv6Network;
 
 public class NetUtils {
     protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
@@ -154,14 +157,6 @@ public class NetUtils {
         return cidrList.toArray(new String[0]);
     }
 
-    private static boolean isWindows() {
-        String os = System.getProperty("os.name");
-        if (os != null && os.startsWith("Windows"))
-            return true;
-
-        return false;
-    }
-
     public static String getDefaultHostIp() {
         if (SystemUtils.IS_OS_WINDOWS) {
             Pattern pattern = Pattern.compile("\\s*0.0.0.0\\s*0.0.0.0\\s*(\\S*)\\s*(\\S*)\\s*");
@@ -177,7 +172,8 @@ public class NetUtils {
                     }
                     line = output.readLine();
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
+                s_logger.debug("Caught IOException", e);
             }
             return null;
         } else {
@@ -430,7 +426,8 @@ public class NetUtils {
         try {
             byte[] mac = nic.getHardwareAddress();
             result[1] = byte2Mac(mac);
-        } catch (Exception e) {
+        } catch (SocketException e) {
+            s_logger.debug("Caught exception when trying to get the mac address ", e);
         }
 
         result[2] = prefix2Netmask(addr.getNetworkPrefixLength());
@@ -832,7 +829,7 @@ public class NetUtils {
             if (cidrALong[1] < cidrBLong[1]) {
                 //this implies cidrA is super set of cidrB
                 return supersetOrSubset.isSuperset;
-            } else if (cidrALong[1] == cidrBLong[1]) {
+            } else if (cidrALong[1].equals(cidrBLong[1])) {
                 //this implies both the cidrs are equal
                 return supersetOrSubset.sameSubnet;
             }
@@ -1209,7 +1206,7 @@ public class NetUtils {
 
     public static boolean isValidIpv6(String ip) {
         try {
-            IPv6Address address = IPv6Address.fromString(ip);
+            IPv6Address.fromString(ip);
         } catch (IllegalArgumentException ex) {
             return false;
         }
@@ -1218,7 +1215,7 @@ public class NetUtils {
 
     public static boolean isValidIp6Cidr(String ip6Cidr) {
         try {
-            IPv6Network network = IPv6Network.fromString(ip6Cidr);
+            IPv6Network.fromString(ip6Cidr);
         } catch (IllegalArgumentException ex) {
             return false;
         }
@@ -1372,6 +1369,14 @@ public class NetUtils {
             resultIp = result.toString();
         }
         return resultIp;
+    }
+
+    public static String standardizeIp6Address(String ip6Addr) {
+        return IPv6Address.fromString(ip6Addr).toString();
+    }
+
+    public static String standardizeIp6Cidr(String ip6Cidr){
+        return IPv6Network.fromString(ip6Cidr).toString();
     }
 
     static final String VLAN_PREFIX = "vlan://";

@@ -42,7 +42,8 @@ import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.element.PaloAltoFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listPaloAltoFirewalls", responseObject = PaloAltoFirewallResponse.class, description = "lists Palo Alto firewall devices in a physical network")
+@APICommand(name = "listPaloAltoFirewalls", responseObject = PaloAltoFirewallResponse.class, description = "lists Palo Alto firewall devices in a physical network",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPaloAltoFirewallsCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListPaloAltoFirewallsCmd.class.getName());

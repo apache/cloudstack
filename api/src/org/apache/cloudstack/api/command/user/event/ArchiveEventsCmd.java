@@ -31,10 +31,12 @@ import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.event.Event;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = "archiveEvents", description = "Archive one or more events.", responseObject = SuccessResponse.class)
+@APICommand(name = "archiveEvents", description = "Archive one or more events.", responseObject = SuccessResponse.class, entityType = {Event.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ArchiveEventsCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(ArchiveEventsCmd.class.getName());
@@ -111,7 +113,7 @@ public class ArchiveEventsCmd extends BaseCmd {
         boolean result = _mgr.archiveEvents(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to archive Events, one or more parameters has invalid values");
         }

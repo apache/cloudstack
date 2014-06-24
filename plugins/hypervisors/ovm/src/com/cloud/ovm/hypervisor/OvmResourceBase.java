@@ -808,7 +808,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         Map<String, String> vms = OvmHost.getAllVms(_conn);
         for (final Map.Entry<String, String> entry : vms.entrySet()) {
             PowerState state = toPowerState(entry.getKey(), entry.getValue());
-            vmStates.put(entry.getKey(), new HostVmStateReportEntry(state, _conn.getIp(), null));
+            vmStates.put(entry.getKey(), new HostVmStateReportEntry(state, _conn.getIp()));
         }
         return vmStates;
     }

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage;
 
+import java.util.Date;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -24,6 +25,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "guest_os")
@@ -44,6 +47,15 @@ public class GuestOSVO implements GuestOS {
 
     @Column(name = "uuid")
     String uuid = UUID.randomUUID().toString();
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    private Date removed;
+
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date created;
+
+    @Column(name = "is_user_defined")
+    private boolean isUserDefined;
 
     @Override
     public long getId() {
@@ -79,10 +91,33 @@ public class GuestOSVO implements GuestOS {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
+    @Override
+    public Date getRemoved() {
+        return removed;
+    }
+
+    @Override
+    public boolean getIsUserDefined() {
+        return isUserDefined;
+    }
+
+    public void setIsUserDefined(boolean isUserDefined) {
+        this.isUserDefined = isUserDefined;
     }
 }

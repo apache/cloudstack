@@ -25,6 +25,7 @@ public class Argument implements Comparable {
     private String type;
     private String sinceVersion = null;
     private List<Argument> arguments;
+    private String dataType;
 
     public Argument(String name) {
         this.name = name;
@@ -47,6 +48,14 @@ public class Argument implements Comparable {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public void setDataType(String dataType) {
+        this.dataType = dataType;
+    }
+
+    public String getDataType() {
+        return this.dataType;
     }
 
     public String getName() {
@@ -99,5 +108,10 @@ public class Argument implements Comparable {
 
     public boolean hasArguments() {
         return (arguments != null && !arguments.isEmpty());
+    }
+
+    @Override
+    public String toString() {
+        return "name=" + this.name + ", description=" + description + ", required=" + required + ", type=" + this.type + ", sinceVersion=" + this.sinceVersion + ", arguments=" + this.arguments + ", dataType=" + this.dataType;
     }
 }

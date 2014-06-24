@@ -150,7 +150,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     protected EndPoint findEndPointForImageMove(DataStore srcStore, DataStore destStore) {
-        // find any xen/kvm host in the scope
+        // find any xenserver/kvm host in the scope
         Scope srcScope = srcStore.getScope();
         Scope destScope = destStore.getScope();
         Scope selectedScope = null;
@@ -166,10 +166,11 @@ public class DefaultEndPointSelector implements EndPointSelector {
             poolId = destStore.getId();
         } else {
             // if both are zone scope
-            selectedScope = srcScope;
             if (srcStore.getRole() == DataStoreRole.Primary) {
+                selectedScope = srcScope;
                 poolId = srcStore.getId();
             } else if (destStore.getRole() == DataStoreRole.Primary) {
+                selectedScope = destScope;
                 poolId = destStore.getId();
             }
         }
@@ -299,6 +300,15 @@ public class DefaultEndPointSelector implements EndPointSelector {
             if (snapshotInfo.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
                 VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
                 VirtualMachine vm = volumeInfo.getAttachedVM();
+                if ((vm != null) && (vm.getState() == VirtualMachine.State.Running)) {
+                    Long hostId = vm.getHostId();
+                    return getEndPointFromHostId(hostId);
+                }
+            }
+        } else if (action == StorageAction.MIGRATEVOLUME) {
+            VolumeInfo volume = (VolumeInfo)object;
+            if (volume.getHypervisorType() == Hypervisor.HypervisorType.Hyperv) {
+                VirtualMachine vm = volume.getAttachedVM();
                 if ((vm != null) && (vm.getState() == VirtualMachine.State.Running)) {
                     Long hostId = vm.getHostId();
                     return getEndPointFromHostId(hostId);

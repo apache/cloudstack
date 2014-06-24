@@ -31,7 +31,8 @@ import org.apache.log4j.Logger;
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag;
 
-@APICommand(name = "addResourceDetail", description = "Adds detail for the Resource.", responseObject = SuccessResponse.class)
+@APICommand(name = "addResourceDetail", description = "Adds detail for the Resource.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddResourceDetailCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddResourceDetailCmd.class.getName());
     private static final String s_name = "addresourcedetailresponse";
@@ -48,6 +49,9 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, required = true, collectionType = CommandType.STRING, description = "resource id to create the details for")
     private String resourceId;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "pass false if you want this detail to be disabled for the regular user. True by default", since = "4.4")
+    private Boolean display;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -77,6 +81,14 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
         return resourceId;
     }
 
+    public boolean forDisplay() {
+        if (display != null) {
+            return display;
+        } else {
+            return true;
+        }
+    }
+
 /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -104,7 +116,7 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        _resourceMetaDataService.addResourceMetaData(getResourceId(), getResourceType(), getDetails());
+        _resourceMetaDataService.addResourceMetaData(getResourceId(), getResourceType(), getDetails(), forDisplay());
         setResponseObject(new SuccessResponse(getCommandName()));
     }
 }

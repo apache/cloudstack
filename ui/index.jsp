@@ -71,7 +71,7 @@
                             <select name="language">
                                 <option value=""></option> <!-- when this blank option is selected, browser's default language will be used -->
                                 <option value="en"><fmt:message key="label.lang.english"/></option>
-                                <option value="ja"><fmt:message key="label.lang.japanese"/></option>
+                                <option value="ja_JP"><fmt:message key="label.lang.japanese"/></option>
                                 <option value="zh_CN"><fmt:message key="label.lang.chinese"/></option>
                                 <option value="ru_RU"><fmt:message key="label.lang.russian"/></option>
                                 <option value="fr_FR"><fmt:message key="label.lang.french"/></option>
@@ -83,6 +83,8 @@
                                 <option value="it_IT"><fmt:message key="label.lang.italian"/></option>
                                 <option value="nb_NO"><fmt:message key="label.lang.norwegian"/></option>
                                 <option value="ar"><fmt:message key="label.lang.arabic"/></option>
+                                <option value="nl_NL"><fmt:message key="label.lang.dutch"/></option>
+                                <option value="pl"><fmt:message key="label.lang.polish"/></option>
                             </select>
                         </div>
                     </div>
@@ -204,6 +206,7 @@
                             <div class="content">
                                 <div class="select-container">
                                 </div>
+
                                 <!-- Custom size slider -->
                                 <div class="section custom-size">
                                     <div class="field">
@@ -217,6 +220,18 @@
                                     <div class="field">
                                         <label><fmt:message key="label.memory.mb"/></label>
                                         <input type="text" class="required disallowSpecialCharacters" name="compute-memory" />
+                                    </div>
+                                </div>
+
+                                <!-- Custom iops -->
+                                <div class="section custom-iops">
+                                    <div class="field">
+                                        <label><fmt:message key="label.disk.iops.min"/></label>
+                                        <input type="text" class="disallowSpecialCharacters" name="disk-min-iops" />
+                                    </div>
+                                    <div class="field">
+                                        <label><fmt:message key="label.disk.iops.max"/></label>
+                                        <input type="text" class="disallowSpecialCharacters" name="disk-max-iops" />
                                     </div>
                                 </div>
                             </div>
@@ -235,16 +250,28 @@
                                 </div>
 
                                 <!-- Custom size slider -->
-                                <div class="section custom-size">
+                                <div class="section custom-size custom-disk-size">
                                     <label><fmt:message key="label.disk.size"/></label>
 
                                     <!-- Slider -->
-                                    <label class="size">1 GB</label>
+                                    <label class="size min"><span></span> GB</label>
                                     <div class="slider custom-size"></div>
                                     <label class="size max"><span></span> GB</label>
 
                                     <input type="text" class="required digits" name="size" value="1" />
                                     <label class="size">GB</label>
+                                </div>
+
+                                <!-- Custom iops -->
+                                <div class="section custom-iops-do">
+                                    <div class="field">
+                                        <label><fmt:message key="label.disk.iops.min"/></label>
+                                        <input type="text" class="disallowSpecialCharacters" name="disk-min-iops-do" />
+                                    </div>
+                                    <div class="field">
+                                        <label><fmt:message key="label.disk.iops.max"/></label>
+                                        <input type="text" class="disallowSpecialCharacters" name="disk-max-iops-do" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -263,7 +290,15 @@
                             <div class="wizard-step-conditional nothing-to-select">
                                 <p id="from_instance_page_1"><fmt:message key="message.zone.no.network.selection"/></p>
                                 <p id="from_instance_page_2"><fmt:message key="message.please.proceed"/></p>
-                                <p id="from_vpc_tier"></p>
+                                <p id="from_vpc_tier">
+                                    <div class="specify-ip">
+                                        <label>
+                                            <fmt:message key="label.ip.address"/>
+                                            (<fmt:message key="label.optional"/>):
+                                        </label>
+                                        <input type="text" name="vpc-specify-ip" />
+                                    </div>
+                                </p>
                             </div>
 
                             <!-- 5b: Select network -->
@@ -514,10 +549,10 @@
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th style="width:40px">Select</th>
-                                            <th style="width:110px">Realname</th>
-                                            <th style="width:70px">Username</th>
-                                            <th>Email</th>
+                                            <th><fmt:message key="label.select"/></th>
+                                            <th><fmt:message key="label.name"/></th>
+                                            <th><fmt:message key="label.username"/></th>
+                                            <th><fmt:message key="label.email"/></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1042,7 +1077,7 @@
                     <div class="button refresh" id="refresh_button">
                         <span><fmt:message key="label.refresh"/></span>
                     </div>
-                    <div id="update_ssl_button" class="button action main-action reduced-hide lock" title="Updates your Console Proxy SSL Certificate">
+                    <div id="update_ssl_button" class="button action main-action reduced-hide lock" title="Updates your SSL Certificate">
                         <span class="icon">&nbsp;</span>
                         <span><fmt:message key="label.update.ssl.cert"/></span>
                     </div>

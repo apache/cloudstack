@@ -35,7 +35,8 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 
-@APICommand(name = "disableStaticNat", description = "Disables static rule for given ip address", responseObject = SuccessResponse.class)
+@APICommand(name = "disableStaticNat", description = "Disables static rule for given ip address", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DisableStaticNatCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingRuleCmd.class.getName());
     private static final String s_name = "disablestaticnatresponse";

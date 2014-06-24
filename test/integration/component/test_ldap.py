@@ -29,9 +29,9 @@ import hashlib
 import random
 from marvin.cloudstackAPI import *
 from marvin.cloudstackAPI import login
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 import urllib
 
@@ -128,7 +128,7 @@ class TestLdap(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic", "selfservice"])
     def test_01_addLdapConfiguration(self):
         """
         This test configures LDAP and attempts to authenticate as a user.

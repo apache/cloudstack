@@ -27,7 +27,6 @@ if os.path.exists("/opt/xensource/sm"):
 if os.path.exists("/usr/lib/xcp/sm"):
     sys.path.extend(["/usr/lib/xcp/sm/", "/usr/local/sbin/", "/sbin/"])
 import base64
-import hostvmstats
 import socket
 import stat
 import tempfile
@@ -61,15 +60,6 @@ def add_to_VCPUs_params_live(session, args):
         return 'false'
     return 'true'
 
-@echo
-def gethostvmstats(session, args):
-    collect_host_stats = args['collectHostStats']
-    consolidation_function = args['consolidationFunction']
-    interval = args['interval']
-    start_time = args['startTime']
-    result = hostvmstats.get_stats(session, collect_host_stats, consolidation_function, interval, start_time)
-    return result
-    
 @echo
 def setup_iscsi(session, args):
    uuid=args['uuid']
@@ -163,36 +153,6 @@ def pingtest(session, args):
     return txt
 
 @echo
-def savePassword(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/save_password_to_domr.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        logging.debug("  save password to domr failed "  )
-        txt = '' 
-
-    return txt
-
-@echo
-def saveDhcpEntry(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/dhcp_entry.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        logging.debug(" save dhcp entry failed "  )
-        txt = '' 
-
-    return txt
-    
-@echo
 def setLinkLocalIP(session, args):
     brName = args['brName']
     try:
@@ -237,96 +197,6 @@ def setLinkLocalIP(session, args):
     txt = 'success'
     return txt
 
-
-    
-@echo
-def setFirewallRule(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/call_firewall.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        logging.debug(" set firewall rule failed "  )
-        txt = '' 
-
-    return txt
-    
-@echo
-def routerProxy(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/router_proxy.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        if txt is None or len(txt) == 0 :
-            txt = 'success'
-    except:
-        logging.debug("routerProxy command " + sargs + " failed "  )
-        txt = '' 
-
-    return txt
-
-
-
-@echo
-def setLoadBalancerRule(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/call_loadbalancer.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        logging.debug(" set loadbalancer rule failed "  )
-        txt = '' 
-
-    return txt
-@echo
-def configdnsmasq(session, args):
-    routerip = args['routerip']
-    args = args['args']
-    target   = "root@"+routerip
-    try:
-       util.pread2(['ssh','-p','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',target,'/root/dnsmasq.sh',args])
-       txt='success'
-    except:
-       logging.debug("failed to config dnsmasq server")
-       txt=''
-    return txt
-
-@echo
-def createipAlias(session, args):
-    args = args['args']
-    cmd = args.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/createipAlias.sh")
-    cmd.insert(0, "bin/bash")
-    try:
-       txt=util.pread2(cmd)
-       txt='success'
-    except:
-       logging.debug("failed to create ip alias on router vm")
-       txt=''
-    return txt
-
-@echo
-def deleteipAlias(session, args):
-    args = args['args']
-    cmd = args.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/deleteipAlias.sh")
-    cmd.insert(0, "bin/bash")
-    try:
-       txt=util.pread2(cmd)
-       txt='success'
-    except:
-       logging.debug("failed to create ip alias on router vm")
-       txt=''
-    return txt
-
 @echo
 def createFile(session, args):
     file_path = args['filepath']
@@ -354,13 +224,12 @@ def createFileInDomr(session, args):
         f.write(file_contents)
         f.close()
         target = "root@" + domrip + ":" + file_path
-        util.pread2(['scp','-P','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',tmpfile, target])
+        txt = util.pread2(['scp','-P','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',tmpfile, target])
         util.pread2(['rm',tmpfile])
-        txt = 'success'
+        txt = 'succ#' + txt
     except:
-        logging.debug(" failed to create HA proxy cfg file ")
-        txt = ''
-
+        logging.debug("failed to create file " + file_path + " in VR, contain: " + file_contents)
+        txt = 'fail#' + txt
     return txt
 
 @echo
@@ -1608,41 +1477,19 @@ def network_rules(session, args):
   except:
     logging.debug("Failed to network rule !")
 
-@echo
-def bumpUpPriority(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/bumpUpPriority.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        logging.debug("bump up priority fail! ")
-        txt = ''
-
-    return txt
-
-
 if __name__ == "__main__":
-     XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
+     XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi,
                             "getgateway": getgateway, "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
-                            "savePassword": savePassword, 
-                            "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "routerProxy": routerProxy, 
-                            "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, 
+                            "createFile": createFile, "deleteFile": deleteFile,
                             "network_rules":network_rules, 
                             "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules,
                             "destroy_network_rules_for_vm":destroy_network_rules_for_vm, 
                             "default_network_rules_systemvm":default_network_rules_systemvm, 
                             "network_rules_vmSecondaryIp":network_rules_vmSecondaryIp,
-                            "createipAlias":createipAlias,
-                            "configdnsmasq":configdnsmasq,
-                            "deleteipAlias":deleteipAlias,
                             "get_rule_logs_for_vms":get_rule_logs_for_vms, 
 			    "add_to_VCPUs_params_live":add_to_VCPUs_params_live,
                             "setLinkLocalIP":setLinkLocalIP,
                             "cleanup_rules":cleanup_rules,
-                            "bumpUpPriority":bumpUpPriority,
                             "createFileInDomr":createFileInDomr,
                             "kill_copy_process":kill_copy_process})

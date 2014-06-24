@@ -98,7 +98,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     protected GslbServiceProvider _gslbProvider = null;
 
     public void setGslbServiceProvider(GslbServiceProvider provider) {
-        this._gslbProvider = provider;
+        _gslbProvider = provider;
     }
 
     @Override
@@ -183,7 +183,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             throw new InvalidParameterValueException("Invalid global load balancer rule id: " + gslbRuleId);
         }
 
-        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, gslbRule);
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, true, gslbRule);
 
         if (gslbRule.getState() == GlobalLoadBalancerRule.State.Revoke) {
             throw new InvalidParameterValueException("global load balancer rule id: " + gslbRule.getUuid() + " is in revoked state");
@@ -319,7 +319,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             throw new InvalidParameterValueException("Invalid global load balancer rule id: " + gslbRuleId);
         }
 
-        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, gslbRule);
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, true, gslbRule);
 
         if (gslbRule.getState() == GlobalLoadBalancerRule.State.Revoke) {
             throw new InvalidParameterValueException("global load balancer rule id: " + gslbRuleId + " is already in revoked state");
@@ -445,7 +445,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             throw new InvalidParameterValueException("Invalid global load balancer rule id: " + gslbRuleId);
         }
 
-        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, gslbRule);
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, true, gslbRule);
 
         if (gslbRule.getState() == com.cloud.region.ha.GlobalLoadBalancerRule.State.Staged) {
             if (s_logger.isDebugEnabled()) {
@@ -523,7 +523,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         CallContext ctx = CallContext.current();
         Account caller = ctx.getCallingAccount();
 
-        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, gslbRule);
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, true, gslbRule);
 
         if (algorithm != null && !GlobalLoadBalancerRule.Algorithm.isValidAlgorithm(algorithm)) {
             throw new InvalidParameterValueException("Invalid Algorithm: " + algorithm);
@@ -583,7 +583,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             if (gslbRule == null) {
                 throw new InvalidParameterValueException("Invalid gslb rule id specified");
             }
-            _accountMgr.checkAccess(caller, org.apache.cloudstack.acl.SecurityChecker.AccessType.ListEntry, false, gslbRule);
+            _accountMgr.checkAccess(caller, org.apache.cloudstack.acl.SecurityChecker.AccessType.UseEntry, false, gslbRule);
 
             response.add(gslbRule);
             return response;

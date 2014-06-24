@@ -32,7 +32,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.network.as.AutoScalePolicy;
 
-@APICommand(name = "listAutoScalePolicies", description = "Lists autoscale policies.", responseObject = AutoScalePolicyResponse.class)
+@APICommand(name = "listAutoScalePolicies", description = "Lists autoscale policies.", responseObject = AutoScalePolicyResponse.class, entityType = {AutoScalePolicy.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAutoScalePoliciesCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAutoScalePoliciesCmd.class.getName());
 
@@ -99,7 +100,7 @@ public class ListAutoScalePoliciesCmd extends BaseListAccountResourcesCmd {
         }
         response.setResponses(responses);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
 }

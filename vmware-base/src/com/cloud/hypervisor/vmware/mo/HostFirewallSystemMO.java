@@ -25,6 +25,7 @@ import com.vmware.vim25.ManagedObjectReference;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class HostFirewallSystemMO extends BaseMO {
+    @SuppressWarnings("unused")
     private static final Logger s_logger = Logger.getLogger(HostFirewallSystemMO.class);
 
     public HostFirewallSystemMO(VmwareContext context, ManagedObjectReference morFirewallSystem) {

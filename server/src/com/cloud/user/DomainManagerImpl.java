@@ -32,6 +32,8 @@ import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.region.RegionManager;
 
 import com.cloud.configuration.Resource.ResourceOwnerType;
@@ -105,6 +107,9 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     @Inject
     private NetworkDomainDao _networkDomainDao;
 
+    @Inject
+    MessageBus _messageBus;
+
     @Override
     public Domain getDomain(long domainId) {
         return _domainDao.findById(domainId);
@@ -175,8 +180,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
-                    "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                        + "and the hyphen ('-'); can't start or end with \"-\"");
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                                + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
 
@@ -198,12 +203,15 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             @Override
             public DomainVO doInTransaction(TransactionStatus status) {
                 DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, domainUUIDFinal));
-                _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
+        _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
                 return domain;
             }
         });
 
         CallContext.current().putContextParameter(Domain.class, domain.getUuid());
+
+        _messageBus.publish(_name, MESSAGE_ADD_DOMAIN_EVENT, PublishScope.LOCAL, domain.getId());
+
         return domain;
     }
 
@@ -452,8 +460,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             }
             _accountMgr.checkAccess(caller, domain);
         } else {
-            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                domainId = caller.getDomainId();
+            if (!_accountMgr.isRootAdmin(caller.getId())) {
+            domainId = caller.getDomainId();
             }
             if (listAll) {
                 isRecursive = true;
@@ -605,30 +613,30 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         if (networkDomain != null && !networkDomain.isEmpty()) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
-                    "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                        + "and the hyphen ('-'); can't start or end with \"-\"");
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                                + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                if (domainName != null) {
-                    String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
-                    updateDomainChildren(domain, updatedDomainPath);
-                    domain.setName(domainName);
-                    domain.setPath(updatedDomainPath);
-                }
+        if (domainName != null) {
+            String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
+            updateDomainChildren(domain, updatedDomainPath);
+            domain.setName(domainName);
+            domain.setPath(updatedDomainPath);
+        }
 
-                if (networkDomain != null) {
-                    if (networkDomain.isEmpty()) {
-                        domain.setNetworkDomain(null);
-                    } else {
-                        domain.setNetworkDomain(networkDomain);
-                    }
-                }
-                _domainDao.update(domainId, domain);
-                CallContext.current().putContextParameter(Domain.class, domain.getUuid());
+        if (networkDomain != null) {
+            if (networkDomain.isEmpty()) {
+                domain.setNetworkDomain(null);
+            } else {
+                domain.setNetworkDomain(networkDomain);
+            }
+        }
+        _domainDao.update(domainId, domain);
+        CallContext.current().putContextParameter(Domain.class, domain.getUuid());
             }
         });
 

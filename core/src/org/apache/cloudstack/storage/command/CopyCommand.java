@@ -78,4 +78,8 @@ public final class CopyCommand extends Command implements StorageSubSystemComman
         return options;
     }
 
+    @Override
+    public void setExecuteInSequence(boolean inSeq) {
+        this.executeInSequence = inSeq;
+    }
 }

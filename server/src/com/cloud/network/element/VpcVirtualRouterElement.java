@@ -36,6 +36,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Network.State;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
@@ -179,7 +180,11 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         DomainRouterVO router = routers.get(0);
         //Add router to guest network if needed
         if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
-            if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, false)) {
+            Map<VirtualMachineProfile.Param, Object> paramsForRouter = new HashMap<VirtualMachineProfile.Param, Object>(1);
+            if (network.getState() == State.Setup) {
+                paramsForRouter.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
+            }
+            if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, false, paramsForRouter)) {
                 throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
             } else {
                 s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
@@ -220,7 +225,12 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             DomainRouterVO router = routers.get(0);
             //Add router to guest network if needed
             if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
-                if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, false)) {
+                Map<VirtualMachineProfile.Param, Object> paramsForRouter = new HashMap<VirtualMachineProfile.Param, Object>(1);
+                // need to reprogram guest network if it comes in a setup state
+                if (network.getState() == State.Setup) {
+                    paramsForRouter.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
+                }
+                if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, false, paramsForRouter)) {
                     throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
                 } else {
                     s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);

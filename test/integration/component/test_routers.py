@@ -21,9 +21,9 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 
 #Import System modules
 import time
@@ -98,11 +98,13 @@ class TestRouterServices(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestRouterServices, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRouterServices, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -167,7 +169,7 @@ class TestRouterServices(cloudstackTestCase):
         self.cleanup = []
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_01_AdvancedZoneRouterServices(self):
         """Test advanced zone router services
         """
@@ -318,7 +320,7 @@ class TestRouterServices(cloudstackTestCase):
         return
 
     @attr(configuration = "network.gc")
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_02_NetworkGarbageCollection(self):
         """Test network garbage collection
         """
@@ -496,7 +498,7 @@ class TestRouterServices(cloudstackTestCase):
         self.cleanup.append(self.vm_2)
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_03_RouterStartOnVmDeploy(self):
         """Test router start on VM deploy
         """
@@ -641,11 +643,13 @@ class TestRouterStopCreatePF(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestRouterStopCreatePF, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRouterStopCreatePF, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
@@ -703,7 +707,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         self.cleanup = []
         return
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "provisioning"])
     def test_01_RouterStopCreatePF(self):
         """Test router stop create port forwarding
         """
@@ -853,11 +857,13 @@ class TestRouterStopCreateLB(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestRouterStopCreateLB, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRouterStopCreateLB, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
@@ -914,7 +920,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
         self.cleanup = []
         return
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "provisioning"])
     def test_01_RouterStopCreateLB(self):
         """Test router stop create Load balancing
         """
@@ -1065,11 +1071,13 @@ class TestRouterStopCreateFW(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestRouterStopCreateFW, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRouterStopCreateFW, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
@@ -1122,10 +1130,11 @@ class TestRouterStopCreateFW(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.cleanup = []
         return
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "provisioning"])
     def test_01_RouterStopCreateFW(self):
         """Test router stop create Firewall rule
         """
@@ -1254,30 +1263,30 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                     str(self.services["fw_rule"]["endport"]),
                     "Check end port of firewall rule"
                     )
-        hosts = list_hosts(
-                           self.apiclient,
-                           id=router.hostid,
-                           )
-        self.assertEqual(
-                        isinstance(hosts, list),
-                        True,
-                        "Check for list hosts response return valid data"
-                        )
-        host = hosts[0]
-        host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
-
         # For DNS and DHCP check 'dnsmasq' process status
-        if self.apiclient.hypervisor.lower() == 'vmware':
-               result = get_process_status(
+        if (self.hypervisor.lower() == 'vmware'
+                         or self.hypervisor.lower() == 'hyperv'):
+            result = get_process_status(
                                self.apiclient.connection.mgtSvr,
                                22,
                                self.apiclient.connection.user,
                                self.apiclient.connection.passwd,
                                router.linklocalip,
                                'iptables -t nat -L',
-                                hypervisor=self.apiclient.hypervisor
+                                hypervisor=self.hypervisor
                                )
         else:
+            hosts = list_hosts(
+                        self.apiclient,
+                        id=router.hostid,
+                        )
+            self.assertEqual(
+                        isinstance(hosts, list),
+                        True,
+                        "Check for list hosts response return valid data"
+                        )
+            host = hosts[0]
+            host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
             try:
                 result = get_process_status(
                     host.ipaddress,

@@ -19,10 +19,10 @@
 
   <groupId>org.apache.cloudstack</groupId>
   <artifactId>cloudstack</artifactId>
-  <version>4.4.0-SNAPSHOT</version>
+  <version>4.5.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
-  <description>Apache CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
+  <description>Apache CloudStack is an IaaS (“Infrastructure as a Service”) cloud orchestration platform.</description>
   <url>http://www.cloudstack.org</url>
   <scm>
     <connection>scm:git:https://git-wip-us.apache.org/repos/asf/cloudstack.git</connection>
@@ -34,8 +34,9 @@
   </issueManagement>
 
   <properties>
-    <cs.jdk.version>1.6</cs.jdk.version>
+    <cs.jdk.version>1.7</cs.jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <cs.log4j.version>1.2.16</cs.log4j.version>
     <cs.log4j.extras.version>1.1</cs.log4j.extras.version>
@@ -48,16 +49,18 @@
     <cs.logging.version>1.1.1</cs.logging.version>
     <cs.discovery.version>0.5</cs.discovery.version>
     <cs.ejb.version>3.0</cs.ejb.version>
-    <cs.junit.version>4.10</cs.junit.version>
+    <!-- do not forget to also upgrade hamcrest library with junit -->
+    <cs.junit.version>4.11</cs.junit.version>
+    <cs.hamcrest.version>1.3</cs.hamcrest.version>
     <cs.bcprov.version>1.46</cs.bcprov.version>
     <cs.jsch.version>0.1.42</cs.jsch.version>
     <cs.jpa.version>2.0.0</cs.jpa.version>
     <cs.jasypt.version>1.9.0</cs.jasypt.version>
     <cs.trilead.version>build213-svnkit-1.3-patch</cs.trilead.version>
     <cs.ehcache.version>2.6.6</cs.ehcache.version>
-    <cs.gson.version>1.7.1</cs.gson.version>
+    <cs.gson.version>1.7.2</cs.gson.version>
     <cs.guava.version>14.0-rc1</cs.guava.version>
-    <cs.xapi.version>5.6.100-1-SNAPSHOT</cs.xapi.version>
+    <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
     <cs.httpclient.version>3.1</cs.httpclient.version>
     <cs.httpcore.version>4.2.1</cs.httpcore.version>
     <cs.mysql.version>5.1.21</cs.mysql.version>
@@ -75,6 +78,7 @@
     <cs.vmware.api.version>5.1</cs.vmware.api.version>
     <org.springframework.version>3.2.4.RELEASE</org.springframework.version>
     <cs.mockito.version>1.9.5</cs.mockito.version>
+    <cs.powermock.version>1.5.3</cs.powermock.version>
     <cs.aws.sdk.version>1.3.22</cs.aws.sdk.version>
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-io.version>1.4</cs.commons-io.version>
@@ -82,11 +86,14 @@
     <cs.java-ipv6.version>0.10</cs.java-ipv6.version>
     <cs.replace.properties>build/replace.properties</cs.replace.properties>
     <cs.libvirt-java.version>0.5.1</cs.libvirt-java.version>
-    <cs.rados-java.version>0.1.3</cs.rados-java.version>
+    <cs.rados-java.version>0.1.4</cs.rados-java.version>
     <cs.target.dir>target</cs.target.dir>
     <cs.daemon.version>1.0.10</cs.daemon.version>
     <cs.jna.version>4.0.0</cs.jna.version>
     <cs.checkstyle.version>2.11</cs.checkstyle.version>
+    <cs.mycila.license.version>2.5</cs.mycila.license.version>
+    <cs.findbugs.version>2.5.3</cs.findbugs.version>
+    <cs.javadoc.version>2.9.1</cs.javadoc.version>
   </properties>
 
   <distributionManagement>
@@ -167,11 +174,9 @@
     <module>server</module>
     <module>usage</module>
     <module>utils</module>
-    <module>deps/XenServerJava</module>
     <module>engine</module>
     <module>plugins</module>
     <module>framework</module>
-    <module>test</module>
     <module>client</module>
     <module>services</module>
     <module>maven-standard</module>
@@ -410,10 +415,27 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-library</artifactId>
+      <version>${cs.hamcrest.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
       <version>1.9.5</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+	  <groupId>org.powermock</groupId>
+	  <artifactId>powermock-module-junit4</artifactId>
+	  <version>${cs.powermock.version}</version>
+    </dependency>
+    <dependency>
+	  <groupId>org.powermock</groupId>
+	  <artifactId>powermock-api-mockito</artifactId>
+	  <version>${cs.powermock.version}</version>
+	  <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
@@ -448,40 +470,110 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>cloudstack-checkstyle</id>
+              <phase>none</phase>
+              <inherited>false</inherited>
+            </execution>
+          </executions>
       </plugin>
-    </plugins>
-    <pluginManagement>
-      <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>${cs.checkstyle.version}</version>
-        <dependencies>
-          <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>checkstyle</artifactId>
-            <version>${project.version}</version>
-          </dependency>
-        </dependencies>
-
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
         <executions>
           <execution>
-            <phase>validate</phase>
+            <id>cloudstack-checklicence</id>
+            <phase>none</phase>
             <goals>
               <goal>check</goal>
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <failsOnError>true</failsOnError>
-          <configLocation>cloud-style.xml</configLocation>
-          <consoleOutput>true</consoleOutput>
-          <includeTestSourceDirectory>true</includeTestSourceDirectory>
-          <sourceDirectory>${project.basedir}</sourceDirectory>
-          <includes>**\/*.java</includes>
-          <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/awsapi\/,**\/XenServerJava\/,**\/apidoc\/</excludes>
-        </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>cloudstack-findbugs</id>
+            <phase>none</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>3.3</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${cs.checkstyle.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.cloudstack</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>${project.version}</version>
+            </dependency>
+          </dependencies>
+          <executions>
+            <execution>
+              <id>cloudstack-checkstyle</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <failsOnError>true</failsOnError>
+            <configLocation>cloud-style.xml</configLocation>
+            <consoleOutput>true</consoleOutput>
+            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+            <sourceDirectory>${project.basedir}</sourceDirectory>
+            <includes>**\/*.java</includes>
+            <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/awsapi\/,**\/apidoc\/</excludes>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>com.mycila</groupId>
+          <artifactId>license-maven-plugin</artifactId>
+          <version>${cs.mycila.license.version}</version>
+          <executions>
+            <execution>
+              <id>cloudstack-checklicence</id>
+              <phase>process-classes</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <strictCheck>true</strictCheck>
+            <aggregate>true</aggregate>
+            <header>LICENSE.header</header>
+            <mapping>
+                  <xml>XML_STYLE</xml>
+                  <java>DOUBLESLASH_STYLE</java>
+                  <clj>SEMICOLON_STYLE</clj>
+            </mapping>
+            <useDefaultExcludes>false</useDefaultExcludes>
+            <excludes>
+              <exclude>**/target/**</exclude>
+              <exclude>.settings/**</exclude>
+              <exclude>.checkstyle</exclude>
+              <exclude>.project</exclude>
+              <exclude>.classpath</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <configuration>
@@ -562,11 +654,12 @@
                 </pluginExecution>
                 <pluginExecution>
                   <pluginExecutionFilter>
-                    <groupId>com.mycila.maven-license-plugin</groupId>
-                    <artifactId>maven-license-plugin</artifactId>
-                    <versionRange>[1.9.0,)</versionRange>
+                    <groupId>com.mycila</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <versionRange>[2.5,)</versionRange>
                     <goals>
                       <goal>format</goal>
+                      <goal>check</goal>
                     </goals>
                   </pluginExecutionFilter>
                   <action>
@@ -640,9 +733,6 @@
               <exclude>debian/control</exclude>
               <exclude>debian/dirs</exclude>
               <exclude>debian/rules</exclude>
-              <exclude>deps/XenServerJava/src/com/xensource/xenapi/*.java</exclude>
-              <exclude>deps/XenServerJava/BSD</exclude>
-              <exclude>deps/XenServerJava/Makefile</exclude>
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/ServerResource.sln</exclude>
               <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/packages/**</exclude>
@@ -652,6 +742,7 @@
               <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**/packages.config</exclude>
               <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**/App.config</exclude>
               <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**/*.csproj</exclude>
+              <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**/*.settings</exclude>
               <exclude>plugins/hypervisors/hyperv/conf/agent.properties</exclude>
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
               <exclude>services/console-proxy/server/conf/agent.properties</exclude>
@@ -727,6 +818,7 @@
               <exclude>tools/ngui/static/bootstrap/*</exclude>
               <exclude>tools/ngui/static/js/lib/*</exclude>
               <exclude>**/.checkstyle</exclude>
+              <exclude>scripts/installer/windows/acs_license.rtf</exclude>
             </excludes>
           </configuration>
         </plugin>
@@ -787,9 +879,95 @@
             </formats>
           </configuration>
         </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>findbugs-maven-plugin</artifactId>
+          <version>${cs.findbugs.version}</version>
+          <configuration>
+            <effort>Max</effort>
+            <threshold>High</threshold>
+            <xmlOutput>true</xmlOutput>
+            <failOnError>false</failOnError>
+            <maxHeap>2048</maxHeap>
+            <excludeFilterFile>${basedir}/findbugsExcludeFilter.xml</excludeFilterFile>
+          </configuration>
+          <executions>
+            <execution>
+              <id>cloudstack-findbugs</id>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-pmd-plugin</artifactId>
+          <version>3.1</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.cloudstack</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>${project.version}</version>
+            </dependency>
+          </dependencies>
+          <configuration>
+            <failOnViolation>false</failOnViolation>
+           <rulesets>
+             <ruleset>cloud-pmd.xml</ruleset>
+           </rulesets>
+          </configuration>
+          <executions>
+            <execution>
+              <id>cloudstack-pmd</id>
+              <goals>
+                <goal>check</goal>
+                <goal>cpd-check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <version>${cs.findbugs.version}</version>
+        <configuration>
+          <threshold>Low</threshold><!-- High|Normal|Low|Exp|Ignore -->
+          <effort>Default</effort><!-- Min|Default|Max -->
+          <excludeFilterFile>${basedir}/findbugsExcludeFilter.xml</excludeFilterFile>
+        </configuration>
+      </plugin>
+      <plugin>
+         <groupId>org.apache.maven.plugins</groupId>
+         <artifactId>maven-javadoc-plugin</artifactId>
+         <version>${cs.javadoc.version}</version>
+         <configuration>
+           <minmemory>128m</minmemory>
+           <maxmemory>1g</maxmemory>
+         </configuration>
+      </plugin>
+      <plugin>
+         <groupId>org.apache.maven.plugins</groupId>
+         <artifactId>maven-project-info-reports-plugin</artifactId>
+         <version>2.7</version>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>cobertura-maven-plugin</artifactId>
+        <version>2.6</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>3.3</version>
+      </plugin>
+    </plugins>
+  </reporting>
   <profiles>
     <profile>
       <id>awsapi</id>
@@ -820,6 +998,7 @@
         <marvin.config>tools/devcloud/devcloud.cfg</marvin.config>
       </properties>
       <modules>
+        <module>test</module>
         <module>developer</module>
         <module>tools</module>
       </modules>
@@ -842,6 +1021,53 @@
       </activation>
       <modules>
         <module>vmware-base</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>disablecheckstyle</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>cloudstack-checkstyle</id>
+                  <phase>none</phase>
+                  <inherited>true</inherited>
+                </execution>
+              </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>  
+    <profile>
+      <id>enablefindbugs</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>findbugs-maven-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>cloudstack-findbugs</id>
+                  <phase>process-classes</phase>
+                  <inherited>true</inherited>
+                </execution>
+              </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>  
+    <profile>
+      <id>buildw</id>
+      <activation>
+        <property>
+          <name>buildw</name>
+        </property>
+      </activation>
+      <modules>
+        <module>tools/wix-cloudstack-maven-plugin</module>
       </modules>
     </profile>
   </profiles>

@@ -23,6 +23,7 @@ public class NicTO extends NetworkTO {
     Integer networkRateMbps;
     Integer networkRateMulticastMbps;
     boolean defaultNic;
+    boolean pxeDisable;
     String uuid;
     List<String> nicSecIps;
 
@@ -58,6 +59,14 @@ public class NicTO extends NetworkTO {
         this.defaultNic = defaultNic;
     }
 
+    public void setPxeDisable(boolean pxeDisable) {
+        this.pxeDisable = pxeDisable;
+    }
+
+    public boolean getPxeDisable() {
+        return pxeDisable;
+    }
+
     @Override
     public String getUuid() {
         return uuid;
@@ -79,5 +88,13 @@ public class NicTO extends NetworkTO {
 
     public List<String> getNicSecIps() {
         return nicSecIps;
+    }
+
+    public String getNetworkUuid() {
+        return super.getUuid();
+    }
+
+    public void setNetworkUuid(String uuid) {
+        super.setUuid(uuid);
     }
 }

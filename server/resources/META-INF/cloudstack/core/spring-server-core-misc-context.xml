@@ -50,6 +50,20 @@
 
     <bean id="apiDispatcher" class="com.cloud.api.ApiDispatcher" />
 
+    <bean id="dispatchChainFactory" class="com.cloud.api.dispatch.DispatchChainFactory" />
+
+    <bean id="paramProcessWorker" class="com.cloud.api.dispatch.ParamProcessWorker">
+        <property name="secChecker" value="#{securityCheckersRegistry.registered}" />
+    </bean>
+
+    <bean id="paramUnpackWorker" class="com.cloud.api.dispatch.ParamUnpackWorker" />
+
+    <bean id="paramGenericValidationWorker" class="com.cloud.api.dispatch.ParamGenericValidationWorker" />
+
+    <bean id="specificCmdValidationWorker" class="com.cloud.api.dispatch.SpecificCmdValidationWorker" />
+
+    <bean id="commandCreationWorker" class="com.cloud.api.dispatch.CommandCreationWorker" />
+
     <bean id="apiResponseHelper" class="com.cloud.api.ApiResponseHelper" />
 
     <bean id="apiServer" class="com.cloud.api.ApiServer">

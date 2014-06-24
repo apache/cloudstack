@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.user.securitygroup;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -32,8 +34,10 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.network.security.SecurityGroup;
 
-@APICommand(name = "deleteSecurityGroup", description = "Deletes security group", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteSecurityGroup", description = "Deletes security group", responseObject = SuccessResponse.class, entityType = {SecurityGroup.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSecurityGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSecurityGroupCmd.class.getName());
     private static final String s_name = "deletesecuritygroupresponse";
@@ -54,10 +58,8 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "the project of the security group", entityType = ProjectResponse.class)
     private Long projectId;
 
-    @Parameter(name = ApiConstants.ID,
-               type = CommandType.UUID,
-               description = "The ID of the security group. Mutually exclusive with name parameter",
-               entityType = SecurityGroupResponse.class)
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, description="The ID of the security group. Mutually exclusive with name parameter", entityType=SecurityGroupResponse.class)
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The ID of the security group. Mutually exclusive with id parameter")
@@ -109,7 +111,7 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -123,7 +125,7 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
             boolean result = _securityGroupService.deleteSecurityGroup(this);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete security group");
             }

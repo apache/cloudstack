@@ -20,10 +20,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -46,6 +45,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -67,6 +67,7 @@ import com.cloud.utils.storage.encoding.EncodingType;
 
 public class PrimaryDataStoreImpl implements PrimaryDataStore {
     private static final Logger s_logger = Logger.getLogger(PrimaryDataStoreImpl.class);
+
     protected PrimaryDataStoreDriver driver;
     protected StoragePoolVO pdsv;
     @Inject
@@ -86,6 +87,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Inject
     private VolumeDao volumeDao;
+    private Map<String, String> _details;
 
     public PrimaryDataStoreImpl() {
 
@@ -136,15 +138,24 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     }
 
     @Override
+    public void setDetails(Map<String, String> details) {
+        _details = details;
+    }
+
+    @Override
+    public Map<String, String> getDetails() {
+        return _details;
+    }
+
+    @Override
     public String getUri() {
-        String path = pdsv.getPath();
-        path.replaceFirst("/*", "");
+        String path = pdsv.getPath().replaceFirst("/*", "");
         StringBuilder builder = new StringBuilder();
         builder.append(pdsv.getPoolType());
         builder.append("://");
         builder.append(pdsv.getHostAddress());
         builder.append(File.separator);
-        builder.append(pdsv.getPath());
+        builder.append(path);
         builder.append(File.separator);
         builder.append("?" + EncodingType.ROLE + "=" + getRole());
         builder.append("&" + EncodingType.STOREUUID + "=" + pdsv.getUuid());
@@ -224,9 +235,14 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     }
 
     @Override
+    public boolean isManaged() {
+        return pdsv.isManaged();
+    }
+
+    @Override
     public DataObject create(DataObject obj) {
         // create template on primary storage
-        if (obj.getType() == DataObjectType.TEMPLATE) {
+        if (obj.getType() == DataObjectType.TEMPLATE && !isManaged()) {
             try {
                 String templateIdPoolIdString = "templateId:" + obj.getId() + "poolId:" + getId();
                 VMTemplateStoragePoolVO templateStoragePoolRef;
@@ -372,6 +388,11 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     public boolean isInMaintenance() {
         return getStatus() == StoragePoolStatus.PrepareForMaintenance || getStatus() == StoragePoolStatus.Maintenance ||
             getStatus() == StoragePoolStatus.ErrorInMaintenance || getRemoved() != null;
+    }
+
+    @Override
+    public HypervisorType getHypervisor() {
+       return pdsv.getHypervisor();
     }
 
     @Override

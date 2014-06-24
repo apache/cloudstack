@@ -20,7 +20,7 @@
 from nose.plugins.attrib import             attr
 from marvin.cloudstackTestCase import       cloudstackTestCase, unittest
 
-from marvin.integration.lib.base import     (Snapshot,
+from marvin.lib.base import     (Snapshot,
                                              Template,
                                              VirtualMachine,
                                              Account,
@@ -28,7 +28,7 @@ from marvin.integration.lib.base import     (Snapshot,
                                              DiskOffering,
                                              Volume)
 
-from marvin.integration.lib.common import   (get_domain,
+from marvin.lib.common import   (get_domain,
                                              get_zone,
                                              get_template,
                                              list_events,
@@ -38,7 +38,7 @@ from marvin.integration.lib.common import   (get_domain,
                                              list_virtual_machines,
                                              )
 
-from marvin.integration.lib.utils import    (cleanup_resources,
+from marvin.lib.utils import    (cleanup_resources,
                                              format_volume_to_ext3,
                                              random_gen,
                                              is_snapshot_on_nfs,
@@ -158,11 +158,13 @@ class TestSnapshots(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestSnapshots, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestSnapshots, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -229,6 +231,7 @@ class TestSnapshots(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         return
@@ -242,7 +245,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags=["advanced", "advancedns", "smoke", "provisioning"])
     def test_02_snapshot_data_disk(self):
         """Test Snapshot Data Disk
         """
@@ -289,7 +292,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg", "provisioning"])
     def test_01_volume_from_snapshot(self):
         """Test Creating snapshot from volume having spaces in name(KVM)
         """
@@ -534,7 +537,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags=["advanced", "advancedns", "smoke", "provisioning"])
     def test_04_delete_snapshot(self):
         """Test Delete Snapshot
         """
@@ -593,7 +596,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg", "provisioning"])
     def test_03_snapshot_detachedDisk(self):
         """Test snapshot from detached disk
         """
@@ -719,7 +722,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke", "xen"])
+    @attr(tags=["advanced", "advancedns", "smoke", "xen", "provisioning"])
     def test_07_template_from_snapshot(self):
         """Create Template from snapshot
         """
@@ -910,11 +913,13 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestCreateVMSnapshotTemplate, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestCreateVMSnapshotTemplate, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
@@ -956,6 +961,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         return
@@ -969,7 +975,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "provisioning"])
     def test_01_createVM_snapshotTemplate(self):
         """Test create VM, Snapshot and Template
         """
@@ -1108,11 +1114,14 @@ class TestSnapshotEvents(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestSnapshotEvents, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestSnapshotEvents, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -1163,6 +1172,7 @@ class TestSnapshotEvents(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         return
@@ -1176,7 +1186,7 @@ class TestSnapshotEvents(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_05_snapshot_events(self):
         """Test snapshot events
         """

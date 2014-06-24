@@ -18,8 +18,8 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
+import java.util.Set;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.network.Network;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {Network.class, ProjectAccount.class})
@@ -209,12 +210,20 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private String ip6Cidr;
 
     @SerializedName(ApiConstants.DISPLAY_NETWORK)
-    @Param(description = "an optional field, whether to the display the network to the end user or not.")
+    @Param(description = "an optional field, whether to the display the network to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayNetwork;
 
     @SerializedName(ApiConstants.ACL_ID)
     @Param(description = "ACL Id associated with the VPC network")
     private String aclId;
+
+    @SerializedName(ApiConstants.STRECHED_L2_SUBNET)
+    @Param(description = "true if network can span multiple zones", since = "4.4")
+    private Boolean strechedL2Subnet;
+
+    @SerializedName(ApiConstants.NETWORK_SPANNED_ZONES)
+    @Param(description = "If a network is enabled for 'streched l2 subnet' then represents zones on which network currently spans", since = "4.4")
+    private Set<String> networkSpannedZones;
 
     public Boolean getDisplayNetwork() {
         return displayNetwork;
@@ -411,5 +420,13 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setAclId(String aclId) {
         this.aclId = aclId;
+    }
+
+    public void setStrechedL2Subnet(Boolean strechedL2Subnet) {
+        this.strechedL2Subnet = strechedL2Subnet;
+    }
+
+    public void setNetworkSpannedZones(Set<String> networkSpannedZones) {
+        this.networkSpannedZones = networkSpannedZones;
     }
 }

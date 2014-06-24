@@ -335,7 +335,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             if (storagePool == null) {
                 storagePool = new MockStoragePoolVO();
                 storagePool.setUuid(sf.getUuid());
-                storagePool.setMountPoint("/mnt/" + sf.getUuid() + File.separator);
+                storagePool.setMountPoint("/mnt/" + sf.getUuid());
 
                 Long size = DEFAULT_HOST_STORAGE_SIZE;
                 String path = sf.getPath();
@@ -362,7 +362,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
-        return new ModifyStoragePoolAnswer(cmd, storagePool.getCapacity(), 0, new HashMap<String, TemplateProp>());
+        return new ModifyStoragePoolAnswer(cmd, storagePool.getCapacity(), storagePool.getCapacity(), new HashMap<String, TemplateProp>());
     }
 
     @Override
@@ -376,7 +376,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             if (storagePool == null) {
                 storagePool = new MockStoragePoolVO();
                 storagePool.setUuid(sf.getUuid());
-                storagePool.setMountPoint("/mnt/" + sf.getUuid() + File.separator);
+                storagePool.setMountPoint("/mnt/" + sf.getUuid());
 
                 Long size = DEFAULT_HOST_STORAGE_SIZE;
                 String path = sf.getPath();
@@ -945,7 +945,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             String uuid = UUID.randomUUID().toString();
             storagePool = new MockStoragePoolVO();
             storagePool.setUuid(uuid);
-            storagePool.setMountPoint("/mnt/" + uuid + File.separator);
+            storagePool.setMountPoint("/mnt/" + uuid);
             storagePool.setCapacity(DEFAULT_HOST_STORAGE_SIZE);
             storagePool.setHostGuid(hostGuid);
             storagePool.setStorageType(StoragePoolType.Filesystem);
@@ -964,7 +964,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             }
         }
         return new StoragePoolInfo(storagePool.getUuid(), host.getPrivateIpAddress(), storagePool.getMountPoint(), storagePool.getMountPoint(),
-            storagePool.getPoolType(), storagePool.getCapacity(), 0);
+            storagePool.getPoolType(), storagePool.getCapacity(), storagePool.getCapacity());
     }
 
     @Override
@@ -1004,7 +1004,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             String uuid = UUID.randomUUID().toString();
             storagePool = new MockStoragePoolVO();
             storagePool.setUuid(uuid);
-            storagePool.setMountPoint("/mnt/" + uuid + File.separator);
+            storagePool.setMountPoint("/mnt/" + uuid);
             storagePool.setCapacity(storageSize);
             storagePool.setHostGuid(hostGuid);
             storagePool.setStorageType(StoragePoolType.Filesystem);

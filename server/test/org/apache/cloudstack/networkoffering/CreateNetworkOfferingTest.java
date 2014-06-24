@@ -26,6 +26,10 @@ import javax.inject.Inject;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,10 +38,6 @@ import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.event.dao.UsageEventDao;
@@ -89,6 +89,9 @@ public class CreateNetworkOfferingTest extends TestCase {
 
     @Inject
     UsageEventDetailsDao usageEventDetailsDao;
+
+    @Inject
+    UserIpAddressDetailsDao userIpAddressDetailsDao;
 
     @Override
     @Before

@@ -34,10 +34,13 @@ import javax.persistence.TableGenerator;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.cluster.agentlb.HostTransferMapVO;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.gpu.dao.VGPUTypesDao;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostTagVO;
@@ -125,6 +128,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Inject
     protected HostDetailsDao _detailsDao;
+    @Inject
+    protected HostGpuGroupsDao _hostGpuGroupsDao;
+    @Inject
+    protected VGPUTypesDao _vgpuTypesDao;
     @Inject
     protected HostTagsDao _hostTagsDao;
     @Inject
@@ -775,6 +782,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         _hostTagsDao.persist(host.getId(), hostTags);
     }
 
+    protected void saveGpuRecords(HostVO host) {
+        HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = host.getGpuGroupDetails();
+        if (groupDetails != null) {
+            // Create/Update GPU group entries
+            _hostGpuGroupsDao.persist(host.getId(), new ArrayList<String>(groupDetails.keySet()));
+            // Create/Update VGPU types entries
+            _vgpuTypesDao.persist(host.getId(), groupDetails);
+        }
+    }
+
     @Override
     @DB
     public HostVO persist(HostVO host) {
@@ -797,6 +814,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         loadDetails(dbHost);
         saveHostTags(host);
         loadHostTags(dbHost);
+        saveGpuRecords(host);
 
         txn.commit();
 
@@ -816,6 +834,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         saveDetails(host);
         saveHostTags(host);
+        saveGpuRecords(host);
 
         txn.commit();
 
@@ -852,7 +871,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 l.add(info);
             }
         } catch (SQLException e) {
-        } catch (Throwable e) {
+            s_logger.debug("SQLException caught", e);
         }
         return l;
     }
@@ -881,7 +900,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public boolean updateState(Status oldStatus, Event event, Status newStatus, Host vo, Object data) {
-        HostVO host = findById(vo.getId());
+        // lock target row from beginning to avoid lock-promotion caused deadlock
+        HostVO host = lockRow(vo.getId(), true);
         if (host == null) {
             if (event == Event.Remove && newStatus == Status.Removed) {
                 host = findByIdIncludingRemoved(vo.getId());
@@ -935,46 +955,49 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         int result = update(ub, sc, null);
         assert result <= 1 : "How can this update " + result + " rows? ";
 
-        if (status_logger.isDebugEnabled() && result == 0) {
+        if (result == 0) {
             HostVO ho = findById(host.getId());
             assert ho != null : "How how how? : " + host.getId();
 
-            StringBuilder str = new StringBuilder("Unable to update host for event:").append(event.toString());
-            str.append(". Name=").append(host.getName());
-            str.append("; New=[status=")
-                .append(newStatus.toString())
-                .append(":msid=")
-                .append(newStatus.lostConnection() ? "null" : host.getManagementServerId())
-                .append(":lastpinged=")
-                .append(host.getLastPinged())
-                .append("]");
-            str.append("; Old=[status=")
-                .append(oldStatus.toString())
-                .append(":msid=")
-                .append(host.getManagementServerId())
-                .append(":lastpinged=")
-                .append(oldPingTime)
-                .append("]");
-            str.append("; DB=[status=")
-                .append(vo.getStatus().toString())
-                .append(":msid=")
-                .append(vo.getManagementServerId())
-                .append(":lastpinged=")
-                .append(vo.getLastPinged())
-                .append(":old update count=")
-                .append(oldUpdateCount)
-                .append("]");
-            status_logger.debug(str.toString());
-        } else {
-            StringBuilder msg = new StringBuilder("Agent status update: [");
-            msg.append("id = " + host.getId());
-            msg.append("; name = " + host.getName());
-            msg.append("; old status = " + oldStatus);
-            msg.append("; event = " + event);
-            msg.append("; new status = " + newStatus);
-            msg.append("; old update count = " + oldUpdateCount);
-            msg.append("; new update count = " + newUpdateCount + "]");
-            status_logger.debug(msg.toString());
+            if (status_logger.isDebugEnabled()) {
+
+                StringBuilder str = new StringBuilder("Unable to update host for event:").append(event.toString());
+                str.append(". Name=").append(host.getName());
+                str.append("; New=[status=")
+                        .append(newStatus.toString())
+                        .append(":msid=")
+                        .append(newStatus.lostConnection() ? "null" : host.getManagementServerId())
+                        .append(":lastpinged=")
+                        .append(host.getLastPinged())
+                        .append("]");
+                str.append("; Old=[status=").append(oldStatus.toString()).append(":msid=").append(host.getManagementServerId()).append(":lastpinged=").append(oldPingTime)
+                        .append("]");
+                str.append("; DB=[status=")
+                        .append(vo.getStatus().toString())
+                        .append(":msid=")
+                        .append(vo.getManagementServerId())
+                        .append(":lastpinged=")
+                        .append(vo.getLastPinged())
+                        .append(":old update count=")
+                        .append(oldUpdateCount)
+                        .append("]");
+                status_logger.debug(str.toString());
+            } else {
+                StringBuilder msg = new StringBuilder("Agent status update: [");
+                msg.append("id = " + host.getId());
+                msg.append("; name = " + host.getName());
+                msg.append("; old status = " + oldStatus);
+                msg.append("; event = " + event);
+                msg.append("; new status = " + newStatus);
+                msg.append("; old update count = " + oldUpdateCount);
+                msg.append("; new update count = " + newUpdateCount + "]");
+                status_logger.debug(msg.toString());
+            }
+
+            if (ho.getState() == newStatus) {
+                status_logger.debug("Host " + ho.getName() + " state has already been updated to " + newStatus);
+                return true;
+            }
         }
 
         return result > 0;

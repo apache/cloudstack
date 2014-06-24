@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.agent.api.routing;
 
+import com.cloud.agent.api.to.FirewallRuleTO;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import com.cloud.agent.api.to.FirewallRuleTO;
 
 /**
  *
@@ -91,5 +91,10 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
         result[0] = toAdd.toArray(new String[toAdd.size()]);
 
         return result;
+    }
+
+    @Override
+    public int getAnswersCount() {
+        return rules.length;
     }
 }

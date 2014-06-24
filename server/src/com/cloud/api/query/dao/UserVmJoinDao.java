@@ -20,6 +20,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -29,9 +30,9 @@ import com.cloud.utils.db.GenericDao;
 
 public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
 
-    UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller);
+    UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller);
 
-    UserVmResponse setUserVmResponse(UserVmResponse userVmData, UserVmJoinVO uvo);
+    UserVmResponse setUserVmResponse(ResponseView view, UserVmResponse userVmData, UserVmJoinVO uvo);
 
     List<UserVmJoinVO> newUserVmView(UserVm... userVms);
 

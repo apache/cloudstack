@@ -32,7 +32,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 
-@APICommand(name = "reconnectHost", description = "Reconnects a host.", responseObject = HostResponse.class)
+@APICommand(name = "reconnectHost", description = "Reconnects a host.", responseObject = HostResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReconnectHostCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReconnectHostCmd.class.getName());
 

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.vm.VirtualMachine;
 
 public class StopCommand extends RebootCommand {
@@ -23,26 +24,31 @@ public class StopCommand extends RebootCommand {
     private String urlPort = null;
     private String publicConsoleProxyIpAddress = null;
     boolean executeInSequence = false;
+    private GPUDeviceTO gpuDevice;
+    boolean checkBeforeCleanup = false;
 
     protected StopCommand() {
     }
 
-    public StopCommand(VirtualMachine vm, boolean isProxy, String urlPort, String publicConsoleProxyIpAddress, boolean executeInSequence) {
+    public StopCommand(VirtualMachine vm, boolean isProxy, String urlPort, String publicConsoleProxyIpAddress, boolean executeInSequence, boolean checkBeforeCleanup) {
         super(vm);
         this.isProxy = isProxy;
         this.urlPort = urlPort;
         this.publicConsoleProxyIpAddress = publicConsoleProxyIpAddress;
         this.executeInSequence = executeInSequence;
+        this.checkBeforeCleanup = checkBeforeCleanup;
     }
 
-    public StopCommand(VirtualMachine vm, boolean executeInSequence) {
+    public StopCommand(VirtualMachine vm, boolean executeInSequence, boolean checkBeforeCleanup) {
         super(vm);
         this.executeInSequence = executeInSequence;
+        this.checkBeforeCleanup = checkBeforeCleanup;
     }
 
-    public StopCommand(String vmName, boolean executeInSequence) {
+    public StopCommand(String vmName, boolean executeInSequence, boolean checkBeforeCleanup) {
         super(vmName);
         this.executeInSequence = executeInSequence;
+        this.checkBeforeCleanup = checkBeforeCleanup;
     }
 
     @Override
@@ -62,4 +68,15 @@ public class StopCommand extends RebootCommand {
         return this.publicConsoleProxyIpAddress;
     }
 
+    public GPUDeviceTO getGpuDevice() {
+        return this.gpuDevice;
+    }
+
+    public void setGpuDevice(GPUDeviceTO gpuDevice) {
+        this.gpuDevice = gpuDevice;
+    }
+
+    public boolean checkBeforeCleanup() {
+        return this.checkBeforeCleanup;
+    }
 }

@@ -172,10 +172,17 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         }
 
         Long clusterId = pool.getClusterId();
-        ClusterVO cluster = _clusterDao.findById(clusterId);
-        if (!(cluster.getHypervisorType() == dskCh.getHypervisorType())) {
+        if (clusterId != null) {
+            ClusterVO cluster = _clusterDao.findById(clusterId);
+            if (!(cluster.getHypervisorType() == dskCh.getHypervisorType())) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("StoragePool's Cluster does not have required hypervisorType, skipping this pool");
+                }
+                return false;
+            }
+        } else if (pool.getHypervisor() != null && !(pool.getHypervisor() == dskCh.getHypervisorType())) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("StoragePool's Cluster does not have required hypervisorType, skipping this pool");
+                s_logger.debug("StoragePool does not have required hypervisorType, skipping this pool");
             }
             return false;
         }
@@ -184,6 +191,6 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         Volume volume = _volumeDao.findById(dskCh.getVolumeId());
         List<Volume> requestVolumes = new ArrayList<Volume>();
         requestVolumes.add(volume);
-        return storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool);
+        return storageMgr.storagePoolHasEnoughIops(requestVolumes, pool) && storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool);
     }
 }

@@ -101,10 +101,16 @@
                     var clickAction = function() {
                         $('#user-options a').eq(0).trigger('click');
                     };
+
+                    if ($('.notification-box:visible').size()) {
+                        $('.notification-box, div.overlay:first').remove();
+                    }
+
                     cloudStack.dialog.notice({
                         message: _l('label.session.expired'),
                         clickAction: clickAction
-                    });
+                    }).closest('.ui-dialog').overlay();
+
                     return false;
                 }
             }
@@ -483,6 +489,6 @@
             };
         }
 
-        document.title = _l('label.app.name');
+        document.title = _l('label.app.name');            
     });
 })(cloudStack, jQuery);

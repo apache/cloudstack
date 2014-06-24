@@ -20,6 +20,8 @@ package org.apache.cloudstack.network.contrail.management;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -28,8 +30,11 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageBusBase;
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
 
 import com.cloud.event.ActionEvent;
+import com.cloud.event.ActionEvents;
 import com.cloud.event.Event;
 import com.cloud.event.EventCategory;
 import com.cloud.event.EventTypes;
@@ -74,12 +79,61 @@ public class EventUtils {
 
     }
 
-    public static class EventInterceptor implements ComponentMethodInterceptor {
+    public static class EventInterceptor implements ComponentMethodInterceptor, MethodInterceptor {
 
         private static final Logger s_logger = Logger.getLogger(EventInterceptor.class);
 
         public EventInterceptor() {
 
+        }
+
+        @Override
+        public Object invoke(MethodInvocation invocation) throws Throwable {
+            Method m = invocation.getMethod();
+            Object target = invocation.getThis();
+
+            if ( getActionEvents(m).size() == 0 ) {
+                /* Look for annotation on impl class */
+                m = target.getClass().getMethod(m.getName(), m.getParameterTypes());
+            }
+
+            Object interceptorData = null;
+
+            boolean success = true;
+            try {
+                interceptorData = interceptStart(m, target);
+
+                Object result = invocation.proceed();
+                success = true;
+
+                return result;
+            } finally {
+                if ( success ) {
+                    interceptComplete(m, target, interceptorData);
+                } else {
+                    interceptException(m, target, interceptorData);
+                }
+            }
+        }
+
+        protected List<ActionEvent> getActionEvents(Method m) {
+            List<ActionEvent> result = new ArrayList<ActionEvent>();
+
+            ActionEvents events = m.getAnnotation(ActionEvents.class);
+
+            if ( events != null ) {
+                for ( ActionEvent e : events.value() ) {
+                    result.add(e);
+                }
+            }
+
+            ActionEvent e = m.getAnnotation(ActionEvent.class);
+
+            if ( e != null ) {
+                result.add(e);
+            }
+
+            return result;
         }
 
         @Override

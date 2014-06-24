@@ -48,7 +48,7 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
     @Enumerated(value = EnumType.STRING)
     TrafficType trafficType;
 
-    @Column(name = "xen_network_label")
+    @Column(name = "xenserver_network_label")
     private String xenNetworkLabel;
 
     @Column(name = "kvm_network_label")

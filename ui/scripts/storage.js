@@ -306,6 +306,10 @@
                                                 description: 'VHD'
                                             });
                                             items.push({
+                                                id: 'VHDX',
+                                                description: 'VHDX'
+                                            });
+                                            items.push({
                                                 id: 'OVA',
                                                 description: 'OVA'
                                             });
@@ -901,6 +905,11 @@
                                                     });
                                                 }
 
+                                                var volumeDrEnabled = false;                                               
+                                                if (isModuleIncluded("dr")) {
+                                                    volumeDrEnabled = cloudStack.dr.sharedFunctions.isVolumeDrEnabled(args.context.volumes[0]);                                                    
+                                                }    
+                                                
                                                 $(['Running', 'Stopped']).each(function() {
                                                     $.ajax({
                                                         url: createURL('listVirtualMachines'),
@@ -911,10 +920,20 @@
                                                         success: function(json) {
                                                             var instanceObjs = json.listvirtualmachinesresponse.virtualmachine;
                                                             $(instanceObjs).each(function() {
+                                                                if (isModuleIncluded("dr")) {
+                                                                    var vmDrEnabled = cloudStack.dr.sharedFunctions.isVmDrEnabled(this);
+                                                                    if (vmDrEnabled == volumeDrEnabled) {
                                                                 items.push({
                                                                     id: this.id,
                                                                     description: this.displayname ? this.displayname : this.name
                                                                 });
+                                                                    } 
+                                                                } else {
+                                                                    items.push({
+                                                                        id: this.id,
+                                                                        description: this.displayname ? this.displayname : this.name
+                                                                    });
+                                                                }                                                                
                                                             });
                                                         }
                                                     });
@@ -975,7 +994,7 @@
                                                     getUpdatedItem: function(json) {
                                                         return {
                                                             virtualmachineid: null,
-                                                            vmname: null
+                                                            vmdisplayname: null
                                                         };
                                                     },
                                                     getActionFilter: function() {
@@ -1093,11 +1112,11 @@
                                             isBoolean: true
                                         },
                                         isFeatured: {
-                                            label: "label.featured",
+                                            label: 'label.featured',
                                             isBoolean: true
                                         },
                                         isdynamicallyscalable: {
-                                            label: "Dynamically Scalable",
+                                            label: 'label.dynamically.scalable',
                                             isBoolean: true
                                         }
                                     }
@@ -1402,6 +1421,9 @@
                                     storagetype: {
                                         label: 'label.storage.type'
                                     },
+                                    provisioningtype: {
+                                        label: 'label.disk.provisioningtype'
+                                    },
                                     hypervisor: {
                                         label: 'label.hypervisor'
                                     },
@@ -1479,6 +1501,11 @@
                                         async: true,
                                         success: function(json) {
                                             var jsonObj = json.listvolumesresponse.volume[0];
+                                            
+                                            if (isModuleIncluded("dr")) {
+                                                cloudStack.dr.sharedFunctions.addExtraProperties(jsonObj, "Volume");
+                                            }                                            
+                                            
                                             args.response.success({
                                                 actionFilter: volumeActionfilter,
                                                 data: jsonObj
@@ -1688,7 +1715,7 @@
                                             isBoolean: true
                                         },
                                         isdynamicallyscalable: {
-                                            label: "Dynamically Scalable",
+                                            label: 'label.dynamically.scalable',
                                             isBoolean: true
                                         }
                                     }

@@ -151,7 +151,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
                 l.add(new Pair<Long, Integer>(rs.getLong(1), rs.getInt(2)));
             }
         } catch (SQLException e) {
-        } catch (Throwable e) {
+            s_logger.debug("SQLException: ", e);
         }
         return l;
     }

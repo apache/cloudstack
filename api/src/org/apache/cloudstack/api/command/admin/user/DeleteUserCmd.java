@@ -34,7 +34,8 @@ import org.apache.cloudstack.region.RegionService;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = "deleteUser", description = "Deletes a user for an account", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteUser", description = "Deletes a user for an account", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteUserCmd.class.getName());
 

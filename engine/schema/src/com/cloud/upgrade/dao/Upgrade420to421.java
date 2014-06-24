@@ -25,6 +25,7 @@ import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -64,10 +65,12 @@ public class Upgrade420to421 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         upgradeResourceCount(conn);
-        updateCpuOverprovisioning(conn);
+        updateOverprovisioningPerVm(conn);
     }
 
-    private void updateCpuOverprovisioning(Connection conn) {
+
+
+    private void updateOverprovisioningPerVm(Connection conn) {
         PreparedStatement pstmt1 = null;
         PreparedStatement pstmt2 = null;
         PreparedStatement pstmt3 = null;
@@ -79,28 +82,54 @@ public class Upgrade420to421 implements DbUpgrade {
         try {
             pstmt1 = conn.prepareStatement("select value from `cloud`.`configuration` where name='cpu.overprovisioning.factor'");
             result1 = pstmt1.executeQuery();
-            String overprov = "1";
-            if (result1.next()) {
-                overprov = result1.getString(1);
+            String cpuoverprov = "1";
+            if(result1.next()){
+                cpuoverprov = result1.getString(1);
             }
+            result1.close();
+            pstmt1.close();
+
+            pstmt1 = conn.prepareStatement("select value from `cloud`.`configuration` where name='mem.overprovisioning.factor'");
+            result1 = pstmt1.executeQuery();
+            String memoverprov = "1";
+            if(result1.next()){
+                memoverprov = result1.getString(1);
+            }
+            result1.close();
+            pstmt1.close();
+
             // Need to populate only when overprovisioning factor doesn't pre exist.
             s_logger.debug("Starting updating user_vm_details with cpu/memory overprovisioning factors");
-            pstmt2 =
-                conn.prepareStatement("select id from `cloud`.`vm_instance` where removed is null and id not in (select vm_id from  `cloud`.`user_vm_details` where name='cpuOvercommitRatio')");
+            pstmt2 = conn.prepareStatement("select id, hypervisor_type from `cloud`.`vm_instance` where removed is null and id not in (select vm_id from  `cloud`.`user_vm_details` where name='cpuOvercommitRatio')");
             pstmt3 = conn.prepareStatement("INSERT IGNORE INTO cloud.user_vm_details (vm_id, name, value) VALUES (?, ?, ?)");
             result2 = pstmt2.executeQuery();
             while (result2.next()) {
-                //For cpu
-                pstmt3.setLong(1, result2.getLong(1));
-                pstmt3.setString(2, "cpuOvercommitRatio");
-                pstmt3.setString(3, overprov);
-                pstmt3.executeUpdate();
+                String hypervisor_type = result2.getString(2);
+                if (hypervisor_type.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.name())) {
+                    //For cpu
+                    pstmt3.setLong(1, result2.getLong(1));
+                    pstmt3.setString(2, "cpuOvercommitRatio");
+                    pstmt3.setString(3, cpuoverprov);
+                    pstmt3.executeUpdate();
 
-                // For memory
-                pstmt3.setLong(1, result2.getLong(1));
-                pstmt3.setString(2, "memoryOvercommitRatio");
-                pstmt3.setString(3, "1"); // memory overprovisioning didn't exist earlier.
-                pstmt3.executeUpdate();
+                    // For memory
+                    pstmt3.setLong(1, result2.getLong(1));
+                    pstmt3.setString(2, "memoryOvercommitRatio");
+                    pstmt3.setString(3, memoverprov); // memory overprovisioning was used to reserve memory in case of VMware.
+                    pstmt3.executeUpdate();
+                } else {
+                    //For cpu
+                    pstmt3.setLong(1, result2.getLong(1));
+                    pstmt3.setString(2, "cpuOvercommitRatio");
+                    pstmt3.setString(3, cpuoverprov);
+                    pstmt3.executeUpdate();
+
+                    // For memory
+                    pstmt3.setLong(1, result2.getLong(1));
+                    pstmt3.setString(2, "memoryOvercommitRatio");
+                    pstmt3.setString(3, "1"); // memory overprovisioning didn't exist earlier.
+                    pstmt3.executeUpdate();
+                }
             }
             s_logger.debug("Done updating user_vm_details with cpu/memory overprovisioning factors");
 
@@ -108,13 +137,35 @@ public class Upgrade420to421 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to update cpu/memory overprovisioning factors", e);
         } finally {
             try {
-                if (pstmt1 != null)
+                if (pstmt1 != null && !pstmt1.isClosed())  {
                     pstmt1.close();
-                if (pstmt2 != null)
-                    pstmt2.close();
-                if (pstmt3 != null)
-                    pstmt3.close();
+                }
             } catch (SQLException e) {
+            }
+            try {
+                if (pstmt2 != null && !pstmt2.isClosed())  {
+                    pstmt2.close();
+                }
+            } catch (SQLException e) {
+            }
+            try {
+                if (pstmt3 != null && !pstmt3.isClosed())  {
+                    pstmt3.close();
+                }
+            } catch (SQLException e) {
+            }
+            try {
+                if (result1 != null) {
+                    result1.close();
+                }
+            } catch (SQLException e) {
+            }
+            try {
+                if (result2 != null) {
+                    result2.close();
+                }
+            }catch (SQLException e){
+
             }
         }
 
@@ -127,7 +178,6 @@ public class Upgrade420to421 implements DbUpgrade {
         PreparedStatement pstmt3 = null;
         PreparedStatement pstmt4 = null;
         PreparedStatement pstmt5 = null;
-        ResultSet rs = null;
         ResultSet rsAccount = null;
         ResultSet rsCount = null;
         try {
@@ -138,9 +188,9 @@ public class Upgrade420to421 implements DbUpgrade {
                 long domain_id = rsAccount.getLong(2);
                 // 1. update cpu,memory for all accounts
                 pstmt2 =
-                    conn.prepareStatement("SELECT SUM(service_offering.cpu), SUM(service_offering.ram_size)" + " FROM `cloud`.`vm_instance`, `cloud`.`service_offering`"
-                        + " WHERE vm_instance.service_offering_id = service_offering.id AND vm_instance.account_id = ?" + " AND vm_instance.removed is NULL"
-                        + " AND vm_instance.vm_type='User' AND state not in ('Destroyed', 'Error', 'Expunging')");
+                        conn.prepareStatement("SELECT SUM(service_offering.cpu), SUM(service_offering.ram_size)" + " FROM `cloud`.`vm_instance`, `cloud`.`service_offering`"
+                                + " WHERE vm_instance.service_offering_id = service_offering.id AND vm_instance.account_id = ?" + " AND vm_instance.removed is NULL"
+                                + " AND vm_instance.vm_type='User' AND state not in ('Destroyed', 'Error', 'Expunging')");
                 pstmt2.setLong(1, account_id);
                 rsCount = pstmt2.executeQuery();
                 if (rsCount.next()) {
@@ -150,11 +200,13 @@ public class Upgrade420to421 implements DbUpgrade {
                     upgradeResourceCountforAccount(conn, account_id, domain_id, "cpu", 0L);
                     upgradeResourceCountforAccount(conn, account_id, domain_id, "memory", 0L);
                 }
+                rsCount.close();
+
                 // 2. update primary_storage for all accounts
                 pstmt3 =
-                    conn.prepareStatement("SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?"
-                        + " AND (path is not NULL OR state in ('Allocated')) AND removed is NULL"
-                        + " AND instance_id IN (SELECT id FROM `cloud`.`vm_instance` WHERE vm_type='User')");
+                        conn.prepareStatement("SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?"
+                                + " AND (path is not NULL OR state in ('Allocated')) AND removed is NULL"
+                                + " AND instance_id IN (SELECT id FROM `cloud`.`vm_instance` WHERE vm_type='User')");
                 pstmt3.setLong(1, account_id);
                 rsCount = pstmt3.executeQuery();
                 if (rsCount.next()) {
@@ -162,27 +214,35 @@ public class Upgrade420to421 implements DbUpgrade {
                 } else {
                     upgradeResourceCountforAccount(conn, account_id, domain_id, "primary_storage", 0L);
                 }
+                rsCount.close();
+
                 // 3. update secondary_storage for all accounts
                 long totalVolumesSize = 0;
                 long totalSnapshotsSize = 0;
                 long totalTemplatesSize = 0;
                 pstmt4 =
-                    conn.prepareStatement("SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?"
-                        + " AND path is NULL AND state not in ('Allocated') AND removed is NULL");
+                        conn.prepareStatement("SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?"
+                                + " AND path is NULL AND state not in ('Allocated') AND removed is NULL");
                 pstmt4.setLong(1, account_id);
                 rsCount = pstmt4.executeQuery();
                 if (rsCount.next()) {
                     totalVolumesSize = rsCount.getLong(1);
                 }
+                rsCount.close();
+                pstmt4.close();
+
                 pstmt4 = conn.prepareStatement("SELECT sum(size) FROM `cloud`.`snapshots` WHERE account_id= ? AND removed is NULL");
                 pstmt4.setLong(1, account_id);
                 rsCount = pstmt4.executeQuery();
                 if (rsCount.next()) {
                     totalSnapshotsSize = rsCount.getLong(1);
                 }
+                rsCount.close();
+                pstmt4.close();
+
                 pstmt4 =
-                    conn.prepareStatement("SELECT sum(template_store_ref.size) FROM `cloud`.`template_store_ref`,`cloud`.`vm_template` WHERE account_id = ?"
-                        + " AND template_store_ref.template_id = vm_template.id AND download_state = 'DOWNLOADED' AND destroyed = false AND removed is NULL");
+                        conn.prepareStatement("SELECT sum(template_store_ref.size) FROM `cloud`.`template_store_ref`,`cloud`.`vm_template` WHERE account_id = ?"
+                                + " AND template_store_ref.template_id = vm_template.id AND download_state = 'DOWNLOADED' AND destroyed = false AND removed is NULL");
                 pstmt4.setLong(1, account_id);
                 rsCount = pstmt4.executeQuery();
                 if (rsCount.next()) {
@@ -190,6 +250,8 @@ public class Upgrade420to421 implements DbUpgrade {
                 }
                 upgradeResourceCountforAccount(conn, account_id, domain_id, "secondary_storage", totalVolumesSize + totalSnapshotsSize + totalTemplatesSize);
             }
+            rsAccount.close();
+
             // 4. upgrade cpu,memory,primary_storage,secondary_storage for domains
             String resource_types[] = {"cpu", "memory", "primary_storage", "secondary_storage"};
             pstmt5 = conn.prepareStatement("select id FROM `cloud`.`domain`");
@@ -204,8 +266,8 @@ public class Upgrade420to421 implements DbUpgrade {
             for (int count = 0; count < resource_types.length; count++) {
                 String resource_type = resource_types[count];
                 pstmt5 =
-                    conn.prepareStatement("select account.domain_id,sum(resource_count.count) from `cloud`.`account` left join `cloud`.`resource_count` on account.id=resource_count.account_id "
-                        + "where resource_count.type=? group by account.domain_id;");
+                        conn.prepareStatement("select account.domain_id,sum(resource_count.count) from `cloud`.`account` left join `cloud`.`resource_count` on account.id=resource_count.account_id "
+                                + "where resource_count.type=? group by account.domain_id;");
                 pstmt5.setString(1, resource_type);
                 rsCount = pstmt5.executeQuery();
                 while (rsCount.next()) {
@@ -219,9 +281,6 @@ public class Upgrade420to421 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to upgrade resource count (cpu,memory,primary_storage,secondary_storage) ", e);
         } finally {
             try {
-                if (rs != null) {
-                    rs.close();
-                }
                 if (rsAccount != null) {
                     rsAccount.close();
                 }
@@ -252,7 +311,7 @@ public class Upgrade420to421 implements DbUpgrade {
         //update or insert into resource_count table.
         PreparedStatement pstmt = null;
         pstmt =
-            conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (account_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");
+                conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (account_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");
         pstmt.setLong(1, accountId);
         pstmt.setString(2, type);
         pstmt.setLong(3, resourceCount);
@@ -265,7 +324,7 @@ public class Upgrade420to421 implements DbUpgrade {
         //update or insert into resource_count table.
         PreparedStatement pstmt = null;
         pstmt =
-            conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (domain_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");
+                conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (domain_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");
         pstmt.setLong(1, domainId);
         pstmt.setString(2, type);
         pstmt.setLong(3, resourceCount);

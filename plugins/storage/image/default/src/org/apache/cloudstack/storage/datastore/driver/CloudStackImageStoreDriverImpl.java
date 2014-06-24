@@ -22,6 +22,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
+import com.cloud.storage.Upload;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -93,16 +95,44 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         if (sslCfg != null) {
             _sslCopy = Boolean.parseBoolean(sslCfg);
         }
+        if(_sslCopy && (_ssvmUrlDomain == null || _ssvmUrlDomain.isEmpty())){
+            s_logger.warn("Empty secondary storage url domain, ignoring SSL");
+            _sslCopy = false;
+        }
         if (_sslCopy) {
-            hostname = ipAddress.replace(".", "-");
-            if (_ssvmUrlDomain != null && _ssvmUrlDomain.length() > 0) {
-                hostname = hostname + "." + _ssvmUrlDomain;
+            if(_ssvmUrlDomain.startsWith("*")) {
+                hostname = ipAddress.replace(".", "-");
+                hostname = hostname + _ssvmUrlDomain.substring(1);
             } else {
-                hostname = hostname + ".realhostip.com";
+                hostname = _ssvmUrlDomain;
             }
             scheme = "https";
         }
         return scheme + "://" + hostname + "/userdata/" + uuid;
+    }
+
+    @Override
+    public void deleteEntityExtractUrl(DataStore store, String installPath, String downloadUrl, Upload.Type entityType) {
+        // find an endpoint to send command
+        EndPoint ep = _epSelector.select(store);
+
+        // Delete Symlink at ssvm. In case of volume also delete the volume.
+        DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(installPath, entityType, downloadUrl, ((ImageStoreEntity) store).getMountPoint());
+
+        Answer ans = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            ans = new Answer(cmd, false, errMsg);
+        } else {
+            ans = ep.sendMessage(cmd);
+        }
+        if (ans == null || !ans.getResult()) {
+            String errorString = "Unable to delete the url " + downloadUrl + " for path " + installPath + " on ssvm, " + ans.getDetails();
+            s_logger.error(errorString);
+            throw new CloudRuntimeException(errorString);
+        }
+
     }
 
 }

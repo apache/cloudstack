@@ -43,15 +43,16 @@ public class NetworkDetailVO implements ResourceDetail {
     private String value;
 
     @Column(name = "display")
-    private boolean display;
+    private boolean display = true;
 
     public NetworkDetailVO() {
     }
 
-    public NetworkDetailVO(long networkId, String name, String value) {
+    public NetworkDetailVO(long networkId, String name, String value, boolean display) {
         this.resourceId = networkId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

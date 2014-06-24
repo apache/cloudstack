@@ -31,10 +31,8 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -42,7 +40,6 @@ import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
@@ -60,7 +57,6 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.upload.UploadListener;
 import com.cloud.template.VirtualMachineTemplate;
@@ -74,39 +70,28 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);
 
     @Inject
-    TemplateDataStoreDao _vmTemplateStoreDao;
+    private TemplateDataStoreDao _vmTemplateStoreDao;
     @Inject
-    ImageStoreDao _imageStoreDao;
+    private VolumeDao _volumeDao;
     @Inject
-    VolumeDao _volumeDao;
+    private VolumeDataStoreDao _volumeStoreDao;
     @Inject
-    VolumeDataStoreDao _volumeStoreDao;
-    @Inject
-    VMTemplateDao _templateDao = null;
+    private final VMTemplateDao _templateDao = null;
     @Inject
     private AgentManager _agentMgr;
     @Inject
-    SecondaryStorageVmManager _secMgr;
+    private ConfigurationDao _configDao;
     @Inject
-    ConfigurationDao _configDao;
-    @Inject
-    EndPointSelector _epSelector;
-    @Inject
-    TemplateDataFactory tmplFactory;
+    private EndPointSelector _epSelector;
 
-    private Boolean _sslCopy = new Boolean(false);
     private String _copyAuthPasswd;
     private String _proxy = null;
 
-    Timer _timer;
-
-    @Inject
-    DataStoreManager storeMgr;
+    private Timer _timer;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) {
         final Map<String, String> configs = _configDao.getConfiguration("management-server", params);
-        _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
         _proxy = configs.get(Config.SecStorageProxy.key());
 
         String cert = configs.get("secstorage.ssl.cert.domain");

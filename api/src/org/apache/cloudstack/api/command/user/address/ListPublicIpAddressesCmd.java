@@ -21,11 +21,13 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -37,7 +39,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.network.IpAddress;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listPublicIpAddresses", description = "Lists all public ip addresses", responseObject = IPAddressResponse.class)
+@APICommand(name = "listPublicIpAddresses", description = "Lists all public ip addresses", responseObject = IPAddressResponse.class, responseView = ResponseView.Restricted,
+ requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = { IpAddress.class })
 public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
 
@@ -89,6 +92,9 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List ips belonging to the VPC")
     private Long vpcId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -136,6 +142,14 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
         return vpcId;
     }
 
+    @Override
+    public Boolean getDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return super.getDisplay();
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -150,14 +164,14 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
         ListResponse<IPAddressResponse> response = new ListResponse<IPAddressResponse>();
         List<IPAddressResponse> ipAddrResponses = new ArrayList<IPAddressResponse>();
         for (IpAddress ipAddress : result.first()) {
-            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ipAddress);
+            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ResponseView.Restricted, ipAddress);
             ipResponse.setObjectName("publicipaddress");
             ipAddrResponses.add(ipResponse);
         }
 
         response.setResponses(ipAddrResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     @Override

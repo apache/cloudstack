@@ -49,11 +49,13 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.PerformanceMonitorCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -175,6 +177,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private AutoScaleVmProfileDao _asProfileDao;
     @Inject
     private ServiceOfferingDao _serviceOfferingDao;
+    @Inject
+    private HostGpuGroupsDao _hostGpuGroupsDao;
 
     private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
     private final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
@@ -188,6 +192,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     long volumeStatsInterval = -1L;
     long autoScaleStatsInterval = -1L;
     int vmDiskStatsInterval = 0;
+    List<Long> hostIds = null;
 
     private ScheduledExecutorService _diskStatsUpdateExecutor;
     private int _usageAggregationRange = 1440;
@@ -325,6 +330,25 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     }
                 }
                 _hostStats = hostStats;
+                // Get a subset of hosts with GPU support from the list of "hosts"
+                List<HostVO> gpuEnabledHosts = new ArrayList<HostVO>();
+                if (hostIds != null) {
+                    for (HostVO host : hosts) {
+                        if (hostIds.contains(host.getId())) {
+                            gpuEnabledHosts.add(host);
+                        }
+                    }
+                } else {
+                    // Check for all the hosts managed by CloudStack.
+                    gpuEnabledHosts = hosts;
+                }
+                for (HostVO host : gpuEnabledHosts) {
+                    HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = _resourceMgr.getGPUStatistics(host);
+                    if (groupDetails != null) {
+                        _resourceMgr.updateGPUDetails(host.getId(), groupDetails);
+                    }
+                }
+                hostIds = _hostGpuGroupsDao.listHostIds();
             } catch (Throwable t) {
                 s_logger.error("Error trying to retrieve host stats", t);
             }
@@ -737,7 +761,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                             }
 
                                             String counterName = getCounternamebyCondition(conditionId.longValue());
-                                            if (counterName == Counter.Source.memory.toString()) {
+                                            if (Counter.Source.memory.toString().equals(counterName)) {
                                                 // calculate memory in percent
                                                 Long profileId = asGroup.getProfileId();
                                                 AutoScaleVmProfileVO profileVo = _asProfileDao.findById(profileId);
@@ -839,11 +863,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 Double sum = avgCounter.get(counter_count);
                                 Double avg = sum / currentVM;
                                 Operator op = conditionVO.getRelationalOperator();
-                                boolean bConditionCheck = ((op == com.cloud.network.as.Condition.Operator.EQ) && (thresholdPercent == avg))
-                                    || ((op == com.cloud.network.as.Condition.Operator.GE) && (avg >= thresholdPercent))
-                                    || ((op == com.cloud.network.as.Condition.Operator.GT) && (avg > thresholdPercent))
-                                    || ((op == com.cloud.network.as.Condition.Operator.LE) && (avg <= thresholdPercent))
-                                    || ((op == com.cloud.network.as.Condition.Operator.LT) && (avg < thresholdPercent));
+                                boolean bConditionCheck = ((op == com.cloud.network.as.Condition.Operator.EQ) && (thresholdPercent.equals(avg)))
+                                    || ((op == com.cloud.network.as.Condition.Operator.GE) && (avg.doubleValue() >= thresholdPercent.doubleValue()))
+                                    || ((op == com.cloud.network.as.Condition.Operator.GT) && (avg.doubleValue() > thresholdPercent.doubleValue()))
+                                    || ((op == com.cloud.network.as.Condition.Operator.LE) && (avg.doubleValue() <= thresholdPercent.doubleValue()))
+                                    || ((op == com.cloud.network.as.Condition.Operator.LT) && (avg.doubleValue() < thresholdPercent.doubleValue()));
 
                                 if (!bConditionCheck) {
                                     bValid = false;

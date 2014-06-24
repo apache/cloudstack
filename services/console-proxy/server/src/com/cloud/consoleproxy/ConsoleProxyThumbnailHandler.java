@@ -41,6 +41,7 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
     }
 
     @Override
+    @SuppressWarnings("access")
     public void handle(HttpExchange t) throws IOException {
         try {
             Thread.currentThread().setName("JPG Thread " + Thread.currentThread().getId() + " " + t.getRemoteAddress());
@@ -76,6 +77,7 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
                 width = Integer.parseInt(ws);
                 height = Integer.parseInt(hs);
             } catch (NumberFormatException ex) {
+                s_logger.debug("Cannot parse width: " + ws + " or height: " + hs, ex);
             }
             width = Math.min(width, 800);
             height = Math.min(height, 600);

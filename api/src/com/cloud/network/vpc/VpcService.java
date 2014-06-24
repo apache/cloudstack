@@ -43,10 +43,11 @@ public interface VpcService {
      * @param displayText
      * @param cidr
      * @param networkDomain TODO
+     * @param displayVpc TODO
      * @return
      * @throws ResourceAllocationException TODO
      */
-    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain)
+    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain, Boolean displayVpc)
         throws ResourceAllocationException;
 
     /**
@@ -66,9 +67,11 @@ public interface VpcService {
      * @param vpcId
      * @param vpcName
      * @param displayText
+     * @param customId TODO
+     * @param displayVpc TODO
      * @return
      */
-    public Vpc updateVpc(long vpcId, String vpcName, String displayText);
+    public Vpc updateVpc(long vpcId, String vpcName, String displayText, String customId, Boolean displayVpc);
 
     /**
      * Lists VPC(s) based on the parameters passed to the method call
@@ -90,12 +93,13 @@ public interface VpcService {
      * @param restartRequired TODO
      * @param tags TODO
      * @param projectId TODO
+     * @param display TODO
      * @param vpc
      * @return
      */
     public List<? extends Vpc> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, String cidr, Long vpcOffId, String state,
         String accountName, Long domainId, String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired,
-        Map<String, String> tags, Long projectId);
+        Map<String, String> tags, Long projectId, Boolean display);
 
     /**
      * Starts VPC which includes starting VPC provider and applying all the neworking rules on the backend

@@ -44,7 +44,7 @@ public interface CapacityManager {
         "Percentage (as a value between 0 and 1) of storage utilization above which allocators will disable using the pool for low storage available.", true,
         ConfigKey.Scope.Zone);
     static final ConfigKey<Double> StorageOverprovisioningFactor = new ConfigKey<Double>("Storage", Double.class, StorageOverprovisioningFactorCK, "2",
-        "Used for storage overprovisioning calculation; available storage will be (actualStorageSize * storage.overprovisioning.factor)", true, ConfigKey.Scope.Zone);
+        "Used for storage overprovisioning calculation; available storage will be (actualStorageSize * storage.overprovisioning.factor)", true, ConfigKey.Scope.StoragePool);
     static final ConfigKey<Double> StorageAllocatedCapacityDisableThreshold =
         new ConfigKey<Double>(
             "Alert",

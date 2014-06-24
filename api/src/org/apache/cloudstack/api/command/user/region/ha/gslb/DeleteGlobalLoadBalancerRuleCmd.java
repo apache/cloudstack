@@ -37,7 +37,8 @@ import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteGlobalLoadBalancerRule", description = "Deletes a global load balancer rule.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteGlobalLoadBalancerRule", description = "Deletes a global load balancer rule.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteGlobalLoadBalancerRuleCmd.class.getName());

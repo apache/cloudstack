@@ -700,7 +700,7 @@ def cleanup_rules():
                     logging.debug("vm " + vm_name + " is not running or paused, cleaning up iptable rules")
                     cleanup.append(vm_name)
 
-        chainscmd = """ebtables-save | awk '/:i/ { gsub(/(^:|-(in|out))/, "") ; print $1}'"""
+        chainscmd = """ebtables-save | awk '/:i/ { gsub(/(^:|-(in|out|ips))/, "") ; print $1}'"""
         chains = execute(chainscmd).split('\n')
         for chain in chains:
             if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
@@ -978,7 +978,7 @@ def addFWFramework(brname):
         execute("iptables -N " + brfwin)
 
     try:
-        refs = execute("""iptables -n -L " + brfw + " | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % brfw).strip()
+        refs = execute("""iptables -n -L %s | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip()
         if refs == "0":
             execute("iptables -I FORWARD -i " + brname + " -j DROP")
             execute("iptables -I FORWARD -o " + brname + " -j DROP")

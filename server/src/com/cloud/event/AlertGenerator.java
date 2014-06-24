@@ -29,9 +29,11 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 
+import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -46,11 +48,14 @@ public class AlertGenerator {
     private static DataCenterDao s_dcDao;
     private static HostPodDao s_podDao;
     protected static EventBus s_eventBus = null;
+    protected static ConfigurationDao s_configDao;
 
     @Inject
     DataCenterDao dcDao;
     @Inject
     HostPodDao podDao;
+    @Inject
+    ConfigurationDao configDao;
 
     public AlertGenerator() {
     }
@@ -59,9 +64,16 @@ public class AlertGenerator {
     void init() {
         s_dcDao = dcDao;
         s_podDao = podDao;
+        s_configDao = configDao;
     }
 
     public static void publishAlertOnEventBus(String alertType, long dataCenterId, Long podId, String subject, String body) {
+
+        String configKey = Config.PublishAlertEvent.key();
+        String value = s_configDao.getValue(configKey);
+        boolean configValue = Boolean.parseBoolean(value);
+        if(!configValue)
+            return;
         try {
             s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {

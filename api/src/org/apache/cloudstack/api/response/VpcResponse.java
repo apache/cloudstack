@@ -19,14 +19,14 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.vpc.Vpc;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Vpc.class)
 @SuppressWarnings("unused")
@@ -106,6 +106,18 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     @SerializedName(ApiConstants.TAGS)
     @Param(description = "the list of resource tags associated with the project", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
+
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is vpc for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
+
+    @SerializedName(ApiConstants.DISTRIBUTED_VPC_ROUTER)
+    @Param(description = "is VPC uses distributed router for one hop forwarding and host based network ACL's", since = "4.4")
+    private boolean usesDistributedRouter;
+
+    @SerializedName((ApiConstants.REGION_LEVEL_VPC))
+    @Param(description = "true if VPC is region level", since = "4.4")
+    private Boolean regionLevelVpc;
 
     public void setId(String id) {
         this.id = id;
@@ -190,5 +202,17 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
 
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
+    }
+
+    public void setRegionLevelVpc(Boolean regionLevelVpc) {
+        this.regionLevelVpc = regionLevelVpc;
+    }
+
+    public void setUsesDistributedRouter(Boolean usesDistributedRouter) {
+        this.usesDistributedRouter = usesDistributedRouter;
     }
 }

@@ -21,19 +21,25 @@ package com.cloud.agent.api;
 public class OvsDestroyBridgeCommand extends Command {
 
     Long networkId;
-    Integer key;
+    String name;
+    Long hostId;
 
-    public OvsDestroyBridgeCommand(Long networkId, Integer key) {
+    public OvsDestroyBridgeCommand(Long networkId, String name, Long hostId) {
         this.networkId = networkId;
-        this.key = key;
+        this.name = name;
+        this.hostId = hostId;
     }
 
     public Long getNetworkId() {
         return networkId;
     }
 
-    public Integer getKey() {
-        return key;
+    public String getBridgeName() {
+        return name;
+    }
+
+    public Long getHostId() {
+        return hostId;
     }
 
     @Override

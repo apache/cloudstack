@@ -28,7 +28,7 @@ import org.apache.cloudstack.resourcedetail.Site2SiteVpnGatewayDetailVO;
 public class Site2SiteVpnGatewayDetailsDaoImpl extends ResourceDetailsDaoBase<Site2SiteVpnGatewayDetailVO> implements Site2SiteVpnGatewayDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new Site2SiteVpnGatewayDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new Site2SiteVpnGatewayDetailVO(resourceId, key, value, display));
     }
 }

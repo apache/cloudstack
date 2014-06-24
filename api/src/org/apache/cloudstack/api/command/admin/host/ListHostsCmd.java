@@ -42,7 +42,8 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 
-@APICommand(name = "listHosts", description = "Lists hosts.", responseObject = HostResponse.class)
+@APICommand(name = "listHosts", description = "Lists hosts.", responseObject = HostResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListHostsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListHostsCmd.class.getName());
 

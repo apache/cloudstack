@@ -21,8 +21,8 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import startVirtualMachine, stopVirtualMachine
-from marvin.integration.lib.utils import cleanup_resources, validateList
-from marvin.integration.lib.base import (VirtualMachine,
+from marvin.lib.utils import cleanup_resources, validateList
+from marvin.lib.base import (VirtualMachine,
                                          ServiceOffering,
                                          Account,
                                          NATRule,
@@ -35,7 +35,7 @@ from marvin.integration.lib.base import (VirtualMachine,
                                          StaticNATRule,
                                          NetworkACL,
                                          PublicIPAddress)
-from marvin.integration.lib.common import (get_zone,
+from marvin.lib.common import (get_zone,
                                            get_domain,
                                            get_template,
                                            wait_for_cleanup,
@@ -239,17 +239,17 @@ class TestVPCNetwork(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVPCNetwork,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPCNetwork, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
+
         # Added an attribute to track if Netscaler addition was successful.
         # Value is checked in tests and if not configured, Netscaler tests will be skipped
         cls.ns_configured = False
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -294,8 +294,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        self.cleanup.insert(0, self.account)
+        self.cleanup = [self.account, ]
         return
 
     def tearDown(self):
@@ -695,7 +694,7 @@ class TestVPCNetwork(cloudstackTestCase):
         return
 
     @unittest.skip("skipped - RvR didn't support VPC currently ")
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "NA"])
     def test_06_create_network_with_rvr(self):
         """ Test create network with redundant router capability
         """
@@ -769,7 +768,7 @@ class TestVPCNetwork(cloudstackTestCase):
         self.debug("Network creation failed")
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_07_create_network_unsupported_services(self):
         """ Test create network services not supported by VPC (Should fail)
         """
@@ -836,7 +835,7 @@ class TestVPCNetwork(cloudstackTestCase):
         self.debug("Network creation failed as VPC doesn't have LB service")
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_08_create_network_without_sourceNAT(self):
         """ Test create network without sourceNAT service in VPC (should fail)
         """
@@ -1003,17 +1002,17 @@ class TestVPCNetworkRanges(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVPCNetworkRanges,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPCNetworkRanges, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
+
         # Added an attribute to track if Netscaler addition was successful.
         # Value is checked in tests and if not configured, Netscaler tests will be skipped
         cls.ns_configured = False
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1056,8 +1055,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        self.cleanup.insert(0, self.account)
+        self.cleanup = [self.account, ]
         return
 
     def tearDown(self):
@@ -1186,7 +1184,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
             "Network creation failed as network cidr range is outside of vpc")
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_02_create_network_outside_range(self):
         """ Test create network outside cidr range of VPC
         """
@@ -1516,6 +1514,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                 )
+        self.cleanup.append(account)
 
         # Creating network using the network offering created
         self.debug("Creating network from diff account than VPC")
@@ -1541,14 +1540,14 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVPCNetworkUpgrade,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPCNetworkUpgrade, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1584,8 +1583,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        self.cleanup.insert(0, self.account)
+        self.cleanup = [self.account, ]
         return
 
     def tearDown(self):
@@ -1645,7 +1643,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         self.debug("VPC network validated - %s" % network.name)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioning"])
     def test_01_network_services_upgrade(self):
         """ Test update Network that is part of a VPC to a network offering that has more services
         """
@@ -1933,8 +1931,6 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop VMs, %s" % e)
 
-        wait_for_cleanup(self.apiclient, ["expunge.interval", "expunge.delay"])
-
         # When all Vms ain network are stopped, network state changes from Implemented --> Shutdown --> Allocated
         # We can't update the network when it is in Shutodown state, hence we should wait for the state to change to
         # Allocated and then update the network
@@ -2007,7 +2003,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioning"])
     def test_02_network_vpcvr2vr_upgrade(self):
         """ Test update Network that is NOT part of a VPC to a nw offering that has services that are provided by VPCVR and vice versa
         """
@@ -2108,8 +2104,6 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop VMs, %s" % e)
 
-        wait_for_cleanup(self.apiclient, ["expunge.interval", "expunge.delay"])
-
         self.debug("Upgrading network offering to support PF services")
         with self.assertRaises(Exception):
             network_1.update(
@@ -2123,14 +2117,14 @@ class TestVPCNetworkGc(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVPCNetworkGc,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPCNetworkGc, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -2341,7 +2335,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
         self.debug("VPC network validated - %s" % network.name)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioning"])
     def test_01_wait_network_gc(self):
         """ Test network gc after shutdown of vms in the network
         """
@@ -2367,7 +2361,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
         self.assertEqual(lbrules, None, "LBrules were not cleared after network GC thread is run")
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioning"])
     def test_02_start_vm_network_gc(self):
         """ Test network rules after starting a VpcVr that was shutdown after network.gc
         """
@@ -2441,7 +2435,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioning"])
     def test_03_restart_vpcvr(self):
         """ Test Stop all the Vms that are part of the a Network
             (Wait for network GC).Restart VPCVR.

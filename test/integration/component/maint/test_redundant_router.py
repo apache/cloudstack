@@ -16,9 +16,9 @@
 # under the License.
 
 from nose.plugins.attrib import attr
-from marvin.integration.lib.base import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.common import *
+from marvin.lib.base import *
+from marvin.lib.utils import *
+from marvin.lib.common import *
 
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -137,14 +137,13 @@ class TestCreateRvRNetworkOffering(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestCreateRvRNetworkOffering,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestCreateRvRNetworkOffering, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls._cleanup = []
         return
 
@@ -231,14 +230,13 @@ class TestCreateRvRNetwork(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestCreateRvRNetwork,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestCreateRvRNetwork, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -433,14 +431,13 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestCreateRvRNetworkNonDefaultGuestCidr,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestCreateRvRNetworkNonDefaultGuestCidr, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -642,14 +639,13 @@ class TestRVRInternals(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestRVRInternals,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRVRInternals, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -685,6 +681,7 @@ class TestRVRInternals(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
                                      self.apiclient,
@@ -846,7 +843,7 @@ class TestRVRInternals(cloudstackTestCase):
         self.debug(master_router.linklocalip)
 
         # Check eth2 port for master router
-        if self.apiclient.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() == 'vmware':
             result = get_process_status(
                                 self.apiclient.connection.mgtSvr,
                                 22,
@@ -854,7 +851,7 @@ class TestRVRInternals(cloudstackTestCase):
                                 self.apiclient.connection.passwd,
                                 master_router.linklocalip,
                                 'ip addr show eth2',
-                                hypervisor=self.apiclient.hypervisor
+                                hypervisor=self.hypervisor
                                 )
         else:
             result = get_process_status(
@@ -882,7 +879,7 @@ class TestRVRInternals(cloudstackTestCase):
                          )
 
         # Check eth2 port for backup router
-        if self.apiclient.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() == 'vmware':
             result = get_process_status(
                                 self.apiclient.connection.mgtSvr,
                                 22,
@@ -890,7 +887,7 @@ class TestRVRInternals(cloudstackTestCase):
                                 self.apiclient.connction.passwd,
                                 backup_router.linklocalip,
                                 'ip addr show eth2',
-                                hypervisor=self.apiclient.hypervisor
+                                hypervisor=self.hypervisor
                                 )
         else:
             result = get_process_status(
@@ -945,14 +942,13 @@ class TestRvRRedundancy(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestRvRRedundancy,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRvRRedundancy, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,

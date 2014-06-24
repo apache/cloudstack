@@ -52,7 +52,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.vmware.VmwareServerDiscoverer;
-import com.cloud.hypervisor.xen.resource.XcpOssResource;
+import com.cloud.hypervisor.xenserver.resource.XcpOssResource;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;

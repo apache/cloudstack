@@ -24,12 +24,10 @@
 
 . /etc/rc.d/init.d/functions
 
-whatami=cloudstack-agent
-
 # set environment variables
 
-SHORTNAME="$whatami"
-PIDFILE=/var/run/"$whatami".pid
+SHORTNAME=$(basename $0 | sed -e 's/^[SK][0-9][0-9]//')
+PIDFILE=/var/run/"$SHORTNAME".pid
 LOCKFILE=/var/lock/subsys/"$SHORTNAME"
 LOGDIR=/var/log/cloudstack/agent
 LOGFILE=${LOGDIR}/agent.log
@@ -112,7 +110,7 @@ case "$1" in
         fi
         ;;
     *)
-    echo $"Usage: $whatami {start|stop|restart|condrestart|status|help}"
+    echo $"Usage: $SHORTNAME {start|stop|restart|condrestart|status|help}"
     RETVAL=3
 esac
 

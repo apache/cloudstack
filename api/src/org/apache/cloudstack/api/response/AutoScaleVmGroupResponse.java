@@ -18,14 +18,14 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = AutoScaleVmGroup.class)
 public class AutoScaleVmGroupResponse extends BaseResponse implements ControlledEntityResponse {
@@ -85,6 +85,10 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain name of the vm profile")
     private String domainName;
+
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is group for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
 
     public AutoScaleVmGroupResponse() {
 
@@ -154,5 +158,9 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 }

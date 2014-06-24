@@ -18,6 +18,7 @@
 package org.apache.cloudstack.network.contrail.model;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
@@ -28,12 +29,14 @@ import net.juniper.contrail.api.types.ServiceInstance;
 import net.juniper.contrail.api.types.VirtualMachine;
 
 import org.apache.cloudstack.network.contrail.management.ContrailManager;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
@@ -82,10 +85,26 @@ public class VirtualMachineModel extends ModelObjectBase {
             final Gson json = new Gson();
             Map<String, String> kvmap = json.fromJson(userVm.getUserData(), new TypeToken<Map<String, String>>() {
             }.getType());
-            String data = kvmap.get("service-instance");
-            if (data != null) {
-                /* link the object with the service instance */
-                buildServiceInstance(controller, data);
+            //Renamed "data" to "serviceUuid" because it's clearer.
+            String serviceUuid = kvmap.get("service-instance");
+            if (serviceUuid != null) {
+                /*
+                 * UUID.fromString() does not validate an UUID properly. I tried, for example, informing less digits in the UUID, where 12 were expected,
+                 * and the UUID.fromstring() did not thrown the exception as expected. However, if you try UUID.fromString("aaa") it breaks, but if you try
+                 * UUID.fromString("3dd4fa6e-2899-4429-b818-d34fe8df5") it doesn't (the last portion should have 12, instead of 9 digits).
+                 *
+                 * In other fix I added the validate UUID method to the UuidUtil classes.
+                 */
+                if (UuidUtils.validateUUID(serviceUuid)) {
+                    /* link the object with the service instance */
+                    buildServiceInstance(controller, serviceUuid);
+                } else {
+                    // Throw a CloudRuntimeException in case the UUID is not valid.
+                    String message = "Invalid UUID ({0}) given for the service-instance for VM {1}.";
+                    message = MessageFormat.format(message, instance.getId(), serviceUuid);
+                    s_logger.warn(message);
+                    throw new CloudRuntimeException(message);
+                }
             }
         }
     }
@@ -101,24 +120,27 @@ public class VirtualMachineModel extends ModelObjectBase {
         ApiConnector api = controller.getApiAccessor();
         _serviceUuid = serviceUuid;
 
-        ServiceInstanceModel siModel = manager.getDatabase().lookupServiceInstance(serviceUuid);
-        if (siModel == null) {
-            ServiceInstance siObj;
-            try {
-                siObj = (ServiceInstance)api.findById(ServiceInstance.class, serviceUuid);
-            } catch (IOException ex) {
-                s_logger.warn("service-instance read", ex);
-                throw new CloudRuntimeException("Unable to read service-instance object", ex);
-            }
-            if (siObj == null) {
-                //If the ServiceInstance object is null, do not call build. It will break in many places. Instead, call update passing the controller as parameter.
-                //It will then create a new ServiceInstance is that's null.
-                siModel = new ServiceInstanceModel(serviceUuid);
-                siModel.update(controller);
-
-                siObj = siModel.getServiceInstance();
-            }
+        ServiceInstance siObj;
+        try {
+            siObj = (ServiceInstance) api.findById(ServiceInstance.class, serviceUuid);
+        } catch (IOException ex) {
+            s_logger.warn("service-instance read", ex);
+            throw new CloudRuntimeException("Unable to read service-instance object", ex);
         }
+
+        ServiceInstanceModel siModel;
+        String fqn = StringUtils.join(siObj.getQualifiedName(), ':');
+        siModel = manager.getDatabase().lookupServiceInstance(fqn);
+        if (siModel == null) {
+            siModel = new ServiceInstanceModel(serviceUuid);
+            siModel.build(controller, siObj);
+            manager.getDatabase().getServiceInstances().add(siModel);
+        }
+        /*
+         * The code that was under the ELSE was never executed and due to that has been removed.
+         * Also, in the case siObj was null, it was going pass it as parameter to the build() method in the
+         * siModel object.
+         */
         _serviceModel = siModel;
     }
 
@@ -338,26 +360,26 @@ public class VirtualMachineModel extends ModelObjectBase {
     @Override
     public boolean verify(ModelController controller) {
         assert _initialized : "initialized is false";
-        assert _uuid != null : "uuid is not set";
+    assert _uuid != null : "uuid is not set";
 
-        ApiConnector api = controller.getApiAccessor();
+    ApiConnector api = controller.getApiAccessor();
 
-        try {
-            _vm = (VirtualMachine) api.findById(VirtualMachine.class, _uuid);
-        } catch (IOException e) {
-            s_logger.error("virtual-machine verify", e);
-        }
+    try {
+        _vm = (VirtualMachine) api.findById(VirtualMachine.class, _uuid);
+    } catch (IOException e) {
+        s_logger.error("virtual-machine verify", e);
+    }
 
-        if (_vm == null) {
+    if (_vm == null) {
+        return false;
+    }
+
+    for (ModelObject successor: successors()) {
+        if (!successor.verify(controller)) {
             return false;
         }
-
-        for (ModelObject successor: successors()) {
-            if (!successor.verify(controller)) {
-                return false;
-            }
-        }
-        return true;
+    }
+    return true;
     }
 
     @Override

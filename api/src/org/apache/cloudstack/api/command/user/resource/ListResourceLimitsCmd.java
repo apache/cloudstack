@@ -19,18 +19,18 @@ package org.apache.cloudstack.api.command.user.resource;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ResourceLimit;
 
-@APICommand(name = "listResourceLimits", description = "Lists resource limits.", responseObject = ResourceLimitResponse.class)
+@APICommand(name = "listResourceLimits", description = "Lists resource limits.", responseObject = ResourceLimitResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListResourceLimitsCmd.class.getName());
 
@@ -77,7 +77,7 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     @Override
     public void execute() {
         List<? extends ResourceLimit> result =
-            _resourceLimitService.searchForLimits(id, finalyzeAccountId(this.getAccountName(), this.getDomainId(), this.getProjectId(), false), this.getDomainId(),
+                _resourceLimitService.searchForLimits(id, _accountService.finalyzeAccountId(this.getAccountName(), this.getDomainId(), this.getProjectId(), false), this.getDomainId(),
                 resourceType, this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ResourceLimitResponse> response = new ListResponse<ResourceLimitResponse>();
         List<ResourceLimitResponse> limitResponses = new ArrayList<ResourceLimitResponse>();

@@ -132,16 +132,16 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
 
     public AsyncJobVO() {
         uuid = UUID.randomUUID().toString();
-        related = UUID.randomUUID().toString();
+        related = "";
         status = Status.IN_PROGRESS;
     }
 
-    public AsyncJobVO(String related, long userId, long accountId, String cmd, String cmdInfo, Long instanceId, String instanceType) {
+    public AsyncJobVO(String related, long userId, long accountId, String cmd, String cmdInfo, Long instanceId, String instanceType, String injectedUuid) {
         this.userId = userId;
         this.accountId = accountId;
         this.cmd = cmd;
         this.cmdInfo = cmdInfo;
-        uuid = UUID.randomUUID().toString();
+        uuid = ( injectedUuid == null ? UUID.randomUUID().toString() : injectedUuid );
         this.related = related;
         this.instanceId = instanceId;
         this.instanceType = instanceType;

@@ -19,6 +19,7 @@ package org.apache.cloudstack.networkoffering;
 
 import java.io.IOException;
 
+import com.cloud.storage.StorageManager;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -106,7 +107,6 @@ import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountManager;
@@ -133,7 +133,8 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
     PortableIpRangeDaoImpl.class, RegionDaoImpl.class, PortableIpDaoImpl.class, AccountGuestVlanMapDaoImpl.class},
                includeFilters = {@Filter(value = ChildTestConfiguration.Library.class, type = FilterType.CUSTOM)},
                useDefaultFilters = false)
-public class ChildTestConfiguration {
+public class
+        ChildTestConfiguration {
 
     @Bean
     public ManagementService managementService() {
@@ -178,11 +179,6 @@ public class ChildTestConfiguration {
     @Bean
     public ProjectManager projectMgr() {
         return Mockito.mock(ProjectManager.class);
-    }
-
-    @Bean
-    public SecondaryStorageVmManager ssvmMgr() {
-        return Mockito.mock(SecondaryStorageVmManager.class);
     }
 
     @Bean
@@ -333,6 +329,11 @@ public class ChildTestConfiguration {
     @Bean
     public AffinityGroupService affinityGroupService() {
         return Mockito.mock(AffinityGroupService.class);
+    }
+
+    @Bean
+    public StorageManager storageManager() {
+        return Mockito.mock(StorageManager.class);
     }
 
     public static class Library implements TypeFilter {

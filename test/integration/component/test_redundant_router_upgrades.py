@@ -17,9 +17,9 @@
 
 
 from nose.plugins.attrib import attr
-from marvin.integration.lib.base import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.common import *
+from marvin.lib.base import *
+from marvin.lib.utils import *
+from marvin.lib.common import *
 
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -137,14 +137,13 @@ class TestRvRUpgradeDowngrade(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestRvRUpgradeDowngrade,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRvRUpgradeDowngrade, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -200,7 +199,7 @@ class TestRvRUpgradeDowngrade(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh"])
+    @attr(tags=["advanced", "advancedns", "ssh", "selfservice"])
     def test_upgradeVR_to_redundantVR(self):
         """Test upgrade virtual router to redundant virtual router
         """
@@ -345,7 +344,7 @@ class TestRvRUpgradeDowngrade(cloudstackTestCase):
                     )
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh"])
+    @attr(tags=["advanced", "advancedns", "ssh", "selfservice"])
     def test_downgradeRvR_to_VR(self):
         """Test downgrade redundant virtual router to virtual router
         """

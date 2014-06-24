@@ -251,7 +251,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             if (_emailAlert != null) {
                 _emailAlert.sendAlert(alertType, dataCenterId, podId, null, subject, body);
             } else {
-                s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " + podId + " // clusterId:: " + null +
+                s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " + podId +
                     " // message:: " + subject);
             }
         } catch (Exception ex) {
@@ -750,7 +750,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content) throws MessagingException,
             UnsupportedEncodingException {
             s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " +
-                podId + " // clusterId:: " + null + " // message:: " + subject);
+                podId + " // clusterId:: " + clusterId + " // message:: " + subject);
             AlertVO alert = null;
             if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) &&
                 (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM) &&

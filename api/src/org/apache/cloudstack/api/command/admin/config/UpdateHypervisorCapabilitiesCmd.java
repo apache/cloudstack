@@ -32,7 +32,9 @@ import com.cloud.user.Account;
 @APICommand(name = "updateHypervisorCapabilities",
             description = "Updates a hypervisor capabilities.",
             responseObject = HypervisorCapabilitiesResponse.class,
-            since = "3.0.0")
+            since = "3.0.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateHypervisorCapabilitiesCmd.class.getName());
     private static final String s_name = "updatehypervisorcapabilitiesresponse";

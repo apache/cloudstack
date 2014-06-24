@@ -26,6 +26,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.VirtualNetworkApplianceService;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -40,6 +42,8 @@ import com.cloud.agent.api.CreateVMSnapshotAnswer;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.FenceAnswer;
+import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetVmStatsAnswer;
@@ -484,22 +488,23 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     public Answer deleteVmSnapshot(DeleteVMSnapshotCommand cmd) {
         String vm = cmd.getVmName();
         String snapshotName = cmd.getTarget().getSnapshotName();
-        if (_mockVmDao.findByVmName(cmd.getVmName()) != null) {
+        if (_mockVmDao.findByVmName(cmd.getVmName()) == null) {
             return new DeleteVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
         }
         s_logger.debug("Removed snapshot " + snapshotName + " of VM " + vm);
-        return new DeleteVMSnapshotAnswer(cmd, true, "success");
+        return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());
     }
 
     @Override
     public Answer revertVmSnapshot(RevertToVMSnapshotCommand cmd) {
         String vm = cmd.getVmName();
         String snapshot = cmd.getTarget().getSnapshotName();
-        if (_mockVmDao.findByVmName(cmd.getVmName()) != null) {
+        MockVMVO vmVo = _mockVmDao.findByVmName(cmd.getVmName());
+        if (vmVo == null) {
             return new RevertToVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
         }
         s_logger.debug("Reverted to snapshot " + snapshot + " of VM " + vm);
-        return new RevertToVMSnapshotAnswer(cmd, true, "success");
+        return new RevertToVMSnapshotAnswer(cmd, cmd.getVolumeTOs(), vmVo.getState());
     }
 
     @Override
@@ -568,7 +573,8 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd) {
-        return new GetDomRVersionAnswer(cmd, null, "CloudStack Release 4.2.0", UUID.randomUUID().toString());
+        String template_version = "CloudStack Release "+ VirtualNetworkApplianceService.MinVRVersion.toString();
+        return new GetDomRVersionAnswer(cmd, null, template_version, UUID.randomUUID().toString());
     }
 
     @Override
@@ -658,4 +664,8 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         return maps;
     }
 
+    @Override
+    public Answer fence(FenceCommand cmd) {
+       return new FenceAnswer(cmd);
+    }
 }

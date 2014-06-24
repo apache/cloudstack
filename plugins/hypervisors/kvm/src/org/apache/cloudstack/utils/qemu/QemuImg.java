@@ -16,11 +16,16 @@
 // under the License.
 package org.apache.cloudstack.utils.qemu;
 
-import java.util.HashMap;
 import java.util.Map;
+import com.cloud.storage.Storage;
 
-import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.script.OutputInterpreter;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import org.apache.commons.lang.NotImplementedException;
+
+import java.lang.reflect.Type;
 
 public class QemuImg {
 
@@ -40,6 +45,35 @@ public class QemuImg {
         @Override
         public String toString() {
             return this.format;
+        }
+    }
+
+    public static enum PreallocationType {
+        Off("off"),
+        Metadata("metadata"),
+        Full("full");
+
+        private final String preallocationType;
+
+        private PreallocationType(String preallocationType){
+            this.preallocationType = preallocationType;
+        }
+
+        public String toString(){
+            return this.preallocationType;
+        }
+
+        public static PreallocationType getPreallocationType(Storage.ProvisioningType provisioningType){
+            switch (provisioningType){
+                case THIN:
+                    return PreallocationType.Off;
+                case SPARSE:
+                    return PreallocationType.Metadata;
+                case FAT:
+                    return PreallocationType.Full;
+                default:
+                    throw new NotImplementedException();
+            }
         }
     }
 
@@ -90,11 +124,11 @@ public class QemuImg {
 
         if (options != null && !options.isEmpty()) {
             s.add("-o");
-            String optionsStr = "";
+            final StringBuilder optionsStr = new StringBuilder();
             for (Map.Entry<String, String> option : options.entrySet()) {
-                optionsStr += option.getKey() + "=" + option.getValue() + ",";
+                optionsStr.append(option.getKey()).append('=').append(option.getValue()).append(',');
             }
-            s.add(optionsStr);
+            s.add(optionsStr.toString());
         }
 
         /*
@@ -111,10 +145,12 @@ public class QemuImg {
         }
 
         s.add(file.getFileName());
-
-        if (backingFile == null) {
+        if (file.getSize() != 0L) {
             s.add(Long.toString(file.getSize()));
+        } else if (backingFile == null) {
+            throw new QemuImgException("No size was passed, and no backing file was passed");
         }
+
         String result = s.execute();
         if (result != null) {
             throw new QemuImgException(result);
@@ -206,6 +242,10 @@ public class QemuImg {
         if (result != null) {
             throw new QemuImgException(result);
         }
+
+        if (srcFile.getSize() < destFile.getSize()) {
+            this.resize(destFile, destFile.getSize());
+        }
     }
 
     /**
@@ -245,9 +285,9 @@ public class QemuImg {
      * Qemu-img returns human readable output, but this method does it's best
      * to turn that into machine readeable data.
      *
-     * Spaces in keys are replaced by underscores (_).
-     * Sizes (virtual_size and disk_size) are returned in bytes
-     * Paths (image and backing_file) are the absolute path to the file
+     * Spaces in keys are replaced by hyphen-minus (-).
+     * Sizes (virtual-size and disk-size) are returned in bytes
+     * Paths (image and backing-file) are the absolute path to the file
      *
      * @param file
      *            A QemuImgFile object containing the file to get the information from
@@ -256,6 +296,8 @@ public class QemuImg {
     public Map<String, String> info(QemuImgFile file) throws QemuImgException {
         Script s = new Script(_qemuImgPath);
         s.add("info");
+        s.add("--output");
+        s.add("json");
         s.add(file.getFileName());
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = s.execute(parser);
@@ -263,24 +305,9 @@ public class QemuImg {
             throw new QemuImgException(result);
         }
 
-        HashMap<String, String> info = new HashMap<String, String>();
-        String[] outputBuffer = parser.getLines().trim().split("\n");
-        for (int i = 0; i < outputBuffer.length; i++) {
-            String[] lineBuffer = outputBuffer[i].split(":", 2);
-            if (lineBuffer.length == 2) {
-                String key = lineBuffer[0].trim().replace(" ", "_");
-                String value = null;
-
-                if (key.equals("virtual_size")) {
-                    value = lineBuffer[1].trim().replaceAll("^.*\\(([0-9]+).*$", "$1");
-                } else {
-                    value = lineBuffer[1].trim();
-                }
-
-                info.put(key, value);
-            }
-        }
-        return info;
+        Type stringStringMap = new TypeToken<Map<String, String>>(){}.getType();
+        Gson gson = new Gson();
+        return gson.fromJson(parser.getLines(), stringStringMap);
     }
 
     /* List, apply, create or delete snapshots in image */

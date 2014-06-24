@@ -45,6 +45,8 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = {HypervManager.class})
 public class HypervManagerImpl implements HypervManager {
@@ -60,10 +62,11 @@ public class HypervManagerImpl implements HypervManager {
     Map<String, String> _storageMounts = new HashMap<String, String>();
     StorageLayer _storage;
 
-    @Inject
-    ConfigurationDao _configDao;
-    @Inject
-    DataStoreManager _dataStoreMgr;
+    @Inject ConfigurationDao _configDao;
+    @Inject DataStoreManager _dataStoreMgr;
+    @Inject VMInstanceDao _vminstanceDao;
+    @Inject NicDao _nicDao;
+    int _routerExtraPublicNics = 2;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -77,7 +80,7 @@ public class HypervManagerImpl implements HypervManager {
             _storage = new JavaStorageLayer();
             _storage.configure("StorageLayer", params);
         }
-
+        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
         return true;
     }
 
@@ -372,5 +375,10 @@ public class HypervManagerImpl implements HypervManager {
                 file.delete();
             }
         }
+    }
+
+    @Override
+    public int getRouterExtraPublicNics() {
+        return _routerExtraPublicNics;
     }
 }

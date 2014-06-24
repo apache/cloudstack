@@ -92,6 +92,7 @@ import com.cloud.vm.dao.NicDao;
 public class SspElement extends AdapterBase implements ConnectivityProvider, SspManager, SspService, NetworkMigrationResponder {
     private static final Logger s_logger = Logger.getLogger(SspElement.class);
     public static final String s_SSP_NAME = "StratosphereSsp";
+    private static final Provider s_ssp_provider = new Provider(s_SSP_NAME, false);
 
     @Inject
     NetworkServiceMapDao _ntwkSrvcDao;
@@ -134,15 +135,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
 
     @Override
     public Provider getProvider() {
-        Provider provider = null;
-        synchronized (s_SSP_NAME) {
-            provider = Provider.getProvider(s_SSP_NAME);
-            if (provider == null) {
-                provider = new Provider(s_SSP_NAME, true);
-                s_logger.debug("registering Network.Provider " + s_SSP_NAME);
-            }
-        }
-        return provider;
+        return s_ssp_provider;
     }
 
     private List<SspClient> fetchSspClients(Long physicalNetworkId, Long dataCenterId, boolean enabledOnly) {
@@ -187,14 +180,10 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
         PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(provider.getPhysicalNetworkId());
         assert (physicalNetwork != null);
-        if (physicalNetwork != null) {
-            if (fetchSspClients(physicalNetwork.getId(), physicalNetwork.getDataCenterId(), false).size() > 0) {
-                return true;
-            }
-            s_logger.warn("Ssp api endpoint not found. " + physicalNetwork.toString());
-        } else {
-            s_logger.warn("PhysicalNetwork is NULL.");
+        if (fetchSspClients(physicalNetwork.getId(), physicalNetwork.getDataCenterId(), false).size() > 0) {
+            return true;
         }
+        s_logger.warn("Ssp api endpoint not found. " + physicalNetwork.toString());
         return false;
     }
 

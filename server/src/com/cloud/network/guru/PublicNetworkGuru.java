@@ -103,7 +103,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
         if (offering.getTrafficType() == TrafficType.Public) {
             NetworkVO ntwk =
-                new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Vlan, offering.getId(), State.Setup, plan.getDataCenterId(),
+                new NetworkVO(offering.getTrafficType(), Mode.Static, network.getBroadcastDomainType(), offering.getId(), State.Setup, plan.getDataCenterId(),
                     plan.getPhysicalNetworkId());
             return ntwk;
         } else {
@@ -122,9 +122,15 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setIp4Address(ip.getAddress().toString());
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());
-            nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
-            nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
-            nic.setBroadcastType(BroadcastDomainType.Vlan);
+            if (network.getBroadcastDomainType() == BroadcastDomainType.Vxlan) {
+                nic.setIsolationUri(BroadcastDomainType.Vxlan.toUri(ip.getVlanTag()));
+                nic.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(ip.getVlanTag()));
+                nic.setBroadcastType(BroadcastDomainType.Vxlan);
+            } else {
+                nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+                nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
+                nic.setBroadcastType(BroadcastDomainType.Vlan);
+            }
             nic.setFormat(AddressFormat.Ip4);
             nic.setReservationId(String.valueOf(ip.getVlanTag()));
             nic.setMacAddress(ip.getMacAddress());

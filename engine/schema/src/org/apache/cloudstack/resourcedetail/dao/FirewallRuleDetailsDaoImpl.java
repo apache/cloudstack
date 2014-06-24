@@ -28,7 +28,7 @@ import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 public class FirewallRuleDetailsDaoImpl extends ResourceDetailsDaoBase<FirewallRuleDetailVO> implements FirewallRuleDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new FirewallRuleDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new FirewallRuleDetailVO(resourceId, key, value, display));
     }
 }

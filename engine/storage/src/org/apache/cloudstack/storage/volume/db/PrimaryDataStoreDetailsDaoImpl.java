@@ -26,8 +26,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDetailsDao;
 public class PrimaryDataStoreDetailsDaoImpl extends ResourceDetailsDaoBase<PrimaryDataStoreDetailVO> implements PrimaryDataStoreDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new PrimaryDataStoreDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new PrimaryDataStoreDetailVO(resourceId, key, value, display));
     }
 
 }

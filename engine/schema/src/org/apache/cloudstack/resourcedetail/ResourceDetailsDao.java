@@ -33,6 +33,15 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
     public R findDetail(long resourceId, String name);
 
     /**
+     * Find details by key,value pair
+     * @param key
+     * @param value
+     * @param display
+     * @return
+     */
+    public List<R> findDetails(String key, String value, Boolean display);
+
+    /**
      * Removes all details for the resource specified
      * @param resourceId
      */
@@ -66,6 +75,6 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
 
     public void saveDetails(List<R> details);
 
-    public void addDetail(long resourceId, String key, String value);
+    public void addDetail(long resourceId, String key, String value, boolean display);
 
 }

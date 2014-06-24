@@ -73,7 +73,7 @@ public interface AccountService {
         User
         createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID);
 
-    boolean isAdmin(short accountType);
+    boolean isAdmin(Long accountId);
 
     Account finalizeOwner(Account caller, String accountName, Long domainId, Long projectId);
 
@@ -87,7 +87,11 @@ public interface AccountService {
 
     User getUserIncludingRemoved(long userId);
 
-    boolean isRootAdmin(short accountType);
+    boolean isRootAdmin(Long accountId);
+
+    boolean isDomainAdmin(Long accountId);
+
+    boolean isNormalUser(long accountId);
 
     User getActiveUserByRegistrationToken(String registrationToken);
 
@@ -102,5 +106,17 @@ public interface AccountService {
     void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;
+
+    void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
+            ControlledEntity... entities) throws PermissionDeniedException;
+
+    Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
+
+    /**
+     * returns the user account object for a given user id
+     * @param userId user id
+     * @return useraccount object if it exists else null
+     */
+    UserAccount getUserAccountById(Long userId);
 
 }

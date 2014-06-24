@@ -33,10 +33,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -44,18 +42,14 @@ import com.cloud.baremetal.networkservice.BareMetalResourceBase;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
-import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
@@ -71,17 +65,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
     protected static final Logger s_logger = Logger.getLogger(BareMetalDiscoverer.class);
     @Inject
-    protected ClusterDao _clusterDao;
-    @Inject
-    protected HostDao _hostDao;
-    @Inject
-    protected DataCenterDao _dcDao;
-    @Inject
     protected VMInstanceDao _vmDao = null;
-    @Inject
-    protected ResourceManager _resourceMgr;
-    @Inject
-    protected ConfigurationDao _configDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

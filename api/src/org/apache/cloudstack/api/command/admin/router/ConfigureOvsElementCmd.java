@@ -39,7 +39,8 @@ import com.cloud.network.OvsProvider;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.user.Account;
 
-@APICommand(name = "configureOvsElement", responseObject = OvsProviderResponse.class, description = "Configures an ovs element.")
+@APICommand(name = "configureOvsElement", responseObject = OvsProviderResponse.class, description = "Configures an ovs element.",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ConfigureOvsElementCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger
         .getLogger(ConfigureOvsElementCmd.class.getName());

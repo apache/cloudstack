@@ -16,24 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.vmware;
 
-import java.net.URI;
-import java.net.URLDecoder;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-
-import com.vmware.vim25.ClusterDasConfigInfo;
-import com.vmware.vim25.ManagedObjectReference;
-
-import org.apache.cloudstack.api.ApiConstants;
-
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
@@ -42,14 +24,11 @@ import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
@@ -71,7 +50,6 @@ import com.cloud.network.element.CiscoNexusVSMElement;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
-import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
@@ -82,13 +60,25 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
+import com.vmware.vim25.ClusterDasConfigInfo;
+import com.vmware.vim25.ManagedObjectReference;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.net.URI;
+import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Local(value = Discoverer.class)
 public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(VmwareServerDiscoverer.class);
 
-    @Inject
-    ClusterDao _clusterDao;
     @Inject
     VmwareManager _vmwareMgr;
     @Inject
@@ -98,15 +88,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
     @Inject
-    HostDao _hostDao;
-    @Inject
-    DataCenterDao _dcDao;
-    @Inject
-    ResourceManager _resourceMgr;
-    @Inject
     CiscoNexusVSMDeviceDao _nexusDao;
-    CiscoNexusVSMElement _nexusElement;
-    List<NetworkElement> networkElements;
     @Inject
     NetworkModel _netmgr;
     @Inject
@@ -119,6 +101,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     protected Map<String, String> _urlParams;
     protected boolean useDVS = false;
     protected boolean nexusDVS = false;
+    CiscoNexusVSMElement _nexusElement;
+    List<NetworkElement> networkElements;
 
     public VmwareServerDiscoverer() {
         s_logger.info("VmwareServerDiscoverer is constructed");
@@ -126,7 +110,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 
     @Override
     public Map<? extends ServerResource, Map<String, String>>
-        find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags) throws DiscoveryException {
+    find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags) throws DiscoveryException {
 
         if (s_logger.isInfoEnabled())
             s_logger.info("Discover host. dc: " + dcId + ", pod: " + podId + ", cluster: " + clusterId + ", uri host: " + url.getHost());
@@ -158,7 +142,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             if (usernameNotProvided || passwordNotProvided) {
                 // Retrieve credentials associated with VMware DC
                 s_logger.info("Username and/or Password not provided while adding cluster to cloudstack zone. "
-                    + "Hence using both username & password provided while adding VMware DC to CloudStack zone.");
+                        + "Hence using both username & password provided while adding VMware DC to CloudStack zone.");
                 username = vmwareDc.getUser();
                 password = vmwareDc.getPassword();
                 clusterDetails.put("username", username);
@@ -166,7 +150,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                 _clusterDetailsDao.persist(clusterId, clusterDetails);
             }
             String updatedInventoryPath = validateCluster(url, vmwareDc);
-            if (url.getPath() != updatedInventoryPath) {
+            if (!url.getPath().equals(updatedInventoryPath)) {
                 // If url from API doesn't specify DC then update url in database with DC associated with this zone.
                 clusterDetails.put("url", url.getScheme() + "://" + url.getHost() + updatedInventoryPath);
                 _clusterDetailsDao.persist(clusterId, clusterDetails);
@@ -252,7 +236,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 
             // Process traffic label information provided at zone level and cluster level
             publicTrafficLabelObj =
-                getTrafficInfo(TrafficType.Public, publicTrafficLabel, defaultVirtualSwitchType, paramPublicVswitchType, paramPublicVswitchName, clusterId);
+                    getTrafficInfo(TrafficType.Public, publicTrafficLabel, defaultVirtualSwitchType, paramPublicVswitchType, paramPublicVswitchName, clusterId);
 
             // Configuration Check: A physical network cannot be shared by different types of virtual switches.
             //
@@ -272,7 +256,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             if (pNetworkListGuestTraffic.contains(pNetworkPublic)) {
                 if (publicTrafficLabelObj.getVirtualSwitchType() != guestTrafficLabelObj.getVirtualSwitchType()) {
                     String msg =
-                        "Both public traffic and guest traffic is over same physical network " + pNetworkPublic +
+                            "Both public traffic and guest traffic is over same physical network " + pNetworkPublic +
                             ". And virtual switch type chosen for each traffic is different" +
                             ". A physical network cannot be shared by different types of virtual switches.";
                     s_logger.error(msg);
@@ -295,7 +279,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         }
         Pair<Boolean, Long> vsmInfo = new Pair<Boolean, Long>(false, 0L);
         if (nexusDVS && (guestTrafficLabelObj.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch) ||
-            ((zoneType == NetworkType.Advanced) && (publicTrafficLabelObj.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch))) {
+                ((zoneType == NetworkType.Advanced) && (publicTrafficLabelObj.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch))) {
             // Expect Cisco Nexus VSM details only if following 2 condition met
             // 1) The global config parameter vmware.use.nexus.vswitch
             // 2) Atleast 1 traffic type uses Nexus distributed virtual switch as backend.
@@ -335,14 +319,14 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                     context.registerStockObject("vsmcredentials", vsmCredentials);
                 }
             }
-            List<ManagedObjectReference> morHosts = _vmwareMgr.addHostToPodCluster(context, dcId, podId, clusterId, URLDecoder.decode(url.getPath()));
+            List<ManagedObjectReference> morHosts = _vmwareMgr.addHostToPodCluster(context, dcId, podId, clusterId, URLDecoder.decode(url.getPath(), "UTF-8"));
             if (morHosts == null)
                 s_logger.info("Found 0 hosts.");
             if (privateTrafficLabel != null)
                 context.uregisterStockObject("privateTrafficLabel");
 
             if (morHosts == null) {
-                s_logger.error("Unable to find host or cluster based on url: " + URLDecoder.decode(url.getPath()));
+                s_logger.error("Unable to find host or cluster based on url: " + URLDecoder.decode(url.getPath(), "UTF-8"));
                 return null;
             }
 
@@ -350,7 +334,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             clusterDetails = _clusterDetailsDao.findDetails(clusterId);
             if (clusterDetails.get("url") != null) {
                 URI uriFromCluster = new URI(UriUtils.encodeURIComponent(clusterDetails.get("url")));
-                morCluster = context.getHostMorByPath(URLDecoder.decode(uriFromCluster.getPath()));
+                morCluster = context.getHostMorByPath(URLDecoder.decode(uriFromCluster.getPath(), "UTF-8"));
 
                 if (morCluster == null || !morCluster.getType().equalsIgnoreCase("ClusterComputeResource")) {
                     s_logger.warn("Cluster url does not point to a valid vSphere cluster, url: " + clusterDetails.get("url"));
@@ -397,6 +381,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                 }
                 params.put("guestTrafficInfo", guestTrafficLabelObj);
                 params.put("publicTrafficInfo", publicTrafficLabelObj);
+
+                params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
 
                 VmwareResource resource = new VmwareResource();
                 try {
@@ -491,13 +477,13 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 
         if (!vCenterHost.equalsIgnoreCase(url.getHost())) {
             msg =
-                "This cluster " + clusterName + " belongs to vCenter " + url.getHost() + ". But this zone is associated with VMware DC from vCenter " + vCenterHost +
+                    "This cluster " + clusterName + " belongs to vCenter " + url.getHost() + ". But this zone is associated with VMware DC from vCenter " + vCenterHost +
                     ". Make sure the cluster being added belongs to vCenter " + vCenterHost + " and VMware DC " + vmwareDcNameFromDb;
             s_logger.error(msg);
             throw new DiscoveryException(msg);
         } else if (!vmwareDcNameFromDb.equalsIgnoreCase(vmwareDcNameFromApi)) {
             msg =
-                "This cluster " + clusterName + " belongs to VMware DC " + vmwareDcNameFromApi + " .But this zone is associated with VMware DC " + vmwareDcNameFromDb +
+                    "This cluster " + clusterName + " belongs to VMware DC " + vmwareDcNameFromApi + " .But this zone is associated with VMware DC " + vmwareDcNameFromDb +
                     ". Make sure the cluster being added belongs to VMware DC " + vmwareDcNameFromDb + " in vCenter " + vCenterHost;
             s_logger.error(msg);
             throw new DiscoveryException(msg);
@@ -567,8 +553,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         if (tmplt == null) {
             id = _tmpltDao.getNextInSequence(Long.class, "id");
             VMTemplateVO template =
-                VMTemplateVO.createPreHostIso(id, isoName, isoName, ImageFormat.ISO, true, true, TemplateType.PERHOST, null, null, true, 64, Account.ACCOUNT_ID_SYSTEM,
-                    null, "VMware Tools Installer ISO", false, 1, false, HypervisorType.VMware);
+                    VMTemplateVO.createPreHostIso(id, isoName, isoName, ImageFormat.ISO, true, true, TemplateType.PERHOST, null, null, true, 64, Account.ACCOUNT_ID_SYSTEM,
+                            null, "VMware Tools Installer ISO", false, 1, false, HypervisorType.VMware);
             _tmpltDao.persist(template);
         } else {
             id = tmplt.getId();
@@ -627,7 +613,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     }
 
     private VmwareTrafficLabel getTrafficInfo(TrafficType trafficType, String zoneWideTrafficLabel, VirtualSwitchType defaultVirtualSwitchType, String vSwitchType,
-        String vSwitchName, Long clusterId) {
+            String vSwitchName, Long clusterId) {
         VmwareTrafficLabel trafficLabelObj = null;
         Map<String, String> clusterDetails = null;
         try {
@@ -664,7 +650,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     }
 
     private VmwareTrafficLabel getTrafficInfo(TrafficType trafficType, String zoneWideTrafficLabel, Map<String, String> clusterDetails,
-        VirtualSwitchType defVirtualSwitchType) {
+            VirtualSwitchType defVirtualSwitchType) {
         VmwareTrafficLabel trafficLabelObj = null;
         try {
             trafficLabelObj = new VmwareTrafficLabel(zoneWideTrafficLabel, trafficType, defVirtualSwitchType);

@@ -16,26 +16,6 @@
 // under the License.
 package com.cloud.network.element;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-
-import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
-import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
-import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
-import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
-import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
@@ -101,6 +81,22 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.Gson;
+import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
+import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
+import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Local(value = {NetworkElement.class, FirewallServiceProvider.class,
     DhcpServiceProvider.class, UserDataServiceProvider.class,
@@ -110,7 +106,7 @@ import com.cloud.vm.dao.UserVmDao;
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider,
         UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
         LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
-        NetworkMigrationResponder {
+        NetworkMigrationResponder, AggregatedCommandExecutor {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     public static final AutoScaleCounterType AutoScaleCounterCpu = new AutoScaleCounterType("cpu");
     public static final AutoScaleCounterType AutoScaleCounterMemory = new AutoScaleCounterType("memory");
@@ -192,10 +188,16 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
-        List<DomainRouterVO> routers =
-            _routerMgr.deployVirtualRouterInGuestNetwork(network, dest, _accountMgr.getAccount(network.getAccountId()), params, offering.getRedundantRouter());
-        if ((routers == null) || (routers.size() == 0)) {
-            throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
+        List<DomainRouterVO> routers = _routerMgr.deployVirtualRouterInGuestNetwork(network, dest,
+                _accountMgr.getAccount(network.getAccountId()), params,
+                offering.getRedundantRouter());
+        int routerCounts = 1;
+        if (offering.getRedundantRouter()) {
+            routerCounts = 2;
+        }
+        if ((routers == null) || (routers.size() < routerCounts)) {
+            throw new ResourceUnavailableException("Can't find all necessary running routers!",
+                    DataCenter.class, network.getDataCenterId());
         }
 
         return true;
@@ -1090,5 +1092,38 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             UserVmVO userVm = (UserVmVO)vm.getVirtualMachine();
             _userVmMgr.setupVmForPvlan(true, userVm.getHostId(), nic);
         }
+    }
+
+    @Override
+    public boolean prepareAggregatedExecution(Network network, DeployDestination dest) throws ResourceUnavailableException {
+        List<DomainRouterVO> routers = getRouters(network, dest);
+
+        if ((routers == null) || (routers.size() == 0)) {
+            throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
+        }
+
+        return _routerMgr.prepareAggregatedExecution(network, routers);
+    }
+
+    @Override
+    public boolean completeAggregatedExecution(Network network, DeployDestination dest) throws ResourceUnavailableException {
+        List<DomainRouterVO> routers = getRouters(network, dest);
+
+        if ((routers == null) || (routers.size() == 0)) {
+            throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
+        }
+
+        return _routerMgr.completeAggregatedExecution(network, routers);
+    }
+
+    @Override
+    public boolean cleanupAggregatedExecution(Network network, DeployDestination dest) throws ResourceUnavailableException {
+        List<DomainRouterVO> routers = getRouters(network, dest);
+
+        if ((routers == null) || (routers.size() == 0)) {
+            throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
+        }
+
+        return _routerMgr.cleanupAggregatedExecution(network, routers);
     }
 }

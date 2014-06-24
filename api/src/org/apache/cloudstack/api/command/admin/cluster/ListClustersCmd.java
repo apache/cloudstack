@@ -34,7 +34,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.org.Cluster;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listClusters", description = "Lists clusters.", responseObject = ClusterResponse.class)
+@APICommand(name = "listClusters", description = "Lists clusters.", responseObject = ClusterResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListClustersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
 

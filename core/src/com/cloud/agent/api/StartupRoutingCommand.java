@@ -22,7 +22,7 @@ import java.util.Map;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
-import com.cloud.utils.Ternary;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine.State;
 
 public class StartupRoutingCommand extends StartupCommand {
@@ -63,13 +63,14 @@ public class StartupRoutingCommand extends StartupCommand {
     // TODO vmsync
     // deprecated, will delete after full replacement
     Map<String, VmState> vms;
-    HashMap<String, Ternary<String, State, String>> _clusterVMStates;
+    HashMap<String, Pair<String, State>> _clusterVMStates;
 
     String caps;
     String pool;
     HypervisorType hypervisorType;
     Map<String, String> hostDetails; //stuff like host os, cpu capabilities
     String hypervisorVersion;
+    HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
 
     public StartupRoutingCommand() {
         super(Host.Type.Routing);
@@ -137,7 +138,7 @@ public class StartupRoutingCommand extends StartupCommand {
         }
     }
 
-    public void setClusterVMStateChanges(HashMap<String, Ternary<String, State, String>> allStates) {
+    public void setClusterVMStateChanges(HashMap<String, Pair<String, State>> allStates) {
         _clusterVMStates = allStates;
     }
 
@@ -169,7 +170,7 @@ public class StartupRoutingCommand extends StartupCommand {
         return vms;
     }
 
-    public HashMap<String, Ternary<String, State, String>> getClusterVMStateChanges() {
+    public HashMap<String, Pair<String, State>> getClusterVMStateChanges() {
         return _clusterVMStates;
     }
 
@@ -243,5 +244,13 @@ public class StartupRoutingCommand extends StartupCommand {
 
     public void setHostVmStateReport(Map<String, HostVmStateReportEntry> hostVmStateReport) {
         this._hostVmStateReport = hostVmStateReport;
+    }
+
+    public  HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetails() {
+        return groupDetails;
+    }
+
+    public void setGpuGroupDetails(HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
+        this.groupDetails = groupDetails;
     }
 }

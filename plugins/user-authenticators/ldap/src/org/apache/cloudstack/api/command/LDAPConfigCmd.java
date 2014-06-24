@@ -50,7 +50,9 @@ import com.cloud.utils.Pair;
  * @deprecated as of 4.3 use the new api {@link LdapAddConfigurationCmd}
  */
 @Deprecated
-@APICommand(name = "ldapConfig", description = "Configure the LDAP context for this site.", responseObject = LDAPConfigResponse.class, since = "3.0.0")
+@APICommand(name = "ldapConfig", description = "Configure the LDAP context for this site.", responseObject = LDAPConfigResponse.class, since = "3.0.0",
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
+
 public class LDAPConfigCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LDAPConfigCmd.class.getName());
 

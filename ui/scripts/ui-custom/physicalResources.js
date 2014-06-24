@@ -117,8 +117,8 @@
                             type: "POST",
                             url: createURL('uploadCustomCertificate'),
                             data: {
-                                certificate: encodeURIComponent(args.data.certificate),
-                                privatekey: encodeURIComponent(args.data.privatekey),
+                                certificate: args.data.certificate,
+                                privatekey: args.data.privatekey,
                                 domainsuffix: args.data.domainsuffix
                             },
                             dataType: 'json',
@@ -136,7 +136,7 @@
                                                 clearInterval(uploadCustomCertificateIntervalID);
                                                 if (result.jobstatus == 1) {
                                                     cloudStack.dialog.notice({
-                                                        message: 'Update SSL Certiciate succeeded'
+                                                        message: 'Update SSL Certificate succeeded'
                                                     });
                                                 } else if (result.jobstatus == 2) {
                                                     cloudStack.dialog.notice({

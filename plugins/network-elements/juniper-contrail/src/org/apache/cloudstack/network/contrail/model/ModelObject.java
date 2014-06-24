@@ -39,8 +39,16 @@ import com.cloud.exception.InternalErrorException;
  * The update method pushes updates to the contrail API server.
  */
 public interface ModelObject {
+
     public static class ModelReference implements Comparable<ModelReference>, Serializable {
-        WeakReference<ModelObject> reference;
+
+        private static final long serialVersionUID = -2019113974956703526L;
+
+        /*
+         * WeakReference class is not serializable by definition. So, we cannot enforce its serialization unless we write the implementation of
+         * methods writeObject() and readObject(). Since the code was already not serializing it, it's been marked as transient.
+         */
+        transient WeakReference<ModelObject> reference;
 
         ModelReference(ModelObject obj) {
             reference = new WeakReference<ModelObject>(obj);

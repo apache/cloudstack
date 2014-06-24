@@ -32,7 +32,8 @@ import org.apache.cloudstack.region.RegionService;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "addRegion", description = "Adds a Region", responseObject = RegionResponse.class)
+@APICommand(name = "addRegion", description = "Adds a Region", responseObject = RegionResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddRegionCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddRegionCmd.class.getName());
 

@@ -35,7 +35,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.Condition;
 
-@APICommand(name = "createCondition", description = "Creates a condition", responseObject = ConditionResponse.class)
+@APICommand(name = "createCondition", description = "Creates a condition", responseObject = ConditionResponse.class, entityType = {Condition.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateConditionCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateConditionCmd.class.getName());
     private static final String s_name = "conditionresponse";
@@ -69,8 +70,8 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
         condition = _autoScaleService.createCondition(this);
 
         if (condition != null) {
-            this.setEntityId(condition.getId());
-            this.setEntityUuid(condition.getUuid());
+            setEntityId(condition.getId());
+            setEntityUuid(condition.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create condition.");
         }
@@ -81,7 +82,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
         Condition condition = _entityMgr.findById(Condition.class, getEntityId());
         ConditionResponse response = _responseGenerator.createConditionResponse(condition);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     // /////////////////////////////////////////////////
@@ -137,7 +138,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, null, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, null, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

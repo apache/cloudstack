@@ -40,7 +40,8 @@ import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.user.Account;
 
-@APICommand(name = "createVirtualRouterElement", responseObject = VirtualRouterProviderResponse.class, description = "Create a virtual router element.")
+@APICommand(name = "createVirtualRouterElement", responseObject = VirtualRouterProviderResponse.class, description = "Create a virtual router element.",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVirtualRouterElementCmd.class.getName());
     private static final String s_name = "createvirtualrouterelementresponse";

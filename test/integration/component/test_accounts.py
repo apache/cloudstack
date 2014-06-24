@@ -17,14 +17,32 @@
 """ P1 tests for Account
 """
 #Import Local Modules
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-from marvin.sshClient import SshClient
+from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import (random_gen,
+                              cleanup_resources)
+from marvin.lib.base import (Domain,
+                             Account,
+                             ServiceOffering,
+                             VirtualMachine,
+                             Network,
+                             User,
+                             NATRule,
+                             Template,
+                             PublicIPAddress)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               list_accounts,
+                               list_virtual_machines,
+                               list_service_offering,
+                               list_templates,
+                               list_users,
+                               get_builtin_template_info,
+                               wait_for_cleanup)
 from nose.plugins.attrib import attr
-from marvin.cloudstackException import cloudstackAPIException
+from marvin.cloudstackException import CloudstackAPIException
+import time
 
 class Services:
     """Test Account Services
@@ -102,13 +120,11 @@ class TestAccounts(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestAccounts,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAccounts, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -148,7 +164,7 @@ class TestAccounts(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg", "selfservice"])
     def test_01_create_account(self):
         """Test Create Account and user for that account
         """
@@ -232,13 +248,11 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestRemoveUserFromAccount,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRemoveUserFromAccount, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -258,8 +272,8 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                             cls.services["account"]
                             )
 
-        cls._cleanup = [
-                        cls.service_offering,
+        cls._cleanup =  [cls.account,
+                         cls.service_offering,
                         ]
         return
 
@@ -286,7 +300,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg", "selfservice"])
     def test_01_user_remove_VM_running(self):
         """Test Remove one user from the account
         """
@@ -392,13 +406,11 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestNonRootAdminsPrivileges,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestNonRootAdminsPrivileges, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone settings
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         # Create an account, domain etc
         cls.domain = Domain.create(
@@ -440,7 +452,7 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg", "selfservice"])
     def test_01_non_root_admin_Privileges(self):
         """Test to verify Non Root admin previleges"""
 
@@ -465,7 +477,8 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
 
         accounts_response = list_accounts(
                                           self.apiclient,
-                                          domainid=self.domain.id
+                                          domainid=self.domain.id,
+                                          listall=True
                                           )
 
         self.assertEqual(
@@ -561,7 +574,7 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg", "selfservice"])
     def test_01_service_offering_siblings(self):
         """Test to verify service offerings at same level in hierarchy"""
 
@@ -679,7 +692,7 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg", "selfservice"])
     def test_01_service_offering_hierarchy(self):
         """Test to verify service offerings at same level in hierarchy"""
 
@@ -726,12 +739,12 @@ class TestTemplateHierarchy(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestTemplateHierarchy,
-                               cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestTemplateHierarchy, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
         cls.services = Services().services
-        # Get Zone settings
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype 
 
         # Create domains, accounts and template
@@ -761,6 +774,13 @@ class TestTemplateHierarchy(cloudstackTestCase):
                             domainid=cls.domain_2.id
                             )
 
+        cls._cleanup = [
+                        cls.account_2,
+                        cls.domain_2,
+                        cls.account_1,
+                        cls.domain_1,
+                        ]
+
         builtin_info = get_builtin_template_info(cls.api_client, cls.zone.id)
         cls.services["template"]["url"] = builtin_info[0] 
         cls.services["template"]["hypervisor"] = builtin_info[1]     
@@ -772,7 +792,8 @@ class TestTemplateHierarchy(cloudstackTestCase):
                                         cls.services["template"],
                                         zoneid=cls.zone.id,
                                         account=cls.account_1.name,
-                                        domainid=cls.domain_1.id
+                                        domainid=cls.domain_1.id,
+                                        hypervisor=cls.hypervisor
                                         )
 
         # Wait for template to download
@@ -780,14 +801,6 @@ class TestTemplateHierarchy(cloudstackTestCase):
 
         # Wait for template status to be changed across
         time.sleep(60)
-
-        cls._cleanup = [
-                        cls.account_2,
-                        cls.domain_2,
-                        cls.template,
-                        cls.account_1,
-                        cls.domain_1,
-                        ]
         return
 
     @classmethod
@@ -879,21 +892,12 @@ class TestAddVmToSubDomain(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestAddVmToSubDomain,
-                               cls
-                               ).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cls.testClient = super(TestAddVmToSubDomain, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        # Setup working Environment- Create domain, zone, pod cluster etc.
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
-        cls.zone = get_zone(
-                               cls.api_client,
-                               cls.services,
-                               )
+        cls.services = Services().services
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.sub_domain = Domain.create(
                                    cls.api_client,
@@ -922,6 +926,13 @@ class TestAddVmToSubDomain(cloudstackTestCase):
                                     cls.services["service_offering"],
                                     domainid=cls.domain.id
                                     )
+
+        cls._cleanup = [
+                        cls.account_2,
+                        cls.account_1,
+                        cls.sub_domain,
+                        cls.service_offering
+                        ]
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -945,12 +956,6 @@ class TestAddVmToSubDomain(cloudstackTestCase):
                                     domainid=cls.account_2.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
-        cls._cleanup = [
-                        cls.account_2,
-                        cls.account_1,
-                        cls.sub_domain,
-                        cls.service_offering
-                        ]
         return
 
     @classmethod
@@ -976,7 +981,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg", "selfservice"])
     def test_01_add_vm_to_subdomain(self):
         """ Test Sub domain allowed to launch VM  when a Domain level zone is created"""
 
@@ -1031,14 +1036,12 @@ class TestUserDetails(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestUserDetails,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestUserDetails, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, Domain etc
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls._cleanup = []
         return
@@ -1331,14 +1334,12 @@ class TestUserLogin(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestUserLogin,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestUserLogin, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, Domain etc
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls._cleanup = []
         return
@@ -1482,21 +1483,12 @@ class TestDomainForceRemove(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestDomainForceRemove,
-                               cls
-                               ).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cls.testClient = super(TestDomainForceRemove, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        # Setup working Environment- Create domain, zone, pod cluster etc.
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
-        cls.zone = get_zone(
-                               cls.api_client,
-                               cls.services,
-                               )
+        cls.services = Services().services
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
@@ -1533,7 +1525,7 @@ class TestDomainForceRemove(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["domains", "advanced", "advancedns", "simulator"])
+    @attr(tags=["domains", "advanced", "advancedns", "simulator", "selfservice"])
     def test_forceDeleteDomain(self):
         """ Test delete domain with force option"""
 
@@ -1582,16 +1574,17 @@ class TestDomainForceRemove(cloudstackTestCase):
                                      domainid=domain.id
                                      )
 
-        self.debug("Creating a tiny service offering for VM deployment")
-        self.service_offering = ServiceOffering.create(
+        try:
+            self.debug("Creating a tiny service offering for VM deployment")
+            self.service_offering = ServiceOffering.create(
                                     self.apiclient,
                                     self.services["service_offering"],
                                     domainid=self.domain.id
                                     )
 
-        self.debug("Deploying virtual machine in account 1: %s" %
+            self.debug("Deploying virtual machine in account 1: %s" %
                                                 self.account_1.name)
-        vm_1 = VirtualMachine.create(
+            vm_1 = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
@@ -1600,9 +1593,9 @@ class TestDomainForceRemove(cloudstackTestCase):
                                     serviceofferingid=self.service_offering.id
                                     )
 
-        self.debug("Deploying virtual machine in account 2: %s" %
+            self.debug("Deploying virtual machine in account 2: %s" %
                                                 self.account_2.name)
-        vm_2 = VirtualMachine.create(
+            VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
@@ -1611,22 +1604,22 @@ class TestDomainForceRemove(cloudstackTestCase):
                                     serviceofferingid=self.service_offering.id
                                     )
 
-        networks = Network.list(
+            networks = Network.list(
                                 self.apiclient,
                                 account=self.account_1.name,
                                 domainid=self.account_1.domainid,
                                 listall=True
                                 )
-        self.assertEqual(
+            self.assertEqual(
                          isinstance(networks, list),
                          True,
                          "List networks should return a valid response"
                          )
-        network_1 = networks[0]
-        self.debug("Default network in account 1: %s is %s" % (
+            network_1 = networks[0]
+            self.debug("Default network in account 1: %s is %s" % (
                                                 self.account_1.name,
                                                 network_1.name))
-        src_nat_list = PublicIPAddress.list(
+            src_nat_list = PublicIPAddress.list(
                                     self.apiclient,
                                     associatednetworkid=network_1.id,
                                     account=self.account_1.name,
@@ -1634,44 +1627,48 @@ class TestDomainForceRemove(cloudstackTestCase):
                                     listall=True,
                                     issourcenat=True,
                                     )
-        self.assertEqual(
+            self.assertEqual(
                          isinstance(src_nat_list, list),
                          True,
                          "List Public IP should return a valid source NAT"
                          )
-        self.assertNotEqual(
+            self.assertNotEqual(
                     len(src_nat_list),
                     0,
                     "Length of response from listPublicIp should not be 0"
                     )
 
-        src_nat = src_nat_list[0]
+            src_nat = src_nat_list[0]
 
-        self.debug(
-            "Trying to create a port forwarding rule in source NAT: %s" %
+            self.debug(
+                      "Trying to create a port forwarding rule in source NAT: %s" %
                                                             src_nat.ipaddress)
-        #Create NAT rule
-        nat_rule = NATRule.create(
+            #Create NAT rule
+            nat_rule = NATRule.create(
                                   self.apiclient,
                                   vm_1,
                                   self.services["natrule"],
                                   ipaddressid=src_nat.id
                            )
-        self.debug("Created PF rule on source NAT: %s" % src_nat.ipaddress)
+            self.debug("Created PF rule on source NAT: %s" % src_nat.ipaddress)
 
-        nat_rules = NATRule.list(self.apiclient, id=nat_rule.id)
+            nat_rules = NATRule.list(self.apiclient, id=nat_rule.id)
 
-        self.assertEqual(
+            self.assertEqual(
                          isinstance(nat_rules, list),
                          True,
                          "List NAT should return a valid port forwarding rules"
                          )
 
-        self.assertNotEqual(
+            self.assertNotEqual(
                     len(nat_rules),
                     0,
                     "Length of response from listLbRules should not be 0"
                     )
+        except Exception as e:
+            self.clenaup.append(self.account_1)
+            self.cleanup.append(self.account_2)
+            self.fail(e)
 
         self.debug("Deleting domain with force option")
         try:
@@ -1681,7 +1678,7 @@ class TestDomainForceRemove(cloudstackTestCase):
                 " to cleanup any remaining resouces")
             # Sleep 3*account.gc to ensure that all resources are deleted
             wait_for_cleanup(self.apiclient, ["account.cleanup.interval"]*3)
-            with self.assertRaises(cloudstackAPIException):
+            with self.assertRaises(CloudstackAPIException):
                 Domain.list(
                         self.apiclient,
                         id=domain.id,
@@ -1689,7 +1686,7 @@ class TestDomainForceRemove(cloudstackTestCase):
                         )
 
         self.debug("Checking if the resources in domain are deleted")
-        with self.assertRaises(cloudstackAPIException):
+        with self.assertRaises(CloudstackAPIException):
             Account.list(
                         self.apiclient,
                         name=self.account_1.name,
@@ -1698,7 +1695,7 @@ class TestDomainForceRemove(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["domains", "advanced", "advancedns", "simulator"])
+    @attr(tags=["domains", "advanced", "advancedns", "simulator", "selfservice"])
     def test_DeleteDomain(self):
         """ Test delete domain without force option"""
 
@@ -1768,7 +1765,7 @@ class TestDomainForceRemove(cloudstackTestCase):
 
         self.debug("Deploying virtual machine in account 2: %s" %
                                                 self.account_2.name)
-        vm_2 = VirtualMachine.create(
+        VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,

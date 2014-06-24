@@ -17,10 +17,11 @@
 package org.apache.cloudstack.api.command.admin.offering;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,14 +30,16 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 
-@APICommand(name = "createServiceOffering", description = "Creates a service offering.", responseObject = ServiceOfferingResponse.class)
+@APICommand(name = "createServiceOffering", description = "Creates a service offering.", responseObject = ServiceOfferingResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateServiceOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateServiceOfferingCmd.class.getName());
-    private static final String Name = "createserviceofferingresponse";
+    private static final String s_name = "createserviceofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -50,6 +53,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of the service offering")
     private String displayText;
+
+    @Parameter(name = ApiConstants.PROVISIONINGTYPE, type = CommandType.STRING, description = "provisioning type used to create volumes. Valid values are thin, sparse, fat.")
+    private String provisioningType = Storage.ProvisioningType.THIN.toString();
 
     @Parameter(name = ApiConstants.MEMORY, type = CommandType.INTEGER, required = false, description = "the total memory of the service offering in MB")
     private Integer memory;
@@ -102,7 +108,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     private String deploymentPlanner;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_DETAILS, type = CommandType.MAP, description = "details for planner, used to store specific parameters")
-    private Map<String, String> details;
+    private Map details;
 
     @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, required = false, description = "bytes read rate of the disk offering")
     private Long bytesReadRate;
@@ -115,6 +121,22 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, required = false, description = "io requests write rate of the disk offering")
     private Long iopsWriteRate;
+
+    @Parameter(name = ApiConstants.CUSTOMIZED_IOPS, type = CommandType.BOOLEAN, required = false, description = "whether compute offering iops is custom or not", since = "4.4")
+    private Boolean customizedIops;
+
+    @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "min iops of the compute offering", since = "4.4")
+    private Long minIops;
+
+    @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, required = false, description = "max iops of the compute offering", since = "4.4")
+    private Long maxIops;
+
+    @Parameter(name = ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE,
+            type = CommandType.INTEGER,
+            required = false,
+            description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)",
+            since = "4.4")
+    private Integer hypervisorSnapshotReserve;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -130,6 +152,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public String getDisplayText() {
         return displayText;
+    }
+
+    public String getProvisioningType(){
+        return provisioningType;
     }
 
     public Integer getMemory() {
@@ -189,13 +215,17 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public Map<String, String> getDetails() {
-        if (details == null || details.isEmpty()) {
-            return null;
+        Map<String, String> detailsMap = null;
+        if (details != null && !details.isEmpty()) {
+            detailsMap = new HashMap<String, String>();
+            Collection<?> props = details.values();
+            Iterator<?> iter = props.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> detail = (HashMap<String, String>) iter.next();
+                detailsMap.put(detail.get("key"), detail.get("value"));
+            }
         }
-
-        Collection<String> paramsCollection = details.values();
-        Map<String, String> params = (Map<String, String>)(paramsCollection.toArray())[0];
-        return params;
+        return detailsMap;
     }
 
     public Long getBytesReadRate() {
@@ -214,13 +244,29 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return iopsWriteRate;
     }
 
+    public Boolean isCustomizedIops() {
+        return customizedIops;
+    }
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public Integer getHypervisorSnapshotReserve() {
+        return hypervisorSnapshotReserve;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
-        return Name;
+        return s_name;
     }
 
     @Override

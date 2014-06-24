@@ -39,7 +39,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.OvsProvider;
 import com.cloud.network.element.VirtualRouterElementService;
 
-@APICommand(name = "listOvsElements", description = "Lists all available ovs elements.", responseObject = OvsProviderResponse.class)
+@APICommand(name = "listOvsElements", description = "Lists all available ovs elements.", responseObject = OvsProviderResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListOvsElementsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger
         .getLogger(ListNetworkOfferingsCmd.class.getName());

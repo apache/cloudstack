@@ -18,8 +18,8 @@
 import factory
 import marvin
 from marvin import cloudstackTestCase
-from marvin.integration.lib.base import *
-from marvin.integration.lib import utils
+from marvin.lib.base import *
+from marvin.lib import utils
 
 class AccountFactory(factory.Factory):
     FACTORY_FOR = createAccount.createAccountCmd

@@ -72,10 +72,10 @@ import com.citrix.netscaler.nitro.resource.config.ssl.sslvserver_sslcertkey_bind
 import com.citrix.netscaler.nitro.resource.stat.lb.lbvserver_stats;
 import com.citrix.netscaler.nitro.service.nitro_service;
 import com.citrix.netscaler.nitro.util.filtervalue;
-import com.citrix.sdx.nitro.resource.config.device_profile;
-import com.citrix.sdx.nitro.resource.config.mps;
-import com.citrix.sdx.nitro.resource.config.ns;
-import com.citrix.sdx.nitro.resource.config.xen_vpx_image;
+import com.citrix.sdx.nitro.resource.config.mps.device_profile;
+import com.citrix.sdx.nitro.resource.config.mps.mps;
+import com.citrix.sdx.nitro.resource.config.ns.ns;
+import com.citrix.sdx.nitro.resource.config.xen.xen_nsvpx_image;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 
@@ -295,10 +295,12 @@ public class NetscalerResource implements ServerResource {
                 _netscalerService = new nitro_service(_ip, "https");
                 _netscalerService.set_credential(_username, _password);
                 _netscalerService.set_timeout(_timeout);
+                _netscalerService.set_certvalidation(false);
+                _netscalerService.set_hostnameverification(false);
                 apiCallResult = _netscalerService.login();
                 if (apiCallResult.errorcode != 0) {
                     throw new ExecutionException("Failed to log in to Netscaler device at " + _ip + " due to error " + apiCallResult.errorcode + " and message " +
-                        apiCallResult.message);
+                            apiCallResult.message);
                 }
             } else {
                 _netscalerSdxService = new com.citrix.sdx.nitro.service.nitro_service(_ip, "https");
@@ -306,7 +308,7 @@ public class NetscalerResource implements ServerResource {
                 com.citrix.sdx.nitro.resource.base.login login = _netscalerSdxService.login();
                 if (login == null) {
                     throw new ExecutionException("Failed to log in to Netscaler SDX device at " + _ip + " due to error " + apiCallResult.errorcode + " and message " +
-                        apiCallResult.message);
+                            apiCallResult.message);
                 }
             }
         } catch (nitro_exception e) {
@@ -374,7 +376,7 @@ public class NetscalerResource implements ServerResource {
                     throw new ExecutionException("Failed to get the hardware description of the Netscaler device at " + _ip);
                 } else {
                     if ((_deviceName.equalsIgnoreCase("NetscalerMPXLoadBalancer") && nsHw.get_hwdescription().contains("MPX")) ||
-                        (_deviceName.equalsIgnoreCase("NetscalerVPXLoadBalancer") && nsHw.get_hwdescription().contains("NetScaler Virtual Appliance"))) {
+                            (_deviceName.equalsIgnoreCase("NetscalerVPXLoadBalancer") && nsHw.get_hwdescription().contains("NetScaler Virtual Appliance"))) {
                         return;
                     }
                     throw new ExecutionException("Netscalar device type specified does not match with the actuall device type.");
@@ -510,7 +512,7 @@ public class NetscalerResource implements ServerResource {
                     String nsVirtualServerName = generateNSVirtualServerName(loadBalancer.getSrcIp(), loadBalancer.getSrcPort());
 
                     com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding[] serviceBindings =
-                        com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.get(_netscalerService, nsVirtualServerName);
+                            com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.get(_netscalerService, nsVirtualServerName);
 
                     if (serviceBindings != null) {
                         for (DestinationTO destination : loadBalancer.getDestinations()) {
@@ -635,21 +637,21 @@ public class NetscalerResource implements ServerResource {
                                 apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.service.add(_netscalerService, newService);
                                 if (apiCallResult.errorcode != 0) {
                                     throw new ExecutionException("Failed to create service " + nsServiceName + " using server " + nsServerName + " due to" +
-                                        apiCallResult.message);
+                                            apiCallResult.message);
                                 }
                             }
 
                             //bind service to load balancing virtual server
                             if (!nsServiceBindingExists(nsVirtualServerName, nsServiceName)) {
                                 com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding svcBinding =
-                                    new com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding();
+                                        new com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding();
                                 svcBinding.set_name(nsVirtualServerName);
                                 svcBinding.set_servicename(nsServiceName);
                                 apiCallResult = com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.add(_netscalerService, svcBinding);
 
                                 if (apiCallResult.errorcode != 0) {
                                     throw new ExecutionException("Failed to bind service: " + nsServiceName + " to the lb virtual server: " + nsVirtualServerName +
-                                        " on Netscaler device");
+                                            " on Netscaler device");
                                 }
                             }
 
@@ -692,7 +694,7 @@ public class NetscalerResource implements ServerResource {
                                             String intermediateCertFileName = intermediateCertKeyName + ".pem";
 
                                             if (!SSL.isSslCertKeyPresent(_netscalerService, intermediateCertKeyName)) {
-                                                byte[] certData = intermediateCert.getEncoded();
+                                                intermediateCert.getEncoded();
                                                 StringWriter textWriter = new StringWriter();
                                                 PEMWriter pemWriter = new PEMWriter(textWriter);
                                                 pemWriter.writeObject(intermediateCert);
@@ -735,13 +737,13 @@ public class NetscalerResource implements ServerResource {
 
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Successfully added LB destination: " + destination.getDestIp() + ":" + destination.getDestPort() + " to load balancer " +
-                                    srcIp + ":" + srcPort);
+                                        srcIp + ":" + srcPort);
                             }
 
                         } else {
                             // remove a destination from the deployed load balancing rule
                             com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding[] serviceBindings =
-                                com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.get(_netscalerService, nsVirtualServerName);
+                                    com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.get(_netscalerService, nsVirtualServerName);
                             if (serviceBindings != null) {
                                 for (com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding binding : serviceBindings) {
                                     if (nsServiceName.equalsIgnoreCase(binding.get_servicename())) {
@@ -749,7 +751,7 @@ public class NetscalerResource implements ServerResource {
                                         apiCallResult = com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.delete(_netscalerService, binding);
                                         if (apiCallResult.errorcode != 0) {
                                             throw new ExecutionException("Failed to delete the binding between the virtual server: " + nsVirtualServerName +
-                                                " and service:" + nsServiceName + " due to" + apiCallResult.message);
+                                                    " and service:" + nsServiceName + " due to" + apiCallResult.message);
                                         }
 
                                         // check if service is bound to any other virtual server
@@ -780,7 +782,7 @@ public class NetscalerResource implements ServerResource {
                     if (lbserver != null) {
                         //unbind the all services associated with this virtual server
                         com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding[] serviceBindings =
-                            com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.get(_netscalerService, nsVirtualServerName);
+                                com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.get(_netscalerService, nsVirtualServerName);
 
                         if (serviceBindings != null) {
                             for (com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding binding : serviceBindings) {
@@ -788,11 +790,11 @@ public class NetscalerResource implements ServerResource {
                                 apiCallResult = com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.delete(_netscalerService, binding);
                                 if (apiCallResult.errorcode != 0) {
                                     throw new ExecutionException("Failed to unbind service from the lb virtual server: " + nsVirtualServerName + " due to " +
-                                        apiCallResult.message);
+                                            apiCallResult.message);
                                 }
 
                                 com.citrix.netscaler.nitro.resource.config.basic.service svc =
-                                    com.citrix.netscaler.nitro.resource.config.basic.service.get(_netscalerService, serviceName);
+                                        com.citrix.netscaler.nitro.resource.config.basic.service.get(_netscalerService, serviceName);
                                 String nsServerName = svc.get_servername();
 
                                 // check if service is bound to any other virtual server
@@ -830,8 +832,8 @@ public class NetscalerResource implements ServerResource {
 
                     // unbind before deleting
                     if (nsVirtualServerExists(nsVirtualServerName) &&
-                        SSL.isSslCertKeyPresent(_netscalerService, certKeyName) &&
-                        SSL.isBoundToVserver(_netscalerService, certKeyName, nsVirtualServerName)) {
+                            SSL.isSslCertKeyPresent(_netscalerService, certKeyName) &&
+                            SSL.isBoundToVserver(_netscalerService, certKeyName, nsVirtualServerName)) {
                         SSL.unbindCertKeyFromVserver(_netscalerService, certKeyName, nsVirtualServerName);
                     }
 
@@ -846,7 +848,7 @@ public class NetscalerResource implements ServerResource {
                      * Check and delete intermediate certs:
                      * we can delete an intermediate cert if no other
                      * cert references it as the athority
-                    */
+                     */
 
                     if (sslCert.getChain() != null) {
                         List<Certificate> chainList = CertificateHelper.parseChain(sslCert.getChain());
@@ -858,7 +860,7 @@ public class NetscalerResource implements ServerResource {
                             String intermediateCertFileName = intermediateCertKeyName + ".pem";
 
                             if (SSL.isSslCertKeyPresent(_netscalerService, intermediateCertKeyName) &&
-                                !SSL.isCaforCerts(_netscalerService, intermediateCertKeyName)) {
+                                    !SSL.isCaforCerts(_netscalerService, intermediateCertKeyName)) {
                                 SSL.deleteSslCertKey(_netscalerService, intermediateCertKeyName);
                                 SSL.deleteCertFile(_ip, _username, _password, intermediateCertFileName);
                             } else {
@@ -914,8 +916,8 @@ public class NetscalerResource implements ServerResource {
             ns_obj.set_password(password);
 
             // configure VPX instances with defaults
-            ns_obj.set_feature_license("Standard");
-            ns_obj.set_memory_total(new Double(2048));
+            ns_obj.set_license("Standard");
+            ns_obj.set_vm_memory_total(new Double(2048));
             ns_obj.set_throughput(new Double(1000));
             ns_obj.set_pps(new Double(1000000));
             ns_obj.set_number_of_ssl_cores(0);
@@ -924,17 +926,17 @@ public class NetscalerResource implements ServerResource {
             device_profile[] profiles = device_profile.get(_netscalerSdxService);
             if (!(profiles != null && profiles.length >= 1)) {
                 new Answer(cmd, new ExecutionException("Failed to create VPX instance on the netscaler SDX device " + _ip +
-                    " as there are no admin profile to use for creating VPX."));
+                        " as there are no admin profile to use for creating VPX."));
             }
             String profileName = profiles[0].get_name();
-            ns_obj.set_nsroot_profile(profileName);
+            ns_obj.set_profile_name(profileName);
 
             // use the first VPX image of the available VPX images on the SDX to create an instance of VPX
             // TODO: should enable the option to choose the template while adding the SDX device in to CloudStack
-            xen_vpx_image[] vpxImages = xen_vpx_image.get(_netscalerSdxService);
+            xen_nsvpx_image[] vpxImages = xen_nsvpx_image.get(_netscalerSdxService);
             if (!(vpxImages != null && vpxImages.length >= 1)) {
                 new Answer(cmd, new ExecutionException("Failed to create VPX instance on the netscaler SDX device " + _ip +
-                    " as there are no VPX images on SDX to use for creating VPX."));
+                        " as there are no VPX images on SDX to use for creating VPX."));
             }
             String imageName = vpxImages[0].get_file_name();
             ns_obj.set_image_name(imageName);
@@ -949,13 +951,13 @@ public class NetscalerResource implements ServerResource {
             ns newVpx = ns.add(_netscalerSdxService, ns_obj);
 
             if (newVpx == null) {
-                new Answer(cmd, new ExecutionException("Failed to create VPX instance on the netscaler SDX device " + _ip));
+                return new Answer(cmd, new ExecutionException("Failed to create VPX instance on the netscaler SDX device " + _ip));
             }
 
             // wait for VPX instance to start-up
             long startTick = System.currentTimeMillis();
             long startWaitMilliSeconds = 600000;
-            while (!newVpx.get_ns_state().equalsIgnoreCase("up") && System.currentTimeMillis() - startTick < startWaitMilliSeconds) {
+            while (!newVpx.get_state().equalsIgnoreCase("up") && System.currentTimeMillis() - startTick < startWaitMilliSeconds) {
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException e) {
@@ -966,7 +968,7 @@ public class NetscalerResource implements ServerResource {
             }
 
             // if vpx instance never came up then error out
-            if (!newVpx.get_ns_state().equalsIgnoreCase("up")) {
+            if (!newVpx.get_state().equalsIgnoreCase("up")) {
                 return new Answer(cmd, new ExecutionException("Failed to start VPX instance " + vpxName + " created on the netscaler SDX device " + _ip));
             }
 
@@ -1036,13 +1038,13 @@ public class NetscalerResource implements ServerResource {
             }
 
             return new CreateLoadBalancerApplianceAnswer(cmd, true, "provisioned VPX instance", "NetscalerVPXLoadBalancer", "Netscaler", new NetscalerResource(),
-                publicIf, privateIf, _username, _password);
+                    publicIf, privateIf, _username, _password);
         } catch (Exception e) {
             if (shouldRetry(numRetries)) {
                 return retry(cmd, numRetries);
             }
             return new CreateLoadBalancerApplianceAnswer(cmd, false, "failed to provisioned VPX instance due to " + e.getMessage(), null, null, null, null, null, null,
-                null);
+                    null);
         }
     }
 
@@ -1108,8 +1110,7 @@ public class NetscalerResource implements ServerResource {
                             // Unbind GSLB service with GSLB virtual server
                             GSLB.deleteVserverServiceBinding(_netscalerService, serviceName, vserverName);
 
-                            // delete 'gslbservice' object
-                            gslbservice service = GSLB.getServiceObject(_netscalerService, serviceName);
+                            GSLB.getServiceObject(_netscalerService, serviceName);
                             GSLB.deleteService(_netscalerService, serviceName);
 
                             // delete the GSLB service monitor
@@ -1288,7 +1289,7 @@ public class NetscalerResource implements ServerResource {
 
         // create a 'gslbvserver' object representing a globally load balanced service
         private static void
-            createVirtualServer(nitro_service client, String vserverName, String lbMethod, String persistenceType, long persistenceId, String serviceType)
+        createVirtualServer(nitro_service client, String vserverName, String lbMethod, String persistenceType, long persistenceId, String serviceType)
                 throws ExecutionException {
             try {
                 gslbvserver vserver;
@@ -1398,7 +1399,7 @@ public class NetscalerResource implements ServerResource {
 
         // update 'gslbvserver' object representing a globally load balanced service
         private static void updateVirtualServer(nitro_service client, String vserverName, String lbMethod, String persistenceType, String serviceType)
-            throws ExecutionException {
+                throws ExecutionException {
             try {
                 gslbvserver vServer = getVserverObject(client, vserverName);
                 if (vServer != null) {
@@ -1421,7 +1422,7 @@ public class NetscalerResource implements ServerResource {
 
         // create, delete, update, get the GSLB services
         private static void createService(nitro_service client, String serviceName, String serviceType, String serviceIp, String servicePort, String siteName)
-            throws ExecutionException {
+                throws ExecutionException {
             try {
                 gslbservice service;
                 service = getServiceObject(client, serviceName);
@@ -1493,7 +1494,7 @@ public class NetscalerResource implements ServerResource {
         }
 
         private static void updateService(nitro_service client, String serviceName, String serviceType, String publicIp, String publicPort, String siteName)
-            throws ExecutionException {
+                throws ExecutionException {
             try {
                 gslbservice service;
                 service = getServiceObject(client, serviceName);
@@ -1688,7 +1689,7 @@ public class NetscalerResource implements ServerResource {
                 }
             } catch (Exception e) {
                 s_logger.debug("Failed to delete GSLB monitor " + monitorName + " and GSLB service " + serviceName + " binding due to " + e.getMessage() +
-                    " but moving on ..., will be cleaned up as part of GSLB " + " service delete any way..");
+                        " but moving on ..., will be cleaned up as part of GSLB " + " service delete any way..");
             }
         }
 
@@ -2357,7 +2358,7 @@ public class NetscalerResource implements ServerResource {
                 // if Vlan to interface binding does not exist then ignore the exception and proceed
                 if (!(e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS)) {
                     throw new ExecutionException("Failed to unbind vlan from the interface while shutdown of guest network on the Netscaler device due to " +
-                        e.getMessage());
+                            e.getMessage());
                 }
             }
 
@@ -2380,7 +2381,10 @@ public class NetscalerResource implements ServerResource {
 
             // remove subnet IP
             try {
-                nsip subnetIp = nsip.get(_netscalerService, vlanSelfIp);
+                nsip _vlanSelfIp = new nsip();
+                _vlanSelfIp.set_ipaddress(vlanSelfIp);
+
+                nsip subnetIp = nsip.get(_netscalerService, _vlanSelfIp);
                 apiCallResult = nsip.delete(_netscalerService, subnetIp);
                 if (apiCallResult.errorcode != 0) {
                     throw new ExecutionException("Failed to remove subnet ip:" + vlanSelfIp + " from the NetScaler device due to" + apiCallResult.message);
@@ -2425,9 +2429,12 @@ public class NetscalerResource implements ServerResource {
         }
     }
 
-    private boolean nsSnipExists(String subnetIP) throws ExecutionException {
+    private boolean nsSnipExists(String subnetIp) throws ExecutionException {
         try {
-            nsip snip = nsip.get(_netscalerService, subnetIP);
+            nsip _subnetIp = new nsip();
+            _subnetIp.set_ipaddress(subnetIp);
+
+            nsip snip = nsip.get(_netscalerService, _subnetIp);
             return (snip != null);
         } catch (nitro_exception e) {
             if (e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS) {
@@ -2585,7 +2592,7 @@ public class NetscalerResource implements ServerResource {
     private boolean nsServiceBindingExists(String lbVirtualServer, String serviceName) throws ExecutionException {
         try {
             com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding[] serviceBindings =
-                com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.get(_netscalerService, lbVirtualServer);
+                    com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.get(_netscalerService, lbVirtualServer);
             if (serviceBindings != null) {
                 for (com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding binding : serviceBindings) {
                     if (serviceName.equalsIgnoreCase(binding.get_servicename())) {
@@ -2603,17 +2610,17 @@ public class NetscalerResource implements ServerResource {
 
     private boolean isServiceGroupBoundToVirtualServer(String nsVirtualServerName, String serviceGroupName) throws ExecutionException {
 
-        lbvserver_servicegroup_binding vserver_servicegroup_binding = new lbvserver_servicegroup_binding();
+        new lbvserver_servicegroup_binding();
 
         try {
             lbvserver_servicegroup_binding[] result =
-                lbvserver_servicegroup_binding.get_filtered(_netscalerService, nsVirtualServerName, "servicegroupname:" + serviceGroupName);
+                    lbvserver_servicegroup_binding.get_filtered(_netscalerService, nsVirtualServerName, "servicegroupname:" + serviceGroupName);
             if (result != null && result.length > 0) {
                 return true;
             }
         } catch (Exception e) {
             throw new ExecutionException("Failed to verify lb vserver " + nsVirtualServerName + "and servicegrop " + serviceGroupName + " binding exists due to " +
-                e.getMessage());
+                    e.getMessage());
         }
         return false;
 
@@ -2647,7 +2654,7 @@ public class NetscalerResource implements ServerResource {
                 if (NetUtils.sameSubnet(vlanSelfIp, server.get_ipaddress(), vlanNetmask)) {
                     // first remove services associated with this server
                     com.citrix.netscaler.nitro.resource.config.basic.service serveicesList[] =
-                        com.citrix.netscaler.nitro.resource.config.basic.service.get(_netscalerService);
+                            com.citrix.netscaler.nitro.resource.config.basic.service.get(_netscalerService);
                     if (serveicesList != null) {
                         for (com.citrix.netscaler.nitro.resource.config.basic.service svc : serveicesList) {
                             if (svc.get_servername().equals(server.get_ipaddress())) {
@@ -2685,7 +2692,7 @@ public class NetscalerResource implements ServerResource {
         if ((stickyPolicies != null) && (stickyPolicies.length > 0) && (stickyPolicies[0] != null)) {
             StickinessPolicyTO stickinessPolicy = stickyPolicies[0];
             if (StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName()) ||
-                (StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName()))) {
+                    (StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName()))) {
                 nsProtocol = "HTTP";
                 return nsProtocol;
             }
@@ -2706,7 +2713,7 @@ public class NetscalerResource implements ServerResource {
     }
 
     private void addLBVirtualServer(String virtualServerName, String publicIp, int publicPort, String lbAlgorithm, String protocol, StickinessPolicyTO[] stickyPolicies,
-        AutoScaleVmGroupTO vmGroupTO) throws ExecutionException {
+            AutoScaleVmGroupTO vmGroupTO) throws ExecutionException {
         try {
             String lbMethod;
             if ("roundrobin".equalsIgnoreCase(lbAlgorithm)) {
@@ -2724,7 +2731,7 @@ public class NetscalerResource implements ServerResource {
             if (vserver != null) {
                 if (!vserver.get_servicetype().equalsIgnoreCase(protocol)) {
                     throw new ExecutionException("Can not update virtual server:" + virtualServerName + " as current protocol:" + vserver.get_servicetype() +
-                        " of virtual server is different from the " + " intended protocol:" + protocol);
+                            " of virtual server is different from the " + " intended protocol:" + protocol);
                 }
                 vserverExisis = true;
             }
@@ -2826,7 +2833,7 @@ public class NetscalerResource implements ServerResource {
             if (csMonitor != null) {
                 if (!csMonitor.get_type().equalsIgnoreCase(lbProtocol)) {
                     throw new ExecutionException("Can not update monitor :" + nsMonitorName + " as current protocol:" + csMonitor.get_type() +
-                        " of monitor is different from the " + " intended protocol:" + lbProtocol);
+                            " of monitor is different from the " + " intended protocol:" + lbProtocol);
                 }
                 csMonitorExisis = true;
             }
@@ -2847,7 +2854,7 @@ public class NetscalerResource implements ServerResource {
                 csMon.set_failureretries(hcp.getUnhealthThresshold());
                 csMon.set_successretries(hcp.getHealthcheckThresshold());
                 s_logger.debug("Monitor properites going to get created :interval :: " + csMon.get_interval() + "respTimeOUt:: " + csMon.get_resptimeout() +
-                    "failure retires(unhealththresshold) :: " + csMon.get_failureretries() + "successtries(healththresshold) ::" + csMon.get_successretries());
+                        "failure retires(unhealththresshold) :: " + csMon.get_failureretries() + "successtries(healththresshold) ::" + csMon.get_successretries());
                 lbmonitor.add(_netscalerService, csMon);
             } else {
                 s_logger.debug("Monitor :" + nsMonitorName + " is already existing. Skipping to delete and create it");
@@ -2866,7 +2873,7 @@ public class NetscalerResource implements ServerResource {
             serviceObject = com.citrix.netscaler.nitro.resource.config.basic.service.get(_netscalerService, nsServiceName);
             if (serviceObject != null) {
                 com.citrix.netscaler.nitro.resource.config.basic.service_lbmonitor_binding serviceMonitor =
-                    new com.citrix.netscaler.nitro.resource.config.basic.service_lbmonitor_binding();
+                        new com.citrix.netscaler.nitro.resource.config.basic.service_lbmonitor_binding();
                 serviceMonitor.set_monitor_name(nsMonitorName);
                 serviceMonitor.set_name(nsServiceName);
                 serviceMonitor.set_monstate("ENABLED");
@@ -2889,7 +2896,7 @@ public class NetscalerResource implements ServerResource {
 
             if (serviceObject != null) {
                 com.citrix.netscaler.nitro.resource.config.basic.service_lbmonitor_binding serviceMonitor =
-                    new com.citrix.netscaler.nitro.resource.config.basic.service_lbmonitor_binding();
+                        new com.citrix.netscaler.nitro.resource.config.basic.service_lbmonitor_binding();
                 serviceMonitor.set_monitor_name(nsMonitorName);
                 serviceMonitor.set_name(nsServiceName);
                 s_logger.debug("Trying to unbind  the monitor :" + nsMonitorName + " from the service :" + nsServiceName);
@@ -2955,7 +2962,7 @@ public class NetscalerResource implements ServerResource {
         int srcPort = loadBalancerTO.getSrcPort();
         String lbProtocol = getNetScalerProtocol(loadBalancerTO);
         String lbAlgorithm = loadBalancerTO.getAlgorithm();
-        String vmGroupIdentifier = generateAutoScaleVmGroupIdentifier(loadBalancerTO);
+        generateAutoScaleVmGroupIdentifier(loadBalancerTO);
         String nsVirtualServerName = generateNSVirtualServerName(srcIp, srcPort);
         AutoScaleVmGroupTO vmGroupTO = loadBalancerTO.getAutoScaleVmGroupTO();
         if (s_logger.isDebugEnabled()) {
@@ -3008,7 +3015,7 @@ public class NetscalerResource implements ServerResource {
     private synchronized boolean removeAutoScaleConfig(LoadBalancerTO loadBalancerTO) throws Exception, ExecutionException {
         String srcIp = loadBalancerTO.getSrcIp();
         int srcPort = loadBalancerTO.getSrcPort();
-        String vmGroupIdentifier = generateAutoScaleVmGroupIdentifier(loadBalancerTO);
+        generateAutoScaleVmGroupIdentifier(loadBalancerTO);
 
         String nsVirtualServerName = generateNSVirtualServerName(srcIp, srcPort);
         String serviceGroupName = generateAutoScaleServiceGroupName(loadBalancerTO);
@@ -3064,7 +3071,7 @@ public class NetscalerResource implements ServerResource {
         AutoScaleVmProfileTO profileTO = vmGroupTO.getProfile();
         List<AutoScalePolicyTO> policies = vmGroupTO.getPolicies();
         int interval = vmGroupTO.getInterval();
-        List<Pair<String, String>> counterParams = profileTO.getCounterParamList();
+        profileTO.getCounterParamList();
         String snmpCommunity = null;
         int snmpPort = DEFAULT_SNMP_PORT;
         long cur_prirotiy = 1;
@@ -3156,7 +3163,7 @@ public class NetscalerResource implements ServerResource {
             // add autoscale action lb_scaleUpAction provision -vserver lb -profilename lb_asprofile -params
             // -lbruleid=1234&command=deployvm&zoneid=10&templateid=5&serviceofferingid=3- -quiettime 300
             com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction scaleUpAction =
-                new com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction();
+                    new com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction();
             try {
                 scaleUpAction.set_name(scaleUpActionName);
                 scaleUpAction.set_type("SCALE_UP"); // TODO: will this be called provision?
@@ -3165,10 +3172,10 @@ public class NetscalerResource implements ServerResource {
                 scaleUpAction.set_profilename(profileName);
                 scaleUpAction.set_quiettime(scaleUpQuietTime);
                 String scaleUpParameters =
-                    "command=deployVirtualMachine" + "&" + ApiConstants.ZONE_ID + "=" + profileTO.getZoneId() + "&" + ApiConstants.SERVICE_OFFERING_ID + "=" +
-                        profileTO.getServiceOfferingId() + "&" + ApiConstants.TEMPLATE_ID + "=" + profileTO.getTemplateId() + "&" + ApiConstants.DISPLAY_NAME + "=" +
-                        profileTO.getVmName() + "&" + ((profileTO.getNetworkId() == null) ? "" : (ApiConstants.NETWORK_IDS + "=" + profileTO.getNetworkId() + "&")) +
-                        ((profileTO.getOtherDeployParams() == null) ? "" : (profileTO.getOtherDeployParams() + "&")) + "lbruleid=" + loadBalancerTO.getUuid();
+                        "command=deployVirtualMachine" + "&" + ApiConstants.ZONE_ID + "=" + profileTO.getZoneId() + "&" + ApiConstants.SERVICE_OFFERING_ID + "=" +
+                                profileTO.getServiceOfferingId() + "&" + ApiConstants.TEMPLATE_ID + "=" + profileTO.getTemplateId() + "&" + ApiConstants.DISPLAY_NAME + "=" +
+                                profileTO.getVmName() + "&" + ((profileTO.getNetworkId() == null) ? "" : (ApiConstants.NETWORK_IDS + "=" + profileTO.getNetworkId() + "&")) +
+                                ((profileTO.getOtherDeployParams() == null) ? "" : (profileTO.getOtherDeployParams() + "&")) + "lbruleid=" + loadBalancerTO.getUuid();
                 scaleUpAction.set_parameters(scaleUpParameters);
                 autoscaleaction.add(_netscalerService, scaleUpAction);
             } catch (Exception e) {
@@ -3178,7 +3185,7 @@ public class NetscalerResource implements ServerResource {
             }
 
             com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction scaleDownAction =
-                new com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction();
+                    new com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction();
             Integer destroyVmGracePeriod = profileTO.getDestroyVmGraceperiod();
             try {
                 scaleDownAction.set_name(scaleDownActionName);
@@ -3200,13 +3207,13 @@ public class NetscalerResource implements ServerResource {
             /* Create min member policy */
             String minMemberPolicyName = generateAutoScaleMinPolicyName(vmGroupIdentifier);
             String minMemberPolicyExp =
-                "SYS.VSERVER(\"" + nsVirtualServerName + "\").ACTIVESERVICES.LT(SYS.VSERVER(\"" + nsVirtualServerName + "\").MINAUTOSCALEMEMBERS)";
+                    "SYS.VSERVER(\"" + nsVirtualServerName + "\").ACTIVESERVICES.LT(SYS.VSERVER(\"" + nsVirtualServerName + "\").MINAUTOSCALEMEMBERS)";
             addAutoScalePolicy(timerName, minMemberPolicyName, cur_prirotiy++, minMemberPolicyExp, scaleUpActionName, interval, interval, isCleanUp);
 
             /* Create max member policy */
             String maxMemberPolicyName = generateAutoScaleMaxPolicyName(vmGroupIdentifier);
             String maxMemberPolicyExp =
-                "SYS.VSERVER(\"" + nsVirtualServerName + "\").ACTIVESERVICES.GT(SYS.VSERVER(\"" + nsVirtualServerName + "\").MAXAUTOSCALEMEMBERS)";
+                    "SYS.VSERVER(\"" + nsVirtualServerName + "\").ACTIVESERVICES.GT(SYS.VSERVER(\"" + nsVirtualServerName + "\").MAXAUTOSCALEMEMBERS)";
             addAutoScalePolicy(timerName, maxMemberPolicyName, cur_prirotiy++, maxMemberPolicyExp, scaleDownActionName, interval, interval, isCleanUp);
 
             /* Create Counters */
@@ -3336,12 +3343,12 @@ public class NetscalerResource implements ServerResource {
                 if (isScaleUpPolicy(autoScalePolicyTO)) {
                     action = scaleUpActionName;
                     String scaleUpCondition =
-                        "SYS.VSERVER(\"" + nsVirtualServerName + "\").ACTIVESERVICES.LT(SYS.VSERVER(\"" + nsVirtualServerName + "\").MAXAUTOSCALEMEMBERS)";
+                            "SYS.VSERVER(\"" + nsVirtualServerName + "\").ACTIVESERVICES.LT(SYS.VSERVER(\"" + nsVirtualServerName + "\").MAXAUTOSCALEMEMBERS)";
                     policyExpression = scaleUpCondition + " && " + policyExpression;
                 } else {
                     action = scaleDownActionName;
                     String scaleDownCondition =
-                        "SYS.VSERVER(\"" + nsVirtualServerName + "\").ACTIVESERVICES.GT(SYS.VSERVER(\"" + nsVirtualServerName + "\").MINAUTOSCALEMEMBERS)";
+                            "SYS.VSERVER(\"" + nsVirtualServerName + "\").ACTIVESERVICES.GT(SYS.VSERVER(\"" + nsVirtualServerName + "\").MINAUTOSCALEMEMBERS)";
                     policyExpression = scaleDownCondition + " && " + policyExpression;
                 }
 
@@ -3409,7 +3416,7 @@ public class NetscalerResource implements ServerResource {
             /* Delete AutoScale Config */
             // Delete AutoScale ScaleDown action
             com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction scaleDownAction =
-                new com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction();
+                    new com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction();
             try {
                 scaleDownAction.set_name(scaleDownActionName);
                 autoscaleaction.delete(_netscalerService, scaleDownAction);
@@ -3421,7 +3428,7 @@ public class NetscalerResource implements ServerResource {
 
             // Delete AutoScale ScaleUp action
             com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction scaleUpAction =
-                new com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction();
+                    new com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction();
             try {
                 scaleUpAction.set_name(scaleUpActionName);
                 autoscaleaction.delete(_netscalerService, scaleUpAction);
@@ -3504,7 +3511,7 @@ public class NetscalerResource implements ServerResource {
     }
 
     private synchronized void addAutoScalePolicy(String timerName, String policyName, long priority, String policyExpression, String action, int duration, int interval,
-        boolean isCleanUp) throws Exception {
+            boolean isCleanUp) throws Exception {
         // Adding a autoscale policy
         // add timer policy lb_policy_scaleUp_cpu_mem -rule - (SYS.CUR_VSERVER.METRIC_TABLE(cpu).AVG_VAL.GT(80)-
         // -action lb_scaleUpAction
@@ -3572,7 +3579,7 @@ public class NetscalerResource implements ServerResource {
     }
 
     private boolean isAutoScaleSupportedInNetScaler() throws ExecutionException {
-        autoscaleprofile autoscaleProfile = new autoscaleprofile();
+        new autoscaleprofile();
         try {
             autoscaleprofile.get(_netscalerService);
         } catch (Exception ex) {
