@@ -304,7 +304,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         return
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false", BugId="CLOUDSTACK-6984")
     def test_01_stop_vm(self):
         """Test Stop Virtual Machine
         """
@@ -593,7 +593,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.assertEqual(list_vm_response,None,"Check Expunged virtual machine is in listVirtualMachines response")
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true", BugId="CLOUDSTACK-6985")
     def test_10_attachAndDetach_iso(self):
         """Test for attach and detach ISO to virtual machine"""
 
