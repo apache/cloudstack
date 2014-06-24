@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -64,6 +65,9 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the disk volume")
     private Long volumeId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the policy to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -86,6 +90,14 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
 
     public Long getVolumeId() {
         return volumeId;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if(display == null)
+            return true;
+        else
+            return display;
     }
 
     /////////////////////////////////////////////////////
