@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.snapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -46,12 +47,23 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the disk volume")
     private Long volumeId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getVolumeId() {
         return volumeId;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return true;
     }
 
     /////////////////////////////////////////////////////

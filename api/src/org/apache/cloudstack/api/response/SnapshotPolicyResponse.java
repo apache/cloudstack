@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.response;
 
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
@@ -49,6 +51,10 @@ public class SnapshotPolicyResponse extends BaseResponse {
     @SerializedName("timezone")
     @Param(description = "the time zone of the snapshot policy")
     private String timezone;
+
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is this policy for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
 
     public String getId() {
         return id;
@@ -96,5 +102,13 @@ public class SnapshotPolicyResponse extends BaseResponse {
 
     public void setTimezone(String timezone) {
         this.timezone = timezone;
+    }
+
+    public Boolean getForDisplay() {
+        return forDisplay;
+    }
+
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 }
