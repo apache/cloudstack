@@ -609,7 +609,7 @@ class TestVolumes(cloudstackTestCase):
         return 
 
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true", BugId="CLOUDSTACK-6985")
     def test_08_resize_volume(self):
         """Test resize a volume"""
         # Verify the size is the new size is what we wanted it to be.

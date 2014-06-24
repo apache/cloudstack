@@ -233,7 +233,7 @@ class TestDeployVM(cloudstackTestCase):
         else:
             self.debug("test 01 does not support hypervisor type " + self.hypervisor);
 
-    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true")
+    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true", BugId="CLOUDSTACK-6985")
     def test_02_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize less than template size
         """
