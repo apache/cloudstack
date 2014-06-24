@@ -36,6 +36,7 @@ import org.apache.cloudstack.resourcedetail.dao.RemoteAccessVpnDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.Site2SiteCustomerGatewayDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnConnectionDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnGatewayDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
@@ -117,9 +118,11 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Inject
     AutoScaleVmGroupDetailsDao _autoScaleVmGroupDetailsDao;
     @Inject
-    LBStickinessPolicyDetailsDao _stickinessPolicyDao;
+    LBStickinessPolicyDetailsDao _stickinessPolicyDetailsDao;
     @Inject
-    LBHealthCheckPolicyDetailsDao _healthcheckPolicyDao;
+    LBHealthCheckPolicyDetailsDao _healthcheckPolicyDetailsDao;
+    @Inject
+    SnapshotPolicyDetailsDao _snapshotPolicyDetailsDao;
 
     private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> s_daoMap = new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
 
@@ -149,8 +152,9 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         s_daoMap.put(ResourceObjectType.User, _userDetailsDao);
         s_daoMap.put(ResourceObjectType.AutoScaleVmProfile, _autoScaleVmProfileDetailsDao);
         s_daoMap.put(ResourceObjectType.AutoScaleVmGroup, _autoScaleVmGroupDetailsDao);
-        s_daoMap.put(ResourceObjectType.LBStickinessPolicy, _stickinessPolicyDao);
-        s_daoMap.put(ResourceObjectType.LBHealthCheckPolicy, _healthcheckPolicyDao);
+        s_daoMap.put(ResourceObjectType.LBStickinessPolicy, _stickinessPolicyDetailsDao);
+        s_daoMap.put(ResourceObjectType.LBHealthCheckPolicy, _healthcheckPolicyDetailsDao);
+        s_daoMap.put(ResourceObjectType.SnapshotPolicy, _snapshotPolicyDetailsDao);
 
         return true;
     }
