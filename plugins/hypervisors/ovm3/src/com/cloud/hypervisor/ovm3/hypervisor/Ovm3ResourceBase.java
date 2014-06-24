@@ -1868,7 +1868,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             s_logger.debug("VM " + vm.getKey() + " state: " + vm.getValue()
                     + ":" + convertStateToPower(vm.getValue()));
             vmStates.put(vm.getKey(), new HostVmStateReportEntry(
-                    convertStateToPower(vm.getValue()), c.getIp()));
+                    convertStateToPower(vm.getValue()), c.getIp(), null));
         }
         return vmStates;
     }
