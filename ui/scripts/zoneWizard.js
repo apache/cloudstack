@@ -88,9 +88,6 @@
             case 'Ovm':
                 hypervisorAttr = 'ovmnetworklabel';
                 break;
-            case 'Ovm3':
-                hypervisorAttr = 'ovmnetworklabel';
-                break;
             case 'LXC':
                 hypervisorAttr = 'lxcnetworklabel';
                 break;
@@ -477,7 +474,6 @@
                                         nonSupportedHypervisors["BareMetal"] = 1;
                                         nonSupportedHypervisors["Hyperv"] = 1;
                                         nonSupportedHypervisors["Ovm"] = 1;
-                                        nonSupportedHypervisors["Ovm3"] = 1;
                                         nonSupportedHypervisors["LXC"] = 1;
                                     }
 
@@ -940,15 +936,6 @@
                                     return $.inArray($(this).attr('rel'), vsmFields) > -1;
                                 });
 
-                                if ($(this).val() == "Ovm3") {
-                                    $form.find('.form-item[rel=ovm3pool]').css('display', 'inline-block');
-                                    $form.find('.form-item[rel=ovm3pool]').find('input[type=checkbox]').removeAttr('checked');
-
-                                    $form.find('.form-item[rel=ovm3cluster]').css('display', 'inline-block');
-                                    $form.find('.form-item[rel=ovm3cluster]').find('input[type=checkbox]').removeAttr('checked');
-                                    $form.find('[rel=ovm3vip]').css('display', 'block');$
-                                }
-
                                 if ($(this).val() == "VMware") {
                                     //$('li[input_sub_group="external"]', $dialogAddCluster).show();
                                     if (dvSwitchEnabled) {
@@ -1301,18 +1288,6 @@
                         $form.find('[rel=agentUsername]').css('display', 'block');
                         $form.find('[rel=agentUsername]').find('input').val("oracle");
                         $form.find('[rel=agentPassword]').css('display', 'block');
-                    } else if (selectedClusterObj.hypervisortype == "Ovm3") {   
-                        //$('li[input_group="general"]', $dialogAddHost).show();
-                        $form.find('.form-item[rel=hostname]').css('display', 'inline-block');
-                        $form.find('.form-item[rel=username]').css('display', 'inline-block');
-                        $form.find('.form-item[rel=password]').css('display', 'inline-block');
-
-                        //$('li[input_group="Ovm3"]', $dialogAddHost).show();
-                        $form.find('.form-item[rel=agentUsername]').css('display', 'inline-block');
-                        $form.find('.form-item[rel=agentUsername]').find('input').val("oracle");
-                        $form.find('.form-item[rel=agentPassword]').css('display', 'inline-block');
-                        $form.find('.form-item[rel=agentPort]').css('display', 'inline-block');
-                        $form.find('.form-item[rel=agentPort]').find('input').val("8899");
                     } else {
                         //$('li[input_group="general"]', $dialogAddHost).show();
                         $form.find('[rel=hostname]').css('display', 'block');
@@ -1418,16 +1393,6 @@
                         isPassword: true
                     },
                     //input_group="OVM" ends here
-
-                    //input_group="OVM3" starts here
-                    agentPort: {
-                        label: 'label.agent.port',
-                        validation: {
-                            required: false
-                        },
-                        isHidden: true
-                    },
-                    //input_group="OVM3" ends here
 
                     //always appear (begin)
                     hosttags: {
@@ -1567,7 +1532,7 @@
                             	args.response.success({
                                     data: items
                                 });
-                            } else if (selectedClusterObj.hypervisortype == "Ovm" || selectedClusterObj.hypervisortype == "Ovm3") {
+                            } else if (selectedClusterObj.hypervisortype == "Ovm") {
                                 var items = [];
                                 items.push({
                                     id: "nfs",
@@ -4447,12 +4412,6 @@
                         $.extend(data, {
                             agentusername: args.data.host.agentUsername,
                             agentpassword: args.data.host.agentPassword
-                        });
-                    } else if (selectedClusterObj.hypervisortype == "Ovm3") {
-                        $.extend(data, {
-                            agentusername: args.data.agentUsername,
-                            agentpassword: args.data.agentPassword,
-                            agentport: args.data.agentPort,
                         });
                     }
 
