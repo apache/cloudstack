@@ -294,7 +294,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  */
 @Local(value = { VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class })
 public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService,
-        VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
+VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
     @Inject
@@ -610,7 +610,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         if (router.isStopPending()) {
             s_logger.info("Clear the stop pending flag of router " + router.getHostName() + " after stop router successfully");
             router.setStopPending(false);
-            router = _routerDao.persist(router);
+            _routerDao.persist(router);
             virtualRouter.setStopPending(false);
         }
         return virtualRouter;
@@ -2028,7 +2028,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     private DomainRouterVO startVirtualRouter(DomainRouterVO router, User user, Account caller, Map<Param, Object> params)
             throws StorageUnavailableException, InsufficientCapacityException,
-    ConcurrentOperationException, ResourceUnavailableException {
+            ConcurrentOperationException, ResourceUnavailableException {
 
         if (router.getRole() != Role.VIRTUAL_ROUTER || !router.getIsRedundantRouter()) {
             return this.start(router, user, caller, params, null);
@@ -2118,11 +2118,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     protected List<DomainRouterVO> startRouters(final Map<Param, Object> params, final List<DomainRouterVO> routers) throws StorageUnavailableException,
     InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        List<DomainRouterVO> runningRouters = null;
-
-        if (routers != null) {
-            runningRouters = new ArrayList<DomainRouterVO>();
-        }
+        List<DomainRouterVO> runningRouters = new ArrayList<DomainRouterVO>();
 
         for (DomainRouterVO router : routers) {
             boolean skip = false;
@@ -2547,6 +2543,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         // at VR startup time, information in VirtualMachineProfile may not updated to DB yet,
         // getRouterControlIp() may give wrong IP under basic network mode in VMware environment
         final NicProfile controlNic = getControlNic(profile);
+        if (controlNic == null) {
+            throw new CloudRuntimeException("VirtualMachine " + profile.getInstanceName() + " doesn't have a control interface");
+        }
         final SetMonitorServiceCommand command = new SetMonitorServiceCommand(servicesTO);
         command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIp4Address());
         command.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(networkId, router.getId()));
@@ -2846,7 +2845,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer)cmds.getAnswer("getDomRVersion");
             router.setTemplateVersion(versionAnswer.getTemplateVersion());
             router.setScriptsVersion(versionAnswer.getScriptsVersion());
-            router = _routerDao.persist(router, guestNetworks);
+            _routerDao.persist(router, guestNetworks);
         }
 
         return result;
@@ -3435,9 +3434,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     private void createApplyPortForwardingRulesCommands(final List<? extends PortForwardingRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
-        List<PortForwardingRuleTO> rulesTO = null;
+        List<PortForwardingRuleTO> rulesTO = new ArrayList<PortForwardingRuleTO>();
         if (rules != null) {
-            rulesTO = new ArrayList<PortForwardingRuleTO>();
             for (final PortForwardingRule rule : rules) {
                 final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
                 final PortForwardingRuleTO ruleTO = new PortForwardingRuleTO(rule, null, sourceIp.getAddress().addr());
@@ -3463,9 +3461,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     private void createApplyStaticNatRulesCommands(final List<? extends StaticNatRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
-        List<StaticNatRuleTO> rulesTO = null;
+        List<StaticNatRuleTO> rulesTO = new ArrayList<StaticNatRuleTO>();
         if (rules != null) {
-            rulesTO = new ArrayList<StaticNatRuleTO>();
             for (final StaticNatRule rule : rules) {
                 final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
                 final StaticNatRuleTO ruleTO = new StaticNatRuleTO(rule, null, sourceIp.getAddress().addr(), rule.getDestIpAddress());
@@ -3900,7 +3897,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     private void createFirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
-        List<FirewallRuleTO> rulesTO = null;
+        List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
         String systemRule = null;
         Boolean defaultEgressPolicy = false;
         if (rules != null) {
@@ -3909,7 +3906,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
                 }
             }
-            rulesTO = new ArrayList<FirewallRuleTO>();
             for (final FirewallRule rule : rules) {
                 _rulesDao.loadSourceCidrs((FirewallRuleVO)rule);
                 final FirewallRule.TrafficType traffictype = rule.getTrafficType();
@@ -4061,9 +4057,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     private void createApplyStaticNatCommands(final List<? extends StaticNat> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
-        List<StaticNatRuleTO> rulesTO = null;
+        List<StaticNatRuleTO> rulesTO = new ArrayList<StaticNatRuleTO>();
         if (rules != null) {
-            rulesTO = new ArrayList<StaticNatRuleTO>();
             for (final StaticNat rule : rules) {
                 final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
                 final StaticNatRuleTO ruleTO =
@@ -4349,21 +4344,21 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         List<Long> jobIds = new ArrayList<Long>();
         for(DomainRouterVO router: routers){
             if(!checkRouterVersion(router)){
-                    s_logger.debug("Upgrading template for router: "+router.getId());
-                    Map<String, String> params = new HashMap<String, String>();
-                    params.put("ctxUserId", "1");
-                    params.put("ctxAccountId", "" + router.getAccountId());
+                s_logger.debug("Upgrading template for router: "+router.getId());
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("ctxUserId", "1");
+                params.put("ctxAccountId", "" + router.getAccountId());
 
-                    RebootRouterCmd cmd = new RebootRouterCmd();
-                    ComponentContext.inject(cmd);
-                    params.put("id", ""+router.getId());
-                    params.put("ctxStartEventId", "1");
+                RebootRouterCmd cmd = new RebootRouterCmd();
+                ComponentContext.inject(cmd);
+                params.put("id", ""+router.getId());
+                params.put("ctxStartEventId", "1");
                 AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, router.getAccountId(), RebootRouterCmd.class.getName(),
-                            ApiGsonHelper.getBuilder().create().toJson(params), router.getId(),
-                            cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null, null);
-                    job.setDispatcher(_asyncDispatcher.getName());
-                    long jobId = _asyncMgr.submitAsyncJob(job);
-                    jobIds.add(jobId);
+                        ApiGsonHelper.getBuilder().create().toJson(params), router.getId(),
+                        cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null, null);
+                job.setDispatcher(_asyncDispatcher.getName());
+                long jobId = _asyncMgr.submitAsyncJob(job);
+                jobIds.add(jobId);
             } else {
                 s_logger.debug("Router: " + router.getId() + " is already at the latest version. No upgrade required");
             }
