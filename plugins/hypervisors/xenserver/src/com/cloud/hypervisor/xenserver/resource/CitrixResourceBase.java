@@ -1886,16 +1886,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String mountpoint = details.get(DiskTO.MOUNT_POINT);
         String protocoltype=details.get(DiskTO.PROTOCOL_TYPE);
 
-        if(StoragePoolType.NetworkFilesystem.toString().equalsIgnoreCase(protocoltype)){
-        String poolid = storageHost+":"+mountpoint;
-        String namelable = mountpoint;
-        String volumedesc = storageHost+":"+mountpoint;
+        if (StoragePoolType.NetworkFilesystem.toString().equalsIgnoreCase(protocoltype)) {
+            String poolid = storageHost + ":" + mountpoint;
+            String namelable = mountpoint;
+            String volumedesc = storageHost + ":" + mountpoint;
 
-        return getNfsSR(conn, poolid, namelable, storageHost, mountpoint, volumedesc);
-
-        }else{
-
-        return getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
+            return getNfsSR(conn, poolid, namelable, storageHost, mountpoint, volumedesc);
+        } else {
+            return getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
         }
     }
 
@@ -1908,20 +1906,21 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (vdi == null) {
 
             vdi = createVdi(sr, vdiNameLabel, volumeSize);
-        }else {
+        } else {
+            // if VDI is not null, it must have already been created, so check whether a resize of the volume was performed
+            // if true, resize the VDI to the volume size
 
-            // if vdi is not null, it must have been already created, check whether a resize of volume was done
-            // if true , resize the vdi to the volume size
             s_logger.info("checking for the resize of the datadisk");
-            long vdiVirtualsize = vdi.getVirtualSize(conn);
 
-            if(vdiVirtualsize != volumeSize){
-                s_logger.info("resizing the datadisk(vdi) from vdiVirtualsize :"+ vdiVirtualsize + "to volumeSize :" + volumeSize);
+            long vdiVirtualSize = vdi.getVirtualSize(conn);
+
+            if (vdiVirtualSize != volumeSize) {
+                s_logger.info("resizing the datadisk(vdi) from vdiVirtualsize :"+ vdiVirtualSize + "to volumeSize :" + volumeSize);
 
                 try {
                     vdi.resize(conn, volumeSize);
                 } catch (Exception e) {
-                    s_logger.warn("Unable to resize volume",e);
+                    s_logger.warn("Unable to resize volume", e);
                 }
             }
          }
@@ -5086,7 +5085,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         StorageFilerTO pool = cmd.getPool();
         try {
             if (pool.getType() == StoragePoolType.NetworkFilesystem) {
-                getNfsSR(conn, Long.toString(pool.getId()),pool.getUuid(),pool.getHost(),pool.getPath(),pool.toString());
+                getNfsSR(conn, Long.toString(pool.getId()), pool.getUuid(), pool.getHost(), pool.getPath(), pool.toString());
             } else if (pool.getType() == StoragePoolType.IscsiLUN) {
                 getIscsiSR(conn, pool.getUuid(), pool.getHost(), pool.getPath(), null, null, false);
             } else if (pool.getType() == StoragePoolType.PreSetup) {
@@ -6096,7 +6095,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected SR getNfsSR(Connection conn,String poolid,String uuid, String server,String serverpath,String pooldesc) {
+    protected SR getNfsSR(Connection conn, String poolid, String uuid, String server, String serverpath, String pooldesc) {
         Map<String, String> deviceConfig = new HashMap<String, String>();
         try {
             serverpath = serverpath.replace("//", "/");
@@ -6129,7 +6128,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 if (server.equals(dc.get("server")) && serverpath.equals(dc.get("serverpath"))) {
                     throw new CloudRuntimeException("There is a SR using the same configuration server:" + dc.get("server") + ", serverpath:" + dc.get("serverpath") +
-                            " for pool " + uuid + "on host:" + _host.uuid);
+                            " for pool " + uuid + " on host:" + _host.uuid);
                 }
 
             }
