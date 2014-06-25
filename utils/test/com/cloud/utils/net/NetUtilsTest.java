@@ -137,7 +137,8 @@ public class NetUtilsTest extends TestCase {
     	assertTrue(NetUtils.getIsolatedPvlanFromUri(uri).equals("456"));
     }
 
-    public void testIsSameIpRange() {
+    @Test
+    public void testIsValidCIDR() {
         //Test to check IP Range of 2 CIDRs
         String cidrFirst = "10.0.144.0/20";
         String cidrSecond = "10.0.151.0/20";
@@ -145,6 +146,24 @@ public class NetUtilsTest extends TestCase {
         assertTrue(NetUtils.isValidCIDR(cidrFirst));
         assertTrue(NetUtils.isValidCIDR(cidrSecond));
         assertTrue(NetUtils.isValidCIDR(cidrThird));
+    }
+
+    @Test
+    public void testIsValidCidrList() throws Exception {
+        String cidrFirst = "10.0.144.0/20,1.2.3.4/32,5.6.7.8/24";
+        String cidrSecond = "10.0.151.0/20,129.0.0.0/4";
+        String cidrThird = "10.0.144.0/21";
+
+        assertTrue(NetUtils.isValidCidrList(cidrFirst));
+        assertTrue(NetUtils.isValidCidrList(cidrSecond));
+        assertTrue(NetUtils.isValidCidrList(cidrThird));
+    }
+
+    @Test
+    public void testIsSameIpRange() {
+        String cidrFirst = "10.0.144.0/20";
+        String cidrSecond = "10.0.151.0/20";
+        String cidrThird = "10.0.144.0/21";
 
         //Check for exactly same CIDRs
         assertTrue(NetUtils.isSameIpRange(cidrFirst, cidrFirst));
