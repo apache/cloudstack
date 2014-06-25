@@ -78,7 +78,7 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "guestvlanrange", "dedicate", "release"], BugId="CLOUDSTACK-6738", required_hardware="false")
+    @attr(tags=["advanced", "guestvlanrange", "dedicate", "release"], required_hardware="false")
     def test_dedicateGuestVlanRange(self):
         """Test guest vlan range dedication
         """
