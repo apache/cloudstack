@@ -1175,6 +1175,15 @@ public class NetUtils {
         return true;
     }
 
+    public static boolean isValidCidrList(String cidrList) {
+        for (String guestCidr : cidrList.split(",")) {
+            if (!isValidCIDR(guestCidr)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static boolean validateGuestCidrList(String guestCidrList) {
         for (String guestCidr : guestCidrList.split(",")) {
             if (!validateGuestCidr(guestCidr)) {
