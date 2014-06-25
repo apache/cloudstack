@@ -137,15 +137,15 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     private static final String LIST_CAPACITY_GROUP_BY_CLUSTER_TYPE_PART2 = " GROUP BY cluster_id, capacity_type order by percent desc limit ";
     private static final String UPDATE_CAPACITY_STATE = "UPDATE `cloud`.`op_host_capacity` SET capacity_state = ? WHERE ";
 
-    private static final String LIST_CAPACITY_GROUP_BY_CAPACITY_PART1 =
-        "SELECT sum(capacity.used_capacity), sum(capacity.reserved_capacity),"
-            + " (case capacity_type when 1 then (sum(total_capacity) * (select value from `cloud`.`cluster_details` where cluster_details.name= 'cpuOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id)) "
-            + "when '0' then (sum(total_capacity) * (select value from `cloud`.`cluster_details` where cluster_details.name= 'memoryOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id))else sum(total_capacity) end),"
-            + "((sum(capacity.used_capacity) + sum(capacity.reserved_capacity)) / ( case capacity_type when 1 then (sum(total_capacity) * (select value from `cloud`.`cluster_details` where cluster_details.name= 'cpuOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id)) "
-            + "when '0' then (sum(total_capacity) * (select value from `cloud`.`cluster_details` where cluster_details.name= 'memoryOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id)) else sum(total_capacity) end)) percent,"
-            + "capacity.capacity_type, capacity.data_center_id, pod_id FROM `cloud`.`op_host_capacity` capacity WHERE  total_capacity > 0 AND data_center_id is not null AND capacity_state='Enabled' ";
+    private static final String LIST_CAPACITY_GROUP_BY_CAPACITY_PART1= "SELECT sum(capacity.used_capacity), sum(capacity.reserved_capacity)," +
+            " (case capacity_type when 1 then (sum(total_capacity) * (select value from `cloud`.`cluster_details` where cluster_details.name= 'cpuOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id)) " +
+            "when '0' then (sum(total_capacity) * (select value from `cloud`.`cluster_details` where cluster_details.name= 'memoryOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id))else sum(total_capacity) end)," +
+            "((sum(capacity.used_capacity) + sum(capacity.reserved_capacity)) / ( case capacity_type when 1 then (sum(total_capacity) * (select value from `cloud`.`cluster_details` where cluster_details.name= 'cpuOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id)) " +
+            "when '0' then (sum(total_capacity) * (select value from `cloud`.`cluster_details` where cluster_details.name= 'memoryOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id)) else sum(total_capacity) end)) percent," +
+            "capacity.capacity_type, capacity.data_center_id, pod_id, cluster_id FROM `cloud`.`op_host_capacity` capacity WHERE  total_capacity > 0 AND data_center_id is not null AND capacity_state='Enabled' ";
 
     private static final String LIST_CAPACITY_GROUP_BY_CAPACITY_PART2 = " GROUP BY capacity_type";
+    private static final String LIST_CAPACITY_GROUP_BY_CAPACITY_DATA_CENTER_POD_CLUSTER = " GROUP BY data_center_id, pod_id, cluster_id, capacity_type";
 
     /* In the below query"LIST_CLUSTERS_CROSSING_THRESHOLD" the threshold value is getting from the cluster_details table if not present then it gets from the global configuration
     *
@@ -403,7 +403,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
-        List<SummedCapacity> result = new ArrayList<SummedCapacity>();
+        List<SummedCapacity> results = new ArrayList<SummedCapacity>();
 
         StringBuilder sql = new StringBuilder(LIST_CAPACITY_GROUP_BY_CAPACITY_PART1);
         List<Long> resourceIdList = new ArrayList<Long>();
@@ -425,7 +425,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             resourceIdList.add(capacityType.longValue());
         }
 
-        sql.append(LIST_CAPACITY_GROUP_BY_CAPACITY_PART2);
+        sql.append(LIST_CAPACITY_GROUP_BY_CAPACITY_DATA_CENTER_POD_CLUSTER);
 
         try {
             pstmt = txn.prepareAutoCloseStatement(sql.toString());
@@ -435,10 +435,49 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             }
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                SummedCapacity summedCapacity = new SummedCapacity(rs.getLong(1), rs.getLong(2), rs.getLong(3), (short)rs.getLong(5), null, null, rs.getLong(6));
-                result.add(summedCapacity);
+
+                Long capacityPodId = null;
+                Long capacityClusterId = null;
+
+                if(rs.getLong(7) != 0)
+                    capacityPodId = rs.getLong(7);
+                if(rs.getLong(8) != 0)
+                    capacityClusterId = rs.getLong(8);
+
+                SummedCapacity summedCapacity = new SummedCapacity( rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getFloat(4),
+                        (short)rs.getLong(5), rs.getLong(6),
+                        capacityPodId, capacityClusterId);
+
+                results.add(summedCapacity);
             }
-            return result;
+            HashMap<String, SummedCapacity> capacityMap = new HashMap<String, SummedCapacity>();
+            for (SummedCapacity result: results) {
+                String key;
+                if (zoneId != null || podId!= null) {
+                    key=String.valueOf(result.getCapacityType());
+                }
+                else {
+                     // sum the values based on the zoneId.
+                     key=String.valueOf(result.getDataCenterId())+String.valueOf(result.getCapacityType());
+                }
+                SummedCapacity tempCapacity=null;
+                if (capacityMap.containsKey(key)) {
+                    tempCapacity = capacityMap.get(key);
+                    tempCapacity.setUsedCapacity(tempCapacity.getUsedCapacity()+result.getUsedCapacity());
+                    tempCapacity.setReservedCapacity(tempCapacity.getReservedCapacity()+result.getReservedCapacity());
+                    tempCapacity.setSumTotal(tempCapacity.getTotalCapacity()+result.getTotalCapacity());
+                }else {
+                    capacityMap.put(key, result);
+                }
+                tempCapacity = capacityMap.get(key);
+                tempCapacity.setPodId(podId);
+                tempCapacity.setClusterId(clusterId);
+            }
+            List<SummedCapacity> summedCapacityList = new ArrayList<SummedCapacity>();
+            for (String key : capacityMap.keySet()) {
+                summedCapacityList.add(capacityMap.get(key));
+            }
+            return summedCapacityList;
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + sql, e);
         } catch (Throwable e) {
@@ -621,6 +660,22 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
         public Float getPercentUsed() {
             return percentUsed;
+        }
+        public void setUsedCapacity(long sumUsed) {
+            this.sumUsed= sumUsed;
+        }
+        public void setReservedCapacity(long sumReserved) {
+            this.sumReserved=sumReserved;
+        }
+        public void setSumTotal(long sumTotal) {
+            this.sumTotal=sumTotal;
+        }
+
+        public void setPodId(Long podId) {
+            this.podId=podId;
+        }
+        public void setClusterId(Long clusterId) {
+            this.clusterId=clusterId;
         }
     }
 
