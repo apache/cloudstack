@@ -98,7 +98,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true",BugId="CLOUDSTACK-6878")
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_01_snapshot_root_disk(self):
         """Test Snapshot Root Disk
         """
