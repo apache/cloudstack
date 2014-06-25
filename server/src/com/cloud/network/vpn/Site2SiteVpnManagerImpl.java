@@ -171,9 +171,9 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (name == null) {
             name = "VPN-" + gatewayIp;
         }
-        String guestCidrList = cmd.getGuestCidrList();
-        if (!NetUtils.validateGuestCidrList(guestCidrList)) {
-            throw new InvalidParameterValueException("The customer gateway guest cidr list " + guestCidrList + " is invalid guest cidr!");
+        String peerCidrList = cmd.getGuestCidrList();
+        if (!NetUtils.isValidCidrList(peerCidrList)) {
+            throw new InvalidParameterValueException("The customer gateway peer cidr list " + peerCidrList + " contains an invalid cidr!");
         }
         String ipsecPsk = cmd.getIpsecPsk();
         String ikePolicy = cmd.getIkePolicy();
@@ -214,10 +214,10 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             throw new InvalidParameterValueException("The customer gateway with name " + name + " already existed!");
         }
 
-        checkCustomerGatewayCidrList(guestCidrList);
+        checkCustomerGatewayCidrList(peerCidrList);
 
-        Site2SiteCustomerGatewayVO gw = new Site2SiteCustomerGatewayVO(name, accountId, owner.getDomainId(), gatewayIp, guestCidrList, ipsecPsk,
-                ikePolicy, espPolicy, ikeLifetime, espLifetime, dpd);
+        Site2SiteCustomerGatewayVO gw =
+            new Site2SiteCustomerGatewayVO(name, accountId, owner.getDomainId(), gatewayIp, peerCidrList, ipsecPsk, ikePolicy, espPolicy, ikeLifetime, espLifetime, dpd);
         _customerGatewayDao.persist(gw);
         return gw;
     }

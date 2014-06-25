@@ -46,8 +46,8 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="public ip address id of the customer gateway")
     private String gatewayIp;
 
-    @Parameter(name=ApiConstants.CIDR_LIST, type=CommandType.STRING, required=true, description="guest cidr list of the customer gateway")
-    private String guestCidrList;
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.STRING, required = true, description = "guest cidr list of the customer gateway")
+    private String peerCidrList;
 
     @Parameter(name=ApiConstants.IPSEC_PSK, type=CommandType.STRING, required=true, description="IPsec Preshared-Key of the customer gateway")
     private String ipsecPsk;
@@ -89,7 +89,7 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     }
 
     public String getGuestCidrList() {
-        return guestCidrList;
+        return peerCidrList;
     }
 
     public String getGatewayIp() {
