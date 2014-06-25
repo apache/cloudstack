@@ -41,6 +41,7 @@ import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolAutomation;
 
 public class NexentaPrimaryDataStoreLifeCycle
@@ -172,5 +173,9 @@ public class NexentaPrimaryDataStoreLifeCycle
     @Override
     public boolean migrateToObjectStore(DataStore store) {
         return false;
+    }
+
+    @Override
+    public void updateStoragePool(StoragePool storagePool, Map<String, String> details) {
     }
 }

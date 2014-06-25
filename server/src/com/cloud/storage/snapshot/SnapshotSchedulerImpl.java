@@ -304,6 +304,12 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         if (policy == null) {
             return null;
         }
+
+        // If display attribute is false then remove schedules if any.
+        if(!policy.isDisplay()){
+            removeSchedule(policy.getVolumeId(), policy.getId());
+        }
+
         final long policyId = policy.getId();
         if (policyId == Snapshot.MANUAL_POLICY_ID) {
             return null;
@@ -329,6 +335,20 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         }
         return nextSnapshotTimestamp;
     }
+
+    @Override
+    public void scheduleOrCancelNextSnapshotJobOnDisplayChange(final SnapshotPolicyVO policy, boolean previousDisplay) {
+
+        // Take action only if display changed
+        if(policy.isDisplay() != previousDisplay ){
+            if(policy.isDisplay()){
+                scheduleNextSnapshotJob(policy);
+            }else{
+                removeSchedule(policy.getVolumeId(), policy.getId());
+            }
+        }
+    }
+
 
     @Override
     @DB

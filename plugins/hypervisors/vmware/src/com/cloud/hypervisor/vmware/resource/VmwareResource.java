@@ -354,6 +354,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         _gson = GsonHelper.getGsonLogger();
     }
 
+    private String getCommandLogTitle(Command cmd) {
+        StringBuffer sb = new StringBuffer();
+        if (_hostName != null) {
+            sb.append(_hostName);
+        }
+
+        if (cmd.getContextParam("job") != null) {
+            sb.append(", ").append(cmd.getContextParam("job"));
+        }
+        sb.append(", cmd: ").append(cmd.getClass().getSimpleName());
+
+        return sb.toString();
+    }
+
     @Override
     public Answer executeRequest(Command cmd) {
 
@@ -361,7 +375,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.trace("Begin executeRequest(), cmd: " + cmd.getClass().getSimpleName());
 
         Answer answer = null;
-        NDC.push(_hostName != null ? _hostName : _guid + "(" + this.getClass().getPackage().getImplementationVersion() + ")");
+        NDC.push(getCommandLogTitle(cmd));
         try {
             long cmdSequence = _cmdSequence++;
             Date startTime = DateUtil.currentGMTTime();

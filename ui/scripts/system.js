@@ -16190,6 +16190,14 @@
                                     var array1 =[];
                                     array1.push("&tags=" + todb(args.data.tags));
                                     
+                                    if (args.data.disksizetotal != null && args.data.disksizetotal.length > 0) {
+                                        array1.push("&capacitybytes=" + cloudStack.converters.toBytes(args.data.disksizetotal));
+                                    }
+
+                                    if (args.data.capacityiops != null && args.data.capacityiops.length > 0) {
+                                        array1.push("&capacityiops=" + args.data.capacityiops);
+                                    }
+
                                     $.ajax({
                                         url: createURL("updateStoragePool&id=" + args.context.primarystorages[0].id + array1.join("")),
                                         dataType: "json",
@@ -16356,6 +16364,7 @@
                                     },
                                     disksizetotal: {
                                         label: 'label.disk.total',
+                                        isEditable: true,
                                         converter: function (args) {
                                             if (args == null || args == 0)
                                             return ""; else
@@ -16372,6 +16381,7 @@
                                     },
                                     capacityiops: {
                                         label: 'label.disk.iops.total',
+                                        isEditable: true,
                                         converter: function (args) {
                                             if (args == null || args == 0)
                                             return ""; else

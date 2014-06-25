@@ -58,17 +58,21 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
     @Column(name = "uuid")
     String uuid;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public SnapshotPolicyVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public SnapshotPolicyVO(long volumeId, String schedule, String timezone, IntervalType intvType, int maxSnaps) {
+    public SnapshotPolicyVO(long volumeId, String schedule, String timezone, IntervalType intvType, int maxSnaps, boolean display) {
         this.volumeId = volumeId;
         this.schedule = schedule;
         this.timezone = timezone;
         this.interval = (short)intvType.ordinal();
         this.maxSnaps = maxSnaps;
         this.active = true;
+        this.display = display;
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -139,5 +143,13 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public boolean isDisplay() {
+        return display;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
     }
 }

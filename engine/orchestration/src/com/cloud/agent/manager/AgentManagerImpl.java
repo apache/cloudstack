@@ -43,6 +43,8 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
@@ -379,6 +381,18 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return !txn.dbTxnStarted();
     }
 
+    private static void tagCommand(Command cmd) {
+        AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrentExecutionContext();
+        if (context != null && context.getJob() != null) {
+            AsyncJob job = context.getJob();
+
+            if (job.getRelated() != null && !job.getRelated().isEmpty())
+                cmd.setContextParam("job", "job-" + job.getRelated() + "/" + "job-" + job.getId());
+            else
+                cmd.setContextParam("job", "job-" + job.getId());
+        }
+    }
+
     @Override
     public Answer[] send(Long hostId, Commands commands, int timeout) throws AgentUnavailableException, OperationTimedoutException {
         assert hostId != null : "Who's not checking the agent id before sending?  ... (finger wagging)";
@@ -407,6 +421,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (cmds.length == 0) {
             commands.setAnswers(new Answer[0]);
         }
+
+        for (Command cmd : cmds)
+            tagCommand(cmd);
 
         final AgentAttache agent = getAttache(hostId);
         if (agent == null || agent.isClosed()) {
@@ -466,6 +483,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (cmds.length == 0) {
             throw new AgentUnavailableException("Empty command set for agent " + agent.getId(), agent.getId());
         }
+
+        for (Command cmd : cmds)
+            tagCommand(cmd);
+
         Request req = new Request(hostId, agent.getName(), _nodeId, cmds, commands.stopOnError(), true);
         req.setSequence(agent.getNextSequence());
 

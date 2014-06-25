@@ -1712,3 +1712,16 @@ CREATE TABLE `cloud`.`load_balancer_healthcheck_policy_details` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_lb_healthcheck_policy_details__lb_healthcheck_policy_id` FOREIGN KEY `fk_lb_healthcheck_policy_details__lb_healthcheck_policy_id`(`lb_policy_id`) REFERENCES `load_balancer_healthcheck_policies`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`snapshot_policy` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the policy can be displayed to the end user';
+
+CREATE TABLE `cloud`.`snapshot_policy_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `policy_id` bigint unsigned NOT NULL COMMENT 'snapshot policy id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_snapshot_policy_details__snapshot_policy_id` FOREIGN KEY `fk_snapshot_policy_details__snapshot_policy_id`(`policy_id`) REFERENCES `snapshot_policy`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

@@ -2093,6 +2093,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             details.put(DiskTO.STORAGE_PORT, String.valueOf(volumeToAttachStoragePool.getPort()));
             details.put(DiskTO.VOLUME_SIZE, String.valueOf(volumeToAttach.getSize()));
             details.put(DiskTO.IQN, volumeToAttach.get_iScsiName());
+            details.put(DiskTO.MOUNT_POINT, volumeToAttach.get_iScsiName());
+            details.put(DiskTO.PROTOCOL_TYPE, (volumeToAttach.getPoolType() != null) ? volumeToAttach.getPoolType().toString() : null);
 
             if (chapInfo != null) {
                 details.put(DiskTO.CHAP_INITIATOR_USERNAME, chapInfo.getInitiatorUsername());

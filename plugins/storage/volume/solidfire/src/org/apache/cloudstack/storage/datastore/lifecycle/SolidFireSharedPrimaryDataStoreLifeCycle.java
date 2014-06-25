@@ -209,6 +209,10 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             throw new CloudRuntimeException("The parameter '" + CAPACITY_IOPS + "' must be equal to the parameter '" + SolidFireUtil.MIN_IOPS + "'.");
         }
 
+        if (lMinIops > SolidFireUtil.MAX_IOPS_PER_VOLUME || lMaxIops > SolidFireUtil.MAX_IOPS_PER_VOLUME || lBurstIops > SolidFireUtil.MAX_IOPS_PER_VOLUME) {
+            throw new CloudRuntimeException("This volume cannot exceed " + NumberFormat.getInstance().format(SolidFireUtil.MAX_IOPS_PER_VOLUME) + " IOPS.");
+        }
+
         details.put(SolidFireUtil.MIN_IOPS, String.valueOf(lMinIops));
         details.put(SolidFireUtil.MAX_IOPS, String.valueOf(lMaxIops));
         details.put(SolidFireUtil.BURST_IOPS, String.valueOf(lBurstIops));
@@ -302,7 +306,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             }
 
             long sfVolumeId = SolidFireUtil.createSolidFireVolume(sfConnection, SolidFireUtil.getSolidFireVolumeName(volumeName), sfAccount.getId(), volumeSize,
-                    true, NumberFormat.getInstance().format(volumeSize), minIops, maxIops, burstIops);
+                    true, null, minIops, maxIops, burstIops);
             SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getSolidFireVolume(sfConnection, sfVolumeId);
 
             return sfVolume;
@@ -523,6 +527,14 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         return Long.parseLong(volumeId);
     }
 
+    private long getIopsValue(long storagePoolId, String iopsKey) {
+        StoragePoolDetailVO storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePoolId, iopsKey);
+
+        String iops = storagePoolDetail.getValue();
+
+        return Long.parseLong(iops);
+    }
+
     private static boolean isSupportedHypervisorType(HypervisorType hypervisorType) {
         return HypervisorType.XenServer.equals(hypervisorType) || HypervisorType.VMware.equals(hypervisorType);
     }
@@ -545,4 +557,49 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         return false;
     }
 
+    @Override
+    public void updateStoragePool(StoragePool storagePool, Map<String, String> details) {
+        String strCapacityBytes = details.get(PrimaryDataStoreLifeCycle.CAPACITY_BYTES);
+        String strCapacityIops = details.get(PrimaryDataStoreLifeCycle.CAPACITY_IOPS);
+
+        Long capacityBytes = strCapacityBytes != null ? Long.parseLong(strCapacityBytes) : null;
+        Long capacityIops = strCapacityIops != null ? Long.parseLong(strCapacityIops) : null;
+
+        SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePool.getId(), _storagePoolDetailsDao);
+
+        long size = capacityBytes != null ? capacityBytes : storagePool.getCapacityBytes();
+
+        long currentMinIops = getIopsValue(storagePool.getId(), SolidFireUtil.MIN_IOPS);
+        long currentMaxIops = getIopsValue(storagePool.getId(), SolidFireUtil.MAX_IOPS);
+        long currentBurstIops = getIopsValue(storagePool.getId(), SolidFireUtil.BURST_IOPS);
+
+        long minIops = currentMinIops;
+        long maxIops = currentMaxIops;
+        long burstIops = currentBurstIops;
+
+        if (capacityIops != null) {
+            if (capacityIops > SolidFireUtil.MAX_IOPS_PER_VOLUME) {
+                throw new CloudRuntimeException("This volume cannot exceed " + NumberFormat.getInstance().format(SolidFireUtil.MAX_IOPS_PER_VOLUME) + " IOPS.");
+            }
+
+            float maxPercentOfMin = currentMaxIops / (float)currentMinIops;
+            float burstPercentOfMax = currentBurstIops / (float)currentMaxIops;
+
+            minIops = capacityIops;
+            maxIops = (long)(minIops * maxPercentOfMin);
+            burstIops = (long)(maxIops * burstPercentOfMax);
+
+            if (maxIops > SolidFireUtil.MAX_IOPS_PER_VOLUME) {
+                maxIops = SolidFireUtil.MAX_IOPS_PER_VOLUME;
+            }
+
+            if (burstIops > SolidFireUtil.MAX_IOPS_PER_VOLUME) {
+                burstIops = SolidFireUtil.MAX_IOPS_PER_VOLUME;
+            }
+        }
+
+        SolidFireUtil.modifySolidFireVolume(sfConnection, getVolumeId(storagePool.getId()), size, minIops, maxIops, burstIops);
+
+        SolidFireUtil.updateCsDbWithSolidFireIopsInfo(storagePool.getId(), _primaryDataStoreDao, _storagePoolDetailsDao, minIops, maxIops, burstIops);
+    }
 }

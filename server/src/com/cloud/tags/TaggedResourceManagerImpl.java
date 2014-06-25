@@ -25,6 +25,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.Identity;
@@ -124,6 +125,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         s_typeMap.put(ResourceObjectType.AutoScaleVmGroup, AutoScaleVmGroupVO.class);
         s_typeMap.put(ResourceObjectType.LBStickinessPolicy, LBStickinessPolicyVO.class);
         s_typeMap.put(ResourceObjectType.LBHealthCheckPolicy, LBHealthCheckPolicyVO.class);
+        s_typeMap.put(ResourceObjectType.SnapshotPolicy, SnapshotPolicyVO.class);
 
     }
 
@@ -166,9 +168,9 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         entity = _entityMgr.findById(clazz, resourceId);
         if (entity != null) {
             return ((InternalIdentity)entity).getId();
-                }
-            throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + " and type " + resourceType);
         }
+        throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + " and type " + resourceType);
+    }
 
     private Pair<Long, Long> getAccountDomain(long resourceId, ResourceObjectType resourceType) {
         Class<?> clazz = s_typeMap.get(resourceType);

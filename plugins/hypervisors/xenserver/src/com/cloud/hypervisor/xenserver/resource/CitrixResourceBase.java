@@ -1883,20 +1883,47 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String storageHost = details.get(DiskTO.STORAGE_HOST);
         String chapInitiatorUsername = details.get(DiskTO.CHAP_INITIATOR_USERNAME);
         String chapInitiatorSecret = details.get(DiskTO.CHAP_INITIATOR_SECRET);
+        String mountpoint = details.get(DiskTO.MOUNT_POINT);
+        String protocoltype=details.get(DiskTO.PROTOCOL_TYPE);
 
-        return getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
+        if (StoragePoolType.NetworkFilesystem.toString().equalsIgnoreCase(protocoltype)) {
+            String poolid = storageHost + ":" + mountpoint;
+            String namelable = mountpoint;
+            String volumedesc = storageHost + ":" + mountpoint;
+
+            return getNfsSR(conn, poolid, namelable, storageHost, mountpoint, volumedesc);
+        } else {
+            return getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
+        }
     }
 
     protected VDI prepareManagedStorage(Connection conn, Map<String, String> details, String path, String vdiNameLabel) throws Exception {
         SR sr = prepareManagedSr(conn, details);
 
         VDI vdi = getVDIbyUuid(conn, path, false);
+        Long volumeSize = Long.parseLong(details.get(DiskTO.VOLUME_SIZE));
 
         if (vdi == null) {
-            Long volumeSize = Long.parseLong(details.get(DiskTO.VOLUME_SIZE));
 
             vdi = createVdi(sr, vdiNameLabel, volumeSize);
-        }
+        } else {
+            // if VDI is not null, it must have already been created, so check whether a resize of the volume was performed
+            // if true, resize the VDI to the volume size
+
+            s_logger.info("checking for the resize of the datadisk");
+
+            long vdiVirtualSize = vdi.getVirtualSize(conn);
+
+            if (vdiVirtualSize != volumeSize) {
+                s_logger.info("resizing the datadisk(vdi) from vdiVirtualsize :"+ vdiVirtualSize + "to volumeSize :" + volumeSize);
+
+                try {
+                    vdi.resize(conn, volumeSize);
+                } catch (Exception e) {
+                    s_logger.warn("Unable to resize volume", e);
+                }
+            }
+         }
 
         return vdi;
     }
@@ -5058,7 +5085,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         StorageFilerTO pool = cmd.getPool();
         try {
             if (pool.getType() == StoragePoolType.NetworkFilesystem) {
-                getNfsSR(conn, pool);
+                getNfsSR(conn, Long.toString(pool.getId()), pool.getUuid(), pool.getHost(), pool.getPath(), pool.toString());
             } else if (pool.getType() == StoragePoolType.IscsiLUN) {
                 getIscsiSR(conn, pool.getUuid(), pool.getHost(), pool.getPath(), null, null, false);
             } else if (pool.getType() == StoragePoolType.PreSetup) {
@@ -6068,11 +6095,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected SR getNfsSR(Connection conn, StorageFilerTO pool) {
+    protected SR getNfsSR(Connection conn, String poolid, String uuid, String server, String serverpath, String pooldesc) {
         Map<String, String> deviceConfig = new HashMap<String, String>();
         try {
-            String server = pool.getHost();
-            String serverpath = pool.getPath();
             serverpath = serverpath.replace("//", "/");
             Set<SR> srs = SR.getAll(conn);
             for (SR sr : srs) {
@@ -6103,7 +6128,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 if (server.equals(dc.get("server")) && serverpath.equals(dc.get("serverpath"))) {
                     throw new CloudRuntimeException("There is a SR using the same configuration server:" + dc.get("server") + ", serverpath:" + dc.get("serverpath") +
-                            " for pool " + pool.getUuid() + "on host:" + _host.uuid);
+                            " for pool " + uuid + " on host:" + _host.uuid);
                 }
 
             }
@@ -6112,13 +6137,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Host host = Host.getByUuid(conn, _host.uuid);
             Map<String, String> smConfig = new HashMap<String, String>();
             smConfig.put("nosubdir", "true");
-            SR sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), Long.toString(pool.getId()), SRType.NFS.toString(), "user", true, smConfig);
+            SR sr = SR.create(conn, host, deviceConfig, new Long(0), uuid, poolid, SRType.NFS.toString(), "user", true, smConfig);
             sr.scan(conn);
             return sr;
         } catch (XenAPIException e) {
-            throw new CloudRuntimeException("Unable to create NFS SR " + pool.toString(), e);
+            throw new CloudRuntimeException("Unable to create NFS SR " + pooldesc, e);
         } catch (XmlRpcException e) {
-            throw new CloudRuntimeException("Unable to create NFS SR " + pool.toString(), e);
+            throw new CloudRuntimeException("Unable to create NFS SR " + pooldesc, e);
         }
     }
 

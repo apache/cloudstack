@@ -493,5 +493,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
         return false;
     }
 
-
+    @Override
+    public void updateStoragePool(StoragePool storagePool, Map<String, String> details) {
+    }
 }

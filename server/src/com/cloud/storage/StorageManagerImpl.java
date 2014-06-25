@@ -67,6 +67,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -755,10 +756,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Long capacityBytes = cmd.getCapacityBytes();
 
         if (capacityBytes != null) {
-            if (capacityBytes > pool.getCapacityBytes()) {
+            if (capacityBytes != pool.getCapacityBytes()) {
                 updatedCapacityBytes = capacityBytes;
-            } else if (capacityBytes < pool.getCapacityBytes()) {
-                throw new CloudRuntimeException("The value of 'Capacity bytes' cannot be reduced in this version.");
             }
         }
 
@@ -766,10 +765,23 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Long capacityIops = cmd.getCapacityIops();
 
         if (capacityIops != null) {
-            if (capacityIops > pool.getCapacityIops()) {
+            if (capacityIops != pool.getCapacityIops()) {
                 updatedCapacityIops = capacityIops;
-            } else if (capacityIops < pool.getCapacityIops()) {
-                throw new CloudRuntimeException("The value of 'Capacity IOPS' cannot be reduced in this version.");
+            }
+        }
+
+        if (updatedCapacityBytes != null || updatedCapacityIops != null) {
+            StoragePoolVO storagePool = _storagePoolDao.findById(id);
+            DataStoreProvider dataStoreProvider = dataStoreProviderMgr.getDataStoreProvider(storagePool.getStorageProviderName());
+            DataStoreLifeCycle dataStoreLifeCycle = dataStoreProvider.getDataStoreLifeCycle();
+
+            if (dataStoreLifeCycle instanceof PrimaryDataStoreLifeCycle) {
+                Map<String, String> details = new HashMap<String, String>();
+
+                details.put(PrimaryDataStoreLifeCycle.CAPACITY_BYTES, updatedCapacityBytes != null ? String.valueOf(updatedCapacityBytes) : null);
+                details.put(PrimaryDataStoreLifeCycle.CAPACITY_IOPS, updatedCapacityIops != null ? String.valueOf(updatedCapacityIops) : null);
+
+                ((PrimaryDataStoreLifeCycle)dataStoreLifeCycle).updateStoragePool(storagePool, details);
             }
         }
 
@@ -1507,20 +1519,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         // Only IOPS guaranteed primary storage like SolidFire is using/setting IOPS.
         // This check returns true for storage that does not specify IOPS.
         if (pool.getCapacityIops() == null ) {
-            s_logger.info("Storage pool " + pool.getName() + " (" + pool.getId() + ") does not supply Iops capacity, assuming enough capacity");
+            s_logger.info("Storage pool " + pool.getName() + " (" + pool.getId() + ") does not supply IOPS capacity, assuming enough capacity");
+
             return true;
         }
 
-        long currentIops = 0;
-        List<VolumeVO> volumesInPool = _volumeDao.findByPoolId(pool.getId(), null);
-
-        for (VolumeVO volumeInPool : volumesInPool) {
-            Long minIops = volumeInPool.getMinIops();
-
-            if (minIops != null && minIops > 0) {
-                currentIops += minIops;
-            }
-        }
+        StoragePoolVO storagePoolVo = _storagePoolDao.findById(pool.getId());
+        long currentIops = _capacityMgr.getUsedIops(storagePoolVo);
 
         long requestedIops = 0;
 

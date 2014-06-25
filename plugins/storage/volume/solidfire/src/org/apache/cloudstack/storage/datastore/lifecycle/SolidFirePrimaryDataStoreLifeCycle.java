@@ -33,15 +33,18 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCy
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolAutomation;
@@ -50,18 +53,13 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(SolidFirePrimaryDataStoreLifeCycle.class);
 
-    @Inject
-    private DataCenterDao zoneDao;
-    @Inject
-    private PrimaryDataStoreDao storagePoolDao;
-    @Inject
-    private PrimaryDataStoreHelper dataStoreHelper;
-    @Inject
-    private ResourceManager _resourceMgr;
-    @Inject
-    private StorageManager _storageMgr;
-    @Inject
-    private StoragePoolAutomation storagePoolAutomation;
+    @Inject CapacityManager _capacityMgr;
+    @Inject private DataCenterDao zoneDao;
+    @Inject private PrimaryDataStoreDao storagePoolDao;
+    @Inject private PrimaryDataStoreHelper dataStoreHelper;
+    @Inject private ResourceManager _resourceMgr;
+    @Inject private StorageManager _storageMgr;
+    @Inject private StoragePoolAutomation storagePoolAutomation;
 
     // invoked to add primary storage that is based on the SolidFire plug-in
     @Override
@@ -244,4 +242,30 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         return false;
     }
 
+    @Override
+    public void updateStoragePool(StoragePool storagePool, Map<String, String> details) {
+        StoragePoolVO storagePoolVo = storagePoolDao.findById(storagePool.getId());
+
+        String strCapacityBytes = details.get(PrimaryDataStoreLifeCycle.CAPACITY_BYTES);
+        Long capacityBytes = strCapacityBytes != null ? Long.parseLong(strCapacityBytes) : null;
+
+        if (capacityBytes != null) {
+            long usedBytes = _capacityMgr.getUsedBytes(storagePoolVo);
+
+            if (capacityBytes < usedBytes) {
+                throw new CloudRuntimeException("Cannot reduce the number of bytes for this storage pool as it would lead to an insufficient number of bytes");
+            }
+        }
+
+        String strCapacityIops = details.get(PrimaryDataStoreLifeCycle.CAPACITY_IOPS);
+        Long capacityIops = strCapacityIops != null ? Long.parseLong(strCapacityIops) : null;
+
+        if (capacityIops != null) {
+            long usedIops = _capacityMgr.getUsedIops(storagePoolVo);
+
+            if (capacityIops < usedIops) {
+                throw new CloudRuntimeException("Cannot reduce the number of IOPS for this storage pool as it would lead to an insufficient number of IOPS");
+            }
+        }
+    }
 }

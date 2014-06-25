@@ -1050,6 +1050,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         details.put(DiskTO.STORAGE_PORT, String.valueOf(storagePool.getPort()));
         details.put(DiskTO.VOLUME_SIZE, String.valueOf(volumeInfo.getSize()));
         details.put(DiskTO.IQN, volumeInfo.get_iScsiName());
+        details.put(DiskTO.MOUNT_POINT, volumeInfo.get_iScsiName());
+
+        VolumeVO volume = _volumeDao.findById(volumeInfo.getId());
+
+        details.put(DiskTO.PROTOCOL_TYPE, (volume.getPoolType() != null) ? volume.getPoolType().toString() : null);
 
         ChapInfo chapInfo = volService.getChapInfo(volumeInfo, dataStore);
 
