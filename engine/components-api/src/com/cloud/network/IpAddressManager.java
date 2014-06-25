@@ -25,7 +25,7 @@ import com.cloud.dc.Vlan.VlanType;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.addr.PublicIp;
@@ -107,7 +107,7 @@ public interface IpAddressManager {
     boolean handleSystemIpRelease(IpAddress ip);
 
     void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network, String requestedIpv4, String requestedIpv6)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
 
     /**
      * @param owner

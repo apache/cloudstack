@@ -41,7 +41,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
@@ -143,7 +143,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException {
+            throws InsufficientVirtualNetworkCapacityException {
         s_logger.debug("Implement network: " + network.getName() + ", traffic type: " + network.getTrafficType());
 
         VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), _manager.getCanonicalName(network), network.getTrafficType());
@@ -189,7 +189,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
      * until the reserve API is called because of this reason.
      */
     @Override
-    public NicProfile allocate(Network network, NicProfile profile, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network network, NicProfile profile, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException,
     InsufficientAddressCapacityException, ConcurrentOperationException {
         s_logger.debug("allocate NicProfile on " + network.getName());
 
@@ -217,7 +217,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
      */
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
+            throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         s_logger.debug("reserve NicProfile on network id: " + network.getId() + " " + network.getName());
         s_logger.debug("deviceId: " + nic.getDeviceId());
 

@@ -38,7 +38,7 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.UnsupportedServiceException;
@@ -106,7 +106,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
     public ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, long sourceIpNetworkId, String sourceIp,
         int sourcePort, int instancePort, String algorithm, long networkId, long lbOwnerId, Boolean forDisplay) throws InsufficientAddressCapacityException, NetworkRuleConflictException,
-        InsufficientVirtualNetworkCapcityException {
+        InsufficientVirtualNetworkCapacityException {
 
         //Validate LB rule guest network
         Network guestNtwk = _networkModel.getNetwork(networkId);
@@ -132,7 +132,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
 
     protected ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, Network sourceIpNtwk, String sourceIp,
         int sourcePort, int instancePort, String algorithm, Account lbOwner, Network guestNtwk, Boolean forDisplay) throws NetworkRuleConflictException,
-        InsufficientVirtualNetworkCapcityException {
+        InsufficientVirtualNetworkCapacityException {
 
         //Only Internal scheme is supported in this release
         if (scheme != Scheme.Internal) {
@@ -255,9 +255,9 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
      * @param sourceIpNtwk
      * @param requestedIp
      * @return
-     * @throws InsufficientVirtualNetworkCapcityException
+     * @throws InsufficientVirtualNetworkCapacityException
      */
-    protected Ip getSourceIp(Scheme scheme, Network sourceIpNtwk, String requestedIp) throws InsufficientVirtualNetworkCapcityException {
+    protected Ip getSourceIp(Scheme scheme, Network sourceIpNtwk, String requestedIp) throws InsufficientVirtualNetworkCapacityException {
 
         if (requestedIp != null) {
             if (_lbDao.countBySourceIp(new Ip(requestedIp), sourceIpNtwk.getId()) > 0)  {
@@ -271,7 +271,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         requestedIp = allocateSourceIpForLbRule(scheme, sourceIpNtwk, requestedIp);
 
         if (requestedIp == null) {
-            throw new InsufficientVirtualNetworkCapcityException("Unable to acquire IP address for network " + sourceIpNtwk, Network.class, sourceIpNtwk.getId());
+            throw new InsufficientVirtualNetworkCapacityException("Unable to acquire IP address for network " + sourceIpNtwk, Network.class, sourceIpNtwk.getId());
         }
         return new Ip(requestedIp);
     }

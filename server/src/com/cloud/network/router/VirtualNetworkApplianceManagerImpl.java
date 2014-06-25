@@ -143,7 +143,7 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -1481,7 +1481,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
     private final static int DEFAULT_DELTA = 2;
 
     protected int getUpdatedPriority(final Network guestNetwork, final List<DomainRouterVO> routers, final DomainRouterVO exclude)
-            throws InsufficientVirtualNetworkCapcityException {
+            throws InsufficientVirtualNetworkCapacityException {
         int priority;
         if (routers.size() == 0) {
             priority = DEFAULT_PRIORITY;
@@ -1501,10 +1501,10 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
             }
             if (maxPriority < 20) {
                 s_logger.error("Current maximum priority is too low!");
-                throw new InsufficientVirtualNetworkCapcityException("Current maximum priority is too low as " + maxPriority + "!", guestNetwork.getId());
+                throw new InsufficientVirtualNetworkCapacityException("Current maximum priority is too low as " + maxPriority + "!", guestNetwork.getId());
             } else if (maxPriority > 200) {
                 s_logger.error("Too many times fail-over happened! Current maximum priority is too high as " + maxPriority + "!");
-                throw new InsufficientVirtualNetworkCapcityException("Too many times fail-over happened! Current maximum priority is too high as " + maxPriority + "!",
+                throw new InsufficientVirtualNetworkCapacityException("Too many times fail-over happened! Current maximum priority is too high as " + maxPriority + "!",
                         guestNetwork.getId());
             }
             priority = maxPriority - DEFAULT_DELTA + 1;
@@ -2325,7 +2325,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
                 final int priority = getUpdatedPriority(guestNetwork, routers, router);
                 router.setPriority(priority);
                 router = _routerDao.persist(router);
-            } catch (final InsufficientVirtualNetworkCapcityException e) {
+            } catch (final InsufficientVirtualNetworkCapacityException e) {
                 s_logger.error("Failed to get update priority!", e);
                 throw new CloudRuntimeException("Failed to get update priority!");
             }

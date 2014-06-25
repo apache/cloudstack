@@ -34,7 +34,7 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Service;
@@ -117,7 +117,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public Network implement(Network network, NetworkOffering offering,
         DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException {
+        throws InsufficientVirtualNetworkCapacityException {
         assert (network.getState() == State.Implementing) : "Why are we implementing "
             + network;
 
@@ -165,7 +165,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
     public void reserve(NicProfile nic, Network network,
         VirtualMachineProfile vm,
         DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException,
+        throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         super.reserve(nic, network, vm, dest, context);
@@ -205,13 +205,13 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     protected void allocateVnet(Network network, NetworkVO implemented,
         long dcId, long physicalNetworkId, String reservationId)
-        throws InsufficientVirtualNetworkCapcityException {
+        throws InsufficientVirtualNetworkCapacityException {
         if (network.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId,
                 network.getAccountId(), reservationId,
                 UseSystemGuestVlans.valueIn(network.getAccountId()));
             if (vnet == null) {
-                throw new InsufficientVirtualNetworkCapcityException(
+                throw new InsufficientVirtualNetworkCapacityException(
                     "Unable to allocate vnet as a part of network "
                         + network + " implement ", DataCenter.class,
                     dcId);

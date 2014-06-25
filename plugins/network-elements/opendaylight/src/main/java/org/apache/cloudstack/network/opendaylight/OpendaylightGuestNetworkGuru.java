@@ -45,7 +45,7 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
@@ -129,7 +129,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapacityException {
         assert (network.getState() == State.Implementing) : "Why are we implementing " + network;
 
         long dcId = dest.getDataCenter().getId();
@@ -183,7 +183,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+            throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         super.reserve(nic, network, vm, dest, context);
 
         //get physical network id
@@ -192,7 +192,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
         List<OpenDaylightControllerVO> devices = openDaylightControllerMappingDao.listByPhysicalNetwork(physicalNetworkId);
         if (devices.isEmpty()) {
             s_logger.error("No Controller on physical network " + physicalNetworkId);
-            throw new InsufficientVirtualNetworkCapcityException("No OpenDaylight Controller configured for this network", dest.getPod().getId());
+            throw new InsufficientVirtualNetworkCapacityException("No OpenDaylight Controller configured for this network", dest.getPod().getId());
         }
         OpenDaylightControllerVO controller = devices.get(0);
 
@@ -200,7 +200,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
         AddHypervisorAnswer addAnswer = (AddHypervisorAnswer)agentManager.easySend(controller.getHostId(), addCmd);
         if (addAnswer == null || !addAnswer.getResult()) {
             s_logger.error("Failed to add " + dest.getHost().getName() + " as a node to the controller");
-            throw new InsufficientVirtualNetworkCapcityException("Failed to add destination hypervisor to the OpenDaylight Controller", dest.getPod().getId());
+            throw new InsufficientVirtualNetworkCapacityException("Failed to add destination hypervisor to the OpenDaylight Controller", dest.getPod().getId());
         }
 
         ConfigurePortCommand cmd = new ConfigurePortCommand(UUID.fromString(nic.getUuid()), UUID.fromString(BroadcastDomainType.getValue(network.getBroadcastUri())), context
@@ -209,7 +209,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
 
         if (answer == null || !answer.getResult()) {
             s_logger.error("ConfigureNetworkCommand failed");
-            throw new InsufficientVirtualNetworkCapcityException("Failed to configure the port on the OpenDaylight Controller", dest.getPod().getId());
+            throw new InsufficientVirtualNetworkCapacityException("Failed to configure the port on the OpenDaylight Controller", dest.getPod().getId());
         }
 
     }
