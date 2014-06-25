@@ -22,8 +22,8 @@
 -- Disable foreign key checking
 -- SET foreign_key_checks = 0;
 
-ALTER TABLE `cloud`.`volumes` ADD COLUMN `provisioning_type` VARCHAR(32) NOT NULL DEFAULT 'Off' COMMENT 'pre allocation setting of the volume';
-ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `provisioning_type` VARCHAR(32) NOT NULL DEFAULT 'Off' COMMENT 'pre allocation setting of the volume';
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `provisioning_type` VARCHAR(32) NOT NULL DEFAULT 'thin' COMMENT 'pre allocation setting of the volume';
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `provisioning_type` VARCHAR(32) NOT NULL DEFAULT 'thin' COMMENT 'pre allocation setting of the volume';
 
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
 CREATE VIEW `cloud`.`disk_offering_view` AS
