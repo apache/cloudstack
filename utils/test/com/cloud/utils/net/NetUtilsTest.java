@@ -231,6 +231,18 @@ public class NetUtilsTest {
     }
 
     @Test
+    public void testIsValidCidrList() throws Exception {
+        //Test to check IP Range of 2 CIDR
+        String cidrFirst = "10.0.144.0/20,1.2.3.4/32,5.6.7.8/24";
+        String cidrSecond = "10.0.151.0/20,129.0.0.0/4";
+        String cidrThird = "10.0.144.0/21";
+
+        assertTrue(NetUtils.isValidCIDR(cidrFirst));
+        assertTrue(NetUtils.isValidCIDR(cidrSecond));
+        assertTrue(NetUtils.isValidCIDR(cidrThird));
+    }
+
+    @Test
     public void testIsSameIpRange() {
         String cidrFirst = "10.0.144.0/20";
         String cidrSecond = "10.0.151.0/20";
