@@ -35,6 +35,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.server.ManagementService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -457,6 +458,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     VolumeApiService _volumeService;
     @Inject
     DataStoreManager _dataStoreMgr;
+    @Inject
+    ManagementService _mgr;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -642,7 +645,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String password = null;
         String sshPublicKey = s.getPublicKey();
         if (template != null && template.getEnablePassword()) {
-            password = generateRandomPassword();
+            password = _mgr.generateRandomPassword();
         }
 
         boolean result = resetVMSSHKeyInternal(vmId, sshPublicKey, password);
@@ -3350,10 +3353,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    public String generateRandomPassword() {
-        return PasswordGenerator.generateRandomPassword(6);
-    }
-
     @Override
     public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
@@ -3428,7 +3427,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             String password = "saved_password";
             if (template.getEnablePassword()) {
-                password = generateRandomPassword();
+                password = _mgr.generateRandomPassword();
             }
 
             if (!validPassword(password)) {
@@ -4702,7 +4701,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (template.getEnablePassword()) {
-            String password = generateRandomPassword();
+            String password = _mgr.generateRandomPassword();
             boolean result = resetVMPasswordInternal(vmId, password);
             if (result) {
                 vm.setPassword(password);

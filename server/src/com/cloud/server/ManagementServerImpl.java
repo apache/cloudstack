@@ -894,7 +894,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public String generateRandomPassword() {
-        return PasswordGenerator.generateRandomPassword(6);
+        Integer passwordLength = Integer.parseInt(_configDao.getValue("vm.password.length"));
+        return PasswordGenerator.generateRandomPassword(passwordLength);
     }
 
     @Override

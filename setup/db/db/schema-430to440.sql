@@ -2438,3 +2438,5 @@ CREATE TABLE `cloud`.`load_balancer_healthcheck_policy_details` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_lb_healthcheck_policy_details__lb_healthcheck_policy_id` FOREIGN KEY `fk_lb_healthcheck_policy_details__lb_healthcheck_policy_id`(`lb_policy_id`) REFERENCES `load_balancer_healthcheck_policies`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'vm.password.length', '6', 'Specifies the length of a randomly generated password', '6') ON DUPLICATE KEY UPDATE category='Secure';
