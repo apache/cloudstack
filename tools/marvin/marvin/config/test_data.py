@@ -956,6 +956,54 @@ test_data = {
             #Migrate VM to hostid
             "ostype": 'Windows 7 (32-bit)',
             # CentOS 5.3 (64-bit)
-    }
+    },
+    "vpc_remote_vpn": {
 
+        "name": "TestVPC",
+        "displaytext": "TestVPC",
+        "cidr": "192.168.1.1/16"
+    },
+        "vpn_template":{
+                        "name":"VPNClient_Template",
+                        "displaytext":"VPNClient_Template",
+                        "format":"VHD",
+                        "ostype":"CentOS 5.6 (64-bit)",
+                        "url":"http://nfs1.lab.vmops.com/templates/vpnclient-template-xen-centos56-64bit-with-connection-scripts.vhd",
+                        "isfeatured":"True",
+                        "ispublic":"True",
+                        "isextractable":"True"
+    	},
+    	"all_rule":{
+        	"protocol":"ALL",
+        	"cidrlist":"0.0.0.0/0"
+    	},
+        "vpc_network_offering":{
+        	"name":"NET_OFF-RemoteAccessVPNTest",
+        	"displaytext":"NET_OFF-RemoteAccessVPNTest",
+        	"guestiptype":"Isolated",
+        	"supportedservices":"Vpn,Dhcp,Dns,SourceNat,PortForwarding,Lb,UserData,StaticNat,NetworkACL",
+        	"traffictype":"GUEST",
+        	"availability":"Optional",
+        	"useVpc":"on",
+        	"serviceProviderList":{
+            		"Vpn":"VpcVirtualRouter",
+            		"Dhcp":"VpcVirtualRouter",
+            		"Dns":"VpcVirtualRouter",
+            		"SourceNat":"VpcVirtualRouter",
+            		"PortForwarding":"VpcVirtualRouter",
+            		"Lb":"VpcVirtualRouter",
+            		"UserData":"VpcVirtualRouter",
+            		"StaticNat":"VpcVirtualRouter",
+            		"NetworkACL":"VpcVirtualRouter"
+        	}
+	},
+    	"firstnetwork_tier":{
+        	"gateway":"192.168.10.1",
+		"netmask":"255.255.255.0"
+    	},
+	"zone_vpn":{
+		"name":"Adv-Xen-Zone1"
+	},
+	"vpnclient_count": 50,
+	"config_path":"/hudson/scripts3/auto_xen.cfg"
 }
