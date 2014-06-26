@@ -37,6 +37,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -2773,8 +2774,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RevokeSecurityGroupEgressCmd.class);
         cmdList.add(RevokeSecurityGroupIngressCmd.class);
         cmdList.add(CreateSnapshotCmd.class);
-        cmdList.add(CreateSnapshotPolicyCmd.class);
         cmdList.add(DeleteSnapshotCmd.class);
+        cmdList.add(CreateSnapshotPolicyCmd.class);
+        cmdList.add(UpdateSnapshotPolicyCmd.class);
         cmdList.add(DeleteSnapshotPoliciesCmd.class);
         cmdList.add(ListSnapshotPoliciesCmd.class);
         cmdList.add(ListSnapshotsCmd.class);

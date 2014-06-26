@@ -63,6 +63,7 @@ import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
+import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -630,9 +631,9 @@ public class EventTypes {
         // Snapshots
         entityEventDetails.put(EVENT_SNAPSHOT_CREATE, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_DELETE, Snapshot.class);
-        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_CREATE, Snapshot.class);
-        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_UPDATE, Snapshot.class);
-        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_DELETE, Snapshot.class);
+        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_CREATE, SnapshotPolicy.class);
+        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_UPDATE, SnapshotPolicy.class);
+        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_DELETE, SnapshotPolicy.class);
 
         // ISO
         entityEventDetails.put(EVENT_ISO_CREATE, "Iso");
