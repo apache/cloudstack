@@ -1445,7 +1445,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
             }
             String xentoolsversion = details.get("hypervisortoolsversion");
-            if (xentoolsversion == null || !xentoolsversion.equalsIgnoreCase("xenserver61")) {
+            if ((xentoolsversion == null || !xentoolsversion.equalsIgnoreCase("xenserver61")) && vmSpec.getGpuDevice() == null) {
                 Map<String, String> platform = vm.getPlatform(conn);
                 platform.remove("device_id");
                 vm.setPlatform(conn, platform);
