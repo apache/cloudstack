@@ -15560,7 +15560,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.path'+":").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
@@ -15587,7 +15587,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.path'+":").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=smbPassword]').css('display', 'inline-block');
@@ -15614,7 +15614,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.path'+":").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
@@ -15640,7 +15640,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.SR.name'+":").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("SR Name-Label:").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
@@ -15739,7 +15739,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.path'+":").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
