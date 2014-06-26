@@ -1052,6 +1052,157 @@ test_data = {
             "timeout": 60,
             "ostype": 'Windows 8 (64-bit)',
 
-    }
+    },
+      "acl":{
+                #data for domains and accounts
+                "domain1": {
+                    "name": "D1",
+                 },
+                "accountD1": {
+                    "email": "testD1@test.com",
+                    "firstname": "testD1",
+                    "lastname": "Admin",
+                    "username": "testD1",
+                    "password": "password",
+                    "accounttype": "1",
+                },
+                "accountD1A": {
+                    "email": "testD1A@test.com",
+                    "firstname": "testD1A",
+                    "lastname": "User",
+                    "username": "testD1A",
+                    "password": "password",
+                },
+                "accountD1B": {
+                    "email": "testD1B@test.com",
+                    "firstname": "testD1B",
+                    "lastname": "User",
+                    "username": "testD1B",
+                    "password": "password",
+                },
+                "domain11": {
+                    "name": "D11",
+                 },
+                "accountD11": {
+                    "email": "testD11@test.com",
+                    "firstname": "testD11",
+                    "lastname": "Admin",
+                    "username": "testD11",
+                    "password": "password",
+                    "accounttype": "1",
+                },
+                "accountD11A": {
+                    "email": "testD11A@test.com",
+                    "firstname": "testD11A",
+                    "lastname": "User",
+                    "username": "testD11A",
+                    "password": "password",
+                },
+                "accountD11B": {
+                    "email": "test11B@test.com",
+                    "firstname": "testD11B",
+                    "lastname": "User",
+                    "username": "testD11B",
+                    "password": "password",
+                },
+                "domain111": {
+                    "name": "D111",
+                 },
+                "accountD111": {
+                    "email": "testD111@test.com",
+                    "firstname": "testD111",
+                    "lastname": "Admin",
+                    "username": "testD111",
+                    "password": "password",
+                },
+                "accountD111A": {
+                    "email": "testD111A@test.com",
+                    "firstname": "testD111A",
+                    "lastname": "User",
+                    "username": "testD111A",
+                    "password": "password",
+                },
+                "accountD111B": {
+                    "email": "testD111B@test.com",
+                    "firstname": "testD111B",
+                    "lastname": "User",
+                    "username": "testD111B",
+                    "password": "password",
+                },
+               "domain12": {
+                    "name": "D12",
+                 },
+                "accountD12A": {
+                    "email": "testD12A@test.com",
+                    "firstname": "testD12A",
+                    "lastname": "User",
+                    "username": "testD12A",
+                    "password": "password",
+                },
+                "accountD12B": {
+                    "email": "testD12B@test.com",
+                    "firstname": "testD12B",
+                    "lastname": "User",
+                    "username": "testD12B",
+                    "password": "password",
+                },
 
+
+                "domain2": {
+                   "name": "D2",
+                 },
+                "accountD2": {
+                    "email": "testD2@test.com",
+                    "firstname": "testD2",
+                    "lastname": "User",
+                    "username": "testD2",
+                    "password": "password",
+                    "accounttype": "1",
+                },
+                "accountD2A": {
+                    "email": "testD2A@test.com",
+                    "firstname": "testD2A",
+                    "lastname": "User",
+                    "username": "testD2A",
+                    "password": "password",
+                },
+
+                "accountROOTA": {
+                    "email": "testROOTA@test.com",
+                    "firstname": "testROOTA",
+                    "lastname": "User",
+                    "username": "testROOTA",
+                    "password": "password",
+                },
+
+                "accountROOT": {
+                    "email": "testROOTA@test.com",
+                    "firstname": "testROOT",
+                    "lastname": "admin",
+                    "username": "testROOT",
+                    "password": "password",
+                },
+
+                #data reqd for Network creation
+
+                "network": {
+                     "name": "Network-",
+                     "displaytext": "Network-",
+                     "gateway" :"10.223.1.1",
+                     "netmask" :"255.255.255.0",
+                     "startip" :"10.223.1.2",
+                     "endip" :"10.223.1.100",
+                },
+                #small service offering
+                "service_offering": {
+                    "small": {
+                        "name": "Small Instance",
+                        "displaytext": "Small Instance",
+                        "cpunumber": 1,
+                        "cpuspeed": 100,
+                        "memory": 128,
+                    },
+                },
+                "ostype": 'CentOS 5.6 (64-bit)',
+        }
 }

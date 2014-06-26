@@ -63,3 +63,27 @@ def GetDetailExceptionInfo(e):
             exc_type, exc_value, exc_traceback)))
     else:
         return EXCEPTION_OCCURRED
+
+class CloudstackAclException():
+
+    NO_PERMISSION_TO_OPERATE_DOMAIN = "does not have permission to operate within domain"
+    UNABLE_TO_USE_NETWORK = "Unable to use network"
+    NO_PERMISSION_TO_OPERATE_ACCOUNT = "does not have permission to operate with resource Acct"
+    UNABLE_TO_LIST_NETWORK_ACCOUNT = "Can't create/list resources for account"
+    NO_PERMISSION_TO_ACCESS_ACCOUNT = "does not have permission to access resource Acct"
+
+    @staticmethod
+    def verifyMsginException(e,message):
+        if message in str(e):
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def verifyErrorCodeinException(e,errorCode):
+        errorString = " errorCode: " + errorCode
+        if  errorString in str(e):
+            return True
+        else:
+            return False
+

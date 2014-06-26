@@ -105,3 +105,8 @@ KVM = "kvm"
 VMWARE = "vmware"
 ROOT_DOMAIN_ADMIN="root domain admin"
 CHILD_DOMAIN_ADMIN="child domain admin"
+
+'''
+Network states
+'''
+ALLOCATED = "Allocated"
