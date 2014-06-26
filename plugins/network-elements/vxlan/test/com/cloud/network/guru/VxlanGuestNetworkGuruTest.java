@@ -45,7 +45,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
@@ -144,7 +144,7 @@ public class VxlanGuestNetworkGuruTest {
     }
 
     @Test
-    public void testImplement() throws InsufficientVirtualNetworkCapcityException {
+    public void testImplement() throws InsufficientVirtualNetworkCapacityException {
         PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
         when(physnetdao.findById(anyLong())).thenReturn(physnet);
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VXLAN"}));
@@ -186,7 +186,7 @@ public class VxlanGuestNetworkGuruTest {
     }
 
     @Test
-    public void testImplementWithCidr() throws InsufficientVirtualNetworkCapcityException {
+    public void testImplementWithCidr() throws InsufficientVirtualNetworkCapacityException {
         PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
         when(physnetdao.findById(anyLong())).thenReturn(physnet);
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VXLAN"}));
@@ -233,7 +233,7 @@ public class VxlanGuestNetworkGuruTest {
     }
 
     @Test
-    public void testShutdown() throws InsufficientVirtualNetworkCapcityException, URISyntaxException {
+    public void testShutdown() throws InsufficientVirtualNetworkCapacityException, URISyntaxException {
         PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
         when(physnetdao.findById(anyLong())).thenReturn(physnet);
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VXLAN"}));

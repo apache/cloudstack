@@ -134,7 +134,7 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -1740,7 +1740,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         } catch (ConcurrentOperationException e) {
             s_logger.debug("Failed to migration: " + e.toString());
             throw new CloudRuntimeException("Failed to migration: " + e.toString());
-        } catch (InsufficientVirtualNetworkCapcityException e) {
+        } catch (InsufficientVirtualNetworkCapacityException e) {
             s_logger.debug("Failed to migration: " + e.toString());
             throw new CloudRuntimeException("Failed to migration: " + e.toString());
         } catch (InsufficientAddressCapacityException e) {

@@ -71,7 +71,7 @@ import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -1828,7 +1828,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     @DB
     public void allocateDirectIp(final NicProfile nic, final DataCenter dc, final VirtualMachineProfile vm, final Network network, final String requestedIpv4,
-            final String requestedIpv6) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+            final String requestedIpv6) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientAddressCapacityException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientAddressCapacityException {

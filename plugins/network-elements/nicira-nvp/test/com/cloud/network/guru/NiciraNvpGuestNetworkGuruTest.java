@@ -50,7 +50,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
@@ -240,7 +240,7 @@ public class NiciraNvpGuestNetworkGuruTest {
     }
 
     @Test
-    public void testImplement() throws InsufficientVirtualNetworkCapcityException {
+    public void testImplement() throws InsufficientVirtualNetworkCapacityException {
         final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
         when(physnetdao.findById((Long)any())).thenReturn(physnet);
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
@@ -295,7 +295,7 @@ public class NiciraNvpGuestNetworkGuruTest {
     }
 
     @Test
-    public void testImplementWithCidr() throws InsufficientVirtualNetworkCapcityException {
+    public void testImplementWithCidr() throws InsufficientVirtualNetworkCapacityException {
         final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
         when(physnetdao.findById((Long)any())).thenReturn(physnet);
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
@@ -354,7 +354,7 @@ public class NiciraNvpGuestNetworkGuruTest {
     }
 
     @Test
-    public void testImplementURIException() throws InsufficientVirtualNetworkCapcityException {
+    public void testImplementURIException() throws InsufficientVirtualNetworkCapacityException {
         final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
         when(physnetdao.findById((Long)any())).thenReturn(physnet);
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
@@ -409,7 +409,7 @@ public class NiciraNvpGuestNetworkGuruTest {
     }
 
     @Test
-    public void testShutdown() throws InsufficientVirtualNetworkCapcityException, URISyntaxException {
+    public void testShutdown() throws InsufficientVirtualNetworkCapacityException, URISyntaxException {
         final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
         when(physnetdao.findById((Long)any())).thenReturn(physnet);
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));

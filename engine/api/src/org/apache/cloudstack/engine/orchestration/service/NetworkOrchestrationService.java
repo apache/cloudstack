@@ -29,7 +29,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
@@ -147,12 +147,12 @@ public interface NetworkOrchestrationService {
      * @param deviceId
      * @param vm
      * @return
-     * @throws InsufficientVirtualNetworkCapcityException
+     * @throws InsufficientVirtualNetworkCapacityException
      * @throws InsufficientAddressCapacityException
      * @throws ConcurrentOperationException
      */
     Pair<NicProfile, Integer> allocateNic(NicProfile requested, Network network, Boolean isDefaultNic, int deviceId, VirtualMachineProfile vm)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * @param vmProfile
@@ -161,14 +161,14 @@ public interface NetworkOrchestrationService {
      * @param nicId
      * @param network
      * @return
-     * @throws InsufficientVirtualNetworkCapcityException
+     * @throws InsufficientVirtualNetworkCapacityException
      * @throws InsufficientAddressCapacityException
      * @throws ConcurrentOperationException
      * @throws InsufficientCapacityException
      * @throws ResourceUnavailableException
      */
     NicProfile prepareNic(VirtualMachineProfile vmProfile, DeployDestination dest, ReservationContext context, long nicId, Network network)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
         ResourceUnavailableException;
 
     void removeNic(VirtualMachineProfile vm, Nic nic);
@@ -183,7 +183,7 @@ public interface NetworkOrchestrationService {
     void releaseNic(VirtualMachineProfile vmProfile, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException;
 
     NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile vmProfile, boolean prepare)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
         ResourceUnavailableException;
 
     NetworkProfile convertNetworkToNetworkProfile(long networkId);

@@ -35,7 +35,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Ipv6AddressManager;
@@ -201,7 +201,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException, ConcurrentOperationException {
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
@@ -229,7 +229,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null && nic.getIp6Address() == null) {
             allocateDirectIp(nic, network, vm, dest.getDataCenter(), null, null);
             nic.setStrategy(ReservationStrategy.Create);
@@ -238,12 +238,12 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @DB
     protected void allocateDirectIp(final NicProfile nic, final Network network, final VirtualMachineProfile vm, final DataCenter dc, final String requestedIp4Addr,
-        final String requestedIp6Addr) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+        final String requestedIp6Addr) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
 
         try {
             Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
                 @Override
-                public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientVirtualNetworkCapcityException,
+                public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientVirtualNetworkCapacityException,
                     InsufficientAddressCapacityException {
                     _ipAddrMgr.allocateDirectIp(nic, dc, vm, network, requestedIp4Addr, requestedIp6Addr);
                     //save the placeholder nic if the vm is the Virtual router
@@ -258,7 +258,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                 }
             });
         } catch (InsufficientCapacityException e) {
-            ExceptionUtil.rethrow(e, InsufficientVirtualNetworkCapcityException.class);
+            ExceptionUtil.rethrow(e, InsufficientVirtualNetworkCapacityException.class);
             ExceptionUtil.rethrow(e, InsufficientAddressCapacityException.class);
             throw new IllegalStateException(e);
         }
@@ -271,7 +271,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException {
+        throws InsufficientVirtualNetworkCapacityException {
         return network;
     }
 

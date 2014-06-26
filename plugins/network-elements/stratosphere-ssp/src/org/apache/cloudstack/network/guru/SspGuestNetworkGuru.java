@@ -27,7 +27,7 @@ import org.apache.cloudstack.network.element.SspManager;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkMigrationResponder;
 import com.cloud.network.NetworkProfile;
@@ -100,7 +100,7 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
      */
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException {
+        throws InsufficientVirtualNetworkCapacityException {
         s_logger.trace("implement " + network.toString());
         super.implement(network, offering, dest, context);
         _sspMgr.createNetwork(network, offering, dest, context);
@@ -116,7 +116,7 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         super.reserve(nic, network, vm, dest, context);
         _sspMgr.createNicEnv(network, nic, dest, context);
     }
@@ -137,7 +137,7 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     public boolean prepareMigration(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) {
         try {
             reserve(nic, network, vm, dest, context);
-        } catch (InsufficientVirtualNetworkCapcityException e) {
+        } catch (InsufficientVirtualNetworkCapacityException e) {
             s_logger.error("prepareForMigration failed", e);
             return false;
         } catch (InsufficientAddressCapacityException e) {

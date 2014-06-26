@@ -22,7 +22,7 @@ import java.util.List;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListApplicationLoadBalancersCmd;
 
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.Pair;
@@ -31,7 +31,7 @@ public interface ApplicationLoadBalancerService {
 
     ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, long sourceIpNetworkId, String sourceIp, int sourcePort,
         int instancePort, String algorithm, long networkId, long lbOwnerId, Boolean forDisplay) throws InsufficientAddressCapacityException, NetworkRuleConflictException,
-        InsufficientVirtualNetworkCapcityException;
+        InsufficientVirtualNetworkCapacityException;
 
     boolean deleteApplicationLoadBalancer(long id);
 

@@ -102,6 +102,7 @@ class TestScaleVm(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
+    @attr(hypervisor="xenserver")
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_scale_vm(self):
         """Test scale virtual machine 

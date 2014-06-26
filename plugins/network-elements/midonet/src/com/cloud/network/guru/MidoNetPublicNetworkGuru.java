@@ -31,7 +31,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -92,7 +92,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     }
 
     @Override
-    protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network) throws InsufficientVirtualNetworkCapcityException,
+    protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
             PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), Vlan.VlanType.VirtualNetwork, null, null, false);
@@ -131,7 +131,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException, ConcurrentOperationException {
 
         if (nic == null) {
@@ -161,7 +161,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         s_logger.debug("reserve called with network: " + network + " nic: " + nic + " vm: " + vm);
         if (nic.getIp4Address() == null) {
             getIp(nic, dest.getDataCenter(), vm, network);
@@ -176,7 +176,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException {
+        throws InsufficientVirtualNetworkCapacityException {
         s_logger.debug("implement called with network: " + network);
         long dcId = destination.getDataCenter().getId();
 

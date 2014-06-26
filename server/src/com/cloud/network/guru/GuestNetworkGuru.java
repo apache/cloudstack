@@ -42,7 +42,7 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
@@ -277,11 +277,11 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     }
 
     protected void allocateVnet(Network network, NetworkVO implemented, long dcId, long physicalNetworkId, String reservationId)
-        throws InsufficientVirtualNetworkCapcityException {
+        throws InsufficientVirtualNetworkCapacityException {
         if (network.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId, UseSystemGuestVlans.valueIn(network.getAccountId()));
             if (vnet == null) {
-                throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a " + "part of network " + network + " implement ", DataCenter.class,
+                throw new InsufficientVirtualNetworkCapacityException("Unable to allocate vnet as a " + "part of network " + network + " implement ", DataCenter.class,
                     dcId);
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnet));
@@ -294,7 +294,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException {
+        throws InsufficientVirtualNetworkCapacityException {
         assert (network.getState() == State.Implementing) : "Why are we implementing " + network;
 
         long dcId = dest.getDataCenter().getId();
@@ -324,7 +324,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException {
 
         assert (network.getTrafficType() == TrafficType.Guest) : "Look at my name!  Why are you calling" + " me when the traffic type is : " + network.getTrafficType();
@@ -363,7 +363,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                 } else {
                     guestIp = _ipAddrMgr.acquireGuestIpAddress(network, nic.getRequestedIpv4());
                     if (guestIp == null) {
-                        throw new InsufficientVirtualNetworkCapcityException("Unable to acquire Guest IP" + " address for network " + network, DataCenter.class,
+                        throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP" + " address for network " + network, DataCenter.class,
                             dc.getId());
                     }
                 }
@@ -400,7 +400,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for nics that are not allocated at start? ";
 
         nic.setBroadcastUri(network.getBroadcastUri());
