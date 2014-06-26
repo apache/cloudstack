@@ -29,6 +29,7 @@ import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.server.ResourceTag;
+import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.vm.ConsoleProxy;
 import com.cloud.vm.SecondaryStorageVm;
 import org.apache.cloudstack.config.Configuration;
@@ -630,9 +631,9 @@ public class EventTypes {
         // Snapshots
         entityEventDetails.put(EVENT_SNAPSHOT_CREATE, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_DELETE, Snapshot.class);
-        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_CREATE, Snapshot.class);
-        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_UPDATE, Snapshot.class);
-        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_DELETE, Snapshot.class);
+        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_CREATE, SnapshotPolicy.class);
+        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_UPDATE, SnapshotPolicy.class);
+        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_DELETE, SnapshotPolicy.class);
 
         // ISO
         entityEventDetails.put(EVENT_ISO_CREATE, "Iso");
