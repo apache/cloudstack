@@ -52,7 +52,7 @@ public class LegacyZoneDaoImpl extends GenericDaoBase<LegacyZoneVO, Long> implem
     }
 
     @Override
-    public LegacyZoneVO findByZoneId(String zoneId) {
+    public LegacyZoneVO findByZoneId(Long zoneId) {
         SearchCriteria<LegacyZoneVO> sc = zoneSearch.create();
         sc.setParameters("zoneId", zoneId);
         return findOneBy(sc);
