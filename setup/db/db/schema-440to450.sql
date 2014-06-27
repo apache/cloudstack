@@ -229,8 +229,8 @@ ALTER TABLE `cloud`.`physical_network_traffic_types` CHANGE `xen_network_label` 
 
 /* Ovm3 related stuff */
 INSERT IGNORE INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type, state)
-    VALUES (11, UUID(), 'routing-11', 'SystemVM Template (Ovm3)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/4.5/systemvm64template-2013-12-23-ovm.raw.bz2', '5df45ee6ebe1b703a8805f4e1f4d0818', 0, 'SystemVM Template (Ovm3)', 'RAW', 15, 0, 1, 'Ovm3', 'Active' );
-INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES ('Ovm3', 'default', 25, 1);
-INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES ('Ovm3', '3.0', 50, 1);
-UPDATE configuration SET value='KVM,XenServer,VMware,BareMetal,Ovm,Ovm3,LXC' WHERE name='hypervisor.list';
+    VALUES (11, UUID(), 'routing-11', 'SystemVM Template (Ovm3)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/4.5/systemvm64template-2013-12-23-ovm.raw.bz2', '5df45ee6ebe1b703a8805f4e1f4d0818', 0, 'SystemVM Template (Ovm3)', 'RAW', 15, 0, 1, 'Ovm3', 'Active' )
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES ('Ovm3', 'default', 25, 1)
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES ('Ovm3', '3.0', 50, 1)
+UPDATE configuration SET value='KVM,XenServer,VMware,BareMetal,Ovm,Ovm3,LXC' WHERE name='hypervisor.list'
 /* update  `cloud`.`volumes` v,  `cloud`.`storage_pool` s,  `cloud`.`cluster` c  set v.format='RAW' where v.pool_id=s.id and s.cluster_id=c.id and c.hypervisor_type='Ovm3'; */
