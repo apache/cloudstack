@@ -6177,7 +6177,7 @@
                                     args.response.success({
                                         actionFilter: virtualRouterProviderActionFilter,
                                         data: $.extend(nspMap[ "Ovs"], {
-                                            supportedServices: nspMap[ "Ovs"].servicelist.join(', ')
+                                            supportedServices: nspMap["Ovs"] == undefined? "": nspMap["Ovs"].servicelist.join(', ')
                                         })
                                     });
                                 }
@@ -15355,7 +15355,10 @@
                                                 id: 'Hyperv',
                                                 description: _l('Hyperv')
                                             });
-
+                                            items.push({
+                                                id: 'Any',
+                                                description: _l('Any')
+                                            });
                                             args.response.success({
                                                 data: items
                                             });
@@ -15550,6 +15553,10 @@
                                                     id: "iscsi",
                                                     description: "iscsi"
                                                 });
+                                                items.push({
+                                                    id: "custom",
+                                                    description: "custom"
+                                                });
                                                 args.response.success({
                                                     data: items
                                                 });
@@ -15562,6 +15569,10 @@
                                                 items.push({
                                                     id: "vmfs",
                                                     description: "vmfs"
+                                                });
+                                                items.push({
+                                                    id: "custom",
+                                                    description: "custom"
                                                 });
                                                 args.response.success({
                                                     data: items
@@ -15637,7 +15648,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.path'+":").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
@@ -15664,7 +15675,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.path'+":").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=smbPassword]').css('display', 'inline-block');
@@ -15691,7 +15702,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.path'+":").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
@@ -15717,7 +15728,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.SR.name'+":").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("SR Name-Label:").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
@@ -15731,6 +15742,30 @@
                                                     $form.find('.form-item[rel=vCenterDataCenter]').hide();
                                                     $form.find('.form-item[rel=vCenterDataStore]').hide();
                                                     
+                                                    $form.find('.form-item[rel=rbdmonitor]').hide();
+                                                    $form.find('.form-item[rel=rbdpool]').hide();
+                                                    $form.find('.form-item[rel=rbdid]').hide();
+                                                    $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
+                                                } else if (protocol == "custom") {
+                                                    $form.find('.form-item[rel=server]').hide();
+                                                    $form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
+
+                                                    $form.find('.form-item[rel=path]').hide();
+
+                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                    $form.find('.form-item[rel=smbDomain]').hide();
+
+                                                    $form.find('.form-item[rel=iqn]').hide();
+                                                    $form.find('.form-item[rel=lun]').hide();
+
+                                                    $form.find('.form-item[rel=volumegroup]').hide();
+
+                                                    $form.find('.form-item[rel=vCenterDataCenter]').hide();
+                                                    $form.find('.form-item[rel=vCenterDataStore]').hide();
+
                                                     $form.find('.form-item[rel=rbdmonitor]').hide();
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
@@ -15816,7 +15851,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.path'+":").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
@@ -15935,7 +15970,83 @@
                                         },
                                         isHidden: true
                                     },
-                                    
+                                    provider: {
+                                        label: 'label.provider',
+                                        docID: 'helpPrimaryStorageZone',
+                                        validation: {
+                                            required: true
+                                        },
+                                        select: function (args) {
+                                            var data = args.context.providers ?
+                                                { id: args.context.providers[0].id } :
+                                                { listAll: true };
+
+                                            $.ajax({
+                                                url: createURL('listStorageProviders'),
+                                                data: {
+                                                    type: 'primary'
+                                                },
+                                                success: function (json) {
+                                                    var providers = json.liststorageprovidersresponse.dataStoreProvider ? json.liststorageprovidersresponse.dataStoreProvider : [];
+
+                                                    args.response.success({
+                                                        data: $.map(providers, function (provider) {
+                                                            return {
+                                                                id: provider.name,
+                                                                description: provider.name
+                                                            };
+                                                        })
+                                                    });
+                                                }
+                                            });
+                                            args.$select.change(function () {
+                                                var $form = $(this).closest('form');
+                                                var scope = $(this).val();
+
+                                                if (scope == 'DefaultPrimary') {
+                                                    $form.find('.form-item[rel=isManaged]').hide();
+                                                    $form.find('.form-item[rel=capacityIops]').hide();
+                                                    $form.find('.form-item[rel=capacityBytes]').hide();
+                                                    $form.find('.form-item[rel=url]').hide();
+                                                } else {
+                                                    $form.find('.form-item[rel=isManaged]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=capacityIops]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=capacityBytes]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=url]').css('display', 'inline-block');
+                                                }
+                                            }
+                                        )
+                                    }},
+                                    isManaged: {
+                                        label: 'label.managed',
+                                        docID: 'helpManaged',
+                                        isBoolean: true,
+                                        isChecked: false,
+                                        validation: {
+                                            required: false
+                                        }
+                                    },
+                                    capacityBytes: {
+                                        label: 'label.capacity.bytes',
+                                        docID: 'helpCapacityBytes',
+                                        validation: {
+                                            required: false
+                                        }
+                                    },
+                                    capacityIops: {
+                                        label: 'label.capacity.iops',
+                                        docID: 'helpCapacityIops',
+                                        validation: {
+                                            required: false
+                                        }
+                                    },
+                                    url: {
+                                        label: 'URL',
+                                        docID: 'helpUrl',
+                                        validation: {
+                                            required: false
+                                        }
+                                    },
                                     //SMB
                                     smbUsername: {
                                         label: 'label.smb.username',
@@ -16058,6 +16169,7 @@
                                 }
                             },
                             
+                            /******************************/
                             action: function (args) {
                                 var array1 =[];
                                 array1.push("&scope=" + todb(args.data.scope));
@@ -16080,74 +16192,103 @@
                                     array1.push("&clusterid=" + args.data.clusterId);
                                     array1.push("&hostid=" + args.data.hostId);
                                 }
-                                
-                                array1.push("&name=" + todb(args.data.name));
-                                
-                                var server = args.data.server;
-                                var url = null;
-                                if (args.data.protocol == "nfs") {
-                                    var path = args.data.path;
-                                    if (path.substring(0, 1) != "/")
-                                    path = "/" + path;
-                                    url = nfsURL(server, path);
-                                } else if (args.data.protocol == "SMB") {
-                                    var path = args.data.path;
-                                    if (path.substring(0, 1) != "/")
-                                        path = "/" + path;
-                                    url = smbURL(server, path);
-                                    array1.push("&details[0].user=" + args.data.smbUsername);
-                                    array1.push("&details[1].password=" + todb(args.data.smbPassword));
-                                    array1.push("&details[2].domain=" + args.data.smbDomain);
-                                } else if (args.data.protocol == "PreSetup") {                                    
-                                    var path = args.data.path;
-                                    if (path.substring(0, 1) != "/")
-                                    path = "/" + path;
-                                    url = presetupURL(server, path);
-                                } else if (args.data.protocol == "ocfs2") {
-                                    var path = args.data.path;
-                                    if (path.substring(0, 1) != "/")
-                                    path = "/" + path;
-                                    url = ocfs2URL(server, path);
-                                } else if (args.data.protocol == "SharedMountPoint") {
-                                    var path = args.data.path;
-                                    if (path.substring(0, 1) != "/")
-                                    path = "/" + path;
-                                    url = SharedMountPointURL(server, path);
-                                } else if (args.data.protocol == "clvm") {
-                                    var vg = args.data.volumegroup;
-                                    if (vg.substring(0, 1) != "/")
-                                    vg = "/" + vg;
-                                    url = clvmURL(vg);
-                                } else if (args.data.protocol == "rbd") {
-                                    var rbdmonitor = args.data.rbdmonitor;
-                                    var rbdpool = args.data.rbdpool;
-                                    var rbdid = args.data.rbdid;
-                                    var rbdsecret = args.data.rbdsecret;
-                                    url = rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret);
-                                } else if (args.data.protocol == "vmfs") {
-                                    var path = args.data.vCenterDataCenter;
-                                    if (path.substring(0, 1) != "/")
-                                    path = "/" + path;
-                                    path += "/" + args.data.vCenterDataStore;
-                                    url = vmfsURL("dummy", path);
-                                } else if (args.data.protocol == "gluster") {
-                                    var glustervolume = args.data.glustervolume;
 
-                                    if (glustervolume.substring(0, 1) != "/")
-                                        glustervolume = "/" + glustervolume;
-                                    url = glusterURL(server, glustervolume);
-                                } else {
-                                    var iqn = args.data.iqn;
-                                    if (iqn.substring(0, 1) != "/")
-                                    iqn = "/" + iqn;
-                                    var lun = args.data.lun;
-                                    url = iscsiURL(server, iqn, lun);
+                                array1.push("&name=" + todb(args.data.name));
+
+                                array1.push("&provider=" + todb(args.data.provider));
+
+                                if (args.data.provider == "DefaultPrimary")
+                                {
+                                    var server = args.data.server;
+                                    var url = null;
+                                    if (args.data.protocol == "nfs") {
+                                        var path = args.data.path;
+                                        if (path.substring(0, 1) != "/")
+                                            path = "/" + path;
+                                        url = nfsURL(server, path);
+                                    } else if (args.data.protocol == "SMB") {
+                                        var path = args.data.path;
+                                        if (path.substring(0, 1) != "/")
+                                            path = "/" + path;
+                                        url = smbURL(server, path);
+                                        array1.push("&details[0].user=" + args.data.smbUsername);
+                                        array1.push("&details[1].password=" + todb(args.data.smbPassword));
+                                        array1.push("&details[2].domain=" + args.data.smbDomain);
+                                    } else if (args.data.protocol == "PreSetup") {
+                                        var path = args.data.path;
+                                        if (path.substring(0, 1) != "/")
+                                            path = "/" + path;
+                                        url = presetupURL(server, path);
+                                    } else if (args.data.protocol == "ocfs2") {
+                                        var path = args.data.path;
+                                        if (path.substring(0, 1) != "/")
+                                            path = "/" + path;
+                                        url = ocfs2URL(server, path);
+                                    } else if (args.data.protocol == "SharedMountPoint") {
+                                        var path = args.data.path;
+                                        if (path.substring(0, 1) != "/")
+                                            path = "/" + path;
+                                        url = SharedMountPointURL(server, path);
+                                    } else if (args.data.protocol == "clvm") {
+                                        var vg = args.data.volumegroup;
+                                        if (vg.substring(0, 1) != "/")
+                                            vg = "/" + vg;
+                                        url = clvmURL(vg);
+                                    } else if (args.data.protocol == "rbd") {
+                                        var rbdmonitor = args.data.rbdmonitor;
+                                        var rbdpool = args.data.rbdpool;
+                                        var rbdid = args.data.rbdid;
+                                        var rbdsecret = args.data.rbdsecret;
+                                        url = rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret);
+                                    } else if (args.data.protocol == "vmfs") {
+                                        var path = args.data.vCenterDataCenter;
+                                        if (path.substring(0, 1) != "/")
+                                            path = "/" + path;
+                                        path += "/" + args.data.vCenterDataStore;
+                                        url = vmfsURL("dummy", path);
+                                    } else if (args.data.protocol == "gluster") {
+                                        var glustervolume = args.data.glustervolume;
+
+                                        if (glustervolume.substring(0, 1) != "/")
+                                            glustervolume = "/" + glustervolume;
+                                        url = glusterURL(server, glustervolume);
+                                    } else if (args.data.protocol == "iscsi") {
+                                        var iqn = args.data.iqn;
+                                        if (iqn.substring(0, 1) != "/")
+                                            iqn = "/" + iqn;
+                                        var lun = args.data.lun;
+                                        url = iscsiURL(server, iqn, lun);
+                                    } else {
+                                        url = "";
+                                    }
+
+                                    array1.push("&url=" + todb(url));
                                 }
-                                array1.push("&url=" + todb(url));
-                                
+                                else
+                                {
+                                    array1.push("&managed=" + (args.data.isManaged == "on").toString());
+
+                                    if (args.data.capacityBytes != null && args.data.capacityBytes.length > 0)
+                                    {
+                                        array1.push("&capacityBytes=" + args.data.capacityBytes.split(",").join(""));
+                                    }
+
+                                    if (args.data.capacityIops != null && args.data.capacityIops.length > 0)
+                                    {
+                                        array1.push("&capacityIops=" + args.data.capacityIops.split(",").join(""));
+                                    }
+
+                                    if (args.data.url != null && args.data.url.length > 0)
+                                    {
+                                        array1.push("&url=" + todb(args.data.url));
+                                    }
+                                }
+
                                 if (args.data.storageTags != null && args.data.storageTags.length > 0)
-                                array1.push("&tags=" + todb(args.data.storageTags));
-                                
+                                {
+                                    array1.push("&tags=" + todb(args.data.storageTags));
+                                }
+
                                 $.ajax({
                                     url: createURL("createStoragePool" + array1.join("")),
                                     dataType: "json",
@@ -17976,7 +18117,7 @@
                                                 label: 'label.url'
                                             },
                                             providername: {
-                                                label: 'Provider'
+                                                label: 'label.provider'
                                             },
                                             scope: {
                                                 label: 'label.scope'
@@ -19521,11 +19662,14 @@
             });
         }
         
+        if ($.grep(nspHardcodingArray, function(e) { return e.id == 'Ovs'; }).length == 0 ) {
         nspHardcodingArray.push({
-            id: 'OVS',
-            name: 'OVS',
+                id: 'Ovs',
+                name: 'Ovs',
             state: nspMap.Ovs ? nspMap.Ovs.state : 'Disabled'
         });        
+        }
+
     };
     
     cloudStack.actionFilter.physicalNetwork = function (args) {

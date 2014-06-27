@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -269,6 +270,27 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         }
 
         return snapshotStrategy.revertSnapshot(snapshotId);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_POLICY_UPDATE, eventDescription = "updating snapshot policy", async = true)
+    public SnapshotPolicy updateSnapshotPolicy(UpdateSnapshotPolicyCmd cmd) {
+
+        Long id = cmd.getId();
+        String customUUID = cmd.getCustomId();
+        Boolean display = cmd.getDisplay();
+
+        SnapshotPolicyVO policyVO = _snapshotPolicyDao.findById(id);
+        if(display != null)
+            policyVO.setDisplay(display);
+
+        if(customUUID != null)
+            policyVO.setUuid(customUUID);
+
+        _snapshotPolicyDao.update(id, policyVO);
+
+        return policyVO;
+
     }
 
     @Override
@@ -723,12 +745,24 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     public Pair<List<? extends SnapshotPolicy>, Integer> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd) {
         Long volumeId = cmd.getVolumeId();
         boolean display = cmd.isDisplay();
+        Long id = cmd.getId();
+        Pair<List<SnapshotPolicyVO>, Integer> result = null;
+        // TODO - Have a better way of doing this.
+        if(id != null){
+            result = _snapshotPolicyDao.listAndCountById(id, display, null);
+            if(result != null && result.first() != null && !result.first().isEmpty()){
+                SnapshotPolicyVO snapshotPolicy = result.first().get(0);
+                volumeId = snapshotPolicy.getId();
+            }
+        }
         VolumeVO volume = _volsDao.findById(volumeId);
         if (volume == null) {
             throw new InvalidParameterValueException("Unable to find a volume with id " + volumeId);
         }
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
-        Pair<List<SnapshotPolicyVO>, Integer> result = _snapshotPolicyDao.listAndCountByVolumeId(volumeId, display);
+        if(result != null)
+            return new Pair<List<? extends SnapshotPolicy>, Integer>(result.first(), result.second());
+        result = _snapshotPolicyDao.listAndCountByVolumeId(volumeId, display);
         return new Pair<List<? extends SnapshotPolicy>, Integer>(result.first(), result.second());
     }
 

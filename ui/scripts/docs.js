@@ -85,6 +85,29 @@ cloudStack.docs = {
         externalLink: ''
     },
 
+    helpManaged: {
+
+        desc: 'True if CloudStack manages the storage; else, false (check with storage provider if unknown)',
+        externalLink: ''
+    },
+
+    helpCapacityBytes: {
+
+        desc: 'Number of bytes for the primary storage to have',
+        externalLink: ''
+    },
+
+    helpCapacityIops: {
+
+        desc: 'Number of IOPS for the primary storage to have',
+        externalLink: ''
+    },
+
+    helpUrl: {
+
+        desc: 'Arbitrary data to be sent to the storage provider for configuration purposes',
+        externalLink: ''
+    },
 
     //Ldap
     helpLdapQueryFilter: {
