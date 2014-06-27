@@ -51,16 +51,16 @@
      }
 
      @Override
-     public LegacyZoneVO findByZoneId(String zoneId) {
+     public LegacyZoneVO findByZoneId(Long zoneId) {
          SearchCriteria<LegacyZoneVO> sc = zoneSearch.create();
          sc.setParameters("zoneId", zoneId);
          return findOneBy(sc);
      }
 
      @Override
-    public List<LegacyZoneVO> listAllLegacyZones() {
+     public List<LegacyZoneVO> listAllLegacyZones() {
         SearchCriteria<LegacyZoneVO> sc = fullTableSearch.create();
         return search(sc, null);
-    }
+     }
 
 }

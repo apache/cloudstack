@@ -1240,7 +1240,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public boolean isLegacyZone(long dcId) {
         boolean isLegacyZone = false;
-        LegacyZoneVO legacyZoneVo = _legacyZoneDao.findById(dcId);
+        LegacyZoneVO legacyZoneVo = _legacyZoneDao.findByZoneId(dcId);
         if (legacyZoneVo != null) {
             isLegacyZone = true;
         }

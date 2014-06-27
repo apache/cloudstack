@@ -27,7 +27,7 @@ public interface LegacyZoneDao extends GenericDao<LegacyZoneVO, Long> {
      * @param zoneId - id of zone
      * @return Object of legacy zone (LegacyZoneVO) identified by zoneId
      */
-    LegacyZoneVO findByZoneId(String zoneId);
+    LegacyZoneVO findByZoneId(Long zoneId);
 
     /**
      * Lists all legacy CloudStack zones
