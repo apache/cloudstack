@@ -6191,8 +6191,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected VDI createVdi(SR sr, String vdiNameLabel, Long volumeSize) throws Types.XenAPIException, XmlRpcException {
-        VDI vdi = null;
-
         Connection conn = getConnection();
 
         VDI.Record vdir = new VDI.Record();
@@ -6211,22 +6209,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         vdir.virtualSize = volumeSize;
 
-        long maxNumberOfTries = (totalSrSpace / unavailableSrSpace >= 1) ? (totalSrSpace / unavailableSrSpace) : 1;
-        long tryNumber = 0;
-
-        while (tryNumber <= maxNumberOfTries) {
-            try {
-                vdi = VDI.create(conn, vdir);
-
-                break;
-            } catch (Exception ex) {
-                tryNumber++;
-
-                vdir.virtualSize -= unavailableSrSpace;
-            }
-        }
-
-        return vdi;
+        return VDI.create(conn, vdir);
     }
 
     protected void handleSrAndVdiDetach(String iqn, Connection conn) throws Exception {
