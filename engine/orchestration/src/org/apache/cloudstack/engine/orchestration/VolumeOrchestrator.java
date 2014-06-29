@@ -696,7 +696,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             offeringId = offering.getId();
 
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, null, size,
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, vol.getTemplateId(), size,
                     Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());
 
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume, vol.isDisplayVolume());
