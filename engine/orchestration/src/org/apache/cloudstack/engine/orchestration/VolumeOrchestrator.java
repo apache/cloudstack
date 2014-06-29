@@ -701,7 +701,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 vol.getId(),
                 vol.getName(),
                 offeringId,
-                null,
+                vol.getTemplateId(),
                 size,
                 Volume.class.getName(),
                 vol.getUuid());
