@@ -2451,4 +2451,4 @@ CREATE TABLE `cloud`.`snapshot_policy_details` (
   CONSTRAINT `fk_snapshot_policy_details__snapshot_policy_id` FOREIGN KEY `fk_snapshot_policy_details__snapshot_policy_id`(`policy_id`) REFERENCES `snapshot_policy`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'vm.password.length', '6', 'Specifies the length of a randomly generated password', '6') ON DUPLICATE KEY UPDATE category='Secure';
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.password.length', '6', 'Specifies the length of a randomly generated password', '6') ON DUPLICATE KEY UPDATE category='Advanced';
