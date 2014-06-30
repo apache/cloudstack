@@ -35,6 +35,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.UUID;
 
+import com.cloud.event.dao.UsageEventDao;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -145,6 +146,8 @@ public class UserVmManagerTest {
     ResourceLimitService _resourceLimitMgr;
     @Mock
     PrimaryDataStoreDao _storagePoolDao;
+    @Mock
+    UsageEventDao _usageEventDao;
 
     @Before
     public void setup() {
@@ -154,6 +157,7 @@ public class UserVmManagerTest {
         _userVmMgr._vmInstanceDao = _vmInstanceDao;
         _userVmMgr._templateDao = _templateDao;
         _userVmMgr._volsDao = _volsDao;
+        _userVmMgr._usageEventDao = _usageEventDao;
         _userVmMgr._itMgr = _itMgr;
         _userVmMgr.volumeMgr = _storageMgr;
         _userVmMgr._accountDao = _accountDao;
