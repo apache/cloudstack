@@ -1866,8 +1866,12 @@ class ServiceOffering:
             cmd.deploymentplanner = services["deploymentplanner"]
 
         if "serviceofferingdetails" in services:
-            cmd.serviceofferingdetails.append(
-                {services['serviceofferingdetails']})
+            count = 1
+            for i in services["serviceofferingdetails"]:
+                for key, value in i.items():
+                    setattr(cmd, "serviceofferingdetails[%d].key" % count, key)
+                    setattr(cmd, "serviceofferingdetails[%d].value" % count, value)
+                count = count + 1
 
         if "isvolatile" in services:
             cmd.isvolatile = services["isvolatile"]
