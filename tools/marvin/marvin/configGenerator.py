@@ -88,6 +88,7 @@ class zone(object):
         self.pods = []
         self.secondaryStorages = []
         self.cacheStorages = []
+        self.domain = None
 
 
 class trafficType(object):
