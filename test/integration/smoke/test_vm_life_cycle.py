@@ -304,7 +304,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         return
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false", BugId="6984")
     def test_01_stop_vm(self):
         """Test Stop Virtual Machine
         """
