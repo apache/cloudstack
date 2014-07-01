@@ -332,8 +332,8 @@ public class CallContext {
 
     public void putContextParameters(Map<Object, Object> details){
         if (details == null) return;
-        for(Object key : details.keySet()){
-            putContextParameter(key, details.get(key));
+        for(Map.Entry<Object,Object>entry : details.entrySet()){
+            putContextParameter(entry.getKey(), entry.getValue());
         }
     }
 

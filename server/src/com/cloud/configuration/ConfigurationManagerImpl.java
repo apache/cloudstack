@@ -4004,9 +4004,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     void validateConnectivityServiceCapablities(Set<Provider> providers, Map<Capability, String> connectivityServiceCapabilityMap) {
         if (connectivityServiceCapabilityMap != null && !connectivityServiceCapabilityMap.isEmpty()) {
-            for (Capability capability: connectivityServiceCapabilityMap.keySet()) {
+            for (Map.Entry<Capability, String>entry: connectivityServiceCapabilityMap.entrySet()) {
+                Capability capability = entry.getKey();
                 if (capability == Capability.StretchedL2Subnet) {
-                    String value = connectivityServiceCapabilityMap.get(capability).toLowerCase();
+                    String value = entry.getValue().toLowerCase();
                     if (!(value.contains("true") ^ value.contains("false"))) {
                         throw new InvalidParameterValueException("Invalid value (" + value + ") for " + capability +
                         " should be true/false");

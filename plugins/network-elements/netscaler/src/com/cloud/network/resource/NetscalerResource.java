@@ -1763,14 +1763,14 @@ public class NetscalerResource implements ServerResource {
         }
 
         private static String genGslbObjectName(Object... args) {
-            String objectName = "";
+            StringBuffer buff = new StringBuffer();
             for (int i = 0; i < args.length; i++) {
-                objectName += args[i];
+                buff.append(args[i]);
                 if (i != args.length - 1) {
-                    objectName += "-";
+                    buff.append("-");
                 }
             }
-            return objectName;
+            return buff.toString();
         }
     }
 
@@ -3767,14 +3767,14 @@ public class NetscalerResource implements ServerResource {
     }
 
     private String genObjectName(Object... args) {
-        String objectName = "";
+        StringBuffer buff = new StringBuffer();
         for (int i = 0; i < args.length; i++) {
-            objectName += args[i];
+            buff.append(args[i]);
             if (i != args.length - 1) {
-                objectName += _objectNamePathSep;
+                buff.append(_objectNamePathSep);
             }
         }
-        return objectName;
+        return buff.toString();
     }
 
     @Override

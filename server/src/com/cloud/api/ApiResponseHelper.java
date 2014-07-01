@@ -1906,7 +1906,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         Map<Service, Map<Capability, String>> serviceCapabilitiesMap = ApiDBUtils.getNetworkCapabilities(network.getId(), network.getDataCenterId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         if (serviceCapabilitiesMap != null) {
-            for (Service service : serviceCapabilitiesMap.keySet()) {
+            for (Map.Entry<Service, Map<Capability, String>>entry : serviceCapabilitiesMap.entrySet()) {
+                Service service = entry.getKey();
                 ServiceResponse serviceResponse = new ServiceResponse();
                 // skip gateway service
                 if (service == Service.Gateway) {
@@ -1916,11 +1917,12 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 // set list of capabilities for the service
                 List<CapabilityResponse> capabilityResponses = new ArrayList<CapabilityResponse>();
-                Map<Capability, String> serviceCapabilities = serviceCapabilitiesMap.get(service);
+                Map<Capability, String> serviceCapabilities = entry.getValue();
                 if (serviceCapabilities != null) {
-                    for (Capability capability : serviceCapabilities.keySet()) {
+                    for (Map.Entry<Capability,String> ser_cap_entries : serviceCapabilities.entrySet()) {
+                        Capability capability = ser_cap_entries.getKey();
                         CapabilityResponse capabilityResponse = new CapabilityResponse();
-                        String capabilityValue = serviceCapabilities.get(capability);
+                        String capabilityValue = ser_cap_entries.getValue();
                         capabilityResponse.setName(capability.getName());
                         capabilityResponse.setValue(capabilityValue);
                         capabilityResponse.setObjectName("capability");
@@ -2605,7 +2607,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(vpc.getVpcOfferingId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
-        for (Service service : serviceProviderMap.keySet()) {
+        for (Map.Entry<Service,Set<Provider>>entry : serviceProviderMap.entrySet()) {
+            Service service = entry.getKey();
+            Set<Provider> serviceProviders = entry.getValue();
             ServiceResponse svcRsp = new ServiceResponse();
             // skip gateway service
             if (service == Service.Gateway) {
@@ -2613,7 +2617,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             svcRsp.setName(service.getName());
             List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
-            for (Provider provider : serviceProviderMap.get(service)) {
+            for (Provider provider : serviceProviders) {
                 if (provider != null) {
                     ProviderResponse providerRsp = new ProviderResponse();
                     providerRsp.setName(provider.getName());
