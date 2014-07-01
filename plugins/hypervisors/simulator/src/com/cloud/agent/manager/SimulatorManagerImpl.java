@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -114,6 +115,7 @@ import com.cloud.api.commands.ConfigureSimulatorCmd;
 import com.cloud.api.commands.QuerySimulatorMockCmd;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.resource.SimulatorStorageProcessor;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockVMVO;
@@ -129,11 +131,13 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 
 @Component
 @Local(value = {SimulatorManager.class})
 public class SimulatorManagerImpl extends ManagerBase implements SimulatorManager, PluggableService {
     private static final Logger s_logger = Logger.getLogger(SimulatorManagerImpl.class);
+    private static final Gson s_gson = GsonHelper.getGson();
     @Inject
     MockVmManager _mockVmMgr;
     @Inject
@@ -253,16 +257,20 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 if (answer == null) {
                     String message = config.getJsonResponse();
                     if (message != null) {
-                        // json response looks like {"<AnswerType>":....}
-                        String answerType = message.split(":")[0].substring(1).replace("\"", "");
-                        if (answerType != null) {
+                        // json response looks like {"<Type>":....}
+                        String objectType = message.split(":")[0].substring(2).replace("\"", "");
+                        String objectData = message.substring(message.indexOf(':') + 1, message.length() - 1);
+                        if (objectType != null) {
                             Class<?> clz = null;
                             try {
-                                clz = Class.forName(answerType);
+                                clz = Class.forName(objectType);
                             } catch (ClassNotFoundException e) {
                             }
                             if (clz != null) {
-                                answer = (Answer)new Gson().fromJson(message, clz);
+                                StringReader reader = new StringReader(objectData);
+                                JsonReader jsonReader = new JsonReader(reader);
+                                jsonReader.setLenient(true);
+                                answer = (Answer)s_gson.fromJson(jsonReader, clz);
                             }
                         }
                     }
