@@ -273,6 +273,9 @@ cloudStack.docs = {
     helpComputeOfferingDomain: {
         desc: 'The domain to associate this compute offering with'
     },
+    helpComputeOfferingIsVolatile: {
+        desc: 'If checked, VMs created from this service offering will have their root disks reset upon reboot. This is useful for secure environments that need a fresh start on every boot and for desktops that should not retain state.'
+    },
     // Add disk offering
     helpDiskOfferingName: {
         desc: 'Any desired name for the offering',

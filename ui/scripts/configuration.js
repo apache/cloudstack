@@ -199,8 +199,8 @@
                                     isVolatile: {
                                         label: 'label.volatile',
                                         isBoolean: true,
-                                        isChecked: false
-
+                                        isChecked: false,
+                                        docID: 'helpComputeOfferingIsVolatile'
                                     },
 
                                     deploymentPlanner: {
