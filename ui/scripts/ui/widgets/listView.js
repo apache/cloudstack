@@ -786,7 +786,7 @@
             content.click(function() {
                 var checked = $(this).is(':checked');
                 $('.multiSelectCheckbox').attr('checked', checked);
-                toggleMultiSelectActions(checked);
+                toggleMultiSelectActions($table.closest('.list-view'), checked);
             });
         }
 
@@ -1076,7 +1076,8 @@
                         var numRows = $(this).parents('tbody').find('input.multiSelectCheckbox').size();
                         var numRowsChecked = $(this).parents('tbody').find('input.multiSelectCheckbox:checked').size();
                         var enabled = checked || (numRowsChecked > 0);
-                        toggleMultiSelectActions(enabled);
+
+                        toggleMultiSelectActions($td.closest('.list-view'), enabled);
 
                         $td.closest('.list-view').find('input.multiSelectMasterCheckbox').attr('checked', (numRows === numRowsChecked));
                     });
@@ -2123,7 +2124,7 @@
                     $tr = $target.closest('div.list-view').find('tr:first'); // Dummy row
                 } else {
                     if (listViewData.actions[actionID].isMultiSelectAction) {
-                        $tr = $('div.list-view').find('input.multiSelectCheckbox:checked').parents('tr');
+                        $tr = $listView.find('input.multiSelectCheckbox:checked').parents('tr');
                     } else {
                         $tr = $target.closest('tr');
                     }
@@ -2236,8 +2237,7 @@
         return $newRow;
     };
 
-    var toggleMultiSelectActions = function(enabled) {
-        var $listView = $('div.list-view');
+    var toggleMultiSelectActions = function($listView, enabled) {
         $listView.find('div.action.add')[enabled ? 'hide' : 'show']();
         $listView.find('div.main-action:not(.multiSelectAction)')[enabled ? 'hide' : 'show']();
         $listView.find('div.main-action.multiSelectAction')[enabled ? 'show' : 'hide']();
