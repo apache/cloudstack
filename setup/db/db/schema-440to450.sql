@@ -178,6 +178,12 @@ CREATE VIEW `cloud`.`volume_view` AS
         vm_template.uuid template_uuid,
         vm_template.extractable,
         vm_template.type template_type,
+        vm_template.name template_name,
+        vm_template.display_text template_display_text,
+        iso.id iso_id,
+        iso.uuid iso_uuid,
+        iso.name iso_name,
+        iso.display_text iso_display_text,
         resource_tags.id tag_id,
         resource_tags.uuid tag_uuid,
         resource_tags.key tag_key,
@@ -215,7 +221,9 @@ CREATE VIEW `cloud`.`volume_view` AS
             left join
         `cloud`.`cluster` ON storage_pool.cluster_id = cluster.id
             left join
-        `cloud`.`vm_template` ON volumes.template_id = vm_template.id OR volumes.iso_id = vm_template.id
+        `cloud`.`vm_template` ON volumes.template_id = vm_template.id
+            left join
+        `cloud`.`vm_template` iso ON iso.id = volumes.iso_id
             left join
         `cloud`.`resource_tags` ON resource_tags.resource_id = volumes.id
             and resource_tags.resource_type = 'Volume'
