@@ -354,7 +354,7 @@
                     path: '_zone.hosts',
                     label: 'label.hosts',
                     preFilter: function(args) {
-                        return isAdmin();
+                        return (isAdmin() && (args.context.instances[0].hostid != null));
                     },
                     updateContext: function(args) {
                         var instance = args.context.instances[0];
