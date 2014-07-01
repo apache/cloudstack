@@ -539,6 +539,7 @@ dictionary = {
 'label.disk.iops.read.rate': '<fmt:message key="label.disk.iops.read.rate" />',
 'label.disk.read.bytes': '<fmt:message key="label.disk.read.bytes" />',
 'label.disk.read.io': '<fmt:message key="label.disk.read.io" />',
+'label.cache.mode': '<fmt:message key="label.cache.mode" />',
 'label.disk.offering': '<fmt:message key="label.disk.offering" />',
 'label.disk.provisioningtype': '<fmt:message key="label.disk.provisioningtype" />',
 'label.disk.size': '<fmt:message key="label.disk.size" />',
