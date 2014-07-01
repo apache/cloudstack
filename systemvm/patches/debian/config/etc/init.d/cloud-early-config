@@ -892,6 +892,9 @@ setup_aesni() {
 setup_router() {
   log_it "Setting up virtual router system vm"
 
+   #To save router public interface and gw ip information
+   touch /var/cache/cloud/ifaceGwIp
+
   oldmd5=
   [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldmd5=$(md5sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
   
