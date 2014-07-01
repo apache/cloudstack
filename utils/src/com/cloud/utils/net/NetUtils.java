@@ -1381,11 +1381,19 @@ public class NetUtils {
     }
 
     public static String standardizeIp6Address(String ip6Addr) {
-        return IPv6Address.fromString(ip6Addr).toString();
+        try {
+            return IPv6Address.fromString(ip6Addr).toString();
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Invalid IPv6 address: " + ex.getMessage());
+        }
     }
 
     public static String standardizeIp6Cidr(String ip6Cidr){
-        return IPv6Network.fromString(ip6Cidr).toString();
+        try {
+            return IPv6Network.fromString(ip6Cidr).toString();
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Invalid IPv6 CIDR: " + ex.getMessage());
+        }
     }
 
     static final String VLAN_PREFIX = "vlan://";
