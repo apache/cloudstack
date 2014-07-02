@@ -18,6 +18,7 @@ package com.cloud.usage.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.TimeZone;
 
 import javax.ejb.Local;
 
+import com.cloud.exception.CloudException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -57,20 +59,25 @@ public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long
     @Override
     public void update(UsageIPAddressVO usage) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        PreparedStatement pstmt = null;
         try {
             txn.start();
             if (usage.getReleased() != null) {
-                pstmt = txn.prepareAutoCloseStatement(UPDATE_RELEASED);
-                pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getReleased()));
-                pstmt.setLong(2, usage.getAccountId());
-                pstmt.setString(3, usage.getAddress());
+                try(PreparedStatement pstmt = txn.prepareStatement(UPDATE_RELEASED);) {
+                    if (pstmt != null) {
+                        pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getReleased()));
+                        pstmt.setLong(2, usage.getAccountId());
+                        pstmt.setString(3, usage.getAddress());
+                        pstmt.executeUpdate();
+                    }
+                }catch(SQLException e)
+                {
+                   throw new CloudException("update:Exception:"+e.getMessage(), e);
+                }
             }
-            pstmt.executeUpdate();
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Error updating usageIPAddressVO", e);
+            s_logger.error("Error updating usageIPAddressVO:"+e.getMessage(), e);
         } finally {
             txn.close();
         }

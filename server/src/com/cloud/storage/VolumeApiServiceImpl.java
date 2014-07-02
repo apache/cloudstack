@@ -1642,7 +1642,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 try {
                 return orchestrateMigrateVolume(vol.getId(), destPool.getId(), liveMigrateVolume);
                 } finally {
-                    if (VmJobEnabled.value())
+                    if ((VmJobEnabled.value())&&(placeHolder != null))
                         _workJobDao.expunge(placeHolder.getId());
                 }
 

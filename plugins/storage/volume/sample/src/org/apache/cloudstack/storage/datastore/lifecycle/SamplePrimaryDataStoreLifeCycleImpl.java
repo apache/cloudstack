@@ -61,7 +61,6 @@ public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLife
 
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
-
         DataStore store = primaryStoreHelper.createPrimaryDataStore(null);
         return providerMgr.getPrimaryDataStore(store.getId());
     }
