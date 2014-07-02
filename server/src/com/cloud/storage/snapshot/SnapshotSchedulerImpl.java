@@ -305,9 +305,10 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             return null;
         }
 
-        // If display attribute is false then remove schedules if any.
+        // If display attribute is false then remove schedules if any and return.
         if(!policy.isDisplay()){
             removeSchedule(policy.getVolumeId(), policy.getId());
+            return null;
         }
 
         final long policyId = policy.getId();
