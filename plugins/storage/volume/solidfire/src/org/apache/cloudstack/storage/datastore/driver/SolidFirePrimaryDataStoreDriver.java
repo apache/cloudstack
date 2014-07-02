@@ -195,10 +195,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return (long)(maxIops * fClusterDefaultBurstIopsPercentOfMaxIops);
     }
 
-    private SolidFireUtil.SolidFireVolume createSolidFireVolume(SolidFireUtil.SolidFireConnection sfConnection, VolumeInfo volumeInfo) {
-        AccountDetailVO accountDetail = _accountDetailsDao.findDetail(volumeInfo.getAccountId(), SolidFireUtil.ACCOUNT_ID);
-        long sfAccountId = Long.parseLong(accountDetail.getValue());
-
+    private SolidFireUtil.SolidFireVolume createSolidFireVolume(SolidFireUtil.SolidFireConnection sfConnection, VolumeInfo volumeInfo, long sfAccountId) {
         long storagePoolId = volumeInfo.getDataStore().getId();
 
         final Iops iops;
@@ -298,15 +295,26 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             String sfAccountName = SolidFireUtil.getSolidFireAccountName(account.getUuid(), account.getAccountId());
 
             long storagePoolId = dataStore.getId();
+
             SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, _storagePoolDetailsDao);
 
-            if (SolidFireUtil.getSolidFireAccount(sfConnection, sfAccountName) == null) {
-                SolidFireUtil.SolidFireAccount sfAccount = createSolidFireAccount(sfConnection, sfAccountName);
+            AccountDetailVO accountDetail = SolidFireUtil.getAccountDetail(volumeInfo.getAccountId(), storagePoolId, _accountDetailsDao);
 
-                SolidFireUtil.updateCsDbWithSolidFireAccountInfo(account.getId(), sfAccount, _accountDetailsDao);
+            if (accountDetail == null || accountDetail.getValue() == null) {
+                SolidFireUtil.SolidFireAccount sfAccount = SolidFireUtil.getSolidFireAccount(sfConnection, sfAccountName);
+
+                if (sfAccount == null) {
+                    sfAccount = createSolidFireAccount(sfConnection, sfAccountName);
+                }
+
+                SolidFireUtil.updateCsDbWithSolidFireAccountInfo(account.getId(), sfAccount, storagePoolId, _accountDetailsDao);
+
+                accountDetail = SolidFireUtil.getAccountDetail(volumeInfo.getAccountId(), storagePoolId, _accountDetailsDao);
             }
 
-            SolidFireUtil.SolidFireVolume sfVolume = createSolidFireVolume(sfConnection, volumeInfo);
+            long sfAccountId = Long.parseLong(accountDetail.getValue());
+
+            SolidFireUtil.SolidFireVolume sfVolume = createSolidFireVolume(sfConnection, volumeInfo, sfAccountId);
 
             iqn = sfVolume.getIqn();
 

@@ -219,7 +219,9 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
 
         SolidFireUtil.SolidFireConnection sfConnection = new SolidFireUtil.SolidFireConnection(managementVip, managementPort, clusterAdminUsername, clusterAdminPassword);
 
-        SolidFireUtil.SolidFireVolume sfVolume = createSolidFireVolume(sfConnection, storagePoolName, capacityBytes, lMinIops, lMaxIops, lBurstIops);
+        SolidFireCreateVolume sfCreateVolume = createSolidFireVolume(sfConnection, storagePoolName, capacityBytes, lMinIops, lMaxIops, lBurstIops);
+
+        SolidFireUtil.SolidFireVolume sfVolume = sfCreateVolume.getVolume();
 
         String iqn = sfVolume.getIqn();
 
@@ -255,6 +257,11 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             List<HostVO> hosts = _hostDao.findByClusterId(clusterId);
 
             SolidFireUtil.placeVolumeInVolumeAccessGroup(sfConnection, sfVolume.getId(), dataStore.getId(), hosts, _clusterDetailsDao);
+
+            SolidFireUtil.SolidFireAccount sfAccount = sfCreateVolume.getAccount();
+            Account csAccount = CallContext.current().getCallingAccount();
+
+            SolidFireUtil.updateCsDbWithSolidFireAccountInfo(csAccount.getId(), sfAccount, dataStore.getId(), _accountDetailsDao);
         } catch (Exception ex) {
             _primaryDataStoreDao.expunge(dataStore.getId());
 
@@ -286,7 +293,25 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         throw new CloudRuntimeException("The 'hypervisor' parameter must be '" + HypervisorType.XenServer + "' or '" + HypervisorType.VMware + "'.");
     }
 
-    private SolidFireUtil.SolidFireVolume createSolidFireVolume(SolidFireUtil.SolidFireConnection sfConnection,
+    private class SolidFireCreateVolume {
+        private final SolidFireUtil.SolidFireVolume _sfVolume;
+        private final SolidFireUtil.SolidFireAccount _sfAccount;
+
+        public SolidFireCreateVolume(SolidFireUtil.SolidFireVolume sfVolume, SolidFireUtil.SolidFireAccount sfAccount) {
+            _sfVolume = sfVolume;
+            _sfAccount = sfAccount;
+        }
+
+        public SolidFireUtil.SolidFireVolume getVolume() {
+            return _sfVolume;
+        }
+
+        public SolidFireUtil.SolidFireAccount getAccount() {
+            return _sfAccount;
+        }
+    }
+
+    private SolidFireCreateVolume createSolidFireVolume(SolidFireUtil.SolidFireConnection sfConnection,
             String volumeName, long volumeSize, long minIops, long maxIops, long burstIops) {
         try {
             Account csAccount = CallContext.current().getCallingAccount();
@@ -301,15 +326,13 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
                 long accountNumber = SolidFireUtil.createSolidFireAccount(sfConnection, sfAccountName);
 
                 sfAccount = SolidFireUtil.getSolidFireAccountById(sfConnection, accountNumber);
-
-                SolidFireUtil.updateCsDbWithSolidFireAccountInfo(csAccountId, sfAccount, _accountDetailsDao);
             }
 
             long sfVolumeId = SolidFireUtil.createSolidFireVolume(sfConnection, SolidFireUtil.getSolidFireVolumeName(volumeName), sfAccount.getId(), volumeSize,
                     true, null, minIops, maxIops, burstIops);
             SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getSolidFireVolume(sfConnection, sfVolumeId);
 
-            return sfVolume;
+            return new SolidFireCreateVolume(sfVolume, sfAccount);
         } catch (Throwable e) {
             throw new CloudRuntimeException("Failed to create a SolidFire volume: " + e.toString());
         }
