@@ -182,6 +182,10 @@
     </bean>
     <bean id="vpcVirtualNetworkApplianceManagerImpl"
         class="com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl" />
+    <bean id="virtualNetworkApplianceFactory"
+        class="com.cloud.network.rules.VirtualNetworkApplianceFactory" />
+    <bean id="routerControlHelper"
+        class="com.cloud.network.router.RouterControlHelper" />
 
 
     <bean id="ApiAsyncJobDispatcher" class="com.cloud.api.ApiAsyncJobDispatcher">
