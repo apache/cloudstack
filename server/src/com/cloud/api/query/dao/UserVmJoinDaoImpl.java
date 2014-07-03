@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.NicResponse;
+import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -52,7 +53,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.UserVmDetailsDao;
-
+import com.cloud.vm.dao.NicSecondaryIpVO;
 
 @Component
 @Local(value={UserVmJoinDao.class})
@@ -241,6 +242,17 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
                     nicResponse.setType(userVm.getGuestType().toString());
                 }
                 nicResponse.setIsDefault(userVm.isDefaultNic());
+                List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(userVm.getNicId());
+                if (secondaryIps != null) {
+                    List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();
+                    for (NicSecondaryIpVO ip : secondaryIps) {
+                        NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
+                        ipRes.setId(ip.getUuid());
+                        ipRes.setIpAddr(ip.getIp4Address());
+                        ipList.add(ipRes);
+                    }
+                    nicResponse.setSecondaryIps(ipList);
+                }
                 nicResponse.setObjectName("nic");
                 userVmResponse.addNic(nicResponse);
             }
