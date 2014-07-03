@@ -56,7 +56,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
