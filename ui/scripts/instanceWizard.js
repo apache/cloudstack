@@ -813,6 +813,9 @@
             	});
             }
 
+            if (g_hostid != null)
+                array1.push("&hostid=" + g_hostid);
+
             $.ajax({
                 url: createURL('deployVirtualMachine'),
                 data: deployVmData,

@@ -308,9 +308,12 @@
                 }
 
                 if ("hosts" in args.context) {
+                    g_hostid = args.context.hosts[0].id;
                     $.extend(data, {
                         hostid: args.context.hosts[0].id
                     });
+                } else {
+                    g_hostid = null;
                 }
 
                 if ("affinityGroups" in args.context) {
