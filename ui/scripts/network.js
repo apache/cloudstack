@@ -2259,7 +2259,7 @@
                                                 _custom: {
                                                     getUpdatedItem: function(json) {
                                                         return {
-                                                            vpn: json.queryasyncjobresultresponse.jobresult.remoteaccessvpn,
+                                                            remoteaccessvpn: json.queryasyncjobresultresponse.jobresult.remoteaccessvpn,
                                                             vpnenabled: true
                                                         };
                                                     },
@@ -2283,7 +2283,7 @@
                                         return 'label.enable.vpn';
                                     },
                                     complete: function(args) {
-                                        return _l('message.enabled.vpn') + ' ' + args.vpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.vpn.presharedkey;
+                                        return _l('message.enabled.vpn') + ' ' + args.remoteaccessvpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.remoteaccessvpn.presharedkey;
                                     }
                                 },
                                 notification: {
