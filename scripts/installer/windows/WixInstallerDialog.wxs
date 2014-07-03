@@ -28,7 +28,7 @@
             <DialogRef Id="UserExit" />
             <DialogRef Id="DatabaseInformation" />
 
-            <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
+            <Publish Dialog="ExitDialog_custom" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
 
             <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
 
