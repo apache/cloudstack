@@ -26,9 +26,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.utils.net.NetUtils;
-import org.apache.log4j.Logger;
 
-import com.google.gson.Gson;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
@@ -83,6 +82,7 @@ import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.rules.VirtualNetworkApplianceFactory;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -104,6 +104,8 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
+
+import com.google.gson.Gson;
 
 @Local(value = {NetworkElement.class, FirewallServiceProvider.class,
         DhcpServiceProvider.class, UserDataServiceProvider.class,
@@ -154,6 +156,8 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     OvsProviderDao _ovsProviderDao;
     @Inject
     IPAddressDao _ipAddressDao;
+    @Inject
+    protected VirtualNetworkApplianceFactory virtualNetworkApplianceFactory;
 
     protected boolean canHandle(Network network, Service service) {
         Long physicalNetworkId = _networkMdl.getPhysicalNetworkId(network);
