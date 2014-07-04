@@ -44,8 +44,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
@@ -62,6 +60,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -2018,11 +2017,12 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         return new Pair<DeploymentPlan, List<DomainRouterVO>>(plan, routers);
     }
 
-    private DomainRouterVO waitRouter(DomainRouterVO router) {
+    private DomainRouterVO waitRouter(final DomainRouterVO router) {
         DomainRouterVO vm = _routerDao.findById(router.getId());
 
-        if (s_logger.isDebugEnabled())
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Router " + router.getInstanceName() + " is not fully up yet, we will wait");
+        }
         while (vm.getState() == State.Starting) {
             try {
                 Thread.sleep(1000);
@@ -2034,8 +2034,9 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         }
 
         if (vm.getState() == State.Running) {
-            if (s_logger.isDebugEnabled())
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Router " + router.getInstanceName() + " is now fully up");
+            }
 
             return router;
         }
@@ -2044,7 +2045,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         return null;
     }
 
-    private DomainRouterVO startVirtualRouter(DomainRouterVO router, User user, Account caller, Map<Param, Object> params)
+    private DomainRouterVO startVirtualRouter(final DomainRouterVO router, final User user, final Account caller, final Map<Param, Object> params)
             throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
 
@@ -2424,21 +2425,15 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         final PvlanSetupCommand cmd =
                 PvlanSetupCommand.createDhcpSetup(op, nic.getBroadCastUri(), networkTag, router.getInstanceName(), nic.getMacAddress(), nic.getIp4Address());
         // In fact we send command to the host of router, we're not programming router but the host
-        Answer answer = null;
+        Commands cmds = new Commands(Command.OnError.Stop);
+        cmds.addCommand(cmd);
+
         try {
-            answer = _agentMgr.send(hostId, cmd);
-        } catch (final OperationTimedoutException e) {
+            return sendCommandsToRouter(router, cmds);
+        } catch (final ResourceUnavailableException e) {
             s_logger.warn("Timed Out", e);
             return false;
-        } catch (final AgentUnavailableException e) {
-            s_logger.warn("Agent Unavailable ", e);
-            return false;
         }
-
-        if (answer == null || !answer.getResult()) {
-            return false;
-        }
-        return true;
     }
 
     @Override
@@ -2525,7 +2520,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         return true;
     }
 
-    private void finalizeMonitorServiceOnStrat(Commands cmds, VirtualMachineProfile profile, DomainRouterVO router, Provider provider, long networkId, Boolean add) {
+    private void finalizeMonitorServiceOnStrat(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final Provider provider, final long networkId, final Boolean add) {
 
         final NetworkVO network = _networkDao.findById(networkId);
 
@@ -2609,8 +2604,9 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
 
         // Network usage command to create iptables rules
         final boolean forVpc = vr.getVpcId() != null;
-        if (!forVpc)
+        if (!forVpc) {
             cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getHostName(), "create", forVpc));
+        }
     }
 
     protected void finalizeUserDataAndDhcpOnStart(final Commands cmds, final DomainRouterVO router, final Provider provider, final Long guestNetworkId) {
@@ -4371,7 +4367,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         return (Version.compare(trimmedVersion, MinVRVersion) >= 0);
     }
 
-    private List<Long> rebootRouters(List<DomainRouterVO> routers){
+    private List<Long> rebootRouters(final List<DomainRouterVO> routers){
         List<Long> jobIds = new ArrayList<Long>();
         for(DomainRouterVO router: routers){
             if(!checkRouterVersion(router)){
@@ -4408,12 +4404,12 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
     }
 
     @Override
-    public boolean preStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
+    public boolean preStateTransitionEvent(final State oldState, final VirtualMachine.Event event, final State newState, final VirtualMachine vo, final boolean status, final Object opaque) {
         return true;
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
+    public boolean postStateTransitionEvent(final State oldState, final VirtualMachine.Event event, final State newState, final VirtualMachine vo, final boolean status, final Object opaque) {
         if (oldState == State.Stopped && event == VirtualMachine.Event.FollowAgentPowerOnReport && newState == State.Running) {
             if (vo.getType() == VirtualMachine.Type.DomainRouter) {
                 s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band. we need to reboot to refresh network rules");
@@ -4427,7 +4423,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
 
         long _routerId;
 
-        public RebootTask(long routerId) {
+        public RebootTask(final long routerId) {
             _routerId = routerId;
         }
 
@@ -4442,7 +4438,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         }
     }
 
-    protected boolean aggregationExecution(AggregationControlCommand.Action action, Network network, List<DomainRouterVO> routers) throws AgentUnavailableException {
+    protected boolean aggregationExecution(final AggregationControlCommand.Action action, final Network network, final List<DomainRouterVO> routers) throws AgentUnavailableException {
         for (DomainRouterVO router : routers) {
             AggregationControlCommand cmd = new AggregationControlCommand(action, router.getInstanceName(), getRouterControlIp(router.getId()),
                     getRouterIpInNetwork(network.getId(), router.getId()));
@@ -4455,13 +4451,18 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
     }
 
     @Override
-    public boolean prepareAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException {
+    public boolean prepareAggregatedExecution(final Network network, final List<DomainRouterVO> routers) throws AgentUnavailableException {
         return aggregationExecution(Action.Start, network, routers);
     }
 
     @Override
-    public boolean completeAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException {
+    public boolean completeAggregatedExecution(final Network network, final List<DomainRouterVO> routers) throws AgentUnavailableException {
         return aggregationExecution(Action.Finish, network, routers);
+    }
+
+    @Override
+    public boolean cleanupAggregatedExecution(final Network network, final List<DomainRouterVO> routers) throws AgentUnavailableException {
+        return aggregationExecution(Action.Cleanup, network, routers);
     }
 
 }

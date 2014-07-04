@@ -28,7 +28,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.RuleApplier;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -55,9 +54,8 @@ public interface NetworkTopology {
     boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
             throws ResourceUnavailableException;
 
-    boolean applyRules(final Network network, final List<? extends VirtualRouter> routers, final String typeString, final boolean isPodLevelException, final Long podId,
-            final boolean failWhenDisconnect, final RuleApplier applier) throws ResourceUnavailableException;
+    boolean applyRules(final Network network, final List<VirtualRouter> routers, final String typeString, final boolean isPodLevelException, final Long podId,
+            final boolean failWhenDisconnect) throws ResourceUnavailableException;
 
-    boolean sendCommandsToRouter(VirtualRouter router,
-            List<LoadBalancingRule> rules, long id);
+    boolean applyLoadBalancingRules(Network network, List<LoadBalancingRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 }
