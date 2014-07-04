@@ -10,8 +10,8 @@
   governing permissions and limitations under the License. -->
 <WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
 
-  <String Id="Caption">Apache CloudStack Setup</String>
-  <String Id="Title">Apache CloudStack</String>
+  <String Id="Caption">Apache Cloud Stack Setup</String>
+  <String Id="Title">Apache Cloud Stack</String>
   <String Id="MysqlInstaller">Install MySql Database Server</String>
   <String Id="InstallVersion">Version 4.0.0.0</String>
 

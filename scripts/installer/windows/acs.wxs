@@ -11,7 +11,7 @@
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi' xmlns:fire='http://schemas.microsoft.com/wix/FirewallExtension' xmlns:util='http://schemas.microsoft.com/wix/UtilExtension'>
   <Product Name='!(loc.ProductName)' Id='eea70ed5-5950-4f01-b4aa-4a07636359bb'
     UpgradeCode='d6208c34-7b50-4512-b19e-b904dcc1373e' Language='1033'
-    Codepage='1252' Version='!(wix.Version)' Manufacturer='!(loc.ProductManufacturer)'>
+    Codepage='1252' Version='4.4.0' Manufacturer='!(loc.ProductManufacturer)'>
 
     <Package Id='*' Keywords='Installer' Description="!(loc.PackageDescription)"
       Comments='!(loc.PackageComments)'
@@ -67,8 +67,8 @@
 
     <Directory Id='TARGETDIR' Name='SourceDir'>
       <Directory Id='ProgramFilesFolder' Name='PFiles'>
-        <Directory Id='Acme' Name='Apache Software Foundation'>
-          <Directory Id='INSTALLDIR' Name='CloudStack!(wix.Version)'>
+        <Directory Id='Acme' Name='Apache'>
+          <Directory Id='INSTALLDIR' Name='CS'>
             <Component Id='MainExecutable'
               Guid='5980d204-a63a-45db-a7e8-cbd50b2d314b'>
               <CreateFolder />
@@ -139,9 +139,6 @@
           </Component>
         </Directory>
       </Directory>
-      <Component Id="ReadmeFile" Guid="53c03092-438f-4da1-b15d-ceee90c79df0">
-        <File Id="CopyReadmeFile" KeyPath="yes" Source="readme.txt" />
-      </Component>
     </DirectoryRef>
     <DirectoryRef Id="WEBAPPS">
       <Component Id="copyToConf" Guid="99da8926-1eec-4a7f-ac7f-1326d8e73ea0"
@@ -249,9 +246,6 @@
     <CustomAction Id="CopySitePackages" Directory='INSTALLDIR'
       ExeCommand='[SystemFolder]cmd.exe /c xcopy /S "[INSTALLDIR]\python-site-packages" [PYTHON_HOME]\Lib\site-packages'
       Execute="deferred" Return="check"/>
-    <CustomAction Id="CopyMysqlConnctorJar" Directory='INSTALLDIR'
-      ExeCommand='[SystemFolder]cmd.exe /c copy "[ProgramFilesFolder]\MySQL\MySQL Connector J\mysql-connector-java-5.1.30-bin.jar" "[CSMANAGEMENT]\lib\"'
-      Execute="deferred" Return="check"/>
     <CustomAction Id="DeleteDirectory" Directory='INSTALLDIR'
       ExeCommand='[SystemFolder]cmd.exe /c RD /S /Q "[INSTALLDIR]\python-site-packages"'
       Execute="deferred" Return="check" />
@@ -284,8 +278,7 @@
       <Custom Action="GenerateSSLKey" After="PublishProduct">NOT Installed
       </Custom>
       <Custom Action="CopySitePackages" After="GenerateSSLKey">NOT Installed</Custom>
-      <Custom Action="CopyMysqlConnctorJar" After="CopySitePackages">NOT Installed</Custom>
-      <Custom Action="DeleteDirectory" After="CopyMysqlConnctorJar">NOT Installed</Custom>
+      <Custom Action="DeleteDirectory" After="CopySitePackages">NOT Installed</Custom>
       <Custom Action="DbHostWithPort" After="InstallFiles"><![CDATA[DB_PORT]]></Custom>
       <Custom Action="DeployDB" After="DeleteDirectory">(NOT Installed) AND (CREATE_DATABASE = "1")
       </Custom>
@@ -309,31 +302,9 @@
         <ComponentRef Id='MainExecutable' />
         <ComponentRef Id='setuptools' />
         <ComponentRef Id='ServiceInstaller' />
-        <ComponentRef Id='ReadmeFile' />
       </Feature>
     </Feature>
-    <!-- This is to enable check box to start the service -->
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="!(loc.LaunchService)" />
-    <!-- This is to start the service -->
-    <CustomAction Id="LaunchApplication" Directory='INSTALLDIR' ExeCommand="[SystemFolder]cmd.exe /c sc start ACSService" Impersonate="yes" Execute="immediate" Return="asyncNoWait"/>
-
-    <!-- This is to enable check box to view read me file -->
-    <Property Id="WIXUI_EXITDIALOGOPTIONALREADMECHECKBOXTEXT" Value="!(loc.ReadMe)" />
-    <Property Id="WixShellExecTarget" Value="[#CopyReadmeFile]" />
-    <!-- This is to open readme.txt file -->
-    <CustomAction Id="LaunchFile" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
-
-    <UI>
-      <UIRef Id="WixUI_Mondo_Custom" />
-      <Publish Dialog="ExitDialog_custom"
-            Control="Finish"
-            Event="DoAction"
-            Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
-      <Publish Dialog="ExitDialog_custom"
-            Control="Finish"
-            Event="DoAction"
-            Value="LaunchFile">WIXUI_EXITDIALOGOPTIONALRAEDMECHECKBOX = 1 and NOT Installed</Publish>
-    </UI>
+		<UIRef Id="WixUI_Mondo_Custom" />
 		<UIRef Id="WixUI_ErrorProgressText" />
   </Product>
 </Wix>

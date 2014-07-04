@@ -17,7 +17,6 @@
 		</BootstrapperApplicationRef>
 		<Chain>
 			<MsiPackage Id="MySql" Name="mysql-5.1.73-winx64.msi" DownloadUrl="http://cdn.mysql.com/Downloads/MySQL-5.1/mysql-5.1.73-winx64.msi" Compressed="no" Visible="yes" ForcePerMachine="yes" DisplayInternalUI="yes" EnableFeatureSelection="yes" InstallCondition="ACSCheckbox"/>
-      <MsiPackage Id="MySqlConnector" Name="mysql-connector-java-gpl-5.1.30.msi" DownloadUrl="http://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-gpl-5.1.30.msi" Compressed="no" Visible="yes" ForcePerMachine="yes" EnableFeatureSelection="no" DisplayInternalUI="no"/>
 			<MsiPackage Id="MySqlClient" Name="mysql-5.1.73-winx64.msi" DownloadUrl="http://cdn.mysql.com/Downloads/MySQL-5.1/mysql-5.1.73-winx64.msi" Compressed="no" Visible="yes" ForcePerMachine="yes" EnableFeatureSelection="no" DisplayInternalUI="no" InstallCondition="Not ACSCheckbox"/>
 			<MsiPackage Id="SevenZip" Name="7z920-x64.msi" DownloadUrl="http://downloads.sourceforge.net/sevenzip/7z920-x64.msi" Compressed="no" Visible="yes" ForcePerMachine="yes" After="MySql"/>
 			<MsiPackage Id="Python" Name="python-2.7.6.amd64.msi" DownloadUrl="https://www.python.org/ftp/python/2.7.6/python-2.7.6.amd64.msi" Compressed="no" Visible="yes" ForcePerMachine="yes" After="SevenZip"/>

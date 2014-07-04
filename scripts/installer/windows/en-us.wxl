@@ -9,9 +9,9 @@
   OF ANY KIND, either express or implied. See the License for the specific language
   governing permissions and limitations under the License. -->
 <WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
-  <String Id="ProductName">Apache CloudStack</String>
+  <String Id="ProductName">Apache Cloud Stack</String>
   <String Id="ProductManufacturer">Apache</String>
-  <String Id="PackageDescription">Apache CloudStack Installer</String>
+  <String Id="PackageDescription">Apache Cloud Stack Installer</String>
   <String Id="PackageComments">ACS is a registered trademark</String>
   <String Id="PackageManufacturer">Apache</String>
   <String Id="Tomcat6ConditionMessage">Apache tomcat6 is not installed please do install tomcat6 and then try</String>
@@ -19,7 +19,7 @@
   <String Id="Python2ConditionMessage">Python 2.7 is not installed Please do install python and then try</String>
   <String Id="SevenZConditionMessage">7Z is not installed please do install 7z and then try</String>
   <String Id="FeatureTitle1">Management Server</String>
-  <String Id="FeatureDescription1">The Main Executable of CloudStack.</String>
+  <String Id="FeatureDescription1">The Main Executable of Cloud Stack.</String>
   <String Id="FeatureDescription2">The complete package.</String>
   <String Id="DatabaseInformationTitle">Provide Database Information</String>
   <String Id="DatabaseInformationDescription">Please provide the database information that host the cloud schemas</String>
@@ -28,7 +28,7 @@
   <String Id="DbPasswordLabel">Password</String>
   <String Id="DbRootPasswordLabel">Root Password</String>
   <String Id="DbServerPortLabel">Port</String>
-  <String Id="CreateDBCheckBoxLabel">Create CloudStack Database</String>
+  <String Id="CreateDBCheckBoxLabel">Create Cloud Stack Database</String>
   <String Id="GenerateSSLKey">Generating SSL Keys which is needed to talk to Management Server.</String>
   <String Id="DeployDB">Creating Database and needed Schemas for management server.</String>
   <String Id="SetupDatabases">Updating db.properties with the given database configuration.</String>
@@ -38,8 +38,6 @@
   <String Id="DeleteFiles">Deleting un-necessary files from installation directory.</String>
   <String Id="UpdateTomcatCatalinaBase">Updating Tomcat Catalina Base with Management Server Home.</String>
   <String Id="UpdateTomcatClassPath">Updating Tomcat Classpath with necessary paths.</String>
-  <String Id="LaunchService">Launch CloudStack Server</String>
-  <String Id="ReadMe">Open Readme</String>
 
   <String Id="InstallVersion">Version 4.0.0.0</String>
 </WixLocalization>
