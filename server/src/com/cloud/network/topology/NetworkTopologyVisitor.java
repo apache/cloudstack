@@ -18,7 +18,9 @@
 package com.cloud.network.topology;
 
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.rules.DhcpRules;
+import com.cloud.network.rules.DhcpEntryRules;
+import com.cloud.network.rules.DhcpPvlanRules;
+import com.cloud.network.rules.DhcpSubNetRules;
 import com.cloud.network.rules.FirewallRules;
 import com.cloud.network.rules.IpAssociationRules;
 import com.cloud.network.rules.LoadBalancingRules;
@@ -34,18 +36,12 @@ import com.cloud.network.rules.VpnRules;
 
 public abstract class NetworkTopologyVisitor {
 
-    protected final NetworkTopology networkTopology;
-
-    public NetworkTopologyVisitor(final NetworkTopology networkTopology) {
-        this.networkTopology = networkTopology;
-    }
-
     public abstract boolean visit(StaticNatRules nat) throws ResourceUnavailableException;
     public abstract boolean visit(LoadBalancingRules loadbalancing) throws ResourceUnavailableException;
     public abstract boolean visit(FirewallRules firewall) throws ResourceUnavailableException;
     public abstract boolean visit(IpAssociationRules ipAddresses) throws ResourceUnavailableException;
     public abstract boolean visit(UserdataPwdRules userdata) throws ResourceUnavailableException;
-    public abstract boolean visit(DhcpRules dhcp) throws ResourceUnavailableException;
+    public abstract boolean visit(DhcpEntryRules dhcp) throws ResourceUnavailableException;
     public abstract boolean visit(SshKeyToRouterRules ssh) throws ResourceUnavailableException;
     public abstract boolean visit(PasswordToRouterRules pwd) throws ResourceUnavailableException;
     public abstract boolean visit(NetworkAclsRules acl) throws ResourceUnavailableException;
@@ -53,8 +49,6 @@ public abstract class NetworkTopologyVisitor {
     public abstract boolean visit(UserdataToRouterRules userdata) throws ResourceUnavailableException;
     public abstract boolean visit(VpnRules userdata) throws ResourceUnavailableException;
     public abstract boolean visit(PrivateGatewayRules userdata) throws ResourceUnavailableException;
-
-    public NetworkTopology getNetworkTopology() {
-        return networkTopology;
-    }
+    public abstract boolean visit(DhcpPvlanRules vpn) throws ResourceUnavailableException;
+    public abstract boolean visit(final DhcpSubNetRules vpn) throws ResourceUnavailableException;
 }
