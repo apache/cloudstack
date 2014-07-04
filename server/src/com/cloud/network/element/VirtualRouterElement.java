@@ -37,6 +37,8 @@ import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -80,6 +82,8 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.VirtualNetworkApplianceFactory;
+import com.cloud.network.topology.NetworkTopology;
+import com.cloud.network.topology.NetworkTopologyContext;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -128,6 +132,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     NetworkOfferingDao _networkOfferingDao;
     @Inject
     VpcVirtualNetworkApplianceManager _routerMgr;
+
+    @Inject
+    DataCenterDao _dcDao;
+
     @Inject
     ConfigurationManager _configMgr;
     @Inject
@@ -282,8 +290,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         String number = str;
         if (endChar != null) {
             boolean matchedEndChar = false;
-            if (str.length() < 2)
-             {
+            if (str.length() < 2) {
                 return false; // atleast one numeric and one char. example:
             }
             // 3h
@@ -349,6 +356,9 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 for (Pair<String, String> paramKV : paramsList) {
                     String key = paramKV.first();
                     String value = paramKV.second();
+                    if ("cookie-name".equalsIgnoreCase(key)) {
+                        cookieName = value;
+                    }
                     if ("length".equalsIgnoreCase(key)) {
                         length = value;
                     }
@@ -395,7 +405,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 return true;
             }
 
-            if (!_routerMgr.applyLoadBalancingRules(network, rules, routers)) {
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = NetworkTopologyContext.getInstance().retrieveNetworkTopology(dcVO);
+
+            if (!networkTopology.applyLoadBalancingRules(network, rules, routers)) {
                 throw new CloudRuntimeException("Failed to apply load balancing rules in network " + network.getId());
             } else {
                 return true;

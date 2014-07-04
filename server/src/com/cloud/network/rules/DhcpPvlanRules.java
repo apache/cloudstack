@@ -25,13 +25,13 @@ import com.cloud.network.topology.NetworkTopologyVisitor;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
-public class DhcpRules extends RuleApplier {
+public class DhcpPvlanRules extends RuleApplier {
 
     private final NicProfile nic;
     private final VirtualMachineProfile profile;
     private final DeployDestination destination;
 
-    public DhcpRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination destination) {
+    public DhcpPvlanRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination destination) {
         super(network);
 
         this.nic = nic;

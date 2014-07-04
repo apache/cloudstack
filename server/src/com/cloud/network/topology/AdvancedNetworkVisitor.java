@@ -24,8 +24,11 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.router.NEWVirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.DhcpRules;
+import com.cloud.network.rules.DhcpEntryRules;
+import com.cloud.network.rules.DhcpPvlanRules;
+import com.cloud.network.rules.DhcpSubNetRules;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRules;
@@ -44,8 +47,11 @@ import com.cloud.network.rules.VpnRules;
 
 public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
 
-    public AdvancedNetworkVisitor(final NetworkTopology networkTopology) {
-        super(networkTopology);
+    protected NEWVirtualNetworkApplianceManager applianceManager;
+
+    public void setApplianceManager(
+            final NEWVirtualNetworkApplianceManager applianceManager) {
+        this.applianceManager = applianceManager;
     }
 
     @Override
@@ -71,7 +77,7 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
         final Commands cmds = new Commands(Command.OnError.Continue);
         loadbalancing.createApplyLoadBalancingRulesCommands(rules, router, cmds, network.getId());
 
-        return networkTopology.sendCommandsToRouter(router, rules, network.getId());
+        return applianceManager.sendCommandsToRouter(router, cmds);
     }
 
     @Override
@@ -121,7 +127,7 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
     }
 
     @Override
-    public boolean visit(final DhcpRules nat) throws ResourceUnavailableException {
+    public boolean visit(final DhcpEntryRules nat) throws ResourceUnavailableException {
         return false;
     }
 
@@ -151,12 +157,22 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
     }
 
     @Override
-    public boolean visit(PrivateGatewayRules userdata) throws ResourceUnavailableException {
+    public boolean visit(final PrivateGatewayRules privateGW) throws ResourceUnavailableException {
         return false;
     }
 
     @Override
-    public boolean visit(VpnRules userdata) throws ResourceUnavailableException {
+    public boolean visit(final VpnRules vpn) throws ResourceUnavailableException {
+        return false;
+    }
+
+    @Override
+    public boolean visit(final DhcpPvlanRules vpn) throws ResourceUnavailableException {
+        return false;
+    }
+
+    @Override
+    public boolean visit(final DhcpSubNetRules vpn) throws ResourceUnavailableException {
         return false;
     }
 }

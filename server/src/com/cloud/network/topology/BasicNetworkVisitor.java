@@ -20,7 +20,9 @@ package com.cloud.network.topology;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.DhcpRules;
+import com.cloud.network.rules.DhcpEntryRules;
+import com.cloud.network.rules.DhcpPvlanRules;
+import com.cloud.network.rules.DhcpSubNetRules;
 import com.cloud.network.rules.FirewallRules;
 import com.cloud.network.rules.IpAssociationRules;
 import com.cloud.network.rules.LoadBalancingRules;
@@ -35,10 +37,6 @@ import com.cloud.network.rules.VpcIpAssociationRules;
 import com.cloud.network.rules.VpnRules;
 
 public class BasicNetworkVisitor extends NetworkTopologyVisitor {
-
-    public BasicNetworkVisitor(final NetworkTopology networkTopology) {
-        super(networkTopology);
-    }
 
     @Override
     public boolean visit(final StaticNatRules nat) throws ResourceUnavailableException {
@@ -66,7 +64,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     }
 
     @Override
-    public boolean visit(final DhcpRules nat) throws ResourceUnavailableException {
+    public boolean visit(final DhcpEntryRules nat) throws ResourceUnavailableException {
         return false;
     }
 
@@ -100,12 +98,22 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     }
 
     @Override
-    public boolean visit(PrivateGatewayRules userdata) throws ResourceUnavailableException {
+    public boolean visit(final PrivateGatewayRules userdata) throws ResourceUnavailableException {
         return false;
     }
 
     @Override
-    public boolean visit(VpnRules userdata) throws ResourceUnavailableException {
+    public boolean visit(final VpnRules userdata) throws ResourceUnavailableException {
+        return false;
+    }
+
+    @Override
+    public boolean visit(final DhcpPvlanRules vpn) throws ResourceUnavailableException {
+        return false;
+    }
+
+    @Override
+    public boolean visit(final DhcpSubNetRules vpn) throws ResourceUnavailableException {
         return false;
     }
 }
