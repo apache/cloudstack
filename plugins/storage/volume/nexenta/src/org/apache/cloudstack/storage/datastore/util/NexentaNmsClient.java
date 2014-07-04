@@ -45,9 +45,10 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
 import org.apache.log4j.Logger;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class NexentaNmsClient {
     private static final Logger logger = Logger.getLogger(NexentaNmsClient.class);
@@ -123,7 +124,7 @@ public class NexentaNmsClient {
         private Object[] params;
 
         NmsRequest(String object, String method) {
-            this(method, object, null);
+            this(object, method, (Object[])null);
         }
 
         NmsRequest(String object, String method, Object... params) {
@@ -132,6 +133,7 @@ public class NexentaNmsClient {
             this.params = params;
         }
 
+        @Override
         public String toString() {
             StringBuffer b = new StringBuffer();
             b.append("Request to ").append(object).append(" method ").append(method);
