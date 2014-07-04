@@ -33,6 +33,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
+import com.cloud.network.router.NEWVirtualNetworkApplianceManager;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
@@ -48,6 +49,8 @@ public class LoadBalancingRules extends RuleApplier {
     private final List<LoadBalancingRule> rules;
 
     protected RouterControlHelper routerControlHelper;
+
+    protected NEWVirtualNetworkApplianceManager applianceManager;
 
     public LoadBalancingRules(final Network network, final List<LoadBalancingRule> rules) {
         super(network);
@@ -120,20 +123,28 @@ public class LoadBalancingRules extends RuleApplier {
         }
 
         final LoadBalancerConfigCommand cmd =
-                new LoadBalancerConfigCommand(lbs, routerPublicIp, this.routerControlHelper.getRouterIpInNetwork(
+                new LoadBalancerConfigCommand(lbs, routerPublicIp, routerControlHelper.getRouterIpInNetwork(
                         guestNetworkId, router.getId()), router.getPrivateIpAddress(), itMgr.toNicTO(
-                        nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled());
+                                nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled());
 
         cmd.lbStatsVisibility = configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
         cmd.lbStatsAuth = configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
         cmd.lbStatsPort = configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
 
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, this.routerControlHelper.getRouterControlIp(router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, this.routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlHelper.getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         final DataCenterVO dcVo = dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
+    }
+
+    public void setManager(final NEWVirtualNetworkApplianceManager applianceManager) {
+        this.applianceManager = applianceManager;
+    }
+
+    public NEWVirtualNetworkApplianceManager getApplianceManager() {
+        return applianceManager;
     }
 }
