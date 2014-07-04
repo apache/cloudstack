@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.ovm3.hypervisor;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -45,7 +46,6 @@ import org.apache.xmlrpc.XmlRpcException;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-
 
 
 
@@ -79,7 +79,10 @@ import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
+import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 // import com.cloud.agent.api.routing.DhcpEntryAnswer;
 import com.cloud.agent.api.HostStatsEntry;
@@ -100,6 +103,7 @@ import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.SetupGuestNetworkCommand;
 /*
  * import com.cloud.agent.api.SecurityGroupRuleAnswer;
  * import com.cloud.agent.api.SecurityGroupRulesCmd;
@@ -145,6 +149,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.utils.ExecutionResult;
 // import com.cloud.utils.Pair;
 // import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -154,6 +159,8 @@ import com.trilead.ssh2.SCPClient;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
+import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
+import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineName;
@@ -187,12 +194,15 @@ import org.apache.cloudstack.storage.command.AttachCommand;
 
 
 
+
 // import org.apache.cloudstack.storage.command.AttachAnswer;
 import com.cloud.storage.Storage.ImageFormat;
 /* do we need this ? */
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.resource.ResourceManager;
+import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
 
 import org.apache.commons.io.FileUtils;
 
@@ -200,7 +210,7 @@ import javax.inject.Inject;
 
 /* TODO: Seperate these out */
 public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
-        StorageProcessor {
+        StorageProcessor, VirtualRouterDeployer {
     private static final Logger s_logger = Logger
             .getLogger(Ovm3ResourceBase.class);
     private Connection c;
@@ -242,6 +252,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     static boolean s_isHeartBeat = false;
     protected final int DefaultDomRSshPort = 3922;
     String DefaultDomRPath = "/opt/cloud/bin/";
+    private VirtualRoutingResource _virtRouterResource;
     private Map<String, Network.Interface> _interfaces = null;
     /* switch to concurrenthasmaps all over the place ? */
     private final ConcurrentHashMap<String,
@@ -286,6 +297,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     HostDao _hostDao;
     @Inject
     ResourceManager _resourceMgr;
+    
 
     GlobalLock _exclusiveOpLock = GlobalLock.getInternLock("ovm3.exclusive.op");
 
@@ -1606,6 +1618,100 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         }
     }
 
+    /* VR things */
+    @Override
+    public ExecutionResult executeInVR(String routerIp, String script, String args) {
+        return executeInVR(routerIp, script, args, _timeout / 1000);
+    }
+
+    @Override
+    public ExecutionResult executeInVR(String routerIp, String script, String args, int timeout) {
+        final Script command = new Script(_routerProxyPath, timeout * 1000, s_logger);
+        final AllLinesParser parser = new AllLinesParser();
+        command.add(script);
+        command.add(routerIp);
+        if (args != null) {
+            command.add(args);
+        }
+        String details = command.execute(parser);
+        if (details == null) {
+            details = parser.getLines();
+        }
+        return new ExecutionResult(command.getExitValue() == 0, details);
+    }
+
+    @Override
+    public ExecutionResult createFileInVR(String routerIp, String path, String filename, String content) {
+        File permKey = new File("/root/.ssh/id_rsa.cloud");
+        String error = null;
+
+        try {
+            SshHelper.scpTo(routerIp, 3922, "root", permKey, null, path, content.getBytes(), filename, null);
+        } catch (Exception e) {
+            s_logger.warn("Fail to create file " + path + filename + " in VR " + routerIp, e);
+            error = e.getMessage();
+        }
+        return new ExecutionResult(error == null, error);
+    }
+
+    @Override
+    public ExecutionResult prepareCommand(NetworkElementCommand cmd) {
+        //Update IP used to access router
+        cmd.setRouterAccessIp(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
+        assert cmd.getRouterAccessIp() != null;
+
+        if (cmd instanceof IpAssocVpcCommand) {
+            return prepareNetworkElementCommand((IpAssocVpcCommand)cmd);
+        } else if (cmd instanceof IpAssocCommand) {
+            return prepareNetworkElementCommand((IpAssocCommand)cmd);
+        } else if (cmd instanceof SetupGuestNetworkCommand) {
+            return prepareNetworkElementCommand((SetupGuestNetworkCommand)cmd);
+        } else if (cmd instanceof SetSourceNatCommand) {
+            return prepareNetworkElementCommand((SetSourceNatCommand)cmd);
+        }
+        return new ExecutionResult(true, null);
+    }
+
+    @Override
+    public ExecutionResult cleanupCommand(NetworkElementCommand cmd) {
+        if (cmd instanceof IpAssocCommand && !(cmd instanceof IpAssocVpcCommand)) {
+            return cleanupNetworkElementCommand((IpAssocCommand)cmd);
+        }
+        return new ExecutionResult(true, null);
+    }
+
+    private static final class KeyValueInterpreter extends OutputInterpreter {
+        private final Map<String, String> map = new HashMap<String, String>();
+
+        @Override
+        public String interpret(BufferedReader reader) throws IOException {
+            String line = null;
+            int numLines = 0;
+            while ((line = reader.readLine()) != null) {
+                String[] toks = line.trim().split("=");
+                if (toks.length < 2) {
+                    s_logger.warn("Failed to parse Script output: " + line);
+                } else {
+                    map.put(toks[0].trim(), toks[1].trim());
+                }
+                numLines++;
+            }
+            if (numLines == 0) {
+                s_logger.warn("KeyValueInterpreter: no output lines?");
+            }
+            return null;
+        }
+
+        public Map<String, String> getKeyValues() {
+            return map;
+        }
+    }
+
+    @Override
+    protected String getDefaultScriptsDir() {
+        return null;
+    }
+
     /* split out domr stuff later */
     private GetDomRVersionAnswer execute(GetDomRVersionCmd cmd) {
         String args = this.DefaultDomRPath + "get_template_version.sh";
@@ -2798,7 +2904,14 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
 
     @Override
     public Answer executeRequest(Command cmd) {
-        Class<? extends Command> clazz = cmd.getClass();
+    	try {
+    		if (cmd instanceof NetworkElementCommand) {
+                return _virtRouterResource.executeRequest((NetworkElementCommand)cmd);
+            }
+    	} catch (final IllegalArgumentException e) {
+    		return new Answer(cmd, false, e.getMessage());
+    	}
+    	Class<? extends Command> clazz = cmd.getClass();
         if (clazz == ReadyCommand.class) {
             return execute((ReadyCommand) cmd);
         } else if (clazz == CopyCommand.class) {
