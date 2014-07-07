@@ -233,4 +233,4 @@ CREATE VIEW `cloud`.`volume_view` AS
             and async_job.job_status = 0;
 
 /* As part of the separation of Xen and XenServer, update the column for the network labels */
-ALTER TABLE `cloud`.`physical_network_traffic_types` CHANGE `xen_network_label` `xenserver_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a XenServer host'
+ALTER TABLE `cloud`.`physical_network_traffic_types` CHANGE `xen_network_label` `xenserver_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a XenServer host';
