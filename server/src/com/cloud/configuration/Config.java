@@ -1761,6 +1761,14 @@ public enum Config {
             "The maximum number of retrying times to search for an available IPv6 address in the table",
             null),
 
+    BaremetalPeerHypervisorType(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "baremetal.peer.hypervisor.type",
+            "XenServer",
+            "Hypervisor[Xenserver/KVM/VMWare] used to spring up virtual router for baremetal instances. The cluster having this hypervisor type must be in the same zone with baremetal cluster",
+            null),
     ExternalBaremetalSystemUrl(
             "Advanced",
             ManagementServer.class,
