@@ -912,15 +912,17 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 AutoScalePolicyVO policyVo = _asPolicyDao.findById(gpMap.getPolicyId());
                 Integer duration = policyVo.getDuration();
                 //get collection of counter name
-                String counterNames = "";
+
+                StringBuffer buff = new StringBuffer();
                 List<AutoScalePolicyConditionMapVO> lstPCmap = _asConditionMapDao.findByPolicyId(policyVo.getId());
                 for (AutoScalePolicyConditionMapVO pcMap : lstPCmap) {
                     String counterName = getCounternamebyCondition(pcMap.getConditionId());
-
-                    counterNames += counterName + "," + pcMap.getConditionId();
+                    buff.append(counterName);
+                    buff.append(",");
+                    buff.append(pcMap.getConditionId());
                 }
                 // add to result
-                Pair<String, Integer> pair = new Pair<String, Integer>(counterNames, duration);
+                Pair<String, Integer> pair = new Pair<String, Integer>(buff.toString(), duration);
                 result.add(pair);
             }
 

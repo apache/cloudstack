@@ -1866,8 +1866,12 @@ class ServiceOffering:
             cmd.deploymentplanner = services["deploymentplanner"]
 
         if "serviceofferingdetails" in services:
-            cmd.serviceofferingdetails.append(
-                {services['serviceofferingdetails']})
+            count = 1
+            for i in services["serviceofferingdetails"]:
+                for key, value in i.items():
+                    setattr(cmd, "serviceofferingdetails[%d].key" % count, key)
+                    setattr(cmd, "serviceofferingdetails[%d].value" % count, value)
+                count = count + 1
 
         if "isvolatile" in services:
             cmd.isvolatile = services["isvolatile"]
@@ -4560,7 +4564,7 @@ class SimulatorMock:
     @classmethod
     def create(cls, apiclient, command, zoneid=None, podid=None,
                clusterid=None, hostid=None, value="result:fail",
-               count=None, jsonresponse=None):
+               count=None, jsonresponse=None, method="GET"):
         """Creates simulator mock"""
         cmd = configureSimulator.configureSimulatorCmd()
         cmd.zoneid = zoneid
@@ -4572,7 +4576,7 @@ class SimulatorMock:
         cmd.count = count
         cmd.jsonresponse = jsonresponse
         try:
-            simulatormock = apiclient.configureSimulator(cmd)
+            simulatormock = apiclient.configureSimulator(cmd, method=method)
             if simulatormock is not None:
                 return SimulatorMock(simulatormock.__dict__)
         except Exception as e:

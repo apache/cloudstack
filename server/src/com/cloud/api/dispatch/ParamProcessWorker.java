@@ -33,6 +33,7 @@ import java.util.regex.Matcher;
 
 import javax.inject.Inject;
 
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -229,9 +230,10 @@ public class ParamProcessWorker implements DispatchWorker {
         if (!entitiesToAccess.isEmpty()) {
             // check that caller can access the owner account.
             _accountMgr.checkAccess(caller, null, true, owner);
-            for (Object entity : entitiesToAccess.keySet()) {
+            for (Map.Entry<Object,AccessType>entry : entitiesToAccess.entrySet()) {
+                Object entity = entry.getKey();
                 if (entity instanceof ControlledEntity) {
-                    _accountMgr.checkAccess(caller, entitiesToAccess.get(entity), true, (ControlledEntity) entity);
+                    _accountMgr.checkAccess(caller, entry.getValue(), true, (ControlledEntity) entity);
                 } else if (entity instanceof InfrastructureEntity) {
                     // FIXME: Move this code in adapter, remove code from
                     // Account manager

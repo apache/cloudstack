@@ -281,8 +281,11 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         Boolean display = cmd.getDisplay();
 
         SnapshotPolicyVO policyVO = _snapshotPolicyDao.findById(id);
-        if(display != null)
+        if(display != null){
+            boolean previousDisplay = policyVO.isDisplay();
             policyVO.setDisplay(display);
+            _snapSchedMgr.scheduleOrCancelNextSnapshotJobOnDisplayChange(policyVO, previousDisplay);
+        }
 
         if(customUUID != null)
             policyVO.setUuid(customUUID);
@@ -752,7 +755,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             result = _snapshotPolicyDao.listAndCountById(id, display, null);
             if(result != null && result.first() != null && !result.first().isEmpty()){
                 SnapshotPolicyVO snapshotPolicy = result.first().get(0);
-                volumeId = snapshotPolicy.getId();
+                volumeId = snapshotPolicy.getVolumeId();
             }
         }
         VolumeVO volume = _volsDao.findById(volumeId);
@@ -1079,7 +1082,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         try {
             _resourceLimitMgr.checkResourceLimit(owner, ResourceType.snapshot);
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.secondary_storage, new Long(volume.getSize()));
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.secondary_storage, new Long(volume.getSize()).longValue());
         } catch (ResourceAllocationException e) {
             if (snapshotType != Type.MANUAL) {
                 String msg = "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots";

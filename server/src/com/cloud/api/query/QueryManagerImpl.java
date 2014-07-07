@@ -857,10 +857,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (tags != null && !tags.isEmpty()) {
             SearchCriteria<UserVmJoinVO> tagSc = _userVmJoinDao.createSearchCriteria();
-            for (String key : tags.keySet()) {
+            for (Map.Entry<String,String> entry : tags.entrySet()) {
                 SearchCriteria<UserVmJoinVO> tsc = _userVmJoinDao.createSearchCriteria();
-                tsc.addAnd("tagKey", SearchCriteria.Op.EQ, key);
-                tsc.addAnd("tagValue", SearchCriteria.Op.EQ, tags.get(key));
+                tsc.addAnd("tagKey", SearchCriteria.Op.EQ,entry.getKey());
+                tsc.addAnd("tagValue", SearchCriteria.Op.EQ, entry.getValue());
                 tagSc.addOr("tagKey", SearchCriteria.Op.SC, tsc);
             }
             sc.addAnd("tagKey", SearchCriteria.Op.SC, tagSc);
@@ -2739,9 +2739,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         if (resourceTags != null && !resourceTags.isEmpty()) {
             int count = 0;
             sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.Zone.toString());
-            for (String key : resourceTags.keySet()) {
-                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
-                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), resourceTags.get(key));
+            for (Map.Entry<String,String> entry : resourceTags.entrySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), entry.getKey());
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), entry.getValue());
                 count++;
             }
         }
@@ -2859,7 +2859,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         VMTemplateVO template = null;
 
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-        isAscending = (isAscending == null ? true : isAscending);
+        isAscending = (isAscending == null ? Boolean.TRUE : isAscending);
         Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", isAscending, startIndex, pageSize);
 
         SearchBuilder<TemplateJoinVO> sb = _templateJoinDao.createSearchBuilder();
@@ -2999,10 +2999,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             // add tags criteria
             if (tags != null && !tags.isEmpty()) {
                 SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
-                for (String key : tags.keySet()) {
+                for (Map.Entry<String,String>entry : tags.entrySet()) {
                     SearchCriteria<TemplateJoinVO> scTag = _templateJoinDao.createSearchCriteria();
-                    scTag.addAnd("tagKey", SearchCriteria.Op.EQ, key);
-                    scTag.addAnd("tagValue", SearchCriteria.Op.EQ, tags.get(key));
+                    scTag.addAnd("tagKey", SearchCriteria.Op.EQ, entry.getKey());
+                    scTag.addAnd("tagValue", SearchCriteria.Op.EQ, entry.getValue());
                     if (isIso) {
                         scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.ISO);
                     } else {

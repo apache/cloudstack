@@ -60,7 +60,7 @@ public class MockConfigurationVO implements InternalIdentity {
     @Column(name="count")
     private Integer count;
 
-    @Column(name="json_response")
+    @Column(name="json_response", length=4096)
     private String jsonResponse;
 
     @Column(name="removed")

@@ -34,7 +34,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
@@ -99,16 +98,6 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             }
         }
         return suitablePools;
-    }
-
-    @Override
-    protected boolean filter(ExcludeList avoid, StoragePool pool, DiskProfile dskCh, DeploymentPlan plan) {
-        Volume volume = _volumeDao.findById(dskCh.getVolumeId());
-        List<Volume> requestVolumes = new ArrayList<Volume>();
-
-        requestVolumes.add(volume);
-
-        return storageMgr.storagePoolHasEnoughIops(requestVolumes, pool) && storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool);
     }
 
     @Override

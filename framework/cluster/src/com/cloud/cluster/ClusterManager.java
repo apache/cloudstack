@@ -60,6 +60,8 @@ public interface ClusterManager extends Manager {
 
     long getCurrentRunId();
 
+    public long getManagementRunId(long msId);
+
     public interface Dispatcher {
         String getName();
 

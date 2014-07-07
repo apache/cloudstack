@@ -478,7 +478,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 s_logger.error("invalid request, no command sent");
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace("dumping request parameters");
-                    for (final Object key : params.keySet()) {
+                    for (final  Object key : params.keySet()) {
                         final String keyStr = (String)key;
                         final String[] value = (String[])params.get(key);
                         s_logger.trace("   key: " + keyStr + ", value: " + ((value == null) ? "'null'" : value[0]));
@@ -652,7 +652,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             // save the scheduled event
             final Long eventId =
-                    ActionEventUtils.onScheduledActionEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(),
+                    ActionEventUtils.onScheduledActionEvent((callerUserId == null) ? (Long)User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(),
                             asyncCmd.getEventDescription(), asyncCmd.isDisplay(), startEventId);
             if (startEventId == 0) {
                 // There was no create event before, set current event id as start eventId

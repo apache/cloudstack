@@ -18,6 +18,7 @@ package com.cloud.usage.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.TimeZone;
 
 import javax.ejb.Local;
 
+import com.cloud.exception.CloudException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -91,19 +93,22 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
     @Override
     public void removeBy(long accountId, long volId, int storageType) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        PreparedStatement pstmt = null;
         try {
             txn.start();
             String sql = REMOVE_BY_USERID_STORAGEID;
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, accountId);
-            pstmt.setLong(2, volId);
-            pstmt.setInt(3, storageType);
-            pstmt.executeUpdate();
+            try( PreparedStatement pstmt = txn.prepareStatement(sql);) {
+                pstmt.setLong(1, accountId);
+                pstmt.setLong(2, volId);
+                pstmt.setInt(3, storageType);
+                pstmt.executeUpdate();
+            }catch(SQLException e)
+            {
+                throw new CloudException("removeBy:Exception:"+e.getMessage(),e);
+            }
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Error removing usageStorageVO", e);
+            s_logger.error("Error removing usageStorageVO", e);
         } finally {
             txn.close();
         }
@@ -112,21 +117,26 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
     @Override
     public void update(UsageStorageVO usage) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        PreparedStatement pstmt = null;
         try {
             txn.start();
             if (usage.getDeleted() != null) {
-                pstmt = txn.prepareAutoCloseStatement(UPDATE_DELETED);
-                pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
-                pstmt.setLong(2, usage.getAccountId());
-                pstmt.setLong(3, usage.getId());
-                pstmt.setInt(4, usage.getStorageType());
+                try(PreparedStatement pstmt = txn.prepareStatement(UPDATE_DELETED);) {
+                    if (pstmt != null) {
+                        pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
+                        pstmt.setLong(2, usage.getAccountId());
+                        pstmt.setLong(3, usage.getId());
+                        pstmt.setInt(4, usage.getStorageType());
+                        pstmt.executeUpdate();
+                    }
+                }catch (SQLException e)
+                {
+                    throw new CloudException("UsageStorageVO update Error:"+e.getMessage(),e);
+                }
             }
-            pstmt.executeUpdate();
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Error updating UsageStorageVO", e);
+            s_logger.error("Error updating UsageStorageVO:"+e.getMessage(), e);
         } finally {
             txn.close();
         }
@@ -157,11 +167,8 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
         }
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        PreparedStatement pstmt = null;
-
-        try {
-            int i = 1;
-            pstmt = txn.prepareAutoCloseStatement(sql);
+        int i = 1;
+        try (PreparedStatement pstmt = txn.prepareStatement(sql);){
             if (param1 != null) {
                 pstmt.setLong(i++, param1);
             }
@@ -172,38 +179,41 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
             pstmt.setString(i++, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), startDate));
             pstmt.setString(i++, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), endDate));
 
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                //id, zone_id, account_id, domain_id, storage_type, size, created, deleted
-                Long id = Long.valueOf(rs.getLong(1));
-                Long zoneId = Long.valueOf(rs.getLong(2));
-                Long acctId = Long.valueOf(rs.getLong(3));
-                Long dId = Long.valueOf(rs.getLong(4));
-                Integer type = Integer.valueOf(rs.getInt(5));
-                Long sourceId = Long.valueOf(rs.getLong(6));
-                Long size = Long.valueOf(rs.getLong(7));
-                Long virtualSize = Long.valueOf(rs.getLong(10));
-                Date createdDate = null;
-                Date deletedDate = null;
-                String createdTS = rs.getString(8);
-                String deletedTS = rs.getString(9);
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    //id, zone_id, account_id, domain_id, storage_type, size, created, deleted
+                    Long id = Long.valueOf(rs.getLong(1));
+                    Long zoneId = Long.valueOf(rs.getLong(2));
+                    Long acctId = Long.valueOf(rs.getLong(3));
+                    Long dId = Long.valueOf(rs.getLong(4));
+                    Integer type = Integer.valueOf(rs.getInt(5));
+                    Long sourceId = Long.valueOf(rs.getLong(6));
+                    Long size = Long.valueOf(rs.getLong(7));
+                    Long virtualSize = Long.valueOf(rs.getLong(10));
+                    Date createdDate = null;
+                    Date deletedDate = null;
+                    String createdTS = rs.getString(8);
+                    String deletedTS = rs.getString(9);
 
-                if (createdTS != null) {
-                    createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
-                }
-                if (deletedTS != null) {
-                    deletedDate = DateUtil.parseDateString(s_gmtTimeZone, deletedTS);
-                }
+                    if (createdTS != null) {
+                        createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
+                    }
+                    if (deletedTS != null) {
+                        deletedDate = DateUtil.parseDateString(s_gmtTimeZone, deletedTS);
+                    }
 
-                usageRecords.add(new UsageStorageVO(id, zoneId, acctId, dId, type, sourceId, size, virtualSize, createdDate, deletedDate));
+                    usageRecords.add(new UsageStorageVO(id, zoneId, acctId, dId, type, sourceId, size, virtualSize, createdDate, deletedDate));
+                }
+            }catch(SQLException e)
+            {
+                throw new CloudException("getUsageRecords:"+e.getMessage(),e);
             }
-        } catch (Exception e) {
+        }catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Error getting usage records", e);
+            s_logger.error("getUsageRecords:Exception:"+e.getMessage(), e);
         } finally {
             txn.close();
         }
-
         return usageRecords;
     }
 }

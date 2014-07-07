@@ -3389,13 +3389,26 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
             final IpAddressTO[] ipsToSend = new IpAddressTO[ipAddrList.size()];
             int i = 0;
             boolean firstIP = true;
+            boolean isSourceNatNw = false;
 
             for (final PublicIpAddress ipAddr : ipAddrList) {
 
                 final boolean add = (ipAddr.getState() == IpAddress.State.Releasing ? false : true);
                 boolean sourceNat = ipAddr.isSourceNat();
+
+                //set the isSourceNatNw from the first ip of ipAddrList
+                //For non source network ips the isSourceNatNw is always false
+                if (sourceNat) {
+                    isSourceNatNw = ipAddr.isSourceNat();
+                }
+
                 /* enable sourceNAT for the first ip of the public interface */
                 if (firstIP) {
+                    sourceNat = true;
+                }
+
+                // setting sourceNat=true to make sure the snat rule of the ip is deleted
+                if (!isSourceNatNw && !add ) {
                     sourceNat = true;
                 }
                 final String vlanId = ipAddr.getVlanTag();

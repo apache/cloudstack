@@ -38,11 +38,9 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
@@ -160,13 +158,6 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         if (avoid.shouldAvoid(pool)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("StoragePool is in avoid set, skipping this pool");
-            }
-            return false;
-        }
-
-        if (dskCh.getType().equals(Type.ROOT) && pool.getPoolType().equals(StoragePoolType.Iscsi)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Disk needed for ROOT volume, but StoragePoolType is Iscsi, skipping this and trying other available pools");
             }
             return false;
         }

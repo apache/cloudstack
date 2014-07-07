@@ -206,7 +206,7 @@ public interface VpcService {
      * @return
      * @throws ResourceUnavailableException
      */
-    public boolean applyStaticRoutes(long vpcId) throws ResourceUnavailableException;
+    public boolean applyStaticRoutesForVpc(long vpcId) throws ResourceUnavailableException;
 
     /**
      * Deletes static route from the backend and the database
@@ -247,5 +247,11 @@ public interface VpcService {
      */
     IpAddress associateIPToVpc(long ipId, long vpcId) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException,
         ConcurrentOperationException;
+
+    /**
+     * @param routeId
+     * @return
+     */
+    public boolean applyStaticRoute(long routeId) throws ResourceUnavailableException;
 
 }

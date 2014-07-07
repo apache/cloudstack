@@ -16332,11 +16332,15 @@
                                     array1.push("&tags=" + todb(args.data.tags));
                                     
                                     if (args.data.disksizetotal != null && args.data.disksizetotal.length > 0) {
-                                        array1.push("&capacitybytes=" + cloudStack.converters.toBytes(args.data.disksizetotal));
+                                        var diskSizeTotal = args.data.disksizetotal.split(",").join("");
+
+                                        array1.push("&capacitybytes=" + cloudStack.converters.toBytes(diskSizeTotal));
                                     }
 
                                     if (args.data.capacityiops != null && args.data.capacityiops.length > 0) {
-                                        array1.push("&capacityiops=" + args.data.capacityiops);
+                                        var capacityIops = args.data.capacityiops.split(",").join("");
+
+                                        array1.push("&capacityiops=" + capacityIops);
                                     }
 
                                     $.ajax({

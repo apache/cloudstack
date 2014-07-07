@@ -86,8 +86,8 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
             Iterator iter = parameterCollection.iterator();
             while (iter.hasNext()) {
                 HashMap<String, String> value = (HashMap<String, String>)iter.next();
-                for (String key : value.keySet()) {
-                    customparameterMap.put(key, value.get(key));
+                for (Map.Entry<String, String> entry : value.entrySet()) {
+                    customparameterMap.put(entry.getKey(), entry.getValue());
                 }
             }
         }

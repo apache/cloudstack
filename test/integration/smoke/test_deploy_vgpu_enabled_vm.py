@@ -75,11 +75,12 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
 
         self.testdata["vgpu140q"]["zoneid"] = self.zone.id
         self.testdata["vgpu140q"]["template"] = self.template.id
+        self.testdata["service_offerings"]["vgpu260qwin"]["serviceofferingdetails"] = [{'pciDevice': 'VGPU'},
+                                                                                       {'vgpuType':'GRID K120Q'}]
         #create a service offering
         self.service_offering = ServiceOffering.create(
                 self.apiclient,
                 self.testdata["service_offerings"]["vgpu260qwin"],
-                serviceofferingdetails={'pciDevice': 'VGPU'}
         )
         #build cleanup list
         self.cleanup = [

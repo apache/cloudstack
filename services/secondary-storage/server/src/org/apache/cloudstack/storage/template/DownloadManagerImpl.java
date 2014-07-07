@@ -357,7 +357,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         int imgSizeGigs = (int)Math.ceil(_storage.getSize(td.getDownloadLocalPath()) * 1.0d / (1024 * 1024 * 1024));
         imgSizeGigs++; // add one just in case
-        long timeout = imgSizeGigs * installTimeoutPerGig;
+        long timeout = (long)imgSizeGigs * installTimeoutPerGig;
         Script scr = null;
         String script = resourceType == ResourceType.TEMPLATE ? createTmpltScr : createVolScr;
         scr = new Script(script, timeout, s_logger);

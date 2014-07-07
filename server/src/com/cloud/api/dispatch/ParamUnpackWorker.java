@@ -33,7 +33,8 @@ public class ParamUnpackWorker implements DispatchWorker {
     public void handle(final DispatchTask task) throws ServerApiException {
         final Map<String, Object> lowercaseParams = new HashMap<String, Object>();
         final Map<String, String> params = task.getParams();
-        for (final String key : params.keySet()) {
+        for (final Map.Entry<String,String> entry : params.entrySet()) {
+            final String key = entry.getKey();
             final int arrayStartIndex = key.indexOf('[');
             final int arrayStartLastIndex = key.lastIndexOf('[');
             if (arrayStartIndex != arrayStartLastIndex) {
@@ -99,11 +100,11 @@ public class ParamUnpackWorker implements DispatchWorker {
                 }
 
                 // we are ready to store the value for a particular field into the map for this object
-                mapValue.put(fieldName, params.get(key));
+                mapValue.put(fieldName, entry.getValue());
 
                 lowercaseParams.put(paramName, mapArray);
             } else {
-                lowercaseParams.put(key.toLowerCase(), params.get(key));
+                lowercaseParams.put(key.toLowerCase(), entry.getValue());
             }
         }
 

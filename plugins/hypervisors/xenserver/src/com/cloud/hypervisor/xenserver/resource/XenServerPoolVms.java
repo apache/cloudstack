@@ -80,8 +80,10 @@ public class XenServerPoolVms {
     public String toString() {
         StringBuilder sbuf = new StringBuilder("PoolVms=");
         for (HashMap<String/* vm name */, Pair<String/* host uuid */, State/* vm state */>> clusterVM : _clusterVms.values()) {
-            for (String vmname : clusterVM.keySet()) {
-                sbuf.append(vmname).append("-").append(clusterVM.get(vmname).second()).append(",");
+            for (Map.Entry<String,Pair<String,State>> entry: clusterVM.entrySet()) {
+                String vmname = entry.getKey();
+                Pair<String,State> vmstate= entry.getValue();
+                sbuf.append(vmname).append("-").append(vmstate.second()).append(",");
             }
         }
         return sbuf.toString();
