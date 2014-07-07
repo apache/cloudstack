@@ -38,6 +38,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -171,7 +172,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
                 }
                 return false;
             }
-        } else if (pool.getHypervisor() != null && !(pool.getHypervisor() == dskCh.getHypervisorType())) {
+        } else if (pool.getHypervisor() != null && !pool.getHypervisor().equals(HypervisorType.Any) && !(pool.getHypervisor() == dskCh.getHypervisorType())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("StoragePool does not have required hypervisorType, skipping this pool");
             }
