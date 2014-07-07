@@ -741,6 +741,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                 HashMap<String, State> newStates = sync();
                 return new PingRoutingCommand(getType(), id, newStates,
                         HostVmStateReport());
+            } else {
+                s_logger.debug("Agent did not respond correctly: " + ping + " but got " + pong );
             }
         } catch (XmlRpcException e) {
             s_logger.debug("Check agent status failed", e);
@@ -1862,13 +1864,17 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     protected Map<String, HostVmStateReportEntry> HostVmStateReport()
             throws XmlRpcException {
         final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
-        Map<String, State> vms = sync();
-        for (final Map.Entry<String, State> vm : vms.entrySet()) {
-            /* TODO: Figure out how to get xentools version in here */
-            s_logger.debug("VM " + vm.getKey() + " state: " + vm.getValue()
+        try {
+            // Map<String, State> vms = sync();
+            for (final Map.Entry<String, State> vm : _vmstates.entrySet()) {
+                /* TODO: Figure out how to get xentools version in here */
+                s_logger.debug("VM " + vm.getKey() + " state: " + vm.getValue()
                     + ":" + convertStateToPower(vm.getValue()));
-            vmStates.put(vm.getKey(), new HostVmStateReportEntry(
+                vmStates.put(vm.getKey(), new HostVmStateReportEntry(
                     convertStateToPower(vm.getValue()), c.getIp()));
+            }
+        } catch (Exception e) {
+            s_logger.debug("VM state sync on " + _host + " failed", e);
         }
         return vmStates;
     }
@@ -1942,7 +1948,6 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     protected HashMap<String, State> sync() {
         HashMap<String, State> newStates;
         HashMap<String, State> oldStates = null;
-
         try {
             final HashMap<String, State> changes = new HashMap<String, State>();
             newStates = getAllVmStates();
