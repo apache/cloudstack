@@ -91,7 +91,7 @@ test_data = {
         "memory": 128,
 
         "tiny": {
-                "name": "Tiny Instance",
+            "name": "Tiny Instance",
             "displaytext": "Tiny Instance",
             "cpunumber": 1,
             "cpuspeed": 100,
@@ -120,12 +120,20 @@ test_data = {
         },
         "hasmall": {
             "name": "HA Small Instance",
-                    "displaytext": "HA Small Instance",
-                    "cpunumber": 1,
-                    "cpuspeed": 100,
-                    "memory": 256,
-                    "hosttags": "ha",
-                    "offerha": True,
+            "displaytext": "HA Small Instance",
+            "cpunumber": 1,
+            "cpuspeed": 100,
+            "memory": 256,
+            "hosttags": "ha",
+            "offerha": True,
+        },
+        "taggedsmall": {
+            "name": "Tagged Small Instance",
+            "displaytext": "Tagged Small Instance",
+            "cpunumber": 1,
+            "cpuspeed": 100,
+            "memory": 256,
+            "hosttags": "vmsync",
         },
     },
     "disk_offering": {

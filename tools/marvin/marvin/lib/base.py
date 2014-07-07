@@ -4655,7 +4655,7 @@ class SimulatorMock:
     @classmethod
     def create(cls, apiclient, command, zoneid=None, podid=None,
                clusterid=None, hostid=None, value="result:fail",
-               count=None, jsonresponse=None):
+               count=None, jsonresponse=None, method="GET"):
         """Creates simulator mock"""
 
         cmd = configureSimulator.configureSimulatorCmd()
@@ -4668,7 +4668,7 @@ class SimulatorMock:
         cmd.count = count
         cmd.jsonresponse = jsonresponse
         try:
-            simulatormock = apiclient.configureSimulator(cmd)
+            simulatormock = apiclient.configureSimulator(cmd, method=method)
             if simulatormock is not None:
                 return SimulatorMock(simulatormock.__dict__)
         except Exception as e:
