@@ -49,6 +49,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
 
 
+
 // import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 // import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import com.cloud.agent.IAgentControl;
@@ -82,6 +83,7 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 // import com.cloud.agent.api.routing.DhcpEntryAnswer;
@@ -195,6 +197,7 @@ import org.apache.cloudstack.storage.command.AttachCommand;
 
 
 
+
 // import org.apache.cloudstack.storage.command.AttachAnswer;
 import com.cloud.storage.Storage.ImageFormat;
 /* do we need this ? */
@@ -252,6 +255,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     static boolean s_isHeartBeat = false;
     protected final int DefaultDomRSshPort = 3922;
     String DefaultDomRPath = "/opt/cloud/bin/";
+    private final int _timeout = 600;
     private VirtualRoutingResource _virtRouterResource;
     private Map<String, Network.Interface> _interfaces = null;
     /* switch to concurrenthasmaps all over the place ? */
@@ -729,7 +733,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             Map<String, State> changes = null;
             synchronized (_vmstates) {
                 _vmstates.clear();
-                changes = sync();
+                changes = syncState();
             }
             srCmd.setStateChanges(changes);
             /* should not force HVM */
@@ -750,7 +754,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             String ping = "put";
             String pong = test.echo(ping);
             if (pong.contains(ping)) {
-                HashMap<String, State> newStates = sync();
+                HashMap<String, State> newStates = syncState();
                 return new PingRoutingCommand(getType(), id, newStates,
                         HostVmStateReport());
             }
@@ -992,7 +996,11 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         if (isoFile == null || !isoFile.exists()) {
             isoFile = new File("/usr/share/cloudstack-common/vms/" + svmName);
         }
-
+        if (isoFile == null || !isoFile.exists()) {
+        	String svm = "systemvm/dist/systemvm.iso";
+        	s_logger.debug("last resort for systemvm patch iso " + svm);
+            isoFile = new File(svm);
+        }
         assert (isoFile != null);
         if (!isoFile.exists()) {
             s_logger.error("Unable to locate " + svmName + " in your setup at "
@@ -1624,9 +1632,10 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         return executeInVR(routerIp, script, args, _timeout / 1000);
     }
 
+    /* TODO: Double check */
     @Override
     public ExecutionResult executeInVR(String routerIp, String script, String args, int timeout) {
-        final Script command = new Script(_routerProxyPath, timeout * 1000, s_logger);
+        final Script command = new Script(DefaultDomRPath, timeout * 1000, s_logger);
         final AllLinesParser parser = new AllLinesParser();
         command.add(script);
         command.add(routerIp);
@@ -1679,6 +1688,9 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         }
         return new ExecutionResult(true, null);
     }
+    protected ExecutionResult cleanupNetworkElementCommand(IpAssocCommand cmd) {
+    	return null;
+    }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
         private final Map<String, String> map = new HashMap<String, String>();
@@ -1706,8 +1718,24 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             return map;
         }
     }
-
-    @Override
+    
+    /* TODO: fill in these so we can get rid of the VR/SVM/etc specifics */
+    private ExecutionResult prepareNetworkElementCommand(SetupGuestNetworkCommand cmd) {
+		return null;
+    }
+    private ExecutionResult prepareNetworkElementCommand(IpAssocVpcCommand cmd) {
+    	return null;
+    }
+    protected ExecutionResult prepareNetworkElementCommand(SetSourceNatCommand cmd) {
+    	return null;
+    }
+    private ExecutionResult prepareNetworkElementCommand(SetNetworkACLCommand cmd) {
+    	return null;
+    }
+    private ExecutionResult prepareNetworkElementCommand(IpAssocCommand cmd) {
+    	return null;
+	}
+    /* TODO: egh? */
     protected String getDefaultScriptsDir() {
         return null;
     }
@@ -1964,12 +1992,11 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         return state == null ? PowerState.PowerUnknown : state;
     }
 
-    /* State to power in the states */
+    /* State to power in the states from the vmstates that are known */
     protected Map<String, HostVmStateReportEntry> HostVmStateReport()
             throws XmlRpcException {
-        final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
-        Map<String, State> vms = sync();
-        for (final Map.Entry<String, State> vm : vms.entrySet()) {
+        final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>(); 
+        for (final Map.Entry<String, State> vm : _vmstates.entrySet()) {
             /* TODO: Figure out how to get xentools version in here */
             s_logger.debug("VM " + vm.getKey() + " state: " + vm.getValue()
                     + ":" + convertStateToPower(vm.getValue()));
@@ -2045,7 +2072,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     }
 
     /* sync the state we know of with reality */
-    protected HashMap<String, State> sync() {
+    protected HashMap<String, State> syncState() {
         HashMap<String, State> newStates;
         HashMap<String, State> oldStates = null;
 
