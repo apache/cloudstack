@@ -464,7 +464,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
                     stmt.executeUpdate();
                 } catch (SQLException ex) {
-                    s_logger.debug("Caught SQLException when inserting system account ", ex);
+                    s_logger.debug("Caught exception when inserting system account: " + ex.getMessage());
                 }
                 // insert system user
                 insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, user.default)"
@@ -474,7 +474,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
                     stmt.executeUpdate();
                 } catch (SQLException ex) {
-                    s_logger.debug("Caught SQLException when inserting system user ", ex);
+                    s_logger.debug("Caught SQLException when inserting system user: " + ex.getMessage());
                 }
 
                 // insert admin user, but leave the account disabled until we set a
@@ -491,7 +491,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
                     stmt.executeUpdate();
                 } catch (SQLException ex) {
-                    s_logger.debug("Caught SQLException when creating admin account ", ex);
+                    s_logger.debug("Caught SQLException when creating admin account: " + ex.getMessage());
                 }
 
                 // now insert the user
@@ -502,7 +502,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
                     stmt.executeUpdate();
                 } catch (SQLException ex) {
-                    s_logger.debug("Caught SQLException when inserting user ", ex);
+                    s_logger.debug("Caught SQLException when inserting admin user: " + ex.getMessage());
                 }
 
                 try {
