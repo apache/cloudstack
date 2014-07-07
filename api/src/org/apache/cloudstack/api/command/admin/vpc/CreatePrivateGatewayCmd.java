@@ -191,7 +191,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating private gateway";
+        return "Applying VPC private gateway. Private gateway Id: " + getEntityId();
     }
 
     @Override

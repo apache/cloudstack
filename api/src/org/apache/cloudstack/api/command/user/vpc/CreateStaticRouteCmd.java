@@ -89,18 +89,17 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating static route";
+        return "Applying static route. Static route Id: " + getEntityId();
     }
 
     @Override
     public void execute() throws ResourceUnavailableException {
         boolean success = false;
-        StaticRoute route = _entityMgr.findById(StaticRoute.class, getEntityId());
+        StaticRoute route = null;
         try {
             CallContext.current().setEventDetails("Static route Id: " + getEntityId());
-            success = _vpcService.applyStaticRoutes(route.getVpcId());
-
-            // State is different after the route is applied, so get new object here
+            success = _vpcService.applyStaticRoute(getEntityId());
+            // State is different after the route is applied, so retrieve the object only here
             route = _entityMgr.findById(StaticRoute.class, getEntityId());
             StaticRouteResponse routeResponse = new StaticRouteResponse();
             if (route != null) {

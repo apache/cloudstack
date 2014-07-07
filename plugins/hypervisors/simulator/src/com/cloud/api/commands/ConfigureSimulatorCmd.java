@@ -69,12 +69,15 @@ public class ConfigureSimulatorCmd extends BaseCmd {
     @Parameter(name=ApiConstants.COUNT, type=CommandType.INTEGER, description="number of times the mock is active")
     private Integer count;
 
-    @Parameter(name="jsonresponse", type=CommandType.STRING, description="agent command response to be returned")
+    @Parameter(name="jsonresponse", type=CommandType.STRING, description="agent command response to be returned", length=4096)
     private String jsonResponse;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException {
+        if (hostId != null && jsonResponse != null) {
+            jsonResponse = jsonResponse.replace("\"hostId\":0", "\"hostId\":" + hostId);
+        }
         Long id = _simMgr.configureSimulator(zoneId, podId, clusterId, hostId, command, values, count, jsonResponse);
         if (id == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure simulator");

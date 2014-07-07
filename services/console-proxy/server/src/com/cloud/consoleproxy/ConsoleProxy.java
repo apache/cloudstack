@@ -307,6 +307,11 @@ public class ConsoleProxy {
                 s_logger.error(e.toString(), e);
             }
         }
+        try {
+            confs.close();
+        } catch (IOException e) {
+            s_logger.error("Failed to close consolepropxy.properties : " + e.toString(), e);
+        }
 
         start(conf);
     }

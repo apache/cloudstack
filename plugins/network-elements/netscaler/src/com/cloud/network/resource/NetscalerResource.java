@@ -632,7 +632,11 @@ public class NetscalerResource implements ServerResource {
                                 newService.set_port(destination.getDestPort());
                                 newService.set_servername(nsServerName);
                                 newService.set_state("ENABLED");
-                                newService.set_servicetype(lbProtocol);
+                                if(lbProtocol.equalsIgnoreCase(NetUtils.SSL_PROTO)) {
+                                    newService.set_servicetype(NetUtils.HTTP_PROTO);
+                                } else {
+                                    newService.set_servicetype(lbProtocol);
+                                }
 
                                 apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.service.add(_netscalerService, newService);
                                 if (apiCallResult.errorcode != 0) {
@@ -1763,14 +1767,14 @@ public class NetscalerResource implements ServerResource {
         }
 
         private static String genGslbObjectName(Object... args) {
-            String objectName = "";
+            StringBuffer buff = new StringBuffer();
             for (int i = 0; i < args.length; i++) {
-                objectName += args[i];
+                buff.append(args[i]);
                 if (i != args.length - 1) {
-                    objectName += "-";
+                    buff.append("-");
                 }
             }
-            return objectName;
+            return buff.toString();
         }
     }
 
@@ -3767,14 +3771,14 @@ public class NetscalerResource implements ServerResource {
     }
 
     private String genObjectName(Object... args) {
-        String objectName = "";
+        StringBuffer buff = new StringBuffer();
         for (int i = 0; i < args.length; i++) {
-            objectName += args[i];
+            buff.append(args[i]);
             if (i != args.length - 1) {
-                objectName += _objectNamePathSep;
+                buff.append(_objectNamePathSep);
             }
         }
-        return objectName;
+        return buff.toString();
     }
 
     @Override

@@ -35,8 +35,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
@@ -45,6 +43,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -1051,9 +1050,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
             sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.Vpc.toString());
-            for (String key : tags.keySet()) {
-                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
-                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+            for (Map.Entry<String,String>entry : tags.entrySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), entry.getKey());
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), entry.getValue());
                 count++;
             }
        }
@@ -1537,7 +1536,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "creating vpc private gateway", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "creating VPC private gateway", create = true)
     public PrivateGateway createVpcPrivateGateway(final long vpcId, Long physicalNetworkId, final String broadcastUri, final String ipAddress, final String gateway,
         final String netmask, final long gatewayOwnerId, final Long networkOfferingId, final Boolean isSourceNat, final Long aclId) throws ResourceAllocationException,
             ConcurrentOperationException, InsufficientCapacityException {
@@ -1653,10 +1652,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new IllegalStateException(e);
         }
 
+        CallContext.current().setEventDetails("Private Gateway Id: " + gatewayVO.getId());
         return getVpcPrivateGateway(gatewayVO.getId());
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "Applying VPC private gateway", async = true)
     public PrivateGateway applyVpcPrivateGateway(long gatewayId, boolean destroyOnFailure) throws ConcurrentOperationException, ResourceUnavailableException {
         VpcGatewayVO vo = _vpcGatewayDao.findById(gatewayId);
 
@@ -1679,6 +1680,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     _vpcGatewayDao.update(vo.getId(), vo);
                     s_logger.debug("Marke gateway " + gateway + " with state " + VpcGateway.State.Ready);
                 }
+                CallContext.current().setEventDetails("Private Gateway Id: " + gatewayId);
                 return getVpcPrivateGateway(gatewayId);
             } else {
                 s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
@@ -1864,7 +1866,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Override
-    public boolean applyStaticRoutes(long vpcId) throws ResourceUnavailableException {
+    public boolean applyStaticRoutesForVpc(long vpcId) throws ResourceUnavailableException {
         Account caller = CallContext.current().getCallingAccount();
         List<? extends StaticRoute> routes = _staticRouteDao.listByVpcId(vpcId);
         return applyStaticRoutes(routes, caller, true);
@@ -1944,7 +1946,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         markStaticRouteForRevoke(route, caller);
 
-        return applyStaticRoutes(route.getVpcId());
+        return applyStaticRoutesForVpc(route.getVpcId());
     }
 
     @DB
@@ -1962,7 +1964,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
                 }
             });
-            return applyStaticRoutes(vpcId);
+            return applyStaticRoutesForVpc(vpcId);
         }
 
         return true;
@@ -2393,5 +2395,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     public void setVpcElements(List<VpcProvider> vpcElements) {
         this.vpcElements = vpcElements;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_STATIC_ROUTE_CREATE, eventDescription = "Applying static route", async = true)
+    public boolean applyStaticRoute(long routeId) throws ResourceUnavailableException {
+        StaticRoute route = _staticRouteDao.findById(routeId);
+        return applyStaticRoutesForVpc(route.getVpcId());
     }
 }

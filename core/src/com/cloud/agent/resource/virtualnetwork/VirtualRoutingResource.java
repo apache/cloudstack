@@ -476,15 +476,14 @@ public class VirtualRoutingResource {
         LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
 
         String[] config = cfgtr.generateConfiguration(cmd);
-        String tmpCfgFileContents = "";
+        StringBuffer buff = new StringBuffer();
         for (int i = 0; i < config.length; i++) {
-            tmpCfgFileContents += config[i];
-            tmpCfgFileContents += "\n";
+            buff.append(config[i]);
+            buff.append("\n");
         }
-
         String tmpCfgFilePath = "/etc/haproxy/";
         String tmpCfgFileName = "haproxy.cfg.new." + String.valueOf(System.currentTimeMillis());
-        cfg.add(new ConfigItem(tmpCfgFilePath, tmpCfgFileName, tmpCfgFileContents));
+        cfg.add(new ConfigItem(tmpCfgFilePath, tmpCfgFileName, buff.toString()));
 
         String[][] rules = cfgtr.generateFwRules(cmd);
 
@@ -610,18 +609,28 @@ public class VirtualRoutingResource {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
         String args = "";
+        StringBuffer buff = new StringBuffer();
         List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
         for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
-            args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
-        }
+            buff.append(ipAliasTO.getAlias_count());
+            buff.append(":");
+            buff.append(ipAliasTO.getRouterip());
+            buff.append(":");
+            buff.append(ipAliasTO.getNetmask());
+            buff.append("-");
+         }
         //this is to ensure that thre is some argument passed to the deleteipAlias script  when there are no revoked rules.
-        args = args + "- ";
+        buff.append("- ");
         List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
         for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
-            args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
+            buff.append(ipAliasTO.getAlias_count());
+            buff.append(":");
+            buff.append(ipAliasTO.getRouterip());
+            buff.append(":");
+            buff.append(ipAliasTO.getNetmask());
+            buff.append("-");
         }
-
-        cfg.add(new ConfigItem(VRScripts.IPALIAS_DELETE, args));
+        cfg.add(new ConfigItem(VRScripts.IPALIAS_DELETE, buff.toString()));
         return cfg;
     }
 
@@ -629,22 +638,29 @@ public class VirtualRoutingResource {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
         List<DhcpTO> dhcpTos = cmd.getIps();
-        String args = "";
+        StringBuffer buff = new StringBuffer();
         for (DhcpTO dhcpTo : dhcpTos) {
-            args = args + dhcpTo.getRouterIp() + ":" + dhcpTo.getGateway() + ":" + dhcpTo.getNetmask() + ":" + dhcpTo.getStartIpOfSubnet() + "-";
+            buff.append(dhcpTo.getRouterIp());
+            buff.append(":");
+            buff.append(dhcpTo.getGateway());
+            buff.append(":");
+            buff.append(dhcpTo.getNetmask());
+            buff.append(":");
+            buff.append(dhcpTo.getStartIpOfSubnet());
+            buff.append("-");
         }
-
-        cfg.add(new ConfigItem(VRScripts.DNSMASQ_CONFIG, args));
+        cfg.add(new ConfigItem(VRScripts.DNSMASQ_CONFIG, buff.toString()));
         return cfg;
     }
 
     private CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {
-        String args = "";
-        for (String ip : cmd.getVpnIps()) {
-            args += ip + " ";
-        }
 
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.S2SVPN_CHECK, args);
+        StringBuffer buff = new StringBuffer();
+        for (String ip : cmd.getVpnIps()) {
+            buff.append(ip);
+            buff.append(" ");
+        }
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.S2SVPN_CHECK, buff.toString());
         return new CheckS2SVpnConnectionsAnswer(cmd, result.isSuccess(), result.getDetails());
     }
 

@@ -786,7 +786,7 @@
             content.click(function() {
                 var checked = $(this).is(':checked');
                 $('.multiSelectCheckbox').attr('checked', checked);
-                toggleMultiSelectActions(checked);
+                toggleMultiSelectActions($table.closest('.list-view'), checked);
             });
         }
 
@@ -1035,6 +1035,7 @@
         var subselect = uiCustom ? listViewArgs.listView.subselect : null;
 
         if (!(data && data.length)) {
+            $listView.data('end-of-table', true);
             if (!$tbody.find('tr').size()) {
                 return [
                     $('<tr>').addClass('empty last').append(
@@ -1076,7 +1077,8 @@
                         var numRows = $(this).parents('tbody').find('input.multiSelectCheckbox').size();
                         var numRowsChecked = $(this).parents('tbody').find('input.multiSelectCheckbox:checked').size();
                         var enabled = checked || (numRowsChecked > 0);
-                        toggleMultiSelectActions(enabled);
+
+                        toggleMultiSelectActions($td.closest('.list-view'), enabled);
 
                         $td.closest('.list-view').find('input.multiSelectMasterCheckbox').attr('checked', (numRows === numRowsChecked));
                     });
@@ -1501,6 +1503,7 @@
         var reorder = options.reorder;
         var multiSelect = options.multiSelect;
         var $tbody = $table.find('tbody');
+        var $listView = $table.closest('.list-view');
 
         if (!loadArgs) loadArgs = {
             page: 1,
@@ -1511,11 +1514,16 @@
             }
         };
 
+        if (options.clearEndTable) {
+            $listView.data('page', 1);
+            $table.closest('.list-view').data('end-of-table', false);
+        }
+
         if (!append) {
             if (!append) $table.find('tbody tr').remove();
         }
 
-        var viewArgs = $table.closest('.list-view').data('view-args');
+        var viewArgs = $listView.data('view-args');
         var uiCustom = viewArgs.listView ? viewArgs.listView.uiCustom : false;
 
         setLoading($table, function(setLoadingArgs) {
@@ -1537,12 +1545,6 @@
                         $table.dataTable(null, {
                             noSelect: uiCustom
                         });
-
-                        if (args.data &&
-                            args.data.length < pageSize &&
-                            options.setEndTable) {
-                            options.setEndTable();
-                        }
 
                         setTimeout(function() {
                             $table.dataTable('refresh');
@@ -1685,16 +1687,13 @@
         var $toolbar = $('<div>').addClass('toolbar').appendTo($listView);
         var $table = $('<table>').appendTo($listView);
         var infScrollTimer;
-        var page = 1;
         var actions = listViewData.actions;
         var reorder = listViewData.reorder;
         var multiSelect = listViewData.multiSelect;
         var tableHeight = $table.height();
-        var endTable = false;
-        var setEndTable = function() {
-            endTable = true;
-        }
 
+        $listView.data('end-of-table', false);
+        $listView.data('page', 1);
 
         var $switcher;
         if (args.sections) {
@@ -1793,7 +1792,7 @@
             listViewData.preFilter,
             listViewData.fields,
             false, {
-                page: page,
+                page: $listView.data('page'),
                 filterBy: {
                     kind: $listView.find('select[id=filterBy]').val(),
                     search: {
@@ -1807,7 +1806,6 @@
                 context: args.context,
                 reorder: reorder,
                 detailView: listViewData.detailView,
-                setEndTable: setEndTable,
                 'multiSelect': multiSelect,
                 noActionCol: listViewData.noActionCol
             }
@@ -1841,14 +1839,14 @@
         var basicSearch = function() {
             $listView.removeData('advSearch');
 
-            page = 1;
+            $listView.data('page', 1);
             loadBody(
                 $table,
                 listViewData.dataProvider,
                 listViewData.preFilter,
                 listViewData.fields,
                 false, {
-                    page: page,
+                    page: $listView.data('page'),
                     filterBy: {
                         kind: $listView.find('select[id=filterBy]').val(),
                         search: {
@@ -1861,7 +1859,6 @@
                     context: $listView.data('view-args').context,
                     reorder: listViewData.reorder,
                     detailView: listViewData.detailView,
-                    setEndTable: setEndTable,
                     'multiSelect': multiSelect,
                     noActionCol: listViewData.noActionCol
                 }
@@ -1894,15 +1891,14 @@
         //advanced search
         var advancedSearch = function(args) {
             $listView.data('advSearch', args.data);
-
-            page = 1;
+            $listView.data('page', 1);
             loadBody(
                 $table,
                 listViewData.dataProvider,
                 listViewData.preFilter,
                 listViewData.fields,
                 false, {
-                    page: page,
+                    page: $listView.data('page'),
                     filterBy: {
                         kind: $listView.find('select[id=filterBy]').val(),
                         advSearch: args.data
@@ -1912,7 +1908,6 @@
                     context: $listView.data('view-args').context,
                     reorder: listViewData.reorder,
                     detailView: listViewData.detailView,
-                    setEndTable: setEndTable,
                     'multiSelect': multiSelect,
                     noActionCol: listViewData.noActionCol
                 }
@@ -1978,8 +1973,8 @@
                 var loadMoreData = $listView.scrollTop() >= ($table.height() - $listView.height()) - $listView.height() / 4;
                 var context = $listView.data('view-args').context;
 
-                if (loadMoreData && !endTable) {
-                    page = page + 1;
+                if (loadMoreData && !$listView.data('end-of-table')) {
+                    $listView.data('page', $listView.data('page') + 1);
 
                     var filterBy = {
                         kind: $listView.find('select[id=filterBy]').length > 0 ? $listView.find('select[id=filterBy]').val() : 'all'
@@ -1999,12 +1994,11 @@
                         listViewData.preFilter,
                         listViewData.fields, true, {
                             context: context,
-                            page: page,
+                            page: $listView.data('page'),
                             filterBy: filterBy
                         }, actions, {
                             reorder: listViewData.reorder,
                             detailView: listViewData.detailView,
-                            setEndTable: setEndTable,
                             'multiSelect': multiSelect,
                             noActionCol: listViewData.noActionCol
                         });
@@ -2123,7 +2117,7 @@
                     $tr = $target.closest('div.list-view').find('tr:first'); // Dummy row
                 } else {
                     if (listViewData.actions[actionID].isMultiSelectAction) {
-                        $tr = $('div.list-view').find('input.multiSelectCheckbox:checked').parents('tr');
+                        $tr = $listView.find('input.multiSelectCheckbox:checked').parents('tr');
                     } else {
                         $tr = $target.closest('tr');
                     }
@@ -2236,8 +2230,7 @@
         return $newRow;
     };
 
-    var toggleMultiSelectActions = function(enabled) {
-        var $listView = $('div.list-view');
+    var toggleMultiSelectActions = function($listView, enabled) {
         $listView.find('div.action.add')[enabled ? 'hide' : 'show']();
         $listView.find('div.main-action:not(.multiSelectAction)')[enabled ? 'hide' : 'show']();
         $listView.find('div.main-action.multiSelectAction')[enabled ? 'show' : 'hide']();
@@ -2272,6 +2265,7 @@
                 false,
                 null,
                 listViewArgs.actions, {
+                    clearEndTable: true,
                     multiSelect: listViewArgs.multiSelect,
                     context: this.data('view-args').context,
                     detailView: listViewArgs.detailView

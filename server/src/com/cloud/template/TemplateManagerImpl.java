@@ -381,8 +381,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isISO) {
             desc = Upload.Type.ISO.toString();
         }
-        eventId = eventId == null ? 0 : eventId;
-
         if (!_accountMgr.isRootAdmin(caller.getId()) && _disableExtraction) {
             throw new PermissionDeniedException("Extraction has been disabled by admin");
         }
@@ -628,7 +626,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         TemplateDataStoreVO srcTmpltStore = _tmplStoreDao.findByStoreTemplate(srcSecStore.getId(), tmpltId);
 
         _resourceLimitMgr.checkResourceLimit(account, ResourceType.template);
-        _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, new Long(srcTmpltStore.getSize()));
+        _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, new Long(srcTmpltStore.getSize()).longValue());
 
         // Event details
         String copyEventType;
@@ -1593,7 +1591,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);
-        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.secondary_storage, new Long(volume != null ? volume.getSize() : snapshot.getSize()));
+        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.secondary_storage, new Long(volume != null ? volume.getSize() : snapshot.getSize()).longValue());
 
         if (!isAdmin || featured == null) {
             featured = Boolean.FALSE;

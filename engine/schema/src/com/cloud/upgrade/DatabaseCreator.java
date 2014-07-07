@@ -86,8 +86,8 @@ public class DatabaseCreator {
 
     private static void initDB(String dbPropsFile, String rootPassword, String[] databases, boolean dryRun) {
         Properties dbProperties = new Properties();
-        try {
-            dbProperties.load(new FileInputStream(new File(dbPropsFile)));
+        try(FileInputStream f_stream = new FileInputStream(new File(dbPropsFile));) {
+            dbProperties.load(f_stream);
         } catch (IOException e) {
             System.out.println("IOError: unable to load/read db properties file: " + e);
             System.exit(1);

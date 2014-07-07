@@ -512,9 +512,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                         PreparedStatement stmt = txn.prepareAutoCloseStatement(checkSql);
                         stmt.executeQuery();
                         tableName = "network_group";
-                    } catch (SQLException ex) {
+                    } catch (Exception ex) {
                         // if network_groups table exists, create the default security group there
-                        s_logger.debug("Caught SQLException: no network_group  ", ex);
+                        s_logger.debug("Caught (SQL?)Exception: no network_group  " + ex.getLocalizedMessage());
                     }
 
                     insertSql = "SELECT * FROM " + tableName + " where account_id=2 and name='default'";
@@ -1248,9 +1248,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 defaultVpcNetworkOfferingProvidersNoLB.put(Service.PortForwarding, Provider.VPCVirtualRouter);
                 defaultVpcNetworkOfferingProvidersNoLB.put(Service.Vpn, Provider.VPCVirtualRouter);
 
-                for (Service service : defaultVpcNetworkOfferingProvidersNoLB.keySet()) {
+                for (Map.Entry<Service,Provider> entry : defaultVpcNetworkOfferingProvidersNoLB.entrySet()) {
                     NetworkOfferingServiceMapVO offService =
-                            new NetworkOfferingServiceMapVO(defaultNetworkOfferingForVpcNetworksNoLB.getId(), service, defaultVpcNetworkOfferingProvidersNoLB.get(service));
+                            new NetworkOfferingServiceMapVO(defaultNetworkOfferingForVpcNetworksNoLB.getId(), entry.getKey(), entry.getValue());
                     _ntwkOfferingServiceMapDao.persist(offService);
                     s_logger.trace("Added service for the network offering: " + offService);
                 }

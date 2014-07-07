@@ -52,7 +52,7 @@ public class StorageCacheRandomAllocator implements StorageCacheAllocator {
         }
 
         List<DataStore> cacheStores = dataStoreMgr.getImageCacheStores(scope);
-        if (cacheStores.size() <= 0) {
+        if ((cacheStores == null) || (cacheStores.size() <= 0)) {
             s_logger.debug("Can't find staging storage in zone: " + scope.getScopeId());
             return null;
         }

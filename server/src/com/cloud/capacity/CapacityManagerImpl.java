@@ -550,7 +550,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         if (volumes != null && volumes.size() > 0) {
             for (VolumeVO volume : volumes) {
-                usedIops += volume.getMinIops();
+                usedIops += volume.getMinIops() != null ? volume.getMinIops() : 0;
             }
         }
 

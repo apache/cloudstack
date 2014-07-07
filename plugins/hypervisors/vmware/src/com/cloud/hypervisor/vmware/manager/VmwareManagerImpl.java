@@ -531,7 +531,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             return true;
         }
 
-        if (msid == _clusterMgr.getManagementNodeId() && runid != _clusterMgr.getCurrentRunId()) {
+        if (runid != _clusterMgr.getManagementRunId(msid)) {
             if (s_logger.isInfoEnabled())
                 s_logger.info("Worker VM's owner management server has changed runid, recycle it");
             return true;

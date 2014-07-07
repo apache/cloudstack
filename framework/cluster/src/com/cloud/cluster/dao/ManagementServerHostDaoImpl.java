@@ -53,15 +53,14 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     @Override
     public void invalidateRunSession(long id, long runid) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = txn.prepareAutoCloseStatement("update mshost set runid=0, state='Down' where id=? and runid=?");
-            pstmt.setLong(1, id);
-            pstmt.setLong(2, runid);
-
-            pstmt.executeUpdate();
+        try (PreparedStatement pstmt = txn.prepareStatement("update mshost set runid=0, state='Down' where id=? and runid=?");){
+            if(pstmt != null) {
+                pstmt.setLong(1, id);
+                pstmt.setLong(2, runid);
+                pstmt.executeUpdate();
+            }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
+            throw new CloudRuntimeException("invalidateRunSession:Exception:"+ e.getMessage(), e);
         }
     }
 
@@ -82,26 +81,30 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     @DB
     public void update(long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
         try {
             txn.start();
-
-            pstmt =
-                txn.prepareAutoCloseStatement("update mshost set name=?, version=?, service_ip=?, service_port=?, last_update=?, removed=null, alert_count=0, runid=?, state=? where id=?");
-            pstmt.setString(1, name);
-            pstmt.setString(2, version);
-            pstmt.setString(3, serviceIP);
-            pstmt.setInt(4, servicePort);
-            pstmt.setString(5, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
-            pstmt.setLong(6, runid);
-            pstmt.setString(7, ManagementServerHost.State.Up.toString());
-            pstmt.setLong(8, id);
-
-            pstmt.executeUpdate();
+            try(PreparedStatement pstmt =
+                txn.prepareStatement("update mshost set name=?, version=?, service_ip=?, service_port=?, last_update=?, removed=null, alert_count=0, runid=?, state=? where id=?");) {
+                pstmt.setString(1, name);
+                pstmt.setString(2, version);
+                pstmt.setString(3, serviceIP);
+                pstmt.setInt(4, servicePort);
+                pstmt.setString(5, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
+                pstmt.setLong(6, runid);
+                pstmt.setString(7, ManagementServerHost.State.Up.toString());
+                pstmt.setLong(8, id);
+                pstmt.executeUpdate();
+            }catch(SQLException e)
+            {
+                throw new CloudRuntimeException("update:Exception:"+e.getMessage(),e);
+            }
             txn.commit();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            txn.rollback();
             s_logger.warn("Unexpected exception, ", e);
             throw new RuntimeException(e.getMessage(), e);
+        }finally {
+            txn.close();
         }
     }
 
@@ -109,19 +112,20 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     @DB
     public boolean remove(Long id) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-
         try {
             txn.start();
-
             ManagementServerHostVO msHost = findById(id);
             msHost.setState(ManagementServerHost.State.Down);
             super.remove(id);
-
             txn.commit();
             return true;
         } catch (Exception e) {
+            txn.rollback();
             s_logger.warn("Unexpected exception, ", e);
-            throw new RuntimeException(e.getMessage(), e);
+            throw new CloudRuntimeException("remove:Exception:"+e.getMessage(), e);
+        }finally
+        {
+            txn.close();
         }
     }
 
@@ -129,24 +133,29 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     @DB
     public void update(long id, long runid, Date lastUpdate) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
         try {
             txn.start();
+            try( PreparedStatement pstmt = txn.prepareStatement("update mshost set last_update=?, removed=null, alert_count=0 where id=? and runid=?");) {
+                pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
+                pstmt.setLong(2, id);
+                pstmt.setLong(3, runid);
 
-            pstmt = txn.prepareAutoCloseStatement("update mshost set last_update=?, removed=null, alert_count=0 where id=? and runid=?");
-            pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
-            pstmt.setLong(2, id);
-            pstmt.setLong(3, runid);
+                int count = pstmt.executeUpdate();
+                txn.commit();
 
-            int count = pstmt.executeUpdate();
-            txn.commit();
-
-            if (count < 1) {
-                throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runid + " is no longer valid"));
+                if (count < 1) {
+                    throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runid + " is no longer valid"));
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("update:Exception:"+e.getMessage(), e);
             }
-        } catch (Exception e) {
-            s_logger.warn("Unexpected exception, ", e);
-            throw new RuntimeException(e.getMessage(), e);
+        } catch (RuntimeException e) {
+            txn.rollback();
+            s_logger.warn("update:Exception:"+e.getMessage(), e);
+            throw new RuntimeException("update:Exception:"+e.getMessage(), e);
+        }
+        finally {
+            txn.close();
         }
     }
 
@@ -170,21 +179,25 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     @DB
     public int increaseAlertCount(long id) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
         int changedRows = 0;
         try {
             txn.start();
-
-            pstmt = txn.prepareAutoCloseStatement("update mshost set alert_count=alert_count+1 where id=? and alert_count=0");
-            pstmt.setLong(1, id);
-
-            changedRows = pstmt.executeUpdate();
+            try(PreparedStatement pstmt = txn.prepareStatement("update mshost set alert_count=alert_count+1 where id=? and alert_count=0");) {
+                pstmt.setLong(1, id);
+                changedRows = pstmt.executeUpdate();
+            }catch (SQLException e)
+            {
+                throw new CloudRuntimeException("increaseAlertCount:Exception:"+e.getMessage(),e);
+            }
             txn.commit();
-        } catch (Exception e) {
-            s_logger.warn("Unexpected exception, ", e);
-            throw new RuntimeException(e.getMessage(), e);
+        } catch (RuntimeException e) {
+            txn.rollback();
+            s_logger.warn("increaseAlertCount:Exception:" + e.getMessage(), e);
+            throw new CloudRuntimeException("increaseAlertCount:Exception:" + e.getMessage(), e);
+        }finally
+        {
+            txn.close();
         }
-
         return changedRows;
     }
 
@@ -211,21 +224,19 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     @Override
     public void update(long id, long runId, State state, Date lastUpdate) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = txn.prepareAutoCloseStatement("update mshost set state=?, last_update=? where id=? and runid=?");
-            pstmt.setString(1, state.toString());
-            pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
-            pstmt.setLong(3, id);
-            pstmt.setLong(4, runId);
-
-            int count = pstmt.executeUpdate();
-
-            if (count < 1) {
-                throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runId + " is no longer valid"));
+        try (PreparedStatement pstmt = txn.prepareStatement("update mshost set state=?, last_update=? where id=? and runid=?");){
+            if (pstmt != null) {
+                pstmt.setString(1, state.toString());
+                pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
+                pstmt.setLong(3, id);
+                pstmt.setLong(4, runId);
+                int count = pstmt.executeUpdate();
+                if (count < 1) {
+                    throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runId + " is no longer valid"));
+                }
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
+            throw new CloudRuntimeException("update:Exception:" + e.getMessage(), e);
         }
     }
 
@@ -241,22 +252,21 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     @Override
     public List<Long> listOrphanMsids() {
         List<Long> orphanList = new ArrayList<Long>();
-
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-        try {
-            pstmt =
-                txn.prepareAutoCloseStatement("select t.mgmt_server_id from (select mgmt_server_id, count(*) as count from host group by mgmt_server_id) as t WHERE t.count > 0 AND t.mgmt_server_id NOT IN (select msid from mshost)");
-
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                orphanList.add(rs.getLong(1));
+        try (PreparedStatement pstmt =
+                     txn.prepareStatement("select t.mgmt_server_id from (select mgmt_server_id, count(*) as count from host group by mgmt_server_id) as t WHERE t.count > 0 AND t.mgmt_server_id NOT IN (select msid from mshost)");)
+        {
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    orphanList.add(rs.getLong(1));
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("listOrphanMsids:Exception:" + e.getMessage(), e);
             }
+            return orphanList;
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
+            throw new CloudRuntimeException("listOrphanMsids:Exception:" + e.getMessage(), e);
         }
-
-        return orphanList;
     }
 
     @Override

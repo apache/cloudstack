@@ -820,7 +820,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!shrinkOk) {
             /* Check resource limit for this account on primary storage resource */
             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()), ResourceType.primary_storage, volume.isDisplayVolume(), new Long(newSize
-                    - currentSize));
+                    - currentSize).longValue());
         }
 
         /* If this volume has never been beyond allocated state, short circuit everything and simply update the database */
@@ -1642,7 +1642,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 try {
                 return orchestrateMigrateVolume(vol.getId(), destPool.getId(), liveMigrateVolume);
                 } finally {
-                    if (VmJobEnabled.value())
+                    if ((VmJobEnabled.value())&&(placeHolder != null))
                         _workJobDao.expunge(placeHolder.getId());
                 }
 
@@ -1667,7 +1667,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 // retrieve the migrated new volume from job result
                 if (jobResult != null && jobResult instanceof Long) {
-                    return _entityMgr.findById(VolumeVO.class, ((Long)jobResult).longValue());
+                    return _entityMgr.findById(VolumeVO.class, ((Long)jobResult));
                 }
                 return null;
             }

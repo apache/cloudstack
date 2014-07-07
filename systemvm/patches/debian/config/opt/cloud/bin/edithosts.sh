@@ -191,7 +191,7 @@ then
   echo "dhcp-optsfile=$DHCP_OPTS" >> /etc/dnsmasq.conf
 
   tag=$(echo $ipv4 | tr '.' '_')
-  sed -i /$tag/d $DHCP_OPTS
+  sed -i /$tag,/d $DHCP_OPTS
   if [ "$dflt" == "0.0.0.0" ]
   then
     logger -t cloud "$0: unset default router for $ipv4"

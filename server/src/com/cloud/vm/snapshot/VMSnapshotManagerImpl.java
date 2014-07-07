@@ -727,7 +727,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             try {
             return orchestrateDeleteAllVMSnapshots(vmId, type);
             } finally {
-                if (VmJobEnabled.value())
+                if ( (VmJobEnabled.value()) && (placeHolder != null))
                     _workJobDao.expunge(placeHolder.getId());
             }
 

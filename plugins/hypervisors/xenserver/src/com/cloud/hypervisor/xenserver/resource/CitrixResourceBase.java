@@ -643,8 +643,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Map<String, String> args = new HashMap<String, String>();
         Task task = null;
         try {
-            for (String key : params.keySet()) {
-                args.put(key, params.get(key));
+            for (Map.Entry< String, String > entry  : params.entrySet()) {
+                args.put(entry.getKey(), entry.getValue());
             }
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("callHostPlugin executing for command " + cmd
@@ -2313,8 +2313,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 return new GetVmStatsAnswer(cmd, vmStatsNameMap);
             }
 
-            for (String vmUUID : vmStatsUUIDMap.keySet()) {
-                vmStatsNameMap.put(vmNames.get(vmUUIDs.indexOf(vmUUID)), vmStatsUUIDMap.get(vmUUID));
+            for (Map.Entry<String,VmStatsEntry>entry : vmStatsUUIDMap.entrySet()) {
+                vmStatsNameMap.put(vmNames.get(vmUUIDs.indexOf(entry.getKey())), entry.getValue());
             }
 
             return new GetVmStatsAnswer(cmd, vmStatsNameMap);
@@ -2387,8 +2387,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         }
 
-        for (String vmUUID : vmResponseMap.keySet()) {
-            VmStatsEntry vmStatsAnswer = vmResponseMap.get(vmUUID);
+        for (Map.Entry<String, VmStatsEntry> entry: vmResponseMap.entrySet()) {
+            VmStatsEntry vmStatsAnswer = entry.getValue();
 
             if (vmStatsAnswer.getNumCPUs() != 0) {
                 vmStatsAnswer.setCPUUtilization(vmStatsAnswer.getCPUUtilization() / vmStatsAnswer.getNumCPUs());
@@ -3928,7 +3928,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         s_logger.debug("Found unplugged VIF " + deviceId + " in VM " + vmName + " destroy it");
                         vif.destroy(conn);
                     }
-                    usedDeviceNums.add(Integer.valueOf(vif.getDevice(conn)));
                 } catch (NumberFormatException e) {
                     String msg = "Obtained an invalid value for an allocated VIF device number for VM: " + vmName;
                     s_logger.debug(msg, e);
@@ -6192,8 +6191,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected VDI createVdi(SR sr, String vdiNameLabel, Long volumeSize) throws Types.XenAPIException, XmlRpcException {
-        VDI vdi = null;
-
         Connection conn = getConnection();
 
         VDI.Record vdir = new VDI.Record();
@@ -6212,22 +6209,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         vdir.virtualSize = volumeSize;
 
-        long maxNumberOfTries = (totalSrSpace / unavailableSrSpace >= 1) ? (totalSrSpace / unavailableSrSpace) : 1;
-        long tryNumber = 0;
-
-        while (tryNumber <= maxNumberOfTries) {
-            try {
-                vdi = VDI.create(conn, vdir);
-
-                break;
-            } catch (Exception ex) {
-                tryNumber++;
-
-                vdir.virtualSize -= unavailableSrSpace;
-            }
-        }
-
-        return vdi;
+        return VDI.create(conn, vdir);
     }
 
     protected void handleSrAndVdiDetach(String iqn, Connection conn) throws Exception {
@@ -6551,8 +6533,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.warn("Unable to find vdi by uuid: " + vdiUuid + ", skip it");
             }
         }
-        for (VDI vdi : vdiMap.keySet()) {
-            VolumeObjectTO volumeTO = vdiMap.get(vdi);
+        for (Map.Entry<VDI, VolumeObjectTO>entry : vdiMap.entrySet()) {
+            VDI vdi = entry.getKey();
+            VolumeObjectTO volumeTO = entry.getValue();
             VBD.Record vbdr = new VBD.Record();
             vbdr.VM = vm;
             vbdr.VDI = vdi;

@@ -18,6 +18,7 @@ package com.cloud.usage.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.TimeZone;
 
 import javax.ejb.Local;
 
+import com.cloud.exception.CloudException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -56,21 +58,25 @@ public class UsageSecurityGroupDaoImpl extends GenericDaoBase<UsageSecurityGroup
     @Override
     public void update(UsageSecurityGroupVO usage) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        PreparedStatement pstmt = null;
         try {
             txn.start();
             if (usage.getDeleted() != null) {
-                pstmt = txn.prepareAutoCloseStatement(UPDATE_DELETED);
-                pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
-                pstmt.setLong(2, usage.getAccountId());
-                pstmt.setLong(3, usage.getVmInstanceId());
-                pstmt.setLong(4, usage.getSecurityGroupId());
+                try(PreparedStatement pstmt = txn.prepareStatement(UPDATE_DELETED);) {
+                    if (pstmt != null) {
+                        pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
+                        pstmt.setLong(2, usage.getAccountId());
+                        pstmt.setLong(3, usage.getVmInstanceId());
+                        pstmt.setLong(4, usage.getSecurityGroupId());
+                        pstmt.executeUpdate();
+                    }
+                }catch (SQLException e) {
+                    throw new CloudException("Error updating UsageSecurityGroupVO:"+e.getMessage(), e);
+                }
             }
-            pstmt.executeUpdate();
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Error updating UsageSecurityGroupVO", e);
+            s_logger.warn("Error updating UsageSecurityGroupVO:"+e.getMessage(), e);
         } finally {
             txn.close();
         }
@@ -101,11 +107,8 @@ public class UsageSecurityGroupDaoImpl extends GenericDaoBase<UsageSecurityGroup
         }
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        PreparedStatement pstmt = null;
-
-        try {
-            int i = 1;
-            pstmt = txn.prepareAutoCloseStatement(sql);
+        int i = 1;
+        try (PreparedStatement pstmt = txn.prepareStatement(sql);){
             if (param1 != null) {
                 pstmt.setLong(i++, param1);
             }
@@ -115,36 +118,36 @@ public class UsageSecurityGroupDaoImpl extends GenericDaoBase<UsageSecurityGroup
             pstmt.setString(i++, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), endDate));
             pstmt.setString(i++, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), startDate));
             pstmt.setString(i++, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), endDate));
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    //zoneId, account_id, domain_id, vm_instance_id, security_group_id, created, deleted
+                    Long zoneId = Long.valueOf(rs.getLong(1));
+                    Long acctId = Long.valueOf(rs.getLong(2));
+                    Long dId = Long.valueOf(rs.getLong(3));
+                    long vmId = Long.valueOf(rs.getLong(4));
+                    long sgId = Long.valueOf(rs.getLong(5));
+                    Date createdDate = null;
+                    Date deletedDate = null;
+                    String createdTS = rs.getString(6);
+                    String deletedTS = rs.getString(7);
 
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                //zoneId, account_id, domain_id, vm_instance_id, security_group_id, created, deleted
-                Long zoneId = Long.valueOf(rs.getLong(1));
-                Long acctId = Long.valueOf(rs.getLong(2));
-                Long dId = Long.valueOf(rs.getLong(3));
-                long vmId = Long.valueOf(rs.getLong(4));
-                long sgId = Long.valueOf(rs.getLong(5));
-                Date createdDate = null;
-                Date deletedDate = null;
-                String createdTS = rs.getString(6);
-                String deletedTS = rs.getString(7);
-
-                if (createdTS != null) {
-                    createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
+                    if (createdTS != null) {
+                        createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
+                    }
+                    if (deletedTS != null) {
+                        deletedDate = DateUtil.parseDateString(s_gmtTimeZone, deletedTS);
+                    }
+                    usageRecords.add(new UsageSecurityGroupVO(zoneId, acctId, dId, vmId, sgId, createdDate, deletedDate));
                 }
-                if (deletedTS != null) {
-                    deletedDate = DateUtil.parseDateString(s_gmtTimeZone, deletedTS);
-                }
-
-                usageRecords.add(new UsageSecurityGroupVO(zoneId, acctId, dId, vmId, sgId, createdDate, deletedDate));
+            }catch (SQLException e) {
+                throw new CloudException("Error getting usage records"+e.getMessage(), e);
             }
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Error getting usage records", e);
+            s_logger.warn("Error getting usage records:"+e.getMessage(), e);
         } finally {
             txn.close();
         }
-
         return usageRecords;
     }
 }

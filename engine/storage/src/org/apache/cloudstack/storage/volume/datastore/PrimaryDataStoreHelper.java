@@ -67,11 +67,14 @@ public class PrimaryDataStoreHelper {
     protected StoragePoolHostDao storagePoolHostDao;
 
     public DataStore createPrimaryDataStore(PrimaryDataStoreParameters params) {
+        if(params == null)
+        {
+            throw new InvalidParameterValueException("createPrimaryDataStore: Input params is null, please check");
+        }
         StoragePoolVO dataStoreVO = dataStoreDao.findPoolByUUID(params.getUuid());
         if (dataStoreVO != null) {
             throw new CloudRuntimeException("duplicate uuid: " + params.getUuid());
         }
-
         dataStoreVO = new StoragePoolVO();
         dataStoreVO.setStorageProviderName(params.getProviderName());
         dataStoreVO.setHostAddress(params.getHost());
@@ -114,7 +117,6 @@ public class PrimaryDataStoreHelper {
 
             dataStoreVO.setPath(updatedPath);
         }
-
         String tags = params.getTags();
         if (tags != null) {
             String[] tokens = tags.split(",");
@@ -127,9 +129,7 @@ public class PrimaryDataStoreHelper {
                 details.put(tag, "true");
             }
         }
-
         dataStoreVO = dataStoreDao.persist(dataStoreVO, details);
-
         return dataStoreMgr.getDataStore(dataStoreVO.getId(), DataStoreRole.Primary);
     }
 

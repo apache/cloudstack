@@ -110,7 +110,7 @@ public class XenServer56Resource extends CitrixResourceBase {
                         host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_tx");
                         host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_rx");
                     } catch (XenAPIException e) {
-                        s_logger.info("Catch " + e.getClass().getName() + ": failed to destory VLAN " + device + " on host " + _host.uuid + " due to " + e.toString());
+                        s_logger.trace("Catch " + e.getClass().getName() + ": failed to destory VLAN " + device + " on host " + _host.uuid + " due to " + e.toString());
                     }
                 }
                 return;

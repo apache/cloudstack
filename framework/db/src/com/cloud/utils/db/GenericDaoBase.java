@@ -1486,9 +1486,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             if (length < str.length()) {
                 try {
                     if (attr.is(Attribute.Flag.Encrypted)) {
-                        pstmt.setBytes(j, DBEncryptionUtil.encrypt(str.substring(0, column.length())).getBytes("UTF-8"));
+                        pstmt.setBytes(j, DBEncryptionUtil.encrypt(str.substring(0, length)).getBytes("UTF-8"));
                     } else {
-                        pstmt.setBytes(j, str.substring(0, column.length()).getBytes("UTF-8"));
+                        pstmt.setBytes(j, str.substring(0, length).getBytes("UTF-8"));
                     }
                 } catch (UnsupportedEncodingException e) {
                     // no-way it can't support UTF-8 encoding

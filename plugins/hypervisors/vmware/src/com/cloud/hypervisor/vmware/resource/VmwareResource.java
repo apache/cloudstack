@@ -1438,16 +1438,31 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     getReservedCpuMHZ(vmSpec), (int)(vmSpec.getMaxRam() / (1024 * 1024)), getReservedMemoryMb(vmSpec),
                     guestOsId, vmSpec.getLimitCpuUse());
 
-            // Check for hotadd settings
-            vmConfigSpec.setMemoryHotAddEnabled(vmMo.isMemoryHotAddSupported(guestOsId));
-            vmConfigSpec.setCpuHotAddEnabled(vmMo.isCpuHotAddSupported(guestOsId));
-            configNestedHVSupport(vmMo, vmSpec, vmConfigSpec);
-
             // Check for multi-cores per socket settings
+            int numCoresPerSocket = 1;
             String coresPerSocket = vmSpec.getDetails().get("cpu.corespersocket");
             if (coresPerSocket != null) {
-                vmConfigSpec.setNumCoresPerSocket(NumbersUtil.parseInt(coresPerSocket, 1));
+                String apiVersion = HypervisorHostHelper.getVcenterApiVersion(vmMo.getContext());
+                // Property 'numCoresPerSocket' is supported since vSphere API 5.0
+                if (apiVersion.compareTo("5.0") >= 0) {
+                    numCoresPerSocket = NumbersUtil.parseInt(coresPerSocket, 1);
+                    vmConfigSpec.setNumCoresPerSocket(numCoresPerSocket);
+                }
             }
+
+            // Check for hotadd settings
+            vmConfigSpec.setMemoryHotAddEnabled(vmMo.isMemoryHotAddSupported(guestOsId));
+
+            String hostApiVersion = ((HostMO)hyperHost).getHostAboutInfo().getApiVersion();
+            if (numCoresPerSocket > 1 && hostApiVersion.compareTo("5.0") < 0) {
+                s_logger.warn("Dynamic scaling of CPU is not supported for Virtual Machines with multi-core vCPUs in case of ESXi hosts 4.1 and prior. Hence CpuHotAdd will not be"
+                        + " enabled for Virtual Machine: " + vmInternalCSName);
+                vmConfigSpec.setCpuHotAddEnabled(false);
+            } else {
+                vmConfigSpec.setCpuHotAddEnabled(vmMo.isCpuHotAddSupported(guestOsId));
+            }
+
+            configNestedHVSupport(vmMo, vmSpec, vmConfigSpec);
 
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
             int i = 0;

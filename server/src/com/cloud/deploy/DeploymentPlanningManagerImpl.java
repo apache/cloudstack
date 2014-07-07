@@ -120,7 +120,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
@@ -1233,7 +1232,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("We need to allocate new storagepool for this volume");
             }
-            if (!isRootAdmin(plan.getReservationContext())) {
+            if (!isRootAdmin(vmProfile)) {
                 if (!isEnabledForAllocation(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId())) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Cannot allocate new storagepool for this volume in this cluster, allocation state is disabled");
@@ -1361,10 +1360,10 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         return true;
     }
 
-    private boolean isRootAdmin(ReservationContext reservationContext) {
-        if (reservationContext != null) {
-            if (reservationContext.getAccount() != null) {
-                return _accountMgr.isRootAdmin(reservationContext.getAccount().getId());
+    private boolean isRootAdmin(VirtualMachineProfile vmProfile) {
+        if (vmProfile != null) {
+            if (vmProfile.getOwner() != null) {
+                return _accountMgr.isRootAdmin(vmProfile.getOwner().getId());
             } else {
                 return false;
             }
