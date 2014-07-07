@@ -1072,6 +1072,15 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         return _runId;
     }
 
+    @Override
+    public long getManagementRunId(long msId) {
+        ManagementServerHostVO mshost = _mshostDao.findByMsid(msId);
+        if (mshost != null) {
+            return mshost.getRunid();
+        }
+        return -1;
+    }
+
     public boolean isManagementNodeAlive(long msid) {
         ManagementServerHostVO mshost = _mshostDao.findByMsid(msid);
         if (mshost != null) {
