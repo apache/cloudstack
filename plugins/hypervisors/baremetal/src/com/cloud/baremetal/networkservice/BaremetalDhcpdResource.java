@@ -93,7 +93,7 @@ public class BaremetalDhcpdResource extends BaremetalDhcpResourceBase {
             s_logger.debug("Dhcpd resource configure successfully");
             return true;
         } catch (Exception e) {
-            s_logger.debug("Dhcpd resorce configure failed", e);
+            s_logger.debug("Dhcpd resource configure failed", e);
             throw new ConfigurationException(e.getMessage());
         } finally {
             SSHCmdHelper.releaseSshConnection(sshConnection);

@@ -30,5 +30,5 @@
     <bean id="BareMetalPlanner" class="com.cloud.baremetal.manager.BareMetalPlanner">
         <property name="name" value="BareMetalPlanner" />
     </bean>
-    
+
 </beans>
