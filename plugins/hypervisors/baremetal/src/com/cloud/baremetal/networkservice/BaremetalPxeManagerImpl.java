@@ -193,7 +193,7 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
 
     @Override
     public boolean addUserData(NicProfile nic, VirtualMachineProfile profile) {
-        UserVmVO vm = (UserVmVO)profile.getVirtualMachine();
+        UserVmVO vm = _vmDao.findById(profile.getVirtualMachine().getId());
         _vmDao.loadDetails(vm);
 
         String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();

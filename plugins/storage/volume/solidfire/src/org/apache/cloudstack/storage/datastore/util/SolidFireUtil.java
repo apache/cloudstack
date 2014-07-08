@@ -187,13 +187,14 @@ public class SolidFireUtil {
     }
 
     public static void updateCsDbWithSolidFireAccountInfo(long csAccountId, SolidFireUtil.SolidFireAccount sfAccount,
-            AccountDetailsDao accountDetailsDao) {
+            long storagePoolId, AccountDetailsDao accountDetailsDao) {
         AccountDetailVO accountDetail = new AccountDetailVO(csAccountId,
-                SolidFireUtil.ACCOUNT_ID,
+                SolidFireUtil.getAccountKey(storagePoolId),
                 String.valueOf(sfAccount.getId()));
 
         accountDetailsDao.persist(accountDetail);
 
+        /*
         accountDetail = new AccountDetailVO(csAccountId,
                 SolidFireUtil.CHAP_INITIATOR_USERNAME,
                 String.valueOf(sfAccount.getName()));
@@ -217,6 +218,7 @@ public class SolidFireUtil {
                 sfAccount.getTargetSecret());
 
         accountDetailsDao.persist(accountDetail);
+        */
     }
 
     public static SolidFireAccount getSolidFireAccount(SolidFireConnection sfConnection, String sfAccountName) {
@@ -356,6 +358,20 @@ public class SolidFireUtil {
 
     public static String getVagKey(long storagePoolId) {
         return "sfVolumeAccessGroup_" + storagePoolId;
+    }
+
+    private static String getAccountKey(long storagePoolId) {
+        return SolidFireUtil.ACCOUNT_ID + "_" + storagePoolId;
+    }
+
+    public static AccountDetailVO getAccountDetail(long csAccountId, long storagePoolId, AccountDetailsDao accountDetailsDao) {
+        AccountDetailVO accountDetail = accountDetailsDao.findDetail(csAccountId, SolidFireUtil.getAccountKey(storagePoolId));
+
+        if (accountDetail == null || accountDetail.getValue() == null) {
+            accountDetail = accountDetailsDao.findDetail(csAccountId, SolidFireUtil.ACCOUNT_ID);
+        }
+
+        return accountDetail;
     }
 
     public static String[] getIqnsFromHosts(List<? extends Host> hosts) {

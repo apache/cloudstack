@@ -863,14 +863,14 @@ public class Upgrade410to420 implements DbUpgrade {
 
     private void persistLegacyZones(Connection conn) {
         List<Long> listOfLegacyZones = new ArrayList<Long>();
+        List<Long> listOfNonLegacyZones = new ArrayList<Long>();
+        Map<String, ArrayList<Long>> dcToZoneMap = new HashMap<String, ArrayList<Long>>();
         PreparedStatement pstmt = null;
         PreparedStatement clustersQuery = null;
         PreparedStatement clusterDetailsQuery = null;
         ResultSet rs = null;
         ResultSet clusters = null;
         ResultSet clusterDetails = null;
-        ResultSet dcInfo = null;
-        Long vmwareDcId = 1L;
         Long zoneId;
         Long clusterId;
         String clusterHypervisorType;
@@ -881,13 +881,8 @@ public class Upgrade410to420 implements DbUpgrade {
         String dcOfCurrentCluster = null;
         String[] tokens;
         String url;
-        String user = "";
-        String password = "";
         String vc = "";
         String dcName = "";
-        String guid;
-        String key;
-        String value;
 
         try {
             pstmt = conn.prepareStatement("select id from `cloud`.`data_center` where removed is NULL");
@@ -899,6 +894,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 clustersQuery.setLong(1, zoneId);
                 legacyZone = false;
                 ignoreZone = true;
+                ArrayList<String> dcList = new ArrayList<String>();
                 count = 0L;
                 // Legacy zone term is meant only for VMware
                 // Legacy zone is a zone with atleast 2 clusters & with multiple DCs or VCs
@@ -923,6 +919,9 @@ public class Upgrade410to420 implements DbUpgrade {
                             dcName = tokens[3];
                             dcOfPreviousCluster = dcOfCurrentCluster;
                             dcOfCurrentCluster = dcName + "@" + vc;
+                            if (!dcList.contains(dcOfCurrentCluster)) {
+                                dcList.add(dcOfCurrentCluster);
+                            }
                             if (count > 0) {
                                 if (!dcOfPreviousCluster.equalsIgnoreCase(dcOfCurrentCluster)) {
                                     legacyZone = true;
@@ -942,47 +941,30 @@ public class Upgrade410to420 implements DbUpgrade {
                 if (legacyZone) {
                     listOfLegacyZones.add(zoneId);
                 } else {
-                    assert (clusterDetails != null) : "Couldn't retrieve details of cluster!";
-                    s_logger.debug("Discovered non-legacy zone " + zoneId + ". Processing the zone to associate with VMware datacenter.");
-
-                    clusterDetailsQuery = conn.prepareStatement("select name, value from `cloud`.`cluster_details` where cluster_id=?");
-                    clusterDetailsQuery.setLong(1, clusterId);
-                    clusterDetails = clusterDetailsQuery.executeQuery();
-                    while (clusterDetails.next()) {
-                        key = clusterDetails.getString(1);
-                        value = clusterDetails.getString(2);
-                        if (key.equalsIgnoreCase("username")) {
-                            user = value;
-                        } else if (key.equalsIgnoreCase("password")) {
-                            password = value;
+                    listOfNonLegacyZones.add(zoneId);
+                }
+                for (String dc : dcList) {
+                    ArrayList<Long> dcZones = new ArrayList<Long>();
+                    if (dcToZoneMap.get(dc) != null) {
+                        dcZones = dcToZoneMap.get(dc);
+                    }
+                    dcZones.add(zoneId);
+                    dcToZoneMap.put(dc, dcZones);
+                }
+            }
+            // If a VMware datacenter in a vCenter maps to more than 1 CloudStack zone, mark all the zones it is mapped to as legacy
+            for (Map.Entry<String, ArrayList<Long>> entry : dcToZoneMap.entrySet()) {
+                if (entry.getValue().size() > 1) {
+                    for (Long newLegacyZone : entry.getValue()) {
+                        if (listOfNonLegacyZones.contains(newLegacyZone)) {
+                            listOfNonLegacyZones.remove(newLegacyZone);
+                            listOfLegacyZones.add(newLegacyZone);
                         }
                     }
-                    guid = dcName + "@" + vc;
-
-                    pstmt =
-                        conn.prepareStatement("INSERT INTO `cloud`.`vmware_data_center` (uuid, name, guid, vcenter_host, username, password) values(?, ?, ?, ?, ?, ?)");
-                    pstmt.setString(1, UUID.randomUUID().toString());
-                    pstmt.setString(2, dcName);
-                    pstmt.setString(3, guid);
-                    pstmt.setString(4, vc);
-                    pstmt.setString(5, user);
-                    pstmt.setString(6, password);
-                    pstmt.executeUpdate();
-
-                    pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`vmware_data_center` where guid=?");
-                    pstmt.setString(1, guid);
-                    dcInfo = pstmt.executeQuery();
-                    if (dcInfo.next()) {
-                        vmwareDcId = dcInfo.getLong("id");
-                    }
-
-                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vmware_data_center_zone_map` (zone_id, vmware_data_center_id) values(?, ?)");
-                    pstmt.setLong(1, zoneId);
-                    pstmt.setLong(2, vmwareDcId);
-                    pstmt.executeUpdate();
                 }
             }
             updateLegacyZones(conn, listOfLegacyZones);
+            updateNonLegacyZones(conn, listOfNonLegacyZones);
         } catch (SQLException e) {
             String msg = "Unable to discover legacy zones." + e.getMessage();
             s_logger.error(msg);
@@ -994,9 +976,6 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
                 if (pstmt != null) {
                     pstmt.close();
-                }
-                if (dcInfo != null) {
-                    dcInfo.close();
                 }
                 if (clusters != null) {
                     clusters.close();
@@ -1031,6 +1010,98 @@ public class Upgrade410to420 implements DbUpgrade {
             try {
                 if (legacyZonesQuery != null) {
                     legacyZonesQuery.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
+    private void updateNonLegacyZones(Connection conn, List<Long> zones) {
+        PreparedStatement clustersQuery = null;
+        PreparedStatement clusterDetailsQuery = null;
+        PreparedStatement pstmt = null;
+        ResultSet clusters = null;
+        ResultSet clusterDetails = null;
+        ResultSet dcInfo = null;
+        try {
+            for (Long zoneId : zones) {
+                s_logger.debug("Discovered non-legacy zone " + zoneId + ". Processing the zone to associate with VMware datacenter.");
+
+                // All clusters in a non legacy zone will belong to the same VMware DC, hence pick the first cluster
+                clustersQuery = conn.prepareStatement("select id from `cloud`.`cluster` where removed is NULL AND data_center_id=?");
+                clustersQuery.setLong(1, zoneId);
+                clusters = clustersQuery.executeQuery();
+                clusters.next();
+                Long clusterId = clusters.getLong("id");
+
+                // Get VMware datacenter details from cluster_details table
+                String user = null;
+                String password = null;
+                String url = null;
+                clusterDetailsQuery = conn.prepareStatement("select name, value from `cloud`.`cluster_details` where cluster_id=?");
+                clusterDetailsQuery.setLong(1, clusterId);
+                clusterDetails = clusterDetailsQuery.executeQuery();
+                while (clusterDetails.next()) {
+                    String key = clusterDetails.getString(1);
+                    String value = clusterDetails.getString(2);
+                    if (key.equalsIgnoreCase("username")) {
+                        user = value;
+                    } else if (key.equalsIgnoreCase("password")) {
+                        password = value;
+                    } else if (key.equalsIgnoreCase("url")) {
+                        url = value;
+                    }
+                }
+                String[] tokens = url.split("/"); // url format - http://vcenter/dc/cluster
+                String vc = tokens[2];
+                String dcName = tokens[3];
+                String guid = dcName + "@" + vc;
+
+                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vmware_data_center` (uuid, name, guid, vcenter_host, username, password) values(?, ?, ?, ?, ?, ?)");
+                pstmt.setString(1, UUID.randomUUID().toString());
+                pstmt.setString(2, dcName);
+                pstmt.setString(3, guid);
+                pstmt.setString(4, vc);
+                pstmt.setString(5, user);
+                pstmt.setString(6, password);
+                pstmt.executeUpdate();
+
+                pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`vmware_data_center` where guid=?");
+                pstmt.setString(1, guid);
+                dcInfo = pstmt.executeQuery();
+                Long vmwareDcId = -1L;
+                if (dcInfo.next()) {
+                    vmwareDcId = dcInfo.getLong("id");
+                }
+
+                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vmware_data_center_zone_map` (zone_id, vmware_data_center_id) values(?, ?)");
+                pstmt.setLong(1, zoneId);
+                pstmt.setLong(2, vmwareDcId);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            String msg = "Unable to update non legacy zones." + e.getMessage();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                if (clustersQuery != null) {
+                    clustersQuery.close();
+                }
+                if (clusterDetails != null) {
+                    clusterDetails.close();
+                }
+                if (clusterDetailsQuery != null) {
+                    clusterDetailsQuery.close();
+                }
+                if (clusters != null) {
+                    clusters.close();
+                }
+                if (dcInfo != null) {
+                    dcInfo.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
                 }
             } catch (SQLException e) {
             }

@@ -242,3 +242,10 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES ('Ovm3', '3.0', 50, 1)
 UPDATE configuration SET value='KVM,XenServer,VMware,BareMetal,Ovm,Ovm3,LXC' WHERE name='hypervisor.list'
 /* update  `cloud`.`volumes` v,  `cloud`.`storage_pool` s,  `cloud`.`cluster` c  set v.format='RAW' where v.pool_id=s.id and s.cluster_id=c.id and c.hypervisor_type='Ovm3'; */
+
+ALTER TABLE `cloud`.`physical_network_traffic_types` CHANGE `xen_network_label` `xenserver_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a XenServer host';
+/*Adding domainId field to the user table in order to restrict duplicated users creation on the db level*/
+ALTER TABLE `cloud`.`user` ADD COLUMN domain_id bigint(20) unsigned DEFAULT NULL;
+ALTER TABLE `cloud`.`user` ADD CONSTRAINT `fk_user__domain_id` FOREIGN KEY `fk_user__domain_id`(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE;
+UPDATE `cloud`.`user` SET `cloud`.`user`.domain_id=(SELECT `cloud`.`account`.domain_id   FROM `cloud`.`account`   WHERE `cloud`.`account`.id=`cloud`.`user`.account_id) where id > 0;
+ALTER TABLE `cloud`.`user` ADD UNIQUE KEY `username_domain_id` (`username`,`domain_id`);

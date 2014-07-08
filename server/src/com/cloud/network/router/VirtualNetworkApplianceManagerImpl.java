@@ -1738,7 +1738,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         int startRetry = 0;
         DomainRouterVO router = null;
         for (final Iterator<HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
-            final HypervisorType hType = iter.next();
+            HypervisorType hType = iter.next();
             try {
                 final long id = _routerDao.getNextInSequence(Long.class, "id");
                 if (s_logger.isDebugEnabled()) {
@@ -1761,6 +1761,24 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
                     break;
                 case LXC:
                     templateName = RouterTemplateLxc.valueIn(dest.getDataCenter().getId());
+                    break;
+                case BareMetal:
+                    String peerHvType = _configDao.getValue(Config.BaremetalPeerHypervisorType.key());
+                    if (peerHvType == null) {
+                        throw new CloudRuntimeException(String.format("To use baremetal in advanced networking, you must set %s to type of hypervisor(e.g XenServer)" +
+                                " that exists in the same zone with baremetal host. That hyperivsor is used to spring up virtual router for baremetal instance", Config.BaremetalPeerHypervisorType.key()));
+                    }
+
+                    hType = HypervisorType.getType(peerHvType);
+                    if (HypervisorType.XenServer.toString().equals(peerHvType)) {
+                        templateName = RouterTemplateXen.valueIn(dest.getDataCenter().getId());
+                    } else if (HypervisorType.KVM.toString().equals(peerHvType)) {
+                        templateName = RouterTemplateKvm.valueIn(dest.getDataCenter().getId());
+                    } else if (HypervisorType.VMware.toString().equals(peerHvType)) {
+                        templateName = RouterTemplateVmware.valueIn(dest.getDataCenter().getId());
+                    } else {
+                        throw new CloudRuntimeException(String.format("Baremetal only supports peer hypervisor(XenServer/KVM/VMWare) right now, you specified %s", peerHvType));
+                    }
                     break;
                 default:
                     break;

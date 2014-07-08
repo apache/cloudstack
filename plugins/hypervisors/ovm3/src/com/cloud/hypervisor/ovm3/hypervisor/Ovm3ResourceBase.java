@@ -47,9 +47,6 @@ import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
-
-
-
 // import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 // import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import com.cloud.agent.IAgentControl;
@@ -194,10 +191,6 @@ import org.apache.cloudstack.storage.command.DettachCommand;
 // import org.apache.cloudstack.storage.command.DettachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 
-
-
-
-
 // import org.apache.cloudstack.storage.command.AttachAnswer;
 import com.cloud.storage.Storage.ImageFormat;
 /* do we need this ? */
@@ -259,10 +252,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     private VirtualRoutingResource _virtRouterResource;
     private Map<String, Network.Interface> _interfaces = null;
     /* switch to concurrenthasmaps all over the place ? */
-    private final ConcurrentHashMap<String,
-        Map<String, String>> _vmStats =
-            new ConcurrentHashMap<String,
-                Map<String, String>>();
+    private final ConcurrentHashMap<String, Map<String, String>> _vmStats = new ConcurrentHashMap<String, Map<String, String>>();
 
     // TODO vmsync {
     /* This is replaced by the vmList in getall VMs, and operate on that */
@@ -301,7 +291,6 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     HostDao _hostDao;
     @Inject
     ResourceManager _resourceMgr;
-    
 
     GlobalLock _exclusiveOpLock = GlobalLock.getInternLock("ovm3.exclusive.op");
 
@@ -443,10 +432,10 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                 if (_controlNetworkName != null
                         && !_interfaces.containsKey(_controlNetworkName)) {
                     /*
-                     * TODO: find a more elegant way to do this
-                     * for now we need the route del and ifconfig
-                     * as loopback bridges have arp disabled by default,
-                     * and zeroconf configures a route on the main bridge...
+                     * TODO: find a more elegant way to do this for now we need
+                     * the route del and ifconfig as loopback bridges have arp
+                     * disabled by default, and zeroconf configures a route on
+                     * the main bridge...
                      */
                     try {
                         net.startOvsLocalConfig(_controlNetworkName);
@@ -458,17 +447,15 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                     while (!_interfaces.containsKey(_controlNetworkName)) {
                         s_logger.debug("waiting for " + _controlNetworkName);
                         _interfaces = net.getInterfaceList();
-                         Thread.sleep(1 * 1000);
+                        Thread.sleep(1 * 1000);
                     }
                 }
                 /* The bridge is remembered upon reboot, but not the IP */
-                net.ovsIpConfig(_controlNetworkName,
-                        "static",
-                        _controlNetworkIp,
-                        "255.255.0.0");
+                net.ovsIpConfig(_controlNetworkName, "static",
+                        _controlNetworkIp, "255.255.0.0");
                 CloudStackPlugin cSp = new CloudStackPlugin(c);
-                cSp.ovsControlInterface(_controlNetworkName,
-                        _controlNetworkIp + "/16");
+                cSp.ovsControlInterface(_controlNetworkName, _controlNetworkIp
+                        + "/16");
 
                 // Missing netM = new Missing(c);
                 /* build ovs_if_meta in Net based on the following */
@@ -544,7 +531,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             try {
                 _canBridgeFirewall = canBridgeFirewall();
             } catch (XmlRpcException e) {
-                s_logger.error("Failed to detect whether the host supports security groups.",
+                s_logger.error(
+                        "Failed to detect whether the host supports security groups.",
                         e);
                 _canBridgeFirewall = false;
             }
@@ -552,11 +540,9 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             s_logger.debug(_canBridgeFirewall ? "OVM3 host supports security groups."
                     : "OVM3 host doesn't support security groups.");
             /*
-             * } catch (XmlRpcException e) {
-             * String msg = "XML RPC Exception, unable to setup host: " + _host
-             * + " " + e;
-             * s_logger.debug(msg);
-             * throw new ConfigurationException(msg);
+             * } catch (XmlRpcException e) { String msg =
+             * "XML RPC Exception, unable to setup host: " + _host + " " + e;
+             * s_logger.debug(msg); throw new ConfigurationException(msg);
              */
         } catch (Exception e) {
             String msg = "Generic Exception, failed to setup host: " + _host;
@@ -636,7 +622,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
 
             Network net = new Network(c);
             /* more detail -- fix -- and shouldn't matter */
-            /* should this be the bond before the bridge ?*/
+            /* should this be the bond before the bridge ? */
             String defaultBridge = net.getBridgeByIp(_ip).getName();
             if (defaultBridge == null) {
                 throw new CloudRuntimeException(
@@ -654,9 +640,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                 _guestNetworkName = _publicNetworkName;
             }
             /*
-             * if (_storageNetworkName == null) {
-             * _storageNetworkName = _privateNetworkName;
-             * }
+             * if (_storageNetworkName == null) { _storageNetworkName =
+             * _privateNetworkName; }
              */
             Map<String, String> d = cmd.getHostDetails();
             d.put("public.network.device", _publicNetworkName);
@@ -686,10 +671,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     protected void installOvsPlugin() throws IOException {
         /* ssh-copy-id anyone ? */
         try {
-            com.trilead.ssh2.Connection sshConnection =
-                    SSHCmdHelper.acquireAuthorizedConnection(_ip,
-                            _username,
-                            _password);
+            com.trilead.ssh2.Connection sshConnection = SSHCmdHelper
+                    .acquireAuthorizedConnection(_ip, _username, _password);
             if (sshConnection == null) {
                 throw new ConfigurationException(String.format("Unable to "
                         + "connect to server(IP=%1$s, username=%2$s, "
@@ -703,12 +686,11 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                         + userDataScript);
             }
             scp.put(userDataScriptPath, "", "0755");
-            String prepareCmd = String.format("./cloudstack.py "
-                    + "--ssl=" + this._agentSsl + " "
-                    + "--port=" + this._agentPort);
+            String prepareCmd = String.format("./cloudstack.py " + "--ssl="
+                    + this._agentSsl + " " + "--port=" + this._agentPort);
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, prepareCmd)) {
-                throw new ConfigurationException("Module insertion at "
-                        + _host + " failed");
+                throw new ConfigurationException("Module insertion at " + _host
+                        + " failed");
             }
         } catch (Exception es) {
             s_logger.error("Unexpected exception ", es);
@@ -805,8 +787,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     }
 
     /*
-     * Primary storage, will throw an error if ownership does not match!
-     * Pooling is a part of this, for now
+     * Primary storage, will throw an error if ownership does not match! Pooling
+     * is a part of this, for now
      */
     protected boolean createRepo(StorageFilerTO cmd) throws XmlRpcException {
         String basePath = this._ovmRepo;
@@ -814,8 +796,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         String primUuid = repo.deDash(cmd.getUuid());
         String ovsRepo = basePath + "/" + primUuid;
         /* should add port ? */
-        String mountPoint = String.format("%1$s:%2$s",
-                cmd.getHost(),
+        String mountPoint = String.format("%1$s:%2$s", cmd.getHost(),
                 cmd.getPath());
 
         String msg;
@@ -831,13 +812,11 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                 s_logger.debug("NFS repository " + mountPoint + " on "
                         + ovsRepo + " not found creating!");
                 try {
-                    repo.createRepo(mountPoint,
-                            ovsRepo,
-                            primUuid,
+                    repo.createRepo(mountPoint, ovsRepo, primUuid,
                             "OVS Reposutory");
                 } catch (Exception es) {
-                    msg = "NFS repository " + mountPoint + " on "
-                            + ovsRepo + " create failed!";
+                    msg = "NFS repository " + mountPoint + " on " + ovsRepo
+                            + " create failed!";
                     s_logger.debug(msg);
                     throw new CloudRuntimeException(
                             msg + " " + es.getMessage(), es);
@@ -866,15 +845,16 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                 } catch (Exception e) {
                     msg = "Unable to setup pool on " + ovsRepo;
                     s_logger.debug(msg);
-                    throw new CloudRuntimeException(msg + " " + e.getMessage(), e);
+                    throw new CloudRuntimeException(msg + " " + e.getMessage(),
+                            e);
                 }
             } else {
                 msg = "no way dude I can't stand for this";
                 s_logger.debug(msg);
             }
             /*
-             * this is to create the .generic_fs_stamp else we're not allowed
-             * to create any data\disks on this thing
+             * this is to create the .generic_fs_stamp else we're not allowed to
+             * create any data\disks on this thing
              */
             try {
                 URI uri = new URI(cmd.getType() + "://" + cmd.getHost() + ":"
@@ -929,8 +909,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                         // destIso);
                         if (sp.getFileSize() > 0) {
                             s_logger.info(" System VM patch ISO file already exists: "
-                                + srcIso.getAbsolutePath().toString()
-                                + ", destination: " + destIso);
+                                    + srcIso.getAbsolutePath().toString()
+                                    + ", destination: " + destIso);
                         }
                     } catch (Exception e) {
                         /*
@@ -949,13 +929,9 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                              * Storageplugin, so craft a url that can be used
                              * for that.
                              */
-                            SshHelper.scpTo(this._host,
-                                    22,
-                                    this._username,
-                                    null,
-                                    this._password,
-                                    destPath,
-                                    srcIso.getAbsolutePath().toString(),
+                            SshHelper.scpTo(this._host, 22, this._username,
+                                    null, this._password, destPath, srcIso
+                                            .getAbsolutePath().toString(),
                                     "0644");
                         } catch (Exception es) {
                             s_logger.error("Unexpected exception ", es);
@@ -999,8 +975,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             isoFile = new File("/usr/share/cloudstack-common/vms/" + svmName);
         }
         if (isoFile == null || !isoFile.exists()) {
-        	String svm = "systemvm/dist/systemvm.iso";
-        	s_logger.debug("last resort for systemvm patch iso " + svm);
+            String svm = "systemvm/dist/systemvm.iso";
+            s_logger.debug("last resort for systemvm patch iso " + svm);
             isoFile = new File(svm);
         }
         assert (isoFile != null);
@@ -1136,9 +1112,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
 
     /*
      * Download some primary storage into the repository, we need the repoid to
-     * do that, but also have a uuid for the disk...
-     * TODO: check disk
-     * TODO: looks like we don't need this for now! (dead code)
+     * do that, but also have a uuid for the disk... TODO: check disk TODO:
+     * looks like we don't need this for now! (dead code)
      */
     protected PrimaryStorageDownloadAnswer execute(
             final PrimaryStorageDownloadCommand cmd) {
@@ -1160,8 +1135,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     }
 
     /*
-     * TODO: Split out in Sec to prim and prim to prim and types ?
-     * Storage mount also goes in here for secstorage
+     * TODO: Split out in Sec to prim and prim to prim and types ? Storage mount
+     * also goes in here for secstorage
      */
     protected final Answer execute(final CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
@@ -1219,8 +1194,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
 
                     String srcFile = srcTemplate.getPath() + "/"
                             + srcTemplate.getUuid() + ".raw";
-                    String vDisksPath = srcTemplate.getPath()
-                            .replace("Templates", "VirtualDisks");
+                    String vDisksPath = srcTemplate.getPath().replace(
+                            "Templates", "VirtualDisks");
                     String destFile = vDisksPath + "/" + dstVolume.getUuid()
                             + ".raw";
 
@@ -1293,9 +1268,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                 /* this is a dup with the createVolume ? */
                 s_logger.debug("CreateCommand " + dst);
                 store.storagePluginCreate(primaryStorage.getUuid(),
-                        primaryStorage.getHost(),
-                        dst,
-                        disk.getSize());
+                        primaryStorage.getHost(), dst, disk.getSize());
             }
 
             store.storagePluginGetFileInfo(dst);
@@ -1387,8 +1360,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     }
 
     /*
-     * TODO: ovs calls ? depending on the type of network
-     * TODO: get the bridge on a per VM base so we can throw it away?
+     * TODO: ovs calls ? depending on the type of network TODO: get the bridge
+     * on a per VM base so we can throw it away?
      */
     private String createVlanBridge(String networkName, Integer vlanId)
             throws XmlRpcException {
@@ -1471,8 +1444,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     /*
      * TODO: OVM already cleans stuff up, just not the extra bridges which we
      * don't want right now, as we'd have to keep a state table of which vlans
-     * need to stay on the host!?
-     * A map with vlanid -> list-o-hosts
+     * need to stay on the host!? A map with vlanid -> list-o-hosts
      */
     private void cleanupNetwork(List<String> vifs) throws XmlRpcException {
         /* peel out vif info for vlan stuff */
@@ -1487,8 +1459,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         try {
             cleanupNetwork(vm.getVmVifs());
         } catch (XmlRpcException e) {
-            s_logger.debug("Clean up network for " + vm.getVmName() + " failed",
-                    e);
+            s_logger.debug(
+                    "Clean up network for " + vm.getVmName() + " failed", e);
         }
         String vmName = vm.getVmName();
         /* should become a single entity */
@@ -1583,18 +1555,16 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                         }
                         /*
                          * Older xend issues in, took me a while to figure this
-                         * out:
-                         * ../xen/xend/XendConstants.py
-                         * """Minimum time between domain restarts in seconds."""
-                         * MINIMUM_RESTART_TIME = 60
-                         * this does NOT work!!!--^^ as we respawn within 30
-                         * seconds easily.
+                         * out: ../xen/xend/XendConstants.py
+                         * """Minimum time between domain restarts in seconds."
+                         * "" MINIMUM_RESTART_TIME = 60 this does NOT
+                         * work!!!--^^ as we respawn within 30 seconds easily.
                          * return state stopped.
                          */
                         if (_vmstates.get(vmName) == null) {
                             String msg = "VM " + vmName + " went missing on "
                                     + _host + ", returning stopped";
-                                    s_logger.debug(msg);
+                            s_logger.debug(msg);
                             state = State.Stopped;
                             return new StartAnswer(cmd, msg);
                         }
@@ -1609,8 +1579,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
              */
             if (_ovm3pool && _ovm3cluster) {
                 xen.configureVmHa(_ovmObject.deDash(vm.getPrimaryPoolUuid()),
-                        vm.getVmUuid(),
-                        true);
+                        vm.getVmUuid(), true);
             }
             /* should be starting no ? */
             state = State.Running;
@@ -1630,14 +1599,17 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
 
     /* VR things */
     @Override
-    public ExecutionResult executeInVR(String routerIp, String script, String args) {
+    public ExecutionResult executeInVR(String routerIp, String script,
+            String args) {
         return executeInVR(routerIp, script, args, _timeout / 1000);
     }
 
     /* TODO: Double check */
     @Override
-    public ExecutionResult executeInVR(String routerIp, String script, String args, int timeout) {
-        final Script command = new Script(DefaultDomRPath, timeout * 1000, s_logger);
+    public ExecutionResult executeInVR(String routerIp, String script,
+            String args, int timeout) {
+        final Script command = new Script(DefaultDomRPath, timeout * 1000,
+                s_logger);
         final AllLinesParser parser = new AllLinesParser();
         command.add(script);
         command.add(routerIp);
@@ -1652,14 +1624,17 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     }
 
     @Override
-    public ExecutionResult createFileInVR(String routerIp, String path, String filename, String content) {
+    public ExecutionResult createFileInVR(String routerIp, String path,
+            String filename, String content) {
         File permKey = new File("/root/.ssh/id_rsa.cloud");
         String error = null;
 
         try {
-            SshHelper.scpTo(routerIp, 3922, "root", permKey, null, path, content.getBytes(), filename, null);
+            SshHelper.scpTo(routerIp, 3922, "root", permKey, null, path,
+                    content.getBytes(), filename, null);
         } catch (Exception e) {
-            s_logger.warn("Fail to create file " + path + filename + " in VR " + routerIp, e);
+            s_logger.warn("Fail to create file " + path + filename + " in VR "
+                    + routerIp, e);
             error = e.getMessage();
         }
         return new ExecutionResult(error == null, error);
@@ -1667,31 +1642,34 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
 
     @Override
     public ExecutionResult prepareCommand(NetworkElementCommand cmd) {
-        //Update IP used to access router
-        cmd.setRouterAccessIp(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
+        // Update IP used to access router
+        cmd.setRouterAccessIp(cmd
+                .getAccessDetail(NetworkElementCommand.ROUTER_IP));
         assert cmd.getRouterAccessIp() != null;
 
         if (cmd instanceof IpAssocVpcCommand) {
-            return prepareNetworkElementCommand((IpAssocVpcCommand)cmd);
+            return prepareNetworkElementCommand((IpAssocVpcCommand) cmd);
         } else if (cmd instanceof IpAssocCommand) {
-            return prepareNetworkElementCommand((IpAssocCommand)cmd);
+            return prepareNetworkElementCommand((IpAssocCommand) cmd);
         } else if (cmd instanceof SetupGuestNetworkCommand) {
-            return prepareNetworkElementCommand((SetupGuestNetworkCommand)cmd);
+            return prepareNetworkElementCommand((SetupGuestNetworkCommand) cmd);
         } else if (cmd instanceof SetSourceNatCommand) {
-            return prepareNetworkElementCommand((SetSourceNatCommand)cmd);
+            return prepareNetworkElementCommand((SetSourceNatCommand) cmd);
         }
         return new ExecutionResult(true, null);
     }
 
     @Override
     public ExecutionResult cleanupCommand(NetworkElementCommand cmd) {
-        if (cmd instanceof IpAssocCommand && !(cmd instanceof IpAssocVpcCommand)) {
-            return cleanupNetworkElementCommand((IpAssocCommand)cmd);
+        if (cmd instanceof IpAssocCommand
+                && !(cmd instanceof IpAssocVpcCommand)) {
+            return cleanupNetworkElementCommand((IpAssocCommand) cmd);
         }
         return new ExecutionResult(true, null);
     }
+
     protected ExecutionResult cleanupNetworkElementCommand(IpAssocCommand cmd) {
-    	return null;
+        return null;
     }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
@@ -1720,23 +1698,31 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             return map;
         }
     }
-    
+
     /* TODO: fill in these so we can get rid of the VR/SVM/etc specifics */
-    private ExecutionResult prepareNetworkElementCommand(SetupGuestNetworkCommand cmd) {
-		return null;
+    private ExecutionResult prepareNetworkElementCommand(
+            SetupGuestNetworkCommand cmd) {
+        return null;
     }
+
     private ExecutionResult prepareNetworkElementCommand(IpAssocVpcCommand cmd) {
-    	return null;
+        return null;
     }
-    protected ExecutionResult prepareNetworkElementCommand(SetSourceNatCommand cmd) {
-    	return null;
+
+    protected ExecutionResult prepareNetworkElementCommand(
+            SetSourceNatCommand cmd) {
+        return null;
     }
-    private ExecutionResult prepareNetworkElementCommand(SetNetworkACLCommand cmd) {
-    	return null;
+
+    private ExecutionResult prepareNetworkElementCommand(
+            SetNetworkACLCommand cmd) {
+        return null;
     }
+
     private ExecutionResult prepareNetworkElementCommand(IpAssocCommand cmd) {
-    	return null;
-	}
+        return null;
+    }
+
     /* TODO: egh? */
     protected String getDefaultScriptsDir() {
         return null;
@@ -1879,7 +1865,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     protected Answer execute(GetHostStatsCommand cmd) {
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
-            Map<String, String> stats = cSp.ovsDom0Stats(this._publicNetworkName);
+            Map<String, String> stats = cSp
+                    .ovsDom0Stats(this._publicNetworkName);
             Double cpuUtil = Double.parseDouble(stats.get("cpu"));
             Double rxBytes = Double.parseDouble(stats.get("rx"));
             Double txBytes = Double.parseDouble(stats.get("tx"));
@@ -1890,8 +1877,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                     0, 0);
             return new GetHostStatsAnswer(cmd, hostStats);
         } catch (Exception e) {
-            s_logger.debug("Get host stats of " + cmd.getHostName() + " failed",
-                    e);
+            s_logger.debug(
+                    "Get host stats of " + cmd.getHostName() + " failed", e);
             return new Answer(cmd, false, e.getMessage());
         }
     }
@@ -1997,7 +1984,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     /* State to power in the states from the vmstates that are known */
     protected Map<String, HostVmStateReportEntry> HostVmStateReport()
             throws XmlRpcException {
-        final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>(); 
+        final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
         for (final Map.Entry<String, State> vm : _vmstates.entrySet()) {
             /* TODO: Figure out how to get xentools version in here */
             s_logger.debug("VM " + vm.getKey() + " state: " + vm.getValue()
@@ -2024,8 +2011,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     }
 
     /*
-     * Get all the states and set them up according to xm(1)
-     * TODO: check migrating ?
+     * Get all the states and set them up according to xm(1) TODO: check
+     * migrating ?
      */
     protected HashMap<String, State> getAllVmStates() throws XmlRpcException {
         Map<String, Xen.Vm> vms = getAllVms();
@@ -2175,8 +2162,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                         _vmstates.remove(vmName);
                     } else if (oldState == State.Migrating) {
                         /*
-                         * do something smarter here.. newstate should
-                         * say stopping already
+                         * do something smarter here.. newstate should say
+                         * stopping already
                          */
                         s_logger.debug("Ignoring VM " + vmName
                                 + " in migrating state.");
@@ -2227,9 +2214,9 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             long used = total - Long.parseLong(store.getFreeSize());
             return new GetStorageStatsAnswer(cmd, total, used);
         } catch (Exception e) {
-            s_logger.debug("GetStorageStatsCommand on pool "
-                    + cmd.getStorageId() + " failed",
-                    e);
+            s_logger.debug(
+                    "GetStorageStatsCommand on pool " + cmd.getStorageId()
+                            + " failed", e);
             return new GetStorageStatsAnswer(cmd, e.getMessage());
         }
     }
@@ -2256,9 +2243,11 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             e.setNetworkReadKBs(Double.parseDouble(stats.get("rx_bytes"))
                     - Double.parseDouble(o_stats.get("rx_bytes")));
             e.setNetworkWriteKBs(Double.parseDouble(stats.get("tx_bytes"))
-                    - Double.parseDouble(o_stats.get("tx_bytes")));;
+                    - Double.parseDouble(o_stats.get("tx_bytes")));
+            ;
             e.setDiskReadKBs(Double.parseDouble(stats.get("rd_bytes"))
-                    - Double.parseDouble(o_stats.get("rd_bytes")));;
+                    - Double.parseDouble(o_stats.get("rd_bytes")));
+            ;
             e.setDiskWriteKBs(Double.parseDouble(stats.get("rw_bytes"))
                     - Double.parseDouble(o_stats.get("rw_bytes")));
             e.setDiskReadIOs(Double.parseDouble(stats.get("rd_ops"))
@@ -2270,7 +2259,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                     - Double.parseDouble(o_stats.get("cputime"));
             Double d_time = Double.parseDouble(stats.get("uptime"))
                     - Double.parseDouble(o_stats.get("uptime"));
-            Double cpupct = d_cpu/d_time * 100 * cpus;
+            Double cpupct = d_cpu / d_time * 100 * cpus;
             e.setCPUUtilization(cpupct);
             e.setEntityType("vm");
         }
@@ -2343,8 +2332,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         State state = State.Error;
         /*
          * TODO: figure out non pooled migration, works from CLI but not from
-         * the agent... perhaps pause the VM and then migrate it ? for now
-         * just stop the VM.
+         * the agent... perhaps pause the VM and then migrate it ? for now just
+         * stop the VM.
          */
         String msg = "Migrating " + vmName + " to " + destIp;
         s_logger.info(msg);
@@ -2386,8 +2375,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                 }
                 /* not a storage migration!!! */
                 xen.migrateVm(_ovmObject.deDash(vm.getVmRootDiskPoolId()),
-                        vm.getVmUuid(),
-                        destIp);
+                        vm.getVmUuid(), destIp);
                 state = State.Stopping;
                 msg = "Migration of " + vmName + " successfull";
                 return new MigrateAnswer(cmd, true, msg, null);
@@ -2512,8 +2500,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             Pool pool = new Pool(c);
 
             /* setup pool and role, needs utility to be able to do things */
-            if (host.getServerRoles().contentEquals(pool.getValidRoles()
-                    .toString())) {
+            if (host.getServerRoles().contentEquals(
+                    pool.getValidRoles().toString())) {
                 s_logger.debug("Server role for host " + _host + " is ok");
             } else {
                 try {
@@ -2568,10 +2556,9 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         String clusterUuid = _masterUuid.substring(0, 15);
         String managerId = _masterUuid;
         String poolAlias = cmd.getHost() + ":" + cmd.getPath();
-        String mountPoint = String.format("%1$s:%2$s",
-                cmd.getHost(),
-                cmd.getPath()) +
-                "/VirtualMachines";
+        String mountPoint = String.format("%1$s:%2$s", cmd.getHost(),
+                cmd.getPath())
+                + "/VirtualMachines";
         List<String> members = new ArrayList<String>();
         _isMaster = masterCheck();
         Integer poolSize = 0;
@@ -2587,25 +2574,16 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                         msg = "Create poolfs on " + _host + " for repo "
                                 + primUuid;
                         s_logger.debug(msg);
-                        poolFs.createPoolFs(fsType,
-                                mountPoint,
-                                clusterUuid,
-                                primUuid,
-                                ssUuid,
-                                managerId,
-                                primUuid);
+                        poolFs.createPoolFs(fsType, mountPoint, clusterUuid,
+                                primUuid, ssUuid, managerId, primUuid);
                     } catch (Exception e) {
                         msg = "Poolfs already exists on " + _host
                                 + " for repo " + primUuid;
                         s_logger.debug(msg);
                     }
                     try {
-                        poolHost.createServerPool(poolAlias,
-                                primUuid,
-                                _ovm3vip,
-                                poolSize + 1,
-                                _host,
-                                _ip);
+                        poolHost.createServerPool(poolAlias, primUuid,
+                                _ovm3vip, poolSize + 1, _host, _ip);
                     } catch (Exception e) {
                         msg = "Server pool with id " + clusterUuid + " on "
                                 + _host;
@@ -2628,12 +2606,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                     /* get all the details from the master */
                     try {
                         /* why does it call bloody M here???!?!?!! */
-                        poolHost.joinServerPool(poolAlias,
-                                primUuid,
-                                _ovm3vip,
-                                poolSize,
-                                _host,
-                                _ip);
+                        poolHost.joinServerPool(poolAlias, primUuid, _ovm3vip,
+                                poolSize, _host, _ip);
                     } catch (Exception e) {
                         msg = "Failed to join server pool "
                                 + poolMaster.getPoolAlias() + " on " + _host
@@ -2655,10 +2629,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                         + this._agentPassword + "@" + member + ":" + _agentPort
                         + "/api/3";
                 /*
-                 * Common comCall = new Common(c);
-                 * comCall.dispatch(url,
-                 * "set_pool_member_ip_list",
-                 * StringUtils.join(members, ","));
+                 * Common comCall = new Common(c); comCall.dispatch(url,
+                 * "set_pool_member_ip_list", StringUtils.join(members, ","));
                  */
                 Connection x = new Connection(member, _agentPort,
                         _agentUserName, _agentPassword);
@@ -2697,9 +2669,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             if (fs == null || !fs.getMountPoint().equals(mountPoint)) {
                 try {
                     StoragePlugin sp = new StoragePlugin(c);
-                    sp.storagePluginMount(uri.getHost(),
-                            uri.getPath(),
-                            uuid,
+                    sp.storagePluginMount(uri.getHost(), uri.getPath(), uuid,
                             mountPoint);
                     msg = "Nfs storage " + uri + " mounted on " + mountPoint;
                     return uuid;
@@ -2841,9 +2811,10 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             pool.leaveServerPool(cmd.getPool().getUuid());
             /* also connect to the master and update the pool list ? */
         } catch (Exception e) {
-            s_logger.debug("Delete storage pool on host "
-                    + _host
-                    + " failed, however, we leave to user for cleanup and tell managment server it succeeded",
+            s_logger.debug(
+                    "Delete storage pool on host "
+                            + _host
+                            + " failed, however, we leave to user for cleanup and tell managment server it succeeded",
                     e);
         }
 
@@ -2935,14 +2906,15 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
 
     @Override
     public Answer executeRequest(Command cmd) {
-    	try {
-    		if (cmd instanceof NetworkElementCommand) {
-                return _virtRouterResource.executeRequest((NetworkElementCommand)cmd);
+        try {
+            if (cmd instanceof NetworkElementCommand) {
+                return _virtRouterResource
+                        .executeRequest((NetworkElementCommand) cmd);
             }
-    	} catch (final IllegalArgumentException e) {
-    		return new Answer(cmd, false, e.getMessage());
-    	}
-    	Class<? extends Command> clazz = cmd.getClass();
+        } catch (final IllegalArgumentException e) {
+            return new Answer(cmd, false, e.getMessage());
+        }
+        Class<? extends Command> clazz = cmd.getClass();
         if (clazz == ReadyCommand.class) {
             return execute((ReadyCommand) cmd);
         } else if (clazz == CopyCommand.class) {
@@ -3104,7 +3076,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
 
     @Override
     public Answer createTemplateFromSnapshot(CopyCommand cmd) {
-        return null;  // To change body of implemented methods use File |
+        return null; // To change body of implemented methods use File |
                      // Settings | File Templates.
     }
 
@@ -3115,9 +3087,9 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
 
     /*
      * TODO: Add iso and update config of the VM is done from set_disk in
-     * lib/xenxm.py (Example found in Xen.java)
-     * Iso first needs to be copied over to the primary storage where the ISOs
-     * reside, or just mount secondary storage, feh!
+     * lib/xenxm.py (Example found in Xen.java) Iso first needs to be copied
+     * over to the primary storage where the ISOs reside, or just mount
+     * secondary storage, feh!
      */
     protected Answer execute(AttachIsoCommand cmd) {
         try {
@@ -3131,9 +3103,10 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             s_logger.debug(cmd.getStoreUrl() + " " + cmd.getIsoPath());
             return new Answer(cmd);
         } catch (Exception e) {
-            s_logger.debug("Attach or detach ISO " + cmd.getIsoPath() + " for "
-                    + cmd.getVmName() + " attach:" + cmd.isAttach() + " failed",
-                    e);
+            s_logger.debug(
+                    "Attach or detach ISO " + cmd.getIsoPath() + " for "
+                            + cmd.getVmName() + " attach:" + cmd.isAttach()
+                            + " failed", e);
             return new Answer(cmd, false, e.getMessage());
         }
     }
@@ -3177,8 +3150,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                 vm.addIso(isoPath);
             } else {
                 if (!vm.removeDisk(isoPath)) {
-                    msg = doThis + " failed for "
-                            + vmName + " iso was not attached " + isoPath;
+                    msg = doThis + " failed for " + vmName
+                            + " iso was not attached " + isoPath;
                     return msg;
                 }
             }
@@ -3225,16 +3198,15 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         }
         return new Answer(cmd, success, answer);
         /*
-         * s_logger.debug("dettaching object: " + cmd.getDisk().getType());
-         * if (this._vmstates.get(vmName) == State.Running) {
-         * return new DettachAnswer("Dettach unsupported on running VM "
-         * + vmName);
+         * s_logger.debug("dettaching object: " + cmd.getDisk().getType()); if
+         * (this._vmstates.get(vmName) == State.Running) { return new
+         * DettachAnswer("Dettach unsupported on running VM " + vmName);
          */
     }
 
     /*
-     * for now we assume that the datastore is there or else we
-     * never came this far
+     * for now we assume that the datastore is there or else we never came this
+     * far
      */
     public Answer execute(CreateObjectCommand cmd) {
         // public Answer execute(CreateObjectCommand cmd) {
@@ -3244,8 +3216,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             return createVolume(cmd);
         } else if (data.getObjectType() == DataObjectType.SNAPSHOT) {
             /*
-             * if stopped yes, if runniing ... no, unless we have ocfs2
-             * when using raw partitions (file:) if using tap:aio we cloud...
+             * if stopped yes, if runniing ... no, unless we have ocfs2 when
+             * using raw partitions (file:) if using tap:aio we cloud...
              */
             /* if (_vmstates(get)) { */
         } else if (data.getObjectType() == DataObjectType.TEMPLATE) {
@@ -3264,16 +3236,14 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         try {
             /*
              * public Boolean storagePluginCreate(String uuid, String ssuuid,
-             * String
-             * host, String file, Integer size)
+             * String host, String file, Integer size)
              */
             String poolUuid = data.getDataStore().getUuid();
             String storeUrl = data.getDataStore().getUrl();
             URI uri = new URI(storeUrl);
             String host = uri.getHost();
             String file = this._ovmRepo + "/" + _ovmObject.deDash(poolUuid)
-                    + "/VirtualDisks/"
-                    + volume.getUuid() + ".raw";
+                    + "/VirtualDisks/" + volume.getUuid() + ".raw";
             Long size = volume.getSize();
             StoragePlugin sp = new StoragePlugin(c);
             sp.storagePluginCreate(poolUuid, host, file, size);

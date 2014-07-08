@@ -246,7 +246,7 @@ CREATE TABLE `cloud`.`networks` (
   `broadcast_domain_type` varchar(32) NOT NULL COMMENT 'type of broadcast domain used',
   `broadcast_uri` varchar(255) COMMENT 'broadcast domain specifier',
   `gateway` varchar(15) COMMENT 'gateway for this network configuration',
-  `cidr` varchar(18) COMMENT 'network cidr', 
+  `cidr` varchar(18) COMMENT 'network cidr',
   `mode` varchar(32) COMMENT 'How to retrieve ip address in this network',
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this configuration is created from',
   `physical_network_id` bigint unsigned COMMENT 'physical network id that this configuration is based on',
@@ -270,14 +270,14 @@ CREATE TABLE `cloud`.`networks` (
   `specify_ip_ranges` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network provides an ability to define ip ranges',
   `vpc_id` bigint unsigned COMMENT 'vpc this network belongs to',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_networks__network_offering_id` FOREIGN KEY (`network_offering_id`) REFERENCES `network_offerings`(`id`),  
+  CONSTRAINT `fk_networks__network_offering_id` FOREIGN KEY (`network_offering_id`) REFERENCES `network_offerings`(`id`),
   CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_networks__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
   CONSTRAINT `fk_networks__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
   CONSTRAINT `fk_networks__vpc_id` FOREIGN KEY(`vpc_id`) REFERENCES `vpc`(`id`),
   CONSTRAINT `uc_networks__uuid` UNIQUE (`uuid`),
-  INDEX `i_networks__removed`(`removed`) 
+  INDEX `i_networks__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`account_network_ref` (
@@ -301,7 +301,7 @@ CREATE TABLE `cloud`.`nics` (
   `ip_type` varchar(32) COMMENT 'type of ip',
   `broadcast_uri` varchar(255) COMMENT 'broadcast uri',
   `network_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
-  `mode` varchar(32) COMMENT 'mode of getting ip address',  
+  `mode` varchar(32) COMMENT 'mode of getting ip address',
   `state` varchar(32) NOT NULL COMMENT 'state of the creation',
   `strategy` varchar(32) NOT NULL COMMENT 'reservation strategy',
   `reserver_name` varchar(255) COMMENT 'Name of the component that reserved the ip address',
@@ -431,11 +431,11 @@ CREATE TABLE `cloud`.`op_ha_work` (
   `time_to_try` bigint COMMENT 'time to try do this work',
   `updated` bigint unsigned NOT NULL COMMENT 'time the VM state was updated when it was stored into work queue',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_op_ha_work__instance_id` FOREIGN KEY `fk_op_ha_work__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE, 
+  CONSTRAINT `fk_op_ha_work__instance_id` FOREIGN KEY `fk_op_ha_work__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE,
   INDEX `i_op_ha_work__instance_id`(`instance_id`),
   CONSTRAINT `fk_op_ha_work__host_id` FOREIGN KEY `fk_op_ha_work__host_id` (`host_id`) REFERENCES `host` (`id`),
-  INDEX `i_op_ha_work__host_id`(`host_id`), 
-  INDEX `i_op_ha_work__step`(`step`), 
+  INDEX `i_op_ha_work__host_id`(`host_id`),
+  INDEX `i_op_ha_work__step`(`step`),
   INDEX `i_op_ha_work__type`(`type`),
   CONSTRAINT `fk_op_ha_work__mgmt_server_id` FOREIGN KEY `fk_op_ha_work__mgmt_server_id`(`mgmt_server_id`) REFERENCES `mshost`(`msid`),
   INDEX `i_op_ha_work__mgmt_server_id`(`mgmt_server_id`)
@@ -682,7 +682,7 @@ CREATE TABLE  `cloud`.`host_pod_ref` (
   `gateway` varchar(255) NOT NULL COMMENT 'gateway for the pod',
   `cidr_address` varchar(15) NOT NULL COMMENT 'CIDR address for the pod',
   `cidr_size` bigint unsigned NOT NULL COMMENT 'CIDR size for the pod',
-  `description` varchar(255) COMMENT 'store private ip range in startIP-endIP format',  
+  `description` varchar(255) COMMENT 'store private ip range in startIP-endIP format',
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this Pod enabled for allocation for new resources',
   `external_dhcp` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this Pod using external DHCP',
   `removed` datetime COMMENT 'date removed if not null',
@@ -692,13 +692,13 @@ CREATE TABLE  `cloud`.`host_pod_ref` (
   INDEX `i_host_pod_ref__allocation_state`(`allocation_state`),
   INDEX `i_host_pod_ref__removed`(`removed`),
   CONSTRAINT `uc_host_pod_ref__uuid` UNIQUE (`uuid`)
-  
+
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_dc_vnet_alloc` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary id',
     `vnet` varchar(18) NOT NULL COMMENT 'vnet',
-	`physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network the vnet belongs to',	
+	`physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network the vnet belongs to',
     `data_center_id` bigint unsigned NOT NULL COMMENT 'data center the vnet belongs to',
     `reservation_id` char(40) NULL COMMENT 'reservation id',
     `account_id` bigint unsigned NULL COMMENT 'account the vnet belongs to right now',
@@ -812,7 +812,7 @@ CREATE TABLE `cloud`.`port_forwarding_rules` (
 CREATE TABLE  `cloud`.`host` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255) NOT NULL,
-  `uuid` varchar(40) COMMENT 'this uuid is different with guid below, the later one is used by hypervisor resource',  
+  `uuid` varchar(40) COMMENT 'this uuid is different with guid below, the later one is used by hypervisor resource',
   `status` varchar(32) NOT NULL,
   `type` varchar(32) NOT NULL,
   `private_ip_address` char(40) NOT NULL,
@@ -869,7 +869,7 @@ CREATE TABLE `cloud`.`op_host` (
   `id` bigint unsigned NOT NULL UNIQUE COMMENT 'host id',
   `sequence` bigint unsigned DEFAULT 1 NOT NULL COMMENT 'sequence for the host communication',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_op_host__id` FOREIGN KEY (`id`) REFERENCES `host`(`id`) ON DELETE CASCADE 
+  CONSTRAINT `fk_op_host__id` FOREIGN KEY (`id`) REFERENCES `host`(`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`account_details` (
@@ -915,7 +915,7 @@ CREATE TABLE  `cloud`.`mshost_peer` (
   `peer_runid` bigint NOT NULL,
   `peer_state` varchar(10) NOT NULL DEFAULT 'Down',
   `last_update` DATETIME NULL COMMENT 'Last record update time',
-  
+
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_mshost_peer__owner_mshost` FOREIGN KEY (`owner_mshost`) REFERENCES `mshost`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_mshost_peer__peer_mshost` FOREIGN KEY (`peer_mshost`) REFERENCES `mshost`(`id`),
@@ -965,7 +965,7 @@ CREATE TABLE  `cloud`.`event` (
   `description` varchar(1024) NOT NULL,
   `user_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
-  `domain_id` bigint unsigned NOT NULL,  
+  `domain_id` bigint unsigned NOT NULL,
   `created` datetime NOT NULL,
   `level` varchar(16) NOT NULL,
   `start_id` bigint unsigned NOT NULL DEFAULT 0,
@@ -1046,7 +1046,7 @@ CREATE TABLE  `cloud`.`vm_template` (
   `hvm`  int(1) unsigned NOT NULL COMMENT 'requires HVM',
   `bits` int(6) unsigned NOT NULL COMMENT '32 bit or 64 bit',
   `url` varchar(255) NULL COMMENT 'the url where the template exists externally',
-  `format` varchar(32) NOT NULL COMMENT 'format for the template', 
+  `format` varchar(32) NOT NULL COMMENT 'format for the template',
   `created` datetime NOT NULL COMMENT 'Date created',
   `removed` datetime COMMENT 'Date removed if not null',
   `account_id` bigint unsigned NOT NULL COMMENT 'id of the account that created this template',
@@ -1153,7 +1153,7 @@ CREATE TABLE `cloud`.`domain_router` (
   `public_ip_address` char(40)  COMMENT 'public ip address used for source net',
   `public_netmask` varchar(15)  COMMENT 'netmask used for the domR',
   `guest_netmask` varchar(15) COMMENT 'netmask used for the guest network',
-  `guest_ip_address` char(40) COMMENT ' ip address in the guest network',   
+  `guest_ip_address` char(40) COMMENT ' ip address in the guest network',
   `is_redundant_router` int(1) unsigned NOT NULL COMMENT 'if in redundant router mode',
   `priority` int(4) unsigned COMMENT 'priority of router in the redundant router mode',
   `is_priority_bumpup` int(1) unsigned NOT NULL COMMENT 'if the priority has been bumped up',
@@ -1230,7 +1230,7 @@ CREATE TABLE  `cloud`.`volume_host_ref` (
   `local_path` varchar(255),
   `install_path` varchar(255),
   `url` varchar(255),
-  `format` varchar(32) NOT NULL COMMENT 'format for the volume', 
+  `format` varchar(32) NOT NULL COMMENT 'format for the volume',
   `destroyed` tinyint(1) COMMENT 'indicates whether the volume_host entry was destroyed by the user or not',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_volume_host_ref__host_id` FOREIGN KEY `fk_volume_host_ref__host_id` (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE,
@@ -1330,9 +1330,9 @@ CREATE TABLE  `cloud`.`account` (
   INDEX i_account__removed(`removed`),
   CONSTRAINT `fk_account__default_zone_id` FOREIGN KEY `fk_account__default_zone_id`(`default_zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
   INDEX `i_account__cleanup_needed`(`cleanup_needed`),
-  INDEX `i_account__account_name__domain_id__removed`(`account_name`, `domain_id`, `removed`), 
+  INDEX `i_account__account_name__domain_id__removed`(`account_name`, `domain_id`, `removed`),
   CONSTRAINT `fk_account__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain` (`id`),
-  INDEX `i_account__domain_id`(`domain_id`),  
+  INDEX `i_account__domain_id`(`domain_id`),
   CONSTRAINT `uc_account__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1380,7 +1380,7 @@ CREATE TABLE `cloud`.`op_host_capacity` (
   INDEX `i_op_host_capacity__host_type`(`host_id`, `capacity_type`),
   INDEX `i_op_host_capacity__pod_id`(`pod_id`),
   INDEX `i_op_host_capacity__data_center_id`(`data_center_id`),
-  INDEX `i_op_host_capacity__cluster_id`(`cluster_id`)  
+  INDEX `i_op_host_capacity__cluster_id`(`cluster_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`alert` (
@@ -1404,7 +1404,7 @@ CREATE TABLE `cloud`.`async_job` (
   `user_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
   `session_key` varchar(64) COMMENT 'all async-job manage to apply session based security enforcement',
-  `instance_type` varchar(64) COMMENT 'instance_type and instance_id work together to allow attaching an instance object to a job',			
+  `instance_type` varchar(64) COMMENT 'instance_type and instance_id work together to allow attaching an instance object to a job',
   `instance_id` bigint unsigned,
   `job_cmd` varchar(64) NOT NULL COMMENT 'command name',
   `job_cmd_originator` varchar(64) COMMENT 'command originator',
@@ -1437,7 +1437,7 @@ CREATE TABLE `cloud`.`async_job` (
 
 CREATE TABLE `cloud`.`sync_queue` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `sync_objtype` varchar(64) NOT NULL, 
+  `sync_objtype` varchar(64) NOT NULL,
   `sync_objid` bigint unsigned NOT NULL,
   `queue_proc_msid` bigint,
   `queue_proc_number` bigint COMMENT 'process number, increase 1 for each iteration',
@@ -1815,7 +1815,7 @@ CREATE TABLE `cloud`.`instance_group` (
   `created` datetime COMMENT 'date the group was created',
   PRIMARY KEY  (`id`),
   INDEX `i_instance_group__removed`(`removed`),
-  CONSTRAINT `uc_instance_group__uuid` UNIQUE (`uuid`),  
+  CONSTRAINT `uc_instance_group__uuid` UNIQUE (`uuid`),
   CONSTRAINT `fk_instance_group__account_id` FOREIGN KEY(`account_id`) REFERENCES `account` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
@@ -1850,7 +1850,7 @@ CREATE TABLE  `cloud`.`usage_event` (
   `resource_name` varchar(255),
   `offering_id` bigint unsigned,
   `template_id` bigint unsigned,
-  `size` bigint unsigned,  
+  `size` bigint unsigned,
   `resource_type` varchar(32),
   `processed` tinyint NOT NULL default '0',
   PRIMARY KEY  (`id`),
@@ -2055,9 +2055,9 @@ CREATE TABLE `cloud`.`physical_network` (
   `name` varchar(255) NOT NULL,
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this physical network belongs to',
   `vnet` varchar(255),
-  `speed` varchar(32),  
+  `speed` varchar(32),
   `domain_id` bigint unsigned COMMENT 'foreign key to domain id',
-  `broadcast_domain_range` varchar(32) NOT NULL DEFAULT 'POD' COMMENT 'range of broadcast domain : POD/ZONE', 
+  `broadcast_domain_range` varchar(32) NOT NULL DEFAULT 'POD' COMMENT 'range of broadcast domain : POD/ZONE',
   `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'what state is this configuration in',
   `created` datetime COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
@@ -2065,7 +2065,7 @@ CREATE TABLE `cloud`.`physical_network` (
   CONSTRAINT `fk_physical_network__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_physical_network__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
   CONSTRAINT `uc_physical_networks__uuid` UNIQUE (`uuid`),
-  INDEX `i_physical_network__removed`(`removed`) 
+  INDEX `i_physical_network__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`physical_network_tags` (
@@ -2091,7 +2091,7 @@ CREATE TABLE `cloud`.`physical_network_traffic_types` (
   `uuid` varchar(40),
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
   `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
-  `xenserver_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a XenServer host',
+  `xen_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a XenServer host',
   `kvm_network_label` varchar(255) DEFAULT 'cloudbr0' COMMENT 'The network name label of the physical device dedicated to this traffic on a KVM host',
   `vmware_network_label` varchar(255) DEFAULT 'vSwitch0' COMMENT 'The network name label of the physical device dedicated to this traffic on a VMware host',
   `simulator_network_label` varchar(255) COMMENT 'The name labels needed for identifying the simulator',
@@ -2333,7 +2333,7 @@ CREATE TABLE `cloud`.`vpc` (
   PRIMARY KEY  (`id`),
   INDEX `i_vpc__removed`(`removed`),
   CONSTRAINT `fk_vpc__zone_id` FOREIGN KEY `fk_vpc__zone_id` (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_vpc__vpc_offering_id` FOREIGN KEY (`vpc_offering_id`) REFERENCES `vpc_offerings`(`id`), 
+  CONSTRAINT `fk_vpc__vpc_offering_id` FOREIGN KEY (`vpc_offering_id`) REFERENCES `vpc_offerings`(`id`),
   CONSTRAINT `fk_vpc__account_id` FOREIGN KEY `fk_vpc__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_vpc__domain_id` FOREIGN KEY `fk_vpc__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -2423,7 +2423,7 @@ CREATE TABLE `cloud`.`static_routes` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `vpc_gateway_id` bigint unsigned COMMENT 'id of the corresponding ip address',
-  `cidr` varchar(18) COMMENT 'cidr for the static route', 
+  `cidr` varchar(18) COMMENT 'cidr for the static route',
   `state` char(32) NOT NULL COMMENT 'current state of this rule',
   `vpc_id` bigint unsigned COMMENT 'vpc the firewall rule is associated with',
   `account_id` bigint unsigned NOT NULL COMMENT 'owner id',
