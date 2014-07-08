@@ -257,8 +257,10 @@ public class Xen extends OvmObject {
         private int _vmDisk = _vmDiskZero;
 
         public boolean isControlDomain() {
-            if (this.vmUuid
-                    .contentEquals("00000000-0000-0000-0000-000000000000"))
+            if (this.getVmUuid()
+                    .contains("00000000-0000-0000-0000-000000000000"))
+                return true;
+            if (this.getVmName().contains("Domain-0"))
                 return true;
             return false;
         }
