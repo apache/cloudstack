@@ -618,8 +618,8 @@ class VirtualMachine:
         cmd.id = self.id
         apiclient.destroyVirtualMachine(cmd)
 
-    def expung(self, apiclient):
-        """Expung an Instance"""
+    def expunge(self, apiclient):
+        """Expunge an Instance"""
         cmd = expungeVirtualMachine.expungeVirtualMachineCmd()
         cmd.id = self.id
         apiclient.expungeVirtualMachine(cmd)
@@ -1876,6 +1876,15 @@ class ServiceOffering:
         if "isvolatile" in services:
             cmd.isvolatile = services["isvolatile"]
 
+        if "miniops" in services:
+            cmd.miniops = services["miniops"]
+
+        if "maxiops" in services:
+            cmd.maxiops = services["maxiops"]
+
+        if "customizediops" in services:
+            cmd.customizediops = services["customizediops"]
+
         if "offerha" in services:
             cmd.offerha = services["offerha"]
 
@@ -1926,6 +1935,24 @@ class DiskOffering:
 
         if "storagetype" in services:
             cmd.storagetype = services["storagetype"]
+
+        if "customizediops" in services:
+            cmd.customizediops = services["customizediops"]
+
+        if "disksize" in services:
+            cmd.disksize = services["disksize"]
+
+        if "maxiops" in services:
+            cmd.maxiops = services["maxiops"]
+
+        if "miniops" in services:
+            cmd.miniops = services["miniops"]
+
+        if "storagetype" in services:
+            cmd.storagetype = services["storagetype"]
+
+        if "tags" in services:
+            cmd.tags = services["tags"]
 
         return DiskOffering(apiclient.createDiskOffering(cmd).__dict__)
 
@@ -2409,8 +2436,9 @@ class StoragePool:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, clusterid=None,
-               zoneid=None, podid=None):
+    def create(cls, apiclient, services, scope=None, clusterid=None,
+               zoneid=None, podid=None, provider=None, tags=None,
+               capacityiops=None, capacitybytes=None, hypervisor=None):
         """Create Storage pool (Primary Storage)"""
 
         cmd = createStoragePool.createStoragePoolCmd()
@@ -2418,7 +2446,7 @@ class StoragePool:
 
         if podid:
             cmd.podid = podid
-        else:
+        elif "podid" in services:
             cmd.podid = services["podid"]
 
         cmd.url = services["url"]
@@ -2431,6 +2459,36 @@ class StoragePool:
             cmd.zoneid = zoneid
         else:
             cmd.zoneid = services["zoneid"]
+
+        if scope:
+            cmd.scope = scope
+        elif "scope" in services:
+            cmd.scope = services["scope"]
+
+        if provider:
+            cmd.provider = provider
+        elif "provider" in services:
+            cmd.provider = services["provider"]
+
+        if tags:
+            cmd.tags = tags
+        elif "tags" in services:
+            cmd.tags = services["tags"]
+
+        if capacityiops:
+            cmd.capacityiops = capacityiops
+        elif "capacityiops" in services:
+            cmd.capacityiops = services["capacityiops"]
+
+        if capacitybytes:
+            cmd.capacitybytes = capacitybytes
+        elif "capacitybytes" in services:
+            cmd.capacitybytes = services["capacitybytes"]
+
+        if hypervisor:
+            cmd.hypervisor = hypervisor
+        elif "hypervisor" in services:
+            cmd.hypervisor = services["hypervisor"]
 
         return StoragePool(apiclient.createStoragePool(cmd).__dict__)
 
