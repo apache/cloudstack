@@ -3982,6 +3982,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                     s_logger.info("Recycle pending worker VM: " + vmMo.getName());
 
                                     vmMo.powerOff();
+                                    vmMo.detachAllDisks();
                                     vmMo.destroy();
                                 }
                             }
