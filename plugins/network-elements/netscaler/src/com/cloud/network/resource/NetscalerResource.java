@@ -171,7 +171,6 @@ public class NetscalerResource implements ServerResource {
     // interface to interact with service VM of the SDX appliance
     com.citrix.sdx.nitro.service.nitro_service _netscalerSdxService;
 
-    Long _timeout = new Long(100000);
     base_response apiCallResult;
 
     public NetscalerResource () {
@@ -294,7 +293,6 @@ public class NetscalerResource implements ServerResource {
             if (!_isSdx) {
                 _netscalerService = new nitro_service(_ip, "https");
                 _netscalerService.set_credential(_username, _password);
-                _netscalerService.set_timeout(_timeout);
                 apiCallResult = _netscalerService.login();
                 if (apiCallResult.errorcode != 0) {
                     throw new ExecutionException ("Failed to log in to Netscaler device at " + _ip + " due to error " + apiCallResult.errorcode + " and message " + apiCallResult.message);
@@ -973,7 +971,6 @@ public class NetscalerResource implements ServerResource {
                 try {
                     nitro_service _netscalerService = new nitro_service(cmd.getLoadBalancerIP(), "https");
                     _netscalerService.set_credential(username, password);
-                    _netscalerService.set_timeout(_timeout);
                     apiCallResult = _netscalerService.login();
                     if (apiCallResult.errorcode == 0) {
                         nsServiceUp = true;
