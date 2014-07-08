@@ -685,6 +685,14 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'CentOS 6.5 (64-bit)', 228);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'CentOS 6.5 (64-bit)', 228);
 
+CREATE TABLE `cloud`.`baremetal_rct` (
+  `id` bigint unsigned UNIQUE AUTO_INCREMENT,
+  `uuid` varchar(40) UNIQUE NOT NULL,
+  `url` varchar(2048) NOT NULL,
+  `rct` text NOT NULL,
+   PRIMARY KEY (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`op_router_monitoring_services` (
   `vm_id` bigint unsigned UNIQUE NOT NULL COMMENT 'Primary Key',
   `router_name` varchar(255) NOT NULL COMMENT 'Name of the Virtual Router',

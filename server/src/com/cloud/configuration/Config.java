@@ -1767,6 +1767,14 @@ public enum Config {
             "The maximum number of retrying times to search for an available IPv6 address in the table",
             null),
 
+    BaremetalPeerHypervisorType(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "baremetal.peer.hypervisor.type",
+            "XenServer",
+            "Hypervisor[Xenserver/KVM/VMWare] used to spring up virtual router for baremetal instances. The cluster having this hypervisor type must be in the same zone with baremetal cluster",
+            null),
     ExternalBaremetalSystemUrl(
             "Advanced",
             ManagementServer.class,
@@ -1806,6 +1814,23 @@ public enum Config {
             "timeout.baremetal.securitygroup.agent.echo",
             "3600",
             "Timeout to echo baremetal security group agent, in seconds, the provisioning process will be treated as a failure",
+            null),
+
+    BaremetalIpmiLanInterface(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "baremetal.ipmi.lan.interface",
+            "default",
+            "option specified in -I option of impitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default valule 'default' means using default option of ipmitool",
+            null),
+
+    BaremetalIpmiRetryTimes("Advanced",
+            ManagementServer.class,
+            String.class,
+            "baremetal.ipmi.fail.retry",
+            "5",
+            "ipmi interface will be temporary out of order after power opertions(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure",
             null),
 
     ApiLimitEnabled("Advanced", ManagementServer.class, Boolean.class, "api.throttling.enabled", "false", "Enable/disable Api rate limit", null),

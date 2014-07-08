@@ -448,6 +448,7 @@ public class EventTypes {
     public static final String EVENT_BAREMETAL_DHCP_SERVER_DELETE = "PHYSICAL.DHCP.DELETE";
     public static final String EVENT_BAREMETAL_PXE_SERVER_ADD = "PHYSICAL.PXE.ADD";
     public static final String EVENT_BAREMETAL_PXE_SERVER_DELETE = "PHYSICAL.PXE.DELETE";
+    public static final String EVENT_BAREMETAL_RCT_ADD = "BAREMETAL.RCT.ADD";
 
     public static final String EVENT_AFFINITY_GROUP_CREATE = "AG.CREATE";
     public static final String EVENT_AFFINITY_GROUP_DELETE = "AG.DELETE";
