@@ -86,7 +86,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_NET_IP_ASSIGN;
+        return EventTypes.EVENT_NIC_SECONDARY_IP_UNASSIGN;
     }
 
     public NicSecondaryIp getIpEntry() {
