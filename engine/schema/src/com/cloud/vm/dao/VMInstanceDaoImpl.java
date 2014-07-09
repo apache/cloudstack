@@ -659,12 +659,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         finalQuery.append(COUNT_VMS_BASED_ON_VGPU_TYPES1);
 
         if (podId != null) {
-            finalQuery.append(" AND host.pod_id = ?");
+            finalQuery.append("AND host.pod_id = ? ");
             resourceIdList.add(podId);
         }
 
         if (clusterId != null) {
-            finalQuery.append(" AND host.cluster_id = ?");
+            finalQuery.append("AND host.cluster_id = ? ");
             resourceIdList.add(clusterId);
         }
         finalQuery.append(COUNT_VMS_BASED_ON_VGPU_TYPES2);
