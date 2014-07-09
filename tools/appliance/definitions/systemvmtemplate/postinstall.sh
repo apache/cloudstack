@@ -59,7 +59,7 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install xl2tpd bcrelay ppp ipsec-tools tdb-tools
   echo "openswan openswan/install_x509_certificate boolean false" | debconf-set-selections
   echo "openswan openswan/install_x509_certificate seen true" | debconf-set-selections
-  apt-get --no-install-recommends -q -y --force-yes install openswan
+  apt-get --no-install-recommends -q -y --force-yes install openswan=1:2.6.37-3
 
   # xenstore utils
   apt-get --no-install-recommends -q -y --force-yes install xenstore-utils libxenstore3.0
