@@ -31,6 +31,7 @@ import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.vm.ConsoleProxy;
+import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.SecondaryStorageVm;
 import org.apache.cloudstack.config.Configuration;
 
@@ -507,6 +508,11 @@ public class EventTypes {
     public static final String EVENT_GUEST_OS_MAPPING_REMOVE = "GUEST.OS.MAPPING.REMOVE";
     public static final String EVENT_GUEST_OS_MAPPING_UPDATE = "GUEST.OS.MAPPING.UPDATE";
 
+    public static final String EVENT_NIC_SECONDARY_IP_ASSIGN = "NIC.SECONDARY.IP.ASSIGN";
+    public static final String EVENT_NIC_SECONDARY_IP_UNASSIGN = "NIC.SECONDARY.IP.UNASSIGN";
+    public static final String EVENT_NIC_SECONDARY_IP_CONFIGURE = "NIC.SECONDARY.IP.CONFIGURE";
+
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -848,6 +854,10 @@ public class EventTypes {
         entityEventDetails.put(EVENT_GUEST_OS_MAPPING_ADD, GuestOSHypervisor.class);
         entityEventDetails.put(EVENT_GUEST_OS_MAPPING_REMOVE, GuestOSHypervisor.class);
         entityEventDetails.put(EVENT_GUEST_OS_MAPPING_UPDATE, GuestOSHypervisor.class);
+        entityEventDetails.put(EVENT_NIC_SECONDARY_IP_ASSIGN, NicSecondaryIp.class);
+        entityEventDetails.put(EVENT_NIC_SECONDARY_IP_UNASSIGN, NicSecondaryIp.class);
+        entityEventDetails.put(EVENT_NIC_SECONDARY_IP_CONFIGURE, NicSecondaryIp.class);
+
     }
 
     public static String getEntityForEvent(String eventName) {
