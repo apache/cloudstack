@@ -85,15 +85,17 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             txn.start();
             try(PreparedStatement pstmt =
                 txn.prepareStatement("update mshost set name=?, version=?, service_ip=?, service_port=?, last_update=?, removed=null, alert_count=0, runid=?, state=? where id=?");) {
-                pstmt.setString(1, name);
-                pstmt.setString(2, version);
-                pstmt.setString(3, serviceIP);
-                pstmt.setInt(4, servicePort);
-                pstmt.setString(5, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
-                pstmt.setLong(6, runid);
-                pstmt.setString(7, ManagementServerHost.State.Up.toString());
-                pstmt.setLong(8, id);
-                pstmt.executeUpdate();
+                if (pstmt != null) {
+                    pstmt.setString(1, name);
+                    pstmt.setString(2, version);
+                    pstmt.setString(3, serviceIP);
+                    pstmt.setInt(4, servicePort);
+                    pstmt.setString(5, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
+                    pstmt.setLong(6, runid);
+                    pstmt.setString(7, ManagementServerHost.State.Up.toString());
+                    pstmt.setLong(8, id);
+                    pstmt.executeUpdate();
+                }
             }catch(SQLException e)
             {
                 throw new CloudRuntimeException("update:Exception:"+e.getMessage(),e);
@@ -136,19 +138,20 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         try {
             txn.start();
             try( PreparedStatement pstmt = txn.prepareStatement("update mshost set last_update=?, removed=null, alert_count=0 where id=? and runid=?");) {
-                pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
-                pstmt.setLong(2, id);
-                pstmt.setLong(3, runid);
+                if (pstmt != null) {
+                    pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
+                    pstmt.setLong(2, id);
+                    pstmt.setLong(3, runid);
 
-                int count = pstmt.executeUpdate();
-                txn.commit();
-
-                if (count < 1) {
-                    throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runid + " is no longer valid"));
+                    int count = pstmt.executeUpdate();
+                    if (count < 1) {
+                        throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runid + " is no longer valid"));
+                    }
                 }
             }catch (SQLException e) {
                 throw new CloudRuntimeException("update:Exception:"+e.getMessage(), e);
             }
+            txn.commit();
         } catch (RuntimeException e) {
             txn.rollback();
             s_logger.warn("update:Exception:"+e.getMessage(), e);
@@ -183,8 +186,10 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         try {
             txn.start();
             try(PreparedStatement pstmt = txn.prepareStatement("update mshost set alert_count=alert_count+1 where id=? and alert_count=0");) {
-                pstmt.setLong(1, id);
-                changedRows = pstmt.executeUpdate();
+                if (pstmt != null) {
+                    pstmt.setLong(1, id);
+                    changedRows = pstmt.executeUpdate();
+                }
             }catch (SQLException e)
             {
                 throw new CloudRuntimeException("increaseAlertCount:Exception:"+e.getMessage(),e);
