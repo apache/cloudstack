@@ -590,6 +590,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                 hasFreeIps = isIP6AddressAvailableInNetwork(network.getId());
             }
         } else {
+            if (network.getCidr() == null) {
+                s_logger.debug("Network - " + network.getId() +  " has NULL CIDR.");
+                return false;
+            }
             hasFreeIps = (getAvailableIps(network, null)).size() > 0;
         }
 
