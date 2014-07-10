@@ -19,6 +19,9 @@ package com.cloud.upgrade.dao;
 
 import java.io.File;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -55,6 +58,7 @@ public class Upgrade440to450 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+        dropInvalidKeyFromStoragePoolTable(conn);
     }
 
 
@@ -66,5 +70,18 @@ public class Upgrade440to450 implements DbUpgrade {
         }
 
         return new File[] {new File(script)};
+    }
+
+    private void dropInvalidKeyFromStoragePoolTable(Connection conn) {
+        HashMap<String, List<String>> uniqueKeys = new HashMap<String, List<String>>();
+        List<String> keys = new ArrayList<String>();
+
+        keys.add("id_2");
+        uniqueKeys.put("storage_pool", keys);
+
+        s_logger.debug("Droping id_2 key from storage_pool table");
+        for (String tableName : uniqueKeys.keySet()) {
+            DbUpgradeUtils.dropKeysIfExist(conn, tableName, uniqueKeys.get(tableName), false);
+        }
     }
 }

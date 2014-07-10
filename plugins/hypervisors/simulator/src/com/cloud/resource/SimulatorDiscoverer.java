@@ -41,7 +41,6 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.manager.MockAgentManager;
 import com.cloud.agent.manager.MockStorageManager;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.Host;
@@ -65,15 +64,11 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
     @Inject
     VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject
-    ClusterDao _clusterDao;
-    @Inject
     AgentManager _agentMgr = null;
     @Inject
     MockAgentManager _mockAgentMgr = null;
     @Inject
     MockStorageManager _mockStorageMgr = null;
-    @Inject
-    ResourceManager _resourceMgr;
 
     /**
      * Finds ServerResources of an in-process simulator

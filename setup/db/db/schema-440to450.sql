@@ -246,3 +246,5 @@ ALTER TABLE `cloud`.`user` ADD COLUMN domain_id bigint(20) unsigned DEFAULT NULL
 ALTER TABLE `cloud`.`user` ADD CONSTRAINT `fk_user__domain_id` FOREIGN KEY `fk_user__domain_id`(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE;
 UPDATE `cloud`.`user` SET `cloud`.`user`.domain_id=(SELECT `cloud`.`account`.domain_id   FROM `cloud`.`account`   WHERE `cloud`.`account`.id=`cloud`.`user`.account_id) where id > 0;
 ALTER TABLE `cloud`.`user` ADD UNIQUE KEY `username_domain_id` (`username`,`domain_id`);
+
+ALTER TABLE `cloud`.`volumes` CHANGE COLUMN `iso_id` `iso_id` bigint(20) unsigned COMMENT 'The id of the iso from which the volume was created';
