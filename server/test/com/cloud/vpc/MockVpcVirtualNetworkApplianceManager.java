@@ -448,4 +448,13 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc,
+            DeployDestination dest, Account owner, Map<Param, Object> params,
+            boolean isRedundant) throws InsufficientCapacityException,
+            ConcurrentOperationException, ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }
