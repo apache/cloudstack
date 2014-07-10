@@ -51,7 +51,6 @@ import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NetworkACLTO;
-import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -172,6 +171,11 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     @Inject
     EntityManager _entityMgr;
 
+    @Inject
+    protected NetworkGeneralHelper nwHelper;
+    @Inject
+    protected VpcVirtualNetworkHelper vpcHelper;
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _itMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
@@ -179,12 +183,17 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException,
+    public List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner,
+            Map<Param, Object> params) throws InsufficientCapacityException,
     ConcurrentOperationException, ResourceUnavailableException {
+        return this.deployVirtualRouterInVpc(vpc, dest, owner, params, false);
+    }
 
-        List<DomainRouterVO> routers = findOrDeployVirtualRouterInVpc(vpc, dest, owner, params);
-
-        return startRouters(params, routers);
+    @Override
+    public List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner,
+            Map<Param, Object> params, final boolean isRedundant) throws InsufficientCapacityException,
+    ConcurrentOperationException, ResourceUnavailableException {
+        return this.vpcHelper.deployVirtualRouterInVpc(vpc, dest, owner, params, isRedundant);
     }
 
     @DB
@@ -334,7 +343,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
         LinkedHashMap<Network, List<? extends NicProfile>> networks = createVpcRouterNetworks(owner, isRedundant, plan, new Pair<Boolean, PublicIp>(true, sourceNatIp),vpcId);
         DomainRouterVO router =
-                super.deployRouter(owner, dest, plan, params, isRedundant, vrProvider, svcOffId, vpcId, networks, true, _vpcMgr.getSupportedVpcHypervisors());
+                nwHelper.deployRouter(owner, dest, plan, params, isRedundant, vrProvider, svcOffId, vpcId, networks, true, _vpcMgr.getSupportedVpcHypervisors());
 
         return router;
     }
@@ -476,12 +485,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
             cmds.addCommand("SetSourceNatCommand", cmd);
         }
-    }
-
-    protected NicTO getNicTO(final VirtualRouter router, Long networkId, String broadcastUri) {
-        NicProfile nicProfile = _networkModel.getNicProfile(router, networkId, broadcastUri);
-
-        return _itMgr.toNicTO(nicProfile, router.getHypervisorType());
     }
 
     @Override
@@ -677,7 +680,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
         }
 
-        SetNetworkACLCommand cmd = new SetNetworkACLCommand(rulesTO, getNicTO(router, guestNetworkId, null));
+        SetNetworkACLCommand cmd = new SetNetworkACLCommand(rulesTO, nwHelper.getNicTO(router, guestNetworkId, null));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, guestVlan);
@@ -752,7 +755,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     }
                 }
                 PlugNicCommand plugNicCmd =
-                        new PlugNicCommand(getNicTO(router, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()), router.getInstanceName(), router.getType());
+                        new PlugNicCommand(nwHelper.getNicTO(router, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()), router.getInstanceName(), router.getType());
                 cmds.addCommand(plugNicCmd);
                 VpcVO vpc = _vpcDao.findById(router.getVpcId());
                 NetworkUsageCommand netUsageCmd =
@@ -778,7 +781,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             for (Pair<Nic, Network> nicNtwk : guestNics) {
                 Nic guestNic = nicNtwk.first();
                 //plug guest nic
-                PlugNicCommand plugNicCmd = new PlugNicCommand(getNicTO(router, guestNic.getNetworkId(), null), router.getInstanceName(), router.getType());
+                PlugNicCommand plugNicCmd = new PlugNicCommand(nwHelper.getNicTO(router, guestNic.getNetworkId(), null), router.getInstanceName(), router.getType());
                 cmds.addCommand(plugNicCmd);
                 if (!_networkModel.isPrivateGateway(guestNic.getNetworkId())) {
                     //set guest network
@@ -920,7 +923,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             Network network = _networkModel.getNetwork(gateway.getNetworkId());
             NicProfile requested = createPrivateNicProfileForGateway(gateway);
 
-            if (!checkRouterVersion(router)) {
+            if (!nwHelper.checkRouterVersion(router)) {
                 s_logger.warn("Router requires upgrade. Unable to send command to router: " + router.getId());
                 return false;
             }

@@ -39,6 +39,22 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplianceManager, VpcVirtualNetworkApplianceService {
 
     /**
+     *
+     * @param vpc
+     * @param dest
+     * @param owner
+     * @param params
+     * @param isRedundant
+     * @return
+     * @throws InsufficientCapacityException
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     */
+    List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner, Map<Param, Object> params, boolean isRedundant) throws InsufficientCapacityException,
+    ConcurrentOperationException, ResourceUnavailableException;
+
+    /**
+     *
      * @param vpc
      * @param dest
      * @param owner
@@ -49,7 +65,7 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @throws ResourceUnavailableException
      */
     List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException,
-        ConcurrentOperationException, ResourceUnavailableException;
+    ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      *
