@@ -360,7 +360,7 @@ public class SolidFireUtil {
         return "sfVolumeAccessGroup_" + storagePoolId;
     }
 
-    private static String getAccountKey(long storagePoolId) {
+    public static String getAccountKey(long storagePoolId) {
         return SolidFireUtil.ACCOUNT_ID + "_" + storagePoolId;
     }
 
