@@ -27,7 +27,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -118,7 +117,6 @@ import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ZoneConfig;
-import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -133,7 +131,6 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
@@ -141,18 +138,15 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.maint.Version;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.MonitoringService;
@@ -227,8 +221,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -278,7 +270,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -409,6 +400,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Inject
     OpRouterMonitorServiceDao _opRouterMonitorServiceDao;
 
+    @Inject
+    protected NetworkGeneralHelper nwHelper;
+
     int _routerRamSize;
     int _routerCpuMHz;
     int _retry = 2;
@@ -428,10 +422,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     private String _usageTimeZone = "GMT";
     private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5; // 5
-                                                                              // seconds
+    // seconds
     private static final int USAGE_AGGREGATION_RANGE_MIN = 10; // 10 minutes,
-                                                               // same as
-                                                               // com.cloud.usage.UsageManagerImpl.USAGE_AGGREGATION_RANGE_MIN
+    // same as
+    // com.cloud.usage.UsageManagerImpl.USAGE_AGGREGATION_RANGE_MIN
     private boolean _dailyOrHourly = false;
 
     ScheduledExecutorService _executor;
@@ -457,21 +451,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Override
     public VirtualRouter destroyRouter(final long routerId, final Account caller, final Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Attempting to destroy router " + routerId);
-        }
-
-        final DomainRouterVO router = _routerDao.findById(routerId);
-        if (router == null) {
-            return null;
-        }
-
-        _accountMgr.checkAccess(caller, null, true, router);
-
-        _itMgr.expunge(router.getUuid());
-        _routerDao.remove(router.getId());
-        return router;
+        return nwHelper.destroyRouter(routerId, caller, callerUserId);
     }
 
     @Override
@@ -1329,14 +1309,14 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             while (true) {
                 try {
                     final Long networkId = _vrUpdateQueue.take(); // This is a
-                                                                  // blocking
-                                                                  // call so
-                                                                  // this thread
-                                                                  // won't run
-                                                                  // all the
-                                                                  // time if no
-                                                                  // work item
-                                                                  // in queue.
+                    // blocking
+                    // call so
+                    // this thread
+                    // won't run
+                    // all the
+                    // time if no
+                    // work item
+                    // in queue.
                     final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(networkId, Role.VIRTUAL_ROUTER);
 
                     if (routers.size() != 2) {
@@ -1437,10 +1417,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     GetRouterAlertsCommand command = null;
                     if (opRouterMonitorServiceVO == null) {
                         command = new GetRouterAlertsCommand(new String("1970-01-01 00:00:00")); // To
-                                                                                                 // avoid
-                                                                                                 // sending
-                                                                                                 // null
-                                                                                                 // value
+                        // avoid
+                        // sending
+                        // null
+                        // value
                     } else {
                         command = new GetRouterAlertsCommand(opRouterMonitorServiceVO.getLastAlertTimestamp());
                     }
@@ -1534,36 +1514,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             priority = (maxPriority - DEFAULT_DELTA) + 1;
         }
         return priority;
-    }
-
-    /*
-     * Ovm won't support any system. So we have to choose a partner cluster in
-     * the same pod to start domain router for us
-     */
-    private HypervisorType getClusterToStartDomainRouterForOvm(final long podId) {
-        final List<ClusterVO> clusters = _clusterDao.listByPodId(podId);
-        for (final ClusterVO cv : clusters) {
-            if ((cv.getHypervisorType() == HypervisorType.Ovm) || (cv.getHypervisorType() == HypervisorType.BareMetal)) {
-                continue;
-            }
-
-            final List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cv.getId());
-            if ((hosts == null) || hosts.isEmpty()) {
-                continue;
-            }
-
-            for (final HostVO h : hosts) {
-                if (h.getState() == Status.Up) {
-                    s_logger.debug("Pick up host that has hypervisor type " + h.getHypervisorType() + " in cluster " + cv.getId() + " to start domain router for OVM");
-                    return h.getHypervisorType();
-                }
-            }
-        }
-
-        final String errMsg = "Cannot find an available cluster in Pod " + podId + " to start domain router for Ovm. \n Ovm won't support any system vm including domain router, "
-                + "please make sure you have a cluster with hypervisor type of any of xenserver/KVM/Vmware in the same pod"
-                + " with Ovm cluster. And there is at least one host in UP status in that cluster.";
-        throw new CloudRuntimeException(errMsg);
     }
 
     private void checkAndResetPriorityOfRedundantRouter(final List<DomainRouterVO> routers) {
@@ -1719,7 +1669,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                             publicNetwork, sourceNatIp));
                     // don't start the router as we are holding the network lock
                     // that needs to be released at the end of router allocation
-                    final DomainRouterVO router = deployRouter(owner, destination, plan, params, isRedundant, vrProvider, offeringId, null, networks, false, null);
+                    final DomainRouterVO router = nwHelper.deployRouter(owner, destination, plan, params, isRedundant, vrProvider, offeringId, null, networks, false, null);
 
                     if (router != null) {
                         _routerDao.addRouterToGuestNetwork(router, guestNetwork);
@@ -1754,174 +1704,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         sc.setJoinParameters("vmInstanceSearch", "type", type);
         sc.setJoinParameters("vmInstanceSearch", "states", (Object[]) states);
         return _podDao.search(sc, null);
-    }
-
-    protected DomainRouterVO deployRouter(final Account owner, final DeployDestination dest, final DeploymentPlan plan, final Map<Param, Object> params,
-            final boolean isRedundant, final VirtualRouterProvider vrProvider, final long svcOffId, final Long vpcId,
-            final LinkedHashMap<Network, List<? extends NicProfile>> networks, final boolean startRouter, final List<HypervisorType> supportedHypervisors)
-            throws ConcurrentOperationException, InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException,
-            StorageUnavailableException, ResourceUnavailableException {
-
-        final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(svcOffId);
-
-        // Router is the network element, we don't know the hypervisor type yet.
-        // Try to allocate the domR twice using diff hypervisors, and when
-        // failed both times, throw the exception up
-        final List<HypervisorType> hypervisors = getHypervisors(dest, plan, supportedHypervisors);
-
-        int allocateRetry = 0;
-        int startRetry = 0;
-        DomainRouterVO router = null;
-        for (final Iterator<HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
-            HypervisorType hType = iter.next();
-            try {
-                final long id = _routerDao.getNextInSequence(Long.class, "id");
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Allocating the VR i=" + id + " in datacenter " + dest.getDataCenter() + "with the hypervisor type " + hType);
-                }
-
-                String templateName = null;
-                switch (hType) {
-                case XenServer:
-                    templateName = RouterTemplateXen.valueIn(dest.getDataCenter().getId());
-                    break;
-                case KVM:
-                    templateName = RouterTemplateKvm.valueIn(dest.getDataCenter().getId());
-                    break;
-                case VMware:
-                    templateName = RouterTemplateVmware.valueIn(dest.getDataCenter().getId());
-                    break;
-                case Hyperv:
-                    templateName = RouterTemplateHyperV.valueIn(dest.getDataCenter().getId());
-                    break;
-                case LXC:
-                    templateName = RouterTemplateLxc.valueIn(dest.getDataCenter().getId());
-                    break;
-                case BareMetal:
-                    /*
-                    String peerHvType = _configDao.getValue(Config.BaremetalPeerHypervisorType.key());
-                    final String peerHvType = _configDao.getValue(Config.BaremetalPeerHypervisorType.key());
-                    if (peerHvType == null) {
-                        throw new CloudRuntimeException(String.format("To use baremetal in advanced networking, you must set %s to type of hypervisor(e.g XenServer)"
-                                + " that exists in the same zone with baremetal host. That hyperivsor is used to spring up virtual router for baremetal instance",
-                                Config.BaremetalPeerHypervisorType.key()));
-                    }
-
-                    hType = HypervisorType.getType(peerHvType);
-                    if (HypervisorType.XenServer.toString().equals(peerHvType)) {
-                        templateName = RouterTemplateXen.valueIn(dest.getDataCenter().getId());
-                    } else if (HypervisorType.KVM.toString().equals(peerHvType)) {
-                        templateName = RouterTemplateKvm.valueIn(dest.getDataCenter().getId());
-                    } else if (HypervisorType.VMware.toString().equals(peerHvType)) {
-                        templateName = RouterTemplateVmware.valueIn(dest.getDataCenter().getId());
-                    } else {
-                        throw new CloudRuntimeException(String.format("Baremetal only supports peer hypervisor(XenServer/KVM/VMWare) right now, you specified %s", peerHvType));
-                    }
-                    */
-                    hType = HypervisorType.VMware;
-                    templateName = RouterTemplateVmware.valueIn(dest.getDataCenter().getId());
-                    break;
-                default:
-                    break;
-                }
-                final VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
-
-                if (template == null) {
-                    s_logger.debug(hType + " won't support system vm, skip it");
-                    continue;
-                }
-
-                boolean offerHA = routerOffering.getOfferHA();
-                /*
-                 * We don't provide HA to redundant router VMs, admin should own
-                 * it all, and redundant router themselves are HA
-                 */
-                if (isRedundant) {
-                    offerHA = false;
-                }
-
-                router = new DomainRouterVO(id, routerOffering.getId(), vrProvider.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(),
-                        template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, offerHA, false,
-                        vpcId);
-                router.setDynamicallyScalable(template.isDynamicallyScalable());
-                router.setRole(Role.VIRTUAL_ROUTER);
-                router = _routerDao.persist(router);
-                _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, plan, null);
-                router = _routerDao.findById(router.getId());
-            } catch (final InsufficientCapacityException ex) {
-                if ((allocateRetry < 2) && iter.hasNext()) {
-                    s_logger.debug("Failed to allocate the VR with hypervisor type " + hType + ", retrying one more time");
-                    continue;
-                } else {
-                    throw ex;
-                }
-            } finally {
-                allocateRetry++;
-            }
-
-            if (startRouter) {
-                try {
-                    router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), params);
-                    break;
-                } catch (final InsufficientCapacityException ex) {
-                    if ((startRetry < 2) && iter.hasNext()) {
-                        s_logger.debug("Failed to start the VR  " + router + " with hypervisor type " + hType + ", " + "destroying it and recreating one more time");
-                        // destroy the router
-                        destroyRouter(router.getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
-                        continue;
-                    } else {
-                        throw ex;
-                    }
-                } finally {
-                    startRetry++;
-                }
-            } else {
-                // return stopped router
-                return router;
-            }
-        }
-
-        return router;
-    }
-
-    protected List<HypervisorType> getHypervisors(final DeployDestination dest, final DeploymentPlan plan, final List<HypervisorType> supportedHypervisors)
-            throws InsufficientServerCapacityException {
-        List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
-
-        if (dest.getCluster() != null) {
-            if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
-                hypervisors.add(getClusterToStartDomainRouterForOvm(dest.getCluster().getPodId()));
-            } else {
-                hypervisors.add(dest.getCluster().getHypervisorType());
-            }
-        } else {
-            final HypervisorType defaults = _resourceMgr.getDefaultHypervisor(dest.getDataCenter().getId());
-            if (defaults != HypervisorType.None) {
-                hypervisors.add(defaults);
-            } else {
-                // if there is no default hypervisor, get it from the cluster
-                hypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true, plan.getPodId());
-            }
-        }
-
-        // keep only elements defined in supported hypervisors
-        final StringBuilder hTypesStr = new StringBuilder();
-        if ((supportedHypervisors != null) && !supportedHypervisors.isEmpty()) {
-            hypervisors.retainAll(supportedHypervisors);
-            for (final HypervisorType hType : supportedHypervisors) {
-                hTypesStr.append(hType).append(" ");
-            }
-        }
-
-        if (hypervisors.isEmpty()) {
-            final String errMsg = hTypesStr.capacity() > 0 ? "supporting hypervisors " + hTypesStr.toString() : "";
-            if (plan.getPodId() != null) {
-                throw new InsufficientServerCapacityException("Unable to create virtual router, " + "there are no clusters in the pod " + errMsg, Pod.class, plan.getPodId());
-            }
-            throw new InsufficientServerCapacityException("Unable to create virtual router, " + "there are no clusters in the zone " + errMsg, DataCenter.class, dest
-                    .getDataCenter().getId());
-        }
-        return hypervisors;
     }
 
     protected LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(final Account owner, final boolean isRedundant, final DeploymentPlan plan,
@@ -2062,147 +1844,13 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return new Pair<DeploymentPlan, List<DomainRouterVO>>(plan, routers);
     }
 
-    private DomainRouterVO waitRouter(final DomainRouterVO router) {
-        DomainRouterVO vm = _routerDao.findById(router.getId());
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Router " + router.getInstanceName() + " is not fully up yet, we will wait");
-        }
-        while (vm.getState() == State.Starting) {
-            try {
-                Thread.sleep(1000);
-            } catch (final InterruptedException e) {
-            }
-
-            // reload to get the latest state info
-            vm = _routerDao.findById(router.getId());
-        }
-
-        if (vm.getState() == State.Running) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Router " + router.getInstanceName() + " is now fully up");
-            }
-
-            return router;
-        }
-
-        s_logger.warn("Router " + router.getInstanceName() + " failed to start. current state: " + vm.getState());
-        return null;
-    }
-
-    private DomainRouterVO startVirtualRouter(final DomainRouterVO router, final User user, final Account caller, final Map<Param, Object> params)
-            throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-
-        if ((router.getRole() != Role.VIRTUAL_ROUTER) || !router.getIsRedundantRouter()) {
-            return this.start(router, user, caller, params, null);
-        }
-
-        if (router.getState() == State.Running) {
-            s_logger.debug("Redundant router " + router.getInstanceName() + " is already running!");
-            return router;
-        }
-
-        //
-        // If another thread has already requested a VR start, there is a
-        // transition period for VR to transit from
-        // Starting to Running, there exist a race conditioning window here
-        // We will wait until VR is up or fail
-        if (router.getState() == State.Starting) {
-            return waitRouter(router);
-        }
-
-        final DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null, null);
-        DomainRouterVO result = null;
-        assert router.getIsRedundantRouter();
-        final List<Long> networkIds = _routerDao.getRouterNetworks(router.getId());
-        // Not support VPC now
-        if (networkIds.size() > 1) {
-            throw new ResourceUnavailableException("Unable to support more than one guest network for redundant router now!", DataCenter.class, router.getDataCenterId());
-        }
-        DomainRouterVO routerToBeAvoid = null;
-        if (networkIds.size() != 0) {
-            final List<DomainRouterVO> routerList = _routerDao.findByNetwork(networkIds.get(0));
-            for (final DomainRouterVO rrouter : routerList) {
-                if ((rrouter.getHostId() != null) && rrouter.getIsRedundantRouter() && (rrouter.getState() == State.Running)) {
-                    if (routerToBeAvoid != null) {
-                        throw new ResourceUnavailableException("Try to start router " + router.getInstanceName() + "(" + router.getId() + ")"
-                                + ", but there are already two redundant routers with IP " + router.getPublicIpAddress() + ", they are " + rrouter.getInstanceName() + "("
-                                + rrouter.getId() + ") and " + routerToBeAvoid.getInstanceName() + "(" + routerToBeAvoid.getId() + ")", DataCenter.class,
-                                rrouter.getDataCenterId());
-                    }
-                    routerToBeAvoid = rrouter;
-                }
-            }
-        }
-        if (routerToBeAvoid == null) {
-            return this.start(router, user, caller, params, null);
-        }
-        // We would try best to deploy the router to another place
-        final int retryIndex = 5;
-        final ExcludeList[] avoids = new ExcludeList[5];
-        avoids[0] = new ExcludeList();
-        avoids[0].addPod(routerToBeAvoid.getPodIdToDeployIn());
-        avoids[1] = new ExcludeList();
-        avoids[1].addCluster(_hostDao.findById(routerToBeAvoid.getHostId()).getClusterId());
-        avoids[2] = new ExcludeList();
-        final List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(routerToBeAvoid.getId(), Volume.Type.ROOT);
-        if ((volumes != null) && (volumes.size() != 0)) {
-            avoids[2].addPool(volumes.get(0).getPoolId());
-        }
-        avoids[2].addHost(routerToBeAvoid.getHostId());
-        avoids[3] = new ExcludeList();
-        avoids[3].addHost(routerToBeAvoid.getHostId());
-        avoids[4] = new ExcludeList();
-
-        for (int i = 0; i < retryIndex; i++) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Try to deploy redundant virtual router:" + router.getHostName() + ", for " + i + " time");
-            }
-            plan.setAvoids(avoids[i]);
-            try {
-                result = this.start(router, user, caller, params, plan);
-            } catch (final InsufficientServerCapacityException ex) {
-                result = null;
-            }
-            if (result != null) {
-                break;
-            }
-        }
-        return result;
-    }
-
     @Override
     public List<DomainRouterVO> deployVirtualRouterInGuestNetwork(final Network guestNetwork, final DeployDestination dest, final Account owner, final Map<Param, Object> params,
             final boolean isRedundant) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
 
         final List<DomainRouterVO> routers = findOrDeployVirtualRouterInGuestNetwork(guestNetwork, dest, owner, isRedundant, params);
 
-        return startRouters(params, routers);
-    }
-
-    protected List<DomainRouterVO> startRouters(final Map<Param, Object> params, final List<DomainRouterVO> routers) throws StorageUnavailableException,
-            InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        final List<DomainRouterVO> runningRouters = new ArrayList<DomainRouterVO>();
-
-        for (DomainRouterVO router : routers) {
-            boolean skip = false;
-            final State state = router.getState();
-            if ((router.getHostId() != null) && (state != State.Running)) {
-                final HostVO host = _hostDao.findById(router.getHostId());
-                if ((host == null) || (host.getState() != Status.Up)) {
-                    skip = true;
-                }
-            }
-            if (!skip) {
-                if (state != State.Running) {
-                    router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), params);
-                }
-                if (router != null) {
-                    runningRouters.add(router);
-                }
-            }
-        }
-        return runningRouters;
+        return nwHelper.startRouters(params, routers);
     }
 
     @Override
@@ -3020,29 +2668,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return result;
     }
 
-    private DomainRouterVO start(DomainRouterVO router, final User user, final Account caller, final Map<Param, Object> params, final DeploymentPlan planToDeploy)
-            throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        s_logger.debug("Starting router " + router);
-        try {
-            _itMgr.advanceStart(router.getUuid(), params, planToDeploy, null);
-        } catch (final OperationTimedoutException e) {
-            throw new ResourceUnavailableException("Starting router " + router + " failed! " + e.toString(), DataCenter.class, router.getDataCenterId());
-        }
-        if (router.isStopPending()) {
-            s_logger.info("Clear the stop pending flag of router " + router.getHostName() + " after start router successfully!");
-            router.setStopPending(false);
-            router = _routerDao.persist(router);
-        }
-        // We don't want the failure of VPN Connection affect the status of
-        // router, so we try to make connection
-        // only after router start successfully
-        final Long vpcId = router.getVpcId();
-        if (vpcId != null) {
-            _s2sVpnMgr.reconnectDisconnectedVpnByVpc(vpcId);
-        }
-        return _routerDao.findById(router.getId());
-    }
-
     @Override
     public DomainRouterVO stop(final VirtualRouter router, final boolean forced, final User user, final Account caller) throws ConcurrentOperationException,
             ResourceUnavailableException {
@@ -3423,7 +3048,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         } else {
             params.put(Param.ReProgramGuestNetworks, false);
         }
-        final VirtualRouter virtualRouter = startVirtualRouter(router, user, caller, params);
+        final VirtualRouter virtualRouter = nwHelper.startVirtualRouter(router, user, caller, params);
         if (virtualRouter == null) {
             throw new CloudRuntimeException("Failed to start router with id " + routerId);
         }
@@ -3805,7 +3430,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     protected boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException {
-        if (!checkRouterVersion(router)) {
+        if (!nwHelper.checkRouterVersion(router)) {
             s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId() + ", router template version : " + router.getTemplateVersion()
                     + ", minimal required version : " + MinVRVersion);
             throw new CloudRuntimeException("Unable to send command. Upgrade in progress. Please contact administrator.");
@@ -4431,24 +4056,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return null;
     }
 
-    // Checks if the router is at the required version
-    // Compares MS version and router version
-    protected boolean checkRouterVersion(final VirtualRouter router) {
-        if (!routerVersionCheckEnabled.value()) {
-            // Router version check is disabled.
-            return true;
-        }
-        if (router.getTemplateVersion() == null) {
-            return false;
-        }
-        final String trimmedVersion = Version.trimRouterVersion(router.getTemplateVersion());
-        return Version.compare(trimmedVersion, MinVRVersion) >= 0;
-    }
-
     private List<Long> rebootRouters(final List<DomainRouterVO> routers) {
         final List<Long> jobIds = new ArrayList<Long>();
         for (final DomainRouterVO router : routers) {
-            if (!checkRouterVersion(router)) {
+            if (!nwHelper.checkRouterVersion(router)) {
                 s_logger.debug("Upgrading template for router: " + router.getId());
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put("ctxUserId", "1");
