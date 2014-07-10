@@ -114,8 +114,8 @@ public class CloudStackPlugin extends OvmObject {
         return (Boolean) x;
     }
 
-    public boolean ovsControlInterface(String dev, String ipmask) throws XmlRpcException {
-        Object x = callWrapper("ovs_control_interface", dev, ipmask);
+    public boolean ovsControlInterface(String dev, String ip, String mask) throws XmlRpcException {
+        Object x = callWrapper("ovs_control_interface", dev, ip, mask);
         return (Boolean) x;
     }
 

@@ -139,8 +139,8 @@ def restartService(service):
     return True
 
 # sets the control interface and removes the route net entry
-def ovsControlInterface(dev, ipmask):
-    command = ['route', 'del', '-net', ipmask];
+def ovsControlInterface(dev, ip, mask):
+    command = ['route', 'del', '-net', ip, "gw 0.0.0.0 netmask", mask];
     subprocess.call(command, shell=False)
     command = ['ifconfig', dev, 'arp']
     subprocess.call(command, shell=False)

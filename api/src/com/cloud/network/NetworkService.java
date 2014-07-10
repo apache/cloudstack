@@ -178,4 +178,6 @@ public interface NetworkService {
     Map<Network.Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service);
 
     IpAddress updateIP(Long id, String customId, Boolean displayIp);
+
+    boolean configureNicSecondaryIp(NicSecondaryIp secIp, boolean isZoneSgEnabled);
 }

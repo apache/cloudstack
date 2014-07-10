@@ -31,7 +31,6 @@ import org.apache.cloudstack.storage.resource.SecondaryStorageDiscoverer;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -51,8 +50,6 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
     private static final Logger s_logger = Logger.getLogger(SimulatorSecondaryDiscoverer.class);
     @Inject
     MockStorageManager _mockStorageMgr = null;
-    @Inject
-    AgentManager _agentMgr;
     @Inject
     SnapshotDao _snapshotDao;
     @Inject

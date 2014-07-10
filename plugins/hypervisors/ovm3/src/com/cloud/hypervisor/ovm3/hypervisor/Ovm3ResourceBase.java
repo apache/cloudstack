@@ -240,7 +240,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     String _storageNetworkName;
     String _controlNetworkName = "control0";
     String _controlNetworkIp = "169.254.0.1";
-    // String _controlNetworkMask = "255.255.0.0";
+    String _controlNetwork = "169.254.0.0";
+    String _controlNetworkMask = "255.255.0.0";
     boolean _canBridgeFirewall = false;
     String _ovmRepo = "/OVS/Repositories";
     String _ovmSec = "/nfsmnt";
@@ -452,10 +453,10 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                 }
                 /* The bridge is remembered upon reboot, but not the IP */
                 net.ovsIpConfig(_controlNetworkName, "static",
-                        _controlNetworkIp, "255.255.0.0");
+                        _controlNetworkIp, _controlNetworkMask);
                 CloudStackPlugin cSp = new CloudStackPlugin(c);
-                cSp.ovsControlInterface(_controlNetworkName, _controlNetworkIp
-                        + "/16");
+                cSp.ovsControlInterface(_controlNetworkName, _controlNetwork,
+                        _controlNetworkMask);
 
                 // Missing netM = new Missing(c);
                 /* build ovs_if_meta in Net based on the following */
@@ -1542,36 +1543,36 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                         controlIp = nic.getIp();
                     }
                 }
-
-                try {
+                /* TODO: still requires a fix for the restart time */
+                for (int count = 0; count < 60; count++) {
+                    Thread.sleep(5000);
                     CloudStackPlugin cSp = new CloudStackPlugin(c);
-                    for (int count = 0; count < 60; count++) {
+                    /*
+                     * Older xend issues in, took me a while to figure this
+                     * out: ../xen/xend/XendConstants.py
+                     * """Minimum time between domain restarts in seconds."
+                     * "" MINIMUM_RESTART_TIME = 60 this does NOT
+                     * work!!!--^^ as we respawn within 30 seconds easily.
+                     * return state stopped.
+                     */
+                    if (_vmstates.get(vmName) == null) {
+                        String msg = "VM " + vmName + " went missing on "
+                                + _host + ", returning stopped";
+                        s_logger.debug(msg);
+                        state = State.Stopped;
+                        return new StartAnswer(cmd, msg);
+                    }
+                    try {
                         Boolean res = cSp.domrCheckSsh(controlIp);
                         s_logger.debug("connected to " + controlIp
                                 + " on attempt " + count + " result: " + res);
-                        Thread.sleep(5000);
                         if (res) {
                             break;
                         }
-                        /*
-                         * Older xend issues in, took me a while to figure this
-                         * out: ../xen/xend/XendConstants.py
-                         * """Minimum time between domain restarts in seconds."
-                         * "" MINIMUM_RESTART_TIME = 60 this does NOT
-                         * work!!!--^^ as we respawn within 30 seconds easily.
-                         * return state stopped.
-                         */
-                        if (_vmstates.get(vmName) == null) {
-                            String msg = "VM " + vmName + " went missing on "
-                                    + _host + ", returning stopped";
-                            s_logger.debug(msg);
-                            state = State.Stopped;
-                            return new StartAnswer(cmd, msg);
-                        }
+                    } catch (Exception x) {
+                        s_logger.debug("unable to connect to " + controlIp + " "
+                                + x.getMessage());
                     }
-                } catch (Exception x) {
-                    s_logger.debug("unable to connect to " + controlIp + " "
-                            + x.getMessage());
                 }
             }
             /*
@@ -2169,13 +2170,15 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                                 + " in migrating state.");
                     } else {
                         /* if it's not there name it stopping */
-                        _vmstates.remove(vmName);
+                        
                         State state = State.Stopping;
                         s_logger.debug("VM "
                                 + vmName
                                 + " is now missing from ovm3 server so removing it");
                         /* TODO: something about killed/halted VM's in here ? */
                         changes.put(vmName, state);
+                        _vmstates.remove(vmName);
+                        _vmstates.put(vmName,state);
                     }
                 }
             }
@@ -3286,13 +3289,13 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         try {
             String poolUuid = data.getDataStore().getUuid();
             /* needs the file attached too please... */
-            String file = volume.getPath();
-            if (file.endsWith("/")) {
-                file = volume.getPath() + "/" + volume.getUuid() + ".raw";
+            String path = volume.getPath();
+            if (path.contains(volume.getUuid()) == false) {
+                path = volume.getPath() + "/" + volume.getUuid() + ".raw";
             }
             StoragePlugin sp = new StoragePlugin(c);
-            sp.storagePluginDestroy(poolUuid, file);
-            s_logger.debug("delete volume success: " + file);
+            sp.storagePluginDestroy(poolUuid, path);
+            s_logger.debug("delete volume success: " + path);
         } catch (Exception e) {
             s_logger.debug("delete volume failed: " + e.toString());
             return new CreateObjectAnswer(e.toString());

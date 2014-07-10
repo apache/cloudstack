@@ -289,11 +289,11 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             vm = _mockVMDao.findByVmName(vmName);
             txn.commit();
             if (vm == null) {
-                return new Answer(cmd, false, "can't vm :" + vmName);
+                return new Answer(cmd, false, "can't find vm :" + vmName);
             }
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Error when attaching iso to vm " + vm.getName(), ex);
+            throw new CloudRuntimeException("Error when attaching iso to vm " + vmName, ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -514,8 +514,8 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
 
             if (cmd.getVmName() != null) {
                 MockVm vm = _mockVMDao.findByVmName(cmd.getVmName());
-                vm.setState(State.Expunging);
                 if (vm != null) {
+                    vm.setState(State.Expunging);
                     MockVMVO vmVo = _mockVMDao.createForUpdate(vm.getId());
                     _mockVMDao.update(vm.getId(), vmVo);
                 }

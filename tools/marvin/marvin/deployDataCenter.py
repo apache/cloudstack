@@ -695,6 +695,7 @@ class DeployDataCenters(object):
                 zonecmd.securitygroupenabled = zone.securitygroupenabled
                 zonecmd.localstorageenabled = zone.localstorageenabled
                 zonecmd.networktype = zone.networktype
+                zonecmd.domain = zone.domain
                 if zone.securitygroupenabled != "true":
                     zonecmd.guestcidraddress = zone.guestcidraddress
                 zoneId = self.createZone(zonecmd)
