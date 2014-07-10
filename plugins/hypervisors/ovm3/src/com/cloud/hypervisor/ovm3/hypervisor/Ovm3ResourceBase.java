@@ -2170,7 +2170,6 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                                 + " in migrating state.");
                     } else {
                         /* if it's not there name it stopping */
-                        
                         State state = State.Stopping;
                         s_logger.debug("VM "
                                 + vmName
