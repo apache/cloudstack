@@ -98,8 +98,8 @@ public class ListPortableIpRangesCmd extends BaseListCmd {
                 }
                 responses.add(rangeResponse);
             }
+            response.setResponses(responses, portableIpRanges.size());
         }
-        response.setResponses(responses, portableIpRanges.size());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

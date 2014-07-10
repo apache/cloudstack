@@ -184,7 +184,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         if (ipAddressId != null) {
             IpAddress ipAddr = _networkService.getIp(ipAddressId);
             if (ipAddr == null || !ipAddr.readyToUse()) {
-                throw new InvalidParameterValueException("Unable to create PF rule, invalid IP address id " + ipAddr.getId());
+                throw new InvalidParameterValueException("Unable to create PF rule, invalid IP address id " + ipAddressId);
             } else {
                 return ipAddr.getVpcId();
             }

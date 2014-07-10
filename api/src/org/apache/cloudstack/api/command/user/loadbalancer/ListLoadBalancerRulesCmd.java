@@ -130,8 +130,8 @@ public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
                 lbResponse.setObjectName("loadbalancerrule");
                 lbResponses.add(lbResponse);
             }
+            response.setResponses(lbResponses, loadBalancers.second());
         }
-        response.setResponses(lbResponses, loadBalancers.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
