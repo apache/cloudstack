@@ -1327,7 +1327,10 @@
                     if ($(this).is(':checked')) {
                         // Populate data
                         subselect.dataProvider({
-                            context: $.extend(true, {}, options.context, {
+                            context: $.extend(true, {},
+                                ($listView && $listView.data('view-args') ?
+                                    $.extend(true, {}, $listView.data('view-args').context, options.context) :
+                                    options.context), {
                                 instances: [$tr.data('json-obj')]
                             }),
                             response: {

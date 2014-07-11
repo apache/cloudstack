@@ -153,7 +153,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
         if (publicIpId != null) {
             IpAddress ipAddr = _networkService.getIp(publicIpId);
             if (ipAddr == null || !ipAddr.readyToUse()) {
-                throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + ipAddr.getId());
+                throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + publicIpId);
             }
         } else if (getEntityId() != null) {
             LoadBalancer rule = _entityMgr.findById(LoadBalancer.class, getEntityId());
@@ -167,7 +167,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
         if (publicIpId != null) {
             IpAddress ipAddr = _networkService.getIp(publicIpId);
             if (ipAddr == null || !ipAddr.readyToUse()) {
-                throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + ipAddr.getId());
+                throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + publicIpId);
             } else {
                 return ipAddr.getVpcId();
             }
