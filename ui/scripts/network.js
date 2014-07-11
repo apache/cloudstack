@@ -248,6 +248,7 @@
                 disallowedActions.push('disableStaticNAT');
                 disallowedActions.push('remove');
             } else { //non-sourceNAT IP supports staticNAT
+            	disallowedActions.push('enableVPN');
             	 if (ipObj.isstaticnat) {
                      disallowedActions.push('enableStaticNAT');
                  } else {
