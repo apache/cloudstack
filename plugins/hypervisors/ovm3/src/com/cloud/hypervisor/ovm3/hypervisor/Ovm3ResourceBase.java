@@ -1992,9 +1992,6 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                     + ":" + convertStateToPower(vm.getValue()));
                 vmStates.put(vm.getKey(), new HostVmStateReportEntry(
                     convertStateToPower(vm.getValue()), c.getIp()));
-            }
-        } catch (Exception e) {
-            s_logger.debug("VM state sync on " + _host + " failed", e);
         }
         return vmStates;
     }

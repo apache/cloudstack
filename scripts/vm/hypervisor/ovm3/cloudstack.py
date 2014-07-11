@@ -140,8 +140,25 @@ def restartService(service):
 
 # sets the control interface and removes the route net entry
 def ovsControlInterface(dev, ip, mask):
-    command = ['route', 'del', '-net', ip, "gw 0.0.0.0 netmask", mask];
-    subprocess.call(command, shell=False)
+    controlRoute = False
+    command = ['route', '-n'];
+    p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    while True:
+        line= p.stdout.readline()
+        if line == '' and p.poll() != None:
+            break
+        if line != '':
+            if re.search("%s" % (ip), line) and not re.search("%s" % (dev), line):
+                command = ['route','del','-net', ip, 'gw', '0.0.0.0', 'netmask', mask]
+                subprocess.call(command, shell=False)
+                print "removed: %s" % (line)
+            elif re.search("%s" % (ip), line) and re.search("%s" % (dev), line):
+                controlRoute = True
+    
+    if controlRoute == False:
+        command = ['route', 'add', '-net', ip, 'netmask', mask, 'dev', dev];
+        subprocess.call(command, shell=False)
+
     command = ['ifconfig', dev, 'arp']
     subprocess.call(command, shell=False)
     return True
@@ -282,13 +299,15 @@ if __name__ == '__main__':
     modpath="%s/api" % (agentpath)
     ssl="disable"
     port=0
+    exec_sub=""
+    exec_opts=""
 
     # get options
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "sp::", 
-            [ 'port=','ssl='])
+        opts, args = getopt.getopt(sys.argv[1:], "eosp::", 
+            [ 'port=','ssl=','exec=','opts='])
     except getopt.GetoptError:
-        print "Available Options: --port=, --ssl="
+        print "Available Options: --port=<number>, --ssl=<true|false>, --exec=<method>, --opts=<arg1,arg2..>"
         sys.exit()
 
     for o, a in opts:
@@ -296,7 +315,18 @@ if __name__ == '__main__':
             ssl = a
         if o in ('-p', '--port'):
             port = int(a)
-
+        if o in ('-e', '--exec'):
+            exec_sub = a
+        if o in ('-o', '--opts'):
+            exec_opts = a
+    
+    if exec_sub != "":
+        func = "%s(%s)" % (exec_sub, exec_opts)
+        print "exec: %s" % (func)
+        opts=exec_opts.split(',')
+        print locals()[exec_sub](*opts)
+        sys.exit()
+    
     # check if we're in the modules already
     cs = CloudStack()
     for mod in MODULES:
