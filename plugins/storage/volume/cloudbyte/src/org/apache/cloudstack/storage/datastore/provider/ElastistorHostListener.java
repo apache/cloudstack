@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -30,6 +31,9 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -48,10 +52,30 @@ public class ElastistorHostListener implements HypervisorHostListener {
     StoragePoolHostDao storagePoolHostDao;
     @Inject
     PrimaryDataStoreDao primaryStoreDao;
+    @Inject
+    PrimaryDataStoreDao storagePoolDao;
+    @Inject
+    HostDao  _hostDao;
 
     @Override
     public boolean hostConnect(long hostId, long poolId) {
         StoragePool pool = (StoragePool) this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
+
+        StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(poolId, hostId);
+        HostVO host = _hostDao.findById(hostId);
+
+        if (storagePoolHost == null) {
+            storagePoolHost = new StoragePoolHostVO(poolId, hostId, "");
+
+            storagePoolHostDao.persist(storagePoolHost);
+        }
+
+        StoragePoolVO poolVO = storagePoolDao.findById(pool.getId());
+
+        if(poolVO.isManaged() && (host.getHypervisorType() != HypervisorType.KVM)){
+            return true;
+        }
+
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
         final Answer answer = agentMgr.easySend(hostId, cmd);
 
@@ -75,8 +99,7 @@ public class ElastistorHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostDisconnected(long hostId, long poolId) {
-        StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(
-                poolId, hostId);
+        StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(poolId, hostId);
 
         if (storagePoolHost != null) {
             storagePoolHostDao.deleteStoragePoolHostDetails(hostId, poolId);
