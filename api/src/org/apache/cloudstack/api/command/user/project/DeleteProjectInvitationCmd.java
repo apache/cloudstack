@@ -31,7 +31,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteProjectInvitation", description = "Accepts or declines project invitation", responseObject = SuccessResponse.class, since = "3.0.0",
+@APICommand(name = "deleteProjectInvitation", description = "Deletes project invitation", responseObject = SuccessResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteProjectInvitationCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteProjectInvitationCmd.class.getName());
