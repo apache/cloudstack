@@ -47,6 +47,7 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
+import com.cloud.network.router.RouterDeploymentDefinition;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
@@ -131,7 +132,9 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
-        _vpcRouterMgr.deployVirtualRouterInVpc(vpc, dest, _accountMgr.getAccount(vpc.getAccountId()), params);
+        RouterDeploymentDefinition routerDeploymentDefinition =
+                new RouterDeploymentDefinition(vpc, dest, _accountMgr.getAccount(vpc.getAccountId()), params, false);
+        _vpcRouterMgr.deployVirtualRouter(routerDeploymentDefinition);
 
         return true;
     }
@@ -168,7 +171,9 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
-        List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouterInVpc(vpc, dest, _accountMgr.getAccount(vpc.getAccountId()), params);
+        RouterDeploymentDefinition routerDeploymentDefinition =
+                new RouterDeploymentDefinition(vpc, dest, _accountMgr.getAccount(vpc.getAccountId()), params, false);
+        List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouter(routerDeploymentDefinition);
         if ((routers == null) || (routers.size() == 0)) {
             throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
         }
@@ -213,7 +218,9 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         if (vm.getType() == VirtualMachine.Type.User) {
             Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
             params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
-            List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouterInVpc(vpc, dest, _accountMgr.getAccount(vpc.getAccountId()), params);
+            RouterDeploymentDefinition routerDeploymentDefinition =
+                    new RouterDeploymentDefinition(vpc, dest, _accountMgr.getAccount(vpc.getAccountId()), params, false);
+            List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouter(routerDeploymentDefinition);
             if ((routers == null) || (routers.size() == 0)) {
                 throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
             }
