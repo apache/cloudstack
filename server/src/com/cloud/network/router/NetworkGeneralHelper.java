@@ -393,10 +393,8 @@ public class NetworkGeneralHelper {
 
 
 //    @Override
-    public DomainRouterVO deployRouter(Account owner,
-            DeployDestination dest, DeploymentPlan plan,
-            Map<Param, Object> params, boolean isRedundant,
-            VirtualRouterProvider vrProvider, long svcOffId, Long vpcId,
+    public DomainRouterVO deployRouter(final RouterDeploymentDefinition routerDeploymentDefinition,
+            VirtualRouterProvider vrProvider, long svcOffId,
             LinkedHashMap<Network, List<? extends NicProfile>> networks,
             boolean startRouter, List<HypervisorType> supportedHypervisors)
             throws InsufficientAddressCapacityException,
@@ -404,10 +402,12 @@ public class NetworkGeneralHelper {
             StorageUnavailableException, ResourceUnavailableException {
 
         final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(svcOffId);
+        final DeployDestination dest = routerDeploymentDefinition.getDest();
+        final Account owner = routerDeploymentDefinition.getOwner();
 
         // Router is the network element, we don't know the hypervisor type yet.
         // Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
-        final List<HypervisorType> hypervisors = getHypervisors(dest, plan, supportedHypervisors);
+        final List<HypervisorType> hypervisors = getHypervisors(routerDeploymentDefinition, supportedHypervisors);
 
         int allocateRetry = 0;
         int startRetry = 0;
@@ -449,19 +449,18 @@ public class NetworkGeneralHelper {
 
                 boolean offerHA = routerOffering.getOfferHA();
                 /* We don't provide HA to redundant router VMs, admin should own it all, and redundant router themselves are HA */
-                if (isRedundant) {
+                if (routerDeploymentDefinition.isRedundant()) {
                     offerHA = false;
                 }
 
-                router =
-                        new DomainRouterVO(id, routerOffering.getId(), vrProvider.getId(),
-                                VirtualMachineName.getRouterName(id, VirtualNwStatus.instance), template.getId(), template.getHypervisorType(),
-                                template.getGuestOSId(), owner.getDomainId(), owner.getId(), isRedundant, 0, false, RedundantState.UNKNOWN,
-                                offerHA, false, vpcId);
+                router = new DomainRouterVO(id, routerOffering.getId(), vrProvider.getId(),
+                        VirtualMachineName.getRouterName(id, VirtualNwStatus.instance), template.getId(), template.getHypervisorType(),
+                        template.getGuestOSId(), owner.getDomainId(), owner.getId(), routerDeploymentDefinition.isRedundant(), 0,
+                        false, RedundantState.UNKNOWN, offerHA, false, routerDeploymentDefinition.getVpc().getId());
                 router.setDynamicallyScalable(template.isDynamicallyScalable());
                 router.setRole(Role.VIRTUAL_ROUTER);
                 router = _routerDao.persist(router);
-                _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, plan, null);
+                _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, routerDeploymentDefinition.getPlan(), null);
                 router = _routerDao.findById(router.getId());
             } catch (final InsufficientCapacityException ex) {
                 if (allocateRetry < 2 && iter.hasNext()) {
@@ -476,7 +475,7 @@ public class NetworkGeneralHelper {
 
             if (startRouter) {
                 try {
-                    router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), params);
+                    router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), routerDeploymentDefinition.getParams());
                     break;
                 } catch (final InsufficientCapacityException ex) {
                     if (startRetry < 2 && iter.hasNext()) {
@@ -499,8 +498,9 @@ public class NetworkGeneralHelper {
         return router;
     }
 
-    protected List<HypervisorType> getHypervisors(final DeployDestination dest, final DeploymentPlan plan, final List<HypervisorType> supportedHypervisors)
+    protected List<HypervisorType> getHypervisors(final RouterDeploymentDefinition routerDeploymentDefinition, final List<HypervisorType> supportedHypervisors)
             throws InsufficientServerCapacityException {
+        final DeployDestination dest = routerDeploymentDefinition.getDest();
         List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
 
         if (dest.getCluster() != null) {
@@ -515,7 +515,7 @@ public class NetworkGeneralHelper {
                 hypervisors.add(defaults);
             } else {
                 //if there is no default hypervisor, get it from the cluster
-                hypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true, plan.getPodId());
+                hypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true, routerDeploymentDefinition.getPodId());
             }
         }
 
@@ -530,9 +530,9 @@ public class NetworkGeneralHelper {
 
         if (hypervisors.isEmpty()) {
             final String errMsg = (hTypesStr.capacity() > 0) ? "supporting hypervisors " + hTypesStr.toString() : "";
-            if (plan.getPodId() != null) {
+            if (routerDeploymentDefinition.getPodId() != null) {
                 throw new InsufficientServerCapacityException("Unable to create virtual router, " + "there are no clusters in the pod " + errMsg, Pod.class,
-                        plan.getPodId());
+                        routerDeploymentDefinition.getPodId());
             }
             throw new InsufficientServerCapacityException("Unable to create virtual router, " + "there are no clusters in the zone " + errMsg, DataCenter.class,
                     dest.getDataCenter().getId());
@@ -564,16 +564,19 @@ public class NetworkGeneralHelper {
         }
 
         final String errMsg =
-                "Cannot find an available cluster in Pod " + podId + " to start domain router for Ovm. \n Ovm won't support any system vm including domain router, " +
-                        "please make sure you have a cluster with hypervisor type of any of xenserver/KVM/Vmware in the same pod" +
-                        " with Ovm cluster. And there is at least one host in UP status in that cluster.";
+                new StringBuilder("Cannot find an available cluster in Pod ")
+                .append(podId)
+                .append(" to start domain router for Ovm. \n Ovm won't support any system vm including domain router, ")
+                .append("please make sure you have a cluster with hypervisor type of any of xenserver/KVM/Vmware in the same pod")
+                .append(" with Ovm cluster. And there is at least one host in UP status in that cluster.")
+                .toString();
         throw new CloudRuntimeException(errMsg);
     }
 
 
 //    @Override
     public LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(
-            Account owner, boolean isRedundant, DeploymentPlan plan,
+            final RouterDeploymentDefinition routerDeploymentDefinition,
             Network guestNetwork, Pair<Boolean, PublicIp> publicNetwork)
             throws ConcurrentOperationException,
             InsufficientAddressCapacityException {
@@ -595,7 +598,7 @@ public class NetworkGeneralHelper {
             if (!setupPublicNetwork) {
                 final Nic placeholder = _networkModel
                         .getPlaceholderNicForRouter(guestNetwork,
-                                plan.getPodId());
+                                routerDeploymentDefinition.getPodId());
                 if (guestNetwork.getCidr() != null) {
                     if (placeholder != null
                             && placeholder.getIp4Address() != null) {
@@ -651,7 +654,7 @@ public class NetworkGeneralHelper {
             final NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp,
                     defaultNetworkStartIpv6);
             if (setupPublicNetwork) {
-                if (isRedundant) {
+                if (routerDeploymentDefinition.isRedundant()) {
                     gatewayNic.setIp4Address(_ipAddrMgr.acquireGuestIpAddress(
                             guestNetwork, null));
                 } else {
@@ -679,7 +682,7 @@ public class NetworkGeneralHelper {
                 .getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         NetworkOffering controlOffering = offerings.get(0);
         Network controlConfig = _networkMgr.setupNetwork(VirtualNwStatus.account,
-                controlOffering, plan, null, null, false).get(0);
+                controlOffering, routerDeploymentDefinition.getPlan(), null, null, false).get(0);
         networks.put(controlConfig, new ArrayList<NicProfile>());
         // 3) Public network
         if (setupPublicNetwork) {
@@ -716,8 +719,8 @@ public class NetworkGeneralHelper {
                     .getSystemAccountNetworkOfferings(
                             NetworkOffering.SystemPublicNetwork).get(0);
             final List<? extends Network> publicNetworks = _networkMgr
-                    .setupNetwork(VirtualNwStatus.account, publicOffering, plan, null,
-                            null, false);
+                    .setupNetwork(VirtualNwStatus.account, publicOffering, routerDeploymentDefinition.getPlan(),
+                            null, null, false);
             final String publicIp = defaultNic.getIp4Address();
             // We want to use the identical MAC address for RvR on public
             // interface if possible
