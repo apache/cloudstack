@@ -144,7 +144,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             return
 
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false", BugId="7062")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_01_primary_storage_iscsi(self):
         """Test primary storage pools - XEN, KVM, VMWare
         """
