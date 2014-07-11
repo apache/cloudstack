@@ -71,6 +71,7 @@ import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.RouterDeploymentDefinition;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
@@ -204,9 +205,11 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
-        List<DomainRouterVO> routers = _routerMgr.deployVirtualRouterInGuestNetwork(network, dest,
-                _accountMgr.getAccount(network.getAccountId()), params,
-                offering.getRedundantRouter());
+        RouterDeploymentDefinition routerDeploymentDefinition =
+                new RouterDeploymentDefinition(network, dest,_accountMgr.getAccount(network.getAccountId()),
+                        params, offering.getRedundantRouter());
+        List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(routerDeploymentDefinition);
+
         int routerCounts = 1;
         if (offering.getRedundantRouter()) {
             routerCounts = 2;
@@ -238,11 +241,12 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             return false;
         }
 
-        @SuppressWarnings("unchecked")
-        VirtualMachineProfile uservm = vm;
+        RouterDeploymentDefinition routerDeploymentDefinition =
+                new RouterDeploymentDefinition(network, dest,_accountMgr.getAccount(network.getAccountId()),
+                        vm.getParameters(), offering.getRedundantRouter());
         List<DomainRouterVO> routers =
-                _routerMgr.deployVirtualRouterInGuestNetwork(network, dest, _accountMgr.getAccount(network.getAccountId()), uservm.getParameters(),
-                        offering.getRedundantRouter());
+                _routerMgr.deployVirtualRouter(routerDeploymentDefinition);
+
         if (routers == null || routers.size() == 0) {
             throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
         }

@@ -402,6 +402,8 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     @Inject
     protected NetworkGeneralHelper nwHelper;
+    @Inject
+    protected RouterDeploymentManager routerDeploymentManager;
 
     int _routerRamSize;
     int _routerCpuMHz;
@@ -1537,8 +1539,11 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     }
 
     @DB
-    protected List<DomainRouterVO> findOrDeployVirtualRouterInGuestNetwork(final Network guestNetwork, final DeployDestination dest, Account owner, final boolean isRedundant,
-            final Map<Param, Object> params) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+    protected List<DomainRouterVO> findOrDeployVirtualRouterInGuestNetwork(final RouterDeploymentDefinition routerDeploymentDefinition) throws ConcurrentOperationException,
+    InsufficientCapacityException, ResourceUnavailableException {
+
+        final Network guestNetwork = routerDeploymentDefinition.getGuestNetwork();
+        final DeployDestination dest = routerDeploymentDefinition.getDest();
 
         List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
         final Network lock = _networkDao.acquireInLockTable(guestNetwork.getId(), NetworkOrchestrationService.NetworkLockTimeout.value());
@@ -1606,7 +1611,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
                 // 2) Figure out required routers count
                 int routerCount = 1;
-                if (isRedundant) {
+                if (routerDeploymentDefinition.isRedundant()) {
                     routerCount = 2;
                     // Check current redundant routers, if possible(all routers
                     // are stopped), reset the priority
@@ -1638,7 +1643,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 }
 
                 if (_networkModel.isNetworkSystem(guestNetwork) || (guestNetwork.getGuestType() == Network.GuestType.Shared)) {
-                    owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
+                    routerDeploymentDefinition.setOwner(_accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
                 }
 
                 // Check if public network has to be set on VR
@@ -1646,7 +1651,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 if (_networkModel.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter)) {
                     publicNetwork = true;
                 }
-                if (isRedundant && !publicNetwork) {
+                if (routerDeploymentDefinition.isRedundant() && !publicNetwork) {
                     s_logger.error("Didn't support redundant virtual router without public network!");
                     return null;
                 }
@@ -1658,18 +1663,18 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
                 PublicIp sourceNatIp = null;
                 if (publicNetwork) {
-                    sourceNatIp = _ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
+                    sourceNatIp = _ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(routerDeploymentDefinition.getOwner(), guestNetwork);
                 }
 
                 // 3) deploy virtual router(s)
                 final int count = routerCount - routers.size();
-                final DeploymentPlan plan = planAndRouters.first();
+                routerDeploymentDefinition.setPlan(planAndRouters.first());
                 for (int i = 0; i < count; i++) {
-                    final LinkedHashMap<Network, List<? extends NicProfile>> networks = createRouterNetworks(owner, isRedundant, plan, guestNetwork, new Pair<Boolean, PublicIp>(
+                    final LinkedHashMap<Network, List<? extends NicProfile>> networks = createRouterNetworks(routerDeploymentDefinition, new Pair<Boolean, PublicIp>(
                             publicNetwork, sourceNatIp));
                     // don't start the router as we are holding the network lock
                     // that needs to be released at the end of router allocation
-                    final DomainRouterVO router = nwHelper.deployRouter(owner, destination, plan, params, isRedundant, vrProvider, offeringId, null, networks, false, null);
+                    final DomainRouterVO router = nwHelper.deployRouter(routerDeploymentDefinition, vrProvider, offeringId, networks, false, null);
 
                     if (router != null) {
                         _routerDao.addRouterToGuestNetwork(router, guestNetwork);
@@ -1706,9 +1711,10 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         return _podDao.search(sc, null);
     }
 
-    protected LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(final Account owner, final boolean isRedundant, final DeploymentPlan plan,
-            final Network guestNetwork, final Pair<Boolean, PublicIp> publicNetwork) throws ConcurrentOperationException, InsufficientAddressCapacityException {
+    protected LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(final RouterDeploymentDefinition routerDeploymentDefinition,
+            final Pair<Boolean, PublicIp> publicNetwork) throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
+        final Network guestNetwork = routerDeploymentDefinition.getGuestNetwork();
         boolean setupPublicNetwork = false;
         if (publicNetwork != null) {
             setupPublicNetwork = publicNetwork.first();
@@ -1722,7 +1728,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             s_logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
             String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
             if (!setupPublicNetwork) {
-                final Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, plan.getPodId());
+                final Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, routerDeploymentDefinition.getPodId());
                 if (guestNetwork.getCidr() != null) {
                     if ((placeholder != null) && (placeholder.getIp4Address() != null)) {
                         s_logger.debug("Requesting ipv4 address " + placeholder.getIp4Address() + " stored in placeholder nic for the network " + guestNetwork);
@@ -1756,7 +1762,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
             final NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, defaultNetworkStartIpv6);
             if (setupPublicNetwork) {
-                if (isRedundant) {
+                if (routerDeploymentDefinition.isRedundant()) {
                     gatewayNic.setIp4Address(_ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
                 } else {
                     gatewayNic.setIp4Address(guestNetwork.getGateway());
@@ -1779,7 +1785,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         s_logger.debug("Adding nic for Virtual Router in Control network ");
         final List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         final NetworkOffering controlOffering = offerings.get(0);
-        final Network controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
+        final Network controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, routerDeploymentDefinition.getPlan(), null, null, false).get(0);
         networks.put(controlConfig, new ArrayList<NicProfile>());
         // 3) Public network
         if (setupPublicNetwork) {
@@ -1808,7 +1814,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 defaultNic.setDeviceId(2);
             }
             final NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
-            final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
+            final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, routerDeploymentDefinition.getPlan(), null, null, false);
             final String publicIp = defaultNic.getIp4Address();
             // We want to use the identical MAC address for RvR on public
             // interface if possible
@@ -1845,12 +1851,12 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     }
 
     @Override
-    public List<DomainRouterVO> deployVirtualRouterInGuestNetwork(final Network guestNetwork, final DeployDestination dest, final Account owner, final Map<Param, Object> params,
-            final boolean isRedundant) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    public List<DomainRouterVO> deployVirtualRouter(final RouterDeploymentDefinition routerDeploymentDefinition) throws InsufficientCapacityException,
+    ConcurrentOperationException, ResourceUnavailableException {
 
-        final List<DomainRouterVO> routers = findOrDeployVirtualRouterInGuestNetwork(guestNetwork, dest, owner, isRedundant, params);
+        final List<DomainRouterVO> routers = findOrDeployVirtualRouterInGuestNetwork(routerDeploymentDefinition);
 
-        return nwHelper.startRouters(params, routers);
+        return nwHelper.startRouters(routerDeploymentDefinition.getParams(), routers);
     }
 
     @Override

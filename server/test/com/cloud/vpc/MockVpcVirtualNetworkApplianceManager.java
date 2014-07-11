@@ -39,6 +39,7 @@ import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.router.RouterDeploymentDefinition;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
@@ -46,14 +47,12 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
-import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfile.Param;
 
 @Component
 @Local(value = {VpcVirtualNetworkApplianceManager.class, VpcVirtualNetworkApplianceService.class})
@@ -98,8 +97,8 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#deployVirtualRouterInGuestNetwork(com.cloud.network.Network, com.cloud.deploy.DeployDestination, com.cloud.user.Account, java.util.Map, boolean)
      */
     @Override
-    public List<DomainRouterVO> deployVirtualRouterInGuestNetwork(final Network guestNetwork, final DeployDestination dest, final Account owner, final Map<Param, Object> params,
-        final boolean isRedundant) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
+    public List<DomainRouterVO> deployVirtualRouter(final RouterDeploymentDefinition routerDeploymentDefinition)
+            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -329,16 +328,6 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
         return false;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.VpcVirtualNetworkApplianceManager#deployVirtualRouterInVpc(com.cloud.network.vpc.Vpc, com.cloud.deploy.DeployDestination, com.cloud.user.Account, java.util.Map)
-     */
-    @Override
-    public List<DomainRouterVO> deployVirtualRouterInVpc(final Vpc vpc, final DeployDestination dest, final Account owner, final Map<Param, Object> params) throws InsufficientCapacityException,
-        ConcurrentOperationException, ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
     @Override
     public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final List<? extends VirtualRouter> routers, final boolean privateGateway)
         throws ResourceUnavailableException {
@@ -444,15 +433,6 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
 
     @Override
     public String[] applyVpnUsers(final RemoteAccessVpn vpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<DomainRouterVO> deployVirtualRouterInVpc(final Vpc vpc,
-            final DeployDestination dest, final Account owner, final Map<Param, Object> params,
-            final boolean isRedundant) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
