@@ -931,7 +931,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                              * for that.
                              */
                             SshHelper.scpTo(this._host, 22, this._username,
-                                    null, this._password, destPath, srcIso
+                                    null, this._password, destIso, srcIso
                                             .getAbsolutePath().toString(),
                                     "0644");
                         } catch (Exception es) {
