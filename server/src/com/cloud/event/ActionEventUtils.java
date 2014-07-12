@@ -204,7 +204,7 @@ public class ActionEventUtils {
         String entityType = null;
         String entityUuid = null;
         CallContext context = CallContext.current();
-        Class entityKey = getEntityKey(eventType);
+        Class<?> entityKey = getEntityKey(eventType);
         if (entityKey != null){
             //FIXME - Remove this since it should be covered by the else if condition below.
             entityUuid = (String)context.getContextParameter(entityKey);
@@ -212,7 +212,7 @@ public class ActionEventUtils {
                 entityType = entityKey.getName();
         }else if (EventTypes.getEntityClassForEvent(eventType) != null){
             //Get entity Class(Example - VirtualMachine.class) from the event Type eg. - VM.CREATE
-            Class entityClass = EventTypes.getEntityClassForEvent(eventType);
+            Class<?> entityClass = EventTypes.getEntityClassForEvent(eventType);
 
             //Get uuid from id
             if(context.getContextParameter(entityClass.getName()) != null){
@@ -260,7 +260,7 @@ public class ActionEventUtils {
         }
     }
 
-    private static String getEntityUuid(Class entityType, Object entityId){
+    private static String getEntityUuid(Class<?> entityType, Object entityId){
 
         // entityId can be internal db id or UUID so accordingly call findbyId or return uuid directly
 
@@ -300,7 +300,7 @@ public class ActionEventUtils {
         for(Map.Entry<Object, Object> entry : contextMap.entrySet()){
             try{
                 Object key = entry.getKey();
-                Class clz = Class.forName((String)key);
+                Class<?> clz = Class.forName((String)key);
                 if(clz instanceof Class && Identity.class.isAssignableFrom(clz)){
                     String uuid = getEntityUuid(clz, entry.getValue());
                     eventDescription.put(ReflectUtil.getEntityName(clz), uuid);
@@ -312,7 +312,7 @@ public class ActionEventUtils {
 
     }
 
-    private static Class getEntityKey(String eventType)
+    private static Class<?> getEntityKey(String eventType)
     {
         // FIXME - Remove this
         if (eventType.startsWith("DOMAIN."))

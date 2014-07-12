@@ -42,7 +42,6 @@ class TestDeployVM(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
 
         self.testdata = self.testClient.getParsedTestDataConfig()
-        
         # Get Zone, Domain and Default Built-in template
         self.domain = get_domain(self.apiclient)
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
@@ -117,7 +116,7 @@ class TestDeployVM(cloudstackTestCase):
         """Test Multiple Deploy Virtual Machine
 
         # Validate the following:
-        # 1. deploy 2 virtual machines 
+        # 1. deploy 2 virtual machines
         # 2. listVirtualMachines using 'ids' parameter returns accurate information
         """
         self.virtual_machine = VirtualMachine.create(
@@ -206,6 +205,7 @@ class TestDeployVMVolumeCreationFailure(cloudstackTestCase):
             self.account,
             self.mock_volume_failure
         ]
+
 
     @attr(tags = ['advanced'], BugId="CLOUDSTACK-6873", required_hardware="false")
     def test_deploy_vm_volume_creation_failure(self):

@@ -432,7 +432,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     public String updateConfiguration(long userId, String name, String category, String value, String scope, Long resourceId) {
-
         String validationMsg = validateConfigurationValue(name, value, scope);
 
         if (validationMsg != null) {
@@ -653,7 +652,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return _configDao.findByName(name);
         }
 
-        if (value.trim().isEmpty() || value.equals("null")) {
+        value = value.trim();
+
+        if (value.isEmpty() || value.equals("null")) {
             value = null;
         }
 

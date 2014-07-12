@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 
 @APICommand(name = "listProjectInvitations",
-            description = "Lists projects and provides detailed information for listed projects",
+            description = "Lists project invitations and provides detailed information for listed invitations",
             responseObject = ProjectInvitationResponse.class,
             since = "3.0.0",
             requestHasSensitiveInfo = false,

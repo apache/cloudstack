@@ -22,10 +22,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBus;
@@ -41,16 +44,25 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.fsm.StateListener;
 
+@Component
+@Local(value = {SnapshotStateListener.class})
 public class SnapshotStateListener implements StateListener<State, Event, SnapshotVO> {
 
     protected static EventBus s_eventBus = null;
-    @Inject
-    private ConfigurationDao _configDao;
+    protected static ConfigurationDao s_configDao;
 
-    private static final Logger s_logger = Logger.getLogger(VolumeStateListener.class);
+    @Inject
+    private ConfigurationDao configDao;
+
+    private static final Logger s_logger = Logger.getLogger(SnapshotStateListener.class);
 
     public SnapshotStateListener() {
 
+    }
+
+    @PostConstruct
+    void init() {
+        s_configDao = configDao;
     }
 
     @Override
@@ -68,7 +80,7 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
     private void pubishOnEventBus(String event, String status, Snapshot vo, State oldState, State newState) {
 
         String configKey = Config.PublishResourceStateEvent.key();
-        String value = _configDao.getValue(configKey);
+        String value = s_configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
         if(!configValue)
             return;
