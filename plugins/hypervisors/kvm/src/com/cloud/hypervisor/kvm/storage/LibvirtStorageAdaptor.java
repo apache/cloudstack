@@ -674,8 +674,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                                                     PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
         String volPath = pool.getLocalPath() + "/" + name;
         String volName = name;
-        long volAllocation = 0;
-        long volCapacity = 0;
+        long virtualSize = 0;
+        long actualSize = 0;
 
         final int timeout = 0;
 
@@ -691,8 +691,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         try{
             qemu.create(destFile, options);
             Map<String, String> info = qemu.info(destFile);
-            volAllocation = Long.parseLong(info.get(new String("virtual-size")));
-            volCapacity = Long.parseLong(info.get(new String("actual-size")));
+            virtualSize = Long.parseLong(info.get(new String("virtual_size")));
+            actualSize = new File(destFile.getFileName()).length();
         } catch (QemuImgException e) {
             s_logger.error("Failed to create " + volPath +
                     " due to a failed executing of qemu-img: " + e.getMessage());
@@ -700,8 +700,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         KVMPhysicalDisk disk = new KVMPhysicalDisk(volPath, volName, pool);
         disk.setFormat(format);
-        disk.setSize(volAllocation);
-        disk.setVirtualSize(volCapacity);
+        disk.setSize(actualSize);
+        disk.setVirtualSize(virtualSize);
         return disk;
     }
 
@@ -1189,7 +1189,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 srcFile = new QemuImgFile(sourcePath, sourceFormat);
                 try {
                     Map<String, String> info = qemu.info(srcFile);
-                    String backingFile = info.get(new String("backing-file"));
+                    String backingFile = info.get(new String("backing_file"));
                     // qcow2 templates can just be copied into place
                     if (sourceFormat.equals(destFormat) && backingFile == null && sourcePath.endsWith(".qcow2")) {
                         String result = Script.runSimpleBashScript("cp -f " + sourcePath + " " + destPath, timeout);
