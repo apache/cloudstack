@@ -44,7 +44,7 @@ public final class NetworkTopologyContext {
 
     public NetworkTopology retrieveNetworkTopology(final DataCenter dc) {
         if (!flyweight.containsKey(dc.getNetworkType())) {
-            throw new IllegalArgumentException("The type given cannot be related to a NetworkTopology implementation. "
+            throw new IllegalArgumentException("The given type cannot be related to a NetworkTopology implementation. "
                     + "Please, give a correct type.");
         }
         return flyweight.get(dc.getNetworkType());
