@@ -19,6 +19,8 @@ package com.cloud.network.topology;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.ResourceUnavailableException;
@@ -36,9 +38,11 @@ import com.cloud.network.rules.IpAssociationRules;
 import com.cloud.network.rules.LoadBalancingRules;
 import com.cloud.network.rules.NetworkAclsRules;
 import com.cloud.network.rules.PasswordToRouterRules;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PrivateGatewayRules;
 import com.cloud.network.rules.SshKeyToRouterRules;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StaticNatRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
@@ -47,6 +51,8 @@ import com.cloud.network.rules.VpnRules;
 
 public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
 
+	private static final Logger s_logger = Logger.getLogger(AdvancedNetworkVisitor.class);
+	
     protected NEWVirtualNetworkApplianceManager applianceManager;
 
     public void setApplianceManager(
@@ -80,7 +86,8 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
         return applianceManager.sendCommandsToRouter(router, cmds);
     }
 
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public boolean visit(final FirewallRules firewall) throws ResourceUnavailableException {
         Network network = firewall.getNetwork();
         VirtualRouter router = firewall.getRouter();
@@ -89,24 +96,33 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
 
         Purpose purpose = firewall.getPurpose();
 
+        final Commands cmds = new Commands(Command.OnError.Continue);
         if (purpose == Purpose.LoadBalancing) {
 
-            //return sendLBRules(router, loadbalancingRules, network.getId());
-
+        	firewall.createApplyLoadBalancingRulesCommands(loadbalancingRules, router, cmds, network.getId());
+        	
+        	return applianceManager.sendCommandsToRouter(router, cmds);
+        	
         } else if (purpose == Purpose.PortForwarding) {
 
-            //return sendPortForwardingRules(router, (List<PortForwardingRule>)rules, network.getId());
+            firewall.createApplyPortForwardingRulesCommands((List<? extends PortForwardingRule>) rules, router, cmds, network.getId());
+            
+            return applianceManager.sendCommandsToRouter(router, cmds);
 
         } else if (purpose == Purpose.StaticNat) {
 
-            //return sendStaticNatRules(router, (List<StaticNatRule>)rules, network.getId());
+            firewall.createApplyStaticNatRulesCommands((List<StaticNatRule>)rules, router, cmds, network.getId());
+            
+            return applianceManager.sendCommandsToRouter(router, cmds);
 
         } else if (purpose == Purpose.Firewall) {
 
-            //return sendFirewallRules(router, (List<FirewallRule>)rules, network.getId());
+        	firewall.createApplyFirewallRulesCommands(rules, router, cmds, network.getId());
+
+        	return applianceManager.sendCommandsToRouter(router, cmds);
 
         }
-        //s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
+        s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
 
         return false;
     }

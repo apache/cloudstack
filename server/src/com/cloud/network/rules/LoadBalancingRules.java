@@ -33,8 +33,6 @@ import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
-import com.cloud.network.router.NEWVirtualNetworkApplianceManager;
-import com.cloud.network.router.RouterControlHelper;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.topology.NetworkTopologyVisitor;
@@ -47,10 +45,6 @@ import com.cloud.vm.NicProfile;
 public class LoadBalancingRules extends RuleApplier {
 
     private final List<LoadBalancingRule> rules;
-
-    protected RouterControlHelper routerControlHelper;
-
-    protected NEWVirtualNetworkApplianceManager applianceManager;
 
     public LoadBalancingRules(final Network network, final List<LoadBalancingRule> rules) {
         super(network);
@@ -138,13 +132,5 @@ public class LoadBalancingRules extends RuleApplier {
         final DataCenterVO dcVo = dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
-    }
-
-    public void setManager(final NEWVirtualNetworkApplianceManager applianceManager) {
-        this.applianceManager = applianceManager;
-    }
-
-    public NEWVirtualNetworkApplianceManager getApplianceManager() {
-        return applianceManager;
     }
 }

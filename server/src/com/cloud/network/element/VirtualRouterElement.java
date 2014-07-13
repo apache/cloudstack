@@ -254,25 +254,28 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean applyFWRules(final Network config, final List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        if (canHandle(config, Service.Firewall)) {
-            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
+    public boolean applyFWRules(final Network network, final List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        if (canHandle(network, Service.Firewall)) {
+            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " + "router doesn't exist in the network " +
-                        config.getId());
+                        network.getId());
                 return true;
             }
 
             if (rules != null && rules.size() == 1) {
                 // for VR no need to add default egress rule to DENY traffic
-                if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System &&
-                        !_networkMdl.getNetworkEgressDefaultPolicy(config.getId())) {
+                if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System
+                        && !_networkMdl.getNetworkEgressDefaultPolicy(network.getId())) {
                     return true;
                 }
             }
 
-            if (!_routerMgr.applyFirewallRules(config, rules, routers)) {
-                throw new CloudRuntimeException("Failed to apply firewall rules in network " + config.getId());
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = NetworkTopologyContext.getInstance().retrieveNetworkTopology(dcVO);
+
+            if (!networkTopology.applyFirewallRules(network, rules, routers)) {
+                throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
             } else {
                 return true;
             }
