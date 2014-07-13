@@ -28,7 +28,9 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.RuleApplier;
+import com.cloud.network.rules.RuleApplierWrapper;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -56,8 +58,9 @@ public interface NetworkTopology {
             throws ResourceUnavailableException;
 
     boolean applyRules(final Network network, final List<? extends VirtualRouter> routers, final String typeString, final boolean isPodLevelException, final Long podId,
-            final boolean failWhenDisconnect, final RuleApplier applier) throws ResourceUnavailableException;
+            final boolean failWhenDisconnect, RuleApplierWrapper<RuleApplier> ruleApplier) throws ResourceUnavailableException;
 
-    boolean sendCommandsToRouter(VirtualRouter router,
-            List<LoadBalancingRule> rules, long id);
+    boolean applyLoadBalancingRules(Network network, List<LoadBalancingRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
+
+    boolean applyFirewallRules(final Network network, final List<? extends FirewallRule> rules, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 }
