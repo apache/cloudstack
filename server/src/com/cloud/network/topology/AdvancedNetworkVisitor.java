@@ -19,6 +19,8 @@ package com.cloud.network.topology;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.ResourceUnavailableException;
@@ -33,9 +35,11 @@ import com.cloud.network.rules.IpAssociationRules;
 import com.cloud.network.rules.LoadBalancingRules;
 import com.cloud.network.rules.NetworkAclsRules;
 import com.cloud.network.rules.PasswordToRouterRules;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PrivateGatewayRules;
 import com.cloud.network.rules.SshKeyToRouterRules;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StaticNatRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
@@ -44,8 +48,12 @@ import com.cloud.network.rules.VpnRules;
 
 public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
 
-    public AdvancedNetworkVisitor(final NetworkTopology networkTopology) {
-        super(networkTopology);
+    private static final Logger s_logger = Logger.getLogger(AdvancedNetworkVisitor.class);
+
+    protected NEWVirtualNetworkApplianceManager applianceManager;
+
+    public void setApplianceManager(final NEWVirtualNetworkApplianceManager applianceManager) {
+        this.applianceManager = applianceManager;
     }
 
     @Override
@@ -57,7 +65,7 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
         final Commands cmds = new Commands(Command.OnError.Continue);
         nat.createApplyStaticNatCommands(rules, router, cmds, network.getId());
 
-        //return sendCommandsToRouter(router, cmds);
+        // return sendCommandsToRouter(router, cmds);
 
         return false;
     }
@@ -74,6 +82,7 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
         return networkTopology.sendCommandsToRouter(router, rules, network.getId());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean visit(final FirewallRules firewall) throws ResourceUnavailableException {
         Network network = firewall.getNetwork();
@@ -83,24 +92,33 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
 
         Purpose purpose = firewall.getPurpose();
 
+        final Commands cmds = new Commands(Command.OnError.Continue);
         if (purpose == Purpose.LoadBalancing) {
 
-            //return sendLBRules(router, loadbalancingRules, network.getId());
+            firewall.createApplyLoadBalancingRulesCommands(loadbalancingRules, router, cmds, network.getId());
+
+            return applianceManager.sendCommandsToRouter(router, cmds);
 
         } else if (purpose == Purpose.PortForwarding) {
 
-            //return sendPortForwardingRules(router, (List<PortForwardingRule>)rules, network.getId());
+            firewall.createApplyPortForwardingRulesCommands((List<? extends PortForwardingRule>) rules, router, cmds, network.getId());
+
+            return applianceManager.sendCommandsToRouter(router, cmds);
 
         } else if (purpose == Purpose.StaticNat) {
 
-            //return sendStaticNatRules(router, (List<StaticNatRule>)rules, network.getId());
+            firewall.createApplyStaticNatRulesCommands((List<StaticNatRule>) rules, router, cmds, network.getId());
+
+            return applianceManager.sendCommandsToRouter(router, cmds);
 
         } else if (purpose == Purpose.Firewall) {
 
-            //return sendFirewallRules(router, (List<FirewallRule>)rules, network.getId());
+            firewall.createApplyFirewallRulesCommands(rules, router, cmds, network.getId());
+
+            return applianceManager.sendCommandsToRouter(router, cmds);
 
         }
-        //s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
+        s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
 
         return false;
     }
@@ -110,7 +128,7 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
         VirtualRouter router = ipRules.getRouter();
         Commands commands = ipRules.getCommands();
 
-        //return sendCommandsToRouter(router, commands);
+        // return sendCommandsToRouter(router, commands);
 
         return false;
     }
@@ -151,12 +169,12 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
     }
 
     @Override
-    public boolean visit(PrivateGatewayRules userdata) throws ResourceUnavailableException {
+    public boolean visit(final PrivateGatewayRules userdata) throws ResourceUnavailableException {
         return false;
     }
 
     @Override
-    public boolean visit(VpnRules userdata) throws ResourceUnavailableException {
+    public boolean visit(final VpnRules userdata) throws ResourceUnavailableException {
         return false;
     }
 }
