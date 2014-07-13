@@ -39,7 +39,11 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRules;
 import com.cloud.network.rules.LoadBalancingRules;
+import com.cloud.network.rules.RuleApplier;
+import com.cloud.network.rules.RuleApplierWrapper;
 import com.cloud.network.rules.VirtualNetworkApplianceFactory;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
@@ -53,13 +57,13 @@ public class BasicNetworkTopology implements NetworkTopology {
     private static final Logger s_logger = Logger.getLogger(BasicNetworkTopology.class);
 
     @Inject
-    VirtualNetworkApplianceFactory applianceFactory;
+    private VirtualNetworkApplianceFactory virtualNetworkApplianceFactory;
 
     @Inject
-    DataCenterDao _dcDao;
+    private DataCenterDao _dcDao;
 
     @Inject
-    HostDao _hostDao;
+    private HostDao _hostDao;
 
     @Override
     public List<DomainRouterVO> findOrDeployVirtualRouterInGuestNetwork(
@@ -109,31 +113,21 @@ public class BasicNetworkTopology implements NetworkTopology {
     }
 
     @Override
-    public boolean applyRules(final Network network, final List<VirtualRouter> routers, final String typeString,
-            final boolean isPodLevelException, final Long podId, final boolean failWhenDisconnect) throws ResourceUnavailableException {
-
-        return false;
-    }
-
-    @Override
-    public boolean applyLoadBalancingRules(final Network network, final List<LoadBalancingRule> rules, final List<? extends VirtualRouter> routers)
-            throws ResourceUnavailableException {
-
-        final String typeString = "loadbalancing rules";
-        final boolean isPodLevelException = false;
-        final boolean failWhenDisconnect = false;
-        final Long podId = null;
-
+    public boolean applyRules(Network network, List<? extends VirtualRouter> routers, String typeString, boolean isPodLevelException, Long podId, boolean failWhenDisconnect,
+    		RuleApplierWrapper<RuleApplier> ruleApplierWrapper)
+    		throws ResourceUnavailableException {
+    	
         if (routers == null || routers.isEmpty()) {
             s_logger.warn("Unable to apply " + typeString + ", virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to apply " + typeString, DataCenter.class, network.getDataCenterId());
         }
 
-        LoadBalancingRules loadBalancingRules = applianceFactory.createLoadBalancingRules(network, rules);
         AdvancedNetworkVisitor visitor = new AdvancedNetworkVisitor();
 
+        RuleApplier ruleApplier =  ruleApplierWrapper.getRuleType();
+        
         //REMOVE THIS SHIT AND INJECT USING A FACTORY FOR THE VISITORS
-        visitor.setApplianceManager(loadBalancingRules.getApplianceManager());
+        visitor.setApplianceManager(ruleApplier.getApplianceManager());
 
         final DataCenter dc = _dcDao.findById(network.getDataCenterId());
         final boolean isZoneBasic = (dc.getNetworkType() == NetworkType.Basic);
@@ -159,7 +153,7 @@ public class BasicNetworkTopology implements NetworkTopology {
                 }
 
                 try {
-                    loadBalancingRules.accept(visitor, router);
+                    ruleApplier.accept(visitor, router);
 
                     connectedRouters.add(router);
                 } catch (final AgentUnavailableException e) {
@@ -209,5 +203,41 @@ public class BasicNetworkTopology implements NetworkTopology {
             result = !connectedRouters.isEmpty();
         }
         return result;
+    }
+
+    @Override
+    public boolean applyLoadBalancingRules(final Network network, final List<LoadBalancingRule> rules, final List<? extends VirtualRouter> routers)
+            throws ResourceUnavailableException {
+
+    	if (rules == null || rules.isEmpty()) {
+            s_logger.debug("No lb rules to be applied for network " + network.getId());
+            return true;
+        }
+    	
+        final String typeString = "loadbalancing rules";
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+        final Long podId = null;
+
+        LoadBalancingRules loadBalancingRules = virtualNetworkApplianceFactory.createLoadBalancingRules(network, rules);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(loadBalancingRules));
+    }
+    
+    @Override
+    public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+    	if (rules == null || rules.isEmpty()) {
+            s_logger.debug("No firewall rules to be applied for network " + network.getId());
+            return true;
+        }
+    	
+    	final String typeString = "firewall rules";
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+        final Long podId = null;
+
+        FirewallRules firewallRules = virtualNetworkApplianceFactory.createFirewallRules(network, rules);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(firewallRules));
     }
 }
