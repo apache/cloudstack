@@ -1829,8 +1829,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String vmNameOnVcenter = null;
         if (vmSpec.getHostName() != null) {
             vmInternalCSName = vmSpec.getName();
-            if (_instanceNameFlag == true)
-                vmNameOnVcenter = vmSpec.getHostName();
+            if (_instanceNameFlag == true) {
+                String[] tokens = vmInternalCSName.split("-");
+                vmNameOnVcenter = String.format("%s-%s-%s", tokens[0], tokens[1], vmSpec.getHostName());
+            }
             else
                 vmNameOnVcenter = vmSpec.getName();
         } else {
