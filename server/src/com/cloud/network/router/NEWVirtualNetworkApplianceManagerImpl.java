@@ -285,7 +285,7 @@ public class NEWVirtualNetworkApplianceManagerImpl implements NEWVirtualNetworkA
         return result;
     }
 
-    //Checks if the router is at the required version
+    // Checks if the router is at the required version
     // Compares MS version and router version
     protected boolean checkRouterVersion(final VirtualRouter router) {
         if(!routerVersionCheckEnabled.value()){

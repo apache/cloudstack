@@ -82,10 +82,6 @@ public abstract class RuleApplier {
         return router;
     }
 
-    public void setManager(final NEWVirtualNetworkApplianceManager applianceManager) {
-        this.applianceManager = applianceManager;
-    }
-
     public NEWVirtualNetworkApplianceManager getApplianceManager() {
         return applianceManager;
     }

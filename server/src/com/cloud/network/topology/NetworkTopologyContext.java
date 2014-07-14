@@ -19,27 +19,24 @@ package com.cloud.network.topology;
 
 import java.util.Hashtable;
 
+import javax.inject.Inject;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 
-public final class NetworkTopologyContext {
+public class NetworkTopologyContext {
 
-    private static NetworkTopologyContext instance;
+    private final Hashtable<NetworkType, NetworkTopology> flyweight = new Hashtable<DataCenter.NetworkType, NetworkTopology>();;
 
-    static {
-        instance = new NetworkTopologyContext();
-    }
+    @Inject
+    private BasicNetworkTopology basicNetworkTopology;
 
-    private final Hashtable<NetworkType, NetworkTopology> flyweight;
+    @Inject
+    private AdvancedNetworkTopology advancedNetworkTopology;
 
-    private NetworkTopologyContext() {
-        flyweight = new Hashtable<DataCenter.NetworkType, NetworkTopology>();
-        flyweight.put(NetworkType.Basic, new BasicNetworkTopology());
-        flyweight.put(NetworkType.Advanced, new AdvancedNetworkTopology());
-    }
-
-    public static NetworkTopologyContext getInstance() {
-        return instance;
+    public void init() {
+        flyweight.put(NetworkType.Basic, basicNetworkTopology);
+        flyweight.put(NetworkType.Advanced, advancedNetworkTopology);
     }
 
     public NetworkTopology retrieveNetworkTopology(final DataCenter dc) {
