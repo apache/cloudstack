@@ -14,8 +14,10 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.NEWVirtualNetworkApplianceManager;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
@@ -37,6 +39,9 @@ public class VirtualNetworkApplianceFactory {
     protected NicDao nicDao;
 
     @Inject
+    protected VirtualMachineManager itMgr;
+
+    @Inject
     protected NetworkOfferingDao networkOfferingDao;
 
     @Inject
@@ -53,6 +58,9 @@ public class VirtualNetworkApplianceFactory {
 
     @Inject
     protected RouterControlHelper routerControlHelper;
+
+    @Inject
+    protected NEWVirtualNetworkApplianceManager applianceManager;
 
 
     public LoadBalancingRules createLoadBalancingRules(final Network network,
@@ -83,8 +91,10 @@ public class VirtualNetworkApplianceFactory {
         applier.loadBalancerDao = loadBalancerDao;
         applier.configDao = configDao;
         applier.nicDao = nicDao;
+        applier.itMgr = itMgr;
         applier.networkOfferingDao = networkOfferingDao;
         applier.routerDao = routerDao;
         applier.routerControlHelper = routerControlHelper;
+        applier.applianceManager = applianceManager;
     }
 }
