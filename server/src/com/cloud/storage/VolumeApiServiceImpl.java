@@ -1141,50 +1141,77 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     public Volume attachVolumeToVM(AttachVolumeCmd command) {
-
-        AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
-        if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            // avoid re-entrance
-
-            VmWorkJobVO placeHolder = null;
-            if (VmJobEnabled.value()) {
-                placeHolder = createPlaceHolderWork(command.getVirtualMachineId());
-            }
-            try {
-            return orchestrateAttachVolumeToVM(command.getVirtualMachineId(), command.getId(), command.getDeviceId());
-            } finally {
-                if (VmJobEnabled.value())
-                    _workJobDao.expunge(placeHolder.getId());
-            }
-
-        } else {
-            Outcome<Volume> outcome = attachVolumeToVmThroughJobQueue(command.getVirtualMachineId(), command.getId(), command.getDeviceId());
-
-            Volume vol = null;
-            try {
-                outcome.get();
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Operation is interrupted", e);
-            } catch (java.util.concurrent.ExecutionException e) {
-                throw new RuntimeException("Execution excetion", e);
-            }
-
-            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobResult != null) {
-                if (jobResult instanceof ConcurrentOperationException)
-                    throw (ConcurrentOperationException)jobResult;
-                else if (jobResult instanceof Throwable)
-                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
-                else if (jobResult instanceof Long) {
-                    vol = _volsDao.findById((Long) jobResult);
-                }
-            }
-            return vol;
-        }
+        return attachVolumeToVM(command.getVirtualMachineId(), command.getId(), command.getDeviceId());
     }
 
     private Volume orchestrateAttachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
-        return attachVolumeToVM(vmId, volumeId, deviceId);
+        VolumeInfo volumeToAttach = volFactory.getVolume(volumeId);
+        UserVmVO vm = _userVmDao.findById(vmId);
+        VolumeVO exstingVolumeOfVm = null;
+        List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
+        if (rootVolumesOfVm.size() > 1) {
+            throw new CloudRuntimeException("The VM " + vm.getHostName() + " has more than one ROOT volume and is in an invalid state.");
+        } else {
+            if (!rootVolumesOfVm.isEmpty()) {
+                exstingVolumeOfVm = rootVolumesOfVm.get(0);
+            } else {
+                // locate data volume of the vm
+                List<VolumeVO> diskVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
+                for (VolumeVO diskVolume : diskVolumesOfVm) {
+                    if (diskVolume.getState() != Volume.State.Allocated) {
+                        exstingVolumeOfVm = diskVolume;
+                        break;
+                    }
+                }
+            }
+        }
+
+        HypervisorType rootDiskHyperType = vm.getHypervisorType();
+        HypervisorType volumeToAttachHyperType = _volsDao.getHypervisorType(volumeToAttach.getId());
+
+        VolumeInfo newVolumeOnPrimaryStorage = volumeToAttach;
+
+        //don't create volume on primary storage if its being attached to the vm which Root's volume hasn't been created yet
+        StoragePoolVO destPrimaryStorage = null;
+        if (exstingVolumeOfVm != null && !exstingVolumeOfVm.getState().equals(Volume.State.Allocated)) {
+            destPrimaryStorage = _storagePoolDao.findById(exstingVolumeOfVm.getPoolId());
+        }
+
+        if (destPrimaryStorage != null && (volumeToAttach.getState() == Volume.State.Allocated || volumeToAttach.getState() == Volume.State.Uploaded)) {
+            try {
+                newVolumeOnPrimaryStorage = _volumeMgr.createVolumeOnPrimaryStorage(vm, volumeToAttach, rootDiskHyperType, destPrimaryStorage);
+            } catch (NoTransitionException e) {
+                s_logger.debug("Failed to create volume on primary storage", e);
+                throw new CloudRuntimeException("Failed to create volume on primary storage", e);
+            }
+        }
+
+        // reload the volume from db
+        newVolumeOnPrimaryStorage = volFactory.getVolume(newVolumeOnPrimaryStorage.getId());
+        boolean moveVolumeNeeded = needMoveVolume(exstingVolumeOfVm, newVolumeOnPrimaryStorage);
+
+        if (moveVolumeNeeded) {
+            PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)newVolumeOnPrimaryStorage.getDataStore();
+            if (primaryStore.isLocal()) {
+                throw new CloudRuntimeException("Failed to attach local data volume " + volumeToAttach.getName() + " to VM " + vm.getDisplayName()
+                        + " as migration of local data volume is not allowed");
+            }
+            StoragePoolVO vmRootVolumePool = _storagePoolDao.findById(exstingVolumeOfVm.getPoolId());
+
+            try {
+                newVolumeOnPrimaryStorage = _volumeMgr.moveVolume(newVolumeOnPrimaryStorage, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(),
+                        vmRootVolumePool.getClusterId(), volumeToAttachHyperType);
+            } catch (ConcurrentOperationException e) {
+                s_logger.debug("move volume failed", e);
+                throw new CloudRuntimeException("move volume failed", e);
+            } catch (StorageUnavailableException e) {
+                s_logger.debug("move volume failed", e);
+                throw new CloudRuntimeException("move volume failed", e);
+            }
+        }
+        VolumeVO newVol = _volsDao.findById(newVolumeOnPrimaryStorage.getId());
+        newVol = sendAttachVolumeCommand(vm, newVol, deviceId);
+        return newVol;
     }
 
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async = true)
@@ -1275,25 +1302,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Volume state must be in Allocated, Ready or in Uploaded state");
         }
 
-        VolumeVO exstingVolumeOfVm = null;
-        List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
-        if (rootVolumesOfVm.size() > 1) {
-            throw new CloudRuntimeException("The VM " + vm.getHostName() + " has more than one ROOT volume and is in an invalid state.");
-        } else {
-            if (!rootVolumesOfVm.isEmpty()) {
-                exstingVolumeOfVm = rootVolumesOfVm.get(0);
-            } else {
-                // locate data volume of the vm
-                List<VolumeVO> diskVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
-                for (VolumeVO diskVolume : diskVolumesOfVm) {
-                    if (diskVolume.getState() != Volume.State.Allocated) {
-                        exstingVolumeOfVm = diskVolume;
-                        break;
-                    }
-                }
-            }
-        }
-
         HypervisorType rootDiskHyperType = vm.getHypervisorType();
         HypervisorType volumeToAttachHyperType = _volsDao.getHypervisorType(volumeToAttach.getId());
 
@@ -1304,47 +1312,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (volumeToAttachStoragePool != null && !volumeToAttachStoragePool.isManaged()) {
             if (volumeToAttachHyperType != HypervisorType.None && rootDiskHyperType != volumeToAttachHyperType) {
                 throw new InvalidParameterValueException("Can't attach a volume created by: " + volumeToAttachHyperType + " to a " + rootDiskHyperType + " vm");
-            }
-        }
-
-        VolumeInfo newVolumeOnPrimaryStorage = volumeToAttach;
-
-        //don't create volume on primary storage if its being attached to the vm which Root's volume hasn't been created yet
-        StoragePoolVO destPrimaryStorage = null;
-        if (exstingVolumeOfVm != null && !exstingVolumeOfVm.getState().equals(Volume.State.Allocated)) {
-            destPrimaryStorage = _storagePoolDao.findById(exstingVolumeOfVm.getPoolId());
-        }
-
-        if (destPrimaryStorage != null && (volumeToAttach.getState() == Volume.State.Allocated || volumeToAttach.getState() == Volume.State.Uploaded)) {
-            try {
-                newVolumeOnPrimaryStorage = _volumeMgr.createVolumeOnPrimaryStorage(vm, volumeToAttach, rootDiskHyperType, destPrimaryStorage);
-            } catch (NoTransitionException e) {
-                s_logger.debug("Failed to create volume on primary storage", e);
-                throw new CloudRuntimeException("Failed to create volume on primary storage", e);
-            }
-        }
-
-        // reload the volume from db
-        newVolumeOnPrimaryStorage = volFactory.getVolume(newVolumeOnPrimaryStorage.getId());
-        boolean moveVolumeNeeded = needMoveVolume(exstingVolumeOfVm, newVolumeOnPrimaryStorage);
-
-        if (moveVolumeNeeded) {
-            PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)newVolumeOnPrimaryStorage.getDataStore();
-            if (primaryStore.isLocal()) {
-                throw new CloudRuntimeException("Failed to attach local data volume " + volumeToAttach.getName() + " to VM " + vm.getDisplayName()
-                        + " as migration of local data volume is not allowed");
-            }
-            StoragePoolVO vmRootVolumePool = _storagePoolDao.findById(exstingVolumeOfVm.getPoolId());
-
-            try {
-                newVolumeOnPrimaryStorage = _volumeMgr.moveVolume(newVolumeOnPrimaryStorage, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(),
-                        vmRootVolumePool.getClusterId(), volumeToAttachHyperType);
-            } catch (ConcurrentOperationException e) {
-                s_logger.debug("move volume failed", e);
-                throw new CloudRuntimeException("move volume failed", e);
-            } catch (StorageUnavailableException e) {
-                s_logger.debug("move volume failed", e);
-                throw new CloudRuntimeException("move volume failed", e);
             }
         }
 
@@ -1360,9 +1327,45 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
         }
 
-        VolumeVO newVol = _volsDao.findById(newVolumeOnPrimaryStorage.getId());
-        newVol = sendAttachVolumeCommand(vm, newVol, deviceId);
-        return newVol;
+        AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+        if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+            // avoid re-entrance
+
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                placeHolder = createPlaceHolderWork(vmId);
+            }
+            try {
+                return orchestrateAttachVolumeToVM(vmId, volumeId, deviceId);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
+
+        } else {
+            Outcome<Volume> outcome = attachVolumeToVmThroughJobQueue(vmId, volumeId, deviceId);
+
+            Volume vol = null;
+            try {
+                outcome.get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Operation is interrupted", e);
+            } catch (java.util.concurrent.ExecutionException e) {
+                throw new RuntimeException("Execution excetion", e);
+            }
+
+            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof ConcurrentOperationException)
+                    throw (ConcurrentOperationException)jobResult;
+                else if (jobResult instanceof Throwable)
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                else if (jobResult instanceof Long) {
+                    vol = _volsDao.findById((Long)jobResult);
+                }
+            }
+            return vol;
+        }
     }
 
     @Override
