@@ -277,7 +277,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
             DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             NetworkTopology networkTopology = NetworkTopologyContext.getInstance().retrieveNetworkTopology(dcVO);
-            
+
             if (!networkTopology.applyFirewallRules(network, rules, routers)) {
                 throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
             } else {
