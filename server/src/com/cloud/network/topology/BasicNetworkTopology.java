@@ -43,6 +43,8 @@ import com.cloud.network.rules.FirewallRules;
 import com.cloud.network.rules.LoadBalancingRules;
 import com.cloud.network.rules.RuleApplier;
 import com.cloud.network.rules.RuleApplierWrapper;
+import com.cloud.network.rules.StaticNat;
+import com.cloud.network.rules.StaticNatRules;
 import com.cloud.network.rules.VirtualNetworkApplianceFactory;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
@@ -237,5 +239,24 @@ public class BasicNetworkTopology implements NetworkTopology {
         FirewallRules firewallRules = virtualNetworkApplianceFactory.createFirewallRules(network, rules);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(firewallRules));
+    }
+
+    @Override
+    public boolean applyStaticNats(final Network network, final List<? extends StaticNat> rules, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+        if (rules == null || rules.isEmpty()) {
+            s_logger.debug("No static nat rules to be applied for network " + network.getId());
+            return true;
+        }
+
+        s_logger.debug("APPLYING STATIC NAT RULES");
+
+        final String typeString = "static nat rules";
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+        final Long podId = null;
+
+        StaticNatRules natRules = virtualNetworkApplianceFactory.createStaticNatRules(network, rules);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(natRules));
     }
 }
