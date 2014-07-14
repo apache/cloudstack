@@ -65,9 +65,7 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
         final Commands cmds = new Commands(Command.OnError.Continue);
         nat.createApplyStaticNatCommands(rules, router, cmds, network.getId());
 
-        // return sendCommandsToRouter(router, cmds);
-
-        return false;
+        return applianceManager.sendCommandsToRouter(router, cmds);
     }
 
     @Override
