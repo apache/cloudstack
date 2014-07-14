@@ -44,10 +44,10 @@ public class VirtualNetworkApplianceFactory {
 
     @Inject
     protected DomainRouterDao routerDao;
-    
+
     @Inject
     protected NetworkDao networkDao;
-    
+
     @Inject
     protected FirewallRulesDao rulesDao;
 
@@ -63,7 +63,7 @@ public class VirtualNetworkApplianceFactory {
 
         return lbRules;
     }
-    
+
     public FirewallRules createFirewallRules(final Network network,
             final List<? extends FirewallRule> rules) {
         FirewallRules fwRules = new FirewallRules(network, rules);
@@ -72,19 +72,19 @@ public class VirtualNetworkApplianceFactory {
 
         fwRules.networkDao = networkDao;
         fwRules.rulesDao = rulesDao;
-        
+
         return fwRules;
     }
-    
-    private void initBeans(RuleApplier applier) {
-    	applier.networkModel = this.networkModel;
-        applier.dcDao = this.dcDao;
-        applier.lbMgr = this.lbMgr;
-        applier.loadBalancerDao = this.loadBalancerDao;
-        applier.configDao = this.configDao;
-        applier.nicDao = this.nicDao;
-        applier.networkOfferingDao = this.networkOfferingDao;
-        applier.routerDao = this.routerDao;
-        applier.routerControlHelper = this.routerControlHelper;
+
+    private void initBeans(final RuleApplier applier) {
+        applier.networkModel = networkModel;
+        applier.dcDao = dcDao;
+        applier.lbMgr = lbMgr;
+        applier.loadBalancerDao = loadBalancerDao;
+        applier.configDao = configDao;
+        applier.nicDao = nicDao;
+        applier.networkOfferingDao = networkOfferingDao;
+        applier.routerDao = routerDao;
+        applier.routerControlHelper = routerControlHelper;
     }
 }
