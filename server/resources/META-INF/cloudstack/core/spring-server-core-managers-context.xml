@@ -175,6 +175,7 @@
 
     <bean id="uploadMonitorImpl" class="com.cloud.storage.upload.UploadMonitorImpl" />
     <bean id="usageServiceImpl" class="com.cloud.usage.UsageServiceImpl" />
+    
     <bean id="virtualNetworkApplianceManagerImpl"
         class="com.cloud.network.router.VirtualNetworkApplianceManagerImpl" />
         
@@ -197,10 +198,13 @@
     
     <bean id="routerControlHelper"
         class="com.cloud.network.router.RouterControlHelper" />
+        
     <bean id="networkGeneralHelper"
         class="com.cloud.network.router.NetworkGeneralHelper" />
+        
     <bean id="vpcVirtualNetworkHelper"
         class="com.cloud.network.router.VpcVirtualNetworkHelperImpl" />
+        
     <bean id="routerDeploymentManager"
         class="com.cloud.network.router.RouterDeploymentManager" />
 
