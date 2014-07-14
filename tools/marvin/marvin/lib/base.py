@@ -1403,7 +1403,7 @@ class PublicIPAddress:
 
         if accountid:
             cmd.account = accountid
-        elif "account" in services:
+        elif services and "account" in services:
             cmd.account = services["account"]
 
         if zoneid:
@@ -1413,7 +1413,7 @@ class PublicIPAddress:
 
         if domainid:
             cmd.domainid = domainid
-        elif "domainid" in services:
+        elif services and "domainid" in services:
             cmd.domainid = services["domainid"]
 
         if isportable:
@@ -2165,19 +2165,25 @@ class LoadBalancerRule:
         apiclient.deleteLoadBalancerRule(cmd)
         return
 
-    def assign(self, apiclient, vms):
+    def assign(self, apiclient, vms=None, vmidipmap=None):
         """Assign virtual machines to load balancing rule"""
         cmd = assignToLoadBalancerRule.assignToLoadBalancerRuleCmd()
         cmd.id = self.id
-        cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        if vmidipmap:
+            cmd.vmidipmap = vmidipmap
+        if vms:
+            cmd.virtualmachineids = [str(vm.id) for vm in vms]
         apiclient.assignToLoadBalancerRule(cmd)
         return
 
-    def remove(self, apiclient, vms):
+    def remove(self, apiclient, vms=None, vmidipmap=None):
         """Remove virtual machines from load balancing rule"""
         cmd = removeFromLoadBalancerRule.removeFromLoadBalancerRuleCmd()
         cmd.id = self.id
-        cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        if vms:
+            cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        if vmidipmap:
+            cmd.vmidipmap = vmidipmap
         apiclient.removeFromLoadBalancerRule(cmd)
         return
 
@@ -2241,13 +2247,14 @@ class LoadBalancerRule:
         return(apiclient.listLoadBalancerRules(cmd))
 
     @classmethod
-    def listLoadBalancerRuleInstances(cls, apiclient, id, applied=None, **kwargs):
+    def listLoadBalancerRuleInstances(cls, apiclient, id, lbvmips=False, applied=None, **kwargs):
         """Lists load balancing rule Instances"""
 
         cmd = listLoadBalancerRuleInstances.listLoadBalancerRuleInstancesCmd()
         cmd.id = id
         if applied:
             cmd.applied = applied
+        cmd.lbvmips = lbvmips
 
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return apiclient.listLoadBalancerRuleInstances(cmd)
@@ -4404,19 +4411,25 @@ class ApplicationLoadBalancer:
         apiclient.deleteLoadBalancerRule(cmd)
         return
 
-    def assign(self, apiclient, vms):
+    def assign(self, apiclient, vms=None, vmidipmap=None):
         """Assign virtual machines to load balancing rule"""
         cmd = assignToLoadBalancerRule.assignToLoadBalancerRuleCmd()
         cmd.id = self.id
-        cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        if vmidipmap:
+            cmd.vmidipmap = vmidipmap
+        if vms:
+            cmd.virtualmachineids = [str(vm.id) for vm in vms]
         apiclient.assignToLoadBalancerRule(cmd)
         return
 
-    def remove(self, apiclient, vms):
+    def remove(self, apiclient, vms=None, vmidipmap=None):
         """Remove virtual machines from load balancing rule"""
         cmd = removeFromLoadBalancerRule.removeFromLoadBalancerRuleCmd()
         cmd.id = self.id
-        cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        if vms:
+            cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        if vmidipmap:
+            cmd.vmidipmap = vmidipmap
         apiclient.removeFromLoadBalancerRule(cmd)
         return
 
