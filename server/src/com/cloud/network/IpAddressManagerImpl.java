@@ -420,6 +420,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     //  1.there is at least one public IP associated with the network on which first rule (PF/static NAT/LB) is being applied.
     //  2.last rule (PF/static NAT/LB) on the public IP has been revoked. So the public IP should not be associated with any provider
     boolean checkIfIpAssocRequired(Network network, boolean postApplyRules, List<PublicIp> publicIps) {
+
+        if (network.getState() == Network.State.Implementing) {
+            return true;
+        }
+
         for (PublicIp ip : publicIps) {
             if (ip.isSourceNat()) {
                 continue;

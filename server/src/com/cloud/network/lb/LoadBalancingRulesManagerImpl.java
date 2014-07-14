@@ -1137,7 +1137,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
                 CloudRuntimeException ex = new CloudRuntimeException("Failed to add specified loadbalancerruleid for vms "
-                    + instanceIds);
+                    + vmInstanceIds);
                 ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
                 // TBD: Also pack in the instanceIds in the exception using the
                 // right VO object or table name.
