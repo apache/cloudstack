@@ -57,13 +57,13 @@ public class BasicNetworkTopology implements NetworkTopology {
     private static final Logger s_logger = Logger.getLogger(BasicNetworkTopology.class);
 
     @Inject
-    private VirtualNetworkApplianceFactory virtualNetworkApplianceFactory;
+    protected VirtualNetworkApplianceFactory virtualNetworkApplianceFactory;
 
     @Inject
-    private DataCenterDao _dcDao;
+    protected DataCenterDao _dcDao;
 
     @Inject
-    private HostDao _hostDao;
+    protected HostDao _hostDao;
 
     @Override
     public List<DomainRouterVO> findOrDeployVirtualRouterInGuestNetwork(
