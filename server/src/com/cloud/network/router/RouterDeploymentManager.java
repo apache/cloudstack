@@ -75,9 +75,9 @@ public class RouterDeploymentManager {
     VirtualRouterProviderDao vrProviderDao;
 
     @Inject
-    protected NetworkGeneralHelper nwHelper;
+    NetworkGeneralHelper nwHelper;
     @Inject
-    protected VpcVirtualNetworkHelperImpl vpcHelper;
+    VpcVirtualNetworkHelperImpl vpcHelper;
 
 
     protected ServiceOfferingVO _offering;
@@ -94,19 +94,20 @@ public class RouterDeploymentManager {
 
     public List<DomainRouterVO> deployVirtualRouterInVpc(final RouterDeploymentDefinition routerDeploymentDefinition)
             throws InsufficientCapacityException,
-        ConcurrentOperationException, ResourceUnavailableException {
+            ConcurrentOperationException, ResourceUnavailableException {
 
-        List<DomainRouterVO> routers = this.findOrDeployVirtualRouterInVpc(routerDeploymentDefinition);
+        List<DomainRouterVO> routers = findOrDeployVirtualRouterInVpc(routerDeploymentDefinition);
 
-        return this.nwHelper.startRouters(routerDeploymentDefinition.getParams(), routers);
+        return nwHelper.startRouters(routerDeploymentDefinition.getParams(), routers);
     }
 
     @DB
     protected List<DomainRouterVO> findOrDeployVirtualRouterInVpc(final RouterDeploymentDefinition routerDeploymentDefinition)
-        throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         final Vpc vpc = routerDeploymentDefinition.getVpc();
         logger.debug("Deploying Virtual Router in VPC " + vpc);
+
         Vpc vpcLock = vpcDao.acquireInLockTable(vpc.getId());
         if (vpcLock == null) {
             throw new ConcurrentOperationException("Unable to lock vpc " + vpc.getId());
@@ -160,27 +161,27 @@ public class RouterDeploymentManager {
         long dcId = routerDeploymentDefinition.getDest().getDataCenter().getId();
 
         DeploymentPlan plan = new DataCenterDeployment(dcId);
-        List<DomainRouterVO> routers = this.vpcHelper.getVpcRouters(routerDeploymentDefinition.getVpc().getId());
+        List<DomainRouterVO> routers = vpcHelper.getVpcRouters(routerDeploymentDefinition.getVpc().getId());
 
         return new Pair<DeploymentPlan, List<DomainRouterVO>>(plan, routers);
     }
 
 
-    protected DomainRouterVO deployVpcRouter(final RouterDeploymentDefinition routerDeploymentDefinition, VirtualRouterProvider vrProvider,
-            long svcOffId, PublicIp sourceNatIp) throws ConcurrentOperationException, InsufficientAddressCapacityException,
-        InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
+    protected DomainRouterVO deployVpcRouter(final RouterDeploymentDefinition routerDeploymentDefinition, final VirtualRouterProvider vrProvider,
+            final long svcOffId, final PublicIp sourceNatIp) throws ConcurrentOperationException, InsufficientAddressCapacityException,
+            InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
 
         LinkedHashMap<Network, List<? extends NicProfile>> networks = createVpcRouterNetworks(routerDeploymentDefinition,
                 new Pair<Boolean, PublicIp>(true, sourceNatIp), routerDeploymentDefinition.getVpc().getId());
 
         DomainRouterVO router =
-            this.nwHelper.deployRouter(routerDeploymentDefinition, vrProvider, svcOffId, networks, true, vpcMgr.getSupportedVpcHypervisors());
+                nwHelper.deployRouter(routerDeploymentDefinition, vrProvider, svcOffId, networks, true, vpcMgr.getSupportedVpcHypervisors());
 
         return router;
     }
 
     protected LinkedHashMap<Network, List<? extends NicProfile>> createVpcRouterNetworks(final RouterDeploymentDefinition routerDeploymentDefinition,
-            Pair<Boolean, PublicIp> sourceNatIp, long vpcId)
+            final Pair<Boolean, PublicIp> sourceNatIp, final long vpcId)
                     throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
         LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(4);
@@ -189,14 +190,14 @@ public class RouterDeploymentManager {
         publicVlans.add(sourceNatIp.second().getVlanTag());
 
         //1) allocate nic for control and source nat public ip
-        networks = this.nwHelper.createRouterNetworks(routerDeploymentDefinition, null, sourceNatIp);
+        networks = nwHelper.createRouterNetworks(routerDeploymentDefinition, null, sourceNatIp);
 
 
         //2) allocate nic for private gateways if needed
         List<PrivateGateway> privateGateways = vpcMgr.getVpcPrivateGateways(vpcId);
         if (privateGateways != null && !privateGateways.isEmpty()) {
             for (PrivateGateway privateGateway : privateGateways) {
-                NicProfile privateNic = this.vpcHelper.createPrivateNicProfileForGateway(privateGateway);
+                NicProfile privateNic = vpcHelper.createPrivateNicProfileForGateway(privateGateway);
                 Network privateNetwork = networkModel.getNetwork(privateGateway.getNetworkId());
                 networks.put(privateNetwork, new ArrayList<NicProfile>(Arrays.asList(privateNic)));
             }
@@ -221,7 +222,7 @@ public class RouterDeploymentManager {
         for (IPAddressVO ip : ips) {
             PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, vlanDao.findById(ip.getVlanId()));
             if ((ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) && vpcMgr.isIpAllocatedToVpc(ip) &&
-                !publicVlans.contains(publicIp.getVlanTag())) {
+                    !publicVlans.contains(publicIp.getVlanTag())) {
                 logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());
                 NicProfile publicNic = new NicProfile();
                 publicNic.setDefaultNic(false);
@@ -255,7 +256,7 @@ public class RouterDeploymentManager {
         return networks;
     }
 
-    protected NicProfile createGuestNicProfileForVpcRouter(Network guestNetwork) {
+    protected NicProfile createGuestNicProfileForVpcRouter(final Network guestNetwork) {
         NicProfile guestNic = new NicProfile();
         guestNic.setIp4Address(guestNetwork.getGateway());
         guestNic.setBroadcastUri(guestNetwork.getBroadcastUri());
