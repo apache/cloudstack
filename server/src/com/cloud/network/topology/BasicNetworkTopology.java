@@ -113,10 +113,10 @@ public class BasicNetworkTopology implements NetworkTopology {
     }
 
     @Override
-    public boolean applyRules(Network network, List<? extends VirtualRouter> routers, String typeString, boolean isPodLevelException, Long podId, boolean failWhenDisconnect,
-    		RuleApplierWrapper<RuleApplier> ruleApplierWrapper)
-    		throws ResourceUnavailableException {
-    	
+    public boolean applyRules(final Network network, final List<? extends VirtualRouter> routers, final String typeString, final boolean isPodLevelException, final Long podId, final boolean failWhenDisconnect,
+            final RuleApplierWrapper<RuleApplier> ruleApplierWrapper)
+                    throws ResourceUnavailableException {
+
         if (routers == null || routers.isEmpty()) {
             s_logger.warn("Unable to apply " + typeString + ", virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to apply " + typeString, DataCenter.class, network.getDataCenterId());
@@ -125,7 +125,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         AdvancedNetworkVisitor visitor = new AdvancedNetworkVisitor();
 
         RuleApplier ruleApplier =  ruleApplierWrapper.getRuleType();
-        
+
         //REMOVE THIS SHIT AND INJECT USING A FACTORY FOR THE VISITORS
         visitor.setApplianceManager(ruleApplier.getApplianceManager());
 
@@ -209,11 +209,11 @@ public class BasicNetworkTopology implements NetworkTopology {
     public boolean applyLoadBalancingRules(final Network network, final List<LoadBalancingRule> rules, final List<? extends VirtualRouter> routers)
             throws ResourceUnavailableException {
 
-    	if (rules == null || rules.isEmpty()) {
+        if (rules == null || rules.isEmpty()) {
             s_logger.debug("No lb rules to be applied for network " + network.getId());
             return true;
         }
-    	
+
         final String typeString = "loadbalancing rules";
         final boolean isPodLevelException = false;
         final boolean failWhenDisconnect = false;
@@ -223,15 +223,15 @@ public class BasicNetworkTopology implements NetworkTopology {
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(loadBalancingRules));
     }
-    
+
     @Override
-    public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
-    	if (rules == null || rules.isEmpty()) {
+    public boolean applyFirewallRules(final Network network, final List<? extends FirewallRule> rules, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+        if (rules == null || rules.isEmpty()) {
             s_logger.debug("No firewall rules to be applied for network " + network.getId());
             return true;
         }
-    	
-    	final String typeString = "firewall rules";
+
+        final String typeString = "firewall rules";
         final boolean isPodLevelException = false;
         final boolean failWhenDisconnect = false;
         final Long podId = null;
