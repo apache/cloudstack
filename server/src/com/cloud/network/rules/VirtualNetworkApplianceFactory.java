@@ -84,6 +84,15 @@ public class VirtualNetworkApplianceFactory {
         return fwRules;
     }
 
+    public StaticNatRules createStaticNatRules(final Network network,
+            final List<? extends StaticNat> rules) {
+        StaticNatRules natRules = new StaticNatRules(network, rules);
+
+        initBeans(natRules);
+
+        return natRules;
+    }
+
     private void initBeans(final RuleApplier applier) {
         applier.networkModel = networkModel;
         applier.dcDao = dcDao;
