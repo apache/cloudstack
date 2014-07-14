@@ -82,7 +82,6 @@ import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.rules.VirtualNetworkApplianceFactory;
 import com.cloud.network.topology.NetworkTopology;
 import com.cloud.network.topology.NetworkTopologyContext;
 import com.cloud.offering.NetworkOffering;
@@ -162,8 +161,9 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     OvsProviderDao _ovsProviderDao;
     @Inject
     IPAddressDao _ipAddressDao;
+
     @Inject
-    protected VirtualNetworkApplianceFactory virtualNetworkApplianceFactory;
+    NetworkTopologyContext networkTopologyContext;
 
     protected boolean canHandle(final Network network, final Service service) {
         Long physicalNetworkId = _networkMdl.getPhysicalNetworkId(network);
@@ -272,7 +272,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             }
 
             DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
-            NetworkTopology networkTopology = NetworkTopologyContext.getInstance().retrieveNetworkTopology(dcVO);
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             if (!networkTopology.applyFirewallRules(network, rules, routers)) {
                 throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
@@ -413,7 +413,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             }
 
             DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
-            NetworkTopology networkTopology = NetworkTopologyContext.getInstance().retrieveNetworkTopology(dcVO);
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             if (!networkTopology.applyLoadBalancingRules(network, rules, routers)) {
                 throw new CloudRuntimeException("Failed to apply load balancing rules in network " + network.getId());
