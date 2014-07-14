@@ -102,7 +102,7 @@ public class FirewallRules extends RuleApplier {
     public Purpose getPurpose() {
         return purpose;
     }
-    
+
     public void createApplyLoadBalancingRulesCommands(final List<LoadBalancingRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
 
         final LoadBalancerTO[] lbs = new LoadBalancerTO[rules.size()];
@@ -159,7 +159,7 @@ public class FirewallRules extends RuleApplier {
         cmds.addCommand(cmd);
 
     }
-    
+
     public void createApplyPortForwardingRulesCommands(final List<? extends PortForwardingRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
         List<PortForwardingRuleTO> rulesTO = new ArrayList<PortForwardingRuleTO>();
         if (rules != null) {
@@ -186,7 +186,7 @@ public class FirewallRules extends RuleApplier {
 
         cmds.addCommand(cmd);
     }
-    
+
     public void createApplyStaticNatRulesCommands(final List<? extends StaticNatRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
         List<StaticNatRuleTO> rulesTO = new ArrayList<StaticNatRuleTO>();
         if (rules != null) {
@@ -205,7 +205,7 @@ public class FirewallRules extends RuleApplier {
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
     }
-    
+
     public void createApplyFirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
         List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
         String systemRule = null;
