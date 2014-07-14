@@ -4455,11 +4455,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 configs.put("ip_begin", NetUtils.getLinkLocalGateway());
                 configs.put("ip_end", NetUtils.getLinkLocalIpEnd());
                 configs.put("netmask", NetUtils.getLinkLocalNetMask());
+                configs.put("vswitch-disable-in-band", "true");
                 rec.otherConfig = configs;
                 linkLocal = Network.create(conn, rec);
-
             } else {
                 linkLocal = networks.iterator().next();
+                if (!linkLocal.getOtherConfig(conn).containsKey("vswitch-disable-in-band")) {
+                    linkLocal.addToOtherConfig(conn, "vswitch-disable-in-band", "true");
+                }
             }
 
             /* Make sure there is a physical bridge on this network */
