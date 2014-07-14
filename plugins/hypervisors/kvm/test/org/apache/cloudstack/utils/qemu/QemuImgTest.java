@@ -51,7 +51,7 @@ public class QemuImgTest {
             fail("We didn't get any information back from qemu-img");
         }
 
-        Long infoSize = Long.parseLong(info.get(new String("virtual-size")));
+        Long infoSize = Long.parseLong(info.get(new String("virtual_size")));
         assertEquals(Long.valueOf(size), Long.valueOf(infoSize));
 
         String infoPath = info.get(new String("image"));
@@ -78,13 +78,13 @@ public class QemuImgTest {
         qemu.create(file, options);
         Map<String, String> info = qemu.info(file);
 
-        Long infoSize = Long.parseLong(info.get(new String("virtual-size")));
+        Long infoSize = Long.parseLong(info.get(new String("virtual_size")));
         assertEquals(Long.valueOf(size), Long.valueOf(infoSize));
 
         String infoPath = info.get(new String("image"));
         assertEquals(filename, infoPath);
 
-        String infoClusterSize = info.get(new String("cluster-size"));
+        String infoClusterSize = info.get(new String("cluster_size"));
         assertEquals(clusterSize, infoClusterSize);
 
         File f = new File(filename);
@@ -135,7 +135,7 @@ public class QemuImgTest {
                 fail("We didn't get any information back from qemu-img");
             }
 
-            Long infoSize = Long.parseLong(info.get(new String("virtual-size")));
+            Long infoSize = Long.parseLong(info.get(new String("virtual_size")));
             assertEquals(Long.valueOf(endSize), Long.valueOf(infoSize));
         } catch (QemuImgException e) {
             fail(e.getMessage());
@@ -164,7 +164,7 @@ public class QemuImgTest {
                 fail("We didn't get any information back from qemu-img");
             }
 
-            Long infoSize = Long.parseLong(info.get(new String("virtual-size")));
+            Long infoSize = Long.parseLong(info.get(new String("virtual_size")));
             assertEquals(Long.valueOf(startSize + increment), Long.valueOf(infoSize));
         } catch (QemuImgException e) {
             fail(e.getMessage());
@@ -192,7 +192,7 @@ public class QemuImgTest {
                 fail("We didn't get any information back from qemu-img");
             }
 
-            Long infoSize = Long.parseLong(info.get(new String("virtual-size")));
+            Long infoSize = Long.parseLong(info.get(new String("virtual_size")));
             assertEquals(Long.valueOf(startSize + increment), Long.valueOf(infoSize));
         } catch (QemuImgException e) {
             fail(e.getMessage());
@@ -255,7 +255,7 @@ public class QemuImgTest {
             fail("We didn't get any information back from qemu-img");
         }
 
-        String backingFile = info.get(new String("backing-file"));
+        String backingFile = info.get(new String("backing_file"));
         if (backingFile == null) {
             fail("The second file does not have a property backing_file! Create failed?");
         }
@@ -306,7 +306,7 @@ public class QemuImgTest {
         PhysicalDiskFormat infoFormat = PhysicalDiskFormat.valueOf(info.get(new String("format")).toUpperCase());
         assertEquals(destFormat, infoFormat);
 
-        Long infoSize = Long.parseLong(info.get(new String("virtual-size")));
+        Long infoSize = Long.parseLong(info.get(new String("virtual_size")));
         assertEquals(Long.valueOf(srcSize), Long.valueOf(infoSize));
 
         File sf = new File(srcFileName);
