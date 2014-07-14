@@ -210,8 +210,9 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
         RouterDeploymentDefinition routerDeploymentDefinition =
-                new RouterDeploymentDefinition(network, dest,_accountMgr.getAccount(network.getAccountId()),
+                new RouterDeploymentDefinition(network, dest, _accountMgr.getAccount(network.getAccountId()),
                         params, offering.getRedundantRouter());
+
         List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(routerDeploymentDefinition);
 
         int routerCounts = 1;
@@ -656,16 +657,19 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean applyStaticNats(final Network config, final List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        if (canHandle(config, Service.StaticNat)) {
-            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
+    public boolean applyStaticNats(final Network network, final List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        if (canHandle(network, Service.StaticNat)) {
+            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply static nat on the backend; virtual " + "router doesn't exist in the network " +
-                        config.getId());
+                        network.getId());
                 return true;
             }
 
-            return _routerMgr.applyStaticNats(config, rules, routers);
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            return networkTopology.applyStaticNats(network, rules, routers);
         } else {
             return true;
         }
