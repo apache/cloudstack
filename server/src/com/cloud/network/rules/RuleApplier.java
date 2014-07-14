@@ -17,8 +17,6 @@
 
 package com.cloud.network.rules;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.dc.dao.DataCenterDao;
@@ -40,8 +38,8 @@ import com.cloud.vm.dao.NicDao;
 
 public abstract class RuleApplier {
 
-	protected NEWVirtualNetworkApplianceManager applianceManager;
-	
+    protected NEWVirtualNetworkApplianceManager applianceManager;
+
     protected NetworkModel networkModel;
 
     protected LoadBalancingRulesManager lbMgr;
@@ -57,17 +55,17 @@ public abstract class RuleApplier {
     protected DataCenterDao dcDao;
 
     protected DomainRouterDao routerDao;
-    
+
     protected NetworkDao networkDao;
-    
+
     protected FirewallRulesDao rulesDao;
 
     protected VirtualMachineManager itMgr;
 
     protected Network network;
-    
+
     protected VirtualRouter router;
-    
+
     protected RouterControlHelper routerControlHelper;
 
     public RuleApplier(final Network network) {
@@ -83,7 +81,7 @@ public abstract class RuleApplier {
     public VirtualRouter getRouter() {
         return router;
     }
-    
+
     public void setManager(final NEWVirtualNetworkApplianceManager applianceManager) {
         this.applianceManager = applianceManager;
     }

@@ -51,8 +51,8 @@ import com.cloud.network.rules.VpnRules;
 
 public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
 
-	private static final Logger s_logger = Logger.getLogger(AdvancedNetworkVisitor.class);
-	
+    private static final Logger s_logger = Logger.getLogger(AdvancedNetworkVisitor.class);
+
     protected NEWVirtualNetworkApplianceManager applianceManager;
 
     public void setApplianceManager(
@@ -87,7 +87,7 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
     }
 
     @SuppressWarnings("unchecked")
-	@Override
+    @Override
     public boolean visit(final FirewallRules firewall) throws ResourceUnavailableException {
         Network network = firewall.getNetwork();
         VirtualRouter router = firewall.getRouter();
@@ -99,27 +99,27 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
         final Commands cmds = new Commands(Command.OnError.Continue);
         if (purpose == Purpose.LoadBalancing) {
 
-        	firewall.createApplyLoadBalancingRulesCommands(loadbalancingRules, router, cmds, network.getId());
-        	
-        	return applianceManager.sendCommandsToRouter(router, cmds);
-        	
+            firewall.createApplyLoadBalancingRulesCommands(loadbalancingRules, router, cmds, network.getId());
+
+            return applianceManager.sendCommandsToRouter(router, cmds);
+
         } else if (purpose == Purpose.PortForwarding) {
 
             firewall.createApplyPortForwardingRulesCommands((List<? extends PortForwardingRule>) rules, router, cmds, network.getId());
-            
+
             return applianceManager.sendCommandsToRouter(router, cmds);
 
         } else if (purpose == Purpose.StaticNat) {
 
             firewall.createApplyStaticNatRulesCommands((List<StaticNatRule>)rules, router, cmds, network.getId());
-            
+
             return applianceManager.sendCommandsToRouter(router, cmds);
 
         } else if (purpose == Purpose.Firewall) {
 
-        	firewall.createApplyFirewallRulesCommands(rules, router, cmds, network.getId());
+            firewall.createApplyFirewallRulesCommands(rules, router, cmds, network.getId());
 
-        	return applianceManager.sendCommandsToRouter(router, cmds);
+            return applianceManager.sendCommandsToRouter(router, cmds);
 
         }
         s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
