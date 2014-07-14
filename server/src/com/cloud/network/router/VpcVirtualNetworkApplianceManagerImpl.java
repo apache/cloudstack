@@ -159,8 +159,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
     @Inject
     protected NetworkGeneralHelper nwHelper;
+
     @Inject
     protected VpcVirtualNetworkHelperImpl vpcHelper;
+
     @Inject
     protected RouterDeploymentManager routerDeploymentManager;
 
@@ -173,12 +175,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     @Override
     public List<DomainRouterVO> deployVirtualRouter(final RouterDeploymentDefinition routerDeploymentDefinition)
             throws InsufficientCapacityException,
-    ConcurrentOperationException, ResourceUnavailableException {
-        return this.routerDeploymentManager.deployVirtualRouterInVpc(routerDeploymentDefinition);
+            ConcurrentOperationException, ResourceUnavailableException {
+        return routerDeploymentManager.deployVirtualRouterInVpc(routerDeploymentDefinition);
     }
 
     @Override
-    public boolean addVpcRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant, Map<VirtualMachineProfile.Param, Object> params)
+    public boolean addVpcRouterToGuestNetwork(final VirtualRouter router, final Network network, final boolean isRedundant, final Map<VirtualMachineProfile.Param, Object> params)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         if (network.getTrafficType() != TrafficType.Guest) {
             s_logger.warn("Network " + network + " is not of type " + TrafficType.Guest);
@@ -225,7 +227,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean removeVpcRouterFromGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) throws ConcurrentOperationException,
+    public boolean removeVpcRouterFromGuestNetwork(final VirtualRouter router, final Network network, final boolean isRedundant) throws ConcurrentOperationException,
     ResourceUnavailableException {
         if (network.getTrafficType() != TrafficType.Guest) {
             s_logger.warn("Network " + network + " is not of type " + TrafficType.Guest);
@@ -256,7 +258,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return result;
     }
 
-    protected boolean setupVpcGuestNetwork(Network network, VirtualRouter router, boolean add, NicProfile guestNic) throws ConcurrentOperationException,
+    protected boolean setupVpcGuestNetwork(final Network network, final VirtualRouter router, final boolean add, final NicProfile guestNic) throws ConcurrentOperationException,
     ResourceUnavailableException {
 
         boolean result = true;
@@ -284,7 +286,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
     }
 
-    protected SetupGuestNetworkCommand createSetupGuestNetworkCommand(VirtualRouter router, boolean add, NicProfile guestNic) {
+    protected SetupGuestNetworkCommand createSetupGuestNetworkCommand(final VirtualRouter router, final boolean add, final NicProfile guestNic) {
         Network network = _networkModel.getNetwork(guestNic.getNetworkId());
 
         String defaultDns1 = null;
@@ -325,8 +327,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return setupCmd;
     }
 
-    private void createVpcAssociatePublicIPCommands(final VirtualRouter router, final List<? extends PublicIpAddress> ips, Commands cmds,
-            Map<String, String> vlanMacAddress) {
+    private void createVpcAssociatePublicIPCommands(final VirtualRouter router, final List<? extends PublicIpAddress> ips, final Commands cmds,
+            final Map<String, String> vlanMacAddress) {
 
         Pair<IpAddressTO, Long> sourceNatIpAdd = null;
         Boolean addSourceNat = null;
@@ -396,7 +398,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean associatePublicIP(Network network, final List<? extends PublicIpAddress> ipAddress, List<? extends VirtualRouter> routers)
+    public boolean associatePublicIP(final Network network, final List<? extends PublicIpAddress> ipAddress, final List<? extends VirtualRouter> routers)
             throws ResourceUnavailableException {
         if (ipAddress == null || ipAddress.isEmpty()) {
             s_logger.debug("No ip association rules to be applied for network " + network.getId());
@@ -479,7 +481,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         //3) apply the ips
         boolean result = applyRules(network, routers, "vpc ip association", false, null, false, new RuleApplier() {
             @Override
-            public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
+            public boolean execute(final Network network, final VirtualRouter router) throws ResourceUnavailableException {
                 Commands cmds = new Commands(Command.OnError.Continue);
                 Map<String, String> vlanMacAddress = new HashMap<String, String>();
                 List<PublicIpAddress> ipsToSend = new ArrayList<PublicIpAddress>();
@@ -515,7 +517,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeVirtualMachineProfile(final VirtualMachineProfile profile, final DeployDestination dest, final ReservationContext context) {
         DomainRouterVO vr = _routerDao.findById(profile.getId());
 
         if (vr.getVpcId() != null) {
@@ -551,7 +553,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean applyNetworkACLs(Network network, final List<? extends NetworkACLItem> rules, List<? extends VirtualRouter> routers, final boolean isPrivateGateway)
+    public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final List<? extends VirtualRouter> routers, final boolean isPrivateGateway)
             throws ResourceUnavailableException {
         if (rules == null || rules.isEmpty()) {
             s_logger.debug("No network ACLs to be applied for network " + network.getId());
@@ -559,20 +561,20 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
         return applyRules(network, routers, "network acls", false, null, false, new RuleApplier() {
             @Override
-            public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
+            public boolean execute(final Network network, final VirtualRouter router) throws ResourceUnavailableException {
                 return sendNetworkACLs(router, rules, network.getId(), isPrivateGateway);
             }
         });
     }
 
-    protected boolean sendNetworkACLs(VirtualRouter router, List<? extends NetworkACLItem> rules, long guestNetworkId, boolean isPrivateGateway)
+    protected boolean sendNetworkACLs(final VirtualRouter router, final List<? extends NetworkACLItem> rules, final long guestNetworkId, final boolean isPrivateGateway)
             throws ResourceUnavailableException {
         Commands cmds = new Commands(Command.OnError.Continue);
         createNetworkACLsCommands(rules, router, cmds, guestNetworkId, isPrivateGateway);
         return sendCommandsToRouter(router, cmds);
     }
 
-    private void createNetworkACLsCommands(List<? extends NetworkACLItem> rules, VirtualRouter router, Commands cmds, long guestNetworkId, boolean privateGateway) {
+    private void createNetworkACLsCommands(final List<? extends NetworkACLItem> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId, final boolean privateGateway) {
         List<NetworkACLTO> rulesTO = new ArrayList<NetworkACLTO>();
         String guestVlan = null;
         Network guestNtwk = _networkDao.findById(guestNetworkId);
@@ -603,7 +605,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
+    public boolean finalizeCommandsOnStart(final Commands cmds, final VirtualMachineProfile profile) {
         DomainRouterVO router = _routerDao.findById(profile.getId());
 
         boolean isVpc = (router.getVpcId() != null);
@@ -789,7 +791,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    protected void finalizeNetworkRulesForNetwork(Commands cmds, DomainRouterVO router, Provider provider, Long guestNetworkId) {
+    protected void finalizeNetworkRulesForNetwork(final Commands cmds, final DomainRouterVO router, final Provider provider, final Long guestNetworkId) {
 
         super.finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
 
@@ -806,7 +808,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
 
-    protected boolean sendNetworkRulesToRouter(long routerId, long networkId)
+    protected boolean sendNetworkRulesToRouter(final long routerId, final long networkId)
             throws ResourceUnavailableException {
         DomainRouterVO router = _routerDao.findById(routerId);
         Commands cmds = new Commands(OnError.Continue);
@@ -825,11 +827,11 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean setupPrivateGateway(PrivateGateway gateway, VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean setupPrivateGateway(final PrivateGateway gateway, final VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
         boolean result = true;
         try {
             Network network = _networkModel.getNetwork(gateway.getNetworkId());
-            NicProfile requested = this.vpcHelper.createPrivateNicProfileForGateway(gateway);
+            NicProfile requested = vpcHelper.createPrivateNicProfileForGateway(gateway);
 
             if (!nwHelper.checkRouterVersion(router)) {
                 s_logger.warn("Router requires upgrade. Unable to send command to router: " + router.getId());
@@ -867,7 +869,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
      * @return
      * @throws ResourceUnavailableException
      */
-    protected boolean setupVpcPrivateNetwork(VirtualRouter router, boolean add, NicProfile privateNic) throws ResourceUnavailableException {
+    protected boolean setupVpcPrivateNetwork(final VirtualRouter router, final boolean add, final NicProfile privateNic) throws ResourceUnavailableException {
 
         if (router.getState() == State.Running) {
             PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(privateNic.getNetworkId(), privateNic.getIp4Address());
@@ -904,7 +906,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean destroyPrivateGateway(PrivateGateway gateway, VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroyPrivateGateway(final PrivateGateway gateway, final VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
 
         if (!_networkModel.isVmPartOfNetwork(router.getId(), gateway.getNetworkId())) {
             s_logger.debug("Router doesn't have nic for gateway " + gateway + " so no need to removed it");
@@ -933,7 +935,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    protected void finalizeIpAssocForNetwork(Commands cmds, VirtualRouter router, Provider provider, Long guestNetworkId, Map<String, String> vlanMacAddress) {
+    protected void finalizeIpAssocForNetwork(final Commands cmds, final VirtualRouter router, final Provider provider, final Long guestNetworkId, final Map<String, String> vlanMacAddress) {
 
         if (router.getVpcId() == null) {
             super.finalizeIpAssocForNetwork(cmds, router, provider, guestNetworkId, vlanMacAddress);
@@ -950,7 +952,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean applyStaticRoutes(List<StaticRouteProfile> staticRoutes, List<DomainRouterVO> routers) throws ResourceUnavailableException {
+    public boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
         if (staticRoutes == null || staticRoutes.isEmpty()) {
             s_logger.debug("No static routes to apply");
             return true;
@@ -972,7 +974,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return result;
     }
 
-    protected boolean sendStaticRoutes(List<StaticRouteProfile> staticRoutes, DomainRouterVO router) throws ResourceUnavailableException {
+    protected boolean sendStaticRoutes(final List<StaticRouteProfile> staticRoutes, final DomainRouterVO router) throws ResourceUnavailableException {
         Commands cmds = new Commands(Command.OnError.Continue);
         createStaticRouteCommands(staticRoutes, router, cmds);
         return sendCommandsToRouter(router, cmds);
@@ -983,7 +985,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
      * @param router
      * @param cmds
      */
-    private void createStaticRouteCommands(List<StaticRouteProfile> staticRoutes, DomainRouterVO router, Commands cmds) {
+    private void createStaticRouteCommands(final List<StaticRouteProfile> staticRoutes, final DomainRouterVO router, final Commands cmds) {
         SetStaticRouteCommand cmd = new SetStaticRouteCommand(staticRoutes);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -993,7 +995,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean startSite2SiteVpn(Site2SiteVpnConnection conn, VirtualRouter router) throws ResourceUnavailableException {
+    public boolean startSite2SiteVpn(final Site2SiteVpnConnection conn, final VirtualRouter router) throws ResourceUnavailableException {
         if (router.getState() != State.Running) {
             s_logger.warn("Unable to apply site-to-site VPN configuration, virtual router is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to apply site 2 site VPN configuration," + " virtual router is not in the right state", DataCenter.class,
@@ -1004,7 +1006,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean stopSite2SiteVpn(Site2SiteVpnConnection conn, VirtualRouter router) throws ResourceUnavailableException {
+    public boolean stopSite2SiteVpn(final Site2SiteVpnConnection conn, final VirtualRouter router) throws ResourceUnavailableException {
         if (router.getState() != State.Running) {
             s_logger.warn("Unable to apply site-to-site VPN configuration, virtual router is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to apply site 2 site VPN configuration," + " virtual router is not in the right state", DataCenter.class,
@@ -1014,13 +1016,13 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return applySite2SiteVpn(false, router, conn);
     }
 
-    protected boolean applySite2SiteVpn(boolean isCreate, VirtualRouter router, Site2SiteVpnConnection conn) throws ResourceUnavailableException {
+    protected boolean applySite2SiteVpn(final boolean isCreate, final VirtualRouter router, final Site2SiteVpnConnection conn) throws ResourceUnavailableException {
         Commands cmds = new Commands(Command.OnError.Continue);
         createSite2SiteVpnCfgCommands(conn, isCreate, router, cmds);
         return sendCommandsToRouter(router, cmds);
     }
 
-    private void createSite2SiteVpnCfgCommands(Site2SiteVpnConnection conn, boolean isCreate, VirtualRouter router, Commands cmds) {
+    private void createSite2SiteVpnCfgCommands(final Site2SiteVpnConnection conn, final boolean isCreate, final VirtualRouter router, final Commands cmds) {
         Site2SiteCustomerGatewayVO gw = _s2sCustomerGatewayDao.findById(conn.getCustomerGatewayId());
         Site2SiteVpnGatewayVO vpnGw = _s2sVpnGatewayDao.findById(conn.getVpnGatewayId());
         IpAddress ip = _ipAddressDao.findById(vpnGw.getAddrId());
@@ -1048,7 +1050,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         cmds.addCommand("applyS2SVpn", cmd);
     }
 
-    private void createVpcAssociatePrivateIPCommands(final VirtualRouter router, final List<PrivateIpAddress> ips, Commands cmds, boolean add) {
+    private void createVpcAssociatePrivateIPCommands(final VirtualRouter router, final List<PrivateIpAddress> ips, final Commands cmds, final boolean add) {
 
         // Ensure that in multiple vlans case we first send all ip addresses of vlan1, then all ip addresses of vlan2, etc..
         Map<String, ArrayList<PrivateIpAddress>> vlanIpMap = new HashMap<String, ArrayList<PrivateIpAddress>>();
@@ -1091,7 +1093,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     protected Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> getNicsToChangeOnRouter(final List<? extends PublicIpAddress> publicIps,
-            VirtualRouter router) {
+            final VirtualRouter router) {
         //1) check which nics need to be plugged/unplugged and plug/unplug them
 
         Map<String, PublicIpAddress> nicsToPlug = new HashMap<String, PublicIpAddress>();
@@ -1151,7 +1153,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile profile, Answer answer) {
+    public void finalizeStop(final VirtualMachineProfile profile, final Answer answer) {
         super.finalizeStop(profile, answer);
         //Mark VPN connections as Disconnected
         DomainRouterVO router = _routerDao.findById(profile.getId());
@@ -1162,7 +1164,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public List<DomainRouterVO> getVpcRouters(long vpcId) {
+    public List<DomainRouterVO> getVpcRouters(final long vpcId) {
         return _routerDao.listByVpcId(vpcId);
     }
 
@@ -1177,7 +1179,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users, VirtualRouter router) throws ResourceUnavailableException {
+    public String[] applyVpnUsers(final RemoteAccessVpn vpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException {
         Vpc vpc = _vpcDao.findById(vpn.getVpcId());
 
         if (router.getState() != State.Running) {
@@ -1207,7 +1209,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    protected String getVpnCidr(RemoteAccessVpn vpn) {
+    protected String getVpnCidr(final RemoteAccessVpn vpn) {
         if (vpn.getVpcId() == null) {
             return super.getVpnCidr(vpn);
         }
@@ -1216,7 +1218,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean startRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router) throws ResourceUnavailableException {
+    public boolean startRemoteAccessVpn(final RemoteAccessVpn vpn, final VirtualRouter router) throws ResourceUnavailableException {
         if (router.getState() != State.Running) {
             s_logger.warn("Unable to apply remote access VPN configuration, virtual router is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to apply remote access VPN configuration," + " virtual router is not in the right state", DataCenter.class,
@@ -1251,7 +1253,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean stopRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router) throws ResourceUnavailableException {
+    public boolean stopRemoteAccessVpn(final RemoteAccessVpn vpn, final VirtualRouter router) throws ResourceUnavailableException {
         boolean result = true;
 
         if (router.getState() == State.Running) {
