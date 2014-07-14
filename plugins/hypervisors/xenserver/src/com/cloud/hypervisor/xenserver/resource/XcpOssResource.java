@@ -27,6 +27,15 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VM;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageAnswer;
@@ -40,14 +49,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VM;
 
 @Local(value = ServerResource.class)
 public class XcpOssResource extends CitrixResourceBase {
@@ -78,6 +79,7 @@ public class XcpOssResource extends CitrixResourceBase {
         return true;
     }
 
+    @Override
     protected StartupStorageCommand initializeLocalSR(Connection conn) {
         SR extsr = getLocalEXTSR(conn);
         if (extsr != null) {
@@ -111,13 +113,17 @@ public class XcpOssResource extends CitrixResourceBase {
     }
 
     @Override
-    protected String getGuestOsType(String stdType, boolean bootFromCD) {
+    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
         if (stdType.equalsIgnoreCase("Debian GNU/Linux 6(64-bit)")) {
             return "Debian Squeeze 6.0 (64-bit)";
         } else if (stdType.equalsIgnoreCase("CentOS 5.6 (64-bit)")) {
             return "CentOS 5 (64-bit)";
         } else {
-            return CitrixHelper.getXcpGuestOsType(stdType);
+            if (platformEmulator == null || platformEmulator.isEmpty()) {
+                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XCP's guestOS type, start it as HVM guest");
+                platformEmulator = "Other install media";
+            }
+            return platformEmulator;
         }
     }
 

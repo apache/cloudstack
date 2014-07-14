@@ -28,10 +28,11 @@ public class VMSnapshotBaseCommand extends Command {
     protected VMSnapshotTO target;
     protected String vmName;
     protected String guestOSType;
+    protected String platformEmulator;
 
     public VMSnapshotBaseCommand(String vmName, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType) {
         this.vmName = vmName;
-        this.target = snapshot;
+        target = snapshot;
         this.volumeTOs = volumeTOs;
         this.guestOSType = guestOSType;
     }
@@ -71,5 +72,13 @@ public class VMSnapshotBaseCommand extends Command {
 
     public void setGuestOSType(String guestOSType) {
         this.guestOSType = guestOSType;
+    }
+
+    public String getPlatformEmulator() {
+        return platformEmulator;
+    }
+
+    public void setPlatformEmulator(String platformEmulator) {
+        this.platformEmulator = platformEmulator;
     }
 }

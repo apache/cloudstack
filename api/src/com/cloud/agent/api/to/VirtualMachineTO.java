@@ -47,6 +47,7 @@ public class VirtualMachineTO {
     String hostName;
     String arch;
     String os;
+    String platformEmulator;
     String bootArgs;
     String[] bootupScripts;
     boolean rebootOnCrash;
@@ -65,7 +66,7 @@ public class VirtualMachineTO {
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
         this.id = id;
-        this.name = instanceName;
+        name = instanceName;
         this.type = type;
         this.cpus = cpus;
         this.speed = speed;
@@ -81,7 +82,7 @@ public class VirtualMachineTO {
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer minSpeed, Integer maxSpeed, long minRam, long maxRam,
             BootloaderType bootloader, String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
         this.id = id;
-        this.name = instanceName;
+        name = instanceName;
         this.type = type;
         this.cpus = cpus;
         this.minSpeed = minSpeed;
@@ -236,7 +237,7 @@ public class VirtualMachineTO {
     }
 
     public String getVncPassword() {
-        return this.vncPassword;
+        return vncPassword;
     }
 
     public void setVncPassword(String vncPassword) {
@@ -244,7 +245,7 @@ public class VirtualMachineTO {
     }
 
     public String getVncAddr() {
-        return this.vncAddr;
+        return vncAddr;
     }
 
     public void setVncAddr(String vncAddr) {
@@ -273,6 +274,14 @@ public class VirtualMachineTO {
 
     public void setGpuDevice(GPUDeviceTO gpuDevice) {
         this.gpuDevice = gpuDevice;
+    }
+
+    public String getPlatformEmulator() {
+        return platformEmulator;
+    }
+
+    public void setPlatformEmulator(String platformEmulator) {
+        this.platformEmulator = platformEmulator;
     }
 
 }

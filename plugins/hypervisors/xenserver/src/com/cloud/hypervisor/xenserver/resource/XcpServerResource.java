@@ -71,8 +71,12 @@ public class XcpServerResource extends CitrixResourceBase {
     }
 
     @Override
-    protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        return CitrixHelper.getXcpGuestOsType(stdType);
+    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
+        if (platformEmulator == null) {
+            s_logger.debug("Can't find the guest os: " + stdType + " mapping into XCP's guestOS type, start it as HVM guest");
+            platformEmulator = "Other install media";
+        }
+        return platformEmulator;
     }
 
     protected NetworkUsageAnswer execute(NetworkUsageCommand cmd) {
