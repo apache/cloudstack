@@ -122,6 +122,7 @@ public class BasicNetworkTopology implements NetworkTopology {
             throw new ResourceUnavailableException("Unable to apply " + typeString, DataCenter.class, network.getDataCenterId());
         }
 
+        // should become a BasicNetworkVisitor in the end
         AdvancedNetworkVisitor visitor = new AdvancedNetworkVisitor();
 
         RuleApplier ruleApplier =  ruleApplierWrapper.getRuleType();
