@@ -116,7 +116,7 @@ public class BasicNetworkTopology implements NetworkTopology {
 
         RuleApplier ruleApplier = ruleApplierWrapper.getRuleType();
 
-        // REMOVE THIS SHIT AND INJECT USING A FACTORY FOR THE VISITORS
+        // [FIXME] REMOVE THIS SHIT AND INJECT USING A FACTORY FOR THE VISITORS
         visitor.setApplianceManager(ruleApplier.getApplianceManager());
 
         final DataCenter dc = _dcDao.findById(network.getDataCenterId());
@@ -175,7 +175,7 @@ public class BasicNetworkTopology implements NetworkTopology {
             if (!isZoneBasic && !disconnectedRouters.isEmpty() && disconnectedRouters.get(0).getIsRedundantRouter()) {
                 // These disconnected redundant virtual routers are out of sync
                 // now, stop them for synchronization
-                // handleSingleWorkingRedundantRouter(connectedRouters,
+                // [FIXME] handleSingleWorkingRedundantRouter(connectedRouters,
                 // disconnectedRouters, msg);
             }
         } else if (!disconnectedRouters.isEmpty()) {
@@ -206,6 +206,8 @@ public class BasicNetworkTopology implements NetworkTopology {
             return true;
         }
 
+        s_logger.debug("APPLYING LOAD BALANCING RULES");
+
         final String typeString = "loadbalancing rules";
         final boolean isPodLevelException = false;
         final boolean failWhenDisconnect = false;
@@ -223,6 +225,8 @@ public class BasicNetworkTopology implements NetworkTopology {
             s_logger.debug("No firewall rules to be applied for network " + network.getId());
             return true;
         }
+
+        s_logger.debug("APPLYING FIREWALL RULES");
 
         final String typeString = "firewall rules";
         final boolean isPodLevelException = false;

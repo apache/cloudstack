@@ -177,13 +177,24 @@
     <bean id="usageServiceImpl" class="com.cloud.usage.UsageServiceImpl" />
     <bean id="virtualNetworkApplianceManagerImpl"
         class="com.cloud.network.router.VirtualNetworkApplianceManagerImpl" />
+        
     <bean id="vpcManagerImpl" class="com.cloud.network.vpc.VpcManagerImpl" >
         <property name="vpcElements" value="#{vpcProvidersRegistry.registered}"></property>
     </bean>
     <bean id="vpcVirtualNetworkApplianceManagerImpl"
         class="com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl" />
+    
+    <bean id="newVirtualNetworkApplianceManagerImpl"
+        class="com.cloud.network.router.NEWVirtualNetworkApplianceManagerImpl" />
+        
     <bean id="virtualNetworkApplianceFactory"
         class="com.cloud.network.rules.VirtualNetworkApplianceFactory" />
+    
+    <bean id="topologyContext" class="com.cloud.network.topology.NetworkTopologyContext" init-method="init" />
+    
+    <bean id="basicNetworkTopology" class="com.cloud.network.topology.BasicNetworkTopology" />
+    <bean id="advancedNetworkTopology" class="com.cloud.network.topology.AdvancedNetworkTopology" />
+    
     <bean id="routerControlHelper"
         class="com.cloud.network.router.RouterControlHelper" />
     <bean id="networkGeneralHelper"
