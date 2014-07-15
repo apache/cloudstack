@@ -130,6 +130,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     LoadBalancingRulesManager _lbMgr;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
+
     @Inject
     VpcVirtualNetworkApplianceManager _routerMgr;
 
