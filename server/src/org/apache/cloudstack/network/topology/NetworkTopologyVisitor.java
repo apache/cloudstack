@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.network.topology;
+package org.apache.cloudstack.network.topology;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.DhcpRules;

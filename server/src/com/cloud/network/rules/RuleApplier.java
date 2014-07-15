@@ -18,6 +18,7 @@
 package com.cloud.network.rules;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ResourceUnavailableException;
@@ -30,7 +31,6 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.NEWVirtualNetworkApplianceManager;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.topology.NetworkTopologyVisitor;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
