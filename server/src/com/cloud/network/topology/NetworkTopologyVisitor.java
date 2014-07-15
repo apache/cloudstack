@@ -41,20 +41,32 @@ public abstract class NetworkTopologyVisitor {
     }
 
     public abstract boolean visit(StaticNatRules nat) throws ResourceUnavailableException;
+
     public abstract boolean visit(LoadBalancingRules loadbalancing) throws ResourceUnavailableException;
+
     public abstract boolean visit(FirewallRules firewall) throws ResourceUnavailableException;
+
     public abstract boolean visit(IpAssociationRules ipAddresses) throws ResourceUnavailableException;
+
     public abstract boolean visit(UserdataPwdRules userdata) throws ResourceUnavailableException;
+
     public abstract boolean visit(DhcpRules dhcp) throws ResourceUnavailableException;
+
     public abstract boolean visit(SshKeyToRouterRules ssh) throws ResourceUnavailableException;
+
     public abstract boolean visit(PasswordToRouterRules pwd) throws ResourceUnavailableException;
+
     public abstract boolean visit(NetworkAclsRules acl) throws ResourceUnavailableException;
+
     public abstract boolean visit(VpcIpAssociationRules vpcIp) throws ResourceUnavailableException;
+
     public abstract boolean visit(UserdataToRouterRules userdata) throws ResourceUnavailableException;
+
     public abstract boolean visit(VpnRules userdata) throws ResourceUnavailableException;
+
     public abstract boolean visit(PrivateGatewayRules userdata) throws ResourceUnavailableException;
 
-    public NetworkTopology getNetworkTopology() {
-        return networkTopology;
-    }
+    public abstract boolean visit(DhcpPvlanRules vpn) throws ResourceUnavailableException;
+
+    public abstract boolean visit(DhcpSubNetRules vpn) throws ResourceUnavailableException;
 }
