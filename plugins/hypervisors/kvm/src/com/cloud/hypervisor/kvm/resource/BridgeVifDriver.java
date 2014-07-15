@@ -101,10 +101,6 @@ public class BridgeVifDriver extends VifDriverBase {
         } else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
             throw new InternalErrorException("Nicira NVP Logicalswitches are not supported by the BridgeVifDriver");
         }
-        if ((vNetId == null)||(protocol == null))
-        {
-            throw new InternalErrorException("plug: protocol or vNetId value is null");
-        }
         String trafficLabel = nic.getName();
         if (nic.getType() == Networks.TrafficType.Guest) {
             Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
