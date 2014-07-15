@@ -24,6 +24,8 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -34,6 +36,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
@@ -63,6 +66,14 @@ public class BasicNetworkTopology implements NetworkTopology {
 
     @Inject
     protected VirtualNetworkApplianceFactory virtualNetworkApplianceFactory;
+
+    @Autowired
+    @Qualifier("basicNetworkVisitor")
+    protected BasicNetworkVisitor basicVisitor;
+
+    @Autowired
+    @Qualifier("advancedNetworkVisitor")
+    protected AdvancedNetworkVisitor advancedVisitor;
 
     @Inject
     protected DataCenterDao _dcDao;
@@ -198,9 +209,6 @@ public class BasicNetworkTopology implements NetworkTopology {
 
         s_logger.debug("APPLYING VPN RULES");
 
-        // should become a BasicNetworkVisitor in the end
-        AdvancedNetworkVisitor visitor = new AdvancedNetworkVisitor();
-
         boolean agentResults = true;
 
         for (final DomainRouterVO router : routers) {
@@ -212,14 +220,10 @@ public class BasicNetworkTopology implements NetworkTopology {
 
             VpnRules vpnRules = virtualNetworkApplianceFactory.createVpnRules(network, users);
 
-            // [FIXME] REMOVE THIS SHIT AND INJECT USING A FACTORY FOR THE
-            // VISITORS
-            visitor.setApplianceManager(vpnRules.getApplianceManager());
-
             // Currently we receive just one answer from the agent. In the
             // future we have to parse individual answers and set
             // results accordingly
-            final boolean agentResult = vpnRules.accept(visitor, router);
+            final boolean agentResult = vpnRules.accept(basicVisitor, router);
             agentResults = agentResults && agentResult;
         }
 
@@ -244,13 +248,7 @@ public class BasicNetworkTopology implements NetworkTopology {
             throw new ResourceUnavailableException("Unable to apply " + typeString, DataCenter.class, network.getDataCenterId());
         }
 
-        // should become a BasicNetworkVisitor in the end
-        AdvancedNetworkVisitor visitor = new AdvancedNetworkVisitor();
-
         RuleApplier ruleApplier = ruleApplierWrapper.getRuleType();
-
-        // [FIXME] REMOVE THIS SHIT AND INJECT USING A FACTORY FOR THE VISITORS
-        visitor.setApplianceManager(ruleApplier.getApplianceManager());
 
         final DataCenter dc = _dcDao.findById(network.getDataCenterId());
         final boolean isZoneBasic = dc.getNetworkType() == NetworkType.Basic;
@@ -276,7 +274,7 @@ public class BasicNetworkTopology implements NetworkTopology {
                 }
 
                 try {
-                    ruleApplier.accept(visitor, router);
+                    ruleApplier.accept(basicVisitor, router);
 
                     connectedRouters.add(router);
                 } catch (final AgentUnavailableException e) {
