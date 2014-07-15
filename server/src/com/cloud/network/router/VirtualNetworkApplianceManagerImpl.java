@@ -286,7 +286,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  */
 @Local(value = { VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class })
 public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, VirtualMachineGuru, Listener,
-Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
+        Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
     @Inject
@@ -414,7 +414,6 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     int _routerStatsInterval = 300;
     int _routerCheckInterval = 30;
     int _rvrStatusUpdatePoolSize = 10;
-    protected ServiceOfferingVO _offering;
     private String _dnsBasicZoneUpdates = "all";
     private final Set<String> _guestOSNeedGatewayOnNonDefaultNetwork = new HashSet<String>();
 
@@ -639,7 +638,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROUTER_REBOOT, eventDescription = "rebooting router Vm", async = true)
     public VirtualRouter rebootRouter(final long routerId, final boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException,
-    InsufficientCapacityException {
+            InsufficientCapacityException {
         final Account caller = CallContext.current().getCallingAccount();
 
         // verify parameters
@@ -735,14 +734,16 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(_agentMgr, _hostDao, _configDao), true, false, false);
 
         final boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, null, null, true, null, ProvisioningType.THIN, useLocalStorage,
-                true, null, true, VirtualMachine.Type.DomainRouter, true);
-        _offering.setUniqueName(ServiceOffering.routerDefaultOffUniqueName);
-        _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
+        ServiceOfferingVO offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, null, null, true, null, ProvisioningType.THIN,
+                useLocalStorage, true, null, true, VirtualMachine.Type.DomainRouter, true);
+        offering.setUniqueName(ServiceOffering.routerDefaultOffUniqueName);
+
+        offering = _serviceOfferingDao.persistSystemServiceOffering(offering);
+        routerDeploymentManager.setOffering(offering);
 
         // this can sometimes happen, if DB is manually or programmatically
         // manipulated
-        if (_offering == null) {
+        if (offering == null) {
             final String msg = "Data integrity problem : System Offering For Software router VM has been removed?";
             s_logger.error(msg);
             throw new ConfigurationException(msg);
@@ -956,7 +957,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
                                                 if ((previousStats != null)
                                                         && ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) || (previousStats.getCurrentBytesSent() != stats
-                                                        .getCurrentBytesSent()))) {
+                                                                .getCurrentBytesSent()))) {
                                                     s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " + "Ignoring current answer. Router: "
                                                             + answerFinal.getRouterName() + " Rcvd: " + answerFinal.getBytesReceived() + "Sent: " + answerFinal.getBytesSent());
                                                     return;
@@ -1540,7 +1541,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     @DB
     protected List<DomainRouterVO> findOrDeployVirtualRouterInGuestNetwork(final RouterDeploymentDefinition routerDeploymentDefinition) throws ConcurrentOperationException,
-    InsufficientCapacityException, ResourceUnavailableException {
+            InsufficientCapacityException, ResourceUnavailableException {
 
         final Network guestNetwork = routerDeploymentDefinition.getGuestNetwork();
         final DeployDestination dest = routerDeploymentDefinition.getDest();
@@ -1558,7 +1559,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         try {
 
             assert (guestNetwork.getState() == Network.State.Implemented) || (guestNetwork.getState() == Network.State.Setup)
-            || (guestNetwork.getState() == Network.State.Implementing) : "Network is not yet fully implemented: " + guestNetwork;
+                    || (guestNetwork.getState() == Network.State.Implementing) : "Network is not yet fully implemented: " + guestNetwork;
             assert guestNetwork.getTrafficType() == TrafficType.Guest;
 
             // 1) Get deployment plan and find out the list of routers
@@ -1658,7 +1659,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
                 Long offeringId = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
                 if (offeringId == null) {
-                    offeringId = _offering.getId();
+                    offeringId = routerDeploymentManager.getOfferingId();
                 }
 
                 PublicIp sourceNatIp = null;
@@ -1852,7 +1853,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     @Override
     public List<DomainRouterVO> deployVirtualRouter(final RouterDeploymentDefinition routerDeploymentDefinition) throws InsufficientCapacityException,
-    ConcurrentOperationException, ResourceUnavailableException {
+            ConcurrentOperationException, ResourceUnavailableException {
 
         final List<DomainRouterVO> routers = findOrDeployVirtualRouterInGuestNetwork(routerDeploymentDefinition);
 
@@ -2676,7 +2677,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     @Override
     public DomainRouterVO stop(final VirtualRouter router, final boolean forced, final User user, final Account caller) throws ConcurrentOperationException,
-    ResourceUnavailableException {
+            ResourceUnavailableException {
         s_logger.debug("Stopping router " + router);
         try {
             _itMgr.advanceStop(router.getUuid(), forced);
@@ -3008,7 +3009,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     @Override
     public VirtualRouter startRouter(final long routerId, final boolean reprogramNetwork) throws ResourceUnavailableException, InsufficientCapacityException,
-    ConcurrentOperationException {
+            ConcurrentOperationException {
         final Account caller = CallContext.current().getCallingAccount();
         final User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
 
@@ -3956,7 +3957,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
                                     if ((previousStats != null)
                                             && ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) || (previousStats.getCurrentBytesSent() != stats
-                                            .getCurrentBytesSent()))) {
+                                                    .getCurrentBytesSent()))) {
                                         s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " + "Ignoring current answer. Router: "
                                                 + answerFinal.getRouterName() + " Rcvd: " + answerFinal.getBytesReceived() + "Sent: " + answerFinal.getBytesSent());
                                         return;
