@@ -20,6 +20,8 @@ package com.cloud.network.rules;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
+
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.to.StaticNatRuleTO;
@@ -29,7 +31,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.topology.NetworkTopologyVisitor;
 
 public class StaticNatRules extends RuleApplier {
 

@@ -20,6 +20,8 @@ package com.cloud.network.rules;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
+
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
@@ -46,7 +48,6 @@ import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
-import com.cloud.network.topology.NetworkTopologyVisitor;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.net.Ip;
