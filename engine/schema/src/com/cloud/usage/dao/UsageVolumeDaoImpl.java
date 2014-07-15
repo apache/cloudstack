@@ -88,8 +88,8 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
                 pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
                 pstmt.setLong(2, usage.getAccountId());
                 pstmt.setLong(3, usage.getId());
+                pstmt.executeUpdate();
             }
-            pstmt.executeUpdate();
             txn.commit();
         } catch (Exception e) {
             txn.rollback();

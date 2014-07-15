@@ -756,7 +756,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         ServiceOffering svo = _entityMgr.findById(ServiceOffering.class, vm.getServiceOfferingId());
         DiskOffering diskVO = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
-        Long clusterId = (storagePool == null ? null : storagePool.getClusterId());
+        Long clusterId = storagePool.getClusterId();
 
         VolumeInfo vol = null;
         if (volume.getState() == Volume.State.Allocated) {

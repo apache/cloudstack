@@ -61,7 +61,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
+            throw new CloudRuntimeException("DB exception: ", e);
         }
     }
 
@@ -227,7 +227,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
                 throw new CloudRuntimeException("Invalid cluster session detected, runId " + runId + " is no longer valid", new ClusterInvalidSessionException("runId " + runId + " is no longer valid"));
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
+            throw new CloudRuntimeException("DB exception: ", e);
         }
     }
 
@@ -255,7 +255,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
                 orphanList.add(rs.getLong(1));
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
+            throw new CloudRuntimeException("DB exception: ", e);
         }
 
         return orphanList;

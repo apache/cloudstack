@@ -205,9 +205,9 @@ public class UriUtils {
             URI uri = new URI(url);
             if (uri.getScheme().equalsIgnoreCase("http")) {
                 httpConn = (HttpURLConnection)uri.toURL().openConnection();
-                httpConn.setConnectTimeout(2000);
-                httpConn.setReadTimeout(5000);
                 if (httpConn != null) {
+                    httpConn.setConnectTimeout(2000);
+                    httpConn.setReadTimeout(5000);
                     String contentLength = httpConn.getHeaderField("content-length");
                     if (contentLength != null) {
                         remoteSize = Long.parseLong(contentLength);

@@ -101,24 +101,28 @@ public class NumbersUtil {
      * @return interval in ms
      */
     public static long parseInterval(String str, long defaultValue) {
-        SimpleDateFormat sdf = null;
-        if (str.contains("D")) {
-            sdf = new SimpleDateFormat("dd'D'HH'h'mm'M'ss'S'SSS'ms'");
-        } else if (str.contains("h")) {
-            sdf = new SimpleDateFormat("HH'h'mm'M'ss'S'SSS'ms'");
-        } else if (str.contains("M")) {
-            sdf = new SimpleDateFormat("mm'M'ss'S'SSS'ms'");
-        } else if (str.contains("S")) {
-            sdf = new SimpleDateFormat("ss'S'SSS'ms'");
-        } else if (str.contains("ms")) {
-            sdf = new SimpleDateFormat("SSS'ms'");
-        }
-        Date date;
         try {
-            if (str == null || sdf == null) {
+            if (str == null) {
                 throw new ParseException("String is wrong", 0);
             }
-            date = sdf.parse(str);
+
+            SimpleDateFormat sdf = null;
+            if (str.contains("D")) {
+                sdf = new SimpleDateFormat("dd'D'HH'h'mm'M'ss'S'SSS'ms'");
+            } else if (str.contains("h")) {
+                sdf = new SimpleDateFormat("HH'h'mm'M'ss'S'SSS'ms'");
+            } else if (str.contains("M")) {
+                sdf = new SimpleDateFormat("mm'M'ss'S'SSS'ms'");
+            } else if (str.contains("S")) {
+                sdf = new SimpleDateFormat("ss'S'SSS'ms'");
+            } else if (str.contains("ms")) {
+                sdf = new SimpleDateFormat("SSS'ms'");
+            }
+            if (sdf == null) {
+                throw new ParseException("String is wrong", 0);
+            }
+
+            Date date = sdf.parse(str);
             return date.getTime();
         } catch (ParseException e) {
             if (defaultValue != -1) {

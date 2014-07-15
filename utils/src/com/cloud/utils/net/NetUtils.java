@@ -1420,10 +1420,10 @@ public class NetUtils {
     public static boolean isSameIsolationId(String one, String other) {
         // check nulls
         // check empty strings
-        if ((one == null || one.equals("")) && (other == null || other.equals(""))) {
+        if ((one == null || one.isEmpty()) && (other == null || other.isEmpty())) {
             return true;
         }
-        if ((one == null || other == null) && !(one == null && other == null)) {
+        if (one == null || other == null) {
             return false;
         }
         // check 'untagged'

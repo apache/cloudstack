@@ -69,8 +69,11 @@ public class SSHKeysHelper {
             e.printStackTrace();
         }
 
-        String sumString = toHexString(md5.digest(keyBytes));
         String rString = "";
+        String sumString = "";
+        if (md5 != null) {
+            sumString = toHexString(md5.digest(keyBytes));
+        }
 
         for (int i = 2; i <= sumString.length(); i += 2) {
             rString += sumString.substring(i - 2, i);
