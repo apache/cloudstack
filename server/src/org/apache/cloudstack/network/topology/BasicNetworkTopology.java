@@ -47,6 +47,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRules;
 import com.cloud.network.rules.IpAssociationRules;
 import com.cloud.network.rules.LoadBalancingRules;
+import com.cloud.network.rules.PasswordToRouterRules;
 import com.cloud.network.rules.RuleApplier;
 import com.cloud.network.rules.RuleApplierWrapper;
 import com.cloud.network.rules.StaticNat;
@@ -56,9 +57,11 @@ import com.cloud.network.rules.VpnRules;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
+import com.cloud.vm.dao.UserVmDao;
 
 public class BasicNetworkTopology implements NetworkTopology {
 
@@ -71,15 +74,14 @@ public class BasicNetworkTopology implements NetworkTopology {
     @Qualifier("basicNetworkVisitor")
     protected BasicNetworkVisitor basicVisitor;
 
-    @Autowired
-    @Qualifier("advancedNetworkVisitor")
-    protected AdvancedNetworkVisitor advancedVisitor;
-
     @Inject
     protected DataCenterDao _dcDao;
 
     @Inject
     protected HostDao _hostDao;
+
+    @Inject
+    protected UserVmDao _userVmDao;
 
     @Override
     public List<DomainRouterVO> findOrDeployVirtualRouterInGuestNetwork(
@@ -243,6 +245,23 @@ public class BasicNetworkTopology implements NetworkTopology {
         }
 
         return result;
+    }
+
+    @Override
+    public boolean savePasswordToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+
+        _userVmDao.loadDetails((UserVmVO)profile.getVirtualMachine());
+
+        s_logger.debug("SAVE PASSWORD TO ROUTE RULES");
+
+        final String typeString = "save password entry";
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+        final Long podId = null;
+
+        PasswordToRouterRules routerRules = virtualNetworkApplianceFactory.createPasswordToRouterRules(network, nic, profile);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(routerRules));
     }
 
     @Override
