@@ -441,7 +441,11 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                         network.getId());
                 return null;
             }
-            return _routerMgr.applyVpnUsers(network, users, routers);
+
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            return networkTopology.applyVpnUsers(network, users, routers);
         } else {
             s_logger.debug("Element " + getName() + " doesn't handle applyVpnUsers command");
             return null;
@@ -505,7 +509,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 return true;
             }
 
-            return _routerMgr.associatePublicIP(network, ipAddress, routers);
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            return networkTopology.associatePublicIP(network, ipAddress, routers);
         } else {
             return false;
         }
@@ -839,7 +846,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 return true;
             }
 
-            if (!_routerMgr.applyFirewallRules(network, rules, routers)) {
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            if (!networkTopology.applyFirewallRules(network, rules, routers)) {
                 throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
             } else {
                 return true;

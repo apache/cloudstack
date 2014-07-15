@@ -50,5 +50,5 @@ public abstract class NetworkTopologyVisitor {
     public abstract boolean visit(VpnRules userdata) throws ResourceUnavailableException;
     public abstract boolean visit(PrivateGatewayRules userdata) throws ResourceUnavailableException;
     public abstract boolean visit(DhcpPvlanRules vpn) throws ResourceUnavailableException;
-    public abstract boolean visit(final DhcpSubNetRules vpn) throws ResourceUnavailableException;
+    public abstract boolean visit(DhcpSubNetRules vpn) throws ResourceUnavailableException;
 }
