@@ -52,8 +52,17 @@ public class XenServer56FP1Resource extends XenServer56Resource {
     }
 
     @Override
-    protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        return CitrixHelper.getXenServer56FP1GuestOsType(stdType, bootFromCD);
+    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
+        if (platformEmulator == null) {
+            if (!bootFromCD) {
+                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
+                platformEmulator = "Other install media";
+            } else {
+                String msg = "XenServer 5.6 FP1 DOES NOT support Guest OS type " + stdType;
+                s_logger.warn(msg);
+            }
+        }
+        return platformEmulator;
     }
 
     @Override

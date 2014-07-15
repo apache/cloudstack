@@ -805,7 +805,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             try {
                 vm = getVM(conn, vmName);
             } catch (Exception e) {
-                vm = createWorkingVM(conn, vmName, cmd.getGuestOSType(), listVolumeTo);
+                vm = createWorkingVM(conn, vmName, cmd.getGuestOSType(), cmd.getPlatformEmulator(), listVolumeTo);
             }
 
             if (vm == null) {
@@ -1289,7 +1289,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected VM createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
-        String guestOsTypeName = getGuestOsType(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD);
+        String guestOsTypeName = getGuestOsType(vmSpec.getOs(), vmSpec.getPlatformEmulator(), vmSpec.getBootloader() == BootloaderType.CD);
         Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();
@@ -1386,7 +1386,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         TemplateObjectTO iso = (TemplateObjectTO)disk.getData();
                         String osType = iso.getGuestOsType();
                         if (osType != null) {
-                            String isoGuestOsName = getGuestOsType(osType, vmSpec.getBootloader() == BootloaderType.CD);
+                            String isoGuestOsName = getGuestOsType(osType, vmSpec.getPlatformEmulator(), vmSpec.getBootloader() == BootloaderType.CD);
                             if (!isoGuestOsName.equals(guestOsTypeName)) {
                                 vmSpec.setBootloader(BootloaderType.PyGrub);
                             }
@@ -4455,11 +4455,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 configs.put("ip_begin", NetUtils.getLinkLocalGateway());
                 configs.put("ip_end", NetUtils.getLinkLocalIpEnd());
                 configs.put("netmask", NetUtils.getLinkLocalNetMask());
+                configs.put("vswitch-disable-in-band", "true");
                 rec.otherConfig = configs;
                 linkLocal = Network.create(conn, rec);
-
             } else {
                 linkLocal = networks.iterator().next();
+                if (!linkLocal.getOtherConfig(conn).containsKey("vswitch-disable-in-band")) {
+                    linkLocal.addToOtherConfig(conn, "vswitch-disable-in-band", "true");
+                }
             }
 
             /* Make sure there is a physical bridge on this network */
@@ -6389,6 +6392,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         List<VolumeObjectTO> listVolumeTo = cmd.getVolumeTOs();
         VirtualMachine.State vmState = cmd.getVmState();
         String guestOSType = cmd.getGuestOSType();
+        String platformEmulator = cmd.getPlatformEmulator();
 
         boolean snapshotMemory = cmd.getTarget().getType() == VMSnapshot.Type.DiskAndMemory;
         long timeout = cmd.getWait();
@@ -6423,7 +6427,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     vm = getVM(conn, vmName);
                 } catch (Exception e) {
                     if (!snapshotMemory) {
-                        vm = createWorkingVM(conn, vmName, guestOSType, listVolumeTo);
+                        vm = createWorkingVM(conn, vmName, guestOSType, platformEmulator, listVolumeTo);
                     }
                 }
 
@@ -6511,9 +6515,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private VM createWorkingVM(Connection conn, String vmName, String guestOSType, List<VolumeObjectTO> listVolumeTo) throws BadServerResponse, Types.VmBadPowerState, Types.SrFull,
+    private VM createWorkingVM(Connection conn, String vmName, String guestOSType, String platformEmulator, List<VolumeObjectTO> listVolumeTo) throws BadServerResponse,
+            Types.VmBadPowerState, Types.SrFull,
     Types.OperationNotAllowed, XenAPIException, XmlRpcException {
-        String guestOsTypeName = getGuestOsType(guestOSType, false);
+        //below is redundant but keeping for consistency and code readabilty
+        String guestOsTypeName = platformEmulator;
         if (guestOsTypeName == null) {
             String msg =
                     " Hypervisor " + this.getClass().getName() + " doesn't support guest OS type " + guestOSType + ". you can choose 'Other install media' to run it as HVM";
@@ -7098,7 +7104,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     /*Override by subclass*/
-    protected String getGuestOsType(String stdType, boolean bootFromCD) {
+    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
         return stdType;
     }
 

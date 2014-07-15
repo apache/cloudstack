@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,7 +15,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.resource.virtualnetwork;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
+
+import javax.naming.ConfigurationException;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BumpUpPriorityCommand;
@@ -52,30 +74,12 @@ import com.cloud.agent.api.to.MonitorServiceTO;
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
-import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource.VRScripts;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.vpc.NetworkACLItem.TrafficType;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.net.NetUtils;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
-
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -250,14 +254,14 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         assertTrue(script.equals(VRScripts.VPC_PORTFORWARDING));
         _count ++;
         switch (_count) {
-            case 1:
-                assertEquals(args, "-A -P tcp -l 64.1.1.10 -p 22:80 -r 10.10.1.10 -d 22-80");
-                break;
-            case 2:
-                assertEquals(args, "-D -P udp -l 64.1.1.11 -p 8080:8080 -r 10.10.1.11 -d 8080-8080");
-                break;
-            default:
-                fail("Failed to recongize the match!");
+        case 1:
+            assertEquals(args, "-A -P tcp -l 64.1.1.10 -p 22:80 -r 10.10.1.10 -d 22-80");
+            break;
+        case 2:
+            assertEquals(args, "-D -P udp -l 64.1.1.11 -p 8080:8080 -r 10.10.1.11 -d 8080-8080");
+            break;
+        default:
+            fail("Failed to recongize the match!");
         }
     }
 
@@ -287,14 +291,14 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         assertTrue(script.equals(VRScripts.FIREWALL_NAT));
         _count ++;
         switch (_count) {
-            case 1:
-                assertEquals(args, "-A -P tcp -l 64.1.1.10 -p 22:80 -r 10.10.1.10 -d 22:80");
-                break;
-            case 2:
-                assertEquals(args, "-D -P udp -l 64.1.1.11 -p 8080:8080 -r 10.10.1.11 -d 8080:8080");
-                break;
-            default:
-                fail("Failed to recongize the match!");
+        case 1:
+            assertEquals(args, "-A -P tcp -l 64.1.1.10 -p 22:80 -r 10.10.1.10 -d 22:80");
+            break;
+        case 2:
+            assertEquals(args, "-D -P udp -l 64.1.1.11 -p 8080:8080 -r 10.10.1.11 -d 8080:8080");
+            break;
+        default:
+            fail("Failed to recongize the match!");
         }
     }
 
@@ -338,7 +342,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
         Answer answer = _resource.executeRequest(cmd);
         assertTrue(answer instanceof GroupAnswer);
-        assertEquals(((GroupAnswer) answer).getResults().length, 6);
+        assertEquals(5, ((GroupAnswer)answer).getResults().length);
         assertTrue(answer.getResult());
 
     }
@@ -359,7 +363,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         IpAddressTO[] ipArray = ips.toArray(new IpAddressTO[ips.size()]);
         IpAssocVpcCommand cmd = new IpAssocVpcCommand(ipArray);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
-        assertEquals(cmd.getAnswersCount(), 6);
+        assertEquals(6, cmd.getAnswersCount()); // AnswersCount is clearly wrong as it doesn't know enough to tell
 
         return cmd;
     }
@@ -368,44 +372,44 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         if (cmd instanceof IpAssocVpcCommand) {
             _count ++;
             switch (_count) {
-                case 1:
-                    assertEquals(script, VRScripts.VPC_IPASSOC);
-                    assertEquals(args, " -A  -l 64.1.1.10 -c eth2 -g 64.1.1.1 -m 24 -n 64.1.1.0");
-                    break;
-                case 2:
-                    assertEquals(script, VRScripts.VPC_PRIVATEGW);
-                    assertEquals(args, " -A  -l 64.1.1.10 -c eth2");
-                    break;
-                case 3:
-                    assertEquals(script, VRScripts.VPC_IPASSOC);
-                    assertEquals(args, " -D  -l 64.1.1.11 -c eth2 -g 64.1.1.1 -m 24 -n 64.1.1.0");
-                    break;
-                case 4:
-                    assertEquals(script, VRScripts.VPC_PRIVATEGW);
-                    assertEquals(args, " -D  -l 64.1.1.11 -c eth2");
-                    break;
-                case 5:
-                    assertEquals(script, VRScripts.VPC_IPASSOC);
-                    assertEquals(args, " -A  -l 65.1.1.11 -c eth2 -g 65.1.1.1 -m 24 -n 65.1.1.0");
-                    break;
-                default:
-                    fail("Failed to recongize the match!");
+            case 1:
+                assertEquals(script, VRScripts.VPC_IPASSOC);
+                assertEquals(args, " -A  -l 64.1.1.10 -c eth2 -g 64.1.1.1 -m 24 -n 64.1.1.0");
+                break;
+            case 2:
+                assertEquals(script, VRScripts.VPC_PRIVATEGW);
+                assertEquals(args, " -A  -l 64.1.1.10 -c eth2");
+                break;
+            case 3:
+                assertEquals(script, VRScripts.VPC_IPASSOC);
+                assertEquals(args, " -D  -l 64.1.1.11 -c eth2 -g 64.1.1.1 -m 24 -n 64.1.1.0");
+                break;
+            case 4:
+                assertEquals(script, VRScripts.VPC_PRIVATEGW);
+                assertEquals(args, " -D  -l 64.1.1.11 -c eth2");
+                break;
+            case 5:
+                assertEquals(script, VRScripts.VPC_IPASSOC);
+                assertEquals(args, " -A  -l 65.1.1.11 -c eth2 -g 65.1.1.1 -m 24 -n 65.1.1.0");
+                break;
+            default:
+                fail("Failed to recongize the match!");
             }
         } else {
             assertEquals(script, VRScripts.IPASSOC);
             _count ++;
             switch (_count) {
-                case 1:
-                    assertEquals(args, "-A -s -f -l 64.1.1.10/24 -c eth2 -g 64.1.1.1");
-                    break;
-                case 2:
-                    assertEquals(args, "-D -l 64.1.1.11/24 -c eth2 -g 64.1.1.1");
-                    break;
-                case 3:
-                    assertEquals(args, "-A -l 65.1.1.11/24 -c eth2 -g 65.1.1.1");
-                    break;
-                default:
-                    fail("Failed to recongize the match!");
+            case 1:
+                assertEquals(args, "-A -s -f -l 64.1.1.10/24 -c eth2 -g 64.1.1.1");
+                break;
+            case 2:
+                assertEquals(args, "-D -l 64.1.1.11/24 -c eth2 -g 64.1.1.1");
+                break;
+            case 3:
+                assertEquals(args, "-A -l 65.1.1.11/24 -c eth2 -g 65.1.1.1");
+                break;
+            default:
+                fail("Failed to recongize the match!");
             }
         }
     }
@@ -469,18 +473,18 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     private void verifyArgs(SetNetworkACLCommand cmd, String script, String args) {
         _count ++;
         switch (_count) {
-            case 1:
-                assertEquals(script, VRScripts.VPC_ACL);
-                assertEquals(args, " -d eth3 -M 01:23:45:67:89:AB -i 192.168.1.1 -m 24 -a Egress:ALL:0:0:192.168.0.1/24-192.168.0.2/24:ACCEPT:," +
-                        "Ingress:ICMP:0:0:192.168.0.1/24-192.168.0.2/24:DROP:,Ingress:TCP:20:80:192.168.0.1/24-192.168.0.2/24:ACCEPT:,");
-                break;
-            case 2:
-                assertEquals(script, VRScripts.VPC_PRIVATEGW_ACL);
-                assertEquals(args, " -d eth3 -M 01:23:45:67:89:AB -a Egress:ALL:0:0:192.168.0.1/24-192.168.0.2/24:ACCEPT:," +
-                        "Ingress:ICMP:0:0:192.168.0.1/24-192.168.0.2/24:DROP:,Ingress:TCP:20:80:192.168.0.1/24-192.168.0.2/24:ACCEPT:,");
-                break;
-            default:
-                fail();
+        case 1:
+            assertEquals(script, VRScripts.VPC_ACL);
+            assertEquals(args, " -d eth3 -M 01:23:45:67:89:AB -i 192.168.1.1 -m 24 -a Egress:ALL:0:0:192.168.0.1/24-192.168.0.2/24:ACCEPT:," +
+                    "Ingress:ICMP:0:0:192.168.0.1/24-192.168.0.2/24:DROP:,Ingress:TCP:20:80:192.168.0.1/24-192.168.0.2/24:ACCEPT:,");
+            break;
+        case 2:
+            assertEquals(script, VRScripts.VPC_PRIVATEGW_ACL);
+            assertEquals(args, " -d eth3 -M 01:23:45:67:89:AB -a Egress:ALL:0:0:192.168.0.1/24-192.168.0.2/24:ACCEPT:," +
+                    "Ingress:ICMP:0:0:192.168.0.1/24-192.168.0.2/24:DROP:,Ingress:TCP:20:80:192.168.0.1/24-192.168.0.2/24:ACCEPT:,");
+            break;
+        default:
+            fail();
         }
     }
 
@@ -570,17 +574,17 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
         assertEquals(script, VRScripts.S2SVPN_IPSEC);
         switch (_count) {
-            case 1:
-                assertEquals(args, "-A -l 64.10.1.10 -n 192.168.1.1/16 -g 64.10.1.1 -r 124.10.1.10 -N 192.168.100.1/24 -e \"3des-sha1,aes128-md5\" -i \"3des-sha1,aes128-sha1;modp1536\" -t 1800 -T 1800 -s \"psk\" -d 1");
-                break;
-            case 2:
-                assertEquals(args, "-A -l 64.10.1.10 -n 192.168.1.1/16 -g 64.10.1.1 -r 124.10.1.10 -N 192.168.100.1/24 -e \"3des-sha1,aes128-md5\" -i \"3des-sha1,aes128-sha1;modp1536\" -t 1800 -T 1800 -s \"psk\" -d 0 -p ");
-                break;
-            case 3:
-                assertEquals(args, "-D -r 124.10.1.10 -n 192.168.1.1/16 -N 192.168.100.1/24");
-                break;
-            default:
-                fail();
+        case 1:
+            assertEquals(args, "-A -l 64.10.1.10 -n 192.168.1.1/16 -g 64.10.1.1 -r 124.10.1.10 -N 192.168.100.1/24 -e \"3des-sha1,aes128-md5\" -i \"3des-sha1,aes128-sha1;modp1536\" -t 1800 -T 1800 -s \"psk\" -d 1");
+            break;
+        case 2:
+            assertEquals(args, "-A -l 64.10.1.10 -n 192.168.1.1/16 -g 64.10.1.1 -r 124.10.1.10 -N 192.168.100.1/24 -e \"3des-sha1,aes128-md5\" -i \"3des-sha1,aes128-sha1;modp1536\" -t 1800 -T 1800 -s \"psk\" -d 0 -p ");
+            break;
+        case 3:
+            assertEquals(args, "-D -r 124.10.1.10 -n 192.168.1.1/16 -N 192.168.100.1/24");
+            break;
+        default:
+            fail();
         }
     }
 
@@ -624,17 +628,17 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
         assertEquals(script, VRScripts.VPN_L2TP);
         switch (_count) {
-            case 1:
-                assertEquals(args, "-r 10.10.1.10-10.10.1.20 -p sharedkey -s 124.10.10.10 -l 10.10.1.1 -c  -C 10.1.1.1/24 -i eth2");
-                break;
-            case 2:
-                assertEquals(args, "-d  -s 124.10.10.10 -C 10.1.1.1/24 -i eth2");
-                break;
-            case 3:
-                assertEquals(args, "-r 10.10.1.10-10.10.1.20 -p sharedkey -s 124.10.10.10 -l 10.10.1.1 -c  -C 10.1.1.1/24 -i eth1");
-                break;
-            default:
-                fail();
+        case 1:
+            assertEquals(args, "-r 10.10.1.10-10.10.1.20 -p sharedkey -s 124.10.10.10 -l 10.10.1.1 -c  -C 10.1.1.1/24 -i eth2");
+            break;
+        case 2:
+            assertEquals(args, "-d  -s 124.10.10.10 -C 10.1.1.1/24 -i eth2");
+            break;
+        case 3:
+            assertEquals(args, "-r 10.10.1.10-10.10.1.20 -p sharedkey -s 124.10.10.10 -l 10.10.1.1 -c  -C 10.1.1.1/24 -i eth1");
+            break;
+        default:
+            fail();
 
         }
     }
@@ -645,8 +649,6 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
         Answer answer = _resource.executeRequest(generateSetFirewallRulesCommand());
         assertTrue(answer.getResult());
-        assertTrue(answer instanceof GroupAnswer);
-        assertEquals(((GroupAnswer) answer).getResults().length, 3);
 
         //TODO Didn't test egress rule because not able to generate FirewallRuleVO object
     }
@@ -760,17 +762,17 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         _count ++;
         assertEquals(script, VRScripts.DHCP);
         switch (_count) {
-            case 1:
-                assertEquals(args, " -m 12:34:56:78:90:AB -4 10.1.10.2 -h vm1");
-                break;
-            case 2:
-                assertEquals(args, " -m 12:34:56:78:90:AB -h vm1 -6 2001:db8:0:0:0:ff00:42:8329 -u 00:03:00:01:12:34:56:78:90:AB");
-                break;
-            case 3:
-                assertEquals(args, " -m 12:34:56:78:90:AB -4 10.1.10.2 -h vm1 -6 2001:db8:0:0:0:ff00:42:8329 -u 00:03:00:01:12:34:56:78:90:AB");
-                break;
-            default:
-                fail();
+        case 1:
+            assertEquals(args, " -m 12:34:56:78:90:AB -4 10.1.10.2 -h vm1");
+            break;
+        case 2:
+            assertEquals(args, " -m 12:34:56:78:90:AB -h vm1 -6 2001:db8:0:0:0:ff00:42:8329 -u 00:03:00:01:12:34:56:78:90:AB");
+            break;
+        case 3:
+            assertEquals(args, " -m 12:34:56:78:90:AB -4 10.1.10.2 -h vm1 -6 2001:db8:0:0:0:ff00:42:8329 -u 00:03:00:01:12:34:56:78:90:AB");
+            break;
+        default:
+            fail();
         }
     }
 
@@ -883,67 +885,67 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     protected void verifyFile(LoadBalancerConfigCommand cmd, String path, String filename, String content) {
         _count ++;
         switch (_count) {
-            case 1:
-            case 3:
-                _file = path + filename;
-                assertEquals(path, "/etc/haproxy/");
-                assertTrue(filename.startsWith("haproxy.cfg.new"));
-                assertEquals(content, "global\n" +
-                        "\tlog 127.0.0.1:3914   local0 warning\n" +
-                        "\tmaxconn 1000\n" +
-                        "\tmaxpipes 250\n" +
-                        "\tchroot /var/lib/haproxy\n" +
-                        "\tuser haproxy\n" +
-                        "\tgroup haproxy\n" +
-                        "\tdaemon\n" +
-                        "\t \n" +
-                        "defaults\n" +
-                        "\tlog     global\n" +
-                        "\tmode    tcp\n" +
-                        "\toption  dontlognull\n" +
-                        "\tretries 3\n" +
-                        "\toption redispatch\n" +
-                        "\toption forwardfor\n" +
-                        "\toption forceclose\n" +
-                        "\ttimeout connect    5000\n" +
-                        "\ttimeout client     50000\n" +
-                        "\ttimeout server     50000\n" +
-                        "\n" +
-                        "listen stats_on_guest 10.1.10.2:8081\n" +
-                        "\tmode http\n" +
-                        "\toption httpclose\n" +
-                        "\tstats enable\n" +
-                        "\tstats uri     /admin?stats\n" +
-                        "\tstats realm   Haproxy\\ Statistics\n" +
-                        "\tstats auth    admin1:AdMiN123\n" +
-                        "\n" +
-                        "\t \n" +
-                        "listen 64_10_1_10-80 64.10.1.10:80\n" +
-                        "\tbalance algo\n" +
-                        "\tserver 64_10_1_10-80_0 10.1.10.2:80 check\n" +
-                        "\tmode http\n" +
-                        "\toption httpclose\n" +
-                        "\t \n" +
-                        "\t \n");
-                break;
-            default:
-                fail();
+        case 1:
+        case 3:
+            _file = path + filename;
+            assertEquals(path, "/etc/haproxy/");
+            assertTrue(filename.startsWith("haproxy.cfg.new"));
+            assertEquals(content, "global\n" +
+                    "\tlog 127.0.0.1:3914   local0 warning\n" +
+                    "\tmaxconn 1000\n" +
+                    "\tmaxpipes 250\n" +
+                    "\tchroot /var/lib/haproxy\n" +
+                    "\tuser haproxy\n" +
+                    "\tgroup haproxy\n" +
+                    "\tdaemon\n" +
+                    "\t \n" +
+                    "defaults\n" +
+                    "\tlog     global\n" +
+                    "\tmode    tcp\n" +
+                    "\toption  dontlognull\n" +
+                    "\tretries 3\n" +
+                    "\toption redispatch\n" +
+                    "\toption forwardfor\n" +
+                    "\toption forceclose\n" +
+                    "\ttimeout connect    5000\n" +
+                    "\ttimeout client     50000\n" +
+                    "\ttimeout server     50000\n" +
+                    "\n" +
+                    "listen stats_on_guest 10.1.10.2:8081\n" +
+                    "\tmode http\n" +
+                    "\toption httpclose\n" +
+                    "\tstats enable\n" +
+                    "\tstats uri     /admin?stats\n" +
+                    "\tstats realm   Haproxy\\ Statistics\n" +
+                    "\tstats auth    admin1:AdMiN123\n" +
+                    "\n" +
+                    "\t \n" +
+                    "listen 64_10_1_10-80 64.10.1.10:80\n" +
+                    "\tbalance algo\n" +
+                    "\tserver 64_10_1_10-80_0 10.1.10.2:80 check\n" +
+                    "\tmode http\n" +
+                    "\toption httpclose\n" +
+                    "\t \n" +
+                    "\t \n");
+            break;
+        default:
+            fail();
         }
     }
 
     private void verifyArgs(LoadBalancerConfigCommand cmd, String script, String args) {
         _count ++;
         switch (_count) {
-            case 2:
-                assertEquals(script, VRScripts.LB);
-                assertEquals(args, " -i 10.1.10.2 -f " + _file + " -a 64.10.1.10:80:, -s 10.1.10.2:8081:0/0:,,");
-                break;
-            case 4:
-                assertEquals(script, VRScripts.VPC_LB);
-                assertEquals(args, " -i 10.1.10.2 -f " + _file + " -a 64.10.1.10:80:, -s 10.1.10.2:8081:0/0:,,");
-                break;
-            default:
-                fail();
+        case 2:
+            assertEquals(script, VRScripts.LB);
+            assertEquals(args, " -i 10.1.10.2 -f " + _file + " -a 64.10.1.10:80:, -s 10.1.10.2:8081:0/0:,,");
+            break;
+        case 4:
+            assertEquals(script, VRScripts.VPC_LB);
+            assertEquals(args, " -i 10.1.10.2 -f " + _file + " -a 64.10.1.10:80:, -s 10.1.10.2:8081:0/0:,,");
+            break;
+        default:
+            fail();
         }
     }
 

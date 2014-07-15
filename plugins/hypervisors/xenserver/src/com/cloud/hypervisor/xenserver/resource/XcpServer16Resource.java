@@ -19,14 +19,21 @@
 
 package com.cloud.hypervisor.xenserver.resource;
 
+import org.apache.log4j.Logger;
+
 public class XcpServer16Resource extends XcpServerResource {
+    private final static Logger s_logger = Logger.getLogger(XcpServer16Resource.class);
 
     public XcpServer16Resource() {
         super();
     }
 
     @Override
-    protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        return CitrixHelper.getXcp160GuestOsType(stdType);
+    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
+        if (platformEmulator == null) {
+            s_logger.debug("Can't find the guest os: " + stdType + " mapping into XCP's guestOS type, start it as HVM guest");
+            platformEmulator = "Other install media";
+        }
+        return platformEmulator;
     }
 }

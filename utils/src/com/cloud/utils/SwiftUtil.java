@@ -100,7 +100,7 @@ public class SwiftUtil {
             String[] lines = parser.getLines().split("\\n");
             for (String line : lines) {
                 if (line.contains("Errno") || line.contains("failed") || line.contains("not found")) {
-                    throw new CloudRuntimeException("Failed to upload file: " + lines.toString());
+                    throw new CloudRuntimeException("Failed to upload file: " + Arrays.toString(lines));
                 }
             }
         }

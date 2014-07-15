@@ -29,6 +29,7 @@ public class DecodedDataObject {
     public DecodedDataObject(String objType, Long size, String name, String path, DecodedDataStore store) {
         this.objType = objType;
         this.size = size;
+        this.name = name;
         this.path = path;
         this.store = store;
     }

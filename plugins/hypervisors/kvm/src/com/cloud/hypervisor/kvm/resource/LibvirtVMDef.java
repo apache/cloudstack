@@ -28,6 +28,7 @@ public class LibvirtVMDef {
     private String _domName;
     private String _domUUID;
     private String _desc;
+    private String _platformEmulator;
     private final Map<String, Object> components = new HashMap<String, Object>();
 
     public static class GuestDef {
@@ -1195,6 +1196,14 @@ public class LibvirtVMDef {
 
     public String getGuestOSType() {
         return _desc;
+    }
+
+    public void setPlatformEmulator(String platformEmulator) {
+        _platformEmulator = platformEmulator;
+    }
+
+    public String getPlatformEmulator() {
+        return _platformEmulator;
     }
 
     public void addComp(Object comp) {

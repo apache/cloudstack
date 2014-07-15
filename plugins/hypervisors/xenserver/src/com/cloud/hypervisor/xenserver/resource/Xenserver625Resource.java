@@ -28,9 +28,9 @@ import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VM;
-import com.xensource.xenapi.Host;
 
 import org.apache.cloudstack.hypervisor.xenserver.XenServerResourceNewBase;
 
@@ -50,8 +50,17 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
     }
 
     @Override
-    protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        return CitrixHelper.getXenServer625GuestOsType(stdType, bootFromCD);
+    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
+        if (platformEmulator == null) {
+            if (!bootFromCD) {
+                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 6.2.5 guestOS type, start it as HVM guest");
+                platformEmulator = "Other install media";
+            } else {
+                String msg = "XenServer 6.2.5 DOES NOT support Guest OS type " + stdType;
+                s_logger.warn(msg);
+            }
+        }
+        return platformEmulator;
     }
 
     @Override
