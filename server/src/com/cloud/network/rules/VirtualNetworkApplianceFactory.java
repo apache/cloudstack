@@ -130,6 +130,8 @@ public class VirtualNetworkApplianceFactory {
 
         initBeans(ipAssociationRules);
 
+        ipAssociationRules.networkDao = networkDao;
+
         return ipAssociationRules;
     }
 
