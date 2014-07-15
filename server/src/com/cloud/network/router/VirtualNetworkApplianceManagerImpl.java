@@ -429,8 +429,6 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
     ScheduledExecutorService _networkStatsUpdateExecutor;
     ExecutorService _rvrStatusUpdateExecutor;
 
-    Account _systemAcct;
-
     BlockingQueue<Long> _vrUpdateQueue = null;
 
     @Override
@@ -739,7 +737,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
             throw new ConfigurationException(msg);
         }
 
-        _systemAcct = _accountMgr.getSystemAccount();
+        VirtualNwStatus.account = _accountMgr.getSystemAccount();
 
         final String aggregationRange = configs.get("usage.stats.job.aggregation.range");
         _usageAggregationRange = NumbersUtil.parseInt(aggregationRange, 1440);
@@ -1757,7 +1755,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         s_logger.debug("Adding nic for Virtual Router in Control network ");
         List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         NetworkOffering controlOffering = offerings.get(0);
-        Network controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, routerDeploymentDefinition.getPlan(),
+        Network controlConfig = _networkMgr.setupNetwork(VirtualNwStatus.account, controlOffering, routerDeploymentDefinition.getPlan(),
                 null, null, false).get(0);
         networks.put(controlConfig, new ArrayList<NicProfile>());
         //3) Public network
@@ -1786,7 +1784,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
                 defaultNic.setDeviceId(2);
             }
             final NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
-            final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering,
+            final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(VirtualNwStatus.account, publicOffering,
                     routerDeploymentDefinition.getPlan(), null, null, false);
             final String publicIp = defaultNic.getIp4Address();
             // We want to use the identical MAC address for RvR on public interface if possible
