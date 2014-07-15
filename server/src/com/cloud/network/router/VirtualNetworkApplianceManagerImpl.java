@@ -415,7 +415,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     int _routerStatsInterval = 300;
     int _routerCheckInterval = 30;
     int _rvrStatusUpdatePoolSize = 10;
-    protected ServiceOfferingVO _offering;
     private String _dnsBasicZoneUpdates = "all";
     private final Set<String> _guestOSNeedGatewayOnNonDefaultNetwork = new HashSet<String>();
 
@@ -736,14 +735,16 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(_agentMgr, _hostDao, _configDao), true, false, false);
 
         final boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, null, null, true, null, ProvisioningType.THIN, useLocalStorage,
-                true, null, true, VirtualMachine.Type.DomainRouter, true);
-        _offering.setUniqueName(ServiceOffering.routerDefaultOffUniqueName);
-        _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
+        ServiceOfferingVO offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, null, null, true, null, ProvisioningType.THIN,
+                useLocalStorage, true, null, true, VirtualMachine.Type.DomainRouter, true);
+        offering.setUniqueName(ServiceOffering.routerDefaultOffUniqueName);
+
+        offering = _serviceOfferingDao.persistSystemServiceOffering(offering);
+        routerDeploymentManager.setOffering(offering);
 
         // this can sometimes happen, if DB is manually or programmatically
         // manipulated
-        if (_offering == null) {
+        if (offering == null) {
             final String msg = "Data integrity problem : System Offering For Software router VM has been removed?";
             s_logger.error(msg);
             throw new ConfigurationException(msg);
@@ -1659,7 +1660,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
                 Long offeringId = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
                 if (offeringId == null) {
-                    offeringId = _offering.getId();
+                    offeringId = routerDeploymentManager.getOfferingId();
                 }
 
                 PublicIp sourceNatIp = null;
