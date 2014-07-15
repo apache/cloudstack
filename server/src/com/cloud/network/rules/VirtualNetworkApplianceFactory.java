@@ -35,7 +35,9 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.NEWVirtualNetworkApplianceManager;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
@@ -141,5 +143,13 @@ public class VirtualNetworkApplianceFactory {
         initBeans(vpnRules);
 
         return vpnRules;
+    }
+
+    public PasswordToRouterRules createPasswordToRouterRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile) {
+        PasswordToRouterRules routerRules = new PasswordToRouterRules(network, nic, profile);
+
+        initBeans(routerRules);
+
+        return routerRules;
     }
 }
