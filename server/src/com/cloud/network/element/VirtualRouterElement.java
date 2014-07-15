@@ -737,23 +737,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         @SuppressWarnings("unchecked")
         VirtualMachineProfile uservm = vm;
 
-        // If any router is running then send save password command otherwise save the password in DB
-        for (VirtualRouter router : routers) {
-            if (router.getState() == State.Running) {
-                return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
-            }
-        }
-        String password = (String) uservm.getParameter(VirtualMachineProfile.Param.VmPassword);
-        String password_encrypted = DBEncryptionUtil.encrypt(password);
-        UserVmVO userVmVO = _userVmDao.findById(vm.getId());
+        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-        _userVmDao.loadDetails(userVmVO);
-        userVmVO.setDetail("password", password_encrypted);
-        _userVmDao.saveDetails(userVmVO);
-
-        userVmVO.setUpdateParameters(true);
-        _userVmDao.update(userVmVO.getId(), userVmVO);
-        return true;
+        return networkTopology.savePasswordToRouter(network, nic, uservm, routers);
     }
 
     @Override
