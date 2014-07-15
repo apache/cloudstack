@@ -96,8 +96,17 @@ public class RouterDeploymentManager {
     VpcVirtualNetworkHelperImpl vpcHelper;
 
 
-    protected ServiceOfferingVO _offering;
+    protected ServiceOfferingVO offering;
 
+
+
+    public void setOffering(ServiceOfferingVO offering) {
+        this.offering = offering;
+    }
+
+    public Long getOfferingId() {
+        return offering.getId();
+    }
 
     ///////////////////////////////////////////////////////////////////////
     // Non-VPC behavior
@@ -141,7 +150,7 @@ public class RouterDeploymentManager {
 
             Long offeringId = vpcOffDao.findById(vpc.getVpcOfferingId()).getServiceOfferingId();
             if (offeringId == null) {
-                offeringId = _offering.getId();
+                offeringId = offering.getId();
             }
             //3) Deploy Virtual Router
             List<? extends PhysicalNetwork> pNtwks = pNtwkDao.listByZone(vpc.getZoneId());
