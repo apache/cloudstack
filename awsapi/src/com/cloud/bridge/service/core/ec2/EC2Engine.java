@@ -1231,7 +1231,9 @@ public class EC2Engine extends ManagerBase {
                 resp.setInstanceId(vol.getVirtualMachineId());
                 resp.setSize(vol.getSize());
                 resp.setSnapshotId(vol.getSnapshotId());
-                resp.setState(vol.getState());
+                if (vol.getState() != null) {
+                    resp.setState(mapToAmazonVolState(vol.getState()));
+                }
                 resp.setType(vol.getVolumeType());
                 resp.setVMState(vol.getVirtualMachineState());
                 resp.setAttachmentState("detached");
