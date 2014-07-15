@@ -173,19 +173,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public List<DomainRouterVO> deployVirtualRouter(final RouterDeploymentDefinition routerDeploymentDefinition)
-            throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException {
-
-        Vpc vpc = routerDeploymentDefinition.getVpc();
-        if (vpc != null) {
-            return routerDeploymentManager.deployVirtualRouterInVpc(routerDeploymentDefinition);
-        } else {
-            return super.deployVirtualRouter(routerDeploymentDefinition);
-        }
-    }
-
-    @Override
     public boolean addVpcRouterToGuestNetwork(final VirtualRouter router, final Network network, final boolean isRedundant, final Map<VirtualMachineProfile.Param, Object> params)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         if (network.getTrafficType() != TrafficType.Guest) {
