@@ -147,7 +147,7 @@ public class NetworkGeneralHelper {
     }
 
 
-//    @Override
+    //    @Override
     public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException {
         if(!checkRouterVersion(router)){
             s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId() + ", router template version : " + router.getTemplateVersion()
@@ -184,14 +184,14 @@ public class NetworkGeneralHelper {
     }
 
 
-//    @Override
-    public NicTO getNicTO(final VirtualRouter router, Long networkId, String broadcastUri) {
+    //    @Override
+    public NicTO getNicTO(final VirtualRouter router, final Long networkId, final String broadcastUri) {
         NicProfile nicProfile = _networkModel.getNicProfile(router, networkId, broadcastUri);
 
         return _itMgr.toNicTO(nicProfile, router.getHypervisorType());
     }
 
-//    @Override
+    //    @Override
     public VirtualRouter destroyRouter(final long routerId, final Account caller, final Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
 
         if (s_logger.isDebugEnabled()) {
@@ -216,7 +216,7 @@ public class NetworkGeneralHelper {
      * @param router
      * @return
      */
-//    @Override
+    //    @Override
     public boolean checkRouterVersion(final VirtualRouter router) {
         if(!VirtualNetworkApplianceManagerImpl.routerVersionCheckEnabled.value()){
             //Router version check is disabled.
@@ -252,11 +252,12 @@ public class NetworkGeneralHelper {
         return _routerDao.findById(router.getId());
     }
 
-    protected DomainRouterVO waitRouter(DomainRouterVO router) {
+    protected DomainRouterVO waitRouter(final DomainRouterVO router) {
         DomainRouterVO vm = _routerDao.findById(router.getId());
 
-        if (s_logger.isDebugEnabled())
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Router " + router.getInstanceName() + " is not fully up yet, we will wait");
+        }
         while (vm.getState() == State.Starting) {
             try {
                 Thread.sleep(1000);
@@ -268,8 +269,9 @@ public class NetworkGeneralHelper {
         }
 
         if (vm.getState() == State.Running) {
-            if (s_logger.isDebugEnabled())
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Router " + router.getInstanceName() + " is now fully up");
+            }
 
             return router;
         }
@@ -279,7 +281,7 @@ public class NetworkGeneralHelper {
     }
 
 
-//    @Override
+    //    @Override
     public List<DomainRouterVO> startRouters(final Map<Param, Object> params, final List<DomainRouterVO> routers) throws StorageUnavailableException,
     InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         List<DomainRouterVO> runningRouters = null;
@@ -309,13 +311,13 @@ public class NetworkGeneralHelper {
         return runningRouters;
     }
 
-//    @Override
-    public DomainRouterVO startVirtualRouter(DomainRouterVO router, User user, Account caller, Map<Param, Object> params)
+    //    @Override
+    public DomainRouterVO startVirtualRouter(final DomainRouterVO router, final User user, final Account caller, final Map<Param, Object> params)
             throws StorageUnavailableException, InsufficientCapacityException,
-    ConcurrentOperationException, ResourceUnavailableException {
+            ConcurrentOperationException, ResourceUnavailableException {
 
         if (router.getRole() != Role.VIRTUAL_ROUTER || !router.getIsRedundantRouter()) {
-            return this.start(router, user, caller, params, null);
+            return start(router, user, caller, params, null);
         }
 
         if (router.getState() == State.Running) {
@@ -355,7 +357,7 @@ public class NetworkGeneralHelper {
             }
         }
         if (routerToBeAvoid == null) {
-            return this.start(router, user, caller, params, null);
+            return start(router, user, caller, params, null);
         }
         // We would try best to deploy the router to another place
         final int retryIndex = 5;
@@ -380,7 +382,7 @@ public class NetworkGeneralHelper {
             }
             plan.setAvoids(avoids[i]);
             try {
-                result = this.start(router, user, caller, params, plan);
+                result = start(router, user, caller, params, plan);
             } catch (final InsufficientServerCapacityException ex) {
                 result = null;
             }
@@ -392,14 +394,14 @@ public class NetworkGeneralHelper {
     }
 
 
-//    @Override
+    //    @Override
     public DomainRouterVO deployRouter(final RouterDeploymentDefinition routerDeploymentDefinition,
-            VirtualRouterProvider vrProvider, long svcOffId,
-            LinkedHashMap<Network, List<? extends NicProfile>> networks,
-            boolean startRouter, List<HypervisorType> supportedHypervisors)
-            throws InsufficientAddressCapacityException,
-            InsufficientServerCapacityException, InsufficientCapacityException,
-            StorageUnavailableException, ResourceUnavailableException {
+            final VirtualRouterProvider vrProvider, final long svcOffId,
+            final LinkedHashMap<Network, List<? extends NicProfile>> networks,
+            final boolean startRouter, final List<HypervisorType> supportedHypervisors)
+                    throws InsufficientAddressCapacityException,
+                    InsufficientServerCapacityException, InsufficientCapacityException,
+                    StorageUnavailableException, ResourceUnavailableException {
 
         final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(svcOffId);
         final DeployDestination dest = routerDeploymentDefinition.getDest();
@@ -422,23 +424,23 @@ public class NetworkGeneralHelper {
 
                 String templateName = null;
                 switch (hType) {
-                case XenServer:
-                    templateName = VirtualNetworkApplianceManager.RouterTemplateXen.valueIn(dest.getDataCenter().getId());
-                    break;
-                case KVM:
-                    templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(dest.getDataCenter().getId());
-                    break;
-                case VMware:
-                    templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(dest.getDataCenter().getId());
-                    break;
-                case Hyperv:
-                    templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(dest.getDataCenter().getId());
-                    break;
-                case LXC:
-                    templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(dest.getDataCenter().getId());
-                    break;
-                default:
-                    break;
+                    case XenServer:
+                        templateName = VirtualNetworkApplianceManager.RouterTemplateXen.valueIn(dest.getDataCenter().getId());
+                        break;
+                    case KVM:
+                        templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(dest.getDataCenter().getId());
+                        break;
+                    case VMware:
+                        templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(dest.getDataCenter().getId());
+                        break;
+                    case Hyperv:
+                        templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(dest.getDataCenter().getId());
+                        break;
+                    case LXC:
+                        templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(dest.getDataCenter().getId());
+                        break;
+                    default:
+                        break;
                 }
                 final VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
 
@@ -453,10 +455,14 @@ public class NetworkGeneralHelper {
                     offerHA = false;
                 }
 
+                // routerDeploymentDefinition.getVpc().getId() ==> do not use VPC because it is not a VPC offering.
+                Long vpcId = routerDeploymentDefinition.getVpc() != null ? routerDeploymentDefinition.getVpc().getId() : null;
+
                 router = new DomainRouterVO(id, routerOffering.getId(), vrProvider.getId(),
                         VirtualMachineName.getRouterName(id, VirtualNwStatus.instance), template.getId(), template.getHypervisorType(),
                         template.getGuestOSId(), owner.getDomainId(), owner.getId(), routerDeploymentDefinition.isRedundant(), 0,
-                        false, RedundantState.UNKNOWN, offerHA, false, routerDeploymentDefinition.getVpc().getId());
+                        false, RedundantState.UNKNOWN, offerHA, false, vpcId);
+
                 router.setDynamicallyScalable(template.isDynamicallyScalable());
                 router.setRole(Role.VIRTUAL_ROUTER);
                 router = _routerDao.persist(router);
@@ -565,21 +571,21 @@ public class NetworkGeneralHelper {
 
         final String errMsg =
                 new StringBuilder("Cannot find an available cluster in Pod ")
-                .append(podId)
-                .append(" to start domain router for Ovm. \n Ovm won't support any system vm including domain router, ")
-                .append("please make sure you have a cluster with hypervisor type of any of xenserver/KVM/Vmware in the same pod")
-                .append(" with Ovm cluster. And there is at least one host in UP status in that cluster.")
-                .toString();
+        .append(podId)
+        .append(" to start domain router for Ovm. \n Ovm won't support any system vm including domain router, ")
+        .append("please make sure you have a cluster with hypervisor type of any of xenserver/KVM/Vmware in the same pod")
+        .append(" with Ovm cluster. And there is at least one host in UP status in that cluster.")
+        .toString();
         throw new CloudRuntimeException(errMsg);
     }
 
 
-//    @Override
+    //    @Override
     public LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(
             final RouterDeploymentDefinition routerDeploymentDefinition,
-            Network guestNetwork, Pair<Boolean, PublicIp> publicNetwork)
-            throws ConcurrentOperationException,
-            InsufficientAddressCapacityException {
+            final Network guestNetwork, final Pair<Boolean, PublicIp> publicNetwork)
+                    throws ConcurrentOperationException,
+                    InsufficientAddressCapacityException {
 
         boolean setupPublicNetwork = false;
         if (publicNetwork != null) {
