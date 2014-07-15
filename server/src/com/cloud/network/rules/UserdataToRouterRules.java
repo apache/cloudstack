@@ -17,12 +17,13 @@
 
 package com.cloud.network.rules;
 
+import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.topology.NetworkTopologyVisitor;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 

@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.network.topology;
+package org.apache.cloudstack.network.topology;
 
 
 public class AdvancedNetworkTopology extends BasicNetworkTopology {
