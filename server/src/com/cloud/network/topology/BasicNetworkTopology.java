@@ -37,16 +37,20 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRules;
+import com.cloud.network.rules.IpAssociationRules;
 import com.cloud.network.rules.LoadBalancingRules;
 import com.cloud.network.rules.RuleApplier;
 import com.cloud.network.rules.RuleApplierWrapper;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRules;
 import com.cloud.network.rules.VirtualNetworkApplianceFactory;
+import com.cloud.network.rules.VpnRules;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -112,6 +116,129 @@ public class BasicNetworkTopology implements NetworkTopology {
             final VirtualMachineProfile profile, final DeployDestination dest,
             final List<DomainRouterVO> routers) throws ResourceUnavailableException {
         return false;
+    }
+
+    @Override
+    public boolean applyLoadBalancingRules(final Network network, final List<LoadBalancingRule> rules, final List<? extends VirtualRouter> routers)
+            throws ResourceUnavailableException {
+
+        if (rules == null || rules.isEmpty()) {
+            s_logger.debug("No lb rules to be applied for network " + network.getId());
+            return true;
+        }
+
+        s_logger.debug("APPLYING LOAD BALANCING RULES");
+
+        final String typeString = "loadbalancing rules";
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+        final Long podId = null;
+
+        LoadBalancingRules loadBalancingRules = virtualNetworkApplianceFactory.createLoadBalancingRules(network, rules);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(loadBalancingRules));
+    }
+
+    @Override
+    public boolean applyFirewallRules(final Network network, final List<? extends FirewallRule> rules, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+        if (rules == null || rules.isEmpty()) {
+            s_logger.debug("No firewall rules to be applied for network " + network.getId());
+            return true;
+        }
+
+        s_logger.debug("APPLYING FIREWALL RULES");
+
+        final String typeString = "firewall rules";
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+        final Long podId = null;
+
+        FirewallRules firewallRules = virtualNetworkApplianceFactory.createFirewallRules(network, rules);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(firewallRules));
+    }
+
+    @Override
+    public boolean applyStaticNats(final Network network, final List<? extends StaticNat> rules, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+        if (rules == null || rules.isEmpty()) {
+            s_logger.debug("No static nat rules to be applied for network " + network.getId());
+            return true;
+        }
+
+        s_logger.debug("APPLYING STATIC NAT RULES");
+
+        final String typeString = "static nat rules";
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+        final Long podId = null;
+
+        StaticNatRules natRules = virtualNetworkApplianceFactory.createStaticNatRules(network, rules);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(natRules));
+    }
+
+    @Override
+    public boolean associatePublicIP(final Network network, final List<? extends PublicIpAddress> ipAddress, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+        if (ipAddress == null || ipAddress.isEmpty()) {
+            s_logger.debug("No ip association rules to be applied for network " + network.getId());
+            return true;
+        }
+
+        s_logger.debug("APPLYING IP RULES");
+
+        final String typeString = "ip association";
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+        final Long podId = null;
+
+        IpAssociationRules ipAddresses= virtualNetworkApplianceFactory.createIpAssociationRules(network, ipAddress);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(ipAddresses));
+    }
+
+    @Override
+    public String[] applyVpnUsers(final Network network, final List<? extends VpnUser> users, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+        if (routers == null || routers.isEmpty()) {
+            s_logger.warn("Failed to add/remove VPN users: no router found for account and zone");
+            throw new ResourceUnavailableException("Unable to assign ip addresses, domR doesn't exist for network " + network.getId(), DataCenter.class,
+                    network.getDataCenterId());
+        }
+
+        s_logger.debug("APPLYING VPN RULES");
+
+        // should become a BasicNetworkVisitor in the end
+        AdvancedNetworkVisitor visitor = new AdvancedNetworkVisitor();
+
+        boolean agentResults = true;
+
+        for (final DomainRouterVO router : routers) {
+            if (router.getState() != State.Running) {
+                s_logger.warn("Failed to add/remove VPN users: router not in running state");
+                throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class,
+                        network.getDataCenterId());
+            }
+
+            VpnRules vpnRules = virtualNetworkApplianceFactory.createVpnRules(network, users);
+
+            //[FIXME] REMOVE THIS SHIT AND INJECT USING A FACTORY FOR THE VISITORS
+            visitor.setApplianceManager(vpnRules.getApplianceManager());
+
+            // Currently we receive just one answer from the agent. In the future we have to parse individual answers and set
+            // results accordingly
+            final boolean agentResult = vpnRules.accept(visitor, router);
+            agentResults = agentResults && agentResult;
+        }
+
+        final String[] result = new String[users.size()];
+        for (int i = 0; i < result.length; i++) {
+            if (agentResults) {
+                result[i] = null;
+            } else {
+                result[i] = String.valueOf(agentResults);
+            }
+        }
+
+        return result;
     }
 
     @Override
@@ -206,64 +333,5 @@ public class BasicNetworkTopology implements NetworkTopology {
             result = !connectedRouters.isEmpty();
         }
         return result;
-    }
-
-    @Override
-    public boolean applyLoadBalancingRules(final Network network, final List<LoadBalancingRule> rules, final List<? extends VirtualRouter> routers)
-            throws ResourceUnavailableException {
-
-        if (rules == null || rules.isEmpty()) {
-            s_logger.debug("No lb rules to be applied for network " + network.getId());
-            return true;
-        }
-
-        s_logger.debug("APPLYING LOAD BALANCING RULES");
-
-        final String typeString = "loadbalancing rules";
-        final boolean isPodLevelException = false;
-        final boolean failWhenDisconnect = false;
-        final Long podId = null;
-
-        LoadBalancingRules loadBalancingRules = virtualNetworkApplianceFactory.createLoadBalancingRules(network, rules);
-
-        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(loadBalancingRules));
-    }
-
-    @Override
-    public boolean applyFirewallRules(final Network network, final List<? extends FirewallRule> rules, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
-        if (rules == null || rules.isEmpty()) {
-            s_logger.debug("No firewall rules to be applied for network " + network.getId());
-            return true;
-        }
-
-        s_logger.debug("APPLYING FIREWALL RULES");
-
-        final String typeString = "firewall rules";
-        final boolean isPodLevelException = false;
-        final boolean failWhenDisconnect = false;
-        final Long podId = null;
-
-        FirewallRules firewallRules = virtualNetworkApplianceFactory.createFirewallRules(network, rules);
-
-        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(firewallRules));
-    }
-
-    @Override
-    public boolean applyStaticNats(final Network network, final List<? extends StaticNat> rules, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
-        if (rules == null || rules.isEmpty()) {
-            s_logger.debug("No static nat rules to be applied for network " + network.getId());
-            return true;
-        }
-
-        s_logger.debug("APPLYING STATIC NAT RULES");
-
-        final String typeString = "static nat rules";
-        final boolean isPodLevelException = false;
-        final boolean failWhenDisconnect = false;
-        final Long podId = null;
-
-        StaticNatRules natRules = virtualNetworkApplianceFactory.createStaticNatRules(network, rules);
-
-        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(natRules));
     }
 }

@@ -25,6 +25,8 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.NEWVirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
@@ -127,12 +129,13 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
 
     @Override
     public boolean visit(final IpAssociationRules ipRules) throws ResourceUnavailableException {
+        Network network = ipRules.getNetwork();
         VirtualRouter router = ipRules.getRouter();
         Commands commands = ipRules.getCommands();
+        List<? extends PublicIpAddress> ips = ipRules.getIpAddresses();
 
-        //return sendCommandsToRouter(router, commands);
-
-        return false;
+        ipRules.createAssociateIPCommands(router, ips, commands, network.getId());
+        return applianceManager.sendCommandsToRouter(router, commands);
     }
 
     @Override
@@ -177,7 +180,13 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
 
     @Override
     public boolean visit(final VpnRules vpn) throws ResourceUnavailableException {
-        return false;
+        VirtualRouter router = vpn.getRouter();
+        List<? extends VpnUser> users = vpn.getUsers();
+
+        final Commands cmds = new Commands(Command.OnError.Continue);
+        vpn.createApplyVpnUsersCommand(users, router, cmds);
+
+        return applianceManager.sendCommandsToRouter(router, cmds);
     }
 
     @Override
