@@ -189,10 +189,10 @@
     <bean id="virtualNetworkApplianceFactory"
         class="com.cloud.network.rules.VirtualNetworkApplianceFactory" />
     
-    <bean id="topologyContext" class="com.cloud.network.topology.NetworkTopologyContext" init-method="init" />
+    <bean id="topologyContext" class="org.apache.cloudstack.network.topology.NetworkTopologyContext" init-method="init" />
     
-    <bean id="basicNetworkTopology" class="com.cloud.network.topology.BasicNetworkTopology" />
-    <bean id="advancedNetworkTopology" class="com.cloud.network.topology.AdvancedNetworkTopology" />
+    <bean id="basicNetworkTopology" class="org.apache.cloudstack.network.topology.BasicNetworkTopology" />
+    <bean id="advancedNetworkTopology" class="org.apache.cloudstack.network.topology.AdvancedNetworkTopology" />
     
     <bean id="routerControlHelper"
         class="com.cloud.network.router.RouterControlHelper" />

@@ -19,10 +19,11 @@ package com.cloud.network.rules;
 
 import java.util.List;
 
+import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
+
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.topology.NetworkTopologyVisitor;
 import com.cloud.network.vpc.NetworkACLItem;
 
 public class PrivateGatewayRules extends RuleApplier {

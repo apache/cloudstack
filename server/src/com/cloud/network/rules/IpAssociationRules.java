@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -37,7 +39,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.topology.NetworkTopologyVisitor;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicVO;
 
