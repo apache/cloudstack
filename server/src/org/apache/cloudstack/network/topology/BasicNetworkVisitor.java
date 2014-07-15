@@ -54,6 +54,8 @@ import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
 import com.cloud.network.rules.VpnRules;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 public class BasicNetworkVisitor extends NetworkTopologyVisitor {
@@ -155,8 +157,15 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     }
 
     @Override
-    public boolean visit(final PasswordToRouterRules nat) throws ResourceUnavailableException {
-        return false;
+    public boolean visit(final PasswordToRouterRules passwd) throws ResourceUnavailableException {
+        VirtualRouter router = passwd.getRouter();
+        NicVO nicVo = passwd.getNicVo();
+        VirtualMachineProfile profile = passwd.getProfile();
+
+        Commands cmds = new Commands(Command.OnError.Stop);
+        passwd.createPasswordCommand(router, profile, nicVo, cmds);
+
+        return applianceManager.sendCommandsToRouter(router, cmds);
     }
 
     @Override

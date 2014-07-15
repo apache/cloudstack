@@ -17,7 +17,18 @@
 
 package org.apache.cloudstack.network.topology;
 
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 
 public class AdvancedNetworkTopology extends BasicNetworkTopology {
+
+    private static final Logger s_logger = Logger.getLogger(AdvancedNetworkTopology.class);
+
+
+    @Autowired
+    @Qualifier("advancedNetworkVisitor")
+    protected AdvancedNetworkVisitor advancedVisitor;
 
 }
