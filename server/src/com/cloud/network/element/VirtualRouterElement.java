@@ -125,6 +125,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     LoadBalancingRulesManager _lbMgr;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
+
     @Inject
     VpcVirtualNetworkApplianceManager _routerMgr;
     @Inject
