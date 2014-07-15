@@ -413,7 +413,23 @@ public class AgentShell implements IAgentShell, Daemon {
             /* By default we only search for log4j.xml */
             LogUtils.initLog4j("log4j-cloud.xml");
 
-            System.setProperty("java.net.preferIPv4Stack", "true");
+            /*
+                By default we disable IPv6 for now to maintain backwards
+                compatibility. At a later point in time we can change this
+                behavior to prefer IPv6 over IPv4.
+            */
+            boolean ipv6disabled = true;
+            String ipv6 = getProperty(null, "ipv6disabled");
+            if (ipv6 != null) {
+                ipv6disabled = Boolean.parseBoolean(ipv6);
+            }
+
+            if (ipv6disabled) {
+                s_logger.debug("Preferring IPv4 address family for agent connection");
+                System.setProperty("java.net.preferIPv4Stack", "true");
+            } else {
+                s_logger.debug("Preferring IPv6 address family for agent connection");
+            }
 
             String instance = getProperty(null, "instance");
             if (instance == null) {
