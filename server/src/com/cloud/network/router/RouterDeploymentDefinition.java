@@ -16,13 +16,20 @@
 // under the License.
 package com.cloud.network.router;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.Pod;
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
 public class RouterDeploymentDefinition {
@@ -34,6 +41,7 @@ public class RouterDeploymentDefinition {
     protected Map<Param, Object> params;
     protected boolean isRedundant;
     protected DeploymentPlan plan;
+    protected List<DomainRouterVO> routers = new ArrayList<>();
 
     public RouterDeploymentDefinition(final Vpc vpc, final DeployDestination dest,
             final Account owner, final Map<Param, Object> params,
@@ -95,14 +103,37 @@ public class RouterDeploymentDefinition {
     public DeploymentPlan getPlan() {
         return plan;
     }
-    public void setPlan(final DeploymentPlan plan) {
-        this.plan = plan;
-    }
 
     public boolean isVpcRouter() {
         return vpc != null;
     }
+    public Pod getPod() {
+        return dest.getPod();
+    }
     public Long getPodId() {
-        return plan.getPodId();
+        return dest.getPod().getId();
+    }
+
+    public List<DomainRouterVO> getRouters() {
+        return routers;
+    }
+    public void setRouters(List<DomainRouterVO> routers) {
+        this.routers = routers;
+    }
+
+    public boolean isBasic() {
+        return this.dest.getDataCenter().getNetworkType() == NetworkType.Basic;
+    }
+
+    public void planDeployment() {
+        final long dcId = this.dest.getDataCenter().getId();
+        Long podId = null;
+        if (this.isBasic()) {
+            if (this.dest.getPod() != null) {
+                throw new CloudRuntimeException("Pod id is expected in deployment destination");
+            }
+            podId = this.dest.getPod().getId();
+        }
+        this.plan = new DataCenterDeployment(dcId, podId, null, null, null, null);
     }
 }

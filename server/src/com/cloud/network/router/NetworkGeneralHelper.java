@@ -298,15 +298,12 @@ public class NetworkGeneralHelper {
 
 
     //    @Override
-    public List<DomainRouterVO> startRouters(final Map<Param, Object> params, final List<DomainRouterVO> routers) throws StorageUnavailableException,
+    public List<DomainRouterVO> startRouters(final RouterDeploymentDefinition routerDeploymentDefinition) throws StorageUnavailableException,
     InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        List<DomainRouterVO> runningRouters = null;
 
-        if (routers != null) {
-            runningRouters = new ArrayList<DomainRouterVO>();
-        }
+        List<DomainRouterVO> runningRouters = new ArrayList<DomainRouterVO>();
 
-        for (DomainRouterVO router : routers) {
+        for (DomainRouterVO router : routerDeploymentDefinition.getRouters()) {
             boolean skip = false;
             final State state = router.getState();
             if (router.getHostId() != null && state != State.Running) {
@@ -317,7 +314,8 @@ public class NetworkGeneralHelper {
             }
             if (!skip) {
                 if (state != State.Running) {
-                    router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), params);
+                    router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(),
+                            routerDeploymentDefinition.getParams());
                 }
                 if (router != null) {
                     runningRouters.add(router);
