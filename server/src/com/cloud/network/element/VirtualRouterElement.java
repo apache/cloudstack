@@ -727,7 +727,11 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
         userVmVO.setUpdateParameters(true);
         _userVmDao.update(userVmVO.getId(), userVmVO);
-        return true;
+
+        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+        return networkTopology.savePasswordToRouter(network, nic, uservm, routers);
     }
 
     @Override

@@ -20,6 +20,10 @@ package org.apache.cloudstack.network.topology;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -38,23 +42,18 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 public class AdvancedNetworkTopology implements NetworkTopology {
 
     @Override
-    public List<DomainRouterVO> findOrDeployVirtualRouterInGuestNetwork(
-            final Network guestNetwork, final DeployDestination dest, final Account owner,
-            final boolean isRedundant, final Map<Param, Object> params)
-                    throws ConcurrentOperationException, InsufficientCapacityException,
-                    ResourceUnavailableException {
+    public List<DomainRouterVO> findOrDeployVirtualRouterInGuestNetwork(final Network guestNetwork, final DeployDestination dest, final Account owner, final boolean isRedundant,
+            final Map<Param, Object> params) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         return null;
     }
 
     @Override
-    public StringBuilder createGuestBootLoadArgs(final NicProfile guestNic,
-            final String defaultDns1, final String defaultDns2, final DomainRouterVO router) {
+    public StringBuilder createGuestBootLoadArgs(final NicProfile guestNic, final String defaultDns1, final String defaultDns2, final DomainRouterVO router) {
         return null;
     }
 
     @Override
-    public String retrieveGuestDhcpRange(final NicProfile guestNic,
-            final Network guestNetwork, final DataCenter dc) {
+    public String retrieveGuestDhcpRange(final NicProfile guestNic, final Network guestNetwork, final DataCenter dc) {
         return null;
     }
 
@@ -64,32 +63,26 @@ public class AdvancedNetworkTopology implements NetworkTopology {
     }
 
     @Override
-    public boolean configDhcpForSubnet(final Network network, final NicProfile nic,
-            final VirtualMachineProfile profile, final DeployDestination dest,
+    public boolean configDhcpForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
             final List<DomainRouterVO> routers) throws ResourceUnavailableException {
         return false;
     }
 
     @Override
-    public boolean applyDhcpEntry(final Network network, final NicProfile nic,
-            final VirtualMachineProfile profile, final DeployDestination dest,
+    public boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
             final List<DomainRouterVO> routers) throws ResourceUnavailableException {
         return false;
     }
 
     @Override
-    public boolean applyUserData(final Network network, final NicProfile nic,
-            final VirtualMachineProfile profile, final DeployDestination dest,
-            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+    public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
+            throws ResourceUnavailableException {
         return false;
     }
 
     @Override
-    public boolean applyRules(final Network network,
-            final List<? extends VirtualRouter> routers, final String typeString,
-            final boolean isPodLevelException, final Long podId,
-            final boolean failWhenDisconnect, final RuleApplier applier)
-                    throws ResourceUnavailableException {
+    public boolean applyRules(final Network network, final List<? extends VirtualRouter> routers, final String typeString, final boolean isPodLevelException, final Long podId,
+            final boolean failWhenDisconnect, final RuleApplier applier) throws ResourceUnavailableException {
 
         AdvancedNetworkVisitor visitor = new AdvancedNetworkVisitor(this);
         applier.accept(visitor, null);
@@ -98,10 +91,15 @@ public class AdvancedNetworkTopology implements NetworkTopology {
     }
 
     @Override
-    public boolean sendCommandsToRouter(VirtualRouter router,
-            List<LoadBalancingRule> rules, long id) {
+    public boolean sendCommandsToRouter(final VirtualRouter router, final List<LoadBalancingRule> rules, final long id) {
         // TODO Auto-generated method stub
         return false;
     }
+
+    private static final Logger s_logger = Logger.getLogger(AdvancedNetworkTopology.class);
+
+    @Autowired
+    @Qualifier("advancedNetworkVisitor")
+    protected AdvancedNetworkVisitor advancedVisitor;
 
 }
