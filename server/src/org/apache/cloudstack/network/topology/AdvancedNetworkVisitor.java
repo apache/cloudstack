@@ -17,16 +17,13 @@
 
 package org.apache.cloudstack.network.topology;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
-import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
-import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.DhcpRules;
@@ -48,7 +45,8 @@ import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
 import com.cloud.network.rules.VpnRules;
 
-public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
+@Component
+public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
     private static final Logger s_logger = Logger.getLogger(AdvancedNetworkVisitor.class);
 
@@ -172,17 +170,6 @@ public class AdvancedNetworkVisitor extends NetworkTopologyVisitor {
     @Override
     public boolean visit(final PrivateGatewayRules privateGW) throws ResourceUnavailableException {
         return false;
-    }
-
-    @Override
-    public boolean visit(final VpnRules vpn) throws ResourceUnavailableException {
-        VirtualRouter router = vpn.getRouter();
-        List<? extends VpnUser> users = vpn.getUsers();
-
-        final Commands cmds = new Commands(Command.OnError.Continue);
-        vpn.createApplyVpnUsersCommand(users, router, cmds);
-
-        return applianceManager.sendCommandsToRouter(router, cmds);
     }
 
     @Override
