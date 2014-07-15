@@ -74,4 +74,6 @@ public interface NetworkTopology {
     boolean associatePublicIP(final Network network, final List<? extends PublicIpAddress> ipAddress, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
     String[] applyVpnUsers(final Network network, final List<? extends VpnUser> users, final List<DomainRouterVO> routers) throws ResourceUnavailableException;
+
+    boolean savePasswordToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 }
