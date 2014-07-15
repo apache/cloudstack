@@ -158,6 +158,8 @@ import com.trilead.ssh2.SCPClient;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
+import com.cloud.agent.api.NetworkUsageCommand;
+import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.vm.DiskProfile;
@@ -898,11 +900,12 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             }
             if (lock.lock(3600)) {
                 try {
+                    /* TODO: save src iso real name for reuse, so we don't depend on other happy little accidents. */
                     File srcIso = getSystemVMPatchIsoFile();
                     String destPath = mountPoint + "/ISOs/";
                     String repoPath[] = mountPoint.split(File.separator);
-                    String destIso = destPath + "/"
-                            + getSystemVMIsoFileNameOnDatastore();
+                    // String destIso = destPath + "/"
+                    //        + getSystemVMIsoFileNameOnDatastore();
                     String result = "";
                     try {
                         StoragePlugin sp = new StoragePlugin(c);
@@ -911,7 +914,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                         if (sp.getFileSize() > 0) {
                             s_logger.info(" System VM patch ISO file already exists: "
                                     + srcIso.getAbsolutePath().toString()
-                                    + ", destination: " + destIso);
+                                    + ", destination: " + destPath);
                         }
                     } catch (Exception e) {
                         /*
@@ -923,7 +926,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                         s_logger.info("Copy System VM patch ISO file to secondary storage. source ISO: "
                                 + srcIso.getAbsolutePath()
                                 + ", destination: "
-                                + destIso);
+                                + destPath);
                         try {
                             /*
                              * should actualy come from importIso in
@@ -931,7 +934,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                              * for that.
                              */
                             SshHelper.scpTo(this._host, 22, this._username,
-                                    null, this._password, destIso, srcIso
+                                    null, this._password, destPath, srcIso
                                             .getAbsolutePath().toString(),
                                     "0644");
                         } catch (Exception es) {
@@ -939,7 +942,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                             String msg = "Unable to copy systemvm ISO on secondary storage. src location: "
                                     + srcIso.toString()
                                     + ", dest location: "
-                                    + destIso;
+                                    + destPath;
                             s_logger.error(msg);
                             throw new CloudRuntimeException(msg);
                         }
@@ -953,7 +956,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         }
     }
 
-    /* stolen from vmware impl */
+    /* stolen from vmware impl - but is wrong now... -sigh- */
     public String getSystemVMIsoFileNameOnDatastore() {
         String version = this.getClass().getPackage()
                 .getImplementationVersion();
@@ -1598,32 +1601,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         }
     }
 
-    /* VR things */
-    @Override
-    public ExecutionResult executeInVR(String routerIp, String script,
-            String args) {
-        return executeInVR(routerIp, script, args, _timeout / 1000);
-    }
-
-    /* TODO: Double check */
-    @Override
-    public ExecutionResult executeInVR(String routerIp, String script,
-            String args, int timeout) {
-        final Script command = new Script(DefaultDomRPath, timeout * 1000,
-                s_logger);
-        final AllLinesParser parser = new AllLinesParser();
-        command.add(script);
-        command.add(routerIp);
-        if (args != null) {
-            command.add(args);
-        }
-        String details = command.execute(parser);
-        if (details == null) {
-            details = parser.getLines();
-        }
-        return new ExecutionResult(command.getExitValue() == 0, details);
-    }
-
+    /* VR */
     @Override
     public ExecutionResult createFileInVR(String routerIp, String path,
             String filename, String content) {
@@ -1729,6 +1707,31 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         return null;
     }
 
+    /* VR things */
+    @Override
+    public ExecutionResult executeInVR(String routerIp, String script,
+            String args) {
+        return executeInVR(routerIp, script, args, _timeout);
+    }
+
+    /* TODO: Double check */
+    @Override
+    public ExecutionResult executeInVR(String routerIp, String script,
+            String args, int timeout) {
+        final AllLinesParser parser = new AllLinesParser();
+        // final Script command = new Script(DefaultDomRPath, timeout,
+        //        s_logger);
+        String cmd = script + " " + args;
+        try {
+            CloudStackPlugin cSp = new CloudStackPlugin(c);
+            CloudStackPlugin.ReturnCode result;
+            result = cSp.domrExec(routerIp, cmd);
+            return new ExecutionResult(result.getRc(), result.getStdOut());
+        } catch (Exception e) {
+            s_logger.error("executeInVR FAILED on " + routerIp + ":" + cmd + ", " + e.getMessage());
+        }
+        return null;
+    }
     /* split out domr stuff later */
     private GetDomRVersionAnswer execute(GetDomRVersionCmd cmd) {
         String args = this.DefaultDomRPath + "get_template_version.sh";
@@ -1763,6 +1766,115 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             return new Answer(cmd, false, e.getMessage());
         }
         return new Answer(cmd);
+    }
+
+    /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
+    protected Answer execute(NetworkUsageCommand cmd) {
+        if (cmd.isForVpc()) {
+            return VPCNetworkUsage(cmd);
+        }
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource NetworkUsageCommand " + cmd);
+        }
+        if (cmd.getOption() != null && cmd.getOption().equals("create")) {
+            String result = networkUsage(cmd.getPrivateIP(), "create", null);
+            NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
+            return answer;
+        }
+        long[] stats = getNetworkStats(cmd.getPrivateIP());
+
+        NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
+        return answer;
+    }
+    /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
+    protected String networkUsage(final String privateIpAddress, final String option, final String ethName) {
+        String args = null;
+        if (option.equals("get")) {
+            args = "-g";
+        } else if (option.equals("create")) {
+            args = "-c";
+        } else if (option.equals("reset")) {
+            args = "-r";
+        } else if (option.equals("addVif")) {
+            args = "-a";
+            args += ethName;
+        } else if (option.equals("deleteVif")) {
+            args = "-d";
+            args += ethName;
+        }
+
+        ExecutionResult result = executeInVR(privateIpAddress, "netusage.sh", args);
+
+        if (!result.isSuccess()) {
+            return null;
+        }
+
+        return result.getDetails();
+    }
+    /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
+    private long[] getNetworkStats(String privateIP) {
+        String result = networkUsage(privateIP, "get", null);
+        long[] stats = new long[2];
+        if (result != null) {
+            try {
+                String[] splitResult = result.split(":");
+                int i = 0;
+                while (i < splitResult.length - 1) {
+                    stats[0] += (new Long(splitResult[i++])).longValue();
+                    stats[1] += (new Long(splitResult[i++])).longValue();
+                }
+            } catch (Throwable e) {
+                s_logger.warn("Unable to parse return from script return of network usage command: " + e.toString(), e);
+            }
+        }
+        return stats;
+    }
+    /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
+    protected NetworkUsageAnswer VPCNetworkUsage(NetworkUsageCommand cmd) {
+        String privateIp = cmd.getPrivateIP();
+        String option = cmd.getOption();
+        String publicIp = cmd.getGatewayIP();
+
+        String args = "-l " + publicIp + " ";
+        if (option.equals("get")) {
+            args += "-g";
+        } else if (option.equals("create")) {
+            args += "-c";
+            String vpcCIDR = cmd.getVpcCIDR();
+            args += " -v " + vpcCIDR;
+        } else if (option.equals("reset")) {
+            args += "-r";
+        } else if (option.equals("vpn")) {
+            args += "-n";
+        } else if (option.equals("remove")) {
+            args += "-d";
+        } else {
+            return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
+        }
+
+        ExecutionResult callResult = executeInVR(privateIp, "vpc_netusage.sh", args);
+
+        if (!callResult.isSuccess()) {
+            s_logger.error("Unable to execute NetworkUsage command on DomR (" + privateIp + "), domR may not be ready yet. failure due to " + callResult.getDetails());
+        }
+
+        if (option.equals("get") || option.equals("vpn")) {
+            String result = callResult.getDetails();
+            if (result == null || result.isEmpty()) {
+                s_logger.error(" vpc network usage get returns empty ");
+            }
+            long[] stats = new long[2];
+            if (result != null) {
+                String[] splitResult = result.split(":");
+                int i = 0;
+                while (i < splitResult.length - 1) {
+                    stats[0] += (new Long(splitResult[i++])).longValue();
+                    stats[1] += (new Long(splitResult[i++])).longValue();
+                }
+                return new NetworkUsageAnswer(cmd, "success", stats[0], stats[1]);
+            }
+        }
+        return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
     }
 
     protected synchronized Answer execute(final DhcpEntryCommand cmd) {
@@ -2905,16 +3017,12 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
 
     @Override
     public Answer executeRequest(Command cmd) {
-        try {
-            if (cmd instanceof NetworkElementCommand) {
-                return _virtRouterResource
-                        .executeRequest((NetworkElementCommand) cmd);
-            }
-        } catch (final IllegalArgumentException e) {
-            return new Answer(cmd, false, e.getMessage());
-        }
         Class<? extends Command> clazz = cmd.getClass();
-        if (clazz == ReadyCommand.class) {
+        if (clazz == NetworkElementCommand.class) {
+            return _virtRouterResource.executeRequest((NetworkElementCommand)cmd);
+        } else if (clazz == NetworkUsageCommand.class) {
+            return execute((NetworkUsageCommand) cmd);
+        } else if (clazz == ReadyCommand.class) {
             return execute((ReadyCommand) cmd);
         } else if (clazz == CopyCommand.class) {
             return execute((CopyCommand) cmd);

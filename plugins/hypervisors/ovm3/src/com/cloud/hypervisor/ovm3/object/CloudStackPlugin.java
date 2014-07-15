@@ -38,6 +38,9 @@ public class CloudStackPlugin extends OvmObject {
     }
 
     public class ReturnCode {
+        public ReturnCode() {
+        }
+
         private Map<String, Object> _rc = new HashMap<String, Object>() {
             {
                 put("rc", null);
