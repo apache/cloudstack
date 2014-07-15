@@ -176,7 +176,13 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     public List<DomainRouterVO> deployVirtualRouter(final RouterDeploymentDefinition routerDeploymentDefinition)
             throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
-        return routerDeploymentManager.deployVirtualRouterInVpc(routerDeploymentDefinition);
+
+        Vpc vpc = routerDeploymentDefinition.getVpc();
+        if (vpc != null) {
+            return routerDeploymentManager.deployVirtualRouterInVpc(routerDeploymentDefinition);
+        } else {
+            return super.deployVirtualRouter(routerDeploymentDefinition);
+        }
     }
 
     @Override
