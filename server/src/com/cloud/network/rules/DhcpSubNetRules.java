@@ -17,22 +17,27 @@
 
 package com.cloud.network.rules;
 
-import java.util.List;
-
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 
+import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.VirtualMachineProfile;
 
-public class PrivateGatewayRules extends RuleApplier {
+public class DhcpSubNetRules extends RuleApplier {
 
-    private final List<? extends NetworkACLItem> rules;
+    private final NicProfile nic;
+    private final VirtualMachineProfile profile;
+    private final DeployDestination destination;
 
-    public PrivateGatewayRules(final Network network, final List<? extends NetworkACLItem> rules) {
+    public DhcpSubNetRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination destination) {
         super(network);
-        this.rules = rules;
+
+        this.nic = nic;
+        this.profile = profile;
+        this.destination = destination;
     }
 
     @Override
@@ -42,7 +47,15 @@ public class PrivateGatewayRules extends RuleApplier {
         return visitor.visit(this);
     }
 
-    public List<? extends NetworkACLItem> getRules() {
-        return rules;
+    public NicProfile getNic() {
+        return nic;
+    }
+
+    public VirtualMachineProfile getProfile() {
+        return profile;
+    }
+
+    public DeployDestination getDestination() {
+        return destination;
     }
 }

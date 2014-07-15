@@ -20,6 +20,8 @@ package com.cloud.network.rules;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
+
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.manager.Commands;
@@ -28,7 +30,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.topology.NetworkTopologyVisitor;
 
 public class VpnRules extends RuleApplier {
 
