@@ -61,7 +61,6 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
@@ -72,14 +71,9 @@ import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
-import com.cloud.network.dao.Site2SiteVpnConnectionDao;
-import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.NetworkACLItemDao;
@@ -98,7 +92,6 @@ import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
-import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.user.Account;
 import com.cloud.user.UserStatisticsVO;
@@ -121,50 +114,30 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Local(value = {VpcVirtualNetworkApplianceManager.class, VpcVirtualNetworkApplianceService.class})
 public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplianceManagerImpl implements VpcVirtualNetworkApplianceManager {
     private static final Logger s_logger = Logger.getLogger(VpcVirtualNetworkApplianceManagerImpl.class);
-    String _name;
-    @Inject
-    VpcDao _vpcDao;
-    @Inject
-    VpcOfferingDao _vpcOffDao;
-    @Inject
-    PhysicalNetworkDao _pNtwkDao;
-    @Inject
-    NetworkService _ntwkService;
-    @Inject
-    NetworkACLManager _networkACLMgr;
-    @Inject
-    VMInstanceDao _vmDao;
-    @Inject
-    StaticRouteDao _staticRouteDao;
-    @Inject
-    VpcManager _vpcMgr;
-    @Inject
-    PrivateIpDao _privateIpDao;
-    @Inject
-    IPAddressDao _ipAddrDao;
-    @Inject
-    Site2SiteVpnGatewayDao _vpnGatewayDao;
-    @Inject
-    Site2SiteVpnConnectionDao _vpnConnectionDao;
-    @Inject
-    FirewallRulesDao _firewallDao;
-    @Inject
-    Site2SiteVpnManager _s2sVpnMgr;
-    @Inject
-    VpcGatewayDao _vpcGatewayDao;
-    @Inject
-    NetworkACLItemDao _networkACLItemDao;
-    @Inject
-    EntityManager _entityMgr;
 
     @Inject
-    protected NetworkGeneralHelper nwHelper;
+    private VpcDao _vpcDao;
+    @Inject
+    private NetworkACLManager _networkACLMgr;
+    @Inject
+    private VMInstanceDao _vmDao;
+    @Inject
+    private StaticRouteDao _staticRouteDao;
+    @Inject
+    private VpcManager _vpcMgr;
+    @Inject
+    private PrivateIpDao _privateIpDao;
+    @Inject
+    private Site2SiteVpnManager _s2sVpnMgr;
+    @Inject
+    private VpcGatewayDao _vpcGatewayDao;
+    @Inject
+    private NetworkACLItemDao _networkACLItemDao;
+    @Inject
+    private EntityManager _entityMgr;
 
     @Inject
-    protected VpcVirtualNetworkHelperImpl vpcHelper;
-
-    @Inject
-    protected RouterDeploymentManager routerDeploymentManager;
+    private VpcVirtualNetworkHelperImpl vpcHelper;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {

@@ -72,10 +72,11 @@ import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.router.RouterDeploymentDefinition;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
+import com.cloud.network.router.deployment.RouterDeploymentDefinition;
+import com.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
@@ -156,6 +157,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Inject
     NetworkTopologyContext networkTopologyContext;
+    @Inject
+    private RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
 
     protected boolean canHandle(final Network network, final Service service) {
         Long physicalNetworkId = _networkMdl.getPhysicalNetworkId(network);
@@ -197,10 +200,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
-        RouterDeploymentDefinition routerDeploymentDefinition = new RouterDeploymentDefinition(network, dest, _accountMgr.getAccount(network.getAccountId()), params,
-                offering.getRedundantRouter());
+        RouterDeploymentDefinition routerDeploymentDefinition = routerDeploymentDefinitionBuilder.create().setGuestNetwork(network).setDeployDestination(dest)
+                .setAccountOwner(_accountMgr.getAccount(network.getAccountId())).setParams(params).setRedundant(offering.getRedundantRouter()).build();
 
-        List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(routerDeploymentDefinition);
+        List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
 
         int routerCounts = 1;
         if (offering.getRedundantRouter()) {
@@ -232,9 +235,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             return false;
         }
 
-        RouterDeploymentDefinition routerDeploymentDefinition = new RouterDeploymentDefinition(network, dest, _accountMgr.getAccount(network.getAccountId()), vm.getParameters(),
-                offering.getRedundantRouter());
-        List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(routerDeploymentDefinition);
+        RouterDeploymentDefinition routerDeploymentDefinition = routerDeploymentDefinitionBuilder.create().setGuestNetwork(network).setDeployDestination(dest)
+                .setAccountOwner(_accountMgr.getAccount(network.getAccountId())).setParams(vm.getParameters()).setRedundant(offering.getRedundantRouter()).build();
+
+        List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
 
         if (routers == null || routers.size() == 0) {
             throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
