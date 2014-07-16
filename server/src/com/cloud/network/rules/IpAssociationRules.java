@@ -26,7 +26,6 @@ import java.util.Map;
 
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.IpAddressTO;
@@ -46,8 +45,6 @@ public class IpAssociationRules extends RuleApplier {
 
     private final List<? extends PublicIpAddress> ipAddresses;
 
-    private Commands commands;
-
     public IpAssociationRules(final Network network, final List<? extends PublicIpAddress> ipAddresses) {
         super(network);
         this.ipAddresses = ipAddresses;
@@ -56,17 +53,12 @@ public class IpAssociationRules extends RuleApplier {
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
         this.router = router;
-        commands = new Commands(Command.OnError.Continue);
 
         return visitor.visit(this);
     }
 
     public List<? extends PublicIpAddress> getIpAddresses() {
         return ipAddresses;
-    }
-
-    public Commands getCommands() {
-        return commands;
     }
 
     public void createAssociateIPCommands(final VirtualRouter router, final List<? extends PublicIpAddress> ips, final Commands cmds, final long vmId) {
