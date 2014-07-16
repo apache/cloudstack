@@ -24,7 +24,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
@@ -97,9 +96,6 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 
     boolean saveUserDataToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers)
         throws ResourceUnavailableException;
-
-    List<DomainRouterVO> deployVirtualRouter(RouterDeploymentDefinition routerDeploymentDefinition)
-            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 
     boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
