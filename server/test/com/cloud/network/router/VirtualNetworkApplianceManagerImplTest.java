@@ -1,10 +1,9 @@
 package com.cloud.network.router;
 
+import static org.mockito.Mockito.when;
+
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Test;
@@ -12,8 +11,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-
-import static org.mockito.Mockito.when;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.DataCenter;
@@ -29,7 +26,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
-import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -62,7 +58,6 @@ import com.cloud.user.dao.UserStatsLogDao;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
