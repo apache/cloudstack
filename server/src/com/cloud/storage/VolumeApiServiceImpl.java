@@ -121,6 +121,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.ReflectionUse;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -637,9 +638,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     public boolean validateVolumeSizeRange(long size) {
         if (size < 0 || (size > 0 && size < (1024 * 1024 * 1024))) {
-            throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
+            throw new InvalidParameterValueException("Please specify a size of at least 1 GB.");
         } else if (size > (_maxVolumeSizeInGb * 1024 * 1024 * 1024)) {
-            throw new InvalidParameterValueException("volume size " + size + ", but the maximum size allowed is " + _maxVolumeSizeInGb + " Gb.");
+            throw new InvalidParameterValueException("Requested volume size is " + size + ", but the maximum size allowed is " + _maxVolumeSizeInGb + " GB.");
         }
 
         return true;
@@ -716,67 +717,99 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_RESIZE, eventDescription = "resizing volume", async = true)
     public VolumeVO resizeVolume(ResizeVolumeCmd cmd) throws ResourceAllocationException {
         Long newSize = null;
+        Long newMinIops = null;
+        Long newMaxIops = null;
         boolean shrinkOk = cmd.getShrinkOk();
 
         VolumeVO volume = _volsDao.findById(cmd.getEntityId());
+
         if (volume == null) {
             throw new InvalidParameterValueException("No such volume");
         }
 
+        /* Does the caller have authority to act on this volume? */
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
+
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        DiskOfferingVO newDiskOffering = null;
+        DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(cmd.getNewDiskOfferingId());
 
-        newDiskOffering = _diskOfferingDao.findById(cmd.getNewDiskOfferingId());
+        /* Only works for KVM/XenServer/VMware for now, and volumes with 'None' since they're just allocated in DB */
 
-        /* Only works for KVM/Xen/VMware for now, and volumes with 'None' since they're just allocated in db */
-        if (_volsDao.getHypervisorType(volume.getId()) != HypervisorType.KVM
-            && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.XenServer
-            && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.VMware
-            && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.None) {
-            throw new InvalidParameterValueException("Cloudstack currently only supports volumes marked as KVM, VMware, XenServer hypervisor for resize");
+        HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
+
+        if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer &&
+            hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.None) {
+            throw new InvalidParameterValueException("CloudStack currently only supports volumes marked as the KVM, VMware, or XenServer hypervisor type for resize.");
         }
 
         if (volume.getState() != Volume.State.Ready && volume.getState() != Volume.State.Allocated) {
-            throw new InvalidParameterValueException("Volume should be in ready or allocated state before attempting a resize. "
-                                                     + "Volume " + volume.getUuid() + " state is:" + volume.getState());
+            throw new InvalidParameterValueException("Volume should be in ready or allocated state before attempting a resize. Volume " +
+                volume.getUuid() + " is in state " + volume.getState() + ".");
         }
 
-        /*
-         * figure out whether or not a new disk offering or size parameter is
-         * required, get the correct size value
-         */
+        // if we are to use the existing disk offering
         if (newDiskOffering == null) {
-            if (diskOffering.isCustomized() || volume.getVolumeType().equals(Volume.Type.ROOT)) {
-                newSize = cmd.getSize();
+            newSize = cmd.getSize();
 
-                if (newSize == null) {
-                    throw new InvalidParameterValueException("new offering is of custom size, need to specify a size");
+            // if the caller is looking to change the size of the volume
+            if (newSize != null) {
+                if (!diskOffering.isCustomized() && !volume.getVolumeType().equals(Volume.Type.ROOT)) {
+                    throw new InvalidParameterValueException("To change a volume's size without providing a new disk offering, its current disk offering must be " +
+                            "customizable or it must be a root volume.");
                 }
 
-                newSize = (newSize << 30);
-            } else {
-                throw new InvalidParameterValueException("current offering" + volume.getDiskOfferingId() + " cannot be resized, need to specify a disk offering");
+                // convert from bytes to GiB
+                newSize = newSize << 30;
             }
-        } else {
-            if (!volume.getVolumeType().equals(Volume.Type.DATADISK)) {
-                throw new InvalidParameterValueException("Can only resize Data volumes via new disk offering");
+            else {
+                // no parameter provided; just use the original size of the volume
+                newSize = volume.getSize();
             }
 
-            if (newDiskOffering.getRemoved() != null || !DiskOfferingVO.Type.Disk.equals(newDiskOffering.getType())) {
-                throw new InvalidParameterValueException("Disk offering ID is missing or invalid");
+            newMinIops = cmd.getMinIops();
+
+            if (newMinIops != null) {
+                if (diskOffering.isCustomizedIops() == null || !diskOffering.isCustomizedIops()) {
+                    throw new InvalidParameterValueException("The current disk offering does not support customization of the 'Min IOPS' parameter.");
+                }
+            }
+            else {
+                // no parameter provided; just use the original min IOPS of the volume
+                newMinIops = volume.getMinIops();
+            }
+
+            newMaxIops = cmd.getMaxIops();
+
+            if (newMaxIops != null) {
+                if (diskOffering.isCustomizedIops() == null || !diskOffering.isCustomizedIops()) {
+                    throw new InvalidParameterValueException("The current disk offering does not support customization of the 'Max IOPS' parameter.");
+                }
+            }
+            else {
+                // no parameter provided; just use the original max IOPS of the volume
+                newMaxIops = volume.getMaxIops();
+            }
+
+            validateIops(newMinIops, newMaxIops);
+        } else {
+            if (newDiskOffering.getRemoved() != null) {
+                throw new InvalidParameterValueException("Requested disk offering has been removed.");
+            }
+
+            if (!DiskOfferingVO.Type.Disk.equals(newDiskOffering.getType())) {
+                throw new InvalidParameterValueException("Requested disk offering type is invalid.");
             }
 
             if (diskOffering.getTags() != null) {
-                if (newDiskOffering.getTags() == null || !newDiskOffering.getTags().equals(diskOffering.getTags())) {
-                    throw new InvalidParameterValueException("Tags on new and old disk offerings must match");
+                if (!StringUtils.areTagsEqual(diskOffering.getTags(), newDiskOffering.getTags())) {
+                    throw new InvalidParameterValueException("The tags on the new and old disk offerings must match.");
                 }
             } else if (newDiskOffering.getTags() != null) {
-                throw new InvalidParameterValueException("There are no tags on current disk offering, new disk offering needs to have no tags");
+                throw new InvalidParameterValueException("There are no tags on the current disk offering. The new disk offering needs to have no tags, as well.");
             }
 
-            if (newDiskOffering.getDomainId() == null) {
-                // do nothing as offering is public
-            } else {
+            if (newDiskOffering.getDomainId() != null) {
+                // not a public offering; check access
                 _configMgr.checkDiskOfferingAccess(CallContext.current().getCallingAccount(), newDiskOffering);
             }
 
@@ -784,108 +817,147 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 newSize = cmd.getSize();
 
                 if (newSize == null) {
-                    throw new InvalidParameterValueException("new offering is of custom size, need to specify a size");
+                    throw new InvalidParameterValueException("The new disk offering requires that a size be specified.");
                 }
 
-                newSize = (newSize << 30);
+                // convert from bytes to GiB
+                newSize = newSize << 30;
             } else {
                 newSize = newDiskOffering.getDiskSize();
             }
-        }
 
-        if (newSize == null) {
-            throw new InvalidParameterValueException("could not detect a size parameter or fetch one from the diskofferingid parameter");
-        }
+            if (volume.getSize() != newSize && !volume.getVolumeType().equals(Volume.Type.DATADISK)) {
+                throw new InvalidParameterValueException("Only data volumes can be resized via a new disk offering.");
+            }
 
-        if (!validateVolumeSizeRange(newSize)) {
-            throw new InvalidParameterValueException("Requested size out of range");
-        }
+            if (newDiskOffering.isCustomizedIops() != null && newDiskOffering.isCustomizedIops()) {
+                newMinIops = cmd.getMinIops() != null ? cmd.getMinIops() : volume.getMinIops();
+                newMaxIops = cmd.getMaxIops() != null ? cmd.getMaxIops() : volume.getMaxIops();
 
-        /* does the caller have the authority to act on this volume? */
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
+                validateIops(newMinIops, newMaxIops);
+            }
+            else {
+                newMinIops = newDiskOffering.getMinIops();
+                newMaxIops = newDiskOffering.getMaxIops();
+            }
+        }
 
         long currentSize = volume.getSize();
 
-        /*
-         * lets make certain they (think they) know what they're doing if they
-         * want to shrink, by forcing them to provide the shrinkok parameter.
-         * This will be checked again at the hypervisor level where we can see
-         * the actual disk size
-         */
-        if (currentSize > newSize && !shrinkOk) {
-            throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize
-                    + " would shrink the volume, need to sign off by supplying the shrinkok parameter with value of true");
+        // if the caller is looking to change the size of the volume
+        if (currentSize != newSize) {
+            if (!validateVolumeSizeRange(newSize)) {
+                throw new InvalidParameterValueException("Requested size out of range");
+            }
+
+            /*
+             * Let's make certain they (think they) know what they're doing if they
+             * want to shrink by forcing them to provide the shrinkok parameter.
+             * This will be checked again at the hypervisor level where we can see
+             * the actual disk size.
+             */
+            if (currentSize > newSize && !shrinkOk) {
+                throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize + " would shrink the volume." +
+                        "Need to sign off by supplying the shrinkok parameter with value of true.");
+            }
+
+            if (newSize > currentSize) {
+                /* Check resource limit for this account on primary storage resource */
+                _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()), ResourceType.primary_storage, volume.isDisplayVolume(),
+                        new Long(newSize - currentSize).longValue());
+            }
         }
 
-        if (!shrinkOk) {
-            /* Check resource limit for this account on primary storage resource */
-            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()), ResourceType.primary_storage, volume.isDisplayVolume(), new Long(newSize
-                    - currentSize).longValue());
-        }
+        // Note: The storage plug-in in question should perform validation on the IOPS to check if a sufficient number of IOPS are available to perform
+        // the requested change
 
-        /* If this volume has never been beyond allocated state, short circuit everything and simply update the database */
+        /* If this volume has never been beyond allocated state, short circuit everything and simply update the database. */
         if (volume.getState() == Volume.State.Allocated) {
-            s_logger.debug("Volume is allocated, but never created, simply updating database with new size");
+            s_logger.debug("Volume is in the allocated state, but has never been created. Simply updating database with new size and IOPS.");
+
             volume.setSize(newSize);
+            volume.setMinIops(newMinIops);
+            volume.setMaxIops(newMaxIops);
+
             if (newDiskOffering != null) {
                 volume.setDiskOfferingId(cmd.getNewDiskOfferingId());
             }
+
             _volsDao.update(volume.getId(), volume);
+
             return volume;
         }
 
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
 
-
         if (userVm != null) {
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+
             if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
                 // avoid re-entrance
 
                 VmWorkJobVO placeHolder = null;
+
                 if (VmJobEnabled.value()) {
                     placeHolder = createPlaceHolderWork(userVm.getId());
                 }
+
                 try {
-                return orchestrateResizeVolume(volume.getId(), currentSize, newSize,
+                    return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops,
                         newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
                 } finally {
-                    if (VmJobEnabled.value())
+                    if (VmJobEnabled.value()) {
                         _workJobDao.expunge(placeHolder.getId());
+                    }
                 }
-
             } else {
-                Outcome<Volume> outcome = resizeVolumeThroughJobQueue(userVm.getId(), volume.getId(), currentSize, newSize,
+                Outcome<Volume> outcome = resizeVolumeThroughJobQueue(userVm.getId(), volume.getId(), currentSize, newSize, newMinIops, newMaxIops,
                         newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
 
-                Volume vol = null;
                 try {
                     outcome.get();
                 } catch (InterruptedException e) {
-                    throw new RuntimeException("Operation is interrupted", e);
+                    throw new RuntimeException("Operation was interrupted", e);
                 } catch (java.util.concurrent.ExecutionException e) {
-                    throw new RuntimeException("Execution excetion", e);
+                    throw new RuntimeException("Execution exception", e);
                 }
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+
                 if (jobResult != null) {
-                    if (jobResult instanceof ConcurrentOperationException)
+                    if (jobResult instanceof ConcurrentOperationException) {
                         throw (ConcurrentOperationException)jobResult;
-                    else if (jobResult instanceof Throwable)
+                    }
+                    else if (jobResult instanceof Throwable) {
                         throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                    }
                     else if (jobResult instanceof Long) {
-                        vol = _volsDao.findById((Long)jobResult);
+                        return _volsDao.findById((Long)jobResult);
                     }
                 }
+
                 return volume;
             }
         }
-        return orchestrateResizeVolume(volume.getId(), currentSize, newSize,
+
+        return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops,
                 newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
+    }
+
+    private void validateIops(Long minIops, Long maxIops) {
+        if ((minIops == null && maxIops != null) || (minIops != null && maxIops == null)) {
+            throw new InvalidParameterValueException("Either 'miniops' and 'maxiops' must both be provided or neither must be provided.");
         }
 
-    private VolumeVO orchestrateResizeVolume(long volumeId, long currentSize, long newSize, Long newDiskOfferingId, boolean shrinkOk) {
+        if (minIops != null && maxIops != null) {
+            if (minIops > maxIops) {
+                throw new InvalidParameterValueException("The 'miniops' parameter must be less than or equal to the 'maxiops' parameter.");
+            }
+        }
+    }
+
+    private VolumeVO orchestrateResizeVolume(long volumeId, long currentSize, long newSize, Long newMinIops, Long newMaxIops, Long newDiskOfferingId, boolean shrinkOk) {
         VolumeVO volume = _volsDao.findById(volumeId);
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         /*
@@ -905,12 +977,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             /* Xen only works offline, SR does not support VDI.resizeOnline */
-            if (_volsDao.getHypervisorType(volume.getId()) == HypervisorType.XenServer && !userVm.getState().equals(State.Stopped)) {
+            if (currentSize != newSize && _volsDao.getHypervisorType(volume.getId()) == HypervisorType.XenServer && !userVm.getState().equals(State.Stopped)) {
                 throw new InvalidParameterValueException("VM must be stopped or disk detached in order to resize with the Xen HV");
             }
         }
 
-        ResizeVolumePayload payload = new ResizeVolumePayload(newSize, shrinkOk, instanceName, hosts);
+        ResizeVolumePayload payload = new ResizeVolumePayload(newSize, newMinIops, newMaxIops, shrinkOk, instanceName, hosts);
 
         try {
             VolumeInfo vol = volFactory.getVolume(volume.getId());
@@ -924,6 +996,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             volume = _volsDao.findById(volume.getId());
+
+            StoragePoolVO storagePool = _storagePoolDao.findById(vol.getPoolId());
+
+            if (storagePool.isManaged()) {
+                if (hosts.length > 0) {
+                    volService.resizeVolumeOnHypervisor(volumeId, newSize, hosts[0], instanceName);
+                }
+
+                volume.setSize(newSize);
+
+                /** @todo let the storage driver know the CloudStack volume within the storage volume in question has a new size */
+            }
 
             if (newDiskOfferingId != null) {
                 volume.setDiskOfferingId(newDiskOfferingId);
@@ -2364,7 +2448,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     public Outcome<Volume> resizeVolumeThroughJobQueue(final Long vmId, final long volumeId,
-            final long currentSize, final long newSize, final Long newServiceOfferingId, final boolean shrinkOk) {
+            final long currentSize, final long newSize, final Long newMinIops, final Long newMaxIops, final Long newServiceOfferingId, final boolean shrinkOk) {
 
         final CallContext context = CallContext.current();
         final User callingUser = context.getCallingUser();
@@ -2394,7 +2478,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 // save work context info (there are some duplications)
                 VmWorkResizeVolume workInfo = new VmWorkResizeVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
-                        VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, currentSize, newSize, newServiceOfferingId, shrinkOk);
+                        VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, currentSize, newSize, newMinIops, newMaxIops, newServiceOfferingId, shrinkOk);
                 workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
@@ -2529,7 +2613,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateResizeVolume(VmWorkResizeVolume work) throws Exception {
-        Volume vol = orchestrateResizeVolume(work.getVolumeId(), work.getCurrentSize(), work.getNewSize(),
+        Volume vol = orchestrateResizeVolume(work.getVolumeId(), work.getCurrentSize(), work.getNewSize(), work.getNewMinIops(), work.getNewMaxIops(),
                 work.getNewServiceOfferingId(), work.isShrinkOk());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
                 _jobMgr.marshallResultObject(new Long(vol.getId())));
