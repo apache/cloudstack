@@ -210,8 +210,7 @@ public class VirtualNetworkApplianceFactory {
         initBeans(dhcpRules);
 
         dhcpRules._userVmDao = _userVmDao;
-        dhcpRules._templateDao = _templateDao;
-        dhcpRules._serviceOfferingDao = _serviceOfferingDao;
+        dhcpRules._networkDao = _networkDao;
 
         return dhcpRules;
 	}
