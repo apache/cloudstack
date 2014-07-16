@@ -35,11 +35,14 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.NEWVirtualNetworkApplianceManager;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDao;
 
 public class VirtualNetworkApplianceFactory {
 
@@ -66,6 +69,15 @@ public class VirtualNetworkApplianceFactory {
 
     @Inject
     protected DataCenterDao dcDao;
+
+    @Inject
+    protected UserVmDao userVmDao;
+
+    @Inject
+    protected ServiceOfferingDao serviceOfferingDao;
+
+    @Inject
+    protected VMTemplateDao templateDao;
 
     @Inject
     protected DomainRouterDao routerDao;
@@ -150,6 +162,32 @@ public class VirtualNetworkApplianceFactory {
 
         initBeans(routerRules);
 
+        routerRules.userVmDao = userVmDao;
+
         return routerRules;
+    }
+
+    public SshKeyToRouterRules createSshKeyToRouterRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final String sshKey) {
+        SshKeyToRouterRules sshKeyToRouterRules = new SshKeyToRouterRules(network, nic, profile, sshKey);
+
+        initBeans(sshKeyToRouterRules);
+
+        sshKeyToRouterRules.userVmDao = userVmDao;
+        sshKeyToRouterRules.templateDao = templateDao;
+        sshKeyToRouterRules.serviceOfferingDao = serviceOfferingDao;
+
+        return sshKeyToRouterRules;
+    }
+
+    public UserdataToRouterRules createUserdataToRouterRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile) {
+        UserdataToRouterRules userdataRules = new UserdataToRouterRules(network, nic, profile);
+
+        initBeans(userdataRules);
+
+        userdataRules.userVmDao = userVmDao;
+        userdataRules.templateDao = templateDao;
+        userdataRules.serviceOfferingDao = serviceOfferingDao;
+
+        return userdataRules;
     }
 }
