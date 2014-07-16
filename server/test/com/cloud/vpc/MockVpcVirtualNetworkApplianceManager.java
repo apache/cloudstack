@@ -17,6 +17,17 @@
 
 package com.cloud.vpc;
 
+import java.util.List;
+import java.util.Map;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
+
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -44,14 +55,6 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
-import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
-import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.util.List;
-import java.util.Map;
 
 @Component
 @Local(value = {VpcVirtualNetworkApplianceManager.class, VpcVirtualNetworkApplianceService.class})
@@ -425,11 +428,6 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
 
     @Override
     public boolean completeAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException {
-        return true;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public boolean cleanupAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException {
         return true;  //To change body of implemented methods use File | Settings | File Templates.
     }
 

@@ -4464,8 +4464,4 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         return aggregationExecution(Action.Finish, network, routers);
     }
 
-    @Override
-    public boolean cleanupAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException {
-        return aggregationExecution(Action.Cleanup, network, routers);
-    }
 }
