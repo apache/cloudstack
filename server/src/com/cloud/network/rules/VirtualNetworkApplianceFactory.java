@@ -203,4 +203,16 @@ public class VirtualNetworkApplianceFactory {
 
         return userdataRules;
     }
+
+	public DhcpEntryRules createDhcpEntryRules(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination destination) {
+		DhcpEntryRules dhcpRules = new DhcpEntryRules(network, nic, profile, destination);
+
+        initBeans(dhcpRules);
+
+        dhcpRules._userVmDao = _userVmDao;
+        dhcpRules._templateDao = _templateDao;
+        dhcpRules._serviceOfferingDao = _serviceOfferingDao;
+
+        return dhcpRules;
+	}
 }

@@ -41,6 +41,7 @@ import com.cloud.network.PublicIpAddress;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRules;
 import com.cloud.network.rules.IpAssociationRules;
@@ -103,10 +104,26 @@ public class BasicNetworkTopology implements NetworkTopology {
     }
 
     @Override
-    public boolean applyDhcpEntry(final Network network, final NicProfile nic,
-            final VirtualMachineProfile profile, final DeployDestination dest,
-            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
-        return false;
+    public boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
+    		final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+    	
+    	s_logger.debug("APPLYING DHCP ENTRY RULES");
+
+        final String typeString = "dhcp entry";
+        final Long podId = dest.getPod().getId();
+        boolean isPodLevelException = false;
+
+        //for user vm in Basic zone we should try to re-deploy vm in a diff pod if it fails to deploy in original pod; so throwing exception with Pod scope
+        if (podId != null && profile.getVirtualMachine().getType() == VirtualMachine.Type.User && network.getTrafficType() == TrafficType.Guest &&
+                network.getGuestType() == Network.GuestType.Shared) {
+        	isPodLevelException = true;
+        }
+
+        final boolean failWhenDisconnect = false;
+
+        DhcpEntryRules dhcpRules = _virtualNetworkApplianceFactory.createDhcpEntryRules(network, nic, profile, dest);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(dhcpRules));
     }
 
     @Override

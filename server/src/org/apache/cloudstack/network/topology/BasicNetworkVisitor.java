@@ -167,7 +167,19 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
     @Override
     public boolean visit(final DhcpEntryRules dhcp) throws ResourceUnavailableException {
-        return false;
+    	final VirtualRouter router = dhcp.getRouter();
+
+        final Commands commands = new Commands(Command.OnError.Stop);
+        final NicVO nicVo = dhcp.getNicVo();
+        final UserVmVO userVM = dhcp.getUserVM();
+        final DeployDestination destination = dhcp.getDestination();
+        
+        if (router.getPodIdToDeployIn().longValue() == destination.getPod().getId()) {
+            dhcp.createDhcpEntryCommand(router, userVM, nicVo, commands);
+            
+            return _applianceManager.sendCommandsToRouter(router, commands);
+        }
+        return true;
     }
 
     @Override
