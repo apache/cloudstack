@@ -26,24 +26,24 @@ import com.cloud.dc.DataCenter.NetworkType;
 
 public class NetworkTopologyContext {
 
-    private final Hashtable<NetworkType, NetworkTopology> flyweight = new Hashtable<DataCenter.NetworkType, NetworkTopology>();;
+    private final Hashtable<NetworkType, NetworkTopology> _flyweight = new Hashtable<DataCenter.NetworkType, NetworkTopology>();;
 
     @Inject
-    private BasicNetworkTopology basicNetworkTopology;
+    private BasicNetworkTopology _basicNetworkTopology;
 
     @Inject
-    private AdvancedNetworkTopology advancedNetworkTopology;
+    private AdvancedNetworkTopology _advancedNetworkTopology;
 
     public void init() {
-        flyweight.put(NetworkType.Basic, basicNetworkTopology);
-        flyweight.put(NetworkType.Advanced, advancedNetworkTopology);
+        _flyweight.put(NetworkType.Basic, _basicNetworkTopology);
+        _flyweight.put(NetworkType.Advanced, _advancedNetworkTopology);
     }
 
     public NetworkTopology retrieveNetworkTopology(final DataCenter dc) {
-        if (!flyweight.containsKey(dc.getNetworkType())) {
+        if (!_flyweight.containsKey(dc.getNetworkType())) {
             throw new IllegalArgumentException("The given type cannot be related to a NetworkTopology implementation. "
                     + "Please, give a correct type.");
         }
-        return flyweight.get(dc.getNetworkType());
+        return _flyweight.get(dc.getNetworkType());
     }
 }
