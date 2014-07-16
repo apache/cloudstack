@@ -913,7 +913,7 @@
                                     };
 
                                     //args.data.networkdomain is null when networkdomain field is hidden
-                                    if (args.data.networkdomain != null && args.data.networkdomain != args.context.networks[0].networkdomain) {
+                                    if (args.data.networkdomain != null && args.data.networkdomain.length > 0 && args.data.networkdomain != args.context.networks[0].networkdomain) {
                                         $.extend(data, {
                                             networkdomain: args.data.networkdomain
                                         });

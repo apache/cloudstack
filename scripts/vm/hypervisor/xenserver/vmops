@@ -37,14 +37,14 @@ import cloudstack_pluginlib as lib
 import logging
 from util import CommandException
 
-lib.setup_logging("/var/log/cloud/vmops.log")
+lib.setup_logging("/var/log/cloud/cloud.log")
 
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        logging.debug("#### VMOPS enter  %s ####" % name )
+        logging.debug("#### CLOUD enter  %s ####" % name )
         res = fn(*v, **k)
-        logging.debug("#### VMOPS exit  %s ####" % name )
+        logging.debug("#### CLOUD exit  %s ####" % name )
         return res
     return wrapped
 

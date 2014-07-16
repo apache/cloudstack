@@ -23,7 +23,7 @@
 
 
 
-/var/log/cloud/vmops.log {
+/var/log/cloud/cloud.log {
     daily
     size 1M
     rotate 20

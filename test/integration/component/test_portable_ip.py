@@ -105,7 +105,7 @@ class Services:
                                     "privateport": 22,
                                     "publicport": 22,
                                     "protocol": "TCP",
-                                    "cidr" : '0.0.0.0/0',
+                                    "cidr": '0.0.0.0/0',
                         },
                         "small":
                                 # Create a small virtual machine instance with disk offering
@@ -143,6 +143,14 @@ class Services:
                                   "publicport": 22,
                                   "protocol": 'TCP',
                         },
+                        "portableIpRange":
+                                {
+			         "gateway": "10.223.252.195",
+			         "netmask": "255.255.255.192",
+			         "startip": "10.223.252.196",
+			         "endip": "10.223.252.197",
+			         "vlan": "1001",
+			},
                         "ostype": 'CentOS 5.3 (64-bit)'
           }
 
@@ -155,8 +163,8 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestCreatePortablePublicIpRanges, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
         cls.services = Services().services
+        cls.config = cls.services
         # Get Zone, Domain and templates
         cls.region = get_region(cls.api_client)
         cls.domain = get_domain(cls.api_client)
@@ -287,8 +295,8 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestDeletePortablePublicIpRanges, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
         cls.services = Services().services
+        cls.config = cls.services
         # Get Zone, Domain and templates
         cls.region = get_region(cls.api_client)
         cls.domain = get_domain(cls.api_client)
@@ -445,8 +453,8 @@ class TestListPortablePublicIpRanges(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestListPortablePublicIpRanges, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
         cls.services = Services().services
+        cls.config = cls.services
         # Get Zone, Domain and templates
         cls.region = get_region(cls.api_client)
         cls.domain = get_domain(cls.api_client)
@@ -537,7 +545,7 @@ class TestListPortablePublicIpRanges(cloudstackTestCase):
                          "Listed netmask not matching with the netmask of created public ip range")
         return
 
-    @attr(tags=["advanced","swamy", "selfservice"])
+    @attr(tags=["advanced", "swamy", "selfservice"])
     def test_list_portable_ip_range_non_root_admin(self):
         """Test list portable ip ranges with non admin root account
         """
@@ -571,8 +579,8 @@ class TestAssociatePublicIp(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestAssociatePublicIp, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
         cls.services = Services().services
+        cls.config = cls.services
         # Get Zone, Domain and templates
         cls.region = get_region(cls.api_client)
         cls.domain = get_domain(cls.api_client)
@@ -887,8 +895,8 @@ class TestDisassociatePublicIp(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestDisassociatePublicIp, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
         cls.services = Services().services
+        cls.config = cls.services
         # Get Zone, Domain and templates
         cls.region = get_region(cls.api_client)
         cls.domain = get_domain(cls.api_client)
@@ -1126,8 +1134,8 @@ class TestDeleteAccount(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestDeleteAccount, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
         cls.services = Services().services
+        cls.config = cls.services
         # Get Zone, Domain and templates
         cls.region = get_region(cls.api_client)
         cls.domain = get_domain(cls.api_client)
@@ -1328,8 +1336,8 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestPortableIpTransferAcrossNetworks, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
         cls.services = Services().services
+        cls.config = cls.services
         # Get Zone, Domain and templates
         cls.region = get_region(cls.api_client)
         cls.domain = get_domain(cls.api_client)
@@ -1447,7 +1455,7 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced","swamy", "selfservice"])
+    @attr(tags=["advanced", "swamy", "selfservice"])
     def test_list_portable_ip_range_non_root_admin(self):
         """Test list portable ip ranges with non admin root account
         """
@@ -1514,7 +1522,7 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
                          "List Public IP should return a valid static NAT info that was created on portable ip"
                          )
         self.assertTrue(
-                        static_nat_list[0].ipaddress == portableip.ipaddress.ipaddress and static_nat_list[0].virtualmachineid==self.virtual_machine2.id,
+                        static_nat_list[0].ipaddress == portableip.ipaddress.ipaddress and static_nat_list[0].virtualmachineid == self.virtual_machine2.id,
                         "There is some issue in transferring portable ip {} across networks".format(portableip.ipaddress.ipaddress)
                         )
         try:

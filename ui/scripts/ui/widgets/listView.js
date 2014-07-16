@@ -1748,12 +1748,21 @@
         // List view header actions
         if (listViewData.actions) {
             $.each(listViewData.actions, function(actionName, action) {
-                if (!action.isHeader || (
-                    action.preFilter && !action.preFilter({
+                var preFilter = function(extendContext) {
+                    var context = $.extend(true, {},
+                        $listView.data('view-args').context ? $listView.data('view-args').context : cloudStack.context);
+
+                    if (extendContext) {
+                        $.extend(context, extendContext);
+                    }
+
+                    return action.preFilter ? action.preFilter({
                         id: listViewData.id,
-                        context: $listView.data('view-args').context ? $listView.data('view-args').context : cloudStack.context
-                    })
-                )) return true;
+                        context: context
+                    }) : null;
+                }
+
+                if (!action.isHeader || (action.preFilter && !preFilter())) return true;
 
                 var $action = $('<div>')
                     .addClass('button action main-action reduced-hide').addClass(actionName)
@@ -1764,6 +1773,10 @@
                 if (action.isMultiSelectAction) {
                     $action.addClass('multiSelectAction');
                     $action.hide();
+
+                    if (action.preFilter) {
+                        $action.data('list-view-action-prefilter', preFilter);
+                    }
                 }
 
                 $toolbar.append($action)
@@ -2234,9 +2247,32 @@
     };
 
     var toggleMultiSelectActions = function($listView, enabled) {
+        var $multiSelectActions = $listView.find('div.main-action.multiSelectAction');
+
         $listView.find('div.action.add')[enabled ? 'hide' : 'show']();
         $listView.find('div.main-action:not(.multiSelectAction)')[enabled ? 'hide' : 'show']();
-        $listView.find('div.main-action.multiSelectAction')[enabled ? 'show' : 'hide']();
+        $multiSelectActions.hide();
+
+        if (enabled) {
+            $multiSelectActions.filter(function() {
+                var preFilter = $(this).data('list-view-action-prefilter');
+                var $selectedVMs;
+                var context = {};
+
+                if (preFilter) {
+                    $selectedVMs = $listView.find('tbody tr').filter(function() {
+                        return $(this).find('td.multiselect input[type=checkbox]:checked').size()
+                    });
+                    context[$listView.data('view-args').activeSection] = $selectedVMs.map(function(index, item) {
+                        return $(item).data('json-obj');
+                    });
+
+                    return preFilter(context);
+                }
+
+                return true;
+            }).show();
+        }
     }
 
     $.fn.listView = function(args, options) {
