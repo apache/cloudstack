@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.RuleApplier;
 import com.cloud.network.rules.RuleApplierWrapper;
 import com.cloud.network.rules.UserdataPwdRules;
@@ -44,9 +45,8 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
 
     @Override
-    public boolean applyUserData(final Network network, final NicProfile nic,
-            final VirtualMachineProfile profile, final DeployDestination dest,
-            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+    public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
+    		final List<DomainRouterVO> routers) throws ResourceUnavailableException {
 
         s_logger.debug("APPLYING USERDATA RULES");
 
@@ -58,5 +58,21 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         UserdataPwdRules pwdRules = _virtualNetworkApplianceFactory.createUserdataPwdRules(network, nic, profile, dest);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(pwdRules));
+    }
+    
+    @Override
+    public boolean applyDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, List<DomainRouterVO> routers)
+    		throws ResourceUnavailableException {
+    	
+    	s_logger.debug("APPLYING DHCP ENTRY RULES");
+
+        final String typeString = "dhcp entry";
+        final Long podId = null;
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+
+        DhcpEntryRules dhcpRules = _virtualNetworkApplianceFactory.createDhcpEntryRules(network, nic, profile, dest);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(dhcpRules));
     }
 }

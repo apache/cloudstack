@@ -966,8 +966,11 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             if ((routers == null) || (routers.size() == 0)) {
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
+            
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-            return _routerMgr.applyDhcpEntry(network, nic, uservm, dest, routers);
+            return networkTopology.applyDhcpEntry(network, nic, uservm, dest, routers);
         }
         return false;
     }
