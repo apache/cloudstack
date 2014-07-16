@@ -748,7 +748,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         @SuppressWarnings("unchecked")
         VirtualMachineProfile uservm = vm;
 
-        return _routerMgr.saveSSHPublicKeyToRouter(network, nic, uservm, routers, sshPublicKey);
+        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+        return networkTopology.saveSSHPublicKeyToRouter(network, nic, uservm, routers, sshPublicKey);
     }
 
     @Override
@@ -765,7 +768,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         @SuppressWarnings("unchecked")
         VirtualMachineProfile uservm = vm;
 
-        return _routerMgr.saveUserDataToRouter(network, nic, uservm, routers);
+        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+        return networkTopology.saveUserDataToRouter(network, nic, uservm, routers);
     }
 
     @Override

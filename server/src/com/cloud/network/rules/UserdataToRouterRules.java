@@ -19,18 +19,21 @@ package com.cloud.network.rules;
 
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 
-import com.cloud.agent.api.Command;
-import com.cloud.agent.manager.Commands;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class UserdataToRouterRules extends RuleApplier {
 
     private final NicProfile nic;
     private final VirtualMachineProfile profile;
+
+    private NicVO nicVo;
+    private UserVmVO userVM;
 
     public UserdataToRouterRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile) {
         super(network);
@@ -43,26 +46,20 @@ public class UserdataToRouterRules extends RuleApplier {
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
         this.router = router;
 
+        userVM = userVmDao.findById(profile.getVirtualMachine().getId());
+        userVmDao.loadDetails(userVM);
+
         // for basic zone, send vm data/password information only to the router in the same pod
-        final Commands cmds = new Commands(Command.OnError.Stop);
-        //final NicVO nicVo = _nicDao.findById(nic.getId());
-
-        //final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
-        //final String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
-
-        //        cmds.addCommand(
-        //                "vmdata",
-        //                generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(), vm.getHostName(), vm.getInstanceName(),
-        //                        vm.getId(), vm.getUuid(), null, nic.getNetworkId()));
+        nicVo = nicDao.findById(nic.getId());
 
         return visitor.visit(this);
     }
 
-    public NicProfile getNic() {
-        return nic;
+    public NicVO getNicVo() {
+        return nicVo;
     }
 
-    public VirtualMachineProfile getProfile() {
-        return profile;
+    public UserVmVO getUserVM() {
+        return userVM;
     }
 }
