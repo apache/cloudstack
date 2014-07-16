@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;
@@ -34,7 +35,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
-
+@Component
 public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
     private static final Logger s_logger = Logger.getLogger(AdvancedNetworkTopology.class);
