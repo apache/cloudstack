@@ -63,11 +63,11 @@ public class BasicNetworkTopology implements NetworkTopology {
     private static final Logger s_logger = Logger.getLogger(BasicNetworkTopology.class);
 
     @Inject
-    protected VirtualNetworkApplianceFactory virtualNetworkApplianceFactory;
+    protected VirtualNetworkApplianceFactory _virtualNetworkApplianceFactory;
 
     @Autowired
     @Qualifier("basicNetworkVisitor")
-    protected BasicNetworkVisitor basicVisitor;
+    protected BasicNetworkVisitor _basicVisitor;
 
     @Inject
     protected DataCenterDao _dcDao;
@@ -129,7 +129,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        LoadBalancingRules loadBalancingRules = virtualNetworkApplianceFactory.createLoadBalancingRules(network, rules);
+        LoadBalancingRules loadBalancingRules = _virtualNetworkApplianceFactory.createLoadBalancingRules(network, rules);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(loadBalancingRules));
     }
@@ -148,7 +148,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        FirewallRules firewallRules = virtualNetworkApplianceFactory.createFirewallRules(network, rules);
+        FirewallRules firewallRules = _virtualNetworkApplianceFactory.createFirewallRules(network, rules);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(firewallRules));
     }
@@ -167,7 +167,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        StaticNatRules natRules = virtualNetworkApplianceFactory.createStaticNatRules(network, rules);
+        StaticNatRules natRules = _virtualNetworkApplianceFactory.createStaticNatRules(network, rules);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(natRules));
     }
@@ -186,7 +186,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        IpAssociationRules ipAddresses= virtualNetworkApplianceFactory.createIpAssociationRules(network, ipAddress);
+        IpAssociationRules ipAddresses= _virtualNetworkApplianceFactory.createIpAssociationRules(network, ipAddress);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(ipAddresses));
     }
@@ -210,11 +210,11 @@ public class BasicNetworkTopology implements NetworkTopology {
                         network.getDataCenterId());
             }
 
-            VpnRules vpnRules = virtualNetworkApplianceFactory.createVpnRules(network, users);
+            VpnRules vpnRules = _virtualNetworkApplianceFactory.createVpnRules(network, users);
 
             // Currently we receive just one answer from the agent. In the future we have to parse individual answers and set
             // results accordingly
-            final boolean agentResult = vpnRules.accept(basicVisitor, router);
+            final boolean agentResult = vpnRules.accept(_basicVisitor, router);
             agentResults = agentResults && agentResult;
         }
 
@@ -240,7 +240,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        PasswordToRouterRules routerRules = virtualNetworkApplianceFactory.createPasswordToRouterRules(network, nic, profile);
+        PasswordToRouterRules routerRules = _virtualNetworkApplianceFactory.createPasswordToRouterRules(network, nic, profile);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(routerRules));
     }
@@ -254,7 +254,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        SshKeyToRouterRules keyToRouterRules = virtualNetworkApplianceFactory.createSshKeyToRouterRules(network, nic, profile, sshPublicKey);
+        SshKeyToRouterRules keyToRouterRules = _virtualNetworkApplianceFactory.createSshKeyToRouterRules(network, nic, profile, sshPublicKey);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(keyToRouterRules));
     }
@@ -268,7 +268,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        UserdataToRouterRules userdataToRouterRules = virtualNetworkApplianceFactory.createUserdataToRouterRules(network, nic, profile);
+        UserdataToRouterRules userdataToRouterRules = _virtualNetworkApplianceFactory.createUserdataToRouterRules(network, nic, profile);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(userdataToRouterRules));
     }
@@ -309,7 +309,7 @@ public class BasicNetworkTopology implements NetworkTopology {
                 }
 
                 try {
-                    ruleApplier.accept(basicVisitor, router);
+                    ruleApplier.accept(_basicVisitor, router);
 
                     connectedRouters.add(router);
                 } catch (final AgentUnavailableException e) {

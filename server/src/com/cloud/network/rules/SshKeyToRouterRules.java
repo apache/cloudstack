@@ -35,46 +35,46 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public class SshKeyToRouterRules extends RuleApplier {
 
-    private final NicProfile nic;
-    private final VirtualMachineProfile profile;
-    private final String sshPublicKey;
+    private final NicProfile _nic;
+    private final VirtualMachineProfile _profile;
+    private final String _sshPublicKey;
 
-    private NicVO nicVo;
-    private VMTemplateVO template;
-    private UserVmVO userVM;
+    private NicVO _nicVo;
+    private VMTemplateVO _template;
+    private UserVmVO _userVM;
 
     public SshKeyToRouterRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final String sshPublicKey) {
         super(network);
 
-        this.nic = nic;
-        this.profile = profile;
-        this.sshPublicKey = sshPublicKey;
+        _nic = nic;
+        _profile = profile;
+        _sshPublicKey = sshPublicKey;
     }
 
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
-        this.router = router;
-        userVM = userVmDao.findById(profile.getVirtualMachine().getId());
-        userVmDao.loadDetails(userVM);
+        _router = router;
+        _userVM = _userVmDao.findById(_profile.getVirtualMachine().getId());
+        _userVmDao.loadDetails(_userVM);
 
-        nicVo = nicDao.findById(nic.getId());
+        _nicVo = _nicDao.findById(_nic.getId());
         // for basic zone, send vm data/password information only to the router in the same pod
-        template = templateDao.findByIdIncludingRemoved(profile.getTemplateId());
+        _template = _templateDao.findByIdIncludingRemoved(_profile.getTemplateId());
 
         return visitor.visit(this);
     }
 
     public void createPasswordCommand(final VirtualRouter router, final VirtualMachineProfile profile, final NicVO nic, final Commands cmds) {
         final String password = (String)profile.getParameter(VirtualMachineProfile.Param.VmPassword);
-        final DataCenterVO dcVo = dcDao.findById(router.getDataCenterId());
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
 
         // password should be set only on default network element
         if (password != null && nic.isDefaultNic()) {
             final String encodedPassword = PasswordGenerator.rot13(password);
             final SavePasswordCommand cmd =
-                    new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getHostName(), networkModel.getExecuteInSeqNtwkElmtCmd());
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlHelper.getRouterControlIp(router.getId()));
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, routerControlHelper.getRouterIpInNetwork(nic.getNetworkId(), router.getId()));
+                    new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getHostName(), _networkModel.getExecuteInSeqNtwkElmtCmd());
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(nic.getNetworkId(), router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
@@ -84,22 +84,22 @@ public class SshKeyToRouterRules extends RuleApplier {
     }
 
     public VirtualMachineProfile getProfile() {
-        return profile;
+        return _profile;
     }
 
     public String getSshPublicKey() {
-        return sshPublicKey;
+        return _sshPublicKey;
     }
 
     public UserVmVO getUserVM() {
-        return userVM;
+        return _userVM;
     }
 
     public NicVO getNicVo() {
-        return nicVo;
+        return _nicVo;
     }
 
     public VMTemplateVO getTemplate() {
-        return template;
+        return _template;
     }
 }
