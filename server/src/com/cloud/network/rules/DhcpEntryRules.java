@@ -42,7 +42,7 @@ public class DhcpEntryRules extends RuleApplier {
 
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
-        this.router = router;
+        this._router = router;
 
         return visitor.visit(this);
     }
