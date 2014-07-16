@@ -29,6 +29,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class PasswordToRouterRules extends RuleApplier {
@@ -48,6 +49,8 @@ public class PasswordToRouterRules extends RuleApplier {
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
         this.router = router;
+
+        userVmDao.loadDetails((UserVmVO)profile.getVirtualMachine());
         // for basic zone, send vm data/password information only to the router in the same pod
         nicVo = nicDao.findById(nic.getId());
 

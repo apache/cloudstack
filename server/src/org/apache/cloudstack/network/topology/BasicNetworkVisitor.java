@@ -53,8 +53,10 @@ import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
 import com.cloud.network.rules.VpnRules;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
@@ -67,9 +69,9 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
     @Override
     public boolean visit(final StaticNatRules nat) throws ResourceUnavailableException {
-        Network network = nat.getNetwork();
-        VirtualRouter router = nat.getRouter();
-        List<? extends StaticNat> rules = nat.getRules();
+        final Network network = nat.getNetwork();
+        final VirtualRouter router = nat.getRouter();
+        final List<? extends StaticNat> rules = nat.getRules();
 
         final Commands cmds = new Commands(Command.OnError.Continue);
         nat.createApplyStaticNatCommands(rules, router, cmds, network.getId());
@@ -79,9 +81,9 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
     @Override
     public boolean visit(final LoadBalancingRules loadbalancing) throws ResourceUnavailableException {
-        Network network = loadbalancing.getNetwork();
-        VirtualRouter router = loadbalancing.getRouter();
-        List<LoadBalancingRule> rules = loadbalancing.getRules();
+        final Network network = loadbalancing.getNetwork();
+        final VirtualRouter router = loadbalancing.getRouter();
+        final List<LoadBalancingRule> rules = loadbalancing.getRules();
 
         final Commands cmds = new Commands(Command.OnError.Continue);
         loadbalancing.createApplyLoadBalancingRulesCommands(rules, router, cmds, network.getId());
@@ -92,12 +94,12 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     @SuppressWarnings("unchecked")
     @Override
     public boolean visit(final FirewallRules firewall) throws ResourceUnavailableException {
-        Network network = firewall.getNetwork();
-        VirtualRouter router = firewall.getRouter();
-        List<? extends FirewallRule> rules = firewall.getRules();
-        List<LoadBalancingRule> loadbalancingRules = firewall.getLoadbalancingRules();
+        final Network network = firewall.getNetwork();
+        final VirtualRouter router = firewall.getRouter();
+        final List<? extends FirewallRule> rules = firewall.getRules();
+        final List<LoadBalancingRule> loadbalancingRules = firewall.getLoadbalancingRules();
 
-        Purpose purpose = firewall.getPurpose();
+        final Purpose purpose = firewall.getPurpose();
 
         final Commands cmds = new Commands(Command.OnError.Continue);
         if (purpose == Purpose.LoadBalancing) {
@@ -132,37 +134,53 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
     @Override
     public boolean visit(final IpAssociationRules ipRules) throws ResourceUnavailableException {
-        Network network = ipRules.getNetwork();
-        VirtualRouter router = ipRules.getRouter();
-        Commands commands = ipRules.getCommands();
-        List<? extends PublicIpAddress> ips = ipRules.getIpAddresses();
+        final Network network = ipRules.getNetwork();
+        final VirtualRouter router = ipRules.getRouter();
+
+        final Commands commands = new Commands(Command.OnError.Continue);
+        final List<? extends PublicIpAddress> ips = ipRules.getIpAddresses();
 
         ipRules.createAssociateIPCommands(router, ips, commands, network.getId());
         return applianceManager.sendCommandsToRouter(router, commands);
     }
 
     @Override
-    public boolean visit(final UserdataPwdRules nat) throws ResourceUnavailableException {
+    public boolean visit(final UserdataPwdRules userdata) throws ResourceUnavailableException {
         return false;
     }
 
     @Override
-    public boolean visit(final DhcpEntryRules nat) throws ResourceUnavailableException {
+    public boolean visit(final DhcpEntryRules dhcp) throws ResourceUnavailableException {
         return false;
     }
 
     @Override
-    public boolean visit(final SshKeyToRouterRules nat) throws ResourceUnavailableException {
-        return false;
+    public boolean visit(final SshKeyToRouterRules sshkey) throws ResourceUnavailableException {
+        final VirtualRouter router = sshkey.getRouter();
+        final VirtualMachineProfile profile = sshkey.getProfile();
+        final String sshKeystr = sshkey.getSshPublicKey();
+        final UserVmVO userVM = sshkey.getUserVM();
+
+        final Commands commands = new Commands(Command.OnError.Stop);
+        final NicVO nicVo = sshkey.getNicVo();
+        final VMTemplateVO template = sshkey.getTemplate();
+
+        if (template != null && template.getEnablePassword()) {
+            sshkey.createPasswordCommand(router, profile, nicVo, commands);
+        }
+
+        sshkey.createVmDataCommand(router, userVM, nicVo, sshKeystr, commands);
+
+        return applianceManager.sendCommandsToRouter(router, commands);
     }
 
     @Override
     public boolean visit(final PasswordToRouterRules passwd) throws ResourceUnavailableException {
-        VirtualRouter router = passwd.getRouter();
-        NicVO nicVo = passwd.getNicVo();
-        VirtualMachineProfile profile = passwd.getProfile();
+        final VirtualRouter router = passwd.getRouter();
+        final NicVO nicVo = passwd.getNicVo();
+        final VirtualMachineProfile profile = passwd.getProfile();
 
-        Commands cmds = new Commands(Command.OnError.Stop);
+        final Commands cmds = new Commands(Command.OnError.Stop);
         passwd.createPasswordCommand(router, profile, nicVo, cmds);
 
         return applianceManager.sendCommandsToRouter(router, cmds);
@@ -180,11 +198,15 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
     @Override
     public boolean visit(final UserdataToRouterRules userdata) throws ResourceUnavailableException {
-        Network network = userdata.getNetwork();
-        VirtualRouter router = userdata.getRouter();
+        final VirtualRouter router = userdata.getRouter();
 
-        //return sendCommandsToRouter(router, cmds);
-        return false;
+        final UserVmVO userVM = userdata.getUserVM();
+        final NicVO nicVo = userdata.getNicVo();
+
+        final Commands commands = new Commands(Command.OnError.Stop);
+        userdata.createVmDataCommand(router, userVM, nicVo, null, commands);
+
+        return applianceManager.sendCommandsToRouter(router, commands);
     }
 
     @Override
