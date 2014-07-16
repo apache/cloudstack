@@ -184,7 +184,9 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     public StoragePoolVO findPoolByHostPath(long datacenterId, Long podId, String host, String path, String uuid) {
         SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
         sc.setParameters("hostAddress", host);
-        sc.setParameters("path", path);
+        if (path != null) {
+            sc.setParameters("path", path);
+        }
         sc.setParameters("datacenterId", datacenterId);
         sc.setParameters("podId", podId);
         sc.setParameters("uuid", uuid);

@@ -554,6 +554,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), "", pInfo.getUuid());
                 }
             }
+            if (pool == null) {
+                //the path can be different, but if they have the same uuid, assume they are the same storage
+                pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), null,
+                        pInfo.getUuid());
+                if (pool != null) {
+                    s_logger.debug("Found a storage pool: " + pInfo.getUuid() + ", but with different hostpath " + pInfo.getHostPath() + ", still treat it as the same pool");
+                }
+            }
+
             DataStoreProvider provider = dataStoreProviderMgr.getDefaultPrimaryDataStoreProvider();
             DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
             if (pool == null) {
