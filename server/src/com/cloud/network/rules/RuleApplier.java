@@ -49,63 +49,63 @@ import com.cloud.vm.dao.UserVmDao;
 
 public abstract class RuleApplier {
 
-    protected NEWVirtualNetworkApplianceManager applianceManager;
+    protected NEWVirtualNetworkApplianceManager _applianceManager;
 
-    protected NetworkModel networkModel;
+    protected NetworkModel _networkModel;
 
-    protected LoadBalancingRulesManager lbMgr;
+    protected LoadBalancingRulesManager _lbMgr;
 
-    protected LoadBalancerDao loadBalancerDao;
+    protected LoadBalancerDao _loadBalancerDao;
 
-    protected ConfigurationDao configDao;
+    protected ConfigurationDao _configDao;
 
-    protected NicDao nicDao;
+    protected NicDao _nicDao;
 
-    protected NetworkOfferingDao networkOfferingDao;
+    protected NetworkOfferingDao _networkOfferingDao;
 
-    protected DataCenterDao dcDao;
+    protected DataCenterDao _dcDao;
 
-    protected DomainRouterDao routerDao;
+    protected DomainRouterDao _routerDao;
 
-    protected UserVmDao userVmDao;
+    protected UserVmDao _userVmDao;
 
-    protected ServiceOfferingDao serviceOfferingDao;
+    protected ServiceOfferingDao _serviceOfferingDao;
 
-    protected VMTemplateDao templateDao;
+    protected VMTemplateDao _templateDao;
 
-    protected NetworkDao networkDao;
+    protected NetworkDao _networkDao;
 
-    protected FirewallRulesDao rulesDao;
+    protected FirewallRulesDao _rulesDao;
 
-    protected VirtualMachineManager itMgr;
+    protected VirtualMachineManager _itMgr;
 
-    protected Network network;
+    protected Network _network;
 
-    protected VirtualRouter router;
+    protected VirtualRouter _router;
 
-    protected RouterControlHelper routerControlHelper;
+    protected RouterControlHelper _routerControlHelper;
 
     public RuleApplier(final Network network) {
-        this.network = network;
+        this._network = network;
     }
 
     public abstract boolean accept(NetworkTopologyVisitor visitor, VirtualRouter router) throws ResourceUnavailableException;
 
     public Network getNetwork() {
-        return network;
+        return _network;
     }
 
     public VirtualRouter getRouter() {
-        return router;
+        return _router;
     }
 
     public NEWVirtualNetworkApplianceManager getApplianceManager() {
-        return applianceManager;
+        return _applianceManager;
     }
 
     public void createVmDataCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final String publicKey, final Commands cmds) {
-        final String serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
-        final String zoneName = dcDao.findById(router.getDataCenterId()).getName();
+        final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
+        final String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
         cmds.addCommand(
                 "vmdata",
                 generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(), vm.getHostName(), vm.getInstanceName(),
@@ -114,13 +114,13 @@ public abstract class RuleApplier {
 
     public VmDataCommand generateVmDataCommand(final VirtualRouter router, final String vmPrivateIpAddress, final String userData, final String serviceOffering, final String zoneName,
             final String guestIpAddress, final String vmName, final String vmInstanceName, final long vmId, final String vmUuid, final String publicKey, final long guestNetworkId) {
-        final VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName, networkModel.getExecuteInSeqNtwkElmtCmd());
+        final VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName, _networkModel.getExecuteInSeqNtwkElmtCmd());
 
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlHelper.getRouterControlIp(router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
-        final DataCenterVO dcVo = dcDao.findById(router.getDataCenterId());
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
         cmd.addVmData("userdata", "user-data", userData);
@@ -146,7 +146,7 @@ public abstract class RuleApplier {
         }
         cmd.addVmData("metadata", "public-keys", publicKey);
 
-        String cloudIdentifier = configDao.getValue("cloud.identifier");
+        String cloudIdentifier = _configDao.getValue("cloud.identifier");
         if (cloudIdentifier == null) {
             cloudIdentifier = "";
         } else {

@@ -57,35 +57,35 @@ import com.cloud.vm.NicProfile;
 
 public class FirewallRules extends RuleApplier {
 
-    private final List<? extends FirewallRule> rules;
-    private List<LoadBalancingRule> loadbalancingRules;
+    private final List<? extends FirewallRule> _rules;
+    private List<LoadBalancingRule> _loadbalancingRules;
 
-    private Purpose purpose;
+    private Purpose _purpose;
 
     public FirewallRules(final Network network, final List<? extends FirewallRule> rules) {
         super(network);
-        this.rules = rules;
+        _rules = rules;
     }
 
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
-        this.router = router;
+        _router = router;
 
-        purpose = rules.get(0).getPurpose();
+        _purpose = _rules.get(0).getPurpose();
 
-        if (purpose == Purpose.LoadBalancing) {
+        if (_purpose == Purpose.LoadBalancing) {
             // for load balancer we have to resend all lb rules for the network
-            final List<LoadBalancerVO> lbs = loadBalancerDao.listByNetworkIdAndScheme(network.getId(), Scheme.Public);
-            loadbalancingRules = new ArrayList<LoadBalancingRule>();
+            final List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkIdAndScheme(_network.getId(), Scheme.Public);
+            _loadbalancingRules = new ArrayList<LoadBalancingRule>();
             for (final LoadBalancerVO lb : lbs) {
-                final List<LbDestination> dstList = lbMgr.getExistingDestinations(lb.getId());
-                final List<LbStickinessPolicy> policyList = lbMgr.getStickinessPolicies(lb.getId());
-                final List<LbHealthCheckPolicy> hcPolicyList = lbMgr.getHealthCheckPolicies(lb.getId());
-                final LbSslCert sslCert = lbMgr.getLbSslCert(lb.getId());
-                final Ip sourceIp = networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+                final List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+                final List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
+                final List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
+                final LbSslCert sslCert = _lbMgr.getLbSslCert(lb.getId());
+                final Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
                 final LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp, sslCert, lb.getLbProtocol());
 
-                loadbalancingRules.add(loadBalancing);
+                _loadbalancingRules.add(loadBalancing);
             }
         }
 
@@ -93,15 +93,15 @@ public class FirewallRules extends RuleApplier {
     }
 
     public List<? extends FirewallRule> getRules() {
-        return rules;
+        return _rules;
     }
 
     public List<LoadBalancingRule> getLoadbalancingRules() {
-        return loadbalancingRules;
+        return _loadbalancingRules;
     }
 
     public Purpose getPurpose() {
-        return purpose;
+        return _purpose;
     }
 
     public void createApplyLoadBalancingRulesCommands(final List<LoadBalancingRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
@@ -126,36 +126,36 @@ public class FirewallRules extends RuleApplier {
         String routerPublicIp = null;
 
         if (router instanceof DomainRouterVO) {
-            final DomainRouterVO domr = routerDao.findById(router.getId());
+            final DomainRouterVO domr = _routerDao.findById(router.getId());
             routerPublicIp = domr.getPublicIpAddress();
         }
 
-        final Network guestNetwork = networkModel.getNetwork(guestNetworkId);
-        final Nic nic = nicDao.findByNtwkIdAndInstanceId(guestNetwork.getId(), router.getId());
+        final Network guestNetwork = _networkModel.getNetwork(guestNetworkId);
+        final Nic nic = _nicDao.findByNtwkIdAndInstanceId(guestNetwork.getId(), router.getId());
         final NicProfile nicProfile =
-                new NicProfile(nic, guestNetwork, nic.getBroadcastUri(), nic.getIsolationUri(), networkModel.getNetworkRate(guestNetwork.getId(), router.getId()),
-                        networkModel.isSecurityGroupSupportedInNetwork(guestNetwork), networkModel.getNetworkTag(router.getHypervisorType(), guestNetwork));
-        final NetworkOffering offering = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
+                new NicProfile(nic, guestNetwork, nic.getBroadcastUri(), nic.getIsolationUri(), _networkModel.getNetworkRate(guestNetwork.getId(), router.getId()),
+                        _networkModel.isSecurityGroupSupportedInNetwork(guestNetwork), _networkModel.getNetworkTag(router.getHypervisorType(), guestNetwork));
+        final NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
         String maxconn = null;
         if (offering.getConcurrentConnections() == null) {
-            maxconn = configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
+            maxconn = _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
         } else {
             maxconn = offering.getConcurrentConnections().toString();
         }
 
         final LoadBalancerConfigCommand cmd =
-                new LoadBalancerConfigCommand(lbs, routerPublicIp, routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()), router.getPrivateIpAddress(), itMgr.toNicTO(
+                new LoadBalancerConfigCommand(lbs, routerPublicIp, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()), router.getPrivateIpAddress(), _itMgr.toNicTO(
                         nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled());
 
-        cmd.lbStatsVisibility = configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
-        cmd.lbStatsUri = configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
-        cmd.lbStatsAuth = configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
-        cmd.lbStatsPort = configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
+        cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
+        cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
+        cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
+        cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
 
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlHelper.getRouterControlIp(router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        final DataCenterVO dcVo = dcDao.findById(router.getDataCenterId());
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
 
@@ -165,7 +165,7 @@ public class FirewallRules extends RuleApplier {
         List<PortForwardingRuleTO> rulesTO = new ArrayList<PortForwardingRuleTO>();
         if (rules != null) {
             for (final PortForwardingRule rule : rules) {
-                final IpAddress sourceIp = networkModel.getIp(rule.getSourceIpAddressId());
+                final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
                 final PortForwardingRuleTO ruleTO = new PortForwardingRuleTO(rule, null, sourceIp.getAddress().addr());
                 rulesTO.add(ruleTO);
             }
@@ -179,10 +179,10 @@ public class FirewallRules extends RuleApplier {
             cmd = new SetPortForwardingRulesCommand(rulesTO);
         }
 
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlHelper.getRouterControlIp(router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        final DataCenterVO dcVo = dcDao.findById(router.getDataCenterId());
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
         cmds.addCommand(cmd);
@@ -192,17 +192,17 @@ public class FirewallRules extends RuleApplier {
         List<StaticNatRuleTO> rulesTO = new ArrayList<StaticNatRuleTO>();
         if (rules != null) {
             for (final StaticNatRule rule : rules) {
-                final IpAddress sourceIp = networkModel.getIp(rule.getSourceIpAddressId());
+                final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
                 final StaticNatRuleTO ruleTO = new StaticNatRuleTO(rule, null, sourceIp.getAddress().addr(), rule.getDestIpAddress());
                 rulesTO.add(ruleTO);
             }
         }
 
         final SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO, router.getVpcId());
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlHelper.getRouterControlIp(router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        final DataCenterVO dcVo = dcDao.findById(router.getDataCenterId());
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
     }
@@ -218,15 +218,15 @@ public class FirewallRules extends RuleApplier {
                 }
             }
             for (final FirewallRule rule : rules) {
-                rulesDao.loadSourceCidrs((FirewallRuleVO)rule);
+                _rulesDao.loadSourceCidrs((FirewallRuleVO)rule);
                 final FirewallRule.TrafficType traffictype = rule.getTrafficType();
                 if (traffictype == FirewallRule.TrafficType.Ingress) {
-                    final IpAddress sourceIp = networkModel.getIp(rule.getSourceIpAddressId());
+                    final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
                     final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr(), Purpose.Firewall, traffictype);
                     rulesTO.add(ruleTO);
                 } else if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
-                    final NetworkVO network = networkDao.findById(guestNetworkId);
-                    final NetworkOfferingVO offering = networkOfferingDao.findById(network.getNetworkOfferingId());
+                    final NetworkVO network = _networkDao.findById(guestNetworkId);
+                    final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
                     defaultEgressPolicy = offering.getEgressDefaultPolicy();
                     assert (rule.getSourceIpAddressId() == null) : "ipAddressId should be null for egress firewall rule. ";
                     final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, "", Purpose.Firewall, traffictype, defaultEgressPolicy);
@@ -236,10 +236,10 @@ public class FirewallRules extends RuleApplier {
         }
 
         final SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rulesTO);
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlHelper.getRouterControlIp(router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        final DataCenterVO dcVo = dcDao.findById(router.getDataCenterId());
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         if (systemRule != null) {
             cmd.setAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT, systemRule);

@@ -29,6 +29,6 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
     @Autowired
     @Qualifier("advancedNetworkVisitor")
-    protected AdvancedNetworkVisitor advancedVisitor;
+    protected AdvancedNetworkVisitor _advancedVisitor;
 
 }
