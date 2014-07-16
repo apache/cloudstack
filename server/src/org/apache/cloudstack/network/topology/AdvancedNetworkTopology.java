@@ -17,18 +17,46 @@
 
 package org.apache.cloudstack.network.topology;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+
+import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
+import com.cloud.network.rules.RuleApplier;
+import com.cloud.network.rules.RuleApplierWrapper;
+import com.cloud.network.rules.UserdataPwdRules;
+import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.VirtualMachineProfile;
 
 
 public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
     private static final Logger s_logger = Logger.getLogger(AdvancedNetworkTopology.class);
 
-
     @Autowired
     @Qualifier("advancedNetworkVisitor")
     protected AdvancedNetworkVisitor _advancedVisitor;
 
+
+    @Override
+    public boolean applyUserData(final Network network, final NicProfile nic,
+            final VirtualMachineProfile profile, final DeployDestination dest,
+            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+
+        s_logger.debug("APPLYING USERDATA RULES");
+
+        final String typeString = "userdata and password entry";
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+        final Long podId = null;
+
+        UserdataPwdRules pwdRules = _virtualNetworkApplianceFactory.createUserdataPwdRules(network, nic, profile, dest);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(pwdRules));
+    }
 }

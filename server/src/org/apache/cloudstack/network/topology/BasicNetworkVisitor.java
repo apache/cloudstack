@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
@@ -146,7 +147,22 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
     @Override
     public boolean visit(final UserdataPwdRules userdata) throws ResourceUnavailableException {
-        return false;
+        final VirtualRouter router = userdata.getRouter();
+
+        final Commands commands = new Commands(Command.OnError.Stop);
+        final VirtualMachineProfile profile = userdata.getProfile();
+        final NicVO nicVo = userdata.getNicVo();
+        final UserVmVO userVM = userdata.getUserVM();
+        final DeployDestination destination = userdata.getDestination();
+
+        if (router.getPodIdToDeployIn().longValue() == destination.getPod().getId()) {
+            userdata.createPasswordCommand(router, profile, nicVo, commands);
+            userdata.createVmDataCommand(router, userVM, nicVo, userVM.getDetail("SSH.PublicKey"), commands);
+
+            return _applianceManager.sendCommandsToRouter(router, commands);
+        }
+
+        return true;
     }
 
     @Override

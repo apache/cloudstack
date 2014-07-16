@@ -1003,7 +1003,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
 
-            return _routerMgr.applyUserData(network, nic, uservm, dest, routers);
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            return networkTopology.applyUserData(network, nic, uservm, dest, routers);
         }
         return false;
     }
