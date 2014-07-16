@@ -33,7 +33,6 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.router.NEWVirtualNetworkApplianceManager;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -92,12 +91,7 @@ public class VirtualNetworkApplianceFactory {
     @Inject
     protected RouterControlHelper _routerControlHelper;
 
-    @Inject
-    protected NEWVirtualNetworkApplianceManager _applianceManager;
-
-
-    public LoadBalancingRules createLoadBalancingRules(final Network network,
-            final List<LoadBalancingRule> rules) {
+    public LoadBalancingRules createLoadBalancingRules(final Network network, final List<LoadBalancingRule> rules) {
         LoadBalancingRules lbRules = new LoadBalancingRules(network, rules);
 
         initBeans(lbRules);
@@ -105,8 +99,7 @@ public class VirtualNetworkApplianceFactory {
         return lbRules;
     }
 
-    public FirewallRules createFirewallRules(final Network network,
-            final List<? extends FirewallRule> rules) {
+    public FirewallRules createFirewallRules(final Network network, final List<? extends FirewallRule> rules) {
         FirewallRules fwRules = new FirewallRules(network, rules);
 
         initBeans(fwRules);
@@ -117,8 +110,7 @@ public class VirtualNetworkApplianceFactory {
         return fwRules;
     }
 
-    public StaticNatRules createStaticNatRules(final Network network,
-            final List<? extends StaticNat> rules) {
+    public StaticNatRules createStaticNatRules(final Network network, final List<? extends StaticNat> rules) {
         StaticNatRules natRules = new StaticNatRules(network, rules);
 
         initBeans(natRules);
@@ -137,7 +129,6 @@ public class VirtualNetworkApplianceFactory {
         applier._networkOfferingDao = _networkOfferingDao;
         applier._routerDao = _routerDao;
         applier._routerControlHelper = _routerControlHelper;
-        applier._applianceManager = _applianceManager;
     }
 
     public IpAssociationRules createIpAssociationRules(final Network network, final List<? extends PublicIpAddress> ipAddresses) {
@@ -202,5 +193,16 @@ public class VirtualNetworkApplianceFactory {
         userdataRules._serviceOfferingDao = _serviceOfferingDao;
 
         return userdataRules;
+    }
+
+    public DhcpEntryRules createDhcpEntryRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination destination) {
+        DhcpEntryRules dhcpRules = new DhcpEntryRules(network, nic, profile, destination);
+
+        initBeans(dhcpRules);
+
+        dhcpRules._userVmDao = _userVmDao;
+        dhcpRules._networkDao = _networkDao;
+
+        return dhcpRules;
     }
 }
