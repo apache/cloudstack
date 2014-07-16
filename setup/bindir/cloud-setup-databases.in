@@ -167,6 +167,10 @@ Sql parameters:
             '''%(table, e.__str__(), kwargs)
             self.errorAndExit(err)
 
+    def errorAndContinue(self, msg):
+        sys.stderr.write(msg)
+        sys.stderr.flush()
+
     def errorAndExit(self, msg):
         self.postRun()
         err = '''\n\nWe apologize for below error:
@@ -389,10 +393,13 @@ for example:
             try:
                 check_selinux()
             except CheckFailed, e:
-                self.errorAndExit(e.__str__())
+                self.info("checkSelinux failed with error continuing...", None)
+                self.errorAndContinue(e.__str__())
             except OSError, e:
                 if e.errno == 2: pass
-                else: self.errorAndExit(e.__str__())
+                else:
+                    self.info("checkSelinux failed with error continuing...", None)
+                    self.errorAndContinue(e.__str__())
             self.info(None, True)
 
         checkCloudDbFiles()
