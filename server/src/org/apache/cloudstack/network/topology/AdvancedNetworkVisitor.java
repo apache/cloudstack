@@ -57,14 +57,14 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
     @Override
     public boolean visit(final DhcpEntryRules dhcp) throws ResourceUnavailableException {
-    	final VirtualRouter router = dhcp.getRouter();
+        final VirtualRouter router = dhcp.getRouter();
 
         final Commands commands = new Commands(Command.OnError.Stop);
         final NicVO nicVo = dhcp.getNicVo();
         final UserVmVO userVM = dhcp.getUserVM();
-        
+
         dhcp.createDhcpEntryCommand(router, userVM, nicVo, commands);
-            
+
         return _applianceManager.sendCommandsToRouter(router, commands);
     }
 
