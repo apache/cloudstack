@@ -45,39 +45,39 @@ import com.cloud.vm.NicProfile;
 
 public class LoadBalancingRules extends RuleApplier {
 
-    private final List<LoadBalancingRule> rules;
+    private final List<LoadBalancingRule> _rules;
 
     public LoadBalancingRules(final Network network, final List<LoadBalancingRule> rules) {
         super(network);
-        this.rules = rules;
+        _rules = rules;
     }
 
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
-        this.router = router;
+        _router = router;
 
         // For load balancer we have to resend all lb rules for the network
-        final List<LoadBalancerVO> lbs = loadBalancerDao.listByNetworkIdAndScheme(network.getId(), Scheme.Public);
+        final List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkIdAndScheme(_network.getId(), Scheme.Public);
 
         // We are cleaning it before because all the rules have to be sent to
         // the router.
-        rules.clear();
+        _rules.clear();
         for (final LoadBalancerVO lb : lbs) {
-            final List<LbDestination> dstList = lbMgr.getExistingDestinations(lb.getId());
-            final List<LbStickinessPolicy> policyList = lbMgr.getStickinessPolicies(lb.getId());
-            final List<LbHealthCheckPolicy> hcPolicyList = lbMgr.getHealthCheckPolicies(lb.getId());
-            final LbSslCert sslCert = lbMgr.getLbSslCert(lb.getId());
-            final Ip sourceIp = networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+            final List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+            final List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
+            final List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
+            final LbSslCert sslCert = _lbMgr.getLbSslCert(lb.getId());
+            final Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
             final LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp, sslCert, lb.getLbProtocol());
 
-            rules.add(loadBalancing);
+            _rules.add(loadBalancing);
         }
 
         return visitor.visit(this);
     }
 
     public List<LoadBalancingRule> getRules() {
-        return rules;
+        return _rules;
     }
 
     public void createApplyLoadBalancingRulesCommands(final List<LoadBalancingRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
@@ -101,34 +101,34 @@ public class LoadBalancingRules extends RuleApplier {
         String routerPublicIp = null;
 
         if (router instanceof DomainRouterVO) {
-            final DomainRouterVO domr = routerDao.findById(router.getId());
+            final DomainRouterVO domr = _routerDao.findById(router.getId());
             routerPublicIp = domr.getPublicIpAddress();
         }
 
-        final Network guestNetwork = networkModel.getNetwork(guestNetworkId);
-        final Nic nic = nicDao.findByNtwkIdAndInstanceId(guestNetwork.getId(), router.getId());
-        final NicProfile nicProfile = new NicProfile(nic, guestNetwork, nic.getBroadcastUri(), nic.getIsolationUri(), networkModel.getNetworkRate(guestNetwork.getId(),
-                router.getId()), networkModel.isSecurityGroupSupportedInNetwork(guestNetwork), networkModel.getNetworkTag(router.getHypervisorType(), guestNetwork));
-        final NetworkOffering offering = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
+        final Network guestNetwork = _networkModel.getNetwork(guestNetworkId);
+        final Nic nic = _nicDao.findByNtwkIdAndInstanceId(guestNetwork.getId(), router.getId());
+        final NicProfile nicProfile = new NicProfile(nic, guestNetwork, nic.getBroadcastUri(), nic.getIsolationUri(), _networkModel.getNetworkRate(guestNetwork.getId(),
+                router.getId()), _networkModel.isSecurityGroupSupportedInNetwork(guestNetwork), _networkModel.getNetworkTag(router.getHypervisorType(), guestNetwork));
+        final NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
         String maxconn = null;
         if (offering.getConcurrentConnections() == null) {
-            maxconn = configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
+            maxconn = _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
         } else {
             maxconn = offering.getConcurrentConnections().toString();
         }
 
-        final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, routerPublicIp, routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()),
-                router.getPrivateIpAddress(), itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled());
+        final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, routerPublicIp, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()),
+                router.getPrivateIpAddress(), _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled());
 
-        cmd.lbStatsVisibility = configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
-        cmd.lbStatsUri = configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
-        cmd.lbStatsAuth = configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
-        cmd.lbStatsPort = configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
+        cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
+        cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
+        cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
+        cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
 
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlHelper.getRouterControlIp(router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        final DataCenterVO dcVo = dcDao.findById(router.getDataCenterId());
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
     }

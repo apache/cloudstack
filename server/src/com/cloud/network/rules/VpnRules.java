@@ -33,16 +33,16 @@ import com.cloud.network.router.VirtualRouter;
 
 public class VpnRules extends RuleApplier {
 
-    private final List<? extends VpnUser> users;
+    private final List<? extends VpnUser> _users;
 
     public VpnRules(final Network network, final List<? extends VpnUser> users) {
         super(network);
-        this.users = users;
+        _users = users;
     }
 
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
-        this.router = router;
+        _router = router;
 
         return visitor.visit(this);
     }
@@ -60,15 +60,15 @@ public class VpnRules extends RuleApplier {
 
         final VpnUsersCfgCommand cmd = new VpnUsersCfgCommand(addUsers, removeUsers);
         cmd.setAccessDetail(NetworkElementCommand.ACCOUNT_ID, String.valueOf(router.getAccountId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlHelper.getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        final DataCenterVO dcVo = dcDao.findById(router.getDataCenterId());
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
         cmds.addCommand("users", cmd);
     }
 
     public List<? extends VpnUser> getUsers() {
-        return users;
+        return _users;
     }
 }

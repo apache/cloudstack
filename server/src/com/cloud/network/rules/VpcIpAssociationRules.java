@@ -28,21 +28,21 @@ import com.cloud.network.router.VirtualRouter;
 
 public class VpcIpAssociationRules extends RuleApplier {
 
-    private final List<? extends PublicIpAddress> ipAddresses;
+    private final List<? extends PublicIpAddress> _ipAddresses;
 
     public VpcIpAssociationRules(final Network network, final List<? extends PublicIpAddress> ipAddresses) {
         super(network);
-        this.ipAddresses = ipAddresses;
+        _ipAddresses = ipAddresses;
     }
 
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
-        this.router = router;
+        _router = router;
 
         return visitor.visit(this);
     }
 
     public List<? extends PublicIpAddress> getIpAddresses() {
-        return ipAddresses;
+        return _ipAddresses;
     }
 }
