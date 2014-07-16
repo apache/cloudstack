@@ -19,7 +19,6 @@ package org.apache.cloudstack.network.topology;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -33,8 +32,6 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -50,18 +47,16 @@ import com.cloud.network.rules.LoadBalancingRules;
 import com.cloud.network.rules.PasswordToRouterRules;
 import com.cloud.network.rules.RuleApplier;
 import com.cloud.network.rules.RuleApplierWrapper;
+import com.cloud.network.rules.SshKeyToRouterRules;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRules;
+import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VirtualNetworkApplianceFactory;
 import com.cloud.network.rules.VpnRules;
-import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfile.Param;
-import com.cloud.vm.dao.UserVmDao;
 
 public class BasicNetworkTopology implements NetworkTopology {
 
@@ -79,18 +74,6 @@ public class BasicNetworkTopology implements NetworkTopology {
 
     @Inject
     protected HostDao _hostDao;
-
-    @Inject
-    protected UserVmDao _userVmDao;
-
-    @Override
-    public List<DomainRouterVO> findOrDeployVirtualRouterInGuestNetwork(
-            final Network guestNetwork, final DeployDestination dest, final Account owner,
-            final boolean isRedundant, final Map<Param, Object> params)
-                    throws ConcurrentOperationException, InsufficientCapacityException,
-                    ResourceUnavailableException {
-        return null;
-    }
 
     @Override
     public StringBuilder createGuestBootLoadArgs(final NicProfile guestNic,
@@ -250,8 +233,6 @@ public class BasicNetworkTopology implements NetworkTopology {
     @Override
     public boolean savePasswordToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
 
-        _userVmDao.loadDetails((UserVmVO)profile.getVirtualMachine());
-
         s_logger.debug("SAVE PASSWORD TO ROUTE RULES");
 
         final String typeString = "save password entry";
@@ -262,6 +243,34 @@ public class BasicNetworkTopology implements NetworkTopology {
         PasswordToRouterRules routerRules = virtualNetworkApplianceFactory.createPasswordToRouterRules(network, nic, profile);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(routerRules));
+    }
+
+    @Override
+    public boolean saveSSHPublicKeyToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final List<? extends VirtualRouter> routers, final String sshPublicKey) throws ResourceUnavailableException {
+        s_logger.debug("SAVE SSH PUB KEY TO ROUTE RULES");
+
+        final String typeString = "save SSHkey entry";
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+        final Long podId = null;
+
+        SshKeyToRouterRules keyToRouterRules = virtualNetworkApplianceFactory.createSshKeyToRouterRules(network, nic, profile, sshPublicKey);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(keyToRouterRules));
+    }
+
+    @Override
+    public boolean saveUserDataToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+        s_logger.debug("SAVE USERDATA TO ROUTE RULES");
+
+        final String typeString = "save userdata entry";
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+        final Long podId = null;
+
+        UserdataToRouterRules userdataToRouterRules = virtualNetworkApplianceFactory.createUserdataToRouterRules(network, nic, profile);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(userdataToRouterRules));
     }
 
     @Override
