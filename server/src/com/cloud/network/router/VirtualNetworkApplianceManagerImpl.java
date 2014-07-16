@@ -192,6 +192,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -274,7 +275,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  */
 @Local(value = { VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class })
 public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, VirtualMachineGuru, Listener,
-Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
+        Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
     @Inject
@@ -391,7 +392,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     @Inject
     protected NetworkGeneralHelper nwHelper;
     @Inject
-    protected RouterDeploymentManager routerDeploymentManager;
+    protected RouterDeploymentDefinitionBuilder routerDeploymentManagerBuilder;
 
     int _routerRamSize;
     int _routerCpuMHz;
@@ -624,7 +625,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROUTER_REBOOT, eventDescription = "rebooting router Vm", async = true)
     public VirtualRouter rebootRouter(final long routerId, final boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException,
-    InsufficientCapacityException {
+            InsufficientCapacityException {
         final Account caller = CallContext.current().getCallingAccount();
 
         // verify parameters
@@ -725,7 +726,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 useLocalStorage, true, null, true, VirtualMachine.Type.DomainRouter, true);
         offering.setUniqueName(ServiceOffering.routerDefaultOffUniqueName);
         offering = _serviceOfferingDao.persistSystemServiceOffering(offering);
-        routerDeploymentManager.setOffering(offering);
+        routerDeploymentManagerBuilder.setOffering(offering);
 
         // this can sometimes happen, if DB is manually or programmatically
         // manipulated
@@ -943,7 +944,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
                                                 if ((previousStats != null)
                                                         && ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) || (previousStats.getCurrentBytesSent() != stats
-                                                        .getCurrentBytesSent()))) {
+                                                                .getCurrentBytesSent()))) {
                                                     s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " + "Ignoring current answer. Router: "
                                                             + answerFinal.getRouterName() + " Rcvd: " + answerFinal.getBytesReceived() + "Sent: " + answerFinal.getBytesSent());
                                                     return;
@@ -1503,13 +1504,6 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             priority = (maxPriority - DEFAULT_DELTA) + 1;
         }
         return priority;
-    }
-
-    @Override
-    public List<DomainRouterVO> deployVirtualRouter(final RouterDeploymentDefinition routerDeploymentDefinition) throws InsufficientCapacityException,
-    ConcurrentOperationException, ResourceUnavailableException {
-
-        return routerDeploymentManager.deployVirtualRouter(routerDeploymentDefinition);
     }
 
     @Override
@@ -2329,7 +2323,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     @Override
     public DomainRouterVO stop(final VirtualRouter router, final boolean forced, final User user, final Account caller) throws ConcurrentOperationException,
-    ResourceUnavailableException {
+            ResourceUnavailableException {
         s_logger.debug("Stopping router " + router);
         try {
             _itMgr.advanceStop(router.getUuid(), forced);
@@ -2661,7 +2655,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     @Override
     public VirtualRouter startRouter(final long routerId, final boolean reprogramNetwork) throws ResourceUnavailableException, InsufficientCapacityException,
-    ConcurrentOperationException {
+            ConcurrentOperationException {
         final Account caller = CallContext.current().getCallingAccount();
         final User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
 
@@ -3609,7 +3603,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
                                     if ((previousStats != null)
                                             && ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) || (previousStats.getCurrentBytesSent() != stats
-                                            .getCurrentBytesSent()))) {
+                                                    .getCurrentBytesSent()))) {
                                         s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " + "Ignoring current answer. Router: "
                                                 + answerFinal.getRouterName() + " Rcvd: " + answerFinal.getBytesReceived() + "Sent: " + answerFinal.getBytesSent());
                                         return;
