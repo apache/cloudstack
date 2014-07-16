@@ -34,20 +34,20 @@ import com.cloud.network.router.VirtualRouter;
 
 public class StaticNatRules extends RuleApplier {
 
-    private final List<? extends StaticNat> rules;
+    private final List<? extends StaticNat> _rules;
 
     public StaticNatRules(final Network network, final List<? extends StaticNat> rules) {
         super(network);
-        this.rules = rules;
+        _rules = rules;
     }
 
     public List<? extends StaticNat> getRules() {
-        return rules;
+        return _rules;
     }
 
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
-        this.router = router;
+        _router = router;
         return visitor.visit(this);
     }
 
@@ -55,7 +55,7 @@ public class StaticNatRules extends RuleApplier {
         List<StaticNatRuleTO> rulesTO = new ArrayList<StaticNatRuleTO>();
         if (rules != null) {
             for (final StaticNat rule : rules) {
-                final IpAddress sourceIp = networkModel.getIp(rule.getSourceIpAddressId());
+                final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
                 final StaticNatRuleTO ruleTO =
                         new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
                 rulesTO.add(ruleTO);
@@ -63,11 +63,11 @@ public class StaticNatRules extends RuleApplier {
         }
 
         final SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO, router.getVpcId());
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlHelper.getRouterControlIp(router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
-        final DataCenterVO dcVo = dcDao.findById(router.getDataCenterId());
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
     }

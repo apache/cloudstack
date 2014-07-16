@@ -100,6 +100,6 @@ public class AdvancedNetworkTopology implements NetworkTopology {
 
     @Autowired
     @Qualifier("advancedNetworkVisitor")
-    protected AdvancedNetworkVisitor advancedVisitor;
+    protected AdvancedNetworkVisitor _advancedVisitor;
 
 }
