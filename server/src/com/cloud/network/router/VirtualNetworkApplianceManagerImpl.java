@@ -192,6 +192,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -392,7 +393,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Inject
     protected NetworkGeneralHelper nwHelper;
     @Inject
-    protected RouterDeploymentManager routerDeploymentManager;
+    protected RouterDeploymentDefinitionBuilder routerDeploymentManagerBuilder;
 
     int _routerRamSize;
     int _routerCpuMHz;
@@ -726,7 +727,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 useLocalStorage, true, null, true, VirtualMachine.Type.DomainRouter, true);
         offering.setUniqueName(ServiceOffering.routerDefaultOffUniqueName);
         offering = _serviceOfferingDao.persistSystemServiceOffering(offering);
-        routerDeploymentManager.setOffering(offering);
+        routerDeploymentManagerBuilder.setOffering(offering);
 
         // this can sometimes happen, if DB is manually or programmatically
         // manipulated
@@ -1504,13 +1505,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             priority = maxPriority - DEFAULT_DELTA + 1;
         }
         return priority;
-    }
-
-    @Override
-    public List<DomainRouterVO> deployVirtualRouter(final RouterDeploymentDefinition routerDeploymentDefinition) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException {
-
-        return routerDeploymentManager.deployVirtualRouter(routerDeploymentDefinition);
     }
 
     @Override

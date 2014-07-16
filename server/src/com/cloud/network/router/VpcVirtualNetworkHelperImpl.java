@@ -23,35 +23,17 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.springframework.stereotype.Component;
 
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
-import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
-import com.cloud.network.dao.Site2SiteVpnConnectionDao;
-import com.cloud.network.dao.Site2SiteVpnGatewayDao;
-import com.cloud.network.dao.VirtualRouterProviderDao;
-import com.cloud.network.vpc.NetworkACLItemDao;
-import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateIpAddress;
 import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.network.vpc.VpcGateway;
-import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.PrivateIpDao;
-import com.cloud.network.vpc.dao.StaticRouteDao;
-import com.cloud.network.vpc.dao.VpcGatewayDao;
-import com.cloud.server.ConfigurationServer;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
@@ -67,55 +49,15 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Local(value = {VpcVirtualNetworkHelperImpl.class})
 public class VpcVirtualNetworkHelperImpl {
 
-    String _name;
     @Inject
-    NetworkService _ntwkService;
+    private VMInstanceDao _vmDao;
+    private PrivateIpDao _privateIpDao;
     @Inject
-    NetworkACLManager _networkACLMgr;
+    private DomainRouterDao _routerDao;
     @Inject
-    VMInstanceDao _vmDao;
+    private NetworkModel _networkModel;
     @Inject
-    StaticRouteDao _staticRouteDao;
-    @Inject
-    VpcManager _vpcMgr;
-    @Inject
-    PrivateIpDao _privateIpDao;
-    @Inject
-    Site2SiteVpnGatewayDao _vpnGatewayDao;
-    @Inject
-    Site2SiteVpnConnectionDao _vpnConnectionDao;
-    @Inject
-    FirewallRulesDao _firewallDao;
-    @Inject
-    VpcGatewayDao _vpcGatewayDao;
-    @Inject
-    NetworkACLItemDao _networkACLItemDao;
-    @Inject
-    EntityManager _entityMgr;
-    @Inject
-    PhysicalNetworkServiceProviderDao _physicalProviderDao;
-    @Inject
-    DataCenterDao _dcDao;
-    @Inject
-    VlanDao _vlanDao;
-    @Inject
-    FirewallRulesDao _rulesDao;
-    @Inject
-    IPAddressDao _ipAddressDao;
-    @Inject
-    DomainRouterDao _routerDao;
-    @Inject
-    ConfigurationServer _configServer;
-    @Inject
-    NetworkOrchestrationService _networkMgr;
-    @Inject
-    NetworkModel _networkModel;
-    @Inject
-    NetworkDao _networkDao;
-    @Inject
-    NicDao _nicDao;
-    @Inject
-    VirtualRouterProviderDao _vrProviderDao;
+    private NicDao _nicDao;
 
     protected NetworkGeneralHelper nwHelper = new NetworkGeneralHelper();
 
@@ -161,6 +103,19 @@ public class VpcVirtualNetworkHelperImpl {
         }
 
         return privateNicProfile;
+    }
+
+    public NicProfile createGuestNicProfileForVpcRouter(final Network guestNetwork) {
+        NicProfile guestNic = new NicProfile();
+        guestNic.setIp4Address(guestNetwork.getGateway());
+        guestNic.setBroadcastUri(guestNetwork.getBroadcastUri());
+        guestNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
+        guestNic.setIsolationUri(guestNetwork.getBroadcastUri());
+        guestNic.setMode(guestNetwork.getMode());
+        String gatewayCidr = guestNetwork.getCidr();
+        guestNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
+
+        return guestNic;
     }
 
 }

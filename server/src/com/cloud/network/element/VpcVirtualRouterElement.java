@@ -47,10 +47,11 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
-import com.cloud.network.router.RouterDeploymentDefinition;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
+import com.cloud.network.router.deployment.RouterDeploymentDefinition;
+import com.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
@@ -93,6 +94,9 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     @Inject
     EntityManager _entityMgr;
 
+    @Inject
+    private RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
+
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Override
@@ -133,8 +137,14 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
         RouterDeploymentDefinition routerDeploymentDefinition =
-                new RouterDeploymentDefinition(vpc, dest, _accountMgr.getAccount(vpc.getAccountId()), params, false);
-        _vpcRouterMgr.deployVirtualRouter(routerDeploymentDefinition);
+                this.routerDeploymentDefinitionBuilder.create()
+                .setVpc(vpc)
+                .setDeployDestination(dest)
+                .setAccountOwner(_accountMgr.getAccount(vpc.getAccountId()))
+                .setParams(params)
+                .build();
+
+        routerDeploymentDefinition.deployVirtualRouter();
 
         return true;
     }
@@ -172,8 +182,15 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
         RouterDeploymentDefinition routerDeploymentDefinition =
-                new RouterDeploymentDefinition(vpc, dest, _accountMgr.getAccount(vpc.getAccountId()), params, false);
-        List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouter(routerDeploymentDefinition);
+                this.routerDeploymentDefinitionBuilder.create()
+                .setVpc(vpc)
+                .setDeployDestination(dest)
+                .setAccountOwner(_accountMgr.getAccount(vpc.getAccountId()))
+                .setParams(params)
+                .build();
+
+        List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
+
         if ((routers == null) || (routers.size() == 0)) {
             throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
         }
@@ -218,9 +235,16 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         if (vm.getType() == VirtualMachine.Type.User) {
             Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
             params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
+
             RouterDeploymentDefinition routerDeploymentDefinition =
-                    new RouterDeploymentDefinition(vpc, dest, _accountMgr.getAccount(vpc.getAccountId()), params, false);
-            List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouter(routerDeploymentDefinition);
+                    this.routerDeploymentDefinitionBuilder.create()
+                    .setVpc(vpc)
+                    .setDeployDestination(dest)
+                    .setAccountOwner(_accountMgr.getAccount(vpc.getAccountId()))
+                    .setParams(params)
+                    .build();
+            List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
+
             if ((routers == null) || (routers.size() == 0)) {
                 throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
             }
