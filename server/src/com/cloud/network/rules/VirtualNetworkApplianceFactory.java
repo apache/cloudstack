@@ -47,52 +47,52 @@ import com.cloud.vm.dao.UserVmDao;
 public class VirtualNetworkApplianceFactory {
 
     @Inject
-    protected NetworkModel networkModel;
+    protected NetworkModel _networkModel;
 
     @Inject
-    protected LoadBalancingRulesManager lbMgr;
+    protected LoadBalancingRulesManager _lbMgr;
 
     @Inject
-    protected LoadBalancerDao loadBalancerDao;
+    protected LoadBalancerDao _loadBalancerDao;
 
     @Inject
-    protected ConfigurationDao configDao;
+    protected ConfigurationDao _configDao;
 
     @Inject
-    protected NicDao nicDao;
+    protected NicDao _nicDao;
 
     @Inject
-    protected VirtualMachineManager itMgr;
+    protected VirtualMachineManager _itMgr;
 
     @Inject
-    protected NetworkOfferingDao networkOfferingDao;
+    protected NetworkOfferingDao _networkOfferingDao;
 
     @Inject
-    protected DataCenterDao dcDao;
+    protected DataCenterDao _dcDao;
 
     @Inject
-    protected UserVmDao userVmDao;
+    protected UserVmDao _userVmDao;
 
     @Inject
-    protected ServiceOfferingDao serviceOfferingDao;
+    protected ServiceOfferingDao _serviceOfferingDao;
 
     @Inject
-    protected VMTemplateDao templateDao;
+    protected VMTemplateDao _templateDao;
 
     @Inject
-    protected DomainRouterDao routerDao;
+    protected DomainRouterDao _routerDao;
 
     @Inject
-    protected NetworkDao networkDao;
+    protected NetworkDao _networkDao;
 
     @Inject
-    protected FirewallRulesDao rulesDao;
+    protected FirewallRulesDao _rulesDao;
 
     @Inject
-    protected RouterControlHelper routerControlHelper;
+    protected RouterControlHelper _routerControlHelper;
 
     @Inject
-    protected NEWVirtualNetworkApplianceManager applianceManager;
+    protected NEWVirtualNetworkApplianceManager _applianceManager;
 
 
     public LoadBalancingRules createLoadBalancingRules(final Network network,
@@ -110,8 +110,8 @@ public class VirtualNetworkApplianceFactory {
 
         initBeans(fwRules);
 
-        fwRules.networkDao = networkDao;
-        fwRules.rulesDao = rulesDao;
+        fwRules._networkDao = _networkDao;
+        fwRules._rulesDao = _rulesDao;
 
         return fwRules;
     }
@@ -126,17 +126,17 @@ public class VirtualNetworkApplianceFactory {
     }
 
     private void initBeans(final RuleApplier applier) {
-        applier.networkModel = networkModel;
-        applier.dcDao = dcDao;
-        applier.lbMgr = lbMgr;
-        applier.loadBalancerDao = loadBalancerDao;
-        applier.configDao = configDao;
-        applier.nicDao = nicDao;
-        applier.itMgr = itMgr;
-        applier.networkOfferingDao = networkOfferingDao;
-        applier.routerDao = routerDao;
-        applier.routerControlHelper = routerControlHelper;
-        applier.applianceManager = applianceManager;
+        applier._networkModel = _networkModel;
+        applier._dcDao = _dcDao;
+        applier._lbMgr = _lbMgr;
+        applier._loadBalancerDao = _loadBalancerDao;
+        applier._configDao = _configDao;
+        applier._nicDao = _nicDao;
+        applier._itMgr = _itMgr;
+        applier._networkOfferingDao = _networkOfferingDao;
+        applier._routerDao = _routerDao;
+        applier._routerControlHelper = _routerControlHelper;
+        applier._applianceManager = _applianceManager;
     }
 
     public IpAssociationRules createIpAssociationRules(final Network network, final List<? extends PublicIpAddress> ipAddresses) {
@@ -144,7 +144,7 @@ public class VirtualNetworkApplianceFactory {
 
         initBeans(ipAssociationRules);
 
-        ipAssociationRules.networkDao = networkDao;
+        ipAssociationRules._networkDao = _networkDao;
 
         return ipAssociationRules;
     }
@@ -162,7 +162,7 @@ public class VirtualNetworkApplianceFactory {
 
         initBeans(routerRules);
 
-        routerRules.userVmDao = userVmDao;
+        routerRules._userVmDao = _userVmDao;
 
         return routerRules;
     }
@@ -172,9 +172,9 @@ public class VirtualNetworkApplianceFactory {
 
         initBeans(sshKeyToRouterRules);
 
-        sshKeyToRouterRules.userVmDao = userVmDao;
-        sshKeyToRouterRules.templateDao = templateDao;
-        sshKeyToRouterRules.serviceOfferingDao = serviceOfferingDao;
+        sshKeyToRouterRules._userVmDao = _userVmDao;
+        sshKeyToRouterRules._templateDao = _templateDao;
+        sshKeyToRouterRules._serviceOfferingDao = _serviceOfferingDao;
 
         return sshKeyToRouterRules;
     }
@@ -184,9 +184,9 @@ public class VirtualNetworkApplianceFactory {
 
         initBeans(userdataRules);
 
-        userdataRules.userVmDao = userVmDao;
-        userdataRules.templateDao = templateDao;
-        userdataRules.serviceOfferingDao = serviceOfferingDao;
+        userdataRules._userVmDao = _userVmDao;
+        userdataRules._templateDao = _templateDao;
+        userdataRules._serviceOfferingDao = _serviceOfferingDao;
 
         return userdataRules;
     }

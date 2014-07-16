@@ -43,22 +43,22 @@ import com.cloud.vm.NicVO;
 
 public class IpAssociationRules extends RuleApplier {
 
-    private final List<? extends PublicIpAddress> ipAddresses;
+    private final List<? extends PublicIpAddress> _ipAddresses;
 
     public IpAssociationRules(final Network network, final List<? extends PublicIpAddress> ipAddresses) {
         super(network);
-        this.ipAddresses = ipAddresses;
+        _ipAddresses = ipAddresses;
     }
 
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
-        this.router = router;
+        _router = router;
 
         return visitor.visit(this);
     }
 
     public List<? extends PublicIpAddress> getIpAddresses() {
-        return ipAddresses;
+        return _ipAddresses;
     }
 
     public void createAssociateIPCommands(final VirtualRouter router, final List<? extends PublicIpAddress> ips, final Commands cmds, final long vmId) {
@@ -79,10 +79,10 @@ public class IpAssociationRules extends RuleApplier {
             vlanIpMap.put(vlanTag, ipList);
         }
 
-        final List<NicVO> nics = nicDao.listByVmId(router.getId());
+        final List<NicVO> nics = _nicDao.listByVmId(router.getId());
         String baseMac = null;
         for (final NicVO nic : nics) {
-            final NetworkVO nw = networkDao.findById(nic.getNetworkId());
+            final NetworkVO nw = _networkDao.findById(nic.getNetworkId());
             if (nw.getTrafficType() == TrafficType.Public) {
                 baseMac = nic.getMacAddress();
                 break;
@@ -102,8 +102,8 @@ public class IpAssociationRules extends RuleApplier {
             });
 
             // Get network rate - required for IpAssoc
-            final Integer networkRate = networkModel.getNetworkRate(ipAddrList.get(0).getNetworkId(), router.getId());
-            final Network network = networkModel.getNetwork(ipAddrList.get(0).getNetworkId());
+            final Integer networkRate = _networkModel.getNetworkRate(ipAddrList.get(0).getNetworkId(), router.getId());
+            final Network network = _networkModel.getNetwork(ipAddrList.get(0).getNetworkId());
 
             final IpAddressTO[] ipsToSend = new IpAddressTO[ipAddrList.size()];
             int i = 0;
@@ -134,7 +134,7 @@ public class IpAssociationRules extends RuleApplier {
                                 networkRate, ipAddr.isOneToOneNat());
 
                 ip.setTrafficType(network.getTrafficType());
-                ip.setNetworkName(networkModel.getNetworkTag(router.getHypervisorType(), network));
+                ip.setNetworkName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
                 ipsToSend[i++] = ip;
                 /* send the firstIP = true for the first Add, this is to create primary on interface*/
                 if (!firstIP || add) {
@@ -142,10 +142,10 @@ public class IpAssociationRules extends RuleApplier {
                 }
             }
             final IpAssocCommand cmd = new IpAssocCommand(ipsToSend);
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlHelper.getRouterControlIp(router.getId()));
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, routerControlHelper.getRouterIpInNetwork(ipAddrList.get(0).getAssociatedWithNetworkId(), router.getId()));
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(ipAddrList.get(0).getAssociatedWithNetworkId(), router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            final DataCenterVO dcVo = dcDao.findById(router.getDataCenterId());
+            final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
             cmds.addCommand("IPAssocCommand", cmd);

@@ -20,13 +20,13 @@ package com.cloud.network.rules;
 
 public class RuleApplierWrapper<T> {
 
-    private final T ruleType;
+    private final T _ruleType;
 
     public RuleApplierWrapper(final T ruleApplier) {
-        this.ruleType = ruleApplier;
+        this._ruleType = ruleApplier;
     }
 
     public T getRuleType() {
-        return ruleType;
+        return _ruleType;
     }
 }

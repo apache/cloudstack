@@ -29,37 +29,37 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public class UserdataToRouterRules extends RuleApplier {
 
-    private final NicProfile nic;
-    private final VirtualMachineProfile profile;
+    private final NicProfile _nic;
+    private final VirtualMachineProfile _profile;
 
-    private NicVO nicVo;
-    private UserVmVO userVM;
+    private NicVO _nicVo;
+    private UserVmVO _userVM;
 
     public UserdataToRouterRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile) {
         super(network);
 
-        this.nic = nic;
-        this.profile = profile;
+        _nic = nic;
+        _profile = profile;
     }
 
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
-        this.router = router;
+        _router = router;
 
-        userVM = userVmDao.findById(profile.getVirtualMachine().getId());
-        userVmDao.loadDetails(userVM);
+        _userVM = _userVmDao.findById(_profile.getVirtualMachine().getId());
+        _userVmDao.loadDetails(_userVM);
 
         // for basic zone, send vm data/password information only to the router in the same pod
-        nicVo = nicDao.findById(nic.getId());
+        _nicVo = _nicDao.findById(_nic.getId());
 
         return visitor.visit(this);
     }
 
     public NicVO getNicVo() {
-        return nicVo;
+        return _nicVo;
     }
 
     public UserVmVO getUserVM() {
-        return userVM;
+        return _userVM;
     }
 }
