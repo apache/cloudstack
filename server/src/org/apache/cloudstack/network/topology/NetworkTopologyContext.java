@@ -21,6 +21,9 @@ import java.util.Hashtable;
 
 import javax.inject.Inject;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 
@@ -28,10 +31,12 @@ public class NetworkTopologyContext {
 
     private final Hashtable<NetworkType, NetworkTopology> _flyweight = new Hashtable<DataCenter.NetworkType, NetworkTopology>();;
 
-    @Inject
+    @Autowired
+    @Qualifier("basicNetworkTopology")
     private BasicNetworkTopology _basicNetworkTopology;
 
-    @Inject
+    @Autowired
+    @Qualifier("advancedNetworkTopology")
     private AdvancedNetworkTopology _advancedNetworkTopology;
 
     public void init() {
