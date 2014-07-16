@@ -39,7 +39,6 @@ import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.router.RouterDeploymentDefinition;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
@@ -91,16 +90,6 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
         throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.VirtualNetworkApplianceManager#deployVirtualRouterInGuestNetwork(com.cloud.network.Network, com.cloud.deploy.DeployDestination, com.cloud.user.Account, java.util.Map, boolean)
-     */
-    @Override
-    public List<DomainRouterVO> deployVirtualRouter(final RouterDeploymentDefinition routerDeploymentDefinition)
-            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     /* (non-Javadoc)
