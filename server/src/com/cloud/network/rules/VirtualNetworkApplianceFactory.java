@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.PublicIpAddress;
@@ -181,6 +182,18 @@ public class VirtualNetworkApplianceFactory {
 
     public UserdataToRouterRules createUserdataToRouterRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile) {
         UserdataToRouterRules userdataRules = new UserdataToRouterRules(network, nic, profile);
+
+        initBeans(userdataRules);
+
+        userdataRules._userVmDao = _userVmDao;
+        userdataRules._templateDao = _templateDao;
+        userdataRules._serviceOfferingDao = _serviceOfferingDao;
+
+        return userdataRules;
+    }
+
+    public UserdataPwdRules createUserdataPwdRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination destination) {
+        UserdataPwdRules userdataRules = new UserdataPwdRules(network, nic, profile, destination);
 
         initBeans(userdataRules);
 

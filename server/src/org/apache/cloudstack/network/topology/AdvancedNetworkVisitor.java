@@ -17,148 +17,65 @@
 
 package org.apache.cloudstack.network.topology;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
-import com.cloud.network.PublicIpAddress;
-import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.DhcpRules;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.FirewallRules;
-import com.cloud.network.rules.IpAssociationRules;
-import com.cloud.network.rules.LoadBalancingRules;
+import com.cloud.network.rules.DhcpEntryRules;
+import com.cloud.network.rules.DhcpSubNetRules;
 import com.cloud.network.rules.NetworkAclsRules;
 import com.cloud.network.rules.PasswordToRouterRules;
-import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PrivateGatewayRules;
 import com.cloud.network.rules.SshKeyToRouterRules;
-import com.cloud.network.rules.StaticNat;
-import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.rules.StaticNatRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
-import com.cloud.network.rules.VpnRules;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
-    private static final Logger s_logger = Logger.getLogger(AdvancedNetworkVisitor.class);
+    @Override
+    public boolean visit(final UserdataPwdRules userdata) throws ResourceUnavailableException {
+        final VirtualRouter router = userdata.getRouter();
 
-    protected NEWVirtualNetworkApplianceManager applianceManager;
+        final Commands commands = new Commands(Command.OnError.Stop);
+        final VirtualMachineProfile profile = userdata.getProfile();
+        final NicVO nicVo = userdata.getNicVo();
+        final UserVmVO userVM = userdata.getUserVM();
 
-    public void setApplianceManager(final NEWVirtualNetworkApplianceManager applianceManager) {
-        this.applianceManager = applianceManager;
+        userdata.createPasswordCommand(router, profile, nicVo, commands);
+        userdata.createVmDataCommand(router, userVM, nicVo, userVM.getDetail("SSH.PublicKey"), commands);
+
+        return _applianceManager.sendCommandsToRouter(router, commands);
     }
 
     @Override
-    public boolean visit(final StaticNatRules nat) throws ResourceUnavailableException {
-        Network network = nat.getNetwork();
-        VirtualRouter router = nat.getRouter();
-        List<? extends StaticNat> rules = nat.getRules();
-
-        final Commands cmds = new Commands(Command.OnError.Continue);
-        nat.createApplyStaticNatCommands(rules, router, cmds, network.getId());
-
-        return applianceManager.sendCommandsToRouter(router, cmds);
-    }
-
-    @Override
-    public boolean visit(final LoadBalancingRules loadbalancing) throws ResourceUnavailableException {
-        Network network = loadbalancing.getNetwork();
-        VirtualRouter router = loadbalancing.getRouter();
-        List<LoadBalancingRule> rules = loadbalancing.getRules();
-
-        final Commands cmds = new Commands(Command.OnError.Continue);
-        loadbalancing.createApplyLoadBalancingRulesCommands(rules, router, cmds, network.getId());
-
-        return networkTopology.sendCommandsToRouter(router, rules, network.getId());
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public boolean visit(final FirewallRules firewall) throws ResourceUnavailableException {
-        Network network = firewall.getNetwork();
-        VirtualRouter router = firewall.getRouter();
-        List<? extends FirewallRule> rules = firewall.getRules();
-        List<LoadBalancingRule> loadbalancingRules = firewall.getLoadbalancingRules();
-
-        Purpose purpose = firewall.getPurpose();
-
-        final Commands cmds = new Commands(Command.OnError.Continue);
-        if (purpose == Purpose.LoadBalancing) {
-
-            firewall.createApplyLoadBalancingRulesCommands(loadbalancingRules, router, cmds, network.getId());
-
-            return applianceManager.sendCommandsToRouter(router, cmds);
-
-        } else if (purpose == Purpose.PortForwarding) {
-
-            firewall.createApplyPortForwardingRulesCommands((List<? extends PortForwardingRule>) rules, router, cmds, network.getId());
-
-            return applianceManager.sendCommandsToRouter(router, cmds);
-
-        } else if (purpose == Purpose.StaticNat) {
-
-            firewall.createApplyStaticNatRulesCommands((List<StaticNatRule>) rules, router, cmds, network.getId());
-
-            return applianceManager.sendCommandsToRouter(router, cmds);
-
-        } else if (purpose == Purpose.Firewall) {
-
-            firewall.createApplyFirewallRulesCommands(rules, router, cmds, network.getId());
-
-            return applianceManager.sendCommandsToRouter(router, cmds);
-
-        }
-        s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
-
+    public boolean visit(final DhcpEntryRules dhcp) throws ResourceUnavailableException {
         return false;
     }
 
     @Override
-    public boolean visit(final IpAssociationRules ipRules) throws ResourceUnavailableException {
-        Network network = ipRules.getNetwork();
-        VirtualRouter router = ipRules.getRouter();
-        Commands commands = ipRules.getCommands();
-        List<? extends PublicIpAddress> ips = ipRules.getIpAddresses();
-
-        ipRules.createAssociateIPCommands(router, ips, commands, network.getId());
-        return applianceManager.sendCommandsToRouter(router, commands);
-    }
-
-    @Override
-    public boolean visit(final UserdataPwdRules nat) throws ResourceUnavailableException {
+    public boolean visit(final SshKeyToRouterRules sshkey) throws ResourceUnavailableException {
         return false;
     }
 
     @Override
-    public boolean visit(final DhcpRules nat) throws ResourceUnavailableException {
+    public boolean visit(final PasswordToRouterRules pwd) throws ResourceUnavailableException {
         return false;
     }
 
     @Override
-    public boolean visit(final SshKeyToRouterRules nat) throws ResourceUnavailableException {
+    public boolean visit(final NetworkAclsRules acls) throws ResourceUnavailableException {
         return false;
     }
 
     @Override
-    public boolean visit(final PasswordToRouterRules nat) throws ResourceUnavailableException {
-        return false;
-    }
-
-    @Override
-    public boolean visit(final NetworkAclsRules nat) throws ResourceUnavailableException {
-        return false;
-    }
-
-    @Override
-    public boolean visit(final VpcIpAssociationRules nat) throws ResourceUnavailableException {
+    public boolean visit(final VpcIpAssociationRules vpcip) throws ResourceUnavailableException {
         return false;
     }
 
@@ -173,12 +90,12 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
     }
 
     @Override
-    public boolean visit(final DhcpPvlanRules vpn) throws ResourceUnavailableException {
+    public boolean visit(final DhcpPvlanRules dhcp) throws ResourceUnavailableException {
         return false;
     }
 
     @Override
-    public boolean visit(final VpnRules userdata) throws ResourceUnavailableException {
+    public boolean visit(final DhcpSubNetRules subnet) throws ResourceUnavailableException {
         return false;
     }
 }
