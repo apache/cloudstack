@@ -1954,6 +1954,9 @@ class DiskOffering:
         if "tags" in services:
             cmd.tags = services["tags"]
 
+        if "provisioningtype" in services:
+            cmd.provisioningtype = services["provisioningtype"]
+
         return DiskOffering(apiclient.createDiskOffering(cmd).__dict__)
 
     def delete(self, apiclient):
