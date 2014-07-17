@@ -7,12 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
-import javax.inject.Inject;
-
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -22,7 +20,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.PhysicalNetwork;
@@ -30,11 +27,8 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
-import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.router.VirtualNwStatus;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.Vpc;
@@ -53,27 +47,11 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     private static final Logger logger = Logger.getLogger(VpcRouterDeploymentDefinition.class);
 
-    @Inject
     protected VpcDao vpcDao;
-    @Inject
     protected VpcOfferingDao vpcOffDao;
-    @Inject
     protected PhysicalNetworkDao pNtwkDao;
-    @Inject
     protected VpcManager vpcMgr;
-    @Inject
-    protected PhysicalNetworkServiceProviderDao physicalProviderDao;
-    @Inject
     protected VlanDao vlanDao;
-    @Inject
-    protected IPAddressDao ipAddressDao;
-    @Inject
-    protected NetworkOrchestrationService networkMgr;
-    @Inject
-    protected NetworkModel networkModel;
-    @Inject
-    protected VirtualRouterProviderDao vrProviderDao;
-
 
     protected Vpc vpc;
 
@@ -84,6 +62,11 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
         super(null, dest, owner, params, isRedundant);
 
         this.vpc = vpc;
+    }
+
+    @Override
+    public Vpc getVpc() {
+        return this.vpc;
     }
 
     @Override
@@ -238,4 +221,9 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
         this.routers = vpcHelper.getVpcRouters(this.getVpc().getId());
     }
 
+    @Override
+    public void generateDeploymentPlan() {
+        final long dcId = this.dest.getDataCenter().getId();
+        this.plan = new DataCenterDeployment(dcId);
+    }
 }
