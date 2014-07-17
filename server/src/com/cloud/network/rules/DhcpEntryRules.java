@@ -46,26 +46,26 @@ public class DhcpEntryRules extends RuleApplier {
     private final NicProfile _nic;
     private final VirtualMachineProfile _profile;
     private final DeployDestination _destination;
-    
+
     private NicVO _nicVo;
     private UserVmVO _userVM;
 
     public DhcpEntryRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination destination) {
         super(network);
 
-        this._nic = nic;
-        this._profile = profile;
-        this._destination = destination;
+        _nic = nic;
+        _profile = profile;
+        _destination = destination;
     }
 
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
-        this._router = router;
+        _router = router;
 
         _userVM = _userVmDao.findById(_profile.getId());
         _userVmDao.loadDetails(_userVM);
         _nicVo = _nicDao.findById(_nic.getId());
-        
+
         return visitor.visit(this);
     }
 
@@ -76,15 +76,15 @@ public class DhcpEntryRules extends RuleApplier {
     public DeployDestination getDestination() {
         return _destination;
     }
-    
+
     public NicVO getNicVo() {
-		return _nicVo;
-	}
-    
+        return _nicVo;
+    }
+
     public UserVmVO getUserVM() {
-		return _userVM;
-	}
-    
+        return _userVM;
+    }
+
     public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final Commands cmds) {
         final DhcpEntryCommand dhcpCommand =
                 new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName(), nic.getIp6Address(), _networkModel.getExecuteInSeqNtwkElmtCmd());
@@ -112,12 +112,12 @@ public class DhcpEntryRules extends RuleApplier {
 
         cmds.addCommand("dhcp", dhcpCommand);
     }
-    
+
     private NicVO findGatewayIp(final long userVmId) {
         final NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
         return defaultNic;
     }
-    
+
     private NicVO findDefaultDnsIp(final long userVmId) {
         final NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
 
