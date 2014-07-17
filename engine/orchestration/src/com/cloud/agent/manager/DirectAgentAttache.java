@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.agent.api.Answer;
@@ -298,9 +299,10 @@ public class DirectAgentAttache extends AgentAttache {
                         } else {
                             answer = new Answer(cmds[i], false, "Agent is disconnected");
                         }
-                    } catch (Exception e) {
-                        s_logger.warn(log(seq, "Exception Caught while executing command"), e);
-                        answer = new Answer(cmds[i], false, e.toString());
+                    } catch (Throwable t) {
+                        // Catch Throwable as all exceptions will otherwise be eaten by the executor framework
+                        s_logger.warn(log(seq, "Throwable caught while executing command"), t);
+                        answer = new Answer(cmds[i], false, t.toString());
                     }
                     answers.add(answer);
                     if (!answer.getResult() && stopOnError) {
@@ -317,8 +319,9 @@ public class DirectAgentAttache extends AgentAttache {
                 }
 
                 processAnswers(seq, resp);
-            } catch (Exception e) {
-                s_logger.warn(log(seq, "Exception caught "), e);
+            } catch (Throwable t) {
+                // This is pretty serious as processAnswers might not be called and the calling process is stuck waiting for the full timeout
+                s_logger.error(log(seq, "Throwable caught in runInContext, this will cause the management to become unpredictable"), t);
             } finally {
                 _outstandingTaskCount.decrementAndGet();
                 scheduleFromQueue();

@@ -1,4 +1,27 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 package com.cloud.network.router;
+
+import static org.mockito.Mockito.when;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+
+import java.util.LinkedHashMap;
+import java.util.List;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Test;
@@ -7,15 +30,20 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.mockito.Mockito.when;
-
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -31,9 +59,11 @@ import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -44,6 +74,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.UserStatsLogDao;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
@@ -53,7 +84,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
-public class VirtualNetworkApplianceManagerTest {
+public class VirtualNetworkApplianceManagerImplTest {
     @Mock
     private ClusterDao _clusterDao;
 
@@ -169,6 +200,8 @@ public class VirtualNetworkApplianceManagerTest {
 
     @Mock private VirtualMachineManager _itMgr;
 
+    @Mock private ResourceManager _resourceMgr;
+
     @InjectMocks
     private VirtualNetworkApplianceManagerImpl virtualNetworkApplianceManagerImpl;
 
@@ -178,7 +211,20 @@ public class VirtualNetworkApplianceManagerTest {
                 1L, false, 0, false, RedundantState.UNKNOWN, false, false, null);
         when(_routerDao.findById(1L)).thenReturn((DomainRouterVO)r);
         VirtualRouter vr = virtualNetworkApplianceManagerImpl.destroyRouter(1L, new AccountVO(1L), 0L);
-        assert vr != null;
+        assertNotEquals(vr, null);
     }
 
+    @Test
+    public void testDeployRouterNotRedundant() throws Exception {
+        DataCenter dc = new DataCenterVO(1L, "name", "description", "dns", null, null, null, "cidr", "domain", null,
+                NetworkType.Basic, "zoneToken", "domainSuffix");
+        when(_routerDao.getNextInSequence(Long.class, "id")).thenReturn(1L);
+        when(_resourceMgr.getDefaultHypervisor(1L)).thenReturn(HypervisorType.Any);
+        DeploymentPlan plan = new DataCenterDeployment(1L);
+        VirtualRouter vr = virtualNetworkApplianceManagerImpl.deployRouter(new AccountVO(1L), new DeployDestination(dc,null,null,null), plan, null, false,
+                new VirtualRouterProviderVO(), 0L, null, new LinkedHashMap<Network, List<? extends NicProfile>> (), true /* start the router */,
+                null);
+        // TODO: more elaborate mocking needed to have a vr returned
+        assertEquals(vr, null);
+    }
 }

@@ -361,7 +361,7 @@ public class VirtualRoutingResource {
 
             Queue<NetworkElementCommand> queue = new LinkedBlockingQueue<>();
             _vrAggregateCommandsSet.put(routerName, queue);
-            return new Answer(cmd);
+            return new Answer(cmd, true, "Command aggregation started");
         } else if (action == Action.Finish) {
             Queue<NetworkElementCommand> queue = _vrAggregateCommandsSet.get(routerName);
             int answerCounts = 0;
@@ -402,20 +402,11 @@ public class VirtualRoutingResource {
                     return new Answer(cmd, false, result.getDetails());
                 }
 
-                return new Answer(cmd);
+                return new Answer(cmd, true, "Command aggregation finished");
             } finally {
                 queue.clear();
                 _vrAggregateCommandsSet.remove(routerName);
             }
-        } else if (action == Action.Cleanup) {
-            assert (_vrAggregateCommandsSet.containsKey(routerName));
-            Queue<NetworkElementCommand> queue = _vrAggregateCommandsSet.get(routerName);
-            if (queue != null) {
-                queue.clear();
-            }
-            _vrAggregateCommandsSet.remove(routerName);
-
-            return new Answer(cmd);
         }
         return new Answer(cmd, false, "Fail to recongize aggregation action " + action.toString());
     }

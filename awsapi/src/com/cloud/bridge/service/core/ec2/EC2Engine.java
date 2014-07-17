@@ -30,15 +30,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
-
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
-
 import com.cloud.bridge.model.CloudStackServiceOfferingVO;
 import com.cloud.bridge.persist.dao.CloudStackAccountDao;
 import com.cloud.bridge.persist.dao.CloudStackSvcOfferingDao;
@@ -74,6 +71,7 @@ import com.cloud.stack.models.CloudStackUserVm;
 import com.cloud.stack.models.CloudStackVolume;
 import com.cloud.stack.models.CloudStackZone;
 import com.cloud.utils.component.ManagerBase;
+
 
 /**
  * EC2Engine processes the ec2 commands and calls their cloudstack analogs
@@ -1175,6 +1173,7 @@ public class EC2Engine extends ManagerBase {
                 resp.setState(vol.getState());
                 resp.setType(vol.getVolumeType());
                 resp.setVMState(vol.getVirtualMachineState());
+                resp.setAttachmentState("detached");
                 resp.setZoneName(vol.getZoneName());
             }
         } catch (Exception e) {
@@ -1231,7 +1230,9 @@ public class EC2Engine extends ManagerBase {
                 resp.setInstanceId(vol.getVirtualMachineId());
                 resp.setSize(vol.getSize());
                 resp.setSnapshotId(vol.getSnapshotId());
-                resp.setState(vol.getState());
+                if (vol.getState() != null) {
+                    resp.setState(mapToAmazonVolState(vol.getState()));
+                }
                 resp.setType(vol.getVolumeType());
                 resp.setVMState(vol.getVirtualMachineState());
                 resp.setAttachmentState("detached");

@@ -4627,6 +4627,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             templateId = vm.getIsoId();
         }
 
+        // If target VM has associated VM snapshots then don't allow restore of VM
+        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+        if (vmSnapshots.size() > 0 && vm.getHypervisorType() == HypervisorType.VMware) {
+            throw new InvalidParameterValueException("Unable to restore VM, please specify a VM that does not have VM snapshots");
+        }
+
         VMTemplateVO template = null;
         //newTemplateId can be either template or ISO id. In the following snippet based on the vm deployment (from template or ISO) it is handled accordingly
         if (newTemplateId != null) {
