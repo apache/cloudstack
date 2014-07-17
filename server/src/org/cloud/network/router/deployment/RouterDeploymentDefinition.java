@@ -116,8 +116,7 @@ public class RouterDeploymentDefinition {
     protected DeploymentPlan plan;
     protected List<DomainRouterVO> routers = new ArrayList<>();
     protected ServiceOfferingVO offering;
-
-
+    protected Long tableLockId;
 
 
     protected RouterDeploymentDefinition(final Network guestNetwork, final DeployDestination dest,
@@ -218,6 +217,171 @@ public class RouterDeploymentDefinition {
 
     @DB
     protected void findOrDeployVirtualRouter()
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+
+        try {
+            this.lock();
+            this.checkPreconditions();
+            // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
+            final List<DeployDestination> destinations = findDestinations();
+
+            for (final DeployDestination destination : destinations) {
+                this.dest = destination;
+                this.planDeploymentRouters();
+                this.generateDeploymentPlan();
+                this.proceedEffectiveDeployment();
+            }
+        } finally {
+            this.unlock();
+        }
+    }
+
+    protected void lock() {
+        final Network lock = networkDao.acquireInLockTable(guestNetwork.getId(), NetworkOrchestrationService.NetworkLockTimeout.value());
+        if (lock == null) {
+            throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
+        }
+        this.tableLockId = lock.getId();
+    }
+
+    protected void unlock() {
+        if (this.tableLockId != null) {
+            networkDao.releaseFromLockTable(this.tableLockId);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Lock is released for network id " + this.tableLockId
+                        + " as a part of router startup in " + dest);
+            }
+        }
+    }
+
+    protected void checkPreconditions() throws ResourceUnavailableException {
+        if (guestNetwork.getState() != Network.State.Implemented &&
+                guestNetwork.getState() != Network.State.Setup &&
+                guestNetwork.getState() != Network.State.Implementing) {
+            throw new ResourceUnavailableException("Network is not yet fully implemented: " + guestNetwork,
+                    Network.class, this.guestNetwork.getId());
+        }
+
+        if (guestNetwork.getTrafficType() != TrafficType.Guest) {
+            throw new ResourceUnavailableException("Network is not type Guest as expected: " + guestNetwork,
+                    Network.class, this.guestNetwork.getId());
+        }
+    }
+
+    protected List<DeployDestination> findDestinations() {
+        // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
+        final List<DeployDestination> destinations = new ArrayList<DeployDestination>();
+
+        // for basic zone, if 'dest' has pod set to null then this is network restart scenario otherwise it is a vm deployment scenario
+        if (this.isBasic() && dest.getPod() == null) {
+            // Find all pods in the data center with running or starting user vms
+            final long dcId = dest.getDataCenter().getId();
+            final List<HostPodVO> pods = listByDataCenterIdVMTypeAndStates(dcId, VirtualMachine.Type.User, VirtualMachine.State.Starting, VirtualMachine.State.Running);
+
+            // Loop through all the pods skip those with running or starting VRs
+            for (final HostPodVO pod : pods) {
+                // Get list of VRs in starting or running state
+                final long podId = pod.getId();
+                final List<DomainRouterVO> virtualRouters = routerDao.listByPodIdAndStates(podId, VirtualMachine.State.Starting, VirtualMachine.State.Running);
+
+                assert (virtualRouters.size() <= 1) : "Pod can have utmost one VR in Basic Zone, please check!";
+
+                // Add virtualRouters to the routers, this avoids the situation when
+                // all routers are skipped and VirtualRouterElement throws exception
+                this.routers.addAll(virtualRouters);
+
+                // If List size is one, we already have a starting or running VR, skip deployment
+                if (virtualRouters.size() == 1) {
+                    logger.debug("Skipping VR deployment: Found a running or starting VR in Pod " + pod.getName() + " id=" + podId);
+                    continue;
+                }
+                // Add new DeployDestination for this pod
+                destinations.add(new DeployDestination(dest.getDataCenter(), pod, null, null));
+            }
+        } else {
+            // Else, just add the supplied dest
+            destinations.add(dest);
+        }
+        return destinations;
+    }
+
+    protected void proceedEffectiveDeployment()
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        // 2) Figure out required routers count
+        int routerCount = 1;
+        if (this.isRedundant) {
+            routerCount = 2;
+            //Check current redundant routers, if possible(all routers are stopped), reset the priority
+            if (this.routers.size() != 0) {
+                checkAndResetPriorityOfRedundantRouter(this.routers);
+            }
+        }
+
+        // If old network is redundant but new is single router, then routers.size() = 2 but routerCount = 1
+        if (this.routers.size() >= routerCount) {
+            return;
+        }
+
+        if (this.routers.size() >= 5) {
+            logger.error("Too much redundant routers!");
+        }
+
+        // Check if providers are supported in the physical networks
+        final Type type = Type.VirtualRouter;
+        final Long physicalNetworkId = networkModel.getPhysicalNetworkId(guestNetwork);
+        final PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
+        if (provider == null) {
+            throw new CloudRuntimeException("Cannot find service provider " + type.toString() + " in physical network " + physicalNetworkId);
+        }
+        final VirtualRouterProvider vrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), type);
+        if (vrProvider == null) {
+            throw new CloudRuntimeException("Cannot find virtual router provider " + type.toString() + " as service provider " + provider.getId());
+        }
+
+        if (networkModel.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
+            this.owner = accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
+        }
+
+        // Check if public network has to be set on VR
+        boolean publicNetwork = false;
+        if (networkModel.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter)) {
+            publicNetwork = true;
+        }
+        if (this.isRedundant && !publicNetwork) {
+            logger.error("Didn't support redundant virtual router without public network!");
+            this.routers = null;
+            return;
+        }
+
+        Long offeringId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
+        if (offeringId == null) {
+            offeringId = getOfferingId();
+        }
+
+        PublicIp sourceNatIp = null;
+        if (publicNetwork) {
+            sourceNatIp = ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(
+                    this.owner, guestNetwork);
+        }
+
+        // 3) deploy virtual router(s)
+        final int count = routerCount - this.routers.size();
+        for (int i = 0; i < count; i++) {
+            LinkedHashMap<Network, List<? extends NicProfile>> networks =
+                    createRouterNetworks(new Pair<Boolean, PublicIp>(
+                    publicNetwork, sourceNatIp));
+            //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
+            DomainRouterVO router = nwHelper.deployRouter(this, vrProvider, offeringId, networks, false, null);
+
+            if (router != null) {
+                routerDao.addRouterToGuestNetwork(router, guestNetwork);
+                this.routers.add(router);
+            }
+        }
+    }
+
+    @DB
+    protected void findOrDeployVirtualRouterOLD()
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         final Network lock = networkDao.acquireInLockTable(guestNetwork.getId(), NetworkOrchestrationService.NetworkLockTimeout.value());
