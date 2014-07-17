@@ -204,8 +204,8 @@ public class VirtualNetworkApplianceFactory {
         return userdataRules;
     }
 
-	public DhcpEntryRules createDhcpEntryRules(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination destination) {
-		DhcpEntryRules dhcpRules = new DhcpEntryRules(network, nic, profile, destination);
+    public DhcpEntryRules createDhcpEntryRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination destination) {
+        DhcpEntryRules dhcpRules = new DhcpEntryRules(network, nic, profile, destination);
 
         initBeans(dhcpRules);
 
@@ -213,5 +213,5 @@ public class VirtualNetworkApplianceFactory {
         dhcpRules._networkDao = _networkDao;
 
         return dhcpRules;
-	}
+    }
 }
