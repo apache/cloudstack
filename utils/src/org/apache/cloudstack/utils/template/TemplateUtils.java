@@ -61,6 +61,13 @@ public class TemplateUtils {
             s_logger.debug("File at path " + path + " looks like ova : " + output);
             return "";
         }
+
+        //lxc
+        if (output.contains("POSIX tar") && isCorrectExtension(url, "tar")) {
+            s_logger.debug("File at path " + path + " looks like just tar : " + output);
+            return "";
+        }
+
         if (output.contains("ISO 9660") && isCorrectExtension(url, "iso")) {
             s_logger.debug("File at path " + path + " looks like an iso : " + output);
             return "";
