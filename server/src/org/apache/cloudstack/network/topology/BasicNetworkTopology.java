@@ -57,6 +57,8 @@ import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VirtualNetworkApplianceFactory;
 import com.cloud.network.rules.VpnRules;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
@@ -95,6 +97,12 @@ public class BasicNetworkTopology implements NetworkTopology {
     @Override
     public NicProfile retrieveControlNic(final VirtualMachineProfile profile) {
         return null;
+    }
+
+    @Override
+    public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final List<? extends VirtualRouter> routers, final boolean isPrivateGateway)
+            throws ResourceUnavailableException {
+        throw new CloudRuntimeException("applyNetworkACLs not implemented in Basic Network Topology.");
     }
 
     @Override

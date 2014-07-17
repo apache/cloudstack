@@ -34,11 +34,15 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.NEWVirtualNetworkApplianceManager;
+import com.cloud.network.router.NetworkGeneralHelper;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.StringUtils;
 import com.cloud.vm.NicVO;
@@ -77,6 +81,12 @@ public abstract class RuleApplier {
 
     protected FirewallRulesDao _rulesDao;
 
+    protected UserStatisticsDao _userStatsDao;
+
+    protected VpcDao _vpcDao;
+
+    protected VpcManager _vpcMgr;
+
     protected VirtualMachineManager _itMgr;
 
     protected Network _network;
@@ -85,8 +95,10 @@ public abstract class RuleApplier {
 
     protected RouterControlHelper _routerControlHelper;
 
+    protected NetworkGeneralHelper _networkHelper;
+
     public RuleApplier(final Network network) {
-        this._network = network;
+        _network = network;
     }
 
     public abstract boolean accept(NetworkTopologyVisitor visitor, VirtualRouter router) throws ResourceUnavailableException;

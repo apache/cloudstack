@@ -25,13 +25,9 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
-import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.Manager;
@@ -53,15 +49,15 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     static final String RouterAlertsCheckIntervalCK = "router.alerts.check.interval";
 
     static final ConfigKey<String> RouterTemplateXen = new ConfigKey<String>(String.class, RouterTemplateXenCK, "Advanced", "SystemVM Template (XenServer)",
-        "Name of the default router template on Xenserver.", true, ConfigKey.Scope.Zone, null);
+            "Name of the default router template on Xenserver.", true, ConfigKey.Scope.Zone, null);
     static final ConfigKey<String> RouterTemplateKvm = new ConfigKey<String>(String.class, RouterTemplateKvmCK, "Advanced", "SystemVM Template (KVM)",
-        "Name of the default router template on KVM.", true, ConfigKey.Scope.Zone, null);
+            "Name of the default router template on KVM.", true, ConfigKey.Scope.Zone, null);
     static final ConfigKey<String> RouterTemplateVmware = new ConfigKey<String>(String.class, RouterTemplateVmwareCK, "Advanced", "SystemVM Template (vSphere)",
-        "Name of the default router template on Vmware.", true, ConfigKey.Scope.Zone, null);
+            "Name of the default router template on Vmware.", true, ConfigKey.Scope.Zone, null);
     static final ConfigKey<String> RouterTemplateHyperV = new ConfigKey<String>(String.class, RouterTemplateHyperVCK, "Advanced", "SystemVM Template (HyperV)",
-        "Name of the default router template on Hyperv.", true, ConfigKey.Scope.Zone, null);
+            "Name of the default router template on Hyperv.", true, ConfigKey.Scope.Zone, null);
     static final ConfigKey<String> RouterTemplateLxc = new ConfigKey<String>(String.class, RouterTemplateLxcCK, "Advanced", "SystemVM Template (LXC)",
-        "Name of the default router template on LXC.", true, ConfigKey.Scope.Zone, null);
+            "Name of the default router template on LXC.", true, ConfigKey.Scope.Zone, null);
 
     static final ConfigKey<String> SetServiceMonitor = new ConfigKey<String>(String.class, SetServiceMonitorCK, "Advanced", "true",
             "service monitoring in router enable/disable option, default true", true, ConfigKey.Scope.Zone, null);
@@ -82,28 +78,9 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
      */
     boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey);
 
-    /**
-     * save a vm password on the router.
-     * @param routers TODO
-     *
-     */
-    boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers)
-        throws ResourceUnavailableException;
-
-    boolean saveSSHPublicKeyToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers, String sshPublicKey)
-        throws ResourceUnavailableException;
-
-    boolean saveUserDataToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers)
-        throws ResourceUnavailableException;
-
     boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
     boolean deleteRemoteAccessVpn(Network network, RemoteAccessVpn vpn, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
-
-    boolean associatePublicIP(Network network, final List<? extends PublicIpAddress> ipAddress, List<? extends VirtualRouter> routers)
-        throws ResourceUnavailableException;
-
-    boolean applyFirewallRules(Network network, final List<? extends FirewallRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
     List<VirtualRouter> getRoutersForNetwork(long networkId);
 
@@ -113,18 +90,8 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 
     String getDnsBasicZoneUpdate();
 
-    boolean applyStaticNats(Network network, final List<? extends StaticNat> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
-
-    boolean applyDhcpEntry(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, List<DomainRouterVO> routers)
-        throws ResourceUnavailableException;
-
-    boolean applyUserData(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, List<DomainRouterVO> routers)
-        throws ResourceUnavailableException;
-
-    boolean applyLoadBalancingRules(Network network, List<? extends LoadBalancingRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
-
     boolean configDhcpForSubnet(Network network, NicProfile nic, VirtualMachineProfile uservm, DeployDestination dest, List<DomainRouterVO> routers)
-        throws ResourceUnavailableException;
+            throws ResourceUnavailableException;
 
     boolean removeDhcpSupportForSubnet(Network network, List<DomainRouterVO> routers) throws ResourceUnavailableException;
 
