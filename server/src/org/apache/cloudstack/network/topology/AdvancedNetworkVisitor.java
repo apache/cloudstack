@@ -17,22 +17,26 @@
 
 package org.apache.cloudstack.network.topology;
 
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.DhcpPvlanRules;
 import com.cloud.network.rules.DhcpSubNetRules;
 import com.cloud.network.rules.NetworkAclsRules;
-import com.cloud.network.rules.PasswordToRouterRules;
+import com.cloud.network.rules.NicPlugInOutRules;
 import com.cloud.network.rules.PrivateGatewayRules;
-import com.cloud.network.rules.SshKeyToRouterRules;
 import com.cloud.network.rules.UserdataPwdRules;
-import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
+import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
@@ -69,28 +73,41 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
     }
 
     @Override
-    public boolean visit(final SshKeyToRouterRules sshkey) throws ResourceUnavailableException {
-        return false;
-    }
+    public boolean visit(final NicPlugInOutRules nicPlugInOutRules) throws ResourceUnavailableException {
+        final VirtualRouter router = nicPlugInOutRules.getRouter();
 
-    @Override
-    public boolean visit(final PasswordToRouterRules pwd) throws ResourceUnavailableException {
-        return false;
+        final Commands commands = nicPlugInOutRules.getNetUsageCommands();
+
+        return _applianceManager.sendCommandsToRouter(router, commands);
     }
 
     @Override
     public boolean visit(final NetworkAclsRules acls) throws ResourceUnavailableException {
-        return false;
+        final VirtualRouter router = acls.getRouter();
+        final Network network = acls.getNetwork();
+
+        Commands commands = new Commands(Command.OnError.Continue);
+        List<? extends NetworkACLItem> rules = acls.getRules();
+        acls.createNetworkACLsCommands(rules, router, commands, network.getId(), acls.isPrivateGateway());
+
+        return _applianceManager.sendCommandsToRouter(router, commands);
     }
 
     @Override
     public boolean visit(final VpcIpAssociationRules vpcip) throws ResourceUnavailableException {
-        return false;
-    }
+        final VirtualRouter router = vpcip.getRouter();
 
-    @Override
-    public boolean visit(final UserdataToRouterRules userdata) throws ResourceUnavailableException {
-        return false;
+        Commands cmds = new Commands(Command.OnError.Continue);
+        Map<String, String> vlanMacAddress = vpcip.getVlanMacAddress();
+        List<PublicIpAddress> ipsToSend = vpcip.getIpsToSend();
+
+
+        if (!ipsToSend.isEmpty()) {
+            vpcip.createVpcAssociatePublicIPCommands(router, ipsToSend, cmds, vlanMacAddress);
+            return _applianceManager.sendCommandsToRouter(router, cmds);
+        } else {
+            return true;
+        }
     }
 
     @Override

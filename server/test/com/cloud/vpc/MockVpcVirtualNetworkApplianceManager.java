@@ -33,17 +33,12 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
-import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.user.Account;
@@ -67,32 +62,6 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.router.VirtualNetworkApplianceManager#savePasswordToRouter(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.VirtualMachineProfile, java.util.List)
-     */
-    @Override
-    public boolean savePasswordToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final List<? extends VirtualRouter> routers)
-        throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean saveSSHPublicKeyToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final List<? extends VirtualRouter> routers, final String sshPublicKey)
-        throws ResourceUnavailableException {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.VirtualNetworkApplianceManager#saveUserDataToRouter(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.VirtualMachineProfile, java.util.List)
-     */
-    @Override
-    public boolean saveUserDataToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final List<? extends VirtualRouter> routers)
-        throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#startRemoteAccessVpn(com.cloud.network.Network, com.cloud.network.RemoteAccessVpn, java.util.List)
      */
     @Override
@@ -106,25 +75,6 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      */
     @Override
     public boolean deleteRemoteAccessVpn(final Network network, final RemoteAccessVpn vpn, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.VirtualNetworkApplianceManager#associatePublicIP(com.cloud.network.Network, java.util.List, java.util.List)
-     */
-    @Override
-    public boolean associatePublicIP(final Network network, final List<? extends PublicIpAddress> ipAddress, final List<? extends VirtualRouter> routers)
-        throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.VirtualNetworkApplianceManager#applyFirewallRules(com.cloud.network.Network, java.util.List, java.util.List)
-     */
-    @Override
-    public boolean applyFirewallRules(final Network network, final List<? extends FirewallRule> rules, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -152,7 +102,6 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      */
     @Override
     public VirtualRouter stop(final VirtualRouter router, final boolean forced, final User callingUser, final Account callingAccount) throws ConcurrentOperationException,
-        ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -166,38 +115,9 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.VirtualNetworkApplianceManager#applyStaticNats(com.cloud.network.Network, java.util.List, java.util.List)
-     */
-    @Override
-    public boolean applyStaticNats(final Network network, final List<? extends StaticNat> rules, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.VirtualNetworkApplianceManager#applyDhcpEntry(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.VirtualMachineProfile, com.cloud.deploy.DeployDestination, java.util.List)
-     */
-    @Override
-    public boolean applyDhcpEntry(final Network config, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest, final List<DomainRouterVO> routers)
-        throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.VirtualNetworkApplianceManager#applyUserData(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.VirtualMachineProfile, com.cloud.deploy.DeployDestination, java.util.List)
-     */
-    @Override
-    public boolean applyUserData(final Network config, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest, final List<DomainRouterVO> routers)
-        throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
     @Override
     public boolean configDhcpForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile uservm, final DeployDestination dest, final List<DomainRouterVO> routers)
-        throws ResourceUnavailableException {
+            throws ResourceUnavailableException {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
@@ -211,7 +131,6 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      */
     @Override
     public VirtualRouter startRouter(final long routerId, final boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException,
-        InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -221,7 +140,6 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      */
     @Override
     public VirtualRouter rebootRouter(final long routerId, final boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException,
-        InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -312,15 +230,8 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      */
     @Override
     public boolean removeVpcRouterFromGuestNetwork(final VirtualRouter router, final Network network, final boolean isRedundant) throws ConcurrentOperationException,
-        ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    @Override
-    public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final List<? extends VirtualRouter> routers, final boolean privateGateway)
-        throws ResourceUnavailableException {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     /* (non-Javadoc)
@@ -372,13 +283,6 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     public List<DomainRouterVO> getVpcRouters(final long vpcId) {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    @Override
-    public boolean applyLoadBalancingRules(final Network network, final List<? extends LoadBalancingRule> rules, final List<? extends VirtualRouter> routers)
-        throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
     }
 
     @Override

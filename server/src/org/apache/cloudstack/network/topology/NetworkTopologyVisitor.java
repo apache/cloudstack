@@ -25,6 +25,7 @@ import com.cloud.network.rules.FirewallRules;
 import com.cloud.network.rules.IpAssociationRules;
 import com.cloud.network.rules.LoadBalancingRules;
 import com.cloud.network.rules.NetworkAclsRules;
+import com.cloud.network.rules.NicPlugInOutRules;
 import com.cloud.network.rules.PasswordToRouterRules;
 import com.cloud.network.rules.PrivateGatewayRules;
 import com.cloud.network.rules.SshKeyToRouterRules;
@@ -51,4 +52,5 @@ public abstract class NetworkTopologyVisitor {
     public abstract boolean visit(PrivateGatewayRules userdata) throws ResourceUnavailableException;
     public abstract boolean visit(DhcpPvlanRules vpn) throws ResourceUnavailableException;
     public abstract boolean visit(DhcpSubNetRules vpn) throws ResourceUnavailableException;
+    public abstract boolean visit(NicPlugInOutRules nicPlugInOutRules) throws ResourceUnavailableException;
 }
