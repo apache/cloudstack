@@ -106,9 +106,9 @@ public class BasicNetworkTopology implements NetworkTopology {
 
     @Override
     public boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
-    		final List<DomainRouterVO> routers) throws ResourceUnavailableException {
-    	
-    	s_logger.debug("APPLYING DHCP ENTRY RULES");
+            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+
+        s_logger.debug("APPLYING DHCP ENTRY RULES");
 
         final String typeString = "dhcp entry";
         final Long podId = dest.getPod().getId();
@@ -117,7 +117,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         //for user vm in Basic zone we should try to re-deploy vm in a diff pod if it fails to deploy in original pod; so throwing exception with Pod scope
         if (podId != null && profile.getVirtualMachine().getType() == VirtualMachine.Type.User && network.getTrafficType() == TrafficType.Guest &&
                 network.getGuestType() == Network.GuestType.Shared) {
-        	isPodLevelException = true;
+            isPodLevelException = true;
         }
 
         final boolean failWhenDisconnect = false;

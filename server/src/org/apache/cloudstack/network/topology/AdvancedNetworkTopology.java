@@ -47,7 +47,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
     @Override
     public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
-    		final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
 
         s_logger.debug("APPLYING USERDATA RULES");
 
@@ -60,12 +60,12 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(pwdRules));
     }
-    
+
     @Override
-    public boolean applyDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, List<DomainRouterVO> routers)
-    		throws ResourceUnavailableException {
-    	
-    	s_logger.debug("APPLYING DHCP ENTRY RULES");
+    public boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
+            throws ResourceUnavailableException {
+
+        s_logger.debug("APPLYING DHCP ENTRY RULES");
 
         final String typeString = "dhcp entry";
         final Long podId = null;
