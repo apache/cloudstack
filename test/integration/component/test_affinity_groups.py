@@ -346,7 +346,7 @@ class TestListAffinityGroups(cloudstackTestCase):
         try:
             cls.api_client = super(TestListAffinityGroups, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls.__cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -594,7 +594,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         try:
             cls.api_client = super(TestDeleteAffinityGroups, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls.__cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -865,7 +865,7 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
         try:
             cls.api_client = super(TestUpdateVMAffinityGroups, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls.__cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -1149,7 +1149,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         try:
             cls.api_client = super(TestDeployVMAffinityGroups, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls.__cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -1496,7 +1496,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         try:
             cls.api_client = super(TestAffinityGroupsAdminUser, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls.__cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
