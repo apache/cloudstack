@@ -42,6 +42,7 @@ import com.cloud.network.PublicIpAddress;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRules;
 import com.cloud.network.rules.IpAssociationRules;
@@ -56,6 +57,8 @@ import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VirtualNetworkApplianceFactory;
 import com.cloud.network.rules.VpnRules;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.UserVmVO;
@@ -101,6 +104,12 @@ public class BasicNetworkTopology implements NetworkTopology {
     }
 
     @Override
+    public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final List<? extends VirtualRouter> routers, final boolean isPrivateGateway)
+            throws ResourceUnavailableException {
+        throw new CloudRuntimeException("applyNetworkACLs not implemented in Basic Network Topology.");
+    }
+
+    @Override
     public boolean configDhcpForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
             final List<DomainRouterVO> routers) throws ResourceUnavailableException {
         return false;
@@ -109,9 +118,6 @@ public class BasicNetworkTopology implements NetworkTopology {
     @Override
     public boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
             final List<DomainRouterVO> routers) throws ResourceUnavailableException {
-<<<<<<< HEAD
-        return false;
-=======
 
         s_logger.debug("APPLYING DHCP ENTRY RULES");
 
@@ -119,9 +125,11 @@ public class BasicNetworkTopology implements NetworkTopology {
         final Long podId = dest.getPod().getId();
         boolean isPodLevelException = false;
 
-        //for user vm in Basic zone we should try to re-deploy vm in a diff pod if it fails to deploy in original pod; so throwing exception with Pod scope
-        if (podId != null && profile.getVirtualMachine().getType() == VirtualMachine.Type.User && network.getTrafficType() == TrafficType.Guest &&
-                network.getGuestType() == Network.GuestType.Shared) {
+        // for user vm in Basic zone we should try to re-deploy vm in a diff pod
+        // if it fails to deploy in original pod; so throwing exception with Pod
+        // scope
+        if (podId != null && profile.getVirtualMachine().getType() == VirtualMachine.Type.User && network.getTrafficType() == TrafficType.Guest
+                && network.getGuestType() == Network.GuestType.Shared) {
             isPodLevelException = true;
         }
 
@@ -130,7 +138,6 @@ public class BasicNetworkTopology implements NetworkTopology {
         DhcpEntryRules dhcpRules = _virtualNetworkApplianceFactory.createDhcpEntryRules(network, nic, profile, dest);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(dhcpRules));
->>>>>>> ee0389b... fixing import in virtual router element and checkstyle in dhcp entry related changes
     }
 
     @Override
