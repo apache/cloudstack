@@ -27,7 +27,7 @@ from marvin.lib.utils import checkVolumeSize
 from marvin.codes import SUCCESS
 from nose.plugins.attrib import attr
 from time import sleep
-from ctypes.wintypes import BOOLEAN
+# from ctypes.wintypes import BOOLEAN
 
 class TestListInstances(cloudstackTestCase):
 
@@ -84,7 +84,7 @@ class TestListInstances(cloudstackTestCase):
                                       cls.api_client,
                                       account=cls.account.name,
                                       domainid=cls.domain.id,
-                                      max=-1,
+                                      max= -1,
                                       resourcetype=i
                                       )
 
@@ -1924,7 +1924,7 @@ class TestInstances(cloudstackTestCase):
                                       cls.api_client,
                                       account=cls.account.name,
                                       domainid=cls.domain.id,
-                                      max=-1,
+                                      max= -1,
                                       resourcetype=i
                                       )
             cls._cleanup.append(cls.account)
@@ -3457,4 +3457,113 @@ class TestInstances(cloudstackTestCase):
                           vm_securitygroups_flag,
                           "Security Groups in VM are not same as created"
                           )
+        return
+
+    @attr(tags=["advanced", "selfservice"])
+    def test_24_deploy_vm_with_static_ip_ES1662(self):
+        """
+        @Desc: Test to verify deploy VM with static ip address assignment
+        @Steps:
+        Step1: Create a network for the user
+        Step2: List the network and check that it is created for the user
+        Step3: Deploy vm with ip address in the above network
+        Step4: List the vm and verify the ip address in the response
+        """
+        # Listing Network Offerings
+        network_offerings_list = NetworkOffering.list(
+                                                      self.apiClient,
+                                                      forvpc="false",
+                                                      guestiptype="Isolated",
+                                                      state="Enabled",
+                                                      supportedservices="SourceNat",
+                                                      zoneid=self.zone.id
+                                                      )
+        status = validateList(network_offerings_list)
+        self.assertEquals(
+                          PASS,
+                          status[0],
+                          "Isolated Network Offerings with sourceNat enabled are not found"
+                          )
+        """
+        Create Isolated netwrok with ip range
+        """
+        self.services["network"]["startip"] = "10.1.1.2"
+        self.services["network"]["endip"] = "10.1.1.254"
+        self.services["network"]["gateway"] = "10.1.1.1"
+        self.services["network"]["netmask"] = "255.255.255.0"
+        vm_ip = "10.1.1.10"
+        """
+        Creating isolated/guest network with ip range
+        """
+        network = Network.create(
+                                  self.userapiclient,
+                                  self.services["network"],
+                                  accountid=self.account.name,
+                                  domainid=self.domain.id,
+                                  networkofferingid=network_offerings_list[0].id,
+                                  zoneid=self.zone.id
+                                 )
+        self.assertIsNotNone(
+                             network,
+                             "Network creation failed"
+                              )
+        # Deploying a VM
+        vm_created = VirtualMachine.create(
+                                           self.userapiclient,
+                                           self.services["virtual_machine"],
+                                           accountid=self.account.name,
+                                           domainid=self.account.domainid,
+                                           networkids=network.id,
+                                           ipaddress=vm_ip,
+                                           serviceofferingid=self.service_offering.id,
+                                           )
+        self.assertIsNotNone(
+                             vm_created,
+                             "VM creation failed"
+                             )
+        # self.cleanup.append(vm_created)
+        self.cleanup.append(network)
+        # Listing all the VMs for a user again
+        vm_response = VirtualMachine.list(
+                                             self.userapiclient,
+                                             id=vm_created.id,
+                                             )
+        status = validateList(vm_response)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "vm list returned invalid response"
+        )
+        # Verifying that the size of the list is 1
+        self.assertEquals(
+                          1,
+                          len(vm_response),
+                          "VM list count is not matching"
+                          )
+        # Verifying that the NIC's in VM created are same as provided
+        vm_nics = vm_created.nic
+        status = validateList(vm_nics)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "vm list returned invalid response for vm nics"
+        )
+        # Verifying that the size of nics is 1
+        self.assertEquals(
+                          1,
+                          len(vm_nics),
+                          "VM is created with more than one nic which is not expected"
+                          )
+        """
+        Verifying that NIC IP address is as expected
+        """
+        self.assertEquals(
+                         str(vm_nics[0].ipaddress),
+                         vm_ip,
+                         "VM is not created with static ip address used in vm deployment"
+                         )
+        try:
+            vm_created.delete(self.apiClient, expunge=True)
+        except Exception as e:
+            raise Exception("Warning: Exception in expunging vm : %s" % e)
         return
