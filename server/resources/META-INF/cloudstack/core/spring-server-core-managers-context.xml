@@ -206,6 +206,9 @@
     <bean id="vpcVirtualNetworkHelper"
         class="com.cloud.network.router.VpcVirtualNetworkHelperImpl" />
         
+    <bean id="routerDeploymentDefinitionBuilder"
+        class="org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder" />
+
     <bean id="ApiAsyncJobDispatcher" class="com.cloud.api.ApiAsyncJobDispatcher">
         <property name="name" value="ApiAsyncJobDispatcher" />
     </bean>
