@@ -661,6 +661,7 @@ class TestTemplateUsage(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
+        cls._cleanup = []
         try:
             cls.account = Account.create(
                             cls.api_client,
