@@ -208,6 +208,8 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
                                                     domainid=cls.account.domainid, serviceofferingid=cls.service_offering.id,
                                                     mode=cls.zone.networktype)
 
+        cls.defaultNetworkId = cls.virtual_machine.nic[0].networkid
+
         # Create Shared Network Offering
         cls.isolated_network_offering = NetworkOffering.create(cls.api_client, cls.services["isolated_network_offering"])
         cls._cleanup.append(cls.isolated_network_offering)
@@ -1389,7 +1391,7 @@ class TestFailureScenariosRemoveNicFromVM(cloudstackTestCase):
         cls._cleanup = []
 
         cls.account = Account.create(cls.api_client,cls.services["account"],domainid = cls.domain.id)
-        cls.append(cls.account)
+        cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(cls.api_client,cls.services["service_offering"])
         cls._cleanup.append(cls.service_offering)

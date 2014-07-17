@@ -471,7 +471,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "multihost"], required_hardware="false")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "multihost"], required_hardware="false", BugId="7107")
     def test_08_migrate_vm(self):
         """Test migrate VM
         """

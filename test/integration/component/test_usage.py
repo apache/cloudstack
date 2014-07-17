@@ -661,6 +661,7 @@ class TestTemplateUsage(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
+        cls._cleanup = []
         try:
             cls.account = Account.create(
                             cls.api_client,
@@ -1479,7 +1480,7 @@ class TestVpnUsage(cloudstackTestCase):
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
-        cls._cleanup.append(cls.sevice_offering)
+        cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
                                 cls.api_client,
                                 cls.services["server"],

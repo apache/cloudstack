@@ -1298,7 +1298,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 throw new PermissionDeniedException("Can't list account " + accountName + " projects; unauthorized");
             }
 
-            if (domainId != null && domainId.equals(caller.getDomainId())) {
+            if (domainId != null && !domainId.equals(caller.getDomainId())) {
                 throw new PermissionDeniedException("Can't list domain id= " + domainId + " projects; unauthorized");
             }
 
