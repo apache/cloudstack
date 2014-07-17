@@ -75,8 +75,72 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     }
 
     @Override
+    protected void lock() {
+        Vpc vpcLock = vpcDao.acquireInLockTable(vpc.getId());
+        if (vpcLock == null) {
+            throw new ConcurrentOperationException("Unable to lock vpc " + vpc.getId());
+        }
+        this.tableLockId = vpcLock.getId();
+    }
+
+    @Override
+    protected void unlock() {
+        if (this.tableLockId != null) {
+            vpcDao.releaseFromLockTable(this.tableLockId);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Lock is released for vpc id " + this.tableLockId
+                        + " as a part of router startup in " + dest);
+            }
+        }
+    }
+
+    @Override
+    protected void checkPreconditions() {
+        // No preconditions for Vpc
+    }
+
+    @Override
+    protected List<DeployDestination> findDestinations() {
+        final List<DeployDestination> destinations = new ArrayList<>();
+        destinations.add(this.dest);
+        return destinations;
+    }
+
+    @Override
+    protected void proceedEffectiveDeployment()
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        //2) Return routers if exist, otherwise...
+        if (this.routers.size() < 1) {
+            Long offeringId = vpcOffDao.findById(vpc.getVpcOfferingId()).getServiceOfferingId();
+            if (offeringId == null) {
+                offeringId = offering.getId();
+            }
+            //3) Deploy Virtual Router
+            List<? extends PhysicalNetwork> pNtwks = pNtwkDao.listByZone(vpc.getZoneId());
+
+            VirtualRouterProvider vpcVrProvider = null;
+
+            for (PhysicalNetwork pNtwk : pNtwks) {
+                PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(pNtwk.getId(), Type.VPCVirtualRouter.toString());
+                if (provider == null) {
+                    throw new CloudRuntimeException("Cannot find service provider " + Type.VPCVirtualRouter.toString() + " in physical network " + pNtwk.getId());
+                }
+                vpcVrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), Type.VPCVirtualRouter);
+                if (vpcVrProvider != null) {
+                    break;
+                }
+            }
+
+            PublicIp sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(this.owner, vpc);
+
+            DomainRouterVO router = deployVpcRouter(vpcVrProvider, offeringId, sourceNatIp);
+            this.routers.add(router);
+        }
+    }
+
+    @Override
     @DB
-    protected void findOrDeployVirtualRouter()
+    protected void findOrDeployVirtualRouterOLD()
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         logger.debug("Deploying Virtual Router in VPC " + vpc);
@@ -87,7 +151,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
         }
 
         //1) Find out the list of routers and generate deployment plan
-        planDeploymentRouters();
+        this.planDeploymentRouters();
         this.generateDeploymentPlan();
 
         //2) Return routers if exist, otherwise...
