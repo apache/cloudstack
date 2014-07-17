@@ -170,6 +170,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
     @Inject
     NetworkTopologyContext networkTopologyContext;
+
     @Inject
     private RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
 
@@ -214,7 +215,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
         RouterDeploymentDefinition routerDeploymentDefinition =
-                this.routerDeploymentDefinitionBuilder.create()
+                routerDeploymentDefinitionBuilder.create()
                 .setGuestNetwork(network)
                 .setDeployDestination(dest)
                 .setAccountOwner(_accountMgr.getAccount(network.getAccountId()))
@@ -256,7 +257,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         }
 
         RouterDeploymentDefinition routerDeploymentDefinition =
-                this.routerDeploymentDefinitionBuilder.create()
+                routerDeploymentDefinitionBuilder.create()
                 .setGuestNetwork(network)
                 .setDeployDestination(dest)
                 .setAccountOwner(_accountMgr.getAccount(network.getAccountId()))
@@ -977,7 +978,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             if ((routers == null) || (routers.size() == 0)) {
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
-            
+
             DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
