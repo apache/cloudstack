@@ -1480,7 +1480,7 @@ class TestVpnUsage(cloudstackTestCase):
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
-        cls._cleanup.append(cls.sevice_offering)
+        cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
                                 cls.api_client,
                                 cls.services["server"],
