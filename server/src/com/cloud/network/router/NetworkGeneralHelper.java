@@ -27,6 +27,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
+import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -68,7 +69,6 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.network.router.deployment.RouterDeploymentDefinition;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
