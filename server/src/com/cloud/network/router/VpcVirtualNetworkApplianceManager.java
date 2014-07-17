@@ -20,29 +20,15 @@ import java.util.List;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
-import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.vm.DomainRouterVO;
 
 public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplianceManager, VpcVirtualNetworkApplianceService {
-
-    /**
-     *
-     * @param network
-     * @param rules
-     * @param routers
-     * @param privateGateway
-     * @return
-     * @throws ResourceUnavailableException
-     */
-    boolean applyNetworkACLs(Network network, List<? extends NetworkACLItem> rules, List<? extends VirtualRouter> routers, boolean privateGateway)
-        throws ResourceUnavailableException;
 
     /**
      * @param gateway

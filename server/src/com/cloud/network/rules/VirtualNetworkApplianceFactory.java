@@ -34,10 +34,15 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.NEWVirtualNetworkApplianceManager;
+import com.cloud.network.router.NetworkGeneralHelper;
 import com.cloud.network.router.RouterControlHelper;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
@@ -75,6 +80,15 @@ public class VirtualNetworkApplianceFactory {
     protected UserVmDao _userVmDao;
 
     @Inject
+    protected UserStatisticsDao _userStatsDao;
+
+    @Inject
+    protected VpcDao _vpcDao;
+
+    @Inject
+    protected VpcManager _vpcMgr;
+
+    @Inject
     protected ServiceOfferingDao _serviceOfferingDao;
 
     @Inject
@@ -94,6 +108,9 @@ public class VirtualNetworkApplianceFactory {
 
     @Inject
     protected NEWVirtualNetworkApplianceManager _applianceManager;
+
+    @Inject
+    protected NetworkGeneralHelper _networkHelper;
 
 
     public LoadBalancingRules createLoadBalancingRules(final Network network,
@@ -142,6 +159,16 @@ public class VirtualNetworkApplianceFactory {
 
     public IpAssociationRules createIpAssociationRules(final Network network, final List<? extends PublicIpAddress> ipAddresses) {
         IpAssociationRules ipAssociationRules = new IpAssociationRules(network, ipAddresses);
+
+        initBeans(ipAssociationRules);
+
+        ipAssociationRules._networkDao = _networkDao;
+
+        return ipAssociationRules;
+    }
+
+    public VpcIpAssociationRules createVpcIpAssociationRules(final Network network, final List<? extends PublicIpAddress> ipAddresses, final NicPlugInOutRules nicPlugInOutRules) {
+        VpcIpAssociationRules ipAssociationRules = new VpcIpAssociationRules(network, ipAddresses, nicPlugInOutRules);
 
         initBeans(ipAssociationRules);
 
@@ -213,5 +240,27 @@ public class VirtualNetworkApplianceFactory {
         dhcpRules._networkDao = _networkDao;
 
         return dhcpRules;
+    }
+
+    public NicPlugInOutRules createNicPluInOutRules(final Network network, final List<? extends PublicIpAddress> ipAddresses) {
+        NicPlugInOutRules nicPlug = new NicPlugInOutRules(network, ipAddresses);
+
+        initBeans(nicPlug);
+
+        nicPlug._vpcDao = _vpcDao;
+        nicPlug._userStatsDao = _userStatsDao;
+        nicPlug._vpcMgr = _vpcMgr;
+
+        return nicPlug;
+    }
+
+    public NetworkAclsRules createNetworkAclRules(final Network network, final List<? extends NetworkACLItem> rules, final boolean isPrivateGateway) {
+        NetworkAclsRules networkAclsRules = new NetworkAclsRules(network, rules, isPrivateGateway);
+
+        initBeans(networkAclsRules);
+
+        networkAclsRules._networkHelper = _networkHelper;
+
+        return networkAclsRules;
     }
 }

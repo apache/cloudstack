@@ -31,6 +31,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.RuleApplier;
 import com.cloud.network.rules.RuleApplierWrapper;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
@@ -49,10 +50,12 @@ public interface NetworkTopology {
     boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
             throws ResourceUnavailableException;
 
-    boolean applyRules(final Network network, final List<? extends VirtualRouter> routers, final String typeString, final boolean isPodLevelException, final Long podId,
-            final boolean failWhenDisconnect, RuleApplierWrapper<RuleApplier> ruleApplier) throws ResourceUnavailableException;
+    // ====== USER FOR VPC ONLY ====== //
 
-    // ====== USER FOR GUEST NETWORK ====== //
+    boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final List<? extends VirtualRouter> routers, final boolean isPrivateGateway)
+            throws ResourceUnavailableException;
+
+    // ====== USER FOR GUEST NETWORK AND VCP ====== //
 
     boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
             throws ResourceUnavailableException;
@@ -74,4 +77,7 @@ public interface NetworkTopology {
 
     boolean saveUserDataToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final List<? extends VirtualRouter> routers)
             throws ResourceUnavailableException;
+
+    boolean applyRules(final Network network, final List<? extends VirtualRouter> routers, final String typeString, final boolean isPodLevelException, final Long podId,
+            final boolean failWhenDisconnect, RuleApplierWrapper<RuleApplier> ruleApplier) throws ResourceUnavailableException;
 }

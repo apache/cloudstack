@@ -80,7 +80,6 @@ public class SshKeyToRouterRules extends RuleApplier {
 
             cmds.addCommand("password", cmd);
         }
-
     }
 
     public VirtualMachineProfile getProfile() {
