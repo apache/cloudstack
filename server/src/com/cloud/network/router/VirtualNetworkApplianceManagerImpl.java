@@ -213,7 +213,6 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ProvisioningType;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -498,72 +497,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     }
 
-    @Override
-    public boolean savePasswordToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final List<? extends VirtualRouter> routers)
-            throws ResourceUnavailableException {
-        _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
-
-        final VirtualMachineProfile updatedProfile = profile;
-
-        return applyRules(network, routers, "save password entry", false, null, false, new RuleApplier() {
-            @Override
-            public boolean execute(final Network network, final VirtualRouter router) throws ResourceUnavailableException {
-                // for basic zone, send vm data/password information only to the
-                // router in the same pod
-                final Commands cmds = new Commands(Command.OnError.Stop);
-                final NicVO nicVo = _nicDao.findById(nic.getId());
-                createPasswordCommand(router, updatedProfile, nicVo, cmds);
-                return sendCommandsToRouter(router, cmds);
-            }
-        });
-    }
-
-    @Override
-    public boolean saveSSHPublicKeyToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final List<? extends VirtualRouter> routers,
-            final String sshPublicKey) throws ResourceUnavailableException {
-        final UserVmVO vm = _userVmDao.findById(profile.getVirtualMachine().getId());
-        _userVmDao.loadDetails(vm);
-
-        final VirtualMachineProfile updatedProfile = profile;
-
-        return applyRules(network, routers, "save SSHkey entry", false, null, false, new RuleApplier() {
-            @Override
-            public boolean execute(final Network network, final VirtualRouter router) throws ResourceUnavailableException {
-                // for basic zone, send vm data/password information only to the
-                // router in the same pod
-                final Commands cmds = new Commands(Command.OnError.Stop);
-                final NicVO nicVo = _nicDao.findById(nic.getId());
-                final VMTemplateVO template = _templateDao.findByIdIncludingRemoved(updatedProfile.getTemplateId());
-                if ((template != null) && template.getEnablePassword()) {
-                    createPasswordCommand(router, updatedProfile, nicVo, cmds);
-                }
-                createVmDataCommand(router, vm, nicVo, sshPublicKey, cmds);
-                return sendCommandsToRouter(router, cmds);
-            }
-        });
-    }
-
-    @Override
-    public boolean saveUserDataToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final List<? extends VirtualRouter> routers)
-            throws ResourceUnavailableException {
-        final UserVmVO vm = _userVmDao.findById(profile.getVirtualMachine().getId());
-        _userVmDao.loadDetails(vm);
-
-        return applyRules(network, routers, "save userdata entry", false, null, false, new RuleApplier() {
-            @Override
-            public boolean execute(final Network network, final VirtualRouter router) throws ResourceUnavailableException {
-                // for basic zone, send vm data/password information only to the
-                // router in the same pod
-                final Commands cmds = new Commands(Command.OnError.Stop);
-                final NicVO nicVo = _nicDao.findById(nic.getId());
-                createVmDataCommand(router, vm, nicVo, null, cmds);
-                return sendCommandsToRouter(router, cmds);
-            }
-        });
-    }
-
-    @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROUTER_STOP, eventDescription = "stopping router Vm", async = true)
+    @Override
     public VirtualRouter stopRouter(final long routerId, final boolean forced) throws ResourceUnavailableException, ConcurrentOperationException {
         final CallContext context = CallContext.current();
         final Account account = context.getCallingAccount();
@@ -2468,45 +2403,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return false;
     }
 
-    @Override
-    public boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
-            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("applyDhcpEntry(" + network.getCidr() + ", " + nic.getMacAddress() + ", " + profile.getUuid() + ", " + dest.getHost() + ", " + routers + ")");
-        }
-        final UserVmVO vm = _userVmDao.findById(profile.getId());
-        _userVmDao.loadDetails(vm);
-
-        final VirtualMachineProfile updatedProfile = profile;
-        final boolean isZoneBasic = dest.getDataCenter().getNetworkType() == NetworkType.Basic;
-        final Long podId = isZoneBasic ? dest.getPod().getId() : null;
-
-        boolean podLevelException = false;
-        // for user vm in Basic zone we should try to re-deploy vm in a diff pod
-        // if it fails to deploy in original pod; so throwing exception with Pod
-        // scope
-        if (isZoneBasic && (podId != null) && (updatedProfile.getVirtualMachine().getType() == VirtualMachine.Type.User) && (network.getTrafficType() == TrafficType.Guest)
-                && (network.getGuestType() == Network.GuestType.Shared)) {
-            podLevelException = true;
-        }
-
-        return applyRules(network, routers, "dhcp entry", podLevelException, podId, true, new RuleApplier() {
-            @Override
-            public boolean execute(final Network network, final VirtualRouter router) throws ResourceUnavailableException {
-                // for basic zone, send dhcp/dns information to all routers in
-                // the basic network only when _dnsBasicZoneUpdates is set to
-                // "all" value
-                final Commands cmds = new Commands(Command.OnError.Stop);
-                if (!(isZoneBasic && (router.getPodIdToDeployIn().longValue() != podId.longValue()) && _dnsBasicZoneUpdates.equalsIgnoreCase("pod"))) {
-                    final NicVO nicVo = _nicDao.findById(nic.getId());
-                    createDhcpEntryCommand(router, vm, nicVo, cmds);
-                    return sendCommandsToRouter(router, cmds);
-                }
-                return true;
-            }
-        });
-    }
-
     private void createDeleteIpAliasCommand(final DomainRouterVO router, final List<IpAliasTO> deleteIpAliasTOs, final List<IpAliasTO> createIpAliasTos, final long networkId,
             final Commands cmds) {
         final String routerip = getRouterIpInNetwork(networkId, router.getId());
@@ -2549,42 +2445,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     private NicVO findGatewayIp(final long userVmId) {
         final NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
         return defaultNic;
-    }
-
-    @Override
-    public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
-            throws ResourceUnavailableException {
-        final UserVmVO vm = _userVmDao.findById(profile.getId());
-        _userVmDao.loadDetails(vm);
-
-        final VirtualMachineProfile updatedProfile = profile;
-        final boolean isZoneBasic = dest.getDataCenter().getNetworkType() == NetworkType.Basic;
-        final Long podId = isZoneBasic ? dest.getPod().getId() : null;
-
-        boolean podLevelException = false;
-        // for user vm in Basic zone we should try to re-deploy vm in a diff pod
-        // if it fails to deploy in original pod; so throwing exception with Pod
-        // scope
-        if (isZoneBasic && (podId != null) && (updatedProfile.getVirtualMachine().getType() == VirtualMachine.Type.User) && (network.getTrafficType() == TrafficType.Guest)
-                && (network.getGuestType() == Network.GuestType.Shared)) {
-            podLevelException = true;
-        }
-
-        return applyRules(network, routers, "userdata and password entry", podLevelException, podId, false, new RuleApplier() {
-            @Override
-            public boolean execute(final Network network, final VirtualRouter router) throws ResourceUnavailableException {
-                // for basic zone, send vm data/password information only to the
-                // router in the same pod
-                final Commands cmds = new Commands(Command.OnError.Stop);
-                if (!(isZoneBasic && (router.getPodIdToDeployIn().longValue() != podId.longValue()))) {
-                    final NicVO nicVo = _nicDao.findById(nic.getId());
-                    createPasswordCommand(router, updatedProfile, nicVo, cmds);
-                    createVmDataCommand(router, vm, nicVo, vm.getDetail("SSH.PublicKey"), cmds);
-                    return sendCommandsToRouter(router, cmds);
-                }
-                return true;
-            }
-        });
     }
 
     protected void createApplyVpnUsersCommand(final List<? extends VpnUser> users, final VirtualRouter router, final Commands cmds) {
@@ -3167,91 +3027,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
     }
 
-    @Override
-    public boolean associatePublicIP(final Network network, final List<? extends PublicIpAddress> ipAddress, final List<? extends VirtualRouter> routers)
-            throws ResourceUnavailableException {
-        if ((ipAddress == null) || ipAddress.isEmpty()) {
-            s_logger.debug("No ip association rules to be applied for network " + network.getId());
-            return true;
-        }
-        return applyRules(network, routers, "ip association", false, null, false, new RuleApplier() {
-            @Override
-            public boolean execute(final Network network, final VirtualRouter router) throws ResourceUnavailableException {
-                final Commands cmds = new Commands(Command.OnError.Continue);
-                createAssociateIPCommands(router, ipAddress, cmds, 0);
-                return sendCommandsToRouter(router, cmds);
-            }
-        });
-    }
-
-    @Override
-    public boolean applyFirewallRules(final Network network, final List<? extends FirewallRule> rules, final List<? extends VirtualRouter> routers)
-            throws ResourceUnavailableException {
-        if ((rules == null) || rules.isEmpty()) {
-            s_logger.debug("No firewall rules to be applied for network " + network.getId());
-            return true;
-        }
-        return applyRules(network, routers, "firewall rules", false, null, false, new RuleApplier() {
-            @Override
-            public boolean execute(final Network network, final VirtualRouter router) throws ResourceUnavailableException {
-                if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
-                    // for load balancer we have to resend all lb rules for the
-                    // network
-                    final List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkIdAndScheme(network.getId(), Scheme.Public);
-                    final List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
-                    for (final LoadBalancerVO lb : lbs) {
-                        final List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-                        final List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
-                        final List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
-                        final LbSslCert sslCert = _lbMgr.getLbSslCert(lb.getId());
-                        final Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
-                        final LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp, sslCert, lb.getLbProtocol());
-
-                        lbRules.add(loadBalancing);
-                    }
-                    return sendLBRules(router, lbRules, network.getId());
-                } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) {
-                    return sendPortForwardingRules(router, (List<PortForwardingRule>) rules, network.getId());
-                } else if (rules.get(0).getPurpose() == Purpose.StaticNat) {
-                    return sendStaticNatRules(router, (List<StaticNatRule>) rules, network.getId());
-                } else if (rules.get(0).getPurpose() == Purpose.Firewall) {
-                    return sendFirewallRules(router, (List<FirewallRule>) rules, network.getId());
-                } else {
-                    s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
-                    return false;
-                }
-            }
-        });
-    }
-
-    @Override
-    public boolean applyLoadBalancingRules(final Network network, final List<? extends LoadBalancingRule> rules, final List<? extends VirtualRouter> routers)
-            throws ResourceUnavailableException {
-        if ((rules == null) || rules.isEmpty()) {
-            s_logger.debug("No lb rules to be applied for network " + network.getId());
-            return true;
-        }
-        return applyRules(network, routers, "loadbalancing rules", false, null, false, new RuleApplier() {
-            @Override
-            public boolean execute(final Network network, final VirtualRouter router) throws ResourceUnavailableException {
-                // for load balancer we have to resend all lb rules for the
-                // network
-                final List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkIdAndScheme(network.getId(), Scheme.Public);
-                final List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
-                for (final LoadBalancerVO lb : lbs) {
-                    final List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-                    final List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
-                    final List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
-                    final LbSslCert sslCert = _lbMgr.getLbSslCert(lb.getId());
-                    final Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
-                    final LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp, sslCert, lb.getLbProtocol());
-                    lbRules.add(loadBalancing);
-                }
-                return sendLBRules(router, lbRules, network.getId());
-            }
-        });
-    }
-
     protected boolean sendLBRules(final VirtualRouter router, final List<LoadBalancingRule> rules, final long guestNetworkId) throws ResourceUnavailableException {
         final Commands cmds = new Commands(Command.OnError.Continue);
         createApplyLoadBalancingRulesCommands(rules, router, cmds, guestNetworkId);
@@ -3419,20 +3194,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             result = !connectedRouters.isEmpty();
         }
         return result;
-    }
-
-    @Override
-    public boolean applyStaticNats(final Network network, final List<? extends StaticNat> rules, final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
-        if ((rules == null) || rules.isEmpty()) {
-            s_logger.debug("No static nat rules to be applied for network " + network.getId());
-            return true;
-        }
-        return applyRules(network, routers, "static nat rules", false, null, false, new RuleApplier() {
-            @Override
-            public boolean execute(final Network network, final VirtualRouter router) throws ResourceUnavailableException {
-                return applyStaticNat(router, rules, network.getId());
-            }
-        });
     }
 
     protected boolean applyStaticNat(final VirtualRouter router, final List<? extends StaticNat> rules, final long guestNetworkId) throws ResourceUnavailableException {
@@ -3802,5 +3563,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Override
     public boolean completeAggregatedExecution(final Network network, final List<DomainRouterVO> routers) throws AgentUnavailableException {
         return aggregationExecution(Action.Finish, network, routers);
+    }
+
+    @Override
+    public boolean cleanupAggregatedExecution(final Network network, final List<DomainRouterVO> routers) throws AgentUnavailableException {
+        return aggregationExecution(Action.Cleanup, network, routers);
     }
 }

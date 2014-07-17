@@ -446,30 +446,33 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-            return _vpcRouterMgr.associatePublicIP(network, ipAddress, routers);
+            return networkTopology.associatePublicIP(network, ipAddress, routers);
         } else {
             return false;
         }
     }
 
     @Override
-    public boolean applyNetworkACLs(final Network config, final List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
-        if (canHandle(config, Service.NetworkACL)) {
-            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
+    public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
+        if (canHandle(network, Service.NetworkACL)) {
+            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " + "router doesn't exist in the network " +
-                        config.getId());
+                        network.getId());
                 return true;
             }
 
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
             try {
-                if (!_vpcRouterMgr.applyNetworkACLs(config, rules, routers, false)) {
+                if (!networkTopology.applyNetworkACLs(network, rules, routers, false)) {
                     return false;
                 } else {
                     return true;
                 }
             } catch (Exception ex) {
-                s_logger.debug("Failed to apply network acl in network " + config.getId());
+                s_logger.debug("Failed to apply network acl in network " + network.getId());
                 return false;
             }
         } else {
@@ -500,18 +503,21 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
     @Override
     public boolean applyACLItemsToPrivateGw(final PrivateGateway gateway, final List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
-        Network config = _networkDao.findById(gateway.getNetworkId());
+        Network network = _networkDao.findById(gateway.getNetworkId());
         boolean isPrivateGateway = true;
 
         List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(gateway.getVpcId());
         if (routers == null || routers.isEmpty()) {
             s_logger.debug("Virtual router element doesn't need to apply network acl rules on the backend; virtual " + "router doesn't exist in the network " +
-                    config.getId());
+                    network.getId());
             return true;
         }
 
-        if (!_vpcRouterMgr.applyNetworkACLs(config, rules, routers, isPrivateGateway)) {
-            throw new CloudRuntimeException("Failed to apply network acl in network " + config.getId());
+        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+        if (!networkTopology.applyNetworkACLs(network, rules, routers, isPrivateGateway)) {
+            throw new CloudRuntimeException("Failed to apply network acl in network " + network.getId());
         } else {
             return true;
         }
