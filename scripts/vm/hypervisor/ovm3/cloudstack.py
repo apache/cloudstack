@@ -159,9 +159,9 @@ def _replaceInFile(file, orig, set, full=False):
                 print line
     return replaced
 
-def _ovsIni(setting, set):
+def _ovsIni(setting, change):
     ini="/etc/ovs-agent/agent.ini"
-    return _replaceInFile(ini, "ssl", ena)
+    return _replaceInFile(ini, setting, change)
 
 # enable/disable ssl for the agent
 def ovsAgentSetSsl(state):
