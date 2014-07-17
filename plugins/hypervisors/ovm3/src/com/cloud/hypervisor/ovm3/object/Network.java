@@ -514,7 +514,7 @@ public class Network extends OvmObject {
 
     public Boolean stopOvsVlanConfig(String dev, int vlan)
             throws XmlRpcException {
-        return ovsVlanConfig("del", dev, vlan);
+        return ovsVlanConfig("remove", dev, vlan);
     }
     public Boolean ovsVlanConfig(String action, String net, int vlan)
             throws XmlRpcException {

@@ -673,6 +673,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
      */
     protected void installOvsPlugin() throws IOException {
         /* ssh-copy-id anyone ? */
+        /* version dependent patching ? */
         try {
             com.trilead.ssh2.Connection sshConnection = SSHCmdHelper
                     .acquireAuthorizedConnection(_ip, _username, _password);
@@ -1369,7 +1370,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
      */
     private String createVlanBridge(String networkName, Integer vlanId)
             throws XmlRpcException {
-        if (vlanId < 2 || vlanId > 4094) {
+        if (vlanId < 1 || vlanId > 4094) {
             throw new CloudRuntimeException("Vlan " + vlanId
                     + " needs to be between 1-4095");
         }
@@ -1379,12 +1380,11 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         try {
             String physInterface = net.getPhysicalByBridgeName(networkName);
             String physVlanInt = physInterface + "." + vlanId;
-
-            if (net.getInterfaceByName(physVlanInt) == null)
-                net.startOvsVlanConfig(physInterface, vlanId);
-
-            if (net.getInterfaceByName(brName) == null)
-                net.startOvsBrConfig(brName, physVlanInt);
+            if (net.getInterfaceByName(brName) == null) {
+                net.startOvsVlanBridge(brName, physInterface, vlanId);
+            } else {
+                s_logger.debug("Interface " + brName + " already exists");
+            }
         } catch (Exception e) {
             throw new CloudRuntimeException("Unable to create vlan "
                     + vlanId.toString() + " bridge for " + networkName
@@ -1550,14 +1550,6 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                 for (int count = 0; count < 60; count++) {
                     Thread.sleep(5000);
                     CloudStackPlugin cSp = new CloudStackPlugin(c);
-                    /*
-                     * Older xend issues in, took me a while to figure this
-                     * out: ../xen/xend/XendConstants.py
-                     * """Minimum time between domain restarts in seconds."
-                     * "" MINIMUM_RESTART_TIME = 60 this does NOT
-                     * work!!!--^^ as we respawn within 30 seconds easily.
-                     * return state stopped.
-                     */
                     if (_vmstates.get(vmName) == null) {
                         String msg = "VM " + vmName + " went missing on "
                                 + _host + ", returning stopped";

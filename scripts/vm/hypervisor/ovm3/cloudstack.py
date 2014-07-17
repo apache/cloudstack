@@ -53,6 +53,7 @@ class CloudStack(Agent):
             'ovs_domU_stats': ovsDomUStats,
             'get_module_version': getModuleVersion,
             'ping': ping,
+#            'patch': ovmCsPatch,
 #            'ovs_agent_set_ssl': ovsAgentSetSsl,
 #            'ovs_agent_set_port': ovsAgentSetPort,
 #            'ovs_restart_agent': ovsRestartAgent,
@@ -106,18 +107,61 @@ def domrCheckSsh(ip, port=3922, timeout=10):
         return True
     return False
 
-def _ovsIni(setting, set):
-    ini="/etc/ovs-agent/agent.ini"
+def grep(file, string):
+    c=0
+    for line in open(file):
+        if string in line:
+           c=c+1
+    return c
+
+def ovmVersion():
+    path="/etc/ovs-release"
+    return re.findall("[\d\.]+$", open(path).readline())[0]
+  
+# fix known bugs.... 
+def ovmCsPatch(version="3.2.1"):
+    path="/etc/xen/scripts"
+    netcom="%s/xen-network-common.sh" % path
+    netbr="%s/linuxbridge/ovs-vlan-bridge" % path
+    func="setup_bridge_port"
+    xendConst="/usr/lib64/python2.4/site-packages/xen/xend/XendConstants.py"
+    xendRtime="MINIMUM_RESTART_TIME"
+    if version == "":
+        version=ovmVersion()
+
+    if version == "3.2.1":
+        if grep(netcom, "_%s" % func) == 3 and grep(netbr, "_%s" % func) < 1:
+            _replaceInFile(netbr, func, "_%s" % func, True)
+        
+        if grep(xendConst, "%s = %s" % (xendRtime, 60)) == 1:
+            _replaceInFile(xendConst, 
+                "%s = %s" % (xendRtime, 60),
+                "%s = %s" % (xendRtime, 10),
+                True)
+            ovsRestartXend()
+
+    return True
+
+def _replaceInFile(file, orig, set, full=False):
     replaced=False
-    if os.path.isfile(ini):
+    if os.path.isfile(file):
         import fileinput
-        for line in fileinput.FileInput(ini, inplace=1):
+        for line in fileinput.FileInput(file, inplace=1):
                 line=line.rstrip('\n')
-                if re.search("%s=" % setting, line):
-                    line="%s=%s" % (setting, set)
-                    replaced=True
+                if full == False:
+                    if re.search("%s=" % orig, line):
+                        line="%s=%s" % (orig, set)
+                        replaced=True
+                else:
+                    if re.search(orig, line):
+                        line=line.replace(orig, set)
+                        replaced=True
                 print line
     return replaced
+
+def _ovsIni(setting, set):
+    ini="/etc/ovs-agent/agent.ini"
+    return _replaceInFile(ini, "ssl", ena)
 
 # enable/disable ssl for the agent
 def ovsAgentSetSsl(state):
@@ -131,6 +175,9 @@ def ovsAgentSetPort(port):
 
 def ovsRestartAgent():
     return restartService("ovs-agent")
+
+def ovsRestartXend():
+    return restartService("xend")
 
 # replace with popen
 def restartService(service):
@@ -371,4 +418,5 @@ if __name__ == '__main__':
         ovsAgentSetPort(port)
 
     # restart either way
+    ovmCsPatch()
     ovsRestartAgent()
