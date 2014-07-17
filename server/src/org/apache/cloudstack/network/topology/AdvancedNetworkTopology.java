@@ -27,10 +27,16 @@ import org.springframework.stereotype.Component;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.DhcpEntryRules;
+import com.cloud.network.rules.NetworkAclsRules;
+import com.cloud.network.rules.NicPlugInOutRules;
 import com.cloud.network.rules.RuleApplier;
 import com.cloud.network.rules.RuleApplierWrapper;
 import com.cloud.network.rules.UserdataPwdRules;
+import com.cloud.network.rules.VpcIpAssociationRules;
+import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
@@ -48,7 +54,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
             throws ResourceUnavailableException {
 
-        s_logger.debug("APPLYING USERDATA RULES");
+        s_logger.debug("APPLYING VPC USERDATA RULES");
 
         final String typeString = "userdata and password entry";
         final boolean isPodLevelException = false;
@@ -64,7 +70,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     public boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
             final List<DomainRouterVO> routers) throws ResourceUnavailableException {
 
-        s_logger.debug("APPLYING DHCP ENTRY RULES");
+        s_logger.debug("APPLYING VPC DHCP ENTRY RULES");
 
         final String typeString = "dhcp entry";
         final Long podId = null;
@@ -74,5 +80,49 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         DhcpEntryRules dhcpRules = _virtualNetworkApplianceFactory.createDhcpEntryRules(network, nic, profile, dest);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(dhcpRules));
+    }
+
+    @Override
+    public boolean associatePublicIP(final Network network, final List<? extends PublicIpAddress> ipAddresses, final List<? extends VirtualRouter> routers)
+            throws ResourceUnavailableException {
+        if (ipAddresses == null || ipAddresses.isEmpty()) {
+            s_logger.debug("No ip association rules to be applied for network " + network.getId());
+            return true;
+        }
+
+        //only one router is supported in VPC now
+        VirtualRouter router = routers.get(0);
+
+        if (router.getVpcId() == null) {
+            return super.associatePublicIP(network, ipAddresses, routers);
+        }
+
+        s_logger.debug("APPLYING VPC IP RULES");
+
+        final String typeString = "vpc ip association";
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+        final Long podId = null;
+
+        NicPlugInOutRules nicPlugInOutRules = _virtualNetworkApplianceFactory.createNicPluInOutRules(network, ipAddresses);
+        VpcIpAssociationRules ipAssociationRules = _virtualNetworkApplianceFactory.createVpcIpAssociationRules(network, ipAddresses, nicPlugInOutRules);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(ipAssociationRules));
+    }
+
+    @Override
+    public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final List<? extends VirtualRouter> routers, final boolean isPrivateGateway)
+            throws ResourceUnavailableException {
+
+        s_logger.debug("APPLYING NETWORK ACLs RULES");
+
+        final String typeString = "network acls";
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+        final Long podId = null;
+
+        NetworkAclsRules aclsRules = _virtualNetworkApplianceFactory.createNetworkAclRules(network, rules, isPrivateGateway);
+
+        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(aclsRules));
     }
 }
