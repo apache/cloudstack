@@ -43,6 +43,7 @@ import com.cloud.network.rules.FirewallRules;
 import com.cloud.network.rules.IpAssociationRules;
 import com.cloud.network.rules.LoadBalancingRules;
 import com.cloud.network.rules.NetworkAclsRules;
+import com.cloud.network.rules.NicPlugInOutRules;
 import com.cloud.network.rules.PasswordToRouterRules;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PrivateGatewayRules;
@@ -215,16 +216,6 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     }
 
     @Override
-    public boolean visit(final NetworkAclsRules nat) throws ResourceUnavailableException {
-        throw new CloudRuntimeException("NetworkAclsRules not implemented in Basic Network Topology.");
-    }
-
-    @Override
-    public boolean visit(final VpcIpAssociationRules nat) throws ResourceUnavailableException {
-        throw new CloudRuntimeException("VpcIpAssociationRules not implemented in Basic Network Topology.");
-    }
-
-    @Override
     public boolean visit(final UserdataToRouterRules userdata) throws ResourceUnavailableException {
         final VirtualRouter router = userdata.getRouter();
 
@@ -235,11 +226,6 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         userdata.createVmDataCommand(router, userVM, nicVo, null, commands);
 
         return _applianceManager.sendCommandsToRouter(router, commands);
-    }
-
-    @Override
-    public boolean visit(final PrivateGatewayRules userdata) throws ResourceUnavailableException {
-        throw new CloudRuntimeException("PrivateGatewayRules not implemented in Basic Network Topology.");
     }
 
     @Override
@@ -261,5 +247,25 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     @Override
     public boolean visit(final DhcpSubNetRules vpn) throws ResourceUnavailableException {
         return false;
+    }
+
+    @Override
+    public boolean visit(final NicPlugInOutRules nicPlugInOutRules) throws ResourceUnavailableException {
+        throw new CloudRuntimeException("NicPlugInOutRules not implemented in Basic Network Topology.");
+    }
+
+    @Override
+    public boolean visit(final NetworkAclsRules nat) throws ResourceUnavailableException {
+        throw new CloudRuntimeException("NetworkAclsRules not implemented in Basic Network Topology.");
+    }
+
+    @Override
+    public boolean visit(final VpcIpAssociationRules nat) throws ResourceUnavailableException {
+        throw new CloudRuntimeException("VpcIpAssociationRules not implemented in Basic Network Topology.");
+    }
+
+    @Override
+    public boolean visit(final PrivateGatewayRules userdata) throws ResourceUnavailableException {
+        throw new CloudRuntimeException("PrivateGatewayRules not implemented in Basic Network Topology.");
     }
 }
