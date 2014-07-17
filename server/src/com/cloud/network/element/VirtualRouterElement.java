@@ -157,6 +157,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Inject
     NetworkTopologyContext networkTopologyContext;
+
     @Inject
     private RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
 
@@ -958,6 +959,9 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             if (routers == null || routers.size() == 0) {
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
+
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             return _routerMgr.applyDhcpEntry(network, nic, uservm, dest, routers);
         }
