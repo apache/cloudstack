@@ -1391,7 +1391,7 @@ class TestFailureScenariosRemoveNicFromVM(cloudstackTestCase):
         cls._cleanup = []
 
         cls.account = Account.create(cls.api_client,cls.services["account"],domainid = cls.domain.id)
-        cls.append(cls.account)
+        cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(cls.api_client,cls.services["service_offering"])
         cls._cleanup.append(cls.service_offering)
