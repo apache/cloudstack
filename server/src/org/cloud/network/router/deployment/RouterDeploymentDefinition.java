@@ -177,7 +177,7 @@ public class RouterDeploymentDefinition {
         return dest.getPod();
     }
     public Long getPodId() {
-        return dest.getPod().getId();
+        return dest.getPod() == null ? null : dest.getPod().getId();
     }
 
     public List<DomainRouterVO> getRouters() {
@@ -206,7 +206,6 @@ public class RouterDeploymentDefinition {
         }
         this.plan = new DataCenterDeployment(dcId, podId, null, null, null, null);
     }
-
 
     public List<DomainRouterVO> deployVirtualRouter()
             throws InsufficientCapacityException,

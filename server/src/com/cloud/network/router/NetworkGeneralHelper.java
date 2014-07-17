@@ -538,7 +538,7 @@ public class NetworkGeneralHelper {
                 hypervisors.add(defaults);
             } else {
                 //if there is no default hypervisor, get it from the cluster
-                hypervisors = resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true, routerDeploymentDefinition.getPodId());
+                hypervisors = resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true, routerDeploymentDefinition.getPlan().getPodId());
             }
         }
 
