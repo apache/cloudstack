@@ -34,6 +34,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.log4j.Logger;
+import org.cloud.network.router.deployment.RouterDeploymentDefinition;
+import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
@@ -76,8 +78,6 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
-import com.cloud.network.router.deployment.RouterDeploymentDefinition;
-import com.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
