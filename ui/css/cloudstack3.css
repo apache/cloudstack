@@ -1396,14 +1396,14 @@ div.list-view td.state.off span {
 .quick-view-tooltip {
   width: 470px;
   display: inline-block;
-  padding-top: 50px;
+  padding-top: 0;
   margin-left: 8px;
 }
 
 .quick-view-tooltip > div.title {
   width: 444px;
   position: absolute;
-  top: 71px;
+  top: 20px;
   left: 10px;
   color: #808080;
   font-weight: 100;

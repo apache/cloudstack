@@ -1462,7 +1462,7 @@
                         $quickViewTooltip.css({
                             position: 'absolute',
                             left: $tr.offset().left + $tr.width() - $quickViewTooltip.width(),
-                            top: $quickView.offset().top - 50,
+                            top: $quickView.offset().top,
                             zIndex: $tr.closest('.panel').zIndex() + 1
                         });
 
