@@ -49,6 +49,7 @@ class CloudStack(Agent):
             'ovs_mkdir': ovsMkdir,
             'ovs_check_file': ovsCheckFile,
             'ovs_upload_ssh_key': ovsUploadSshKey,
+            'ovs_upload_file': ovsUploadFile,
             'ovs_dom0_stats': ovsDom0Stats,
             'ovs_domU_stats': ovsDomUStats,
             'get_module_version': getModuleVersion,

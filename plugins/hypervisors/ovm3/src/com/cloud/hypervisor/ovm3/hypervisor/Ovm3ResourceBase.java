@@ -1365,8 +1365,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     }
 
     /*
-     * TODO: ovs calls ? depending on the type of network TODO: get the bridge
-     * on a per VM base so we can throw it away?
+     * TODO: State keeping for VLANs that are to be provisioned, for deprovisioning..
      */
     private String createVlanBridge(String networkName, Integer vlanId)
             throws XmlRpcException {
@@ -1599,7 +1598,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             String filename, String content) {
         File permKey = new File("/root/.ssh/id_rsa.cloud");
         String error = null;
-
+        s_logger.debug("Trying to copy " +path+ "/"+ filename +" to " + routerIp + " - " + content);
         try {
             SshHelper.scpTo(routerIp, 3922, "root", permKey, null, path,
                     content.getBytes(), filename, null);
