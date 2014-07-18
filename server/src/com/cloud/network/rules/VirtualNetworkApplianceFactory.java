@@ -167,8 +167,8 @@ public class VirtualNetworkApplianceFactory {
         return ipAssociationRules;
     }
 
-    public VpcIpAssociationRules createVpcIpAssociationRules(final Network network, final List<? extends PublicIpAddress> ipAddresses, final NicPlugInOutRules nicPlugInOutRules) {
-        VpcIpAssociationRules ipAssociationRules = new VpcIpAssociationRules(network, ipAddresses, nicPlugInOutRules);
+    public VpcIpAssociationRules createVpcIpAssociationRules(final Network network, final List<? extends PublicIpAddress> ipAddresses) {
+        VpcIpAssociationRules ipAssociationRules = new VpcIpAssociationRules(network, ipAddresses);
 
         initBeans(ipAssociationRules);
 
