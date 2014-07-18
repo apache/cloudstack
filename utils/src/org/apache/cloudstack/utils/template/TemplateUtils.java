@@ -34,7 +34,7 @@ public class TemplateUtils {
         if (isCompressedExtension(url)) {
             command = "file -z ";
         }
-        String output = Script.runSimpleBashScript(command + path + " | cut -d: -f2", 1000);
+        String output = Script.runSimpleBashScript(command + path + " | cut -d: -f2", 60000);
 
         // vmdk
         if ((output.contains("VMware") || output.contains("data")) && isCorrectExtension(url, "vmdk")) {
