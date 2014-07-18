@@ -676,8 +676,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 try {
                     task.destroy(conn);
                 } catch (Exception e1) {
-                    s_logger.warn("unable to destroy task(" + task.toString()
-                            + ") on host(" + _host.uuid + ") due to ", e1);
+                    s_logger.debug("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid + ") due to " +  e1.toString());
                 }
             }
         }
@@ -3502,8 +3501,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (task != null) {
                 try {
                     task.destroy(conn);
-                } catch (Exception e1) {
-                    s_logger.warn("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid + ") due to ", e1);
+                } catch (Exception e) {
+                    s_logger.debug("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid + ") due to " + e.toString());
                 }
             }
         }
@@ -3542,7 +3541,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 try {
                     task.destroy(conn);
                 } catch (Exception e1) {
-                    s_logger.warn("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid + ") due to ", e1);
+                    s_logger.debug("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid + ") due to " + e1.toString());
                 }
             }
         }
