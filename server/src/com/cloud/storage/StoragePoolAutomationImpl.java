@@ -372,7 +372,6 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                         _storagePoolWorkDao.update(work.getId(), work);
                     }
                 }
-                return true;
             } catch (Exception e) {
                 s_logger.debug("Failed start vm", e);
                 throw new CloudRuntimeException(e.toString());
