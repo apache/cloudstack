@@ -51,6 +51,7 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -65,6 +66,8 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
@@ -1278,6 +1281,33 @@ public class VolumeServiceImpl implements VolumeService {
         caller.setCallback(caller.getTarget().resizeVolumeCallback(caller, context)).setContext(context);
         volume.getDataStore().getDriver().resize(volume, caller);
         return future;
+    }
+
+    @Override
+    public void resizeVolumeOnHypervisor(long volumeId, long newSize, long destHostId, String instanceName) {
+        final String errMsg = "Resize command failed";
+
+        try {
+            Answer answer = null;
+            Host destHost = _hostDao.findById(destHostId);
+            EndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(destHost);
+
+            if (ep != null) {
+                VolumeVO volume = _volumeDao.findById(volumeId);
+                PrimaryDataStore primaryDataStore = this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
+                ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(volume.getPath(), new StorageFilerTO(primaryDataStore), volume.getSize(), newSize, true, instanceName);
+
+                answer = ep.sendMessage(resizeCmd);
+            } else {
+                throw new CloudRuntimeException("Could not find a remote endpoint to send command to. Check if host or SSVM is down.");
+            }
+
+            if (answer == null || !answer.getResult()) {
+                throw new CloudRuntimeException(answer != null ? answer.getDetails() : errMsg);
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException(errMsg, e);
+        }
     }
 
     protected Void resizeVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {

@@ -42,6 +42,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -49,6 +50,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -57,10 +59,12 @@ import com.cloud.user.AccountDetailVO;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Inject private AccountDao _accountDao;
     @Inject private AccountDetailsDao _accountDetailsDao;
+    @Inject private CapacityManager _capacityMgr;
     @Inject private ClusterDetailsDao _clusterDetailsDao;
     @Inject private DataCenterDao _zoneDao;
     @Inject private HostDao _hostDao;
@@ -400,8 +404,58 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
-        throw new UnsupportedOperationException();
+    public void resize(DataObject dataObject, AsyncCompletionCallback<CreateCmdResult> callback) {
+        String iqn = null;
+        String errMsg = null;
+
+        if (dataObject.getType() == DataObjectType.VOLUME) {
+            VolumeInfo volumeInfo = (VolumeInfo)dataObject;
+            iqn = volumeInfo.get_iScsiName();
+            long storagePoolId = volumeInfo.getPoolId();
+            long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
+            ResizeVolumePayload payload = (ResizeVolumePayload)volumeInfo.getpayload();
+
+            SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, _storagePoolDetailsDao);
+            SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getSolidFireVolume(sfConnection, sfVolumeId);
+
+            verifySufficientIopsForStoragePool(storagePoolId, volumeInfo.getId(), payload.newMinIops);
+
+            SolidFireUtil.modifySolidFireVolume(sfConnection, sfVolumeId, sfVolume.getTotalSize(), payload.newMinIops, payload.newMaxIops,
+                    getDefaultBurstIops(storagePoolId, payload.newMaxIops));
+
+            VolumeVO volume = _volumeDao.findById(sfVolumeId);
+
+            volume.setMinIops(payload.newMinIops);
+            volume.setMaxIops(payload.newMaxIops);
+
+            _volumeDao.update(volume.getId(), volume);
+        } else {
+            errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to resize";
+        }
+
+        CreateCmdResult result = new CreateCmdResult(iqn, new Answer(null, errMsg == null, errMsg));
+
+        result.setResult(errMsg);
+
+        callback.complete(result);
+    }
+
+    private void verifySufficientIopsForStoragePool(long storagePoolId, long volumeId, long newMinIops) {
+        StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
+        VolumeVO volume = _volumeDao.findById(volumeId);
+
+        long currentMinIops = volume.getMinIops();
+        long diffInMinIops = newMinIops - currentMinIops;
+
+        // if the desire is for more IOPS
+        if (diffInMinIops > 0) {
+            long usedIops = _capacityMgr.getUsedIops(storagePool);
+            long capacityIops = storagePool.getCapacityIops();
+
+            if (usedIops + diffInMinIops > capacityIops) {
+                throw new CloudRuntimeException("Insufficient number of IOPS available in this storage pool");
+            }
+        }
     }
 
     @Override

@@ -96,6 +96,8 @@ public interface VolumeService {
 
     AsyncCallFuture<VolumeApiResult> resize(VolumeInfo volume);
 
+    void resizeVolumeOnHypervisor(long volumeId, long newSize, long destHostId, String instanceName);
+
     void handleVolumeSync(DataStore store);
 
     SnapshotInfo takeSnapshot(VolumeInfo volume);

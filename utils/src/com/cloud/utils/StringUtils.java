@@ -198,6 +198,38 @@ public class StringUtils {
         return cleanResult;
     }
 
+    public static boolean areTagsEqual(String tags1, String tags2) {
+        if (tags1 == null && tags2 == null) {
+            return true;
+        }
+
+        if (tags1 != null && tags2 == null) {
+            return false;
+        }
+
+        if (tags1 == null && tags2 != null) {
+            return false;
+        }
+
+        final String delimiter = ",";
+
+        List<String> lstTags1 = new ArrayList<String>();
+        String[] aTags1 = tags1.split(delimiter);
+
+        for (String tag1 : aTags1) {
+            lstTags1.add(tag1.toLowerCase());
+        }
+
+        List<String> lstTags2 = new ArrayList<String>();
+        String[] aTags2 = tags2.split(delimiter);
+
+        for (String tag2 : aTags2) {
+            lstTags2.add(tag2.toLowerCase());
+        }
+
+        return lstTags1.containsAll(lstTags2) && lstTags2.containsAll(lstTags1);
+    }
+
     public static String stripControlCharacters(String s) {
         return StringUtilities.stripControls(s);
     }

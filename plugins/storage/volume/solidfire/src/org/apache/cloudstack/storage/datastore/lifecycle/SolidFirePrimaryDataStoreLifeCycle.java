@@ -53,7 +53,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(SolidFirePrimaryDataStoreLifeCycle.class);
 
-    @Inject CapacityManager _capacityMgr;
+    @Inject private CapacityManager _capacityMgr;
     @Inject private DataCenterDao zoneDao;
     @Inject private PrimaryDataStoreDao storagePoolDao;
     @Inject private PrimaryDataStoreHelper dataStoreHelper;

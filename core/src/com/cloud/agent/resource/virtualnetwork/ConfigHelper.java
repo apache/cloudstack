@@ -19,15 +19,6 @@
 
 package com.cloud.agent.resource.virtualnetwork;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.codec.binary.Base64;
-
-import com.google.gson.Gson;
-
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
@@ -62,6 +53,13 @@ import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.net.NetUtils;
+import com.google.gson.Gson;
+import org.apache.commons.codec.binary.Base64;
+
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class ConfigHelper {
 
@@ -447,10 +445,11 @@ public class ConfigHelper {
             args += cmd.getPeerGatewayIp();
             args += " -N ";
             args += cmd.getPeerGuestCidrList();
+            // escape semicolon which may cause issue in bash
             args += " -e ";
-            args += "\"" + cmd.getEspPolicy() + "\"";
+            args += "\"" + cmd.getEspPolicy().replaceAll(";", "\\\\;") + "\"";
             args += " -i ";
-            args += "\"" + cmd.getIkePolicy() + "\"";
+            args += "\"" + cmd.getIkePolicy().replaceAll(";", "\\\\;") + "\"";
             args += " -t ";
             args += Long.toString(cmd.getIkeLifetime());
             args += " -T ";
