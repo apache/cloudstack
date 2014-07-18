@@ -397,13 +397,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return super.finalizeVirtualMachineProfile(profile, dest, context);
     }
 
-    protected boolean sendNetworkACLs(final VirtualRouter router, final List<? extends NetworkACLItem> rules, final long guestNetworkId, final boolean isPrivateGateway)
-            throws ResourceUnavailableException {
-        Commands cmds = new Commands(Command.OnError.Continue);
-        createNetworkACLsCommands(rules, router, cmds, guestNetworkId, isPrivateGateway);
-        return sendCommandsToRouter(router, cmds);
-    }
-
     private void createNetworkACLsCommands(final List<? extends NetworkACLItem> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId, final boolean privateGateway) {
         List<NetworkACLTO> rulesTO = new ArrayList<NetworkACLTO>();
         String guestVlan = null;

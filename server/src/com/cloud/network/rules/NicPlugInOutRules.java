@@ -127,7 +127,7 @@ public class NicPlugInOutRules extends RuleApplier {
             }
         }
 
-        // Let the IpAssociationRule call the visitor fot the NicPlugInOutRule
+        // The visit will be done from the AdvancedNetworkTopology, after the VpcIpAssociation is done.
         return true;
     }
 
