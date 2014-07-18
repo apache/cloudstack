@@ -733,12 +733,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
         DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(cmd.getNewDiskOfferingId());
 
-        /* Only works for KVM/XenServer/VMware for now, and volumes with 'None' since they're just allocated in DB */
+        /* Only works for KVM/XenServer/VMware (or "Any") for now, and volumes with 'None' since they're just allocated in DB */
 
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
 
         if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer &&
-            hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.None) {
+            hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Any && hypervisorType != HypervisorType.None) {
             throw new InvalidParameterValueException("CloudStack currently only supports volumes marked as the KVM, VMware, or XenServer hypervisor type for resize.");
         }
 
@@ -806,6 +806,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             } else if (newDiskOffering.getTags() != null) {
                 throw new InvalidParameterValueException("There are no tags on the current disk offering. The new disk offering needs to have no tags, as well.");
+            }
+
+            if (!areIntegersEqual(diskOffering.getHypervisorSnapshotReserve(), newDiskOffering.getHypervisorSnapshotReserve())) {
+                throw new InvalidParameterValueException("The hypervisor snapshot reverse on the new and old disk offerings must be equal.");
             }
 
             if (newDiskOffering.getDomainId() != null) {
@@ -945,6 +949,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
     }
 
+    private static boolean areIntegersEqual(Integer i1, Integer i2) {
+        if (i1 == null) {
+            i1 = 0;
+        }
+
+        if (i2 == null) {
+            i2 = 0;
+        }
+
+        return i1.equals(i2);
+    }
+
     private void validateIops(Long minIops, Long maxIops) {
         if ((minIops == null && maxIops != null) || (minIops != null && maxIops == null)) {
             throw new InvalidParameterValueException("Either 'miniops' and 'maxiops' must both be provided or neither must be provided.");
@@ -999,14 +1015,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             StoragePoolVO storagePool = _storagePoolDao.findById(vol.getPoolId());
 
-            if (storagePool.isManaged()) {
+            if (currentSize != newSize && storagePool.isManaged()) {
                 if (hosts.length > 0) {
                     volService.resizeVolumeOnHypervisor(volumeId, newSize, hosts[0], instanceName);
                 }
 
                 volume.setSize(newSize);
-
-                /** @todo let the storage driver know the CloudStack volume within the storage volume in question has a new size */
             }
 
             if (newDiskOfferingId != null) {
