@@ -42,14 +42,45 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
     Test deploy a vGPU enabled VM into a user account
     """
     @classmethod
-    def setUpClass(cls):
-        testClient = super(TestDeployvGPUenabledVM, cls).getClsTestClient()
+    def setUpClass(self):
+        testClient = super(TestDeployvGPUenabledVM, self).getClsTestClient()
+        self.apiclient = testClient.getApiClient()
+        self.testdata = self.testClient.getParsedTestDataConfig()
         #Need to add check whether zone containing the xen hypervisor or not as well
-        hypervisor = testClient.getHypervisorInfo()
-        if hypervisor.lower() != XEN_SERVER.lower():
-            raise unittest.skipTest("GPU feature is supported only on XenServer")
+        hosts = list_hosts(
+               self.apiclient,
+               hypervisor="XenServer"
+               )
+        if hosts is None:
+            raise unittest.SkipTest("There are no XenServers available. GPU feature is supported only on XenServer.Check listhosts response")
+        else: 
+             gpuhosts=0
+             for ghost in hosts :
+                    if ghost.hypervisorversion >= "6.2.0":
+                       sshClient = SshClient(host=ghost.ipaddress, port=22, user='root',passwd=self.testdata["xen_host_password"]) 
+                       if ghost.hypervisorversion == "6.2.0":
+                          res = sshClient.execute("xe patch-list uuid=0850b186-4d47-11e3-a720-001b2151a503")
+                          if len(res) == 0:
+                              continue
+                       res = sshClient.execute("xe vgpu-type-list model-name=\"GRID K120Q\"")
+                       if len(res) != 0 :
+                           gpuhosts=gpuhosts+1 
+                       else:        
+                           continue
+        if gpuhosts == 0:
+           raise unittest.SkipTest("No XenServer available with GPU Drivers installed")
 
-
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
+        #Creating Account 
+        self.account = Account.create(
+            self.apiclient,
+            self.testdata["account"],
+            domainid=self.domain.id
+            )
+        self._cleanup = [
+                         self.account
+                        ]
     def setUp(self):
         self.testdata = self.testClient.getParsedTestDataConfig()["vgpu"]
         self.apiclient = self.testClient.getApiClient()
@@ -75,7 +106,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
 
         self.testdata["vgpu140q"]["zoneid"] = self.zone.id
         self.testdata["vgpu140q"]["template"] = self.template.id
-        self.testdata["service_offerings"]["vgpu260qwin"]["serviceofferingdetails"] = [{'pciDevice': 'VGPU'},
+        self.testdata["service_offerings"]["vgpu260qwin"]["serviceofferingdetails"] = [{'pciDevice': 'Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'},
                                                                                        {'vgpuType':'GRID K120Q'}]
         #create a service offering
         self.service_offering = ServiceOffering.create(
