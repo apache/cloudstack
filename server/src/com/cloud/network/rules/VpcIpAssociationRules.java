@@ -47,16 +47,13 @@ public class VpcIpAssociationRules extends RuleApplier {
 
     private final List<? extends PublicIpAddress> _ipAddresses;
 
-    private final NicPlugInOutRules _nicPlugInOutRules;
-
     private Map<String, String> _vlanMacAddress;
 
     private List<PublicIpAddress> _ipsToSend;
 
-    public VpcIpAssociationRules(final Network network, final List<? extends PublicIpAddress> ipAddresses, final NicPlugInOutRules nicPlugInOutRules) {
+    public VpcIpAssociationRules(final Network network, final List<? extends PublicIpAddress> ipAddresses) {
         super(network);
         _ipAddresses = ipAddresses;
-        _nicPlugInOutRules = nicPlugInOutRules;
     }
 
     @Override
@@ -88,10 +85,6 @@ public class VpcIpAssociationRules extends RuleApplier {
 
     public List<? extends PublicIpAddress> getIpAddresses() {
         return _ipAddresses;
-    }
-
-    public NicPlugInOutRules getNicPlugInOutRules() {
-        return _nicPlugInOutRules;
     }
 
     public Map<String, String> getVlanMacAddress() {
