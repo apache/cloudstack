@@ -720,7 +720,7 @@ class TestTemplateUsage(cloudstackTestCase):
                                  account=cls.account.name,
                                  domainid=cls.account.domainid
                                  )
-            cls._cleanup.append(cls.account)
+            cls._cleanup.insert(-1, cls.project)
             cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"])
