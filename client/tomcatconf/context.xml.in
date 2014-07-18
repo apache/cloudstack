@@ -16,7 +16,7 @@
   limitations under the License.
 -->
 <!-- The contents of this file will be loaded for each web application -->
-<Context allowLinking="true">
+<Context allowLinking="true" useHttpOnly="true">
 
     <!-- Default set of monitored resources -->
     <WatchedResource>WEB-INF/web.xml</WatchedResource>
