@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.network.topology;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -24,8 +25,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.Pod;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Status;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.router.VirtualRouter;
@@ -39,6 +45,7 @@ import com.cloud.network.rules.VpcIpAssociationRules;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
@@ -106,14 +113,25 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         final Long podId = null;
 
         NicPlugInOutRules nicPlugInOutRules = _virtualNetworkApplianceFactory.createNicPluInOutRules(network, ipAddresses);
-        VpcIpAssociationRules ipAssociationRules = _virtualNetworkApplianceFactory.createVpcIpAssociationRules(network, ipAddresses, nicPlugInOutRules);
+        nicPlugInOutRules.accept(_advancedVisitor, router);
 
-        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(ipAssociationRules));
+        VpcIpAssociationRules ipAssociationRules = _virtualNetworkApplianceFactory.createVpcIpAssociationRules(network, ipAddresses);
+        boolean result = applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(ipAssociationRules));
+
+        if (result) {
+            _advancedVisitor.visit(nicPlugInOutRules);
+        }
+
+        return result;
     }
 
     @Override
     public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final List<? extends VirtualRouter> routers, final boolean isPrivateGateway)
             throws ResourceUnavailableException {
+        if (rules == null || rules.isEmpty()) {
+            s_logger.debug("No network ACLs to be applied for network " + network.getId());
+            return true;
+        }
 
         s_logger.debug("APPLYING NETWORK ACLs RULES");
 
@@ -125,5 +143,93 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         NetworkAclsRules aclsRules = _virtualNetworkApplianceFactory.createNetworkAclRules(network, rules, isPrivateGateway);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(aclsRules));
+    }
+
+    @Override
+    public boolean applyRules(final Network network, final List<? extends VirtualRouter> routers, final String typeString, final boolean isPodLevelException, final Long podId, final boolean failWhenDisconnect,
+            final RuleApplierWrapper<RuleApplier> ruleApplierWrapper)
+                    throws ResourceUnavailableException {
+
+        if (routers == null || routers.isEmpty()) {
+            s_logger.warn("Unable to apply " + typeString + ", virtual router doesn't exist in the network " + network.getId());
+            throw new ResourceUnavailableException("Unable to apply " + typeString, DataCenter.class, network.getDataCenterId());
+        }
+
+        RuleApplier ruleApplier =  ruleApplierWrapper.getRuleType();
+
+        final DataCenter dc = _dcDao.findById(network.getDataCenterId());
+        final boolean isZoneBasic = (dc.getNetworkType() == NetworkType.Basic);
+
+        // isPodLevelException and podId is only used for basic zone
+        assert !((!isZoneBasic && isPodLevelException) || (isZoneBasic && isPodLevelException && podId == null));
+
+        final List<VirtualRouter> connectedRouters = new ArrayList<VirtualRouter>();
+        final List<VirtualRouter> disconnectedRouters = new ArrayList<VirtualRouter>();
+        boolean result = true;
+        final String msg = "Unable to apply " + typeString + " on disconnected router ";
+        for (final VirtualRouter router : routers) {
+            if (router.getState() == State.Running) {
+                s_logger.debug("Applying " + typeString + " in network " + network);
+
+                if (router.isStopPending()) {
+                    if (_hostDao.findById(router.getHostId()).getState() == Status.Up) {
+                        throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName() +
+                                " haven't been stopped after it's host coming back!", DataCenter.class, router.getDataCenterId());
+                    }
+                    s_logger.debug("Router " + router.getInstanceName() + " is stop pending, so not sending apply " + typeString + " commands to the backend");
+                    continue;
+                }
+
+                try {
+                    ruleApplier.accept(_advancedVisitor, router);
+
+                    connectedRouters.add(router);
+                } catch (final AgentUnavailableException e) {
+                    s_logger.warn(msg + router.getInstanceName(), e);
+                    disconnectedRouters.add(router);
+                }
+
+                //If rules fail to apply on one domR and not due to disconnection, no need to proceed with the rest
+                if (!result) {
+                    if (isZoneBasic && isPodLevelException) {
+                        throw new ResourceUnavailableException("Unable to apply " + typeString + " on router ", Pod.class, podId);
+                    }
+                    throw new ResourceUnavailableException("Unable to apply " + typeString + " on router ", DataCenter.class, router.getDataCenterId());
+                }
+
+            } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+                s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending apply " + typeString + " commands to the backend");
+            } else {
+                s_logger.warn("Unable to apply " + typeString + ", virtual router is not in the right state " + router.getState());
+                if (isZoneBasic && isPodLevelException) {
+                    throw new ResourceUnavailableException("Unable to apply " + typeString + ", virtual router is not in the right state", Pod.class, podId);
+                }
+                throw new ResourceUnavailableException("Unable to apply " + typeString + ", virtual router is not in the right state", DataCenter.class,
+                        router.getDataCenterId());
+            }
+        }
+
+        if (!connectedRouters.isEmpty()) {
+            if (!isZoneBasic && !disconnectedRouters.isEmpty() && disconnectedRouters.get(0).getIsRedundantRouter()) {
+                // These disconnected redundant virtual routers are out of sync now, stop them for synchronization
+                //[FIXME] handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
+            }
+        } else if (!disconnectedRouters.isEmpty()) {
+            for (final VirtualRouter router : disconnectedRouters) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(msg + router.getInstanceName() + "(" + router.getId() + ")");
+                }
+            }
+            if (isZoneBasic && isPodLevelException) {
+                throw new ResourceUnavailableException(msg, Pod.class, podId);
+            }
+            throw new ResourceUnavailableException(msg, DataCenter.class, disconnectedRouters.get(0).getDataCenterId());
+        }
+
+        result = true;
+        if (failWhenDisconnect) {
+            result = !connectedRouters.isEmpty();
+        }
+        return result;
     }
 }
