@@ -168,6 +168,10 @@ public class VirtualRoutingResource {
 
 
     private Answer applyConfig(NetworkElementCommand cmd, List<ConfigItem> cfg) {
+        if (cfg.isEmpty()) {
+            return new Answer(cmd, true, "Nothing to do");
+        }
+
         List<ExecutionResult> results = new ArrayList<ExecutionResult>();
         List<String> details = new ArrayList<String>();
         boolean finalResult = false;
