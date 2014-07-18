@@ -77,7 +77,10 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
         final Commands commands = nicPlugInOutRules.getNetUsageCommands();
 
-        return _applianceManager.sendCommandsToRouter(router, commands);
+        if (commands.size() > 0) {
+            return _applianceManager.sendCommandsToRouter(router, commands);
+        }
+        return true;
     }
 
     @Override
