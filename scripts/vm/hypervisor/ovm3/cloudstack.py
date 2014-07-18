@@ -223,6 +223,9 @@ def ovsCheckFile(file):
         return True
     return False
 
+def ovsUploadFile():
+    return True
+
 # upload keys
 def ovsUploadSshKey(keyfile, content):
     keydir=os.path.expanduser("~/.ssh")
