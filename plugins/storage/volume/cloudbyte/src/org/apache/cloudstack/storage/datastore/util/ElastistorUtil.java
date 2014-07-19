@@ -1,21 +1,21 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
+//
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
 
 package org.apache.cloudstack.storage.datastore.util;
 
@@ -37,13 +37,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriBuilder;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.http.auth.InvalidCredentialsException;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.sun.jersey.api.client.Client;
@@ -52,6 +48,11 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
+import com.cloud.agent.api.Answer;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ElastistorUtil {
 
@@ -566,7 +567,6 @@ public class ElastistorUtil {
 
         ListiSCSIInitiatorResponse initiatorResponse = (ListiSCSIInitiatorResponse) getElastistorRestClient().executeCommand(initiatorCmd);
 
-        String intiatorgroup;
         String IG_Id;
         if (initiatorResponse.getIInitiator().getInterface(0).getInitiatorgroup().equalsIgnoreCase("ALL")) {
             IG_Id = initiatorResponse.getIInitiator().getInterface(0).getUuid();
@@ -612,8 +612,6 @@ public class ElastistorUtil {
             s_logger.info("elastistor pool is NOT a managed storage , hence deleting the volume then tsm");
 
             String esvolumeid = null;
-            String estsmid = null;
-
             ListTsmsResponse listTsmsResponse = listTsm(tsmid);
 
             if (listTsmsResponse.getTsmsCount() != 0) {
@@ -923,14 +921,12 @@ public class ElastistorUtil {
      */
     private static String convertCapacityBytes(Long capacityBytes) {
 
-        String quotasize;
-
         if ((1099511627776L) > capacityBytes && (capacityBytes > (1073741824))) {
-            return quotasize = (String.valueOf(capacityBytes / (1024 * 1024 * 1024)) + "G");
+            return (String.valueOf(capacityBytes / (1024 * 1024 * 1024)) + "G");
         } else {
             int temp1 = (int) (capacityBytes / (1024 * 1024 * 1024));
             int temp2 = temp1 / 1024;
-            return quotasize = (String.valueOf(temp2) + "T");
+            return (String.valueOf(temp2) + "T");
         }
     }
 
@@ -1046,9 +1042,9 @@ public class ElastistorUtil {
         private String queryparamresponse = "response";
 
         public ElastiCenterClient(String address, String key) throws InvalidCredentialsException, InvalidParameterException, SSLHandshakeException, ServiceUnavailableException {
-            this.elastiCenterAddress = address;
-            this.apiKey = key;
-            this.initialize();
+            elastiCenterAddress = address;
+            apiKey = key;
+            initialize();
         }
 
         public void initialize() throws InvalidParameterException, SSLHandshakeException, InvalidCredentialsException, ServiceUnavailableException {
@@ -1067,13 +1063,16 @@ public class ElastistorUtil {
                 // Create a trust manager that does not validate certificate
                 // chains
                 TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
+                    @Override
                     public X509Certificate[] getAcceptedIssuers() {
                         return null;
                     }
 
+                    @Override
                     public void checkClientTrusted(X509Certificate[] certs, String authType) {
                     }
 
+                    @Override
                     public void checkServerTrusted(X509Certificate[] certs, String authType) {
                     }
                 } };
@@ -2415,7 +2414,6 @@ public class ElastistorUtil {
 
      public static Answer createElastistorVolumeSnapshot(String volumeId, String snapshotName) throws Throwable{
 
-         CreateCmdResult result = null;
          CreateStorageSnapshotCmd snapshotCmd = new CreateStorageSnapshotCmd();
 
          snapshotCmd.putCommandParameter("id", volumeId);

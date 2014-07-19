@@ -37,14 +37,14 @@ import cloudstack_pluginlib as lib
 import logging
 from util import CommandException
 
-lib.setup_logging("/var/log/cloud/cloud.log")
+lib.setup_logging("/var/log/cloud/vmops.log")
 
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        logging.debug("#### CLOUD enter  %s ####" % name )
+        logging.debug("#### VMOPS enter  %s ####" % name )
         res = fn(*v, **k)
-        logging.debug("#### CLOUD exit  %s ####" % name )
+        logging.debug("#### VMOPS exit  %s ####" % name )
         return res
     return wrapped
 
@@ -250,8 +250,6 @@ def chain_name(vm_name):
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
         if vm_name.endswith('untagged'):
             return '-'.join(vm_name.split('-')[:-1])
-    if len(vm_name) > 28:
-        vm_name = vm_name[0:27]
     return vm_name
 
 def chain_name_def(vm_name):
@@ -259,17 +257,11 @@ def chain_name_def(vm_name):
         if vm_name.endswith('untagged'):
             return '-'.join(vm_name.split('-')[:-2]) + "-def"
         return '-'.join(vm_name.split('-')[:-1]) + "-def"
-
-    if len(vm_name) > 28:
-        vm_name = vm_name[0:27]
     return vm_name
   
 def egress_chain_name(vm_name):
-    name = chain_name(vm_name) + "-eg"
-    if len(name) > 28:
-        name = name[0:27]
-    return name
-
+    return chain_name(vm_name) + "-eg"
+      
 @echo
 def can_bridge_firewall(session, args):
     try:

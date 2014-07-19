@@ -74,6 +74,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
@@ -89,6 +90,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.QueryBuilder;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
@@ -681,7 +683,23 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         @SuppressWarnings("unchecked")
         VirtualMachineProfile uservm = vm;
 
-        return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
+        // If any router is running then send save password command otherwise save the password in DB
+        for (VirtualRouter router : routers) {
+            if (router.getState() == State.Running) {
+                return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
+            }
+        }
+        String password = (String) uservm.getParameter(VirtualMachineProfile.Param.VmPassword);
+        String password_encrypted = DBEncryptionUtil.encrypt(password);
+        UserVmVO userVmVO = _userVmDao.findById(vm.getId());
+
+        _userVmDao.loadDetails(userVmVO);
+        userVmVO.setDetail("password", password_encrypted);
+        _userVmDao.saveDetails(userVmVO);
+
+        userVmVO.setUpdateParameters(true);
+        _userVmDao.update(userVmVO.getId(), userVmVO);
+        return true;
     }
 
     @Override

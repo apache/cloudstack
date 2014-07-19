@@ -230,6 +230,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.guestNetType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -450,6 +451,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _guestCpuMode;
     protected String _guestCpuModel;
     protected boolean _noKvmClock;
+    protected String _videoHw;
+    protected int _videoRam;
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
 
@@ -799,6 +802,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (Boolean.parseBoolean(value)) {
             _noMemBalloon = true;
         }
+
+        _videoHw = (String) params.get("vm.video.hardware");
+        value = (String) params.get("vm.video.ram");
+        _videoRam = NumbersUtil.parseInt(value, 0);
 
         value = (String)params.get("host.reserved.mem.mb");
         _dom0MinMem = NumbersUtil.parseInt(value, 0) * 1024 * 1024;
@@ -1822,10 +1829,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (pool.getType() == StoragePoolType.CLVM && volFormat == PhysicalDiskFormat.RAW) {
             return "CLVM";
         } else if ((poolType == StoragePoolType.NetworkFilesystem
-                  || poolType == StoragePoolType.SharedMountPoint
-                  || poolType == StoragePoolType.Filesystem
-                  || poolType == StoragePoolType.Gluster)
-                  && volFormat == PhysicalDiskFormat.QCOW2 ) {
+                || poolType == StoragePoolType.SharedMountPoint
+                || poolType == StoragePoolType.Filesystem
+                || poolType == StoragePoolType.Gluster)
+                && volFormat == PhysicalDiskFormat.QCOW2 ) {
             return "QCOW2";
         }
         return null;
@@ -2141,7 +2148,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected ExecutionResult prepareNetworkElementCommand(SetSourceNatCommand cmd) {
         Connect conn;
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         IpAddressTO pubIP = cmd.getIpAddress();
 
         try {
@@ -2179,7 +2186,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected ExecutionResult prepareNetworkElementCommand(IpAssocVpcCommand cmd) {
         Connect conn;
-        int i = 0;
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
 
         try {
@@ -2295,12 +2301,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             int nicNum = 0;
             for (IpAddressTO ip : ips) {
 
-                boolean newNic = false;
                 if (!broadcastUriAllocatedToVM.containsKey(ip.getBroadcastUri())) {
                     /* plug a vif into router */
                     VifHotPlug(conn, routerName, ip.getBroadcastUri(), ip.getVifMacAddress());
                     broadcastUriAllocatedToVM.put(ip.getBroadcastUri(), nicPos++);
-                    newNic = true;
                 }
                 nicNum = broadcastUriAllocatedToVM.get(ip.getBroadcastUri());
 
@@ -3441,12 +3445,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected Answer execute(RebootRouterCommand cmd) {
         RebootAnswer answer = (RebootAnswer)execute((RebootCommand)cmd);
-        String result = _virtRouterResource.connect(cmd.getPrivateIpAddress());
-        if (result == null) {
+        if (_virtRouterResource.connect(cmd.getPrivateIpAddress())) {
             networkUsage(cmd.getPrivateIpAddress(), "create", null);
             return answer;
         } else {
-            return new Answer(cmd, false, result);
+            return new Answer(cmd, false, "Failed to connect to virtual router " + cmd.getVmName());
         }
     }
 
@@ -3750,6 +3753,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             VirtioSerialDef vserial = new VirtioSerialDef(vmTO.getName(), null);
             devices.addDevice(vserial);
         }
+
+        VideoDef videoCard = new VideoDef(_videoHw, _videoRam);
+        devices.addDevice(videoCard);
 
         ConsoleDef console = new ConsoleDef("pty", null, null, (short)0);
         devices.addDevice(console);
@@ -4057,9 +4063,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.debug("Ping command port, " + privateIp + ":" + cmdPort);
         }
 
-        String result = _virtRouterResource.connect(privateIp, cmdPort);
-        if (result != null) {
-            return new CheckSshAnswer(cmd, "Can not ping System vm " + vmName + "due to:" + result);
+        if (!_virtRouterResource.connect(privateIp, cmdPort)) {
+            return new CheckSshAnswer(cmd, "Can not ping System vm " + vmName + " because of a connection failure");
         }
 
         if (s_logger.isDebugEnabled()) {

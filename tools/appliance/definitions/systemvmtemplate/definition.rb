@@ -1,3 +1,10 @@
+#
+# NOTE: Before changing the version of the debian image make
+# sure it is added to the userContent of jenkins.buildacloud.org
+# and the copy task is updated on the systemvm builds
+# This will prevent the inevitable build failure once the iso is
+# removed from the debian mirrors
+#
 Veewee::Definition.declare({
   :cpu_count => '1',
   :memory_size=> '256',

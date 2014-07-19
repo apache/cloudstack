@@ -351,7 +351,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
-            s_logger.debug("Failed to create volume: " + e.toString());
+            s_logger.debug("Failed to create volume: ", e);
             return new CopyCmdAnswer(e.toString());
         }
     }
@@ -403,6 +403,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             newVol.setPath(volumeName);
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
+            s_logger.debug("Failed to ccopyVolumeFromImageCacheToPrimary: ", e);
             return new CopyCmdAnswer(e.toString());
         } finally {
             if (secondaryStoragePool != null) {
@@ -448,6 +449,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             newVol.setFormat(destFormat);
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
+            s_logger.debug("Failed to copyVolumeFromPrimaryToSecondary: ", e);
             return new CopyCmdAnswer(e.toString());
         } finally {
             if (secondaryStoragePool != null) {
@@ -554,7 +556,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             newTemplate.setName(templateName);
             return new CopyCmdAnswer(newTemplate);
         } catch (Exception e) {
-            s_logger.debug("Failed to create template from volume: " + e.toString());
+            s_logger.debug("Failed to createTemplateFromVolume: ", e);
             return new CopyCmdAnswer(e.toString());
         } finally {
             if (secondaryStorage != null) {
@@ -754,10 +756,10 @@ public class KVMStorageProcessor implements StorageProcessor {
             newSnapshot.setPhysicalSize(size);
             return new CopyCmdAnswer(newSnapshot);
         } catch (LibvirtException e) {
-            s_logger.debug("Failed to backup snapshot: " + e.toString());
+            s_logger.debug("Failed to backup snapshot: ", e);
             return new CopyCmdAnswer(e.toString());
         } catch (CloudRuntimeException e) {
-            s_logger.debug("Failed to backup snapshot: " + e.toString());
+            s_logger.debug("Failed to backup snapshot: ", e);
             return new CopyCmdAnswer(e.toString());
         } finally {
             try {
@@ -1008,11 +1010,11 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             return new AttachAnswer(disk);
         } catch (LibvirtException e) {
-            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to " + e.toString());
+            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to ", e);
             storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
             return new AttachAnswer(e.toString());
         } catch (InternalErrorException e) {
-            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to " + e.toString());
+            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to ", e);
             return new AttachAnswer(e.toString());
         }
     }
@@ -1034,10 +1036,10 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             return new DettachAnswer(disk);
         } catch (LibvirtException e) {
-            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to " + e.toString());
+            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to ", e);
             return new DettachAnswer(e.toString());
         } catch (InternalErrorException e) {
-            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to " + e.toString());
+            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to ", e);
             return new DettachAnswer(e.toString());
         }
     }
@@ -1053,18 +1055,23 @@ public class KVMStorageProcessor implements StorageProcessor {
         try {
             primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
             disksize = volume.getSize();
-
-            vol = primaryPool.createPhysicalDisk(volume.getUuid(), PhysicalDiskFormat.valueOf(volume.getFormat().toString().toUpperCase()),
+            PhysicalDiskFormat format;
+            if (volume.getFormat() == null) {
+                format = primaryPool.getDefaultFormat();
+            } else {
+                format = PhysicalDiskFormat.valueOf(volume.getFormat().toString().toUpperCase());
+            }
+            vol = primaryPool.createPhysicalDisk(volume.getUuid(), format,
                                                  volume.getProvisioningType(), disksize);
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(vol.getName());
             newVol.setSize(volume.getSize());
-            newVol.setFormat(ImageFormat.valueOf(vol.getFormat().toString().toUpperCase()));
+            newVol.setFormat(ImageFormat.valueOf(format.toString().toUpperCase()));
 
             return new CreateObjectAnswer(newVol);
         } catch (Exception e) {
-            s_logger.debug("Failed to create volume: " + e.toString());
+            s_logger.debug("Failed to create volume: ", e);
             return new CreateObjectAnswer(e.toString());
         }
     }
@@ -1164,7 +1171,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             newSnapshot.setPath(disk.getPath() + File.separator + snapshotName);
             return new CreateObjectAnswer(newSnapshot);
         } catch (LibvirtException e) {
-            s_logger.debug("Failed to manage snapshot: " + e.toString());
+            s_logger.debug("Failed to manage snapshot: ", e);
             return new CreateObjectAnswer("Failed to manage snapshot: " + e.toString());
         }
     }
@@ -1184,7 +1191,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             pool.deletePhysicalDisk(vol.getPath());
             return new Answer(null);
         } catch (CloudRuntimeException e) {
-            s_logger.debug("Failed to delete volume: " + e.toString());
+            s_logger.debug("Failed to delete volume: ", e);
             return new Answer(null, false, e.toString());
         }
     }
@@ -1229,6 +1236,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
+            s_logger.debug("Failed to createVolumeFromSnapshot: ", e);
             return new CopyCmdAnswer(e.toString());
         }
     }

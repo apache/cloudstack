@@ -168,6 +168,10 @@ public class VirtualRoutingResource {
 
 
     private Answer applyConfig(NetworkElementCommand cmd, List<ConfigItem> cfg) {
+        if (cfg.isEmpty()) {
+            return new Answer(cmd, true, "Nothing to do");
+        }
+
         List<ExecutionResult> results = new ArrayList<ExecutionResult>();
         List<String> details = new ArrayList<String>();
         boolean finalResult = false;
@@ -192,7 +196,6 @@ public class VirtualRoutingResource {
             return new GroupAnswer(cmd, finalResult, results.size(), details.toArray(new String[details.size()]));
         }
     }
-
 
     private CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {
 
@@ -226,7 +229,7 @@ public class VirtualRoutingResource {
         }
     }
 
-    protected Answer execute(CheckRouterCommand cmd) {
+    private Answer execute(CheckRouterCommand cmd) {
         final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.RVR_CHECK, null);
         if (!result.isSuccess()) {
             return new CheckRouterAnswer(cmd, result.getDetails());
@@ -234,7 +237,7 @@ public class VirtualRoutingResource {
         return new CheckRouterAnswer(cmd, result.getDetails(), true);
     }
 
-    protected Answer execute(GetDomRVersionCmd cmd) {
+    private Answer execute(GetDomRVersionCmd cmd) {
         final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VERSION, null);
         if (!result.isSuccess()) {
             return new GetDomRVersionAnswer(cmd, "GetDomRVersionCmd failed");
@@ -245,7 +248,6 @@ public class VirtualRoutingResource {
         }
         return new GetDomRVersionAnswer(cmd, result.getDetails(), lines[0], lines[1]);
     }
-
 
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
@@ -270,44 +272,12 @@ public class VirtualRoutingResource {
         return true;
     }
 
-    public String connect(final String ipAddress) {
+    public boolean connect(final String ipAddress) {
         return connect(ipAddress, _port);
     }
 
-    public String connect(final String ipAddress, final int port) {
-        for (int i = 0; i <= _retry; i++) {
-            SocketChannel sch = null;
-            try {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Trying to connect to " + ipAddress);
-                }
-                sch = SocketChannel.open();
-                sch.configureBlocking(true);
-
-                final InetSocketAddress addr = new InetSocketAddress(ipAddress, port);
-                sch.connect(addr);
-                return null;
-            } catch (final IOException e) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Could not connect to " + ipAddress);
-                }
-            } finally {
-                if (sch != null) {
-                    try {
-                        sch.close();
-                    } catch (final IOException e) {
-                    }
-                }
-            }
-            try {
-                Thread.sleep(_sleep);
-            } catch (final InterruptedException e) {
-            }
-        }
-
-        s_logger.debug("Unable to logon to " + ipAddress);
-
-        return "Unable to connect";
+    public boolean connect(final String ipAddress, final int port) {
+        return connect(ipAddress, port, _sleep);
     }
 
     public boolean connect(final String ipAddress, int retry, int sleep) {
