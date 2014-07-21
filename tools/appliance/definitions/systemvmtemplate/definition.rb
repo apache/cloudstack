@@ -65,7 +65,7 @@ config = {
         'configure_networking.sh',
         'configure_acpid.sh',
         'install_systemvm_packages.sh',
-        'postinstall.sh',
+        'configure_systemvm_services.sh',
         'configure_conntrack.sh',
         'cleanup.sh',
         'zerodisk.sh'
