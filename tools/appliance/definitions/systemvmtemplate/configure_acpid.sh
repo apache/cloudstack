@@ -1,5 +1,11 @@
-fix_acpid() {
-  # Fix acpid
+#!/bin/bash
+
+set -e
+set -x
+
+function configure_acpid() {
+  grep /usr/local/sbin/power.sh /etc/acpi/events/power && return
+
   mkdir -p /etc/acpi/events
   cat >> /etc/acpi/events/power << EOF
 event=button/power.*
@@ -12,4 +18,4 @@ EOF
   chmod a+x /usr/local/sbin/power.sh
 }
 
-fix_acpid
+return 2>/dev/null || configure_acpid
