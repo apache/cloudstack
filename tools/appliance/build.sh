@@ -18,11 +18,13 @@
 
 set -x
 
-if [ ! -z "$1" ]
-then
-  appliance="$1"
-else
-  appliance="systemvmtemplate"
+appliance="${1:-systemvmtemplate}"
+arch="i386"
+if [ "${appliance}" == "systemvm64template" ]; then
+  arch="amd64"
+  export VM_ARCH="${arch}"
+  rm -rf definitions/systemvm64template
+  cp -r definitions/systemvmtemplate definitions/systemvm64template
 fi
 
 build_date=`date +%Y-%m-%d`
