@@ -98,5 +98,9 @@
         <property name="typeClass"
             value="com.cloud.network.element.RemoteAccessVPNServiceProvider" />
     </bean>
-
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="gslbServiceProvidersRegistry" />
+        <property name="typeClass"
+            value="org.apache.cloudstack.region.gslb.GslbServiceProvider" />
+    </bean>
 </beans>
