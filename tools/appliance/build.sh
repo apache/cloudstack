@@ -23,7 +23,7 @@
 function usage() {
   cat <<END
 Usage:
-   ./build.sh [veewee_template [version [branch [BUILD_NUMBER]]]
+   ./build.sh [veewee_template [version [branch [BUILD_NUMBER [arch]]]]
 
    * Set \$appliance to provide veewee definition name to build
      (or use command line arg, default systemvmtemplate)
@@ -33,6 +33,8 @@ Usage:
      (or use command line arg, default from running \`git status\`)
    * Set \$BUILD_NUMBER to provide build number to apply to built appliance
      (or use command line arg, default empty)
+   * Set \$arch to provide the (debian) os architecture to inject
+     (or use command line arg, default i386, other option amd64)
    * Set \$DEBUG=1 to enable debug logging
    * Set \$TRACE=1 to enable trace logging
    * Set \$VEEWEE_ARGS to pass veewee custom arguments
@@ -101,6 +103,7 @@ branch="${3:-${branch:-}}"
 # optional (jenkins) build number tag to put into the image filename
 BUILD_NUMBER="${4:-${BUILD_NUMBER:-}}"
 
+# (debian) os architecture to build
 arch="${arch:-i386}"
 if [ "${appliance}" == "systemvm64template" ]; then
   arch="amd64"
@@ -133,6 +136,10 @@ fi
 
 appliance_build_name=${appliance}${branch_tag}${version_tag}
 
+###
+### Generic helper functions
+###
+
 # how to tell sed to use extended regular expressions
 os=`uname`
 sed_regex_option="-E"
@@ -145,91 +152,248 @@ if [[ "${DEBUG}" == "1" ]]; then
   set -x
 fi
 
-# Create custom template definition
-if [ "${appliance}" != "${appliance_build_name}" ]; then
-  cp -r "definitions/${appliance}" "definitions/${appliance_build_name}"
+function log() {
+  local level=${1?}
+  shift
+
+  if [[ "${DEBUG}" != "1" && "${level}" == "DEBUG" ]]; then
+    return
+  fi
+
+  local code=
+  local line="[$(date '+%F %T')] $level: $*"
+  if [ -t 2 ]
+  then
+    case "$level" in
+      INFO) code=36 ;;
+      DEBUG) code=30 ;;
+      WARN) code=33 ;;
+      ERROR) code=31 ;;
+      *) code=37 ;;
+    esac
+    echo -e "\033[${code}m${line}\033[0m"
+  else
+    echo "$line"
+  fi >&2
+}
+
+function error() {
+  log ERROR $@
+  exit 1
+}
+
+# cleanup code support
+declare -a on_exit_items
+
+function on_exit() {
+  for (( i=${#on_exit_items[@]}-1 ; i>=0 ; i-- )) ; do
+    sleep 2
+    log DEBUG "on_exit: ${on_exit_items[i]}"
+    eval ${on_exit_items[i]}
+  done
+}
+
+function add_on_exit() {
+  local n=${#on_exit_items[*]}
+  on_exit_items[${n}]="$*"
+  if [ ${n} -eq 0 ]; then
+    log DEBUG "Setting trap"
+    trap on_exit EXIT
+  fi
+}
+
+# retry code support
+function retry() {
+  local times=$1
+  shift
+  local count=0
+  while [ ${count} -lt ${times} ]; do
+    "$@" && break
+    count=$(( $count +  1 ))
+    sleep ${count}
+  done
+
+  if [ ${count} -eq ${times} ]; then
+    error "Failed ${times} times: $@"
+  fi
+}
+
+###
+### Script logic
+###
+
+function create_definition() {
+  if [ "${appliance}" != "${appliance_build_name}" ]; then
+    cp -r "definitions/${appliance}" "definitions/${appliance_build_name}"
+    set +e
+    sed ${sed_regex_option} -i -e "s/^CLOUDSTACK_RELEASE=.+/CLOUDSTACK_RELEASE=${version}/" \
+        "definitions/${appliance_build_name}/postinstall.sh"
+    set -e
+    add_on_exit rm -rf "definitions/${appliance_build_name}"
+  fi
+}
+
+function prepare() {
+  log INFO "preparing for build"
+  bundle
+  rm -rf dist *.ova *.vhd *.vdi *.qcow* *.bz2 *.vmdk *.ovf
+  mkdir dist
+}
+
+function veewee_destroy() {
+  log INFO "destroying existing veewee image, if any"
   set +e
-  sed ${sed_regex_option} -i -e "s/^CLOUDSTACK_RELEASE=.+/CLOUDSTACK_RELEASE=${version}/" \
-      "definitions/${appliance_build_name}/configure_systemvm_services.sh"
+  bundle exec veewee vbox destroy "${appliance_build_name}" ${VEEWEE_ARGS}
   set -e
-fi
+}
 
-# Initialize veewee and dependencies
-bundle
+function veewee_build() {
+  log INFO "building new image with veewee"
+  bundle exec veewee vbox build "${appliance_build_name}" ${VEEWEE_BUILD_ARGS}
+  bundle exec veewee vbox halt "${appliance_build_name}" ${VEEWEE_ARGS}
+}
 
-# Clean and start building the appliance
-bundle exec veewee vbox destroy ${appliance_build_name} ${VEEWEE_ARGS}
-bundle exec veewee vbox build ${appliance_build_name} ${VEEWEE_BUILD_ARGS}
-bundle exec veewee vbox halt ${appliance_build_name} ${VEEWEE_ARGS}
+function check_appliance_shutdown() {
+  log INFO "waiting for veewee appliance to shut down..."
+  ! (vboxmanage list runningvms | grep "${appliance_build_name}")
+  local result=$?
+  if [ ${result} -eq 0 ]; then
+    log INFO "...veewee appliance shut down ok"
+  else
+    log INFO "...veewee appliance still running"
+  fi
+  return ${result}
+}
 
-while [[ `vboxmanage list runningvms | grep ${appliance_build_name} | wc -l` -ne 0 ]];
-do
-  echo "Waiting for ${appliance_build_name} to shutdown"
-  sleep 2;
-done
-
-# Get appliance uuids
-machine_uuid=`vboxmanage showvminfo ${appliance_build_name} | grep UUID | head -1 | awk '{print $2}'`
-hdd_uuid=`vboxmanage showvminfo ${appliance_build_name} | grep vdi | head -1 | awk '{print $8}' | cut -d ')' -f 1`
-hdd_path=`vboxmanage list hdds | grep "${appliance_build_name}\/" | grep vdi | cut -c 14- | sed 's/^ *//'`
-
-# Remove any shared folder
-shared_folders=`vboxmanage showvminfo ${appliance_build_name} | grep Name | grep Host`
-while [ "$shared_folders" != "" ]
-do
-  vboxmanage sharedfolder remove ${appliance_build_name} --name "`echo $shared_folders | head -1 | cut -c 8- | cut -d \' -f 1`"
-  shared_folders=`vboxmanage showvminfo ${appliance_build_name} | grep Name | grep Host`
-done
-
-# Compact the virtual hdd
-vboxmanage modifyhd $hdd_uuid --compact
-
-# Start exporting
-rm -fr dist *.ova *.vhd *.vdi *.qcow* *.bz2 *.vmdk *.ovf
-mkdir dist
-
-# Export for XenServer
-which faketime >/dev/null 2>&1 && which vhd-util >/dev/null 2>&1
-if [ $? == 0 ]; then
+function remove_shares() {
+  log INFO "removing shared folders from appliance..."
+  set +e
+  local shared_folders=`vboxmanage showvminfo "${appliance_build_name}" | grep Name | grep Host`
+  if [ "${shared_folders}" == "" ]; then
+    return 0
+  fi
+  folder_name=`echo "${shared_folders}" | head -1 | cut -c 8- | cut -d \' -f 1`
+  vboxmanage sharedfolder remove "${appliance_build_name}" --name "${folder_name}"
+  ! (vboxmanage showvminfo "${appliance_build_name}" | grep Name | grep Host)
+  local result=$?
   set -e
-  vboxmanage internalcommands converttoraw -format vdi "$hdd_path" img.raw
-  vhd-util convert -s 0 -t 1 -i img.raw -o stagefixed.vhd
-  faketime '2010-01-01' vhd-util convert -s 1 -t 2 -i stagefixed.vhd -o ${appliance_build_name}-xen.vhd
-  rm *.bak
-  bzip2 ${appliance_build_name}-xen.vhd
-  echo "${appliance_build_name} exported for XenServer: dist/${appliance_build_name}-xen.vhd.bz2"
-else
-  echo "** Skipping ${appliance_build_name} export for XenServer: faketime or vhd-util command is missing. **"
-  echo "** faketime source code is available from https://github.com/wolfcw/libfaketime **"
-fi
+  if [ ${result} -eq 0 ]; then
+    log INFO "...veewee appliance shared folders removed"
+  else
+    log INFO "...veewee appliance still has shared folders"
+  fi
+  return ${result}
+}
 
-# Exit shell if exporting fails for any format
-set -e
+function compact_hdd() {
+  log INFO "compacting image"
+  vboxmanage modifyhd "${1}" --compact
+}
 
-# Export for KVM
-vboxmanage internalcommands converttoraw -format vdi "$hdd_path" raw.img
-qemu-img convert -f raw -c -O qcow2 raw.img ${appliance_build_name}-kvm.qcow2
-rm raw.img
-bzip2 ${appliance_build_name}-kvm.qcow2
-echo "${appliance_build_name} exported for KVM: dist/${appliance_build_name}-kvm.qcow2.bz2"
+function xen_server_export() {
+  log INFO "creating xen server export"
+  local hdd_path="${1}"
+  set +e
+  which faketime >/dev/null 2>&1 && which vhd-util >/dev/null 2>&1
+  local result=$?
+  set -e
+  if [ ${result} == 0 ]; then
+    vboxmanage internalcommands converttoraw -format vdi "${hdd_path}" img.raw
+    vhd-util convert -s 0 -t 1 -i img.raw -o stagefixed.vhd
+    faketime '2010-01-01' vhd-util convert -s 1 -t 2 -i stagefixed.vhd -o "${appliance_build_name}-xen.vhd"
+    rm *.bak
+    bzip2 "${appliance_build_name}-xen.vhd"
+    mv "${appliance_build_name}-xen.vhd.bz2" dist/
+    log INFO "${appliance} exported for XenServer: dist/${appliance_build_name}-xen.vhd.bz2"
+  else
+    log WARN "** Skipping ${appliance_build_name} export for XenServer: faketime or vhd-util command is missing. **"
+    log WARN "** faketime source code is available from https://github.com/wolfcw/libfaketime **"
+  fi
+}
 
-# Export both ova and vmdk for VMWare
-vboxmanage clonehd $hdd_uuid ${appliance_build_name}-vmware.vmdk --format VMDK
-bzip2 ${appliance_build_name}-vmware.vmdk
-echo "${appliance_build_name} exported for VMWare: dist/${appliance_build_name}-vmware.vmdk.bz2"
-vboxmanage export $machine_uuid --output ${appliance_build_name}-vmware.ovf
-mv ${appliance_build_name}-vmware.ovf ${appliance_build_name}-vmware.ovf-orig
-java -cp convert Convert convert_ovf_vbox_to_esx.xslt ${appliance_build_name}-vmware.ovf-orig ${appliance_build_name}-vmware.ovf
-tar -cf ${appliance_build_name}-vmware.ova ${appliance_build_name}-vmware.ovf ${appliance_build_name}-vmware-disk[0-9].vmdk
-rm -f ${appliance_build_name}-vmware.ovf ${appliance_build_name}-vmware.ovf-orig ${appliance_build_name}-vmware-disk[0-9].vmdk
-echo "${appliance_build_name} exported for VMWare: dist/${appliance_build_name}-vmware.ova"
+function kvm_export() {
+  set +e
+  which faketime >/dev/null 2>&1 && which vhd-util >/dev/null 2>&1
+  local result=$?
+  set -e
+  if [ ${result} == 0 ]; then
+    log INFO "creating kvm export"
+    local hdd_path="${1}"
+    vboxmanage internalcommands converttoraw -format vdi "${hdd_path}" raw.img
+    qemu-img convert -f raw -c -O qcow2 raw.img "${appliance_build_name}-kvm.qcow2"
+    add_on_exit rm -f raw.img
+    bzip2 "${appliance_build_name}-kvm.qcow2"
+    mv "${appliance_build_name}-kvm.qcow2.bz2" dist/
+    log INFO "${appliance} exported for KVM: dist/${appliance_build_name}-kvm.qcow2.bz2"
+  else
+    log WARN "** Skipping ${appliance_build_name} export for KVM: qemu-img is missing. **"
+  fi
+}
 
-# Export for HyperV
-vboxmanage clonehd $hdd_uuid ${appliance_build_name}-hyperv.vhd --format VHD
-# HyperV doesn't support import a zipped image from S3, but we create a zipped version to save space on the jenkins box
-zip ${appliance_build_name}-hyperv.vhd.zip ${appliance_build_name}-hyperv.vhd
-echo "${appliance_build_name} exported for HyperV: dist/${appliance_build_name}-hyperv.vhd"
+function vmware_export() {
+  log INFO "creating vmware export"
+  local machine_uuid="${1}"
+  local hdd_uuid="${2}"
+  vboxmanage clonehd "${hdd_uuid}" "${appliance_build_name}-vmware.vmdk" --format VMDK
+  bzip2 "${appliance_build_name}-vmware.vmdk"
+  mv "${appliance_build_name}-vmware.vmdk.bz2" dist/
+  vboxmanage export "${machine_uuid}" --output "${appliance_build_name}-vmware.ovf"
+  log INFO "${appliance} exported for VMWare: dist/${appliance_build_name}-vmware.{vmdk.bz2,ovf}"
+  add_on_exit rm -f ${appliance_build_name}-vmware.ovf
+  add_on_exit rm -f ${appliance_build_name}-vmware-disk[0-9].vmdk
 
-mv *-hyperv.vhd *-hyperv.vhd.zip *.bz2 *.ova dist/
+  # xsltproc doesn't support this XSLT so we use java to run this one XSLT
+  mv ${appliance_build_name}-vmware.ovf ${appliance_build_name}-vmware.ovf-orig
+  java -cp convert Convert convert_ovf_vbox_to_esx.xslt \
+      ${appliance_build_name}-vmware.ovf-orig \
+      ${appliance_build_name}-vmware.ovf
+  add_on_exit rm -f ${appliance_build_name}-vmware.ovf-orig
 
-rm -rf "definitions/${appliance_build_name}"
+  tar -cf ${appliance_build_name}-vmware.ova \
+      ${appliance_build_name}-vmware.ovf \
+      ${appliance_build_name}-vmware-disk[0-9].vmdk
+  mv ${appliance_build_name}-vmware.ova dist/
+  log INFO "${appliance} exported for VMWare: dist/${appliance_build_name}-vmware.ova"
+}
+
+function hyperv_export() {
+  log INFO "creating hyperv export"
+  local hdd_uuid="${1}"
+  vboxmanage clonehd "${hdd_uuid}" "${appliance_build_name}-hyperv.vhd" --format VHD
+  # HyperV doesn't support import a zipped image from S3,
+  # but we create a zipped version to save space on the jenkins box
+  zip "${appliance_build_name}-hyperv.vhd.zip" "${appliance_build_name}-hyperv.vhd"
+  mv "${appliance_build_name}-hyperv.vhd.zip" "${appliance_build_name}-hyperv.vhd" dist/
+  log INFO "${appliance} exported for HyperV: dist/${appliance_build_name}-hyperv.vhd.zip"
+}
+
+###
+### Main invocation
+###
+
+function main() {
+  prepare
+  create_definition
+  veewee_destroy # in case of left-over cruft from failed build
+  add_on_exit veewee_destroy
+  veewee_build
+  retry 10 check_appliance_shutdown
+  retry 10 remove_shares
+
+  # Get appliance uuids
+  local vm_info=`vboxmanage showvminfo "${appliance_build_name}"`
+  local machine_uuid=`echo "${vm_info}" | grep UUID | head -1 | awk '{print $2}'`
+  local hdd_uuid=`echo "${vm_info}" | grep vdi | head -1 | awk '{print $8}' | cut -d ')' -f 1`
+  local hdd_path=`vboxmanage list hdds | grep "${appliance_build_name}\/" | grep vdi | \
+      cut -c 14- | sed ${sed_regex_option} 's/^ *//'`
+
+  compact_hdd "${hdd_uuid}"
+  xen_server_export "${hdd_path}"
+  kvm_export "${hdd_path}"
+  vmware_export "${machine_uuid}" "${hdd_uuid}"
+  hyperv_export "${hdd_uuid}"
+  log INFO "BUILD SUCCESSFUL"
+}
+
+# we only run main() if not source-d
+return 2>/dev/null || main
