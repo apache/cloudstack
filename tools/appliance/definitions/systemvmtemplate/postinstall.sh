@@ -140,18 +140,6 @@ fix_hostname() {
   sed -i '/127.0.1.1/d' /etc/hosts
 }
 
-fix_locale() {
-  cat >> /etc/default/locale  << EOF
-LANG=en_US.UTF-8
-LC_ALL=en_US.UTF-8
-EOF
-  cat >> /etc/locale.gen  << EOF
-en_US.UTF-8 UTF-8
-EOF
-
-  locale-gen en_US.UTF-8
-}
-
 # This is actually a bug in the conntrackd package. The comment in the conf file says stats logging is off by default but the parameter is set to on.
 # After a couple weeks logrotate will rotate the conntrackd-stats.log file ans start conntracking even if we don't want it to (on non-redundant routers for instance).
 fix_conntrackd() {
@@ -178,7 +166,6 @@ do_fixes() {
   fix_nameserver
   fix_acpid
   fix_hostname
-  fix_locale
   fix_conntrackd
   fix_vhdutil
   fix_modules
