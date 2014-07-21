@@ -31,21 +31,13 @@ function configure_apache2() {
 }
 
 function install_cloud_scripts() {
-  # Get config files from master
-  snapshot_url="https://git-wip-us.apache.org/repos/asf?p=cloudstack.git;a=snapshot;h=HEAD;sf=tgz"
-  snapshot_dir="/opt/cloudstack*"
-  cd /opt
-  wget --no-check-certificate $snapshot_url -O cloudstack.tar.gz
-  tar -zxvf cloudstack.tar.gz --wildcards 'cloudstack-HEAD-???????/systemvm'
-  cp -rv $snapshot_dir/systemvm/patches/debian/config/* /
-  cp -rv $snapshot_dir/systemvm/patches/debian/vpn/* /
-  mkdir -p /usr/share/cloud/
-  cd $snapshot_dir/systemvm/patches/debian/config
-  tar -cvf /usr/share/cloud/cloud-scripts.tar *
-  cd $snapshot_dir/systemvm/patches/debian/vpn
-  tar -rvf /usr/share/cloud/cloud-scripts.tar *
-  cd /opt
-  rm -fr $snapshot_dir cloudstack.tar.gz
+  # ./cloud_scripts/ has been put there by ../../cloud_scripts_shar_archive.sh
+  rsync -av ./cloud_scripts/ /
+  chmod +x /opt/cloud/bin/* \
+    /root/{clearUsageRules.sh,reconfigLB.sh,monitorServices.py} \
+    /etc/init.d/{cloud,cloud-early-config,cloud-passwd-srvr,postinit} \
+    /etc/cron.daily/cloud-cleanup \
+    /etc/profile.d/cloud.sh
 
   chkconfig --add cloud-early-config
   chkconfig cloud-early-config on
@@ -73,6 +65,7 @@ configure_services() {
   mkdir -p /var/lib/haproxy
 
   install_cloud_scripts
+  do_signature
 
   chkconfig xl2tpd off
 
@@ -84,7 +77,6 @@ configure_services() {
   chkconfig radvd off
 
   configure_apache2
-  do_signature
 }
 
 return 2>/dev/null || configure_services

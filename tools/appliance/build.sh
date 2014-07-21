@@ -244,6 +244,9 @@ function create_definition() {
     set -e
     add_on_exit rm -rf "definitions/${appliance_build_name}"
   fi
+
+  ./shar_cloud_scripts.sh
+  add_on_exit rm -f cloud_scripts_shar_archive.sh
 }
 
 function prepare() {

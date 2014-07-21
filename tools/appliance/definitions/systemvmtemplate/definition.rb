@@ -85,6 +85,7 @@ config = {
         # turning it into a systemvm
         'install_systemvm_packages.sh',
         'configure_conntrack.sh',
+        '../../cloud_scripts_shar_archive.sh',
         'configure_systemvm_services.sh',
         'authorized_keys.sh',
         # cleanup & space-saving
