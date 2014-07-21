@@ -21,15 +21,6 @@ ROOTPW=password
 HOSTNAME=systemvm
 CLOUDSTACK_RELEASE=4.5.0
 
-fix_vhdutil() {
-  wget --no-check-certificate http://download.cloud.com.s3.amazonaws.com/tools/vhd-util -O /bin/vhd-util
-  chmod a+x /bin/vhd-util
-}
-
-do_fixes() {
-  fix_vhdutil
-}
-
 configure_apache2() {
    # Enable ssl, rewrite and auth
    a2enmod ssl rewrite auth_basic auth_digest
@@ -92,8 +83,6 @@ begin=$(date +%s)
 configure_services
 configure_apache2
 echo "*************DONE SETTING UP SERVICES********************"
-do_fixes
-echo "*************DONE FIXING CONFIGURATION********************"
 do_signature
 
 fin=$(date +%s)

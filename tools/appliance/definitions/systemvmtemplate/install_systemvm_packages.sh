@@ -1,3 +1,8 @@
+fix_vhdutil() {
+  wget --no-check-certificate http://download.cloud.com.s3.amazonaws.com/tools/vhd-util -O /bin/vhd-util
+  chmod a+x /bin/vhd-util
+}
+
 install_packages() {
   DEBIAN_FRONTEND=noninteractive
   DEBIAN_PRIORITY=critical
@@ -86,3 +91,4 @@ install_packages() {
 }
 
 install_packages
+fix_vhdutil
