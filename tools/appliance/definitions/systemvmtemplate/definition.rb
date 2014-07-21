@@ -86,6 +86,7 @@ config = {
         'install_systemvm_packages.sh',
         'configure_conntrack.sh',
         'configure_systemvm_services.sh',
+        'authorized_keys.sh',
         # cleanup & space-saving
         'cleanup.sh',
         'zerodisk.sh'

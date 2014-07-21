@@ -16,28 +16,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# override this file during build to inject /root/.ssh/authorized_keys
+
 set -e
 set -x
 
-# clean up stuff copied in by veewee
-function cleanup_veewee() {
-  # this has to be here since it is the last file to run (and we remove ourselves)
-  rm -fv /root/*.iso
-  rm -fv /root/{apt_upgrade,authorized_keys,build_time,cleanup,install_systemvm_packages,zerodisk}.sh
-  rm -fv /root/configure_{acpid,conntrack,grub,locale,login,networking,systemvm_services}.sh
-  rm -fv .veewee_version .veewee_params .vbox_version
-}
-
-# Zero out the free space to save space in the final image:
-function zero_disk() {
-  cleanup_veewee
-
-  for path in / /boot /usr /var /opt /tmp /home
-  do
-    dd if=/dev/zero of=${path}/zero bs=1M || true
-    sync
-    rm -f ${path}/zero
-  done
-}
-
-return 2>/dev/null || zero_disk
+# the key that we have in ../patches/debian/config/root/.ssh/authorized_keys for some reason
+key='ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAvFu3MLSPphFRBR1yM7nBukXWS9gPdAXfqq9cfC8ZqQN9ybi531aj44CybZ4BVT4kLfzbAs7+7nJeSIpPHxjv9XFqbxjIxoFeGYkj7s0RrJgtsEmvAAubZ3mYboUAYUivMgnJFLnv4VqyAbpjix6CfECUiU4ygwo24F3F6bAmhl4Vo1R5TSUdDIX876YePJTFtuVkLl4lu/+xw1QRWrgaSFosGICT37IKY7RjE79Ozb0GjNHyJPPgVAGkUVO4LawroL9dYOBlzdHpmqqA9Kc44oQBpvcU7s1+ezRTt7fZNnP7TG9ninZtrvnP4qmwAc4iUJ7N1bwh0mCblnoTfZ28hw== anthony@mobl-ant'
+mkdir -p /root/.ssh
+chmod 644 /root/.ssh
+echo ${key}  > /root/.ssh/authorized_keys
+chmod 600 /root/.ssh/authorized_keys
