@@ -107,12 +107,7 @@ BUILD_NUMBER="${4:-${BUILD_NUMBER:-}}"
 
 # (debian) os architecture to build
 arch="${5:-${arch:-i386}}"
-if [ "${appliance}" == "systemvm64template" ]; then
-  arch="amd64"
-  export VM_ARCH="${arch}"
-  rm -rf definitions/systemvm64template
-  cp -r definitions/systemvmtemplate definitions/systemvm64template
-fi
+export VM_ARCH="${arch}"
 
 # optional root SSH public key to write to /root/.ssh/authorized_keys
 # note the cs management server overwrites this, so the only reason to
@@ -231,6 +226,14 @@ function retry() {
 ###
 
 function create_definition() {
+  if [ "${appliance}" == "systemvm64template" ]; then
+    arch="amd64"
+    export VM_ARCH="${arch}"
+    rm -rf definitions/systemvm64template # in case of left-over cruft from failed build
+    cp -r definitions/systemvmtemplate definitions/systemvm64template
+    add_on_exit rm -rf definitions/systemvm64template
+  fi
+
   if [ "${appliance}" != "${appliance_build_name}" ]; then
     cp -r "definitions/${appliance}" "definitions/${appliance_build_name}"
     set +e
