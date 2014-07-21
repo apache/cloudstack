@@ -726,7 +726,9 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         gslbServiceImpl._globalConfigDao = Mockito.mock(ConfigurationDao.class);
         gslbServiceImpl._ipAddressDao = Mockito.mock(IPAddressDao.class);
         gslbServiceImpl._agentMgr = Mockito.mock(AgentManager.class);
-        gslbServiceImpl._gslbProvider = Mockito.mock(GslbServiceProvider.class);
+        List<GslbServiceProvider> mockGslbProviders = new ArrayList<GslbServiceProvider>();
+        mockGslbProviders.add(Mockito.mock(GslbServiceProvider.class));
+        gslbServiceImpl._gslbProviders = mockGslbProviders;
 
         RemoveFromGlobalLoadBalancerRuleCmd removeFromGslbCmd = new RemoveFromGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = removeFromGslbCmd.getClass().getSuperclass();

@@ -85,9 +85,10 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     @Inject
     AgentManager _agentMgr;
 
-    protected GslbServiceProvider _gslbProvider=null;
-    public void setGslbServiceProvider(GslbServiceProvider provider) {
-        this._gslbProvider = provider;
+    protected List<GslbServiceProvider> _gslbProviders;
+
+    public void setGslbServiceProviders(List<GslbServiceProvider> providers) {
+        _gslbProviders = providers;
     }
 
     @Override
@@ -663,8 +664,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
                     ip.getAddress().addr(), Integer.toString(loadBalancer.getDefaultPortStart()),
                     dataCenterId);
 
-            siteLb.setGslbProviderPublicIp(_gslbProvider.getZoneGslbProviderPublicIp(dataCenterId, physicalNetworkId));
-            siteLb.setGslbProviderPrivateIp(_gslbProvider.getZoneGslbProviderPrivateIp(dataCenterId, physicalNetworkId));
+            siteLb.setGslbProviderPublicIp(lookupGslbServiceProvider().getZoneGslbProviderPublicIp(dataCenterId, physicalNetworkId));
+            siteLb.setGslbProviderPrivateIp(lookupGslbServiceProvider().getZoneGslbProviderPrivateIp(dataCenterId, physicalNetworkId));
             siteLb.setWeight(gslbLbMapVo.getWeight());
 
             zoneSiteLoadbalancerMap.put(network.getDataCenterId(), siteLb);
@@ -693,7 +694,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             }
 
             try {
-                _gslbProvider.applyGlobalLoadBalancerRule(zoneId.first(), zoneId.second(), gslbConfigCmd);
+                lookupGslbServiceProvider().applyGlobalLoadBalancerRule(zoneId.first(), zoneId.second(), gslbConfigCmd);
             } catch (ResourceUnavailableException e) {
                 String msg =  "Failed to configure GSLB rule in the zone " + zoneId.first() + " due to " + e.getMessage();
                 s_logger.warn(msg);
@@ -719,11 +720,16 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
     private boolean checkGslbServiceEnabledInZone(long zoneId, long physicalNetworkId) {
 
-        if (_gslbProvider == null) {
+        GslbServiceProvider gslbProvider = lookupGslbServiceProvider();
+        if (gslbProvider == null) {
             throw new CloudRuntimeException("No GSLB provider is available");
         }
 
-        return _gslbProvider.isServiceEnabledInZone(zoneId, physicalNetworkId);
+        return gslbProvider.isServiceEnabledInZone(zoneId, physicalNetworkId);
+    }
+
+    protected GslbServiceProvider lookupGslbServiceProvider() {
+        return _gslbProviders.size() == 0 ? null : _gslbProviders.get(0);
     }
 
     @Override

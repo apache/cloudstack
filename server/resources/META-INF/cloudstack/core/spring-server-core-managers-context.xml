@@ -231,7 +231,8 @@
     <bean id="PlannerHostReservationDaoImpl" class="com.cloud.deploy.dao.PlannerHostReservationDaoImpl" />
 
     <bean id="GlobalLoadBalancingRulesServiceImpl"
-        class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" />
-
+        class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" >
+        <property name="gslbServiceProviders" value="#{gslbServiceProvidersRegistry.registered}" />
+    </bean>
     <bean id="certServiceImpl" class="org.apache.cloudstack.network.lb.CertServiceImpl" />
 </beans>
