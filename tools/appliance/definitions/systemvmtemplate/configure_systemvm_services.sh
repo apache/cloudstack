@@ -1,3 +1,4 @@
+#!/bin/bash
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,13 +16,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
+set -e
 set -x
 
-ROOTPW=password
-HOSTNAME=systemvm
-CLOUDSTACK_RELEASE=4.5.0
+CLOUDSTACK_RELEASE=4.4.0
 
-configure_apache2() {
+function configure_apache2() {
    # Enable ssl, rewrite and auth
    a2enmod ssl rewrite auth_basic auth_digest
    a2ensite default-ssl
@@ -30,17 +30,7 @@ configure_apache2() {
    cp /etc/apache2/sites-available/default-ssl /etc/apache2/sites-available/default-ssl.orig
 }
 
-configure_services() {
-  local arch=`dpkg --print-architecture`
-  mkdir -p /var/www/html
-  mkdir -p /opt/cloud/bin
-  mkdir -p /var/cache/cloud
-  mkdir -p /usr/share/cloud
-  mkdir -p /usr/local/cloud
-  mkdir -p /root/.ssh
-  # Fix haproxy directory issue
-  mkdir -p /var/lib/haproxy
-
+function install_cloud_scripts() {
   # Get config files from master
   snapshot_url="https://git-wip-us.apache.org/repos/asf?p=cloudstack.git;a=snapshot;h=HEAD;sf=tgz"
   snapshot_dir="/opt/cloudstack*"
@@ -63,12 +53,6 @@ configure_services() {
   chkconfig cloud-passwd-srvr off
   chkconfig --add cloud
   chkconfig cloud off
-  chkconfig xl2tpd off
-  # Hyperv  kvp daemon - 64bit only
-  if [ "${arch}" == "amd64" ]; then
-    chkconfig hv_kvp_daemon off
-  fi
-  chkconfig radvd off
 }
 
 do_signature() {
@@ -78,14 +62,30 @@ do_signature() {
   echo "Cloudstack Release $CLOUDSTACK_RELEASE $(date)" > /etc/cloudstack-release
 }
 
-begin=$(date +%s)
+configure_services() {
+  mkdir -p /var/www/html
+  mkdir -p /opt/cloud/bin
+  mkdir -p /var/cache/cloud
+  mkdir -p /usr/share/cloud
+  mkdir -p /usr/local/cloud
+  mkdir -p /root/.ssh
 
-configure_services
-configure_apache2
-echo "*************DONE SETTING UP SERVICES********************"
-do_signature
+  # Fix haproxy directory issue
+  mkdir -p /var/lib/haproxy
 
-fin=$(date +%s)
-t=$((fin-begin))
+  install_cloud_scripts
 
-echo "Signed systemvm build, finished building systemvm appliance in $t seconds"
+  chkconfig xl2tpd off
+
+  # Hyperv kvp daemon - 64bit only
+  local arch=`dpkg --print-architecture`
+  if [ "${arch}" == "amd64" ]; then
+    chkconfig hv_kvp_daemon off
+  fi
+  chkconfig radvd off
+
+  configure_apache2
+  do_signature
+}
+
+return 2>/dev/null || configure_services
