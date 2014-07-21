@@ -639,6 +639,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_POLICY_CREATE, eventDescription = "creating snapshot policy")
     public SnapshotPolicyVO createPolicy(CreateSnapshotPolicyCmd cmd, Account policyOwner) {
         Long volumeId = cmd.getVolumeId();
         boolean display = cmd.isDisplay();
@@ -735,6 +736,8 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             }
 
         }
+        // TODO - Make createSnapshotPolicy - BaseAsyncCreate and remove this.
+        CallContext.current().putContextParameter(SnapshotPolicy.class.getName(), policy.getUuid());
         return policy;
     }
 
