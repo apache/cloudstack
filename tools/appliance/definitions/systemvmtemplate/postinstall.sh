@@ -30,6 +30,7 @@ add_backports () {
 install_packages() {
   DEBIAN_FRONTEND=noninteractive
   DEBIAN_PRIORITY=critical
+  local arch=`dpkg --print-architecture`
 
   # Basic packages
   apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables
@@ -74,8 +75,15 @@ install_packages() {
   echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
   echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
   apt-get --no-install-recommends -q -y --force-yes install iptables-persistent
+  
+  # Hyperv  kvp daemon - 64bit only
+  if [ "${arch}" == "amd64" ]; then
+    # Download the hv kvp daemon
+    wget http://people.apache.org/~rajeshbattala/hv-kvp-daemon_3.1_amd64.deb
+    dpkg -i hv-kvp-daemon_3.1_amd64.deb
+  fi
 
-  #libraries required for rdp client (Hyper-V) 
+  #libraries required for rdp client (Hyper-V)
   apt-get --no-install-recommends -q -y --force-yes install libtcnative-1 libssl-dev libapr1-dev
 
   # vmware tools
@@ -95,6 +103,13 @@ install_packages() {
   # apt-get -q -y --force-yes purge build-essential
 
   apt-get --no-install-recommends -q -y --force-yes install haproxy
+
+  #32 bit architecture support:: not required for 32 bit template
+  if [ "${arch}" != "i386" ]; then
+    dpkg --add-architecture i386
+    apt-get update
+    apt-get --no-install-recommends -q -y --force-yes install links:i386 libuuid1:i386
+  fi
 
   apt-get --no-install-recommends -q -y --force-yes install radvd
 }
@@ -216,6 +231,7 @@ configure_apache2() {
 }
 
 configure_services() {
+  local arch=`dpkg --print-architecture`
   mkdir -p /var/www/html
   mkdir -p /opt/cloud/bin
   mkdir -p /var/cache/cloud
@@ -248,6 +264,10 @@ configure_services() {
   chkconfig --add cloud
   chkconfig cloud off
   chkconfig xl2tpd off
+  # Hyperv  kvp daemon - 64bit only
+  if [ "${arch}" == "amd64" ]; then
+    chkconfig hv_kvp_daemon off
+  fi
   chkconfig radvd off
 }
 
