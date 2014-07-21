@@ -1028,16 +1028,5 @@
         </dependency>
       </dependencies>
     </profile>
-    <profile>
-      <id>nuagevsp</id>
-      <activation>
-        <property>
-          <name>noredist</name>
-        </property>
-      </activation>
-      <modules>
-        <module>network-elements/nuage-vsp</module>
-      </modules>
-    </profile>
   </profiles>
 </project>
