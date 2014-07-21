@@ -35,6 +35,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.server.ManagementService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -243,7 +244,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.RSAHelper;
@@ -482,6 +482,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     VolumeOrchestrationService volumeMgr;
 
+    @Inject
+    ManagementService _mgr;
+
     @Override
     public UserVmVO getVirtualMachine(long vmId) {
         return _vmDao.findById(vmId);
@@ -516,12 +519,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account caller = CallContext.current().getCallingAccount();
         Long vmId = cmd.getId();
         UserVmVO userVm = _vmDao.findById(cmd.getId());
-        _vmDao.loadDetails(userVm);
 
         // Do parameters input validation
         if (userVm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + cmd.getId());
         }
+
+        _vmDao.loadDetails(userVm);
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
         if (template == null || !template.getEnablePassword()) {
@@ -643,7 +647,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String password = null;
         String sshPublicKey = s.getPublicKey();
         if (template != null && template.getEnablePassword()) {
-            password = generateRandomPassword();
+            password = _mgr.generateRandomPassword();
         }
 
         boolean result = resetVMSSHKeyInternal(vmId, sshPublicKey, password);
@@ -679,7 +683,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmInstance);
 
-        if (template != null && template.getEnablePassword()) {
+        if (template.getEnablePassword()) {
             vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
         }
 
@@ -852,7 +856,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (customParameters.size() != 0) {
             if (serviceOffering.getCpu() == null) {
                 String cpuNumber = customParameters.get(UsageEventVO.DynamicParameters.cpuNumber.name());
-                if ((cpuNumber == null) || (NumbersUtil.parseInt(cpuNumber, -1) <= 0 || NumbersUtil.parseInt(cpuNumber, -1) > 2147483647)) {
+                if ((cpuNumber == null) || (NumbersUtil.parseInt(cpuNumber, -1) <= 0)) {
                     throw new InvalidParameterValueException("Invalid cpu cores value, specify a value between 1 and 2147483647");
                 }
             } else if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuNumber.name())) {
@@ -862,7 +866,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             if (serviceOffering.getSpeed() == null) {
                 String cpuSpeed = customParameters.get(UsageEventVO.DynamicParameters.cpuSpeed.name());
-                if ((cpuSpeed == null) || (NumbersUtil.parseInt(cpuSpeed, -1) <= 0 || NumbersUtil.parseInt(cpuSpeed, -1) > 2147483647)) {
+                if ((cpuSpeed == null) || (NumbersUtil.parseInt(cpuSpeed, -1) <= 0)) {
                     throw new InvalidParameterValueException("Invalid cpu speed value, specify a value between 1 and 2147483647");
                 }
             } else if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
@@ -872,7 +876,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             if (serviceOffering.getRamSize() == null) {
                 String memory = customParameters.get(UsageEventVO.DynamicParameters.memory.name());
-                if (memory == null || (NumbersUtil.parseInt(memory, -1) < 32 || NumbersUtil.parseInt(memory, -1) > 2147483647)) {
+                if (memory == null || (NumbersUtil.parseInt(memory, -1) < 32)) {
                     throw new InvalidParameterValueException("Invalid memory value, specify a value between 32 and 2147483647 MB");
                 }
             } else if (customParameters.containsKey(UsageEventVO.DynamicParameters.memory.name())) {
@@ -1148,9 +1152,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         NicProfile existing = null;
         List<NicProfile> nicProfiles = _networkMgr.getNicProfiles(vmInstance);
         for (NicProfile nicProfile : nicProfiles) {
-            if (nicProfile.isDefaultNic() && nicProfile.getNetworkId() == existingdefaultnet.getId()) {
+            if (nicProfile.isDefaultNic() && existingdefaultnet != null && nicProfile.getNetworkId() == existingdefaultnet.getId()) {
                 existing = nicProfile;
-                continue;
             }
         }
 
@@ -1189,7 +1192,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             existingVO.setDeviceId(existingID);
 
             nic = _nicDao.persist(nic);
-            existingVO = _nicDao.persist(existingVO);
+            _nicDao.persist(existingVO);
 
             newdefault = _networkModel.getDefaultNetworkForVm(vmId);
             if (newdefault.getId() == existingdefaultnet.getId()) {
@@ -1268,8 +1271,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 return null;
             }
 
-            for (String vmName : vmDiskStatsByName.keySet()) {
-                vmDiskStatsById.put(vmIds.get(vmNames.indexOf(vmName)), vmDiskStatsByName.get(vmName));
+            for (Map.Entry<String, List<VmDiskStatsEntry>> entry: vmDiskStatsByName.entrySet()) {
+                vmDiskStatsById.put(vmIds.get(vmNames.indexOf(entry.getKey())), entry.getValue());
             }
         }
 
@@ -1440,8 +1443,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         details.put(UsageEventVO.DynamicParameters.cpuSpeed.name(), serviceOffering.getSpeed().toString());
         details.put(UsageEventVO.DynamicParameters.memory.name(), serviceOffering.getRamSize().toString());
         List<UserVmDetailVO> detailList = new ArrayList<UserVmDetailVO>();
-        for (String key : details.keySet()) {
-            UserVmDetailVO detailVO = new UserVmDetailVO(vmId, key, details.get(key), true);
+        for (Map.Entry<String, String> entry: details.entrySet()) {
+            UserVmDetailVO detailVO = new UserVmDetailVO(vmId, entry.getKey(), entry.getValue(), true);
             detailList.add(detailVO);
         }
         _uservmDetailsDao.saveDetails(detailList);
@@ -1454,8 +1457,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         details.remove(UsageEventVO.DynamicParameters.cpuSpeed.name());
         details.remove(UsageEventVO.DynamicParameters.memory.name());
         List<UserVmDetailVO> detailList = new ArrayList<UserVmDetailVO>();
-        for (String key : details.keySet()) {
-            UserVmDetailVO detailVO = new UserVmDetailVO(vmId, key, details.get(key), true);
+        for(Map.Entry<String, String> entry: details.entrySet()) {
+            UserVmDetailVO detailVO = new UserVmDetailVO(vmId, entry.getKey(), entry.getValue(), true);
             detailList.add(detailVO);
         }
         _uservmDetailsDao.saveDetails(detailList);
@@ -1488,8 +1491,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 return null;
             }
 
-            for (String vmName : vmStatsByName.keySet()) {
-                vmStatsById.put(vmIds.get(vmNames.indexOf(vmName)), vmStatsByName.get(vmName));
+            for (Map.Entry<String, VmStatsEntry> entry : vmStatsByName.entrySet()) {
+                vmStatsById.put(vmIds.get(vmNames.indexOf(entry.getKey())), entry.getValue());
             }
         }
 
@@ -1504,7 +1507,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
-        final UserVmVO vm = _vmDao.findById(vmId.longValue());
+        final UserVmVO vm = _vmDao.findById(vmId);
 
         if (vm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
@@ -1676,7 +1679,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             // Only if vm is not expunged already, cleanup it's resources
-            if (vm != null && vm.getRemoved() == null) {
+            if (vm.getRemoved() == null) {
                 // Cleanup vm resources - all the PF/LB/StaticNat rules
                 // associated with vm
                 s_logger.debug("Starting cleaning up vm " + vm + " resources...");
@@ -1849,12 +1852,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account caller = CallContext.current().getCallingAccount();
 
         // Input validation and permission checks
-        UserVmVO vmInstance = _vmDao.findById(id.longValue());
+        UserVmVO vmInstance = _vmDao.findById(id);
         if (vmInstance == null) {
             throw new InvalidParameterValueException("unable to find virtual machine with id " + id);
         }
 
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, vmInstance);
+        _accountMgr.checkAccess(caller, null, true, vmInstance);
 
         //If the flag is specified and is changed
         if (isDisplayVm != null && isDisplayVm != vmInstance.isDisplayVm()) {
@@ -2072,7 +2075,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long vmId = cmd.getId();
 
         // Verify input parameters
-        UserVmVO vmInstance = _vmDao.findById(vmId.longValue());
+        UserVmVO vmInstance = _vmDao.findById(vmId);
         if (vmInstance == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
@@ -3011,10 +3014,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 _vmDao.persist(vm);
-                if (customParameters != null && customParameters.size() > 0) {
-                    for (String key : customParameters.keySet()) {
-                        vm.setDetail(key, customParameters.get(key));
-                    }
+                for (String key : customParameters.keySet()) {
+                    vm.setDetail(key, customParameters.get(key));
                 }
                 _vmDao.saveDetails(vm);
 
@@ -3100,7 +3101,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
 
-            if (decodedUserData.length < 1) {
+            if (decodedUserData == null || decodedUserData.length < 1) {
                 throw new InvalidParameterValueException("User data is too short");
             }
         }
@@ -3362,10 +3363,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    public String generateRandomPassword() {
-        return PasswordGenerator.generateRandomPassword(6);
-    }
-
     @Override
     public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
@@ -3443,7 +3440,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (vm.getDetail("password") != null) {
                     password = DBEncryptionUtil.decrypt(vm.getDetail("password"));
                  } else {
-                    password = generateRandomPassword();
+                    password = _mgr.generateRandomPassword();
                  }
             }
 
@@ -3511,9 +3508,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             s_logger.trace("Vm id=" + vmId + " is already destroyed");
             return vm;
         }
-
-        // _accountMgr.checkAccess(caller, null, true, vm);
-        User userCaller = _userDao.findById(userId);
 
         boolean status;
         State vmState = vm.getState();
@@ -4153,6 +4147,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         long srcHostId = vm.getHostId();
         Host srcHost = _resourceMgr.getHost(srcHostId);
+
+        if(srcHost == null ){
+            throw new InvalidParameterValueException("Cannot migrate VM, there is not Host with id: " + srcHostId);
+        }
+
         // Check if src and destination hosts are valid and migrating to same host
         if (destinationHost.getId() == srcHostId) {
             throw new InvalidParameterValueException("Cannot migrate VM, VM is already present on this host, please" + " specify valid destination host to migrate the VM");
@@ -4698,9 +4697,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             newVol = volumeMgr.allocateDuplicateVolume(root, null);
         }
         // 1. Save usage event and update resource count for user vm volumes
-        if (vm instanceof UserVm) {
-            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
-        }
+        _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
         //2. Create Usage event for the newly created volume
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, newVol.getAccountId(), newVol.getDataCenterId(), newVol.getId(), newVol.getName(), newVol.getDiskOfferingId(), templateId, newVol.getSize());
         _usageEventDao.persist(usageEvent);
@@ -4733,7 +4730,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String password = null;
 
         if (template.getEnablePassword()) {
-            password = generateRandomPassword();
+            password = _mgr.generateRandomPassword();
             boolean result = resetVMPasswordInternal(vmId, password);
             if (result) {
                 vm.setPassword(password);

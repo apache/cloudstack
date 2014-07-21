@@ -242,7 +242,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
                     continue;
                 }
                 if (!NetUtils.isNetworkAWithinNetworkB(cidr, guestCidr)) {
-                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, cidr + "is not within the guest cidr " + guestCidr);
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, cidr + " is not within the guest cidr " + guestCidr);
                 }
             }
         }
