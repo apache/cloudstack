@@ -10,9 +10,9 @@ arch = ENV['VM_ARCH'] || 'i386'
 architectures = {
     :i386 => {
         :os_type_id => 'Debian',
-        :iso_file => "debian-7.6.0-i386-netinst.iso",
-        :iso_src => "http://cdimage.debian.org/debian-cd/7.6.0/i386/iso-cd/debian-7.6.0-i386-netinst.iso",
-        :iso_md5 => "528e1a7315da1bbf50bd4d187880a519",
+        :iso_file => 'debian-7.6.0-i386-netinst.iso',
+        :iso_src => 'http://cdimage.debian.org/debian-cd/7.6.0/i386/iso-cd/debian-7.6.0-i386-netinst.iso',
+        :iso_md5 => '528e1a7315da1bbf50bd4d187880a519',
     },
     :amd64 => {
         :os_type_id => 'Debian_64',
@@ -24,10 +24,11 @@ architectures = {
 
 config = {
     :cpu_count => '1',
-    :memory_size=> '256',
+    :memory_size => '256',
     :disk_size => '2500', :disk_format => 'VDI', :hostiocache => 'off',
-    :iso_download_timeout => "1000",
-    :boot_wait => "10", :boot_cmd_sequence => [
+    :iso_download_timeout => '1000',
+    :boot_wait => '10',
+    :boot_cmd_sequence => [
         '<Esc>',
         'install ',
         'preseed/url=http://%IP%:%PORT%/preseed.cfg ',
@@ -44,26 +45,26 @@ config = {
         'keyboard-configuration/xkb-keymap=us ',
         '<Enter>'
     ],
-    :kickstart_port => "7122",
-    :kickstart_timeout => "10000",
-    :kickstart_file => "preseed.cfg",
-    :ssh_login_timeout => "10000",
-    :ssh_user => "root",
-    :ssh_password => "password",
-    :ssh_key => "",
-    :ssh_host_port => "7222",
-    :ssh_guest_port => "22",
+    :kickstart_port => '7122',
+    :kickstart_timeout => '10000',
+    :kickstart_file => 'preseed.cfg',
+    :ssh_login_timeout => '10000',
+    :ssh_user => 'root',
+    :ssh_password => 'password',
+    :ssh_key => '',
+    :ssh_host_port => '7222',
+    :ssh_guest_port => '22',
     :sudo_cmd => "echo '%p'|sudo -S sh '%f'",
-    :shutdown_cmd => "halt -p",
+    :shutdown_cmd => 'halt -p',
     :postinstall_files => [
-        "apt_upgrade.sh",
-        "configure_grub.sh",
-        "postinstall.sh",
-        "cleanup.sh",
-        "configure_networking.sh",
-        "zerodisk.sh"
+        'apt_upgrade.sh',
+        'configure_grub.sh',
+        'postinstall.sh',
+        'cleanup.sh',
+        'configure_networking.sh',
+        'zerodisk.sh'
     ],
-    :postinstall_timeout => "10000"
+    :postinstall_timeout => '10000'
 }
 
 config.merge! architectures[arch.to_sym]
