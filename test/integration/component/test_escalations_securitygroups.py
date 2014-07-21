@@ -17,40 +17,15 @@
 
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (createVolume,
-                                  createTemplate)
-from marvin.lib.base import (Volume,
-                             Iso,
-                             VirtualMachine,
-                             Template,
-                             Snapshot,
-                             SecurityGroup,
-                             Account,
-                             Zone,
-                             Network,
-                             NetworkOffering,
-                             DiskOffering,
-                             ServiceOffering,
-                             VmSnapshot,
-                             SnapshotPolicy,
-                             SSHKeyPair,
-                             Resources,
-                             Configurations,
-                             VpnCustomerGateway,
-                             Hypervisor,
-                             VpcOffering,
-                             VPC,
-                             NetworkACL)
+from marvin.lib.base import (SecurityGroup,
+                             Account)
 from marvin.lib.common import (get_zone,
                                get_domain,
-                               get_template,
-                               list_os_types)
+                               get_template)
 from marvin.lib.utils import (validateList,
-                              cleanup_resources,
-                              random_gen)
-from marvin.codes import (PASS, FAIL, EMPTY_LIST)
+                              cleanup_resources)
+from marvin.codes import (PASS, EMPTY_LIST)
 from nose.plugins.attrib import attr
-import time
 
 class TestSecurityGroups(cloudstackTestCase):
 
@@ -245,6 +220,7 @@ class TestSecurityGroups(cloudstackTestCase):
         SecurityGroup.delete(
                              securitygroup_created,
                              self.userapiclient)
+        self.cleanup.remove(securitygroup_created)
         # Listing all the security groups in page 2 again
         list_securitygroups_page2 = SecurityGroup.list(
                                                        self.userapiclient,
