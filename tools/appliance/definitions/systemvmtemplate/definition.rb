@@ -60,6 +60,7 @@ config = {
         'build_time.sh',
         'apt_upgrade.sh',
         'configure_grub.sh',
+        'configure_locale.sh',
         'configure_login.sh',
         'postinstall.sh',
         'cleanup.sh',
