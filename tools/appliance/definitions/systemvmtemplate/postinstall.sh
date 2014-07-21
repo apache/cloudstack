@@ -18,7 +18,6 @@
 set -x
 
 ROOTPW=password
-HOSTNAME=systemvm
 CLOUDSTACK_RELEASE=4.4.0
 
 install_packages() {
@@ -108,32 +107,12 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install radvd
 }
 
-fix_nameserver() {
-  # Replace /etc/resolv.conf also
-  cat > /etc/resolv.conf << EOF
-nameserver 8.8.8.8
-nameserver 8.8.4.4
-EOF
-}
-
-fix_hostname() {
-  # Fix hostname in openssh-server generated keys
-  sed -i "s/root@\(.*\)$/root@$HOSTNAME/g" /etc/ssh/ssh_host_*.pub
-  # Fix hostname to override one provided by dhcp during vm build
-  echo "$HOSTNAME" > /etc/hostname
-  hostname $HOSTNAME
-  # Delete entry in /etc/hosts derived from dhcp
-  sed -i '/127.0.1.1/d' /etc/hosts
-}
-
 fix_vhdutil() {
   wget --no-check-certificate http://download.cloud.com.s3.amazonaws.com/tools/vhd-util -O /bin/vhd-util
   chmod a+x /bin/vhd-util
 }
 
 do_fixes() {
-  fix_nameserver
-  fix_hostname
   fix_vhdutil
 }
 
