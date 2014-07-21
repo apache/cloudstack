@@ -21,12 +21,6 @@ ROOTPW=password
 HOSTNAME=systemvm
 CLOUDSTACK_RELEASE=4.4.0
 
-add_backports () {
-    sed -i '/backports/d' /etc/apt/sources.list
-    echo 'deb http://http.us.debian.org/debian wheezy-backports main' >> /etc/apt/sources.list
-    apt-get update
-}
-
 install_packages() {
   DEBIAN_FRONTEND=noninteractive
   DEBIAN_PRIORITY=critical
@@ -280,8 +274,6 @@ do_signature() {
 
 begin=$(date +%s)
 
-echo "*************ADDING BACKPORTS********************"
-add_backports
 echo "*************INSTALLING PACKAGES********************"
 install_packages
 echo "*************DONE INSTALLING PACKAGES********************"
