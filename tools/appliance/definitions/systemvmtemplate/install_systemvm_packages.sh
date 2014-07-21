@@ -28,51 +28,36 @@ function install_packages() {
 
   local apt_install="apt-get --no-install-recommends -q -y --force-yes install"
 
-  # Basic packages
-  ${apt_install} rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables
-  ${apt_install} openssh-server openssl e2fsprogs dhcp3-client tcpdump socat wget
-  # ${apt_install} grub-legacy
-  ${apt_install} python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps  inetutils-ping iputils-arping httping
-  ${apt_install} dnsutils zip unzip ethtool uuid file iproute acpid virt-what sudo
+  #32 bit architecture support:: not required for 32 bit template
+  if [ "${arch}" != "i386" ]; then
+    dpkg --add-architecture i386
+    ${apt_install} links:i386 libuuid1:i386
+  fi
 
-  # sysstat
-  ${apt_install} sysstat
-  # apache
-  ${apt_install} apache2 ssl-cert
+  ${apt_install} \
+    rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables \
+    openssh-server openssl e2fsprogs dhcp3-client tcpdump socat wget \
+    python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps \
+    inetutils-ping iputils-arping httping \
+    dnsutils zip unzip ethtool uuid file iproute acpid virt-what sudo \
+    sysstat \
+    apache2 ssl-cert \
+    dnsmasq dnsmasq-utils \
+    nfs-common irqbalance \
+    samba-common cifs-utils \
+    xl2tpd bcrelay ppp ipsec-tools tdb-tools \
+    openswan=1:2.6.37-3 \
+    xenstore-utils libxenstore3.0 \
+    keepalived conntrackd ipvsadm libnetfilter-conntrack3 libnl1 \
+    ipcalc \
+    openjdk-7-jre-headless \
+    iptables-persistent \
+    libtcnative-1 libssl-dev libapr1-dev \
+    open-vm-tools \
+    haproxy \
+    radvd
 
-  # dnsmasq
-  ${apt_install} dnsmasq dnsmasq-utils
-  # nfs client
-  ${apt_install} nfs-common
-  # nfs irqbalance
-  ${apt_install} irqbalance
-
-  # cifs client
-  ${apt_install} samba-common
-  ${apt_install} cifs-utils
-
-  # vpn stuff
-  ${apt_install} xl2tpd bcrelay ppp ipsec-tools tdb-tools
-  ${apt_install} openswan=1:2.6.37-3
-
-  # xenstore utils
-  ${apt_install} xenstore-utils libxenstore3.0
-  # keepalived and conntrackd for redundant router
-  ${apt_install} keepalived conntrackd ipvsadm libnetfilter-conntrack3 libnl1
-  # ipcalc
-  ${apt_install} ipcalc
-  apt-get update
-  # java
-  ${apt_install}  openjdk-7-jre-headless
-
-  ${apt_install} iptables-persistent
-
-  #libraries required for rdp client (Hyper-V)
-  ${apt_install} libtcnative-1 libssl-dev libapr1-dev
-
-  # vmware tools
-  ${apt_install} open-vm-tools
-  # commented installaion of vmware-tools  as we are using the opensource open-vm-tools:
+  # commented out installation of vmware-tools as we are using the open source open-vm-tools:
   # ${apt_install} build-essential linux-headers-`uname -r`
   # df -h
   # PREVDIR=$PWD
@@ -86,23 +71,12 @@ function install_packages() {
   # rm -fr /opt/vmware-tools-distrib
   # apt-get -q -y --force-yes purge build-essential
 
-  ${apt_install} haproxy
-
   # Hyperv  kvp daemon - 64bit only
   if [ "${arch}" == "amd64" ]; then
     # Download the hv kvp daemon
     wget http://people.apache.org/~rajeshbattala/hv-kvp-daemon_3.1_amd64.deb
     dpkg -i hv-kvp-daemon_3.1_amd64.deb
   fi
-
-  #32 bit architecture support:: not required for 32 bit template
-  if [ "${arch}" != "i386" ]; then
-    dpkg --add-architecture i386
-    apt-get update
-    ${apt_install} links:i386 libuuid1:i386
-  fi
-
-  ${apt_install} radvd
 }
 
 return 2>/dev/null || install_packages
