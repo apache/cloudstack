@@ -116,20 +116,6 @@ nameserver 8.8.4.4
 EOF
 }
 
-fix_acpid() {
-  # Fix acpid
-  mkdir -p /etc/acpi/events
-  cat >> /etc/acpi/events/power << EOF
-event=button/power.*
-action=/usr/local/sbin/power.sh "%e"
-EOF
-  cat >> /usr/local/sbin/power.sh << EOF
-#!/bin/bash
-/sbin/poweroff
-EOF
-  chmod a+x /usr/local/sbin/power.sh
-}
-
 fix_hostname() {
   # Fix hostname in openssh-server generated keys
   sed -i "s/root@\(.*\)$/root@$HOSTNAME/g" /etc/ssh/ssh_host_*.pub
@@ -164,7 +150,6 @@ EOF
 
 do_fixes() {
   fix_nameserver
-  fix_acpid
   fix_hostname
   fix_conntrackd
   fix_vhdutil

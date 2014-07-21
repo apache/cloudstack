@@ -63,6 +63,7 @@ config = {
         'configure_locale.sh',
         'configure_login.sh',
         'postinstall.sh',
+        'configure_acpid.sh',
         'cleanup.sh',
         'configure_networking.sh',
         'zerodisk.sh'
