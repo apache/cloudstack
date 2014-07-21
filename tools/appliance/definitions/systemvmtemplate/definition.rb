@@ -57,6 +57,7 @@ config = {
     :sudo_cmd => "echo '%p'|sudo -S sh '%f'",
     :shutdown_cmd => 'halt -p',
     :postinstall_files => [
+        'build_time.sh',
         'apt_upgrade.sh',
         'configure_grub.sh',
         'postinstall.sh',
