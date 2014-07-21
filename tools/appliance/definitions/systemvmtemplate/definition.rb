@@ -62,11 +62,11 @@ config = {
         'configure_grub.sh',
         'configure_locale.sh',
         'configure_login.sh',
+        'configure_networking.sh',
         'postinstall.sh',
         'configure_acpid.sh',
         'configure_conntrack.sh',
         'cleanup.sh',
-        'configure_networking.sh',
         'zerodisk.sh'
     ],
     :postinstall_timeout => '10000'
