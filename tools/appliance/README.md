@@ -68,6 +68,12 @@ Halt the box:
 
 Now VirtualBox can be used to export appliance.
 
+To build the systemvm64template by hand using veewee, set VM_ARCH=amd64 and use
+the systemvmtemplate:
+
+    export VM_ARCH=amd64
+    cp -r definitions/systemvmtemplate definitions/systemvm64template
+    veewee vbox build 'systemvm64template'
 
 Trobuleshooting
 ===============
