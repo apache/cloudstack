@@ -43,7 +43,8 @@ Veewee::Definition.declare({
   :sudo_cmd => "echo '%p'|sudo -S sh '%f'",
   :shutdown_cmd => "halt -p",
   :postinstall_files => [
-    "base.sh",
+    "apt_upgrade.sh",
+    "configure_grub.sh",
     "postinstall.sh",
     "cleanup.sh",
     "zerodisk.sh"
