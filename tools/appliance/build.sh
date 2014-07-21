@@ -23,7 +23,7 @@
 function usage() {
   cat <<END
 Usage:
-   ./build.sh [veewee_template [version [branch [BUILD_NUMBER [arch]]]]
+   ./build.sh [veewee_template [version [branch [BUILD_NUMBER [arch [ssh_key]]]]]
 
    * Set \$appliance to provide veewee definition name to build
      (or use command line arg, default systemvmtemplate)
@@ -35,6 +35,8 @@ Usage:
      (or use command line arg, default empty)
    * Set \$arch to provide the (debian) os architecture to inject
      (or use command line arg, default i386, other option amd64)
+   * Set \$ssh_key to provide root ssh public key to inject
+     (or use command line arg, default set in the veewee definition its authorized_keys.sh)
    * Set \$DEBUG=1 to enable debug logging
    * Set \$TRACE=1 to enable trace logging
    * Set \$VEEWEE_ARGS to pass veewee custom arguments
@@ -104,13 +106,19 @@ branch="${3:-${branch:-}}"
 BUILD_NUMBER="${4:-${BUILD_NUMBER:-}}"
 
 # (debian) os architecture to build
-arch="${arch:-i386}"
+arch="${5:-${arch:-i386}}"
 if [ "${appliance}" == "systemvm64template" ]; then
   arch="amd64"
   export VM_ARCH="${arch}"
   rm -rf definitions/systemvm64template
   cp -r definitions/systemvmtemplate definitions/systemvm64template
 fi
+
+# optional root SSH public key to write to /root/.ssh/authorized_keys
+# note the cs management server overwrites this, so the only reason to
+# set this is when working with the VM while it is not under management
+# server control
+ssh_key="${6:-${ssh_key:-}}"
 
 # while building with vbox, we need a quite unique appliance name in order to prevent conflicts with multiple
 # concurrent executors on jenkins
@@ -228,6 +236,11 @@ function create_definition() {
     set +e
     sed ${sed_regex_option} -i -e "s/^CLOUDSTACK_RELEASE=.+/CLOUDSTACK_RELEASE=${version}/" \
         "definitions/${appliance_build_name}/postinstall.sh"
+    if [ ! -z "${ssh_key}" ]; then
+      # ssh key lines can contain /
+      sed ${sed_regex_option} -i -e "s|^key=.+|key=\"${ssh_key}\"|" \
+          "definitions/${appliance_build_name}/authorized_keys.sh"
+    fi
     set -e
     add_on_exit rm -rf "definitions/${appliance_build_name}"
   fi
