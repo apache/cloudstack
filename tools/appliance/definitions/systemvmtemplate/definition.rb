@@ -64,6 +64,7 @@ config = {
         'configure_login.sh',
         'postinstall.sh',
         'configure_acpid.sh',
+        'configure_conntrack.sh',
         'cleanup.sh',
         'configure_networking.sh',
         'zerodisk.sh'
