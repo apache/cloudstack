@@ -106,6 +106,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-network-vsp</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
   <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-ovs</artifactId>
       <version>${project.version}</version>
@@ -939,6 +944,21 @@
         <dependency>
           <groupId>org.apache.cloudstack</groupId>
           <artifactId>cloud-plugin-network-f5</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>nuagevsp</id>
+      <activation>
+        <property>
+          <name>noredist</name>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.cloudstack</groupId>
+          <artifactId>cloud-plugin-network-vsp</artifactId>
           <version>${project.version}</version>
         </dependency>
       </dependencies>

@@ -164,6 +164,17 @@
       </modules>
     </profile>
     <profile>
+      <id>nuagevsp</id>
+      <activation>
+        <property>
+          <name>noredist</name>
+        </property>
+      </activation>
+      <modules>
+        <module>network-elements/nuage-vsp</module>
+      </modules>
+    </profile>
+    <profile>
       <id>vmware</id>
       <activation>
         <property>

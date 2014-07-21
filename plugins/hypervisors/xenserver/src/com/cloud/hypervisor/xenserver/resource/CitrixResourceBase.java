@@ -1037,7 +1037,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             assert (BroadcastDomainType.getSchemeValue(uri) == BroadcastDomainType.Vlan);
             long vlan = Long.parseLong(BroadcastDomainType.getValue(uri));
             return enableVlanNetwork(conn, vlan, network);
-        } else if (type == BroadcastDomainType.Native || type == BroadcastDomainType.LinkLocal) {
+        } else if (type == BroadcastDomainType.Native || type == BroadcastDomainType.LinkLocal ||
+                        type == BroadcastDomainType.Vsp) {
             return network.getNetwork();
         } else if (uri != null && type == BroadcastDomainType.Vswitch) {
             String header = uri.toString().substring(Networks.BroadcastDomainType.Vswitch.scheme().length() + "://".length());
@@ -1105,6 +1106,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         // when bridge is setup for distributed routing
         vifr.otherConfig.put("cloudstack-network-id", nic.getNetworkUuid());
 
+        // Nuage Vsp needs Virtual Router IP to be passed in the otherconfig
+        // get the virtual router IP information from broadcast uri
+        URI broadcastUri = nic.getBroadcastUri();
+        if (broadcastUri != null && broadcastUri.getScheme().equalsIgnoreCase(Networks.BroadcastDomainType.Vsp.scheme())) {
+            String path = broadcastUri.getPath();
+            vifr.otherConfig.put("vsp-vr-ip", path.substring(1));
+        }
         vifr.network = getNetwork(conn, nic);
 
         if (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) {
@@ -1302,6 +1310,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         vmr.nameLabel = vmSpec.getName();
         vmr.actionsAfterCrash = Types.OnCrashBehaviour.DESTROY;
         vmr.actionsAfterShutdown = Types.OnNormalExit.DESTROY;
+        vmr.otherConfig.put("vm_uuid", vmSpec.getUuid());
 
         if (isDmcEnabled(conn, host) && vmSpec.isEnableDynamicallyScaleVm()) {
             //scaling is allowed
