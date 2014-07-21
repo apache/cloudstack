@@ -1,71 +1,79 @@
-fix_vhdutil() {
+#!/bin/bash
+
+set -e
+set -x
+
+function install_vhd_util() {
+  [[ -f /bin/vhd-util ]] && return
+
   wget --no-check-certificate http://download.cloud.com.s3.amazonaws.com/tools/vhd-util -O /bin/vhd-util
   chmod a+x /bin/vhd-util
 }
 
-install_packages() {
+function debconf_packages() {
+  echo 'sysstat sysstat/enable boolean true' | debconf-set-selections
+  echo "openswan openswan/install_x509_certificate boolean false" | debconf-set-selections
+  echo "openswan openswan/install_x509_certificate seen true" | debconf-set-selections
+  echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
+  echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
+}
+
+function install_packages() {
   DEBIAN_FRONTEND=noninteractive
   DEBIAN_PRIORITY=critical
   local arch=`dpkg --print-architecture`
 
+  debconf_packages
+  install_vhd_util
+
+  local apt_install="apt-get --no-install-recommends -q -y --force-yes install"
+
   # Basic packages
-  apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables
-  apt-get --no-install-recommends -q -y --force-yes install openssh-server openssl e2fsprogs dhcp3-client tcpdump socat wget
-  # apt-get --no-install-recommends -q -y --force-yes install grub-legacy
-  apt-get --no-install-recommends -q -y --force-yes install python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps  inetutils-ping iputils-arping httping
-  apt-get --no-install-recommends -q -y --force-yes install dnsutils zip unzip ethtool uuid file iproute acpid virt-what sudo
+  ${apt_install} rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables
+  ${apt_install} openssh-server openssl e2fsprogs dhcp3-client tcpdump socat wget
+  # ${apt_install} grub-legacy
+  ${apt_install} python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps  inetutils-ping iputils-arping httping
+  ${apt_install} dnsutils zip unzip ethtool uuid file iproute acpid virt-what sudo
 
   # sysstat
-  echo 'sysstat sysstat/enable boolean true' | debconf-set-selections
-  apt-get --no-install-recommends -q -y --force-yes install sysstat
+  ${apt_install} sysstat
   # apache
-  apt-get --no-install-recommends -q -y --force-yes install apache2 ssl-cert
+  ${apt_install} apache2 ssl-cert
 
   # dnsmasq
-  apt-get --no-install-recommends -q -y --force-yes install dnsmasq dnsmasq-utils
+  ${apt_install} dnsmasq dnsmasq-utils
   # nfs client
-  apt-get --no-install-recommends -q -y --force-yes install nfs-common
+  ${apt_install} nfs-common
   # nfs irqbalance
-  apt-get --no-install-recommends -q -y --force-yes install irqbalance
+  ${apt_install} irqbalance
 
   # cifs client
-  apt-get --no-install-recommends -q -y --force-yes install samba-common
-  apt-get --no-install-recommends -q -y --force-yes install cifs-utils
+  ${apt_install} samba-common
+  ${apt_install} cifs-utils
 
   # vpn stuff
-  apt-get --no-install-recommends -q -y --force-yes install xl2tpd bcrelay ppp ipsec-tools tdb-tools
-  echo "openswan openswan/install_x509_certificate boolean false" | debconf-set-selections
-  echo "openswan openswan/install_x509_certificate seen true" | debconf-set-selections
-  apt-get --no-install-recommends -q -y --force-yes install openswan=1:2.6.37-3
+  ${apt_install} xl2tpd bcrelay ppp ipsec-tools tdb-tools
+  ${apt_install} openswan=1:2.6.37-3
 
   # xenstore utils
-  apt-get --no-install-recommends -q -y --force-yes install xenstore-utils libxenstore3.0
+  ${apt_install} xenstore-utils libxenstore3.0
   # keepalived and conntrackd for redundant router
-  apt-get --no-install-recommends -q -y --force-yes install keepalived conntrackd ipvsadm libnetfilter-conntrack3 libnl1
+  ${apt_install} keepalived conntrackd ipvsadm libnetfilter-conntrack3 libnl1
   # ipcalc
-  apt-get --no-install-recommends -q -y --force-yes install ipcalc
+  ${apt_install} ipcalc
   apt-get update
   # java
-  apt-get --no-install-recommends -q -y --force-yes install  openjdk-7-jre-headless
+  ${apt_install}  openjdk-7-jre-headless
 
-  echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
-  echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
-  apt-get --no-install-recommends -q -y --force-yes install iptables-persistent
-
-  # Hyperv  kvp daemon - 64bit only
-  if [ "${arch}" == "amd64" ]; then
-    # Download the hv kvp daemon
-    wget http://people.apache.org/~rajeshbattala/hv-kvp-daemon_3.1_amd64.deb
-    dpkg -i hv-kvp-daemon_3.1_amd64.deb
-  fi
+  ${apt_install} iptables-persistent
 
   #libraries required for rdp client (Hyper-V)
-  apt-get --no-install-recommends -q -y --force-yes install libtcnative-1 libssl-dev libapr1-dev
+  ${apt_install} libtcnative-1 libssl-dev libapr1-dev
 
   # vmware tools
-  apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
+  ${apt_install} open-vm-tools
   # commented installaion of vmware-tools  as we are using the opensource open-vm-tools:
-  # apt-get --no-install-recommends -q -y --force-yes install build-essential linux-headers-`uname -r`
+  # ${apt_install} build-essential linux-headers-`uname -r`
   # df -h
   # PREVDIR=$PWD
   # cd /opt
@@ -78,17 +86,23 @@ install_packages() {
   # rm -fr /opt/vmware-tools-distrib
   # apt-get -q -y --force-yes purge build-essential
 
-  apt-get --no-install-recommends -q -y --force-yes install haproxy
+  ${apt_install} haproxy
+
+  # Hyperv  kvp daemon - 64bit only
+  if [ "${arch}" == "amd64" ]; then
+    # Download the hv kvp daemon
+    wget http://people.apache.org/~rajeshbattala/hv-kvp-daemon_3.1_amd64.deb
+    dpkg -i hv-kvp-daemon_3.1_amd64.deb
+  fi
 
   #32 bit architecture support:: not required for 32 bit template
   if [ "${arch}" != "i386" ]; then
     dpkg --add-architecture i386
     apt-get update
-    apt-get --no-install-recommends -q -y --force-yes install links:i386 libuuid1:i386
+    ${apt_install} links:i386 libuuid1:i386
   fi
 
-  apt-get --no-install-recommends -q -y --force-yes install radvd
+  ${apt_install} radvd
 }
 
-install_packages
-fix_vhdutil
+return 2>/dev/null || install_packages
