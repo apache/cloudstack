@@ -103,6 +103,8 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
+import com.cloud.agent.api.CheckHealthAnswer;
+import com.cloud.agent.api.CheckHealthCommand;
 /*
  * import com.cloud.agent.api.SecurityGroupRuleAnswer;
  * import com.cloud.agent.api.SecurityGroupRulesCmd;
@@ -547,6 +549,10 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
              * "XML RPC Exception, unable to setup host: " + _host + " " + e;
              * s_logger.debug(msg); throw new ConfigurationException(msg);
              */
+            _virtRouterResource = new VirtualRoutingResource(this);
+            if (!_virtRouterResource.configure(name, params)) {
+                throw new ConfigurationException("Unable to configure VirtualRoutingResource");
+            }
         } catch (Exception e) {
             String msg = "Generic Exception, failed to setup host: " + _host;
             s_logger.debug(msg + ": " + e.getMessage());
@@ -3006,11 +3012,30 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         return false;
     }
 
+    protected CheckHealthAnswer execute(CheckHealthCommand cmd) {
+        Common test = new Common(c);
+        String ping = "put";
+        String pong;
+        try {
+            pong = test.echo(ping);
+        } catch (XmlRpcException e) {
+            s_logger.debug("CheckHealth went wrong: " + _name + ", " + e.getMessage());
+            e.printStackTrace();
+            return new CheckHealthAnswer(cmd, false);
+        }
+        if (ping.contentEquals(pong))
+            return new CheckHealthAnswer(cmd, true);
+        s_logger.debug("CheckHealth did not receive " + ping +" but got " + pong + " from " + _name);
+        return new CheckHealthAnswer(cmd, false);
+    }
+
     @Override
     public Answer executeRequest(Command cmd) {
         Class<? extends Command> clazz = cmd.getClass();
         if (clazz == NetworkElementCommand.class) {
             return _virtRouterResource.executeRequest((NetworkElementCommand)cmd);
+        } else if (clazz == CheckHealthCommand.class) {
+            return execute((CheckHealthCommand) cmd);
         } else if (clazz == NetworkUsageCommand.class) {
             return execute((NetworkUsageCommand) cmd);
         } else if (clazz == ReadyCommand.class) {
