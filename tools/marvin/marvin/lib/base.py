@@ -612,10 +612,11 @@ class VirtualMachine:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.updateVirtualMachine(cmd))
 
-    def delete(self, apiclient):
+    def delete(self, apiclient, **kwargs):
         """Destroy an Instance"""
         cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
         cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
         apiclient.destroyVirtualMachine(cmd)
 
     def expunge(self, apiclient):

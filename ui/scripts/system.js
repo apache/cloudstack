@@ -6689,6 +6689,249 @@
                             }
                         }
                     },
+                    // Nuage Vsp provider detail view
+                    nuageVsp: {
+	                     type: 'detailView',
+	                     id: 'nuageVspProvider',
+	                     label: 'label.nuageVsp',
+	                     viewAll: {
+	                         label: 'label.devices',
+	                         path: '_zone.nuageVspDevices'
+	                     },
+	                     tabs: {
+	                         details: {
+	                             title: 'label.details',
+	                             fields: [{
+	                                 name: {
+	                                     label: 'label.name'
+	                                 }
+	                             }, {
+	                                 state: {
+	                                     label: 'label.state'
+	                                 }
+	                             }],
+	                             dataProvider: function(args) {
+	                                 refreshNspData("NuageVsp");
+	                                 var providerObj;
+	                                 $(nspHardcodingArray).each(function() {
+	                                     if (this.id == "nuageVsp") {
+	                                         providerObj = this;
+	                                         return false; //break each loop
+	                                     }
+	                                 });
+	                                 args.response.success({
+	                                     data: providerObj,
+	                                     actionFilter: networkProviderActionFilter('nuageVsp')
+	                                 });
+	                             }
+	                         }
+	                     },
+	                     actions: {
+	                         add: {
+	                             label: 'label.add.NuageVsp.device',
+	                             createForm: {
+	                                 title: 'label.add.NuageVsp.device',
+	                                 preFilter: function(args) {},
+	                                 fields: {
+	                                     hostname: {
+	                                         label: 'label.host.name',
+	                                         validation: {
+	                                             required: true
+	                                         },
+	                                         docID: 'helpVspHostname'
+	                                     },
+	                                     username: {
+	                                         label: 'label.username',
+	                                         validation: {
+	                                             required: true
+	                                         },
+	                                         docID: 'helpVspUsername'
+	                                     },
+	                                     password: {
+	                                         label: 'label.password',
+	                                         isPassword: true,
+	                                         validation: {
+	                                             required: true
+	                                         },
+	                                         docID: 'helpVspPassword'
+	                                     },
+	                                     port: {
+	                                         label: 'label.port',
+	                                         validation: {
+	                                             required: false,
+	                                             number: true
+	                                         },
+	                                         docID: 'helpVspPort'
+	                                     },
+	                                     apiversion: {
+	                                         label: 'label.api.version',
+	                                         defaultValue: 'v1_0',
+	                                         validation: {
+	                                             required: true
+	                                         },
+	                                         docID: 'helpVspApiVersion'
+	                                     },
+	                                     retrycount: {
+	                                         label: 'label.numretries',
+	                                         defaultValue: '4',
+	                                         validation: {
+	                                             required: true,
+	                                             number: true
+	                                         },
+	                                         docID: 'helpVspRetries'
+	                                     },
+	                                     retryinterval: {
+	                                         label: 'label.retry.interval',
+	                                         defaultValue: '60',
+	                                         validation: {
+	                                             required: false,
+	                                             number: true
+	                                         },
+	                                         docID: 'helpVspRetryInterval'
+	                                     }
+	                                 }
+	                             },
+	                             action: function(args) {
+	                                 if (nspMap["nuageVsp"] == null) {
+	                                     $.ajax({
+	                                         url: createURL("addNetworkServiceProvider&name=NuageVsp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+	                                         dataType: "json",
+	                                         async: true,
+	                                         success: function(json) {
+	                                             var jobId = json.addnetworkserviceproviderresponse.jobid;
+	                                             var addNuageVspProviderIntervalID = setInterval(function() {
+	                                                 $.ajax({
+	                                                     url: createURL("queryAsyncJobResult&jobId=" + jobId),
+	                                                     dataType: "json",
+	                                                     success: function(json) {
+	                                                         var result = json.queryasyncjobresultresponse;
+	                                                         if (result.jobstatus == 0) {
+	                                                             return; //Job has not completed
+	                                                         } else {
+	                                                             clearInterval(addNuageVspProviderIntervalID);
+	                                                             if (result.jobstatus == 1) {
+	                                                                 nspMap["nuageVsp"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+	                                                                 addNuageVspDevice(args, selectedPhysicalNetworkObj, "addNuageVspDevice", "addnuagevspdeviceresponse", "nuagevspdevice")
+	                                                             } else if (result.jobstatus == 2) {
+	                                                                 alert("addNetworkServiceProvider&name=NuageVsp failed. Error: " + _s(result.jobresult.errortext));
+	                                                             }
+	                                                         }
+	                                                     },
+	                                                     error: function(XMLHttpResponse) {
+	                                                         var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+	                                                         alert("addNetworkServiceProvider&name=NuageVsp failed. Error: " + errorMsg);
+	                                                     }
+	                                                 });
+	                                             }, g_queryAsyncJobResultInterval);
+	                                         }
+	                                     });
+	                                 } else {
+	                                     addNuageVspDevice(args, selectedPhysicalNetworkObj, "addNuageVspDevice", "addnuagevspdeviceresponse", "nuagevspdevice")
+	                                 }
+	                             },
+	                             messages: {
+	                                 notification: function(args) {
+	                                     return 'label.add.NuageVsp.device';
+	                                 }
+	                             },
+	                             notification: {
+	                                 poll: pollAsyncJobResult
+	                             }
+	                         },
+	                         enable: {
+	                             label: 'label.enable.provider',
+	                             action: function(args) {
+	                                 $.ajax({
+	                                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["nuageVsp"].id + "&state=Enabled"),
+	                                     dataType: "json",
+	                                     success: function(json) {
+	                                         var jid = json.updatenetworkserviceproviderresponse.jobid;
+	                                         args.response.success({
+	                                             _custom: {
+	                                                 jobId: jid,
+	                                                 getUpdatedItem: function(json) {
+	                                                     $(window).trigger('cloudStack.fullRefresh');
+	                                                 }
+	                                             }
+	                                         });
+	                                     }
+	                                 });
+	                             },
+	                             messages: {
+	                                 confirm: function(args) {
+	                                     return 'message.confirm.enable.provider';
+	                                 },
+	                                 notification: function() {
+	                                     return 'label.enable.provider';
+	                                 }
+	                             },
+	                             notification: {
+	                                 poll: pollAsyncJobResult
+	                             }
+	                         },
+	                         disable: {
+	                             label: 'label.disable.provider',
+	                             action: function(args) {
+	                                 $.ajax({
+	                                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["nuageVsp"].id + "&state=Disabled"),
+	                                     dataType: "json",
+	                                     success: function(json) {
+	                                         var jid = json.updatenetworkserviceproviderresponse.jobid;
+	                                         args.response.success({
+	                                             _custom: {
+	                                                 jobId: jid,
+	                                                 getUpdatedItem: function(json) {
+	                                                     $(window).trigger('cloudStack.fullRefresh');
+	                                                 }
+	                                             }
+	                                         });
+	                                     }
+	                                 });
+	                             },
+	                             messages: {
+	                                 confirm: function(args) {
+	                                     return 'message.confirm.disable.provider';
+	                                 },
+	                                 notification: function() {
+	                                     return 'label.disable.provider';
+	                                 }
+	                             },
+	                             notification: {
+	                                 poll: pollAsyncJobResult
+	                             }
+	                         },
+	                         destroy: {
+	                             label: 'label.shutdown.provider',
+	                             action: function(args) {
+	                                 $.ajax({
+	                                     url: createURL("deleteNetworkServiceProvider&id=" + nspMap["nuageVsp"].id),
+	                                     dataType: "json",
+	                                     success: function(json) {
+	                                         var jid = json.deletenetworkserviceproviderresponse.jobid;
+	                                         args.response.success({
+	                                             _custom: {
+	                                                 jobId: jid
+	                                             }
+	                                         });
+	
+	                                         $(window).trigger('cloudStack.fullRefresh');
+	                                     }
+	                                 });
+	                             },
+	                             messages: {
+	                                 confirm: function(args) {
+	                                     return 'message.confirm.shutdown.provider';
+	                                 },
+	                                 notification: function(args) {
+	                                     return 'label.shutdown.provider';
+	                                 }
+	                             },
+	                             notification: {
+	                                 poll: pollAsyncJobResult
+	                             }
+	                         }
+	                     }
+	                },
                     Opendaylight: {
                         type: 'detailView',
                         id: 'openDaylightProvider',
@@ -11942,6 +12185,202 @@
                                         async: true,
                                         success: function (json) {
                                             var item = json.listbigswitchvnsdeviceresponse.bigswitchvnsdevice[0];
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            nuageVspDevices: {
+                id: 'nuageVspDevices',
+                title: 'label.devices',
+                listView: {
+                    id: 'nuageVspDevices',
+                    fields: {
+                        hostname: {
+                            label: 'label.host.name'
+                        },
+                        port: {
+                            label: 'label.port'
+                        },
+                        apiversion: {
+                            label: 'label.api.version'
+                        },
+                        retrycount: {
+                            label: 'label.numretries',
+                        },
+                        retryinterval: {
+                            label: 'label.retry.interval'
+                        }
+                    },
+                    actions: {
+                        add: {
+                            label: 'label.add.NuageVsp.device',
+                            createForm: {
+                                title: 'label.add.NuageVsp.device',
+                                preFilter: function(args) {},
+                                fields: {
+                                    hostname: {
+                                        label: 'label.host.name'
+                                    },
+                                    username: {
+                                        label: 'label.username'
+                                    },
+                                    password: {
+                                        label: 'label.password',
+                                        isPassword: true
+                                    },
+                                    port: {
+                                        label: 'label.port'
+                                    },
+                                    apiversion: {
+                                        label: 'label.api.version',
+                                        defaultValue: 'v1_0'
+                                    },
+                                    retrycount: {
+                                        label: 'label.numretries',
+                                        defaultValue: '4'
+                                    },
+                                    retryinterval: {
+                                        label: 'label.retry.interval',
+                                        defaultValue: '60'
+                                    }
+                                }
+                            },
+                            action: function(args) {
+                                if (nspMap["nuageVsp"] == null) {
+                                    $.ajax({
+                                        url: createURL("addNetworkServiceProvider&name=NuageVsp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jobId = json.addnetworkserviceproviderresponse.jobid;
+                                            var addNuageVspProviderIntervalID = setInterval(function() {
+                                                $.ajax({
+                                                    url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                    dataType: "json",
+                                                    success: function(json) {
+                                                        var result = json.queryasyncjobresultresponse;
+                                                        if (result.jobstatus == 0) {
+                                                            return;
+                                                        } else {
+                                                            clearInterval(addNuageVspProviderIntervalID);
+                                                            if (result.jobstatus == 1) {
+                                                                nspMap["nuageVsp"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                                                addNuageVspDevice(args, selectedPhysicalNetworkObj, "addNuageVspDevice", "addnuagevspdeviceresponse", "nuagevspdevice")
+                                                            } else if (result.jobstatus == 2) {
+                                                                alert("addNetworkServiceProvider&name=NuageVsp failed. Error: " + _s(result.jobresult.errortext));
+                                                            }
+                                                        }
+                                                    },
+                                                    error: function(XMLHttpResponse) {
+                                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                        alert("addNetworkServiceProvider&name=NuageVsp failed. Error: " + errorMsg);
+                                                    }
+                                                });
+                                            }, g_queryAsyncJobResultInterval);
+                                        }
+                                    });
+                                } else {
+                                    addNuageVspDevice(args, selectedPhysicalNetworkObj, "addNuageVspDevice", "addnuagevspdeviceresponse", "nuagevspdevice")
+                                }
+                            },
+
+                            messages: {
+                                notification: function(args) {
+                                    return 'Added new Nuage Vsp Controller';
+                                }
+                            },
+                            notification: {
+                                poll: pollAsyncJobResult
+                            }
+                        }
+                    },
+                    dataProvider: function(args) {
+                        $.ajax({
+                            url: createURL("listNuageVspDevices&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                            data: {
+                                page: args.page,
+                                pageSize: pageSize
+                            },
+                            dataType: "json",
+                            async: false,
+                            success: function(json) {
+                                var items = json.listnuagevspdeviceresponse.nuagevspdevice;
+                                args.response.success({
+                                    data: items
+                                });
+                            }
+                        });
+                    },
+                    detailView: {
+                        name: 'Nuage Vsp details',
+                        actions: {
+                            'remove': {
+                                label: 'label.delete.NuageVsp',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.confirm.delete.NuageVsp';
+                                    },
+                                    notification: function(args) {
+                                        return 'label.delete.NuageVsp';
+                                    }
+                                },
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("deleteNuageVspDevice&vspdeviceid=" + args.context.nuageVspDevices[0].vspdeviceid),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.deletenuagevspdeviceresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        },
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields: [{
+                                    vspdeviceid: {
+                                        label: 'label.id'
+                                    },
+                                    hostname: {
+                                        label: 'label.host.name'
+                                    },
+                                    port: {
+                                        label: 'label.port'
+                                    },
+                                    apiversion: {
+                                        label: 'label.api.version'
+                                    },
+                                    retrycount: {
+                                        label: 'label.numretries',
+                                    },
+                                    retryinterval: {
+                                        label: 'label.retry.interval'
+                                    }
+                                }],
+                                dataProvider: function(args) {
+                                    $.ajax({
+                                        url: createURL("listNuageVspDevices&vspdeviceid=" + args.context.nuageVspDevices[0].vspdeviceid),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var item = json.listnuagevspdeviceresponse.nuagevspdevice[0];
                                             args.response.success({
                                                 data: item
                                             });
@@ -18894,8 +19333,39 @@
         });
     }
     
-    var afterCreateZonePhysicalNetworkTrafficTypes = function (args, newZoneObj, newPhysicalnetwork) {
+    function addNuageVspDevice(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
+        var array1 = [];
+        array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
+        array1.push("&hostname=" + todb(args.data.hostname));
+        array1.push("&username=" + todb(args.data.username));
+        array1.push("&password=" + todb(args.data.password));
+        array1.push("&port=" + todb(args.data.port));
+        array1.push("&apiversion=" + todb(args.data.apiversion));
+        array1.push("&retrycount=" + todb(args.data.retrycount));
+        array1.push("&retryinterval=" + todb(args.data.retryinterval));
+
         $.ajax({
+            url: createURL(apiCmd + array1.join("")),
+            dataType: "json",
+            type: "POST",
+            success: function(json) {
+                var jid = json[apiCmdRes].jobid;
+                args.response.success({
+                    _custom: {
+                        jobId: jid,
+                        getUpdatedItem: function(json) {
+                            var item = json.queryasyncjobresultresponse.jobresult[apiCmdObj];
+
+                            return item;
+                        }
+                    }
+                });
+            }
+        });
+    }    
+
+    var afterCreateZonePhysicalNetworkTrafficTypes = function (args, newZoneObj, newPhysicalnetwork) {
+                $.ajax({
             url: createURL("updatePhysicalNetwork&state=Enabled&id=" + newPhysicalnetwork.id),
             dataType: "json",
             success: function (json) {
@@ -19572,6 +20042,9 @@
                             case "Opendaylight":
                             nspMap[ "Opendaylight"] = items[i];
                             break;
+                            case "NuageVsp":
+                            nspMap["nuageVsp"] = items[i];
+                            break;
                         }
                     }
                 }
@@ -19636,6 +20109,12 @@
                 id: 'midoNet',
                 name: 'MidoNet',
                 state: nspMap.midoNet ? nspMap.midoNet.state: 'Disabled'
+            });
+
+            nspHardcodingArray.push({
+                id: 'nuageVsp',
+                name: 'Nuage Vsp',
+                state: nspMap.nuageVsp ? nspMap.nuageVsp.state : 'Disabled'
             });
             
             nspHardcodingArray.push({

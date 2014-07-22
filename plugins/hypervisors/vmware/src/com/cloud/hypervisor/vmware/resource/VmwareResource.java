@@ -931,6 +931,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
             vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
+            setNuageVspVrIpInExtraConfig(vmConfigSpec.getExtraConfig(), nicTo);
             if (!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Failed to configure devices when running PlugNicCommand");
             }
@@ -1831,7 +1832,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmInternalCSName = vmSpec.getName();
             if (_instanceNameFlag == true) {
                 String[] tokens = vmInternalCSName.split("-");
-                vmNameOnVcenter = String.format("%s-%s-%s", tokens[0], tokens[1], vmSpec.getHostName());
+                assert (tokens.length >= 3); // vmInternalCSName has format i-x-y-<instance.name>
+                vmNameOnVcenter = String.format("%s-%s-%s-%s", tokens[0], tokens[1], tokens[2], vmSpec.getHostName());
             }
             else
                 vmNameOnVcenter = vmSpec.getName();
@@ -1900,8 +1902,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 newVal.setKey("nvp.iface-id." + nicNum);
                 newVal.setValue(nicTo.getUuid());
                 extraOptions.add(newVal);
+                setNuageVspVrIpInExtraConfig(extraOptions, nicTo);
             }
             nicNum++;
+        }
+    }
+
+    private static void setNuageVspVrIpInExtraConfig(List<OptionValue> extraOptions, NicTO nicTo) {
+        URI broadcastUri = nicTo.getBroadcastUri();
+        if (broadcastUri != null && broadcastUri.getScheme().equalsIgnoreCase(Networks.BroadcastDomainType.Vsp.scheme())) {
+            String path = broadcastUri.getPath();
+            OptionValue newVal = new OptionValue();
+            newVal.setKey("vsp.vr-ip." + nicTo.getMac());
+            newVal.setValue(path.substring(1));
+            extraOptions.add(newVal);
         }
     }
 

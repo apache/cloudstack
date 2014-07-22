@@ -618,6 +618,13 @@ listBigSwitchVnsDevices=1
 addStratosphereSsp=1
 deleteStratoshereSsp=1
 
+#### nuage vsp commands
+
+addNuageVspDevice=1
+deleteNuageVspDevice=1
+listNuageVspDevices=1
+issueNuageVspResourceRequest=15
+
 #### host simulator commands
 
 configureSimulator=1

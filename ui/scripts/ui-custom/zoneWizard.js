@@ -726,7 +726,10 @@
                             }).html('ODL'),
                             $('<option>').attr({
                                 value: 'L3VPN'
-                            }).html('L3VPN')
+                            }).html('L3VPN'),
+		                    $('<option>').attr({
+                                value: 'VSP'
+                            }).html('VSP')
                         )
                     )
                 );

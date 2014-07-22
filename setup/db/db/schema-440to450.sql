@@ -63,6 +63,18 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
     where
         disk_offering.state='ACTIVE';
 
+DROP TABLE IF EXISTS `cloud`.`external_nuage_vsp_devices`;
+CREATE TABLE `cloud`.`external_nuage_vsp_devices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which nuage vsp is added',
+  `provider_name` varchar(255) NOT NULL COMMENT 'the service provider name corresponding to this nuage vsp device',
+  `device_name` varchar(255) NOT NULL COMMENT 'the name of the nuage vsp device',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id corresponding to the external nuage vsp device',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_external_nuage_vsp_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_nuage_vsp_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
 CREATE VIEW `cloud`.`service_offering_view` AS
