@@ -260,7 +260,8 @@ function setup_ruby() {
     # .rvmrc won't get trusted/auto-loaded by jenkins by default
     export VAGRANT_HOME=$HOME/.vagrant.d-release-cloudstack
     rvm use ruby-1.9.3@vagrant-release-cloudstack --create
-    bundle_args="--deployment"
+    # do not use --deployment since that requires Gemfile.lock...and we prefer an up-to-date veewee
+    bundle_args="--path vendor/bundle"
   fi
   bundle check || bundle install ${bundle_args}
 }
