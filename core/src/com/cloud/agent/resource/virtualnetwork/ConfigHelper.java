@@ -19,6 +19,16 @@
 
 package com.cloud.agent.resource.virtualnetwork;
 
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.codec.binary.Base64;
+
+import com.google.gson.Gson;
+
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
@@ -53,13 +63,6 @@ import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.net.NetUtils;
-import com.google.gson.Gson;
-import org.apache.commons.codec.binary.Base64;
-
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 public class ConfigHelper {
 
@@ -307,10 +310,14 @@ public class ConfigHelper {
         data.put(cmd.getVmIpAddress(), cmd.getVmData());
 
         String json = new Gson().toJson(data);
+        String encoded;
+        try {
+            encoded = Base64.encodeBase64String(json.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalArgumentException("Unable retrieve UTF-8 encoded data from vmdata");
+        }
 
-        json = Base64.encodeBase64String(json.getBytes());
-
-        String args = "-d " + json;
+        String args = "-d " + encoded;
 
         cfg.add(new ScriptConfigItem(VRScripts.VMDATA, args));
         return cfg;
@@ -367,12 +374,16 @@ public class ConfigHelper {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
         List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
-        String args = "";
+        StringBuilder args = new StringBuilder();
         for (IpAliasTO ipaliasto : ipAliasTOs) {
-            args = args + ipaliasto.getAlias_count() + ":" + ipaliasto.getRouterip() + ":" + ipaliasto.getNetmask() + "-";
+            args.append(ipaliasto.getAlias_count());
+            args.append(':');
+            args.append(ipaliasto.getRouterip());
+            args.append(':');
+            args.append(ipaliasto.getNetmask());
+            args.append('-');
         }
-
-        cfg.add(new ScriptConfigItem(VRScripts.IPALIAS_CREATE, args));
+        cfg.add(new ScriptConfigItem(VRScripts.IPALIAS_CREATE, args.toString()));
         return cfg;
     }
 
