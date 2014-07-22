@@ -1348,6 +1348,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     protected Boolean createVifs(Xen.Vm vm, VirtualMachineTO spec) {
         NicTO[] nics = spec.getNics();
         for (NicTO nic : nics) {
+            /* sec group only something for xenserver */
             if (nic.isSecurityGroupEnabled()) {
                 if (spec.getType().equals(VirtualMachine.Type.User)) {
                     /*
@@ -1551,7 +1552,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                         controlIp = nic.getIp();
                     }
                 }
-                /* TODO: still requires a fix for the restart time */
+                /* fix is in cloudstack.py for xend restart timer */
                 for (int count = 0; count < 60; count++) {
                     Thread.sleep(5000);
                     CloudStackPlugin cSp = new CloudStackPlugin(c);
