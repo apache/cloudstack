@@ -312,10 +312,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 .toLowerCase().endsWith("vhd.gz")))
                 || (format.equalsIgnoreCase("vhdx") && (!url.toLowerCase().endsWith(".vhdx") && !url.toLowerCase().endsWith("vhdx.zip") && !url.toLowerCase().endsWith("vhdx.bz2") && !url
                         .toLowerCase().endsWith("vhdx.gz")))
-                || (format.equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith(".qcow2") && !url.toLowerCase().endsWith("qcow2.zip")
-                        && !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz")))
-                || (format.equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith(".ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url
-                    .toLowerCase().endsWith("ova.gz"))) || (format.equalsIgnoreCase("raw") && (!url.toLowerCase().endsWith(".img") && !url.toLowerCase().endsWith("raw")))) {
+                        || (format.equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith(".qcow2") && !url.toLowerCase().endsWith("qcow2.zip")
+                                && !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz")))
+                                || (format.equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith(".ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url
+                                        .toLowerCase().endsWith("ova.gz"))) || (format.equalsIgnoreCase("raw") && (!url.toLowerCase().endsWith(".img") && !url.toLowerCase().endsWith("raw")))) {
             throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is an invalid for the format " + format.toLowerCase());
         }
         UriUtils.validateUrl(url);
@@ -370,21 +370,21 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } else {
                     volume.setDiskOfferingId(diskOfferingId);
                 }
-        // volume.setSize(size);
-        volume.setInstanceId(null);
-        volume.setUpdated(new Date());
-        volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
-        volume.setFormat(ImageFormat.valueOf(format));
-        volume = _volsDao.persist(volume);
-        CallContext.current().setEventDetails("Volume Id: " + volume.getId());
+                // volume.setSize(size);
+                volume.setInstanceId(null);
+                volume.setUpdated(new Date());
+                volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
+                volume.setFormat(ImageFormat.valueOf(format));
+                volume = _volsDao.persist(volume);
+                CallContext.current().setEventDetails("Volume Id: " + volume.getId());
 
-        // Increment resource count during allocation; if actual creation fails,
-        // decrement it
-        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
-        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+                // Increment resource count during allocation; if actual creation fails,
+                // decrement it
+                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
+                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
 
-        return volume;
-    }
+                return volume;
+            }
         });
     }
 
@@ -530,7 +530,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             diskOffering = _diskOfferingDao.findById(diskOfferingId);
             if (zoneId == null) {
                 // if zoneId is not provided, we default to create volume in the same zone as the snapshot zone.
-            zoneId = snapshotCheck.getDataCenterId();
+                zoneId = snapshotCheck.getDataCenterId();
             }
             size = snapshotCheck.getSize(); // ; disk offering is used for tags
             // purposes
@@ -695,7 +695,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     protected VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId, Long vmId) throws StorageUnavailableException {
         VolumeInfo createdVolume = null;
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-        long snapshotVolId = snapshot.getVolumeId();
+        snapshot.getVolumeId();
 
         UserVmVO vm = null;
         if (vmId != null) {
@@ -738,13 +738,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
 
         if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer &&
-            hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Any && hypervisorType != HypervisorType.None) {
+                hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Any && hypervisorType != HypervisorType.None) {
             throw new InvalidParameterValueException("CloudStack currently only supports volumes marked as the KVM, VMware, or XenServer hypervisor type for resize.");
         }
 
         if (volume.getState() != Volume.State.Ready && volume.getState() != Volume.State.Allocated) {
             throw new InvalidParameterValueException("Volume should be in ready or allocated state before attempting a resize. Volume " +
-                volume.getUuid() + " is in state " + volume.getState() + ".");
+                    volume.getUuid() + " is in state " + volume.getState() + ".");
         }
 
         // if we are to use the existing disk offering
@@ -830,7 +830,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 newSize = newDiskOffering.getDiskSize();
             }
 
-            if (volume.getSize() != newSize && !volume.getVolumeType().equals(Volume.Type.DATADISK)) {
+            if (!volume.getSize().equals(newSize) && !volume.getVolumeType().equals(Volume.Type.DATADISK)) {
                 throw new InvalidParameterValueException("Only data volumes can be resized via a new disk offering.");
             }
 
@@ -909,7 +909,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 try {
                     return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops,
-                        newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
+                            newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
                 } finally {
                     if (VmJobEnabled.value()) {
                         _workJobDao.expunge(placeHolder.getId());
@@ -1741,7 +1741,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     placeHolder = createPlaceHolderWork(vm.getId());
                 }
                 try {
-                return orchestrateMigrateVolume(vol.getId(), destPool.getId(), liveMigrateVolume);
+                    return orchestrateMigrateVolume(vol.getId(), destPool.getId(), liveMigrateVolume);
                 } finally {
                     if ((VmJobEnabled.value())&&(placeHolder != null))
                         _workJobDao.expunge(placeHolder.getId());
@@ -1790,7 +1790,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             try {
                 newVol = _volumeMgr.migrateVolume(vol, destPool);
             } catch (StorageUnavailableException e) {
-               s_logger.debug("Failed to migrate volume", e);
+                s_logger.debug("Failed to migrate volume", e);
             }
         }
         return newVol;
@@ -1843,7 +1843,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     placeHolder = createPlaceHolderWork(vm.getId());
                 }
                 try {
-                return orchestrateTakeVolumeSnapshot(volumeId, policyId, snapshotId, account, quiescevm);
+                    return orchestrateTakeVolumeSnapshot(volumeId, policyId, snapshotId, account, quiescevm);
                 } finally {
                     if (VmJobEnabled.value())
                         _workJobDao.expunge(placeHolder.getId());
@@ -1873,10 +1873,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 return _snapshotDao.findById(snapshotId);
             }
         } else {
-        CreateSnapshotPayload payload = new CreateSnapshotPayload();
-        payload.setSnapshotId(snapshotId);
-        payload.setSnapshotPolicyId(policyId);
-        payload.setAccount(account);
+            CreateSnapshotPayload payload = new CreateSnapshotPayload();
+            payload.setSnapshotId(snapshotId);
+            payload.setSnapshotPolicyId(policyId);
+            payload.setAccount(account);
             payload.setQuiescevm(quiescevm);
             volume.addPayload(payload);
             return volService.takeSnapshot(volume);
@@ -1996,11 +1996,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        Upload.Mode extractMode;
         if (mode == null || (!mode.equals(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equals(Upload.Mode.HTTP_DOWNLOAD.toString()))) {
             throw new InvalidParameterValueException("Please specify a valid extract Mode ");
-        } else {
-            extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
 
         // Check if the url already exists
@@ -2009,14 +2006,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return volumeStoreRef.getExtractUrl();
         }
 
-        // Clean up code to remove all those previous uploadVO and uploadMonitor code. Previous code is trying to fake an async operation purely in
-        // db table with uploadVO and async_job entry, but internal implementation is actually synchronous.
-        StoragePool srcPool = (StoragePool)dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
+        dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
         ImageStoreEntity secStore = (ImageStoreEntity)dataStoreMgr.getImageStore(zoneId);
-        String secondaryStorageURL = secStore.getUri();
+        secStore.getUri();
 
         String value = _configDao.getValue(Config.CopyVolumeWait.toString());
-        int copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
+        NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
         // Copy volume from primary to secondary storage
         VolumeInfo srcVol = volFactory.getVolume(volume.getId());
         AsyncCallFuture<VolumeApiResult> cvAnswer = volService.copyVolume(srcVol, secStore);
@@ -2100,7 +2095,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (storeForNewStoreScope.getScopeType() == ScopeType.CLUSTER) {
                 Long vmClusterId = null;
                 if (storeForExistingStoreScope.getScopeType() == ScopeType.HOST) {
-                HostScope hs = (HostScope)storeForExistingStoreScope;
+                    HostScope hs = (HostScope)storeForExistingStoreScope;
                     vmClusterId = hs.getClusterId();
                 } else if (storeForExistingStoreScope.getScopeType() == ScopeType.ZONE) {
                     Long hostId = _vmInstanceDao.findById(existingVolume.getInstanceId()).getHostId();
@@ -2171,8 +2166,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (sendCommand) {
             if (host.getHypervisorType() == HypervisorType.KVM &&
-                volumeToAttachStoragePool.isManaged() &&
-                volumeToAttach.getPath() == null) {
+                    volumeToAttachStoragePool.isManaged() &&
+                    volumeToAttach.getPath() == null) {
                 volumeToAttach.setPath(volumeToAttach.get_iScsiName());
 
                 _volsDao.update(volumeToAttach.getId(), volumeToAttach);
@@ -2380,29 +2375,29 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 _vmInstanceDao.lockInLockTable(String.valueOf(vm.getId()), Integer.MAX_VALUE);
                 try {
-                workJob = new VmWorkJobVO(context.getContextId());
+                    workJob = new VmWorkJobVO(context.getContextId());
 
-                workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-                workJob.setCmd(VmWorkAttachVolume.class.getName());
+                    workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkAttachVolume.class.getName());
 
-                workJob.setAccountId(callingAccount.getId());
-                workJob.setUserId(callingUser.getId());
-                workJob.setStep(VmWorkJobVO.Step.Starting);
-                workJob.setVmType(VirtualMachine.Type.Instance);
-                workJob.setVmInstanceId(vm.getId());
+                    workJob.setAccountId(callingAccount.getId());
+                    workJob.setUserId(callingUser.getId());
+                    workJob.setStep(VmWorkJobVO.Step.Starting);
+                    workJob.setVmType(VirtualMachine.Type.Instance);
+                    workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
-                // save work context info (there are some duplications)
+                    // save work context info (there are some duplications)
                     VmWorkAttachVolume workInfo = new VmWorkAttachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
                             VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, deviceId);
-                workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
-                _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+                    _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
-                AsyncJobVO jobVo = _jobMgr.getAsyncJob(workJob.getId());
-                s_logger.debug("New job " + workJob.getId() + ", result field: " + jobVo.getResult());
+                    AsyncJobVO jobVo = _jobMgr.getAsyncJob(workJob.getId());
+                    s_logger.debug("New job " + workJob.getId() + ", result field: " + jobVo.getResult());
 
-                return new Object[] {workJob, new Long(workJob.getId())};
+                    return new Object[] {workJob, new Long(workJob.getId())};
                 } finally {
                     _vmInstanceDao.unlockFromLockTable(String.valueOf(vm.getId()));
                 }
@@ -2431,26 +2426,26 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 _vmInstanceDao.lockInLockTable(String.valueOf(vm.getId()), Integer.MAX_VALUE);
                 try {
-                workJob = new VmWorkJobVO(context.getContextId());
+                    workJob = new VmWorkJobVO(context.getContextId());
 
-                workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-                workJob.setCmd(VmWorkDetachVolume.class.getName());
+                    workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkDetachVolume.class.getName());
 
-                workJob.setAccountId(callingAccount.getId());
-                workJob.setUserId(callingUser.getId());
-                workJob.setStep(VmWorkJobVO.Step.Starting);
-                workJob.setVmType(VirtualMachine.Type.Instance);
-                workJob.setVmInstanceId(vm.getId());
+                    workJob.setAccountId(callingAccount.getId());
+                    workJob.setUserId(callingUser.getId());
+                    workJob.setStep(VmWorkJobVO.Step.Starting);
+                    workJob.setVmType(VirtualMachine.Type.Instance);
+                    workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
-                // save work context info (there are some duplications)
+                    // save work context info (there are some duplications)
                     VmWorkDetachVolume workInfo = new VmWorkDetachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
                             VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId);
-                workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
-                _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+                    _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
-                return new Object[] {workJob, new Long(workJob.getId())};
+                    return new Object[] {workJob, new Long(workJob.getId())};
                 } finally {
                     _vmInstanceDao.unlockFromLockTable(String.valueOf(vm.getId()));
                 }
@@ -2481,26 +2476,26 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _vmInstanceDao.lockInLockTable(String.valueOf(vm.getId()), Integer.MAX_VALUE);
 
                 try {
-                workJob = new VmWorkJobVO(context.getContextId());
+                    workJob = new VmWorkJobVO(context.getContextId());
 
-                workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-                workJob.setCmd(VmWorkResizeVolume.class.getName());
+                    workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkResizeVolume.class.getName());
 
-                workJob.setAccountId(callingAccount.getId());
-                workJob.setUserId(callingUser.getId());
-                workJob.setStep(VmWorkJobVO.Step.Starting);
-                workJob.setVmType(VirtualMachine.Type.Instance);
-                workJob.setVmInstanceId(vm.getId());
+                    workJob.setAccountId(callingAccount.getId());
+                    workJob.setUserId(callingUser.getId());
+                    workJob.setStep(VmWorkJobVO.Step.Starting);
+                    workJob.setVmType(VirtualMachine.Type.Instance);
+                    workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
-                // save work context info (there are some duplications)
-                VmWorkResizeVolume workInfo = new VmWorkResizeVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
-                        VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, currentSize, newSize, newMinIops, newMaxIops, newServiceOfferingId, shrinkOk);
-                workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+                    // save work context info (there are some duplications)
+                    VmWorkResizeVolume workInfo = new VmWorkResizeVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
+                            VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, currentSize, newSize, newMinIops, newMaxIops, newServiceOfferingId, shrinkOk);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
-                _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+                    _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
-                return new Object[] {workJob, new Long(workJob.getId())};
+                    return new Object[] {workJob, new Long(workJob.getId())};
                 } finally {
                     _vmInstanceDao.unlockFromLockTable(String.valueOf(vm.getId()));
                 }
@@ -2530,26 +2525,26 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 _vmInstanceDao.lockInLockTable(String.valueOf(vm.getId()), Integer.MAX_VALUE);
                 try {
-                workJob = new VmWorkJobVO(context.getContextId());
+                    workJob = new VmWorkJobVO(context.getContextId());
 
-                workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-                workJob.setCmd(VmWorkMigrateVolume.class.getName());
+                    workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkMigrateVolume.class.getName());
 
-                workJob.setAccountId(callingAccount.getId());
-                workJob.setUserId(callingUser.getId());
-                workJob.setStep(VmWorkJobVO.Step.Starting);
-                workJob.setVmType(VirtualMachine.Type.Instance);
-                workJob.setVmInstanceId(vm.getId());
+                    workJob.setAccountId(callingAccount.getId());
+                    workJob.setUserId(callingUser.getId());
+                    workJob.setStep(VmWorkJobVO.Step.Starting);
+                    workJob.setVmType(VirtualMachine.Type.Instance);
+                    workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
-                // save work context info (there are some duplications)
-                VmWorkMigrateVolume workInfo = new VmWorkMigrateVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
-                        VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, destPoolId, liveMigrate);
-                workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+                    // save work context info (there are some duplications)
+                    VmWorkMigrateVolume workInfo = new VmWorkMigrateVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
+                            VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, destPoolId, liveMigrate);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
-                _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+                    _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
-                return new Object[] {workJob, new Long(workJob.getId())};
+                    return new Object[] {workJob, new Long(workJob.getId())};
                 } finally {
                     _vmInstanceDao.unlockFromLockTable(String.valueOf(vm.getId()));
                 }
@@ -2579,27 +2574,27 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 _vmInstanceDao.lockInLockTable(String.valueOf(vm.getId()), Integer.MAX_VALUE);
                 try {
-                workJob = new VmWorkJobVO(context.getContextId());
+                    workJob = new VmWorkJobVO(context.getContextId());
 
-                workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-                workJob.setCmd(VmWorkTakeVolumeSnapshot.class.getName());
+                    workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkTakeVolumeSnapshot.class.getName());
 
-                workJob.setAccountId(callingAccount.getId());
-                workJob.setUserId(callingUser.getId());
-                workJob.setStep(VmWorkJobVO.Step.Starting);
-                workJob.setVmType(VirtualMachine.Type.Instance);
-                workJob.setVmInstanceId(vm.getId());
+                    workJob.setAccountId(callingAccount.getId());
+                    workJob.setUserId(callingUser.getId());
+                    workJob.setStep(VmWorkJobVO.Step.Starting);
+                    workJob.setVmType(VirtualMachine.Type.Instance);
+                    workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
-                // save work context info (there are some duplications)
-                VmWorkTakeVolumeSnapshot workInfo = new VmWorkTakeVolumeSnapshot(
-                        callingUser.getId(), accountId != null ? accountId : callingAccount.getId(), vm.getId(),
-                        VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, policyId, snapshotId, quiesceVm);
-                workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+                    // save work context info (there are some duplications)
+                    VmWorkTakeVolumeSnapshot workInfo = new VmWorkTakeVolumeSnapshot(
+                            callingUser.getId(), accountId != null ? accountId : callingAccount.getId(), vm.getId(),
+                                    VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, policyId, snapshotId, quiesceVm);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
-                _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+                    _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
-                return new Object[] {workJob, new Long(workJob.getId())};
+                    return new Object[] {workJob, new Long(workJob.getId())};
                 } finally {
                     _vmInstanceDao.unlockFromLockTable(String.valueOf(vm.getId()));
                 }
