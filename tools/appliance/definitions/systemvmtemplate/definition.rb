@@ -42,7 +42,7 @@ architectures = {
 config = {
     :cpu_count => '1',
     :memory_size => '256',
-    :disk_size => '2500', :disk_format => 'VDI', :hostiocache => 'off',
+    :disk_size => '3000', :disk_format => 'VDI', :hostiocache => 'off',
     :iso_download_timeout => '1200',
     :boot_wait => '10',
     :boot_cmd_sequence => [
