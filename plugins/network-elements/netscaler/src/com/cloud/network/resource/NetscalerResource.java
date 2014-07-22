@@ -247,7 +247,7 @@ public class NetscalerResource implements ServerResource {
 
             //enable load balancing feature
             enableLoadBalancingFeature();
-            SSL.enableSslFeature(_netscalerService);
+            SSL.enableSslFeature(_netscalerService, _isSdx);
 
             //if the the device is cloud stack provisioned then make it part of the public network
             if (_cloudManaged) {
@@ -1910,7 +1910,10 @@ public class NetscalerResource implements ServerResource {
             }
         }
 
-        private static void enableSslFeature(nitro_service ns) throws ExecutionException {
+        private static void enableSslFeature(nitro_service ns, boolean isSdx) throws ExecutionException {
+            if (isSdx) {
+                return;
+            }
             try {
                 base_response result = ns.enable_features(new String[] {"SSL"});
                 if (result.errorcode != 0)
