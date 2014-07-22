@@ -34,11 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.net.URL;
 
 import org.apache.commons.lang.BooleanUtils;
-
-import com.google.gson.Gson;
-
-import org.apache.commons.codec.binary.Base64;
-
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -73,16 +68,11 @@ import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
-import com.cloud.agent.api.GetDomRVersionAnswer;
-import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
-import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
-import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
-import com.cloud.agent.api.routing.VmDataCommand;
 // import com.cloud.agent.api.routing.DhcpEntryAnswer;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.HostVmStateReportEntry;
@@ -202,7 +192,6 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
 
 import org.apache.commons.io.FileUtils;
 
@@ -1601,23 +1590,6 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
 
     /* VR */
     @Override
-    public ExecutionResult createFileInVR(String routerIp, String path,
-            String filename, String content) {
-        File permKey = new File("/root/.ssh/id_rsa.cloud");
-        String error = null;
-        s_logger.debug("Trying to copy " +path+ "/"+ filename +" to " + routerIp + " - " + content);
-        try {
-            SshHelper.scpTo(routerIp, 3922, "root", permKey, null, path,
-                    content.getBytes(), filename, null);
-        } catch (Exception e) {
-            s_logger.warn("Fail to create file " + path + filename + " in VR "
-                    + routerIp, e);
-            error = e.getMessage();
-        }
-        return new ExecutionResult(error == null, error);
-    }
-
-    @Override
     public ExecutionResult prepareCommand(NetworkElementCommand cmd) {
         // Update IP used to access router
         cmd.setRouterAccessIp(cmd
@@ -1716,54 +1688,34 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     @Override
     public ExecutionResult executeInVR(String routerIp, String script,
             String args, int timeout) {
-        final AllLinesParser parser = new AllLinesParser();
-        // final Script command = new Script(DefaultDomRPath, timeout,
-        //        s_logger);
         String cmd = script + " " + args;
+        s_logger.debug("executeInVR via " + _name + " on " + routerIp + ":" + cmd);
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             CloudStackPlugin.ReturnCode result;
             result = cSp.domrExec(routerIp, cmd);
             return new ExecutionResult(result.getRc(), result.getStdOut());
         } catch (Exception e) {
-            s_logger.error("executeInVR FAILED on " + routerIp + ":" + cmd + ", " + e.getMessage());
+            s_logger.error("executeInVR FAILED via " + _name + " on " + routerIp + ":" + cmd + ", " + e.getMessage());
         }
         return null;
     }
-    /* split out domr stuff later */
-    private GetDomRVersionAnswer execute(GetDomRVersionCmd cmd) {
-        String args = this.DefaultDomRPath + "get_template_version.sh";
-        String ip = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+
+    @Override
+    public ExecutionResult createFileInVR(String routerIp, String path,
+            String filename, String content) {
+        String error = null;
+        s_logger.debug("createFileInVR via " + _name + " on " + routerIp + ": " +path+ "/"+ filename + ", content: " + content);
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
-            CloudStackPlugin.ReturnCode result;
-            result = cSp.domrExec(ip, args);
-            if (!result.getRc() || result.getStdOut().isEmpty()) {
-                return new GetDomRVersionAnswer(cmd, "getDomRVersionCmd failed");
-            }
-            String domResp = result.getStdOut();
-            String[] lines = domResp.split("&");
-            if (lines.length != 2) {
-                return new GetDomRVersionAnswer(cmd, domResp);
-            }
-            return new GetDomRVersionAnswer(cmd, domResp, lines[0], lines[1]);
+            boolean result = cSp.ovsDomrUploadFile(routerIp, path, filename, content);
+            return new ExecutionResult(result, "");
         } catch (Exception e) {
-            return new GetDomRVersionAnswer(cmd, "getDomRVersionCmd "
-                    + e.getMessage());
+            error = e.getMessage();
+            s_logger.warn("createFileInVR failed for " + path + "/" + filename + " in VR "
+                    + routerIp + " via " + _name + ": " + error);
         }
-    }
-
-    private Answer giveDomRAns(Command cmd, String ip, String args, String resp) {
-        CloudStackPlugin cSp = new CloudStackPlugin(c);
-        try {
-            CloudStackPlugin.ReturnCode result = cSp.domrExec(ip, args);
-            if (!result.getRc()) {
-                return new Answer(cmd, false, result.getStdOut());
-            }
-        } catch (Exception e) {
-            return new Answer(cmd, false, e.getMessage());
-        }
-        return new Answer(cmd);
+        return new ExecutionResult(error == null, error);
     }
 
     /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
@@ -1873,57 +1825,6 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             }
         }
         return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
-    }
-
-    protected synchronized Answer execute(final DhcpEntryCommand cmd) {
-        String args = this.DefaultDomRPath + "edithosts.sh";
-        String ip = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        if (cmd.getVmIpAddress() != null) {
-            args += " -4 " + cmd.getVmIpAddress();
-        }
-        args += " -m " + cmd.getVmMac();
-        args += " -n " + cmd.getVmName();
-        if (cmd.getDefaultRouter() != null) {
-            args += " -d " + cmd.getDefaultRouter();
-        }
-        if (cmd.getStaticRoutes() != null) {
-            args += " -s " + cmd.getStaticRoutes();
-        }
-
-        if (cmd.getDefaultDns() != null) {
-            args += " -N " + cmd.getDefaultDns();
-        }
-
-        if (cmd.getVmIp6Address() != null) {
-            args += " -6 " + cmd.getVmIp6Address();
-            args += " -u " + cmd.getDuid();
-        }
-
-        if (!cmd.isDefault()) {
-            args += " -z";
-        }
-
-        return giveDomRAns(cmd, ip, args, "DhcpEntry failed");
-    }
-
-    protected Answer execute(final SavePasswordCommand cmd) {
-        final String password = cmd.getPassword();
-        final String ip = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        final String vmIpAddress = cmd.getVmIpAddress();
-        String args = this.DefaultDomRPath + "savepassword.sh ";
-        args += " -v " + vmIpAddress;
-        args += " -p " + password;
-        return giveDomRAns(cmd, ip, args, "SavePassword failed");
-    }
-
-    protected Answer execute(final VmDataCommand cmd) {
-        String ip = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        Map<String, List<String[]>> data = new HashMap<String, List<String[]>>();
-        data.put(cmd.getVmIpAddress(), cmd.getVmData());
-        String json = new Gson().toJson(data);
-        json = Base64.encodeBase64String(json.getBytes());
-        String args = this.DefaultDomRPath + "vmdata.py -d " + json;
-        return giveDomRAns(cmd, ip, args, "Set vm_data failed");
     }
 
     /*
@@ -3109,14 +3010,6 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             return execute((CheckNetworkCommand) cmd);
         } else if (clazz == CheckSshCommand.class) {
             return execute((CheckSshCommand) cmd);
-        } else if (clazz == GetDomRVersionCmd.class) {
-            return execute((GetDomRVersionCmd) cmd);
-        } else if (clazz == DhcpEntryCommand.class) {
-            return execute((DhcpEntryCommand) cmd);
-        } else if (clazz == SavePasswordCommand.class) {
-            return execute((SavePasswordCommand) cmd);
-        } else if (clazz == VmDataCommand.class) {
-            return execute((VmDataCommand) cmd);
         } else if (clazz == CreateObjectCommand.class) {
             return execute((CreateObjectCommand) cmd);
         } else {

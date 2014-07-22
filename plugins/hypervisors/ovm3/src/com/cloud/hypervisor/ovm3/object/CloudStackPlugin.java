@@ -36,6 +36,22 @@ public class CloudStackPlugin extends OvmObject {
         }
         return true;
     }
+    public boolean ovsUploadFile(String path, String file, String content)
+            throws XmlRpcException {
+        Object x = callWrapper("ovs_upload_file", path, file, content);
+        if (x==null) {
+            return false;
+        }
+        return true;
+    }
+    public boolean ovsDomrUploadFile(String domr, String path, String file, String content)
+            throws XmlRpcException {
+        Object x = callWrapper("ovs_domr_upload_file", domr, path, file, content);
+        if (x==null) {
+            return false;
+        }
+        return true;
+    }
 
     public class ReturnCode {
         public ReturnCode() {

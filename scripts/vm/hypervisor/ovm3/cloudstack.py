@@ -24,6 +24,7 @@ import os.path
 import paramiko
 import subprocess
 import socket
+import tempfile
 
 from xen.util.xmlrpcclient import ServerProxy
 from xmlrpclib import Error
@@ -45,6 +46,7 @@ class CloudStack(Agent):
             'exec_domr': domrExec,
             'check_domr_port': domrCheckPort,
             'check_domr_ssh': domrCheckSsh,
+            'ovs_domr_upload_file': ovsDomrUploadFile,
             'ovs_control_interface': ovsControlInterface,
             'ovs_mkdir': ovsMkdir,
             'ovs_check_file': ovsCheckFile,
@@ -71,20 +73,38 @@ def getModuleVersion():
 def call(msg):
     return msg
 
-# execute something on domr
-def domrExec(ip, cmd, timeout=10, username="root", port=3922, keyfile="~/.ssh/id_rsa.cloud"):
-    ssh = paramiko.SSHClient()
-    ssh.load_system_host_keys()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+def paramikoOpts(con, keyfile="~/.ssh/id_rsa.cloud"):
+    con.load_system_host_keys()
+    con.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     privatekeyfile = os.path.expanduser(keyfile)
     key = paramiko.RSAKey.from_private_key_file(privatekeyfile)
-    ssh.connect(ip, port, username, pkey=key, timeout=timeout)
+    return key
+
+# execute something on domr
+def domrExec(host, cmd, timeout=10, username="root", port=3922, keyfile="~/.ssh/id_rsa.cloud"):
+    ssh = paramiko.SSHClient()
+    pkey = paramikoOpts(ssh, keyfile)
+    ssh.connect(host, port, username, pkey=pkey, timeout=timeout)
     ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(cmd)
     exit_status = ssh_stdout.channel.recv_exit_status()
     ssh.close()
     return { "rc": exit_status,
         "out": ''.join(ssh_stdout.readlines()),
         "err": ''.join(ssh_stderr.readlines()) };
+
+def domrSftp(host, localfile, remotefile, timeout=10, username="root", port=3922, keyfile="~/.ssh/id_rsa.cloud"):
+    try:
+        transport = paramiko.Transport((host, port))
+        pkey = paramikoOpts(transport, keyfile)
+        transport.connect(host, port, username, pkey=pkey, timeout=timeout)
+        sftp = paramiko.SFTPClient.from_transport(transport)
+        sftp.put(localfile, remotefile)
+        sftp.close()
+        transport.close()
+    except Exception, e:
+        raise e
+
+    return True
 
 # check a port on domr
 def domrPort(ip, port=3922, timeout=3):
@@ -97,9 +117,9 @@ def domrCheckPort(ip, port=3922, timeout=3):
         s.settimeout(timeout)
         s.connect((ip, port))
         s.close()
-        return True
     except:
         return False
+    return True
 
 # check ssh
 def domrCheckSsh(ip, port=3922, timeout=10):
@@ -223,27 +243,38 @@ def ovsCheckFile(file):
         return True
     return False
 
-def ovsUploadFile():
+def ovsUploadFile(path, filename, content):
+    file="%s/%s" % (path, filename)
+    try:
+        ovsMkdir(os.path.expanduser(path))
+    except Error, v:
+        print "path was already there %s" % path
+
+    try:
+        text_file = open("%s" % file, "w")
+        text_file.write("%s" % content)
+        text_file.close()
+    except Error, v:
+        print "something went wrong creating %s: %s" % (file, v)
+        return False
+    return True
+
+def ovsDomrUploadFile(domr, path, file, content):
+    remotefile = "%s/%s" % (path, file)
+    try:
+        temp = tempfile.NamedTemporaryFile()
+        temp.write(content)
+        domrSftp(domr, temp.name, remotefile)
+        temp.close
+    except Exception, e:
+        print "problem uploading file %s/%s to %s, %s" % (path, file, domr, e)
+        raise e
     return True
 
 # upload keys
 def ovsUploadSshKey(keyfile, content):
     keydir=os.path.expanduser("~/.ssh")
-    key="%s/%s" % (keydir, keyfile)
-    try:
-        ovsMkdir(os.path.expanduser(keydir))
-    except Error, v:
-        print "was already there %s" % keydir
-
-    try:
-        text_file = open("%s" % key, "w")
-        text_file.write("%s" % content)
-        text_file.close()
-    except Error, v:
-        print "something went wrong %s" % v
-        return False
-    return True
-
+    return ovsUploadFile(keydir, keyfile, content)
 
 # older python,
 def ovsDom0Stats(bridge):
