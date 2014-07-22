@@ -252,9 +252,22 @@ function create_definition() {
   add_on_exit rm -f cloud_scripts_shar_archive.sh
 }
 
+function setup_ruby() {
+  local bundle_args=
+  if [[ ! -z "${JENKINS_HOME}" ]]; then
+    # inspired by https://github.com/CloudBees-community/rubyci-clickstart/blob/master/bin/run-ci
+    # also see https://rvm.io/integration/jenkins
+    # .rvmrc won't get trusted/auto-loaded by jenkins by default
+    export VAGRANT_HOME=$HOME/.vagrant.d-release-cloudstack
+    rvm use ruby-1.9.3@vagrant-release-cloudstack --create
+    bundle_args="--deployment"
+  fi
+  bundle check || bundle install ${bundle_args}
+}
+
 function prepare() {
   log INFO "preparing for build"
-  bundle
+  setup_ruby
   rm -rf dist *.ova *.vhd *.vdi *.qcow* *.bz2 *.vmdk *.ovf
   mkdir dist
 }
