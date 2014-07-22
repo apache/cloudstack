@@ -30,7 +30,9 @@ cd ${SCRIPT_DIR}/../..
 CLOUDSTACK_DIR=${PWD}
 cd ${CURR_DIR}
 # ensure we are running in isolation
-TEMP_DIR=`mktemp -d -t shar_cloud`
+TMPDIR=${TMPDIR:-/tmp}
+TMPDIR=${TMPDIR%/}
+TEMP_DIR=`mktemp -d ${TMPDIR}/shar_cloud.XXXXXXXX`
 
 cd ${TEMP_DIR}
 mkdir cloud_scripts
