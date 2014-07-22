@@ -47,6 +47,7 @@ function install_packages() {
   #32 bit architecture support:: not required for 32 bit template
   if [ "${arch}" != "i386" ]; then
     dpkg --add-architecture i386
+    apt-get update
     ${apt_install} links:i386 libuuid1:i386
   fi
 
