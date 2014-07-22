@@ -250,8 +250,6 @@ def chain_name(vm_name):
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
         if vm_name.endswith('untagged'):
             return '-'.join(vm_name.split('-')[:-1])
-    if len(vm_name) > 28:
-        vm_name = vm_name[0:27]
     return vm_name
 
 def chain_name_def(vm_name):
@@ -259,17 +257,11 @@ def chain_name_def(vm_name):
         if vm_name.endswith('untagged'):
             return '-'.join(vm_name.split('-')[:-2]) + "-def"
         return '-'.join(vm_name.split('-')[:-1]) + "-def"
-
-    if len(vm_name) > 28:
-        vm_name = vm_name[0:27]
     return vm_name
   
 def egress_chain_name(vm_name):
-    name = chain_name(vm_name) + "-eg"
-    if len(name) > 28:
-        name = name[0:27]
-    return name
-
+    return chain_name(vm_name) + "-eg"
+      
 @echo
 def can_bridge_firewall(session, args):
     try:
