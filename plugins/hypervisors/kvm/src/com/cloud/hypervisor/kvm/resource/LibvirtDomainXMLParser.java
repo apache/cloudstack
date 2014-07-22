@@ -108,7 +108,9 @@ public class LibvirtDomainXMLParser {
                         def.defBlockBasedDisk(diskDev, diskLabel,
                             DiskDef.diskBus.valueOf(bus.toUpperCase()));
                     }
-                    def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode.toUpperCase()));
+                    if (diskCacheMode != null) {
+                        def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode.toUpperCase()));
+                    }
                 }
 
                 NodeList iotune = disk.getElementsByTagName("iotune");

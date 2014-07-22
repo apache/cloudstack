@@ -941,6 +941,18 @@ public class KVMStorageProcessor implements StorageProcessor {
                 parser.parseDomainXML(xml);
                 disks = parser.getDisks();
 
+                if (attachingPool.getType() == StoragePoolType.RBD) {
+                    if (resource.getHypervisorType() == Hypervisor.HypervisorType.LXC) {
+                        String[] splitPoolImage = attachingDisk.getPath().split("/");
+                        //ToDo: rbd showmapped supports json and xml output. Use json/xml to get device
+                        String device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"  "+splitPoolImage[1]+"\" | cut -d \" \" -f10");
+                        if (device != null) {
+                            s_logger.debug("RBD device on host is: "+device);
+                            attachingDisk.setPath(device);
+                        }
+                    }
+                }
+
                 for (DiskDef disk : disks) {
                     String file = disk.getDiskPath();
                     if (file != null && file.equalsIgnoreCase(attachingDisk.getPath())) {
