@@ -238,7 +238,7 @@ function create_definition() {
     cp -r "definitions/${appliance}" "definitions/${appliance_build_name}"
     set +e
     sed ${sed_regex_option} -i -e "s/^CLOUDSTACK_RELEASE=.+/CLOUDSTACK_RELEASE=${version}/" \
-        "definitions/${appliance_build_name}/postinstall.sh"
+        "definitions/${appliance_build_name}/configure_systemvm_services.sh"
     if [ ! -z "${ssh_key}" ]; then
       # ssh key lines can contain /
       sed ${sed_regex_option} -i -e "s|^key=.+|key=\"${ssh_key}\"|" \
