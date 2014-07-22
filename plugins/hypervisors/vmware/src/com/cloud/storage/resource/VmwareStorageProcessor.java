@@ -268,6 +268,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
         Pair<String, String> templateInfo = VmwareStorageLayoutHelper.decodeTemplateRelativePathAndNameFromUrl(secondaryStorageUrl, templateUrl, template.getName());
 
         VmwareContext context = hostService.getServiceContext(cmd);
+        if (context == null) {
+            return new CopyCmdAnswer("Failed to create a Vmware context, check the management server logs or the ssvm log for details");
+        }
 
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
@@ -286,7 +289,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 if (managed) {
                     morDs = prepareManagedDatastore(context, hyperHost, managedStoragePoolName, storageHost, storagePort,
-                                chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
+                            chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
                 }
                 else {
                     morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, storageUuid);
@@ -303,9 +306,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     vmMo.unregisterVm();
 
                     String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, managedStoragePoolRootVolumeName,
-                        managedStoragePoolRootVolumeName, VmwareStorageLayoutType.VMWARE, false);
+                            managedStoragePoolRootVolumeName, VmwareStorageLayoutType.VMWARE, false);
                     String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, null,
-                        managedStoragePoolRootVolumeName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, false);
+                            managedStoragePoolRootVolumeName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, false);
 
                     dsMo.moveDatastoreFile(vmwareLayoutFilePair[0], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[0], dcMo.getMor(), true);
                     dsMo.moveDatastoreFile(vmwareLayoutFilePair[1], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[1], dcMo.getMor(), true);
@@ -1294,9 +1297,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 Map<String, String> details = disk.getDetails();
 
                 morDs = prepareManagedStorage(context, hyperHost, iScsiName, storageHost, storagePort, null,
-                            details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
-                            details.get(DiskTO.CHAP_TARGET_USERNAME), details.get(DiskTO.CHAP_TARGET_SECRET),
-                            volumeTO.getSize(), cmd);
+                        details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
+                        details.get(DiskTO.CHAP_TARGET_USERNAME), details.get(DiskTO.CHAP_TARGET_SECRET),
+                        volumeTO.getSize(), cmd);
             }
             else {
                 morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid());
@@ -1573,7 +1576,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost,
-                isManaged ? managedDatastoreName : store.getUuid());
+                    isManaged ? managedDatastoreName : store.getUuid());
 
             if (morDs == null) {
                 String msg = "Unable to find datastore based on volume mount point " + store.getUuid();
@@ -1982,7 +1985,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String storageHost, int storagePort, String volumeName, String chapInitiatorUsername, String chapInitiatorSecret,
             String chapTargetUsername, String chapTargetSecret, long size, Command cmd) throws Exception {
         ManagedObjectReference morDs = prepareManagedDatastore(context, hyperHost, iScsiName, storageHost, storagePort,
-                                           chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
+                chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
 
         DatastoreMO dsMo = new DatastoreMO(hostService.getServiceContext(null), morDs);
 
