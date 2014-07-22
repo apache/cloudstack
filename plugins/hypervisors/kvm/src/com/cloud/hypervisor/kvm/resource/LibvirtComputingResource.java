@@ -1860,10 +1860,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             String path = vol.getPath();
             String type = getResizeScriptType(pool, vol);
 
-            if (type == null) {
-                return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '" + pool.getType() + "' and volume format '" + vol.getFormat() + "'");
-            } else if (type.equals("QCOW2") && shrinkOk) {
-                return new ResizeVolumeAnswer(cmd, false, "Unable to shrink volumes of type " + type);
+            if (pool.getType() != StoragePoolType.RBD) {
+                if (type == null) {
+                    return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '" + pool.getType() + "' and volume format '" + vol.getFormat() + "'");
+                } else if (type.equals("QCOW2") && shrinkOk) {
+                    return new ResizeVolumeAnswer(cmd, false, "Unable to shrink volumes of type " + type);
+                }
+            } else {
+                s_logger.debug("Volume " + path + " is on a RBD storage pool. No need to query for additional information.");
             }
 
             s_logger.debug("Resizing volume: " + path + "," + currentSize + "," + newSize + "," + type + "," + vmInstanceName + "," + shrinkOk);
