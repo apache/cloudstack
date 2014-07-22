@@ -47,14 +47,14 @@ function install_cloud_scripts() {
   chkconfig cloud off
 }
 
-do_signature() {
-  mkdir -p /var/cache/cloud/
-  gzip -c /usr/share/cloud/cloud-scripts.tar > /usr/share/cloud/cloud-scripts.tgz
+function do_signature() {
+  mkdir -p /var/cache/cloud/ /usr/share/cloud/
+  (cd ./cloud_scripts/; tar -cvf - * | gzip > /usr/share/cloud/cloud-scripts.tgz)
   md5sum /usr/share/cloud/cloud-scripts.tgz | awk '{print $1}' > /var/cache/cloud/cloud-scripts-signature
   echo "Cloudstack Release $CLOUDSTACK_RELEASE $(date)" > /etc/cloudstack-release
 }
 
-configure_services() {
+function configure_services() {
   mkdir -p /var/www/html
   mkdir -p /opt/cloud/bin
   mkdir -p /var/cache/cloud
