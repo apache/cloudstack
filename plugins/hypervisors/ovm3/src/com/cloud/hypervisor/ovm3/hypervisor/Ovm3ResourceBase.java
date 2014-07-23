@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.ovm3.hypervisor;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -34,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.net.URL;
 
 import org.apache.commons.lang.BooleanUtils;
+
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -41,6 +41,9 @@ import org.apache.xmlrpc.XmlRpcException;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+
+
+
 
 // import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 // import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -134,6 +137,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkSetupInfo;
 // import com.cloud.network.NetworkModel;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.ServerResourceBase;
 import com.cloud.resource.hypervisor.HypervisorResource;
 // import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -156,7 +160,7 @@ import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineName;
+// import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.hypervisor.ovm3.object.Common;
@@ -185,21 +189,25 @@ import org.apache.cloudstack.storage.command.DettachCommand;
 // import org.apache.cloudstack.storage.command.DettachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 
+
+
+
 // import org.apache.cloudstack.storage.command.AttachAnswer;
 import com.cloud.storage.Storage.ImageFormat;
 /* do we need this ? */
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.resource.ResourceManager;
-import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 import org.apache.commons.io.FileUtils;
 
+import javax.ejb.Local;
 import javax.inject.Inject;
 
-/* TODO: Seperate these out */
-public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
-        StorageProcessor, VirtualRouterDeployer {
+/* TODO: Seperate the Resources out */
+@Local(value = ServerResource.class)
+public class Ovm3ResourceBase extends ServerResourceBase implements ServerResource, HypervisorResource, VirtualRouterDeployer,
+        StorageProcessor  {
     private static final Logger s_logger = Logger
             .getLogger(Ovm3ResourceBase.class);
     private Connection c;
@@ -243,14 +251,12 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     protected final int DefaultDomRSshPort = 3922;
     String DefaultDomRPath = "/opt/cloud/bin/";
     private final int _timeout = 600;
-    private VirtualRoutingResource _virtRouterResource;
+    protected VirtualRoutingResource _vrResource;
     private Map<String, Network.Interface> _interfaces = null;
     /* switch to concurrenthasmaps all over the place ? */
     private final ConcurrentHashMap<String, Map<String, String>> _vmStats = new ConcurrentHashMap<String, Map<String, String>>();
 
-    // TODO vmsync {
-    /* This is replaced by the vmList in getall VMs, and operate on that */
-    // protected HashMap<String, State> _vms = new HashMap<String, State>(250);
+    /* TODO: Add a network map, so we know which tagged interfaces we can remove  */
     protected Map<String, Xen.Vm> _vms = new HashMap<String, Xen.Vm>();
     protected Map<String, State> _vmstates = new HashMap<String, State>();
 
@@ -381,7 +387,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             this._ovm3cluster = false;
             this._ovm3vip = "";
         }
-        /* if we're a cluster we have to be a pool ? */
+        /* if we're a cluster we are a pool */
         if (_ovm3cluster) {
             this._ovm3pool = true;
         }
@@ -402,7 +408,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             s_logger.debug(msg, e);
             throw new ConfigurationException(msg);
         }
-        /* setup ovm3 plugin */
+        /* setup ovm3 agent plugin for cloudstack, our minion */
         try {
             installOvsPlugin();
             CloudStackPlugin cSp = new CloudStackPlugin(c);
@@ -430,6 +436,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                      * the route del and ifconfig as loopback bridges have arp
                      * disabled by default, and zeroconf configures a route on
                      * the main bridge...
+                     * For now handled in the ovm3 agent plugin.
                      */
                     try {
                         net.startOvsLocalConfig(_controlNetworkName);
@@ -444,7 +451,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                         Thread.sleep(1 * 1000);
                     }
                 }
-                /* The bridge is remembered upon reboot, but not the IP */
+                /* The bridge is remembered upon reboot, but not the IP or the
+                 * config. Zeroconf also adds the route again by default. */
                 net.ovsIpConfig(_controlNetworkName, "static",
                         _controlNetworkIp, _controlNetworkMask);
                 CloudStackPlugin cSp = new CloudStackPlugin(c);
@@ -518,10 +526,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
              * s_isHeartBeat = false;
              */
 
-            /*
-             * - uses iptables in XenServer, but not agent accessible for agent
-             * *should make module*
-             */
+            /* should go, firewall bridging is only for Xen */
             try {
                 _canBridgeFirewall = canBridgeFirewall();
             } catch (XmlRpcException e) {
@@ -538,8 +543,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
              * "XML RPC Exception, unable to setup host: " + _host + " " + e;
              * s_logger.debug(msg); throw new ConfigurationException(msg);
              */
-            _virtRouterResource = new VirtualRoutingResource(this);
-            if (!_virtRouterResource.configure(name, params)) {
+            _vrResource = new VirtualRoutingResource(this);
+            if (!_vrResource.configure(name, params)) {
                 throw new ConfigurationException("Unable to configure VirtualRoutingResource");
             }
         } catch (Exception e) {
@@ -1560,7 +1565,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
                             break;
                         }
                     } catch (Exception x) {
-                        s_logger.debug("unable to connect to " + controlIp + " "
+                        s_logger.debug("unable to connect to " + controlIp
+                                + " on attempt " + count + " "
                                 + x.getMessage());
                     }
                 }
@@ -1617,59 +1623,36 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         return new ExecutionResult(true, null);
     }
 
+    /* TODO: get the list of bridges and see if the bridge should go or stay
+     * This should be combined with the bridges/vms map, or we should switch to
+     * a bridge per vm.... -cough-
+     */
     protected ExecutionResult cleanupNetworkElementCommand(IpAssocCommand cmd) {
-        return null;
-    }
-
-    private static final class KeyValueInterpreter extends OutputInterpreter {
-        private final Map<String, String> map = new HashMap<String, String>();
-
-        @Override
-        public String interpret(BufferedReader reader) throws IOException {
-            String line = null;
-            int numLines = 0;
-            while ((line = reader.readLine()) != null) {
-                String[] toks = line.trim().split("=");
-                if (toks.length < 2) {
-                    s_logger.warn("Failed to parse Script output: " + line);
-                } else {
-                    map.put(toks[0].trim(), toks[1].trim());
-                }
-                numLines++;
-            }
-            if (numLines == 0) {
-                s_logger.warn("KeyValueInterpreter: no output lines?");
-            }
-            return null;
-        }
-
-        public Map<String, String> getKeyValues() {
-            return map;
-        }
+        return new ExecutionResult(true, null);
     }
 
     /* TODO: fill in these so we can get rid of the VR/SVM/etc specifics */
     private ExecutionResult prepareNetworkElementCommand(
             SetupGuestNetworkCommand cmd) {
-        return null;
+        return new ExecutionResult(true, null);
     }
 
     private ExecutionResult prepareNetworkElementCommand(IpAssocVpcCommand cmd) {
-        return null;
+        return new ExecutionResult(true, null);
     }
 
     protected ExecutionResult prepareNetworkElementCommand(
             SetSourceNatCommand cmd) {
-        return null;
+        return new ExecutionResult(true, null);
     }
 
     private ExecutionResult prepareNetworkElementCommand(
             SetNetworkACLCommand cmd) {
-        return null;
+        return new ExecutionResult(true, null);
     }
 
     private ExecutionResult prepareNetworkElementCommand(IpAssocCommand cmd) {
-        return null;
+        return new ExecutionResult(true, null);
     }
 
     /* TODO: egh? */
@@ -1684,12 +1667,15 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         return executeInVR(routerIp, script, args, _timeout);
     }
 
-    /* TODO: Double check */
     @Override
     public ExecutionResult executeInVR(String routerIp, String script,
             String args, int timeout) {
+        /* TODO: either here OR on cloudstack.py */
+        if (!script.contains(this.DefaultDomRPath)) {
+            script = this.DefaultDomRPath + "/" + script;
+        }
         String cmd = script + " " + args;
-        s_logger.debug("executeInVR via " + _name + " on " + routerIp + ":" + cmd);
+        s_logger.debug("executeInVR via " + _name + " on " + routerIp + ": " + cmd);
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             CloudStackPlugin.ReturnCode result;
@@ -1845,31 +1831,22 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
         int interval = cmd.getInterval();
         int retries = cmd.getRetries();
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Trying port " + privateIp + ":" + cmdPort);
-        }
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             if (!cSp.domrCheckPort(privateIp, cmdPort, retries, interval)) {
-                s_logger.info(vmName + ":" + cmdPort + " nok");
-                return new CheckSshAnswer(cmd, "unable to connect");
+                String msg = "Port " + cmdPort + " not reachable for " + vmName + " via " + _name;
+                s_logger.info(msg);
+                return new CheckSshAnswer(cmd, msg);
             }
-            s_logger.info(vmName + ":" + cmdPort + " ok");
         } catch (Exception e) {
-            s_logger.error("Can not reach port on System vm " + vmName
-                    + " due to exception", e);
-            return new CheckSshAnswer(cmd, e);
+            String msg = "Can not reach port " + cmdPort + " on System vm " + vmName
+                    + " via " + _name + " due to exception: " + e;
+            s_logger.error(msg);
+            return new CheckSshAnswer(cmd, msg);
         }
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Ping command port succeeded for vm " + vmName + " "
+            s_logger.debug("Ping " + cmdPort + " succeeded for vm " + vmName + " via " + _name
                     + cmd);
-        }
-        if (VirtualMachineName.isValidRouterName(vmName)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Execute network usage setup command on "
-                        + vmName);
-            }
-            // TODO: check this one out...
         }
         return new CheckSshAnswer(cmd);
     }
@@ -2635,7 +2612,7 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
             }
             for (String member : members) {
                 /* easy way out for now..., should get this from hostVO */
-                String url = "http://" + this._agentUserName + ":"
+                /* String url = "http://" + this._agentUserName + ":"
                         + this._agentPassword + "@" + member + ":" + _agentPort
                         + "/api/3";
                 /*
@@ -2934,8 +2911,8 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
     @Override
     public Answer executeRequest(Command cmd) {
         Class<? extends Command> clazz = cmd.getClass();
-        if (clazz == NetworkElementCommand.class) {
-            return _virtRouterResource.executeRequest((NetworkElementCommand)cmd);
+        if (cmd instanceof NetworkElementCommand) {
+            return _vrResource.executeRequest((NetworkElementCommand)cmd);
         } else if (clazz == CheckHealthCommand.class) {
             return execute((CheckHealthCommand) cmd);
         } else if (clazz == NetworkUsageCommand.class) {
@@ -3110,8 +3087,9 @@ public class Ovm3ResourceBase implements ServerResource, HypervisorResource,
      */
     protected Answer execute(AttachIsoCommand cmd) {
         try {
-            URI iso = new URI(cmd.getIsoPath());
+            /* URI iso = new URI(cmd.getIsoPath());
             String isoPath = iso.getHost() + ":" + iso.getPath();
+             */
             /*
              * Ovm3Vm.detachOrAttachIso(_conn, cmd.getVmName(), isoPath,
              * cmd.isAttach());

@@ -17,6 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+# TODO: Needs cleaning and sanitazation.
+#
 import logging
 import time
 import re
@@ -65,6 +67,11 @@ class CloudStack(Agent):
     def getName(self):
         return self.__class__.__name__
 
+domrPort=3922
+domrKeyFile="~/.ssh/id_rsa.cloud"
+domrRoot="root"
+domrTimeout=10
+
 # which version are we intended for?
 def getModuleVersion():
     return "0.1"
@@ -92,19 +99,42 @@ def domrExec(host, cmd, timeout=10, username="root", port=3922, keyfile="~/.ssh/
         "out": ''.join(ssh_stdout.readlines()),
         "err": ''.join(ssh_stderr.readlines()) };
 
+# too bad sftp is missing.... Oh no it isn't it's just wrong in the svm config...
+# root@s-1-VM:/var/cache/cloud# grep sftp /etc/ssh/sshd_config
+# Subsystem   sftp    /usr/libexec/openssh/sftp-server
+# root@s-1-VM:/var/cache/cloud# find / -name sftp-server -type f
+# /usr/lib/openssh/sftp-server
+#
 def domrSftp(host, localfile, remotefile, timeout=10, username="root", port=3922, keyfile="~/.ssh/id_rsa.cloud"):
     try:
-        transport = paramiko.Transport((host, port))
-        pkey = paramikoOpts(transport, keyfile)
-        transport.connect(host, port, username, pkey=pkey, timeout=timeout)
-        sftp = paramiko.SFTPClient.from_transport(transport)
+        paramiko.common.logging.basicConfig(level=paramiko.common.DEBUG)
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        pkey = paramikoOpts(ssh, keyfile)
+        ssh.connect(host, port, username, pkey=pkey, timeout=timeout)
+        sftp = ssh.open_sftp() 
+        # either:
         sftp.put(localfile, remotefile)
+        # or:
+        # rf = sftp.open(remotefile, 'w')
+        # rf.write(content)
+        # rf.close()
         sftp.close()
-        transport.close()
+        ssh.close()
     except Exception, e:
         raise e
-
     return True
+
+def domrScp(host, localfile, remotefile, timeout=10, username="root", port=3922, keyfile="~/.ssh/id_rsa.cloud"):
+    try:
+        target = "%s@%s:%s" % (username, host, remotefile)
+        cmd = ['scp', '-P', str(port), '-q', '-o', 'StrictHostKeyChecking=no','-i', os.path.expanduser(keyfile), localfile, target]
+        rc = subprocess.call(cmd, shell=False)
+        if rc == 0:
+            return True
+    except Exception, e:
+        raise e
+    return False
 
 # check a port on domr
 def domrPort(ip, port=3922, timeout=3):
@@ -202,7 +232,7 @@ def ovsRestartXend():
 
 # replace with popen
 def restartService(service):
-    command = ['service', service, 'restart'];
+    command = ['service', service, 'restart']
     subprocess.call(command, shell=False)
     return True
 
@@ -264,7 +294,9 @@ def ovsDomrUploadFile(domr, path, file, content):
     try:
         temp = tempfile.NamedTemporaryFile()
         temp.write(content)
-        domrSftp(domr, temp.name, remotefile)
+        temp.flush()
+        # domrSftp(domr, temp.name, remotefile)
+        domrScp(domr, temp.name, remotefile)
         temp.close
     except Exception, e:
         print "problem uploading file %s/%s to %s, %s" % (path, file, domr, e)
