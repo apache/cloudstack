@@ -38,7 +38,6 @@ import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -107,7 +106,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     }
 
     @Override
-    protected void proceedEffectiveDeployment()
+    protected void executeDeployment()
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         //2) Return routers if exist, otherwise...
         if (this.routers.size() < 1) {
@@ -137,61 +136,6 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
             this.routers.add(router);
         }
     }
-
-    @Override
-    @DB
-    protected void findOrDeployVirtualRouterOLD()
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-
-        logger.debug("Deploying Virtual Router in VPC " + vpc);
-
-        Vpc vpcLock = vpcDao.acquireInLockTable(vpc.getId());
-        if (vpcLock == null) {
-            throw new ConcurrentOperationException("Unable to lock vpc " + vpc.getId());
-        }
-
-        //1) Find out the list of routers and generate deployment plan
-        this.planDeploymentRouters();
-        this.generateDeploymentPlan();
-
-        //2) Return routers if exist, otherwise...
-        if (this.routers.size() < 1) {
-            try {
-
-                Long offeringId = vpcOffDao.findById(vpc.getVpcOfferingId()).getServiceOfferingId();
-                if (offeringId == null) {
-                    offeringId = offering.getId();
-                }
-                //3) Deploy Virtual Router
-                List<? extends PhysicalNetwork> pNtwks = pNtwkDao.listByZone(vpc.getZoneId());
-
-                VirtualRouterProvider vpcVrProvider = null;
-
-                for (PhysicalNetwork pNtwk : pNtwks) {
-                    PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(pNtwk.getId(), Type.VPCVirtualRouter.toString());
-                    if (provider == null) {
-                        throw new CloudRuntimeException("Cannot find service provider " + Type.VPCVirtualRouter.toString() + " in physical network " + pNtwk.getId());
-                    }
-                    vpcVrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), Type.VPCVirtualRouter);
-                    if (vpcVrProvider != null) {
-                        break;
-                    }
-                }
-
-                PublicIp sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(this.owner, vpc);
-
-                DomainRouterVO router = deployVpcRouter(vpcVrProvider, offeringId, sourceNatIp);
-                this.routers.add(router);
-
-            } finally {
-                // TODO Should we do this after the pre or after the whole??
-                if (vpcLock != null) {
-                    vpcDao.releaseFromLockTable(vpc.getId());
-                }
-            }
-        }
-    }
-
 
     protected DomainRouterVO deployVpcRouter(final VirtualRouterProvider vrProvider,
             final long svcOffId, final PublicIp sourceNatIp) throws ConcurrentOperationException, InsufficientAddressCapacityException,
@@ -282,11 +226,11 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
     @Override
     protected void planDeploymentRouters() {
-        this.routers = vpcHelper.getVpcRouters(this.getVpc().getId());
+        this.routers = vpcHelper.getVpcRouters(this.vpc.getId());
     }
 
     @Override
-    public void generateDeploymentPlan() {
+    protected void generateDeploymentPlan() {
         final long dcId = this.dest.getDataCenter().getId();
         this.plan = new DataCenterDeployment(dcId);
     }
