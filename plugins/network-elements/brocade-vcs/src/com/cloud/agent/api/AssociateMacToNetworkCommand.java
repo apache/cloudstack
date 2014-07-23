@@ -14,52 +14,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.agent.api;
 
-import java.util.List;
+public class AssociateMacToNetworkCommand extends Command {
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+    private String _interfaceMac;
+    private long _networkId;
+    private String _ownerName;
 
-import com.cloud.utils.Pair;
-
-/**
- *
- */
-public interface PhysicalNetwork extends Identity, InternalIdentity {
-
-    public enum State {
-        Disabled, Enabled;
+    public AssociateMacToNetworkCommand(long networkId, String interfaceMac, String ownerName) {
+        _networkId = networkId;
+        _interfaceMac = interfaceMac;
+        _ownerName = ownerName;
     }
 
-    public enum IsolationMethod {
-        VLAN, L3, GRE, STT, VNS, MIDO, SSP, VXLAN, ODL, L3VPN, VSP, VCS;
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 
-    public enum BroadcastDomainRange {
-        POD, ZONE;
+    public String getInterfaceMac() {
+        return _interfaceMac;
     }
 
-    BroadcastDomainRange getBroadcastDomainRange();
+    public long getNetworkId() {
+        return _networkId;
+    }
 
-    // TrafficType getTrafficType();
-
-    long getDataCenterId();
-
-    State getState();
-
-    List<String> getTags();
-
-    List<String> getIsolationMethods();
-
-    Long getDomainId();
-
-    List<Pair<Integer, Integer>> getVnet();
-
-    String getVnetString();
-
-    String getSpeed();
-
-    String getName();
+    public String getOwnerName() {
+        return _ownerName;
+    }
 
 }

@@ -104,8 +104,20 @@ public class Networks {
                     else
                         return new URI("vxlan://" + value.toString());
                 } catch (URISyntaxException e) {
-                    throw new CloudRuntimeException(
-                            "Unable to convert to broadcast URI: " + value);
+                    throw new CloudRuntimeException("Unable to convert to broadcast URI: " + value);
+                }
+            }
+        },
+        Vcs("vcs", Integer.class) {
+            @Override
+            public <T> URI toUri(T value) {
+                try {
+                    if (value.toString().contains("://"))
+                        return new URI(value.toString());
+                    else
+                        return new URI("vcs://" + value.toString());
+                } catch (URISyntaxException e) {
+                    throw new CloudRuntimeException("Unable to convert to broadcast URI: " + value);
                 }
             }
         },

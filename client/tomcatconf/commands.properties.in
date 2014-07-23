@@ -607,6 +607,13 @@ listNiciraNvpDeviceNetworks=1
 # Not implemented (yet)
 #configureNiciraNvpDevice=1
 
+#### brocade vcs commands
+
+addBrocadeVcsDevice=1
+deleteBrocadeVcsDevice=1
+listBrocadeVcsDevices=1
+listBrocadeVcsDeviceNetworks=1
+
 #### bigswitch vns commands
 
 addBigSwitchVnsDevice=1

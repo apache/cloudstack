@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="urn:brocade.com:mgmt:brocade-vcs"
+	xmlns:tns="urn:brocade.com:mgmt:brocade-vcs" elementFormDefault="qualified">
+
+	<annotation>
+		<documentation>
+
+			Licensed to the Apache Software Foundation (ASF) under
+			one
+			or more contributor license agreements. See the NOTICE file
+			distributed with this work for additional information
+			regarding
+			copyright ownership. The ASF licenses this file
+			to you under the
+			Apache License, Version 2.0 (the
+			"License"); you may not use this file
+			except in compliance
+			with the License. You may obtain a copy of the
+			License at
+
+			http://www.apache.org/licenses/LICENSE-2.0
+
+			Unless required
+			by applicable law or agreed to in writing,
+			software distributed under
+			the License is distributed on an
+			"AS IS" BASIS, WITHOUT WARRANTIES OR
+			CONDITIONS OF ANY
+			KIND, either express or implied. See the License for
+			the
+			specific language governing permissions and limitations
+			under the
+			License.
+		</documentation>
+	</annotation>
+	<element name="output">
+		<complexType>
+			<sequence>
+				<element name="vcs-cluster-type-info" type="string"></element>
+				<element name="virtual-ip-address" type="string"></element>
+				<element name="principal-switch-wwn" type="string"></element>
+				<element name="co-ordinator-wwn" type="string"></element>
+				<element name="total-nodes-in-cluster" type="int"></element>
+				<element name="nodes-disconnected-from-cluster" type="int">
+				</element>
+				<element ref="tns:vcs-nodes" />
+				<element name="cluster-generic-status" type="string"></element>
+				<element name="cluster-specific-status" type="string"></element>
+
+			</sequence>
+		</complexType>
+	</element>
+
+
+	<element name="vcs-nodes">
+		<complexType>
+			<sequence>
+				<element ref="tns:vcs-node-info" minOccurs="1" maxOccurs="unbounded"></element>
+			</sequence>
+
+		</complexType>
+	</element>
+
+	<element name="vcs-node-info">
+		<complexType>
+			<sequence>
+				<element name="node-num" type="int" />
+				<element name="node-serial-num" type="string"></element>
+				<element name="node-condition" type="string"></element>
+				<element name="node-status" type="string"></element>
+				<element name="node-vcs-mode" type="string"></element>
+				<element name="node-vcs-id" type="int"></element>
+				<element name="node-rbridge-id" type="int"></element>
+				<element name="node-is-principal" type="boolean"></element>
+				<element name="co-ordinator" type="boolean"></element>
+				<element name="node-switch-mac" type="string"></element>
+				<element name="node-switch-wwn" type="string"></element>
+				<element name="switch-fcf-mac" type="string"></element>
+				<element name="node-internal-ip-address" type="string">
+				</element>
+				<element name="node-swbd-number" type="int"></element>
+				<element name="firmware-version" type="string"></element>
+				<element name="node-switchname" type="string"></element>
+				<element name="node-switchtype" type="string"></element>
+				<element name="node-state" type="string"></element>
+				<element name="node-fabric-state" type="string"></element>
+				<element ref="tns:node-public-ip-addresses" />
+				<element ref="tns:node-public-ipv6-addresses" />
+			</sequence>
+		</complexType>
+	</element>
+
+	<element name="node-public-ip-addresses">
+		<complexType>
+			<sequence minOccurs="1" maxOccurs="unbounded">
+				<element name="node-public-ip-address" type="string"></element>
+			</sequence>
+		</complexType>
+	</element>
+
+	<element name="node-public-ipv6-addresses">
+		<complexType>
+			<sequence minOccurs="1" maxOccurs="unbounded">
+				<element name="node-public-ipv6-address" type="string"></element>
+			</sequence>
+		</complexType>
+	</element>
+</schema>

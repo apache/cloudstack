@@ -14,52 +14,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.agent.api;
 
-import java.util.List;
+public class DeleteNetworkCommand extends Command {
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+    private int _vlanId;
+    private long _networkId;
 
-import com.cloud.utils.Pair;
+    public DeleteNetworkCommand(int vlanId, long networkId) {
+        _vlanId = vlanId;
+        _networkId = networkId;
 
-/**
- *
- */
-public interface PhysicalNetwork extends Identity, InternalIdentity {
-
-    public enum State {
-        Disabled, Enabled;
     }
 
-    public enum IsolationMethod {
-        VLAN, L3, GRE, STT, VNS, MIDO, SSP, VXLAN, ODL, L3VPN, VSP, VCS;
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 
-    public enum BroadcastDomainRange {
-        POD, ZONE;
+    public int getVlanId() {
+        return _vlanId;
     }
 
-    BroadcastDomainRange getBroadcastDomainRange();
-
-    // TrafficType getTrafficType();
-
-    long getDataCenterId();
-
-    State getState();
-
-    List<String> getTags();
-
-    List<String> getIsolationMethods();
-
-    Long getDomainId();
-
-    List<Pair<Integer, Integer>> getVnet();
-
-    String getVnetString();
-
-    String getSpeed();
-
-    String getName();
+    public long getNetworkId() {
+        return _networkId;
+    }
 
 }
