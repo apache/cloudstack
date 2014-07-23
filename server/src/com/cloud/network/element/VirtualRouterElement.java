@@ -175,7 +175,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     private RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
 
     protected boolean canHandle(final Network network, final Service service) {
-        Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(network);
+        Long physicalNetworkId = _networkMdl.getPhysicalNetworkId(network);
         if (physicalNetworkId == null) {
             return false;
         }
@@ -286,7 +286,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             if (rules != null && rules.size() == 1) {
                 // for VR no need to add default egress rule to DENY traffic
                 if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System &&
-                        !_networkMgr.getNetworkEgressDefaultPolicy(network.getId())) {
+                        !_networkMdl.getNetworkEgressDefaultPolicy(network.getId())) {
                     return true;
                 }
             }
@@ -1023,7 +1023,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             publicNetwork = true;
         }
         boolean isPodBased =
-                (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMgr.isSecurityGroupSupportedInNetwork(network)) &&
+                (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMdl.isSecurityGroupSupportedInNetwork(network)) &&
                 network.getTrafficType() == TrafficType.Guest;
 
         List<DomainRouterVO> routers;
