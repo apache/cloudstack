@@ -132,6 +132,7 @@ known_categories = {
     'StaticRoute': 'VPC',
     'Tags': 'Resource tags',
     'NiciraNvpDevice': 'Nicira NVP',
+    'BrocadeVcsDevice': 'Brocade VCS',
     'BigSwitchVnsDevice': 'BigSwitch VNS',
 	'NuageVsp': 'Nuage VSP',
     'AutoScale': 'AutoScale',

@@ -244,6 +244,26 @@ CREATE VIEW `cloud`.`volume_view` AS
             and async_job.instance_type = 'Volume'
             and async_job.job_status = 0;
 
+CREATE TABLE `cloud`.`external_brocade_vcs_devices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which brocade vcs switch is added',
+  `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this brocade vcs switch',
+  `device_name` varchar(255) NOT NULL COMMENT 'name of the brocade vcs switch',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external brocade vcs switch',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_external_brocade_vcs_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_brocade_vcs_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`brocade_network_vlan_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `network_id` bigint unsigned NOT NULL COMMENT 'id of the network',
+  `vlan_id` int(10) COMMENT 'vlan id of the network',
+  PRIMARY KEY  (`id`),
+   CONSTRAINT `fk_brocade_network_vlan_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 /* As part of the separation of Xen and XenServer, update the column for the network labels */
 ALTER TABLE `cloud`.`physical_network_traffic_types` CHANGE `xen_network_label` `xenserver_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a XenServer host';
 

@@ -31,6 +31,7 @@ import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.vm.ConsoleProxy;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.SecondaryStorageVm;
 import org.apache.cloudstack.config.Configuration;
@@ -575,6 +576,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_FIREWALL_EGRESS_CLOSE, FirewallRule.class);
         entityEventDetails.put(EVENT_FIREWALL_EGRESS_UPDATE, FirewallRule.class);
 
+        // Nic Events
+        entityEventDetails.put(EVENT_NIC_CREATE, Nic.class);
 
         // Load Balancers
         entityEventDetails.put(EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, FirewallRule.class);

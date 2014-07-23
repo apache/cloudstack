@@ -135,6 +135,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         // add Nuage Vsp Providers
         public static final Provider NuageVsp = new Provider("NuageVsp", false);
         public static final Provider NuageVspVpc = new Provider("NuageVspVpc", false);
+        public static final Provider BrocadeVcs = new Provider("BrocadeVcs", false);
 
         private final String name;
         private final boolean isExternal;
@@ -223,7 +224,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
         Allocated("Indicates the network configuration is in allocated but not setup"), Setup("Indicates the network configuration is setup"), Implementing(
                 "Indicates the network configuration is being implemented"), Implemented("Indicates the network configuration is in use"), Shutdown(
-                        "Indicates the network configuration is being destroyed"), Destroy("Indicates that the network is destroyed");
+                "Indicates the network configuration is being destroyed"), Destroy("Indicates that the network is destroyed");
 
         protected static final StateMachine2<State, Network.Event, Network> s_fsm = new StateMachine2<State, Network.Event, Network>();
 

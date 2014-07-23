@@ -592,7 +592,7 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
             self.fail("Failed to stop guest Vm: %s - %s" %
                                             (virtual_machine.name, e))
 
-        interval = Configurations(
+        interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )

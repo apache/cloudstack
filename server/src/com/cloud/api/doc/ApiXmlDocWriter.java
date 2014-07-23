@@ -144,10 +144,8 @@ public class ApiXmlDocWriter {
         }
 
         for (String fileName : fileNames) {
-            try {
-                FileInputStream in = new FileInputStream(fileName);
+            try(FileInputStream in = new FileInputStream(fileName);) {
                 preProcessedCommands.load(in);
-                in.close();
             } catch (FileNotFoundException ex) {
                 System.out.println("Can't find file " + fileName);
                 System.exit(2);
@@ -595,14 +593,17 @@ public class ApiXmlDocWriter {
                 addDir(files[i], out);
                 continue;
             }
-            FileInputStream in = new FileInputStream(files[i].getPath());
-            out.putNextEntry(new ZipEntry(files[i].getPath().substring(pathToDir.length())));
-            int len;
-            while ((len = in.read(tmpBuf)) > 0) {
-                out.write(tmpBuf, 0, len);
+            try(FileInputStream in = new FileInputStream(files[i].getPath());) {
+                out.putNextEntry(new ZipEntry(files[i].getPath().substring(pathToDir.length())));
+                int len;
+                while ((len = in.read(tmpBuf)) > 0) {
+                    out.write(tmpBuf, 0, len);
+                }
+                out.closeEntry();
+            }catch(IOException ex)
+            {
+                s_logger.error("addDir:Exception:"+ ex.getMessage(),ex);
             }
-            out.closeEntry();
-            in.close();
         }
     }
 
@@ -619,8 +620,7 @@ public class ApiXmlDocWriter {
     private static void writeAlertTypes(String dirName) {
         XStream xs = new XStream();
         xs.alias("alert", Alert.class);
-        try {
-            ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "/alert_types.xml"), "alerts");
+        try(ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "/alert_types.xml"), "alerts");) {
             for (Field f : AlertManager.class.getFields()) {
                 if (f.getClass().isAssignableFrom(Number.class)) {
                     String name = f.getName().substring(11);
@@ -628,7 +628,6 @@ public class ApiXmlDocWriter {
                     out.writeObject(alert);
                 }
             }
-            out.close();
         } catch (IOException e) {
             s_logger.error("Failed to create output stream to write an alert types ", e);
         } catch (IllegalAccessException e) {

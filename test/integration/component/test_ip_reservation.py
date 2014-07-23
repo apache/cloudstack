@@ -964,9 +964,7 @@ class TestRouterOperations(cloudstackTestCase):
         self.assertEqual(validateList(routers)[0], PASS, "Routers list validation failed")
 
         # Destroy Router
-        result = Router.destroy(self.apiclient, id=routers[0].id)
-        if result[0] == FAIL:
-            self.fail("Failed to destroy router: %s" % result[2])
+        Router.destroy(self.apiclient, id=routers[0].id)
 
         #Restart Network
         isolated_network.restart(self.apiclient)
@@ -1080,7 +1078,7 @@ class TestFailureScnarios(cloudstackTestCase):
             isolated_network = resultSet[1]
 
         with self.assertRaises(Exception):
-            response = isolated_network.update(self.apiclient, guestvmcidr="10.1.1.0/26")
+            isolated_network.update(self.apiclient, guestvmcidr="10.1.1.0/26")
         return
 
     @attr(tags=["advanced", "selfservice"])

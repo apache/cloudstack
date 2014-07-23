@@ -244,10 +244,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 job.setStatus(jobStatus);
                 job.setResultCode(resultCode);
 
-                // reset attached object
-                job.setInstanceType(null);
-                job.setInstanceId(null);
-
                 if (resultObject != null) {
                     job.setResult(resultObject);
                 } else {
