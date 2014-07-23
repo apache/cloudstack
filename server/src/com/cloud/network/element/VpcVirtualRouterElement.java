@@ -103,7 +103,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
     @Override
     protected boolean canHandle(final Network network, final Service service) {
-        Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(network);
+        Long physicalNetworkId = _networkMdl.getPhysicalNetworkId(network);
         if (physicalNetworkId == null) {
             return false;
         }
