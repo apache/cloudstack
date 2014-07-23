@@ -39,7 +39,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class RouterDeploymentDefinitionBuilder {
 
     @Inject
-    private NetworkDao networkDao;
+    protected NetworkDao networkDao;
     @Inject
     private DomainRouterDao routerDao = null;
     @Inject

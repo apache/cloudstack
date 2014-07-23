@@ -129,7 +129,7 @@ public class RouterDeploymentDefinition {
         this.isRedundant = isRedundant;
     }
 
-    public void setOffering(ServiceOfferingVO offering) {
+    protected void setOffering(ServiceOfferingVO offering) {
         this.offering = offering;
     }
     public Vpc getVpc() {
@@ -138,37 +138,21 @@ public class RouterDeploymentDefinition {
     public Network getGuestNetwork() {
         return guestNetwork;
     }
-    public void setGuestNetwork(final Network guestNetwork) {
-        this.guestNetwork = guestNetwork;
-    }
     public DeployDestination getDest() {
         return dest;
-    }
-    public void setDest(final DeployDestination dest) {
-        this.dest = dest;
     }
     public Account getOwner() {
         return owner;
     }
-    public void setOwner(final Account owner) {
-        this.owner = owner;
-    }
     public Map<Param, Object> getParams() {
         return params;
-    }
-    public void setParams(final Map<Param, Object> params) {
-        this.params = params;
     }
     public boolean isRedundant() {
         return isRedundant;
     }
-    public void setRedundant(final boolean isRedundant) {
-        this.isRedundant = isRedundant;
-    }
     public DeploymentPlan getPlan() {
         return plan;
     }
-
     public boolean isVpcRouter() {
         return false;
     }
@@ -178,12 +162,8 @@ public class RouterDeploymentDefinition {
     public Long getPodId() {
         return dest.getPod() == null ? null : dest.getPod().getId();
     }
-
     public List<DomainRouterVO> getRouters() {
         return routers;
-    }
-    public void setRouters(List<DomainRouterVO> routers) {
-        this.routers = routers;
     }
 
     public boolean isBasic() {
@@ -194,7 +174,7 @@ public class RouterDeploymentDefinition {
         return offering == null ? null : offering.getId();
     }
 
-    public void generateDeploymentPlan() {
+    protected void generateDeploymentPlan() {
         final long dcId = this.dest.getDataCenter().getId();
         Long podId = null;
         if (this.isBasic()) {
@@ -229,7 +209,7 @@ public class RouterDeploymentDefinition {
                 this.dest = destination;
                 this.planDeploymentRouters();
                 this.generateDeploymentPlan();
-                this.proceedEffectiveDeployment();
+                this.executeDeployment();
             }
         } finally {
             this.unlock();
@@ -284,7 +264,10 @@ public class RouterDeploymentDefinition {
                 final long podId = pod.getId();
                 final List<DomainRouterVO> virtualRouters = routerDao.listByPodIdAndStates(podId, VirtualMachine.State.Starting, VirtualMachine.State.Running);
 
-                assert (virtualRouters.size() <= 1) : "Pod can have utmost one VR in Basic Zone, please check!";
+                if (virtualRouters.size() > 1) {
+                    // FIXME Find or create a better and more specific exception for this
+                    throw new CloudRuntimeException("Pod can have utmost one VR in Basic Zone, please check!");
+                }
 
                 // Add virtualRouters to the routers, this avoids the situation when
                 // all routers are skipped and VirtualRouterElement throws exception
@@ -305,7 +288,7 @@ public class RouterDeploymentDefinition {
         return destinations;
     }
 
-    protected void proceedEffectiveDeployment()
+    protected void executeDeployment()
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         // 2) Figure out required routers count
         int routerCount = 1;
