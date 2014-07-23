@@ -1919,7 +1919,7 @@ class TestInstances(cloudstackTestCase):
             cls.user = cls.account.user[0]
             cls.userapiclient = cls.testClient.getUserApiClient(cls.user.username, cls.domain.name)
             # Updating resource Limits
-            for i in range(0, 12):
+            for i in range(0, 8):
                 Resources.updateLimit(
                                       cls.api_client,
                                       account=cls.account.name,
@@ -3566,4 +3566,216 @@ class TestInstances(cloudstackTestCase):
             vm_created.delete(self.apiClient, expunge=True)
         except Exception as e:
             raise Exception("Warning: Exception in expunging vm : %s" % e)
+        return
+
+    @attr(tags=["advanced", "selfservice"])
+    def test_25_ip_reallocation_ES1377(self):
+        """
+        @Desc: Test to verify dnsmasq dhcp conflict issue due to /ect/hosts not getting udpated
+        @Steps:
+        Step1: Create a network for the user
+        Step2: List the network and check that it is created for the user
+        Step3: Deploy vm1 with hostname hostA and ip address IP A in the above network
+        Step4: List the vm and verify the ip address in the response and verify ssh access to vm
+        Step5: Deploy vm2 with hostname hostB and ip address IP B in the same network
+        Step6: Repeat step4
+        Step7: Destroy vm1 and vm2
+        Step8: Deploy vm3 with hostname hostA and ip address IP B
+        Step9: Repeat step4
+        Step10: Deploy vm4 with IP A and hostC
+        Step11: Repeat step4
+        """
+        # Listing Network Offerings
+        network_offerings_list = NetworkOffering.list(
+            self.apiClient,
+            forvpc="false",
+            guestiptype="Isolated",
+            state="Enabled",
+            supportedservices="SourceNat",
+            zoneid=self.zone.id
+        )
+        status = validateList(network_offerings_list)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "Isolated Network Offerings with sourceNat enabled are not found"
+        )
+        """
+        Create Isolated netwrok with ip range
+        """
+        self.services["network"]["startip"] = "10.1.1.2"
+        self.services["network"]["endip"] = "10.1.1.254"
+        self.services["network"]["gateway"] = "10.1.1.1"
+        self.services["network"]["netmask"] = "255.255.255.0"
+        """
+        Creating isolated/guest network with ip range
+        """
+        network = Network.create(
+            self.userapiclient,
+            self.services["network"],
+            accountid=self.account.name,
+            domainid=self.domain.id,
+            networkofferingid=network_offerings_list[0].id,
+            zoneid=self.zone.id
+        )
+        self.assertIsNotNone(
+            network,
+            "Network creation failed"
+        )
+        vm_ip1 = "10.1.1.10"
+        name1 = "hostA"
+        self.debug("network id:%s" %network.id)
+        self.services["virtual_machine"]["name"] = name1
+        # Deploying a VM
+        vm1 = VirtualMachine.create(
+            self.userapiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkids=[network.id],
+            ipaddress=vm_ip1,
+            serviceofferingid=self.service_offering.id,
+            mode="advanced",
+            )
+        self.assertIsNotNone(
+            vm1,
+            "VM1 creation failed with ip address %s and host name %s" %(vm_ip1,name1)
+        )
+        # self.cleanup.append(vm_created)
+        self.cleanup.append(network)
+        # Listing all the VMs for a user again
+        vm_response = VirtualMachine.list(
+            self.userapiclient,
+            id=vm1.id,
+            )
+        status = validateList(vm_response)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "vm list api returned invalid response for vm1"
+        )
+        # Verifying that the size of the list is 1
+        self.assertEquals(
+            1,
+            len(vm_response),
+            "VM list count is not matching"
+        )
+        # Deploying a VM
+        vm_ip2 = "10.1.1.20"
+        name2 = "hostB"
+        self.services["virtual_machine"]["name"] = name2
+        vm2 = VirtualMachine.create(
+            self.userapiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkids=[network.id],
+            ipaddress=vm_ip2,
+            serviceofferingid=self.service_offering.id,
+            mode="advanced",
+            )
+        self.assertIsNotNone(
+            vm2,
+            "VM2 creation failed"
+        )
+        vm_response = VirtualMachine.list(
+            self.userapiclient,
+            id=vm2.id,
+            )
+        status = validateList(vm_response)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "vm list api returned invalid response for vm2"
+        )
+        # Verifying that the size of the list is 1
+        self.assertEquals(
+            1,
+            len(vm_response),
+            "VM list count is not matching after vm2 deployment"
+        )
+        try:
+            vm1.delete(self.apiClient, expunge=True)
+            vm2.delete(self.apiClient, expunge=True)
+        except Exception as e:
+            raise Exception("Warning: Exception in expunging vms : %s" % e)
+        """
+        Deploy vm3 with ip address of vm1 and host name of vm2 so both the vm1 and vm2 entries
+        would be deleted from dhcphosts file on VR becase dhcprelease matches entries with
+        host name and ip address so it matches both the entries.
+        """
+        # Deploying a VM
+        self.services["virtual_machine"]["name"] = name2
+        vm3 = VirtualMachine.create(
+            self.userapiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkids=[network.id],
+            ipaddress=vm_ip1,
+            serviceofferingid=self.service_offering.id,
+            mode="advanced",
+            )
+        self.assertIsNotNone(
+            vm3,
+            "VM3 creation failed"
+        )
+        vm_response = VirtualMachine.list(
+            self.userapiclient,
+            id=vm3.id,
+            )
+        status = validateList(vm_response)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "vm list api returned invalid response for vm3"
+        )
+        # Verifying that the size of the list is 1
+        self.assertEquals(
+            1,
+            len(vm_response),
+            "VM list count is not matching after vm2 deployment"
+        )
+        # Deploying a VM
+        """
+        Deploy vm4 with ip address of vm2. dnsmasq and dhcprelase should be in sync.
+        We should not see dhcp lease block due to IP reallocation.
+        """
+        name3 = "hostC"
+        self.services["virtual_machine"]["name"] = name3
+        vm4 = VirtualMachine.create(
+            self.userapiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkids=[network.id],
+            ipaddress=vm_ip2,
+            serviceofferingid=self.service_offering.id,
+            mode="advanced",
+            )
+        self.assertIsNotNone(
+            vm4,
+            "VM4 creation failed"
+        )
+        vm_response = VirtualMachine.list(
+            self.userapiclient,
+            id=vm4.id,
+            )
+        status = validateList(vm_response)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "vm list api returned invalid response for vm4"
+        )
+        # Verifying that the size of the list is 1
+        self.assertEquals(
+            1,
+            len(vm_response),
+            "VM list count is not matching after vm2 deployment"
+        )
+        try:
+            vm3.delete(self.apiClient, expunge=True)
+            vm4.delete(self.apiClient, expunge=True)
+        except Exception as e:
+            raise Exception("Warning: Exception in expunging vms vm3 and vm4 : %s" % e)
         return

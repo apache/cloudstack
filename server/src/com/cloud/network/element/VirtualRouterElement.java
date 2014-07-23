@@ -121,7 +121,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     @Inject
     NetworkDao _networksDao;
     @Inject
-    NetworkModel _networkMgr;
+    NetworkModel _networkMdl;
     @Inject
     LoadBalancingRulesManager _lbMgr;
     @Inject
@@ -155,7 +155,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     IPAddressDao _ipAddressDao;
 
     protected boolean canHandle(Network network, Service service) {
-        Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(network);
+        Long physicalNetworkId = _networkMdl.getPhysicalNetworkId(network);
         if (physicalNetworkId == null) {
             return false;
         }
@@ -164,17 +164,17 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             return false;
         }
 
-        if (!_networkMgr.isProviderEnabledInPhysicalNetwork(physicalNetworkId, Network.Provider.VirtualRouter.getName())) {
+        if (!_networkMdl.isProviderEnabledInPhysicalNetwork(physicalNetworkId, Network.Provider.VirtualRouter.getName())) {
             return false;
         }
 
         if (service == null) {
-            if (!_networkMgr.isProviderForNetwork(getProvider(), network.getId())) {
+            if (!_networkMdl.isProviderForNetwork(getProvider(), network.getId())) {
                 s_logger.trace("Element " + getProvider().getName() + " is not a provider for the network " + network);
                 return false;
             }
         } else {
-            if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
+            if (!_networkMdl.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
                 s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
                 return false;
             }
@@ -224,7 +224,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         if (offering.isSystemOnly()) {
             return false;
         }
-        if (!_networkMgr.isProviderEnabledInPhysicalNetwork(_networkMgr.getPhysicalNetworkId(network), getProvider().getName())) {
+        if (!_networkMdl.isProviderEnabledInPhysicalNetwork(_networkMdl.getPhysicalNetworkId(network), getProvider().getName())) {
             return false;
         }
 
@@ -252,7 +252,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             if (rules != null && rules.size() == 1) {
                 // for VR no need to add default egress rule to DENY traffic
                 if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System &&
-                        !_networkMgr.getNetworkEgressDefaultPolicy(config.getId()))
+                        !_networkMdl.getNetworkEgressDefaultPolicy(config.getId()))
                     return true;
             }
 
@@ -949,11 +949,11 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
     protected List<DomainRouterVO> getRouters(Network network, DeployDestination dest) {
         boolean publicNetwork = false;
-        if (_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, getProvider())) {
+        if (_networkMdl.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, getProvider())) {
             publicNetwork = true;
         }
         boolean isPodBased =
-                (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMgr.isSecurityGroupSupportedInNetwork(network)) &&
+                (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMdl.isSecurityGroupSupportedInNetwork(network)) &&
                 network.getTrafficType() == TrafficType.Guest;
 
         List<DomainRouterVO> routers;

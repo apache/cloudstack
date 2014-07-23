@@ -18,6 +18,7 @@ package com.cloud.storage.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -169,25 +170,36 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     @Override
     public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, long datacenterId, long podId, VMTemplateStoragePoolVO.Status downloadState) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
         List<VMTemplateStoragePoolVO> result = new ArrayList<VMTemplateStoragePoolVO>();
-        String sql = DOWNLOADS_STATE_DC_POD;
-        try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
+        ResultSet rs = null;
+        try {
+            String sql = DOWNLOADS_STATE_DC_POD;
+            pstmt = txn.prepareStatement(sql);
+
             pstmt.setLong(1, datacenterId);
             pstmt.setLong(2, podId);
             pstmt.setLong(3, templateId);
             pstmt.setString(4, downloadState.toString());
-            try(ResultSet rs = pstmt.executeQuery();) {
-                while (rs.next()) {
-                    // result.add(toEntityBean(rs, false)); TODO: this is buggy in
-                    // GenericDaoBase for hand constructed queries
-                    long id = rs.getLong(1); // ID column
-                    result.add(findById(id));
-                }
-            }catch (Exception e) {
-                s_logger.warn("Exception: ", e);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                // result.add(toEntityBean(rs, false)); TODO: this is buggy in
+                // GenericDaoBase for hand constructed queries
+                long id = rs.getLong(1); // ID column
+                result.add(findById(id));
             }
         } catch (Exception e) {
             s_logger.warn("Exception: ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
         }
         return result;
 
@@ -195,23 +207,34 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 
     public List<VMTemplateStoragePoolVO> listByHostTemplate(long hostId, long templateId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
         List<VMTemplateStoragePoolVO> result = new ArrayList<VMTemplateStoragePoolVO>();
-        String sql = HOST_TEMPLATE_SEARCH;
-        try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
+        ResultSet rs = null;
+        try {
+            String sql = HOST_TEMPLATE_SEARCH;
+            pstmt = txn.prepareStatement(sql);
+
             pstmt.setLong(1, hostId);
             pstmt.setLong(2, templateId);
-            try(ResultSet rs = pstmt.executeQuery();) {
-                while (rs.next()) {
-                    // result.add(toEntityBean(rs, false)); TODO: this is buggy in
-                    // GenericDaoBase for hand constructed queries
-                    long id = rs.getLong(1); // ID column
-                    result.add(findById(id));
-                }
-            }catch (Exception e) {
-                s_logger.warn("Exception: ", e);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                // result.add(toEntityBean(rs, false)); TODO: this is buggy in
+                // GenericDaoBase for hand constructed queries
+                long id = rs.getLong(1); // ID column
+                result.add(findById(id));
             }
         } catch (Exception e) {
             s_logger.warn("Exception: ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
         }
         return result;
 

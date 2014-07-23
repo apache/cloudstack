@@ -22,7 +22,6 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -81,8 +80,8 @@ public class Upgrade440to450 implements DbUpgrade {
         uniqueKeys.put("storage_pool", keys);
 
         s_logger.debug("Droping id_2 key from storage_pool table");
-        for (Map.Entry<String, List<String>> entry: uniqueKeys.entrySet()) {
-            DbUpgradeUtils.dropKeysIfExist(conn,entry.getKey(), entry.getValue(), false);
+        for (String tableName : uniqueKeys.keySet()) {
+            DbUpgradeUtils.dropKeysIfExist(conn, tableName, uniqueKeys.get(tableName), false);
         }
     }
 }

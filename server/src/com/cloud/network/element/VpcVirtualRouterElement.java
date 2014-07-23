@@ -96,7 +96,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
     @Override
     protected boolean canHandle(Network network, Service service) {
-        Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(network);
+        Long physicalNetworkId = _networkMdl.getPhysicalNetworkId(network);
         if (physicalNetworkId == null) {
             return false;
         }
@@ -105,17 +105,17 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return false;
         }
 
-        if (!_networkMgr.isProviderEnabledInPhysicalNetwork(physicalNetworkId, Network.Provider.VPCVirtualRouter.getName())) {
+        if (!_networkMdl.isProviderEnabledInPhysicalNetwork(physicalNetworkId, Network.Provider.VPCVirtualRouter.getName())) {
             return false;
         }
 
         if (service == null) {
-            if (!_networkMgr.isProviderForNetwork(getProvider(), network.getId())) {
+            if (!_networkMdl.isProviderForNetwork(getProvider(), network.getId())) {
                 s_logger.trace("Element " + getProvider().getName() + " is not a provider for the network " + network);
                 return false;
             }
         } else {
-            if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
+            if (!_networkMdl.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
                 s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
                 return false;
             }
@@ -179,7 +179,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         DomainRouterVO router = routers.get(0);
         //Add router to guest network if needed
-        if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
+        if (!_networkMdl.isVmPartOfNetwork(router.getId(), network.getId())) {
             Map<VirtualMachineProfile.Param, Object> paramsForRouter = new HashMap<VirtualMachineProfile.Param, Object>(1);
             if (network.getState() == State.Setup) {
                 paramsForRouter.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
@@ -224,7 +224,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
             DomainRouterVO router = routers.get(0);
             //Add router to guest network if needed
-            if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
+            if (!_networkMdl.isVmPartOfNetwork(router.getId(), network.getId())) {
                 Map<VirtualMachineProfile.Param, Object> paramsForRouter = new HashMap<VirtualMachineProfile.Param, Object>(1);
                 // need to reprogram guest network if it comes in a setup state
                 if (network.getState() == State.Setup) {
@@ -253,7 +253,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         List<? extends VirtualRouter> routers = _routerDao.listByVpcId(vpcId);
         for (VirtualRouter router : routers) {
             //1) Check if router is already a part of the network
-            if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
+            if (!_networkMdl.isVmPartOfNetwork(router.getId(), network.getId())) {
                 s_logger.debug("Router " + router + " is not a part the network " + network);
                 continue;
             }
@@ -281,7 +281,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         List<? extends VirtualRouter> routers = _routerDao.listByVpcId(vpcId);
         for (VirtualRouter router : routers) {
             //1) Check if router is already a part of the network
-            if (!_networkMgr.isVmPartOfNetwork(router.getId(), config.getId())) {
+            if (!_networkMdl.isVmPartOfNetwork(router.getId(), config.getId())) {
                 s_logger.debug("Router " + router + " is not a part the network " + config);
                 continue;
             }
