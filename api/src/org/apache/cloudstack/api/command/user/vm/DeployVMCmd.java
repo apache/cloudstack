@@ -225,8 +225,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
             Iterator iter = parameterCollection.iterator();
             while (iter.hasNext()) {
                 HashMap<String, String> value = (HashMap<String, String>)iter.next();
-                for (Map.Entry<String,String> entry: value.entrySet()) {
-                    customparameterMap.put(entry.getKey(),entry.getValue());
+                for (String key : value.keySet()) {
+                    customparameterMap.put(key, value.get(key));
                 }
             }
         }

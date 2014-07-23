@@ -1026,24 +1026,20 @@ public class ApiResponseHelper implements ResponseGenerator {
 
 
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
+        response.setPublicIpAddressId(ip.getUuid());
+        response.setPublicIpAddress(ip.getAddress().addr());
 
-        if (ip != null)
-        {
-            response.setPublicIpAddressId(ip.getUuid());
-            response.setPublicIpAddress(ip.getAddress().addr());
-            if (fwRule.getDestinationIpAddress() != null)
-            {
-                response.setDestNatVmIp(fwRule.getDestinationIpAddress().toString());
-                UserVm vm = ApiDBUtils.findUserVmById(fwRule.getVirtualMachineId());
-                if (vm != null) {
-                    response.setVirtualMachineId(vm.getUuid());
-                    response.setVirtualMachineName(vm.getHostName());
+        if (ip != null && fwRule.getDestinationIpAddress() != null) {
+            response.setDestNatVmIp(fwRule.getDestinationIpAddress().toString());
+            UserVm vm = ApiDBUtils.findUserVmById(fwRule.getVirtualMachineId());
+            if (vm != null) {
+                response.setVirtualMachineId(vm.getUuid());
+                response.setVirtualMachineName(vm.getHostName());
 
-                    if (vm.getDisplayName() != null) {
-                        response.setVirtualMachineDisplayName(vm.getDisplayName());
-                    } else {
-                        response.setVirtualMachineDisplayName(vm.getHostName());
-                    }
+                if (vm.getDisplayName() != null) {
+                    response.setVirtualMachineDisplayName(vm.getDisplayName());
+                } else {
+                    response.setVirtualMachineDisplayName(vm.getHostName());
                 }
             }
         }
@@ -1075,20 +1071,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setProtocol(fwRule.getProtocol());
 
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
+        response.setPublicIpAddressId(ip.getId());
+        response.setPublicIpAddress(ip.getAddress().addr());
 
-        if (ip != null) {
-            response.setPublicIpAddressId(ip.getId());
-            response.setPublicIpAddress(ip.getAddress().addr());
-            if (fwRule.getDestIpAddress() != null) {
-                UserVm vm = ApiDBUtils.findUserVmById(ip.getAssociatedWithVmId());
-                if (vm != null) {// vm might be destroyed
-                    response.setVirtualMachineId(vm.getUuid());
-                    response.setVirtualMachineName(vm.getHostName());
-                    if (vm.getDisplayName() != null) {
-                        response.setVirtualMachineDisplayName(vm.getDisplayName());
-                    } else {
-                        response.setVirtualMachineDisplayName(vm.getHostName());
-                    }
+        if (ip != null && fwRule.getDestIpAddress() != null) {
+            UserVm vm = ApiDBUtils.findUserVmById(ip.getAssociatedWithVmId());
+            if (vm != null) {// vm might be destroyed
+                response.setVirtualMachineId(vm.getUuid());
+                response.setVirtualMachineName(vm.getHostName());
+                if (vm.getDisplayName() != null) {
+                    response.setVirtualMachineDisplayName(vm.getDisplayName());
+                } else {
+                    response.setVirtualMachineDisplayName(vm.getHostName());
                 }
             }
         }
@@ -1707,9 +1701,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(offering.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
-        for (Map.Entry<Service,Set<Provider>> entry : serviceProviderMap.entrySet()) {
-            Service service = entry.getKey();
-            Set<Provider> srvc_providers = entry.getValue();
+        for (Service service : serviceProviderMap.keySet()) {
             ServiceResponse svcRsp = new ServiceResponse();
             // skip gateway service
             if (service == Service.Gateway) {
@@ -1717,7 +1709,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             svcRsp.setName(service.getName());
             List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
-            for (Provider provider : srvc_providers) {
+            for (Provider provider : serviceProviderMap.get(service)) {
                 if (provider != null) {
                     ProviderResponse providerRsp = new ProviderResponse();
                     providerRsp.setName(provider.getName());
@@ -1964,9 +1956,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             Domain domain = ApiDBUtils.findDomainById(dedicatedDomainId);
             if (domain != null) {
                 response.setDomainId(domain.getUuid());
-                response.setDomainName(domain.getName());
             }
-
+            response.setDomainName(domain.getName());
         }
 
         response.setSpecifyIpRanges(network.getSpecifyIpRanges());
@@ -2572,10 +2563,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(offering.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
-        for (Map.Entry<Service, Set<Provider>> entry : serviceProviderMap.entrySet()) {
-            Service service = entry.getKey();
-            Set<Provider> srvc_providers = entry.getValue();
-
+        for (Service service : serviceProviderMap.keySet()) {
             ServiceResponse svcRsp = new ServiceResponse();
             // skip gateway service
             if (service == Service.Gateway) {
@@ -2583,7 +2571,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             svcRsp.setName(service.getName());
             List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
-            for (Provider provider : srvc_providers) {
+            for (Provider provider : serviceProviderMap.get(service)) {
                 if (provider != null) {
                     ProviderResponse providerRsp = new ProviderResponse();
                     providerRsp.setName(provider.getName());
@@ -3126,6 +3114,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if (usageRecord.getUsageType() == UsageTypes.TEMPLATE || usageRecord.getUsageType() == UsageTypes.ISO) {
             //Template/ISO ID
             VMTemplateVO tmpl = _entityMgr.findByIdIncludingRemoved(VMTemplateVO.class, usageRecord.getUsageId().toString());
+            usageRecResponse.setUsageId(tmpl.getUuid());
             if (tmpl != null) {
                 usageRecResponse.setUsageId(tmpl.getUuid());
             }
@@ -3400,11 +3389,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         //set Lb instances information
         List<ApplicationLoadBalancerInstanceResponse> instanceResponses = new ArrayList<ApplicationLoadBalancerInstanceResponse>();
-        for (Map.Entry<Ip,UserVm> entry : lbInstances.entrySet()) {
-            Ip ip = entry.getKey();
-            UserVm vm = entry.getValue();
+        for (Ip ip : lbInstances.keySet()) {
             ApplicationLoadBalancerInstanceResponse instanceResponse = new ApplicationLoadBalancerInstanceResponse();
             instanceResponse.setIpAddress(ip.addr());
+            UserVm vm = lbInstances.get(ip);
             instanceResponse.setId(vm.getUuid());
             instanceResponse.setName(vm.getInstanceName());
             instanceResponse.setObjectName("loadbalancerinstance");
