@@ -283,7 +283,9 @@ function veewee_destroy() {
 function veewee_build() {
   log INFO "building new image with veewee"
   bundle exec veewee vbox build "${appliance_build_name}" ${VEEWEE_BUILD_ARGS}
-  bundle exec veewee vbox halt "${appliance_build_name}" ${VEEWEE_ARGS}
+  # vbox export wants to run vbox halt itself, so don't halt!
+  # bundle exec veewee vbox halt "${appliance_build_name}" ${VEEWEE_ARGS}
+  bundle exec veewee vbox export "${appliance_build_name}" ${VEEWEE_ARGS}
 }
 
 function check_appliance_shutdown() {
