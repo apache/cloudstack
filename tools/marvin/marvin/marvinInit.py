@@ -111,7 +111,7 @@ class MarvinInit:
             if not self.__hypervisorType:
                 self.__hypervisorType = XEN_SERVER
             if not self.__zoneForTests:
-                if self.__parsedConfig:
+                if self.__parsedConfig and self.__parsedConfig.zones is not None:
                     for zone in self.__parsedConfig.zones:
                         self.__zoneForTests = zone.name
                         break
