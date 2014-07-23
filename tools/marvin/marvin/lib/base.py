@@ -1949,9 +1949,6 @@ class DiskOffering:
         if "miniops" in services:
             cmd.miniops = services["miniops"]
 
-        if "storagetype" in services:
-            cmd.storagetype = services["storagetype"]
-
         if "tags" in services:
             cmd.tags = services["tags"]
 
