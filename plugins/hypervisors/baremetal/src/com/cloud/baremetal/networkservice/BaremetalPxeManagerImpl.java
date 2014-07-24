@@ -30,6 +30,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.Network;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
@@ -132,10 +133,10 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
     }
 
     @Override
-    public boolean prepare(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context) {
+    public boolean prepare(VirtualMachineProfile profile, NicProfile nic, Network network, DeployDestination dest, ReservationContext context) {
         //TODO: select type from template
         BaremetalPxeType type = BaremetalPxeType.KICK_START;
-        return getServiceByType(type.toString()).prepare(profile, nic, dest, context);
+        return getServiceByType(type.toString()).prepare(profile, nic, network, dest, context);
     }
 
     @Override

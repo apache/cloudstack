@@ -20,6 +20,7 @@ package com.cloud.baremetal.networkservice;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,18 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network;
+import com.cloud.network.guru.ControlNetworkGuru;
+import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.NicDao;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
@@ -62,6 +75,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Local(value = BaremetalPxeService.class)
 public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase implements BaremetalPxeService {
@@ -80,9 +95,67 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
     NetworkDao _nwDao;
     @Inject
     VMTemplateDao _tmpDao;
+    @Inject
+    DomainRouterDao _routerDao;
+    @Inject
+    NicDao _nicDao;
 
-    @Override
-    public boolean prepare(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context) {
+    private DomainRouterVO getVirtualRouter(Network network) {
+        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
+
+        if (routers.isEmpty()) {
+            throw new CloudRuntimeException(String.format("cannot find any running virtual router on network[id:%s, uuid:%s]", network.getId(), network.getUuid()));
+        }
+
+        if (routers.size() > 1) {
+            throw new CloudRuntimeException(String.format("baremetal hasn't supported redundant router yet"));
+        }
+
+        DomainRouterVO vr = routers.get(0);
+        if (!Hypervisor.HypervisorType.VMware.equals(vr.getHypervisorType())) {
+            throw new CloudRuntimeException(String.format("baremetal only support vmware virtual router, but get %s", vr.getHypervisorType()));
+        }
+
+        return vr;
+    }
+
+    private List<String> parseKickstartUrl(VirtualMachineProfile profile) {
+        String tpl = profile.getTemplate().getUrl();
+        assert tpl != null : "How can a null template get here!!!";
+        String[] tpls = tpl.split(";");
+        CloudRuntimeException err =
+                new CloudRuntimeException(
+                        String.format(
+                                "template url[%s] is not correctly encoded. it must be in format of ks=http_link_to_kickstartfile;kernel=nfs_path_to_pxe_kernel;initrd=nfs_path_to_pxe_initrd",
+                                tpl));
+        if (tpls.length != 3) {
+            throw err;
+        }
+
+        String ks = null;
+        String kernel = null;
+        String initrd = null;
+
+        for (String t : tpls) {
+            String[] kv = t.split("=");
+            if (kv.length != 2) {
+                throw err;
+            }
+            if (kv[0].equals("ks")) {
+                ks = kv[1];
+            } else if (kv[0].equals("kernel")) {
+                kernel = kv[1];
+            } else if (kv[0].equals("initrd")) {
+                initrd = kv[1];
+            } else {
+                throw err;
+            }
+        }
+
+        return Arrays.asList(ks, kernel, initrd);
+    }
+
+    private boolean preparePxeInBasicZone(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context) throws AgentUnavailableException, OperationTimedoutException {
         NetworkVO nwVO = _nwDao.findById(nic.getNetworkId());
         QueryBuilder<BaremetalPxeVO> sc = QueryBuilder.create(BaremetalPxeVO.class);
         sc.and(sc.entity().getDeviceType(), Op.EQ, BaremetalPxeType.KICK_START.toString());
@@ -92,54 +165,81 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
             throw new CloudRuntimeException("No kickstart PXE server found in pod: " + dest.getPod().getId() + ", you need to add it before starting VM");
         }
         VMTemplateVO template = _tmpDao.findById(profile.getTemplateId());
+        List<String> tuple =  parseKickstartUrl(profile);
 
+        String ks = tuple.get(0);
+        String kernel = tuple.get(1);
+        String initrd = tuple.get(2);
+
+        PrepareKickstartPxeServerCommand cmd = new PrepareKickstartPxeServerCommand();
+        cmd.setKsFile(ks);
+        cmd.setInitrd(initrd);
+        cmd.setKernel(kernel);
+        cmd.setMac(nic.getMacAddress());
+        cmd.setTemplateUuid(template.getUuid());
+        Answer aws = _agentMgr.send(pxeVo.getHostId(), cmd);
+        if (!aws.getResult()) {
+            s_logger.warn("Unable to set host: " + dest.getHost().getId() + " to PXE boot because " + aws.getDetails());
+            return false;
+        }
+
+        return true;
+    }
+
+    private URI buildUrl(String mgmtIp, String subPath) {
+        UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
+        ub.scheme("http");
+        ub.scheme(mgmtIp);
+        ub.port(10086);
+        ub.path(subPath);
+        return ub.build().toUri();
+    }
+
+    private boolean preparePxeInAdvancedZone(VirtualMachineProfile profile, NicProfile nic, Network network, DeployDestination dest, ReservationContext context) {
+        DomainRouterVO vr = getVirtualRouter(network);
+        List<NicVO> nics = _nicDao.listByVmId(vr.getId());
+        NicVO mgmtNic = null;
+        for (NicVO nicvo : nics) {
+            if (ControlNetworkGuru.class.getSimpleName().equals(nicvo.getReserver())) {
+                mgmtNic = nicvo;
+                break;
+            }
+        }
+
+        if (mgmtNic == null) {
+            throw new CloudRuntimeException(String.format("cannot find management nic on virutal router[id:%s]", vr.getId()));
+        }
+
+        BaremetalVritualRouterCommands.PreparePxeCmd cmd = new BaremetalVritualRouterCommands.PreparePxeCmd();
+        List<String> tuple =  parseKickstartUrl(profile);
+        cmd.setKickStartUrl(tuple.get(0));
+        cmd.setKernelUrl(tuple.get(1));
+        cmd.setInitrdUrl(tuple.get(2));
+        cmd.setGuestMac(nic.getMacAddress());
+        RestTemplate rst = new RestTemplate();
+        BaremetalVritualRouterCommands.PreparePxeRsp rsp = rst.getForObject(buildUrl(mgmtNic.getIp4Address(), BaremetalVritualRouterCommands.PREPARE_PXE_URL), BaremetalVritualRouterCommands.PreparePxeRsp.class);
+        if (!rsp.isSuccess()) {
+            throw new CloudRuntimeException(String.format("failed preparing PXE in virtual router[id:%s], because %s", vr.getId(), rsp.getError()));
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean prepare(VirtualMachineProfile profile, NicProfile nic, Network network, DeployDestination dest, ReservationContext context) {
         try {
-            String tpl = profile.getTemplate().getUrl();
-            assert tpl != null : "How can a null template get here!!!";
-            String[] tpls = tpl.split(";");
-            CloudRuntimeException err =
-                new CloudRuntimeException(
-                    String.format(
-                        "template url[%s] is not correctly encoded. it must be in format of ks=http_link_to_kickstartfile;kernel=nfs_path_to_pxe_kernel;initrd=nfs_path_to_pxe_initrd",
-                        tpl));
-            if (tpls.length != 3) {
-                throw err;
-            }
-
-            String ks = null;
-            String kernel = null;
-            String initrd = null;
-
-            for (String t : tpls) {
-                String[] kv = t.split("=");
-                if (kv.length != 2) {
-                    throw err;
+            if (DataCenter.NetworkType.Basic.equals(dest.getDataCenter().getNetworkType())) {
+                if (!preparePxeInBasicZone(profile, nic, dest, context)) {
+                    return false;
                 }
-                if (kv[0].equals("ks")) {
-                    ks = kv[1];
-                } else if (kv[0].equals("kernel")) {
-                    kernel = kv[1];
-                } else if (kv[0].equals("initrd")) {
-                    initrd = kv[1];
-                } else {
-                    throw err;
+            } else {
+                if (!preparePxeInAdvancedZone(profile, nic, network, dest, context)) {
+                    return false;
                 }
-            }
-
-            PrepareKickstartPxeServerCommand cmd = new PrepareKickstartPxeServerCommand();
-            cmd.setKsFile(ks);
-            cmd.setInitrd(initrd);
-            cmd.setKernel(kernel);
-            cmd.setMac(nic.getMacAddress());
-            cmd.setTemplateUuid(template.getUuid());
-            Answer aws = _agentMgr.send(pxeVo.getHostId(), cmd);
-            if (!aws.getResult()) {
-                s_logger.warn("Unable to set host: " + dest.getHost().getId() + " to PXE boot because " + aws.getDetails());
-                return aws.getResult();
             }
 
             IpmISetBootDevCommand bootCmd = new IpmISetBootDevCommand(BootDev.pxe);
-            aws = _agentMgr.send(dest.getHost().getId(), bootCmd);
+            Answer aws = _agentMgr.send(dest.getHost().getId(), bootCmd);
             if (!aws.getResult()) {
                 s_logger.warn("Unable to set host: " + dest.getHost().getId() + " to PXE boot because " + aws.getDetails());
             }

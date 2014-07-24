@@ -123,7 +123,7 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
             _nicDao.update(nicVo.getId(), nicVo);
 
             /*This vm is just being created */
-            if (!_pxeMgr.prepare(vm, nic, dest, context)) {
+            if (!_pxeMgr.prepare(vm, nic, network, dest, context)) {
                 throw new CloudRuntimeException("Cannot prepare pxe server");
             }
         }
