@@ -107,7 +107,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                 s_logger.debug("Run missing VM report. current time: " + currentTime.getTime());
 
             // 2 times of sync-update interval for graceful period
-            long milliSecondsGracefullPeriod = PingInterval.value() * 2000;
+            long milliSecondsGracefullPeriod = PingInterval.value() * 2000L;
 
             for (VMInstanceVO instance : vmsThatAreMissingReport) {
 
