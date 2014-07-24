@@ -55,6 +55,21 @@ test_data = {
         "username": "test-account",
         "password": "password"
     },
+    "account2": {
+        "email": "test-account2@test.com",
+        "firstname": "test2",
+        "lastname": "test2",
+        "username": "test-account2",
+        "password": "password"
+    },
+    "vmware_cluster" : {
+            "hypervisor": 'VMware',
+            "clustertype": 'ExternalManaged',
+            "username": 'administrator',
+            "password": 'password_123',
+            "url": 'http://10.147.60.15/42xescauto spaces/42xesc Clusters',
+            "clustername": 'VMWare Cluster with Space in DC name',
+        },
     "small": {
         "displayname": "testserver",
         "username": "root",

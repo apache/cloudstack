@@ -54,6 +54,15 @@ class Services:
                                     # username
                                     "password": "password",
                          },
+                        "account_2": {
+                                    "email": "administrator1@clogeny.com",
+                                    "firstname": "Test1",
+                                    "lastname": "User1",
+                                    "username": "test1",
+                                    # Random characters are appended for unique
+                                    # username
+                                    "password": "password",
+                         },
                          "user": {
                                     "email": "administrator@clogeny.com",
                                     "firstname": "User",
@@ -79,6 +88,18 @@ class Services:
                                     "memory": 128, # In MBs
                         },
                         "virtual_machine": {
+                                    "displayname": "TestVM",
+                                    "username": "root",
+                                    "password": "password",
+                                    "ssh_port": 22,
+                                    "hypervisor": 'XenServer',
+                                    # Hypervisor type should be same as
+                                    # hypervisor type of cluster
+                                    "privateport": 22,
+                                    "publicport": 22,
+                                    "protocol": 'TCP',
+                         },
+                        "virtual_machine2": {
                                     "displayname": "TestVM",
                                     "username": "root",
                                     "password": "password",
@@ -122,6 +143,12 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
                             admin=True,
                             domainid=cls.domain.id
                             )
+        cls.account_2 = Account.create(
+                            cls.api_client,
+                            cls.services["account_2"],
+                            admin=True,
+                            domainid=cls.domain.id
+                            )
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
@@ -130,7 +157,8 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
-        cls._cleanup = [cls.account]
+        cls._cleanup = [cls.account,
+                        cls.account_2]
         return
 
     @classmethod
@@ -260,6 +288,49 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
                         internal_name,
                         "VM internal name should match with that of the format"
                         )
+        return
+
+    @attr(tags=["advanced", "basic", "test"])
+    @attr(required_hardware="false")
+    @attr(configuration='vm.instancename.flag')
+    def test_vm_instance_name_duplicate_different_accounts(self):
+        """
+        @Desc: Test whether cloudstack allows duplicate vm instance names in the diff networks
+        @Steps:
+        Step1: Set the vm.instancename.flag to true.
+        Step2: Deploy a VM with name say webserver01 from account1 Internal name should be i-<userid>-<vmid>-webserver01
+        Step3: Now deploy VM with the same name "webserver01" from account2.
+        Step4: Deployment of VM with same name should fail
+        """
+
+        if not is_config_suitable(apiclient=self.apiclient, name='vm.instancename.flag', value='true'):
+            self.skipTest('vm.instancename.flag should be true. skipping')
+        # Step2: Deploy a VM with name say webserver01 from account1
+        self.debug("Deploying VM in account: %s" % self.account.name)
+        self.services["virtual_machine2"]["displayname"] = "webserver01"
+        self.services["virtual_machine2"]["zoneid"] = self.zone.id
+        self.services["virtual_machine2"]["template"] = self.template.id
+        vm1 = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine2"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            )
+        self.cleanup.append(vm1)
+
+        # Step3: Now deploy VM with the same name "webserver01" from account2.
+        self.debug("Deploying VM in account: %s" % self.account_2.name)
+        with self.assertRaises(Exception):
+            vm2 = VirtualMachine.create(
+                self.apiclient,
+                self.services["virtual_machine2"],
+                accountid=self.account_2.name,
+                domainid=self.account_2.domainid,
+                serviceofferingid=self.service_offering.id,
+                )
+            self.cleanup.append(vm2)
+        # Step4: Deployment of VM with same name should fail
         return
 
     @attr(configuration='vm.instancename.flag')
@@ -432,6 +503,56 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
                                   serviceofferingid=self.service_offering.id,
                                   )
         return
+
+    @attr(configuration='vm.instancename.flag')
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    def test_instance_name_with_hyphens(self):
+        """ Test the instance  name with hyphens
+        """
+
+        # Validate the following
+        # 1. Set the vm.instancename.flag to true.
+        # 2. Add the virtual machine with display name with hyphens
+
+        # Reading display name property
+        if not is_config_suitable(apiclient=self.apiclient, name='vm.instancename.flag', value='true'):
+            self.skipTest('vm.instancename.flag should be true. skipping')
+
+        self.services["virtual_machine"]["displayname"] = "TestVM-test-name"
+        self.services["virtual_machine"]["name"] = "TestVM"
+
+        self.debug("Deploying an instance in account: %s" %
+                                        self.account.name)
+
+        virtual_machine = VirtualMachine.create(
+                                  self.apiclient,
+                                  self.services["virtual_machine"],
+                                  accountid=self.account.name,
+                                  domainid=self.account.domainid,
+                                  serviceofferingid=self.service_offering.id,
+                                  )
+        self.debug(
+            "Checking if the virtual machine is created properly or not?")
+        vms = VirtualMachine.list(
+                                  self.apiclient,
+                                  id=virtual_machine.id,
+                                  listall=True
+                                  )
+
+        self.assertEqual(
+                         isinstance(vms, list),
+                         True,
+                         "List vms should retuen a valid name"
+                         )
+        vm = vms[0]
+        self.assertEqual(
+                         vm.state,
+                         "Running",
+                         "Vm state should be running after deployment"
+                         )
+        self.debug("Display name: %s" % vm.displayname)
+        return
+
 
     @attr(configuration='vm.instancename.flag')
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
