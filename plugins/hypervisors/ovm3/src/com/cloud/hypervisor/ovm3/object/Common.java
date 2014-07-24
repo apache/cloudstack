@@ -45,9 +45,9 @@ public class Common extends OvmObject {
      * argument: func - default: None
      */
     /*
-     * normally used to push commands to other hosts in a cluster: *
-     * dispatch function join_server_pool
-     * to server https://oracle:******@192.168.1.67:8899/api/3/
+     * normally used to push commands to other hosts in a cluster: * dispatch
+     * function join_server_pool to server
+     * https://oracle:******@192.168.1.67:8899/api/3/
      */
     public <T> String dispatch(String url, String function, T... args)
             throws XmlRpcException {

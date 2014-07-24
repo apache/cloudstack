@@ -30,26 +30,26 @@ public class Cluster extends OvmObject {
      */
     public Boolean leaveCluster(String poolfsUuid) throws XmlRpcException {
         Object x = callWrapper("leave_cluster", poolfsUuid);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
     /*
      * configure_server_for_cluster, <class
      * 'agent.api.cluster.o2cb.ClusterO2CB'> argument: self - default: None <( ?
-     * argument: o2cb_conf - default: None <( ? argument: clusterConf -
-     * default: None <( ? argument: poolfs_type - default: None argument:
-     * poolfs_target - default: None argument: poolfsUuid - default: None
-     * argument: poolfs_nfsbase_uuid - default: None
+     * argument: o2cb_conf - default: None <( ? argument: clusterConf - default:
+     * None <( ? argument: poolfs_type - default: None argument: poolfs_target -
+     * default: None argument: poolfsUuid - default: None argument:
+     * poolfs_nfsbase_uuid - default: None
      */
     public Boolean configureServerForCluster(String poolfsUuid)
             throws XmlRpcException {
         Object x = callWrapper("configure_server_for_cluster", poolfsUuid);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -61,9 +61,9 @@ public class Cluster extends OvmObject {
     public Boolean deconfigureServerForCluster(String poolfsUuid)
             throws XmlRpcException {
         Object x = callWrapper("deconfigure_server_for_cluster", poolfsUuid);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -73,9 +73,9 @@ public class Cluster extends OvmObject {
      */
     public Boolean joinCLuster(String poolfsUuid) throws XmlRpcException {
         Object x = callWrapper("join_cluster", poolfsUuid);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -102,28 +102,27 @@ public class Cluster extends OvmObject {
      * <Cluster_Name>ba9aaf00ae5e2d73</Cluster_Name> </Node> </Nodes> </Stored>
      * </Cluster_Information> </Discover_Cluster_Result>
      */
-    /* returns xml - sigh */
+    /* TODO: Intepret existing clusters... */
     public Boolean discoverCluster() throws XmlRpcException {
         Object x = callWrapper("discover_cluster");
         // System.out.println(x);
-
         return false;
     }
 
     /*
-     * update_clusterConfiguration, <class
-     * 'agent.api.cluster.o2cb.ClusterO2CB'> argument: self - default: None
-     * argument: cluster_conf - default: None <( ? cluster_conf can be a "dict"
-     * or a plain file: print master.update_clusterConfiguration(
+     * update_clusterConfiguration, <class 'agent.api.cluster.o2cb.ClusterO2CB'>
+     * argument: self - default: None argument: cluster_conf - default: None <(
+     * ? cluster_conf can be a "dict" or a plain file: print
+     * master.update_clusterConfiguration(
      * "heartbeat:\n\tregion = 0004FB0000050000E70FBDDEB802208F\n\tcluster = ba9aaf00ae5e2d72\n\nnode:\n\tip_port = 7777\n\tip_address = 192.168.1.64\n\tnumber = 0\n\tname = ovm-1\n\tcluster = ba9aaf00ae5e2d72\n\nnode:\n\tip_port = 7777\n\tip_address = 192.168.1.65\n\tnumber = 1\n\tname = ovm-2\n\tcluster = ba9aaf00ae5e2d72\n\ncluster:\n\tnode_count = 2\n\theartbeat_mode = global\n\tname = ba9aaf00ae5e2d72\n"
      * )
      */
     public Boolean updateClusterConfiguration(String clusterConf)
             throws XmlRpcException {
         Object x = callWrapper("update_clusterConfiguration", clusterConf);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -133,9 +132,9 @@ public class Cluster extends OvmObject {
      */
     public Boolean destroyCluster(String poolfsUuid) throws XmlRpcException {
         Object x = callWrapper("destroy_cluster", poolfsUuid);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -154,9 +153,9 @@ public class Cluster extends OvmObject {
      */
     public Boolean createCluster(String poolfsUuid) throws XmlRpcException {
         Object x = callWrapper("create_cluster", poolfsUuid);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 }

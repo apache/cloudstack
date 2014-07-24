@@ -32,9 +32,9 @@ public class Repository extends OvmObject {
      */
     public Boolean deleteRepo(String id, Boolean erase) throws XmlRpcException {
         Object x = callWrapper("delete_repository", id, erase);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -46,17 +46,20 @@ public class Repository extends OvmObject {
     /* should add timeout ? */
     public Boolean importVirtualDisk(String url, String vdiskid, String repoid,
             String option) throws XmlRpcException {
-        Object x = callWrapper("import_virtual_disk", url, vdiskid, repoid, option);
-        if (x == null)
+        Object x = callWrapper("import_virtual_disk", url, vdiskid, repoid,
+                option);
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
-    public Boolean importVirtualDisk(String url, String vdiskid, String repoid) throws XmlRpcException {
-        Object x = callWrapper("import_virtual_disk", url, vdiskid, repoid);
-        if (x == null)
-            return true;
 
+    public Boolean importVirtualDisk(String url, String vdiskid, String repoid)
+            throws XmlRpcException {
+        Object x = callWrapper("import_virtual_disk", url, vdiskid, repoid);
+        if (x == null) {
+            return true;
+        }
         return false;
     }
 
@@ -71,17 +74,17 @@ public class Repository extends OvmObject {
     public Boolean discoverRepo(Map<String, String> args)
             throws XmlRpcException {
         Object x = callWrapper("discover_repositories", args);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
     public Boolean discoverRepo(String id) throws XmlRpcException {
         Object x = callWrapper("discover_repositories", id);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -91,9 +94,9 @@ public class Repository extends OvmObject {
      */
     public Boolean addRepo(String remote, String local) throws XmlRpcException {
         Object x = callWrapper("add_repository", remote, local);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -103,9 +106,9 @@ public class Repository extends OvmObject {
      */
     public Boolean getRepoMetaData(String local) throws XmlRpcException {
         Object x = callWrapper("get_repository_meta_data", local);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -116,9 +119,9 @@ public class Repository extends OvmObject {
     public Boolean mountRepoFs(String remote, String local)
             throws XmlRpcException {
         Object x = callWrapper("mount_repository_fs", remote, local);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -128,9 +131,9 @@ public class Repository extends OvmObject {
      */
     public Boolean unmountRepoFs(String local) throws XmlRpcException {
         Object x = callWrapper("unmount_repository_fs", local);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -143,9 +146,9 @@ public class Repository extends OvmObject {
             String repoalias) throws XmlRpcException {
         Object x = callWrapper("create_repository", remote, local, repoid,
                 repoalias);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -165,9 +168,9 @@ public class Repository extends OvmObject {
     public Boolean discoverRepoDb() throws XmlRpcException {
         Object x = callWrapper("discover_repository_db");
         // System.out.println(x);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -178,9 +181,9 @@ public class Repository extends OvmObject {
     public Boolean editRepoDb(String repoId, Map<String, String> changes)
             throws XmlRpcException {
         Object x = callWrapper("edit_repository_db", repoId, changes);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -197,9 +200,9 @@ public class Repository extends OvmObject {
     public Boolean importIso(String url, String isoId, String repoId,
             String option) throws XmlRpcException {
         Object x = callWrapper("import_ISO", url, isoId, repoId);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 }

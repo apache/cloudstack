@@ -23,12 +23,15 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 /*
  * synonym to the pool python lib in the ovs-agent
  */
 public class Pool extends OvmObject {
+    private static final Logger LOGGER = Logger
+            .getLogger(Pool.class);
     /*
      * {Pool_Filesystem_Target=cs-mgmt:/volumes/cs-data/secondary,
      * Pool_Filesystem_Type=nfs,
@@ -92,24 +95,19 @@ public class Pool extends OvmObject {
         String role = roles.toString();
         role = "xen,utility";
         Object x = callWrapper("create_server_pool", alias, id, vip, num, name,
-                ip,
-                role);
-        if (x == null)
+                ip, role);
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
     public Boolean createServerPool(String alias, String id, String vip,
             int num, String name, String ip) throws XmlRpcException {
-        return this.createServerPool(alias,
-                id,
-                vip,
-                num,
-                name,
-                ip,
+        return this.createServerPool(alias, id, vip, num, name, ip,
                 getValidRoles());
     }
+
     public Boolean createServerPool(int num, String name, String ip)
             throws XmlRpcException {
         return createServerPool(poolAlias, poolId, poolMasterVip, num, name,
@@ -135,8 +133,9 @@ public class Pool extends OvmObject {
      */
     public Boolean leaveServerPool(String uuid) throws XmlRpcException {
         Object x = callWrapper("leave_server_pool", uuid);
-        if (x == null)
+        if (x == null) {
             return true;
+        }
         return false;
     }
 
@@ -223,9 +222,9 @@ public class Pool extends OvmObject {
             this._poolDisc = true;
         } catch (Exception e) {
             if (e.getMessage() == null) {
-                System.err.println("No pool to discover: " + e.getMessage());
+                LOGGER.debug("No pool to discover: " + e.getMessage());
             } else {
-                System.err.println("Error in pooldiscovery: " + e.getMessage());
+                LOGGER.debug("Error in pooldiscovery: " + e.getMessage());
             }
         }
 
@@ -256,9 +255,9 @@ public class Pool extends OvmObject {
         validPoolRole(this.poolRoles);
         String roles = StringUtils.join(this.poolRoles.toArray(), ",");
         Object x = callWrapper("update_server_roles", roles);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -267,7 +266,6 @@ public class Pool extends OvmObject {
         this.poolRoles.addAll(roles);
         return setServerRoles();
     }
-
 
     public void addServerRole(String role) throws Exception {
         validPoolRole(role);
@@ -300,11 +298,10 @@ public class Pool extends OvmObject {
             String name, String ip, List<String> roles) throws XmlRpcException {
         String role = StringUtils.join(roles.toArray(), ",");
         Object x = callWrapper("join_server_pool", alias, id, vip, num, name,
-                ip,
-                role);
-        if (x == null)
+                ip, role);
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -326,9 +323,9 @@ public class Pool extends OvmObject {
     public Boolean setPoolMemberIpList() throws XmlRpcException {
         // should throw exception if no poolIps set
         Object x = callWrapper("set_pool_member_ip_list", this.poolIps);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 

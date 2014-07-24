@@ -31,14 +31,19 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import com.cloud.hypervisor.ovm3.hypervisor.Ovm3ResourceBase;
+
 public class OvmObject {
     public static Connection client = null;
     public static Vector<?> emptyParams = new Vector<Object>();
+    private static final Logger LOGGER = Logger
+            .getLogger(Ovm3ResourceBase.class);
 
     /* remove dashes from uuids */
     public String deDash(String str) {
@@ -92,24 +97,19 @@ public class OvmObject {
         if (result == null) {
             return null;
         }
-        if (result instanceof String)
+        if (result instanceof String || result instanceof Integer || result instanceof Long || result instanceof HashMap) {
             return result.toString();
-        if (result instanceof Integer)
-            return result.toString();
-        if (result instanceof Long)
-            return result.toString();
-        if (result instanceof HashMap)
-            return result.toString();
+        }
 
         Object[] results = (Object[]) result;
 
-        if (results.length == 0)
+        if (results.length == 0) {
             // return results[0].toString();
             return null;
-
-        if (results.length == 1)
+        }
+        if (results.length == 1) {
             return results[0].toString();
-
+        }
         return null;
     }
 

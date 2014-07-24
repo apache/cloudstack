@@ -193,11 +193,11 @@ public class StoragePlugin extends OvmObject {
     }
 
     /* TODO: subclass */
-    /* {'fr_type': 'File',
-        'ondisk_sz': '48193536',
-        'fs_uuid': '7718562d-872f-47a7-b454-8f9cac4ffa3a',
-        'file_path': '/nfsmnt/7718562d-872f-47a7-b454-8f9cac4ffa3a/0004fb0000060000d4a1d2ec05a5e799.img',
-        'file_sz': '52380672'}
+    /*
+     * {'fr_type': 'File', 'ondisk_sz': '48193536', 'fs_uuid':
+     * '7718562d-872f-47a7-b454-8f9cac4ffa3a', 'file_path':
+     * '/nfsmnt/7718562d-872f-47a7-b454-8f9cac4ffa3a/0004fb0000060000d4a1d2ec05a5e799.img',
+     * 'file_sz': '52380672'}
      */
     private Map<String, Object> fileProps = new HashMap<String, Object>() {
         {
@@ -212,9 +212,11 @@ public class StoragePlugin extends OvmObject {
     public String getFileName() {
         return (String) this.fileProps.get("file_path");
     }
+
     public long getFileSize() {
         return Long.parseLong((String) this.fileProps.get("file_sz"));
     }
+
     private String mountPoint = "";
 
     public String setFsMountPoint(String val) {
@@ -242,8 +244,7 @@ public class StoragePlugin extends OvmObject {
 
     /*
      * storage_plugin_getStatus, <class 'agent.api.storageplugin.StoragePlugin'>
-     * argument: impl_name - default: None
-     * meh ?
+     * argument: impl_name - default: None meh ?
      */
 
     /*
@@ -256,10 +257,10 @@ public class StoragePlugin extends OvmObject {
      * argument: impl_name - default: None
      */
 
-    /* TODO: make more generic now only for files
-     * storage_plugin_create, <class 'agent.api.storageplugin.StoragePlugin'>
-     * argument: impl_name - default: None
-     * - calls resize secretly.. after "create"
+    /*
+     * TODO: make more generic now only for files storage_plugin_create, <class
+     * 'agent.api.storageplugin.StoragePlugin'> argument: impl_name - default:
+     * None - calls resize secretly.. after "create"
      */
     public Boolean storagePluginCreate(String poolUuid, String host,
             String file, Long size) throws XmlRpcException {
@@ -290,18 +291,17 @@ public class StoragePlugin extends OvmObject {
         baseProps.put("size", "");
 
         /*
-         * fileProps.put("fr_type", "File");
-         * fileProps.put("fs_uuid", ssuuid);
-         * fileProps.put("file_path", file);
-         * fileProps.put("file_sz", "");
+         * fileProps.put("fr_type", "File"); fileProps.put("fs_uuid", ssuuid);
+         * fileProps.put("file_path", file); fileProps.put("file_sz", "");
          * fileProps.put("ondisk_sz", "");
          */
-        Object x = (HashMap<String, Object>)callWrapper("storage_plugin_create",
-                this.pluginType, this.ssProps, this.baseProps, file, "File", size);
+        Object x = (HashMap<String, Object>) callWrapper(
+                "storage_plugin_create", this.pluginType, this.ssProps,
+                this.baseProps, file, "File", size);
 
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return true;
     }
 
@@ -337,9 +337,9 @@ public class StoragePlugin extends OvmObject {
         Map<String, String> y = new HashMap<String, String>();
         Object x = callWrapper("storage_plugin_listFileSystems",
                 this.pluginType, y);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -368,8 +368,7 @@ public class StoragePlugin extends OvmObject {
      */
 
     /**
-     * .
-     * storage_plugin_mount, <class 'agent.api.storageplugin.StoragePlugin'>
+     * . storage_plugin_mount, <class 'agent.api.storageplugin.StoragePlugin'>
      * argument: impl_name - default: None
      */
     public final Boolean storagePluginMount(String nfsHost, String nfsPath,
@@ -431,9 +430,9 @@ public class StoragePlugin extends OvmObject {
     }
 
     /**
-     * .
-     * storage_plugin_unmount, <class 'agent.api.storageplugin.StoragePlugin'>
+     * . storage_plugin_unmount, <class 'agent.api.storageplugin.StoragePlugin'>
      * argument: impl_name - default: None
+     *
      * @return boolean
      * @throws XmlRpcException
      */
@@ -443,7 +442,6 @@ public class StoragePlugin extends OvmObject {
         if (x == null) {
             return true;
         }
-
         return false;
     }
 
@@ -539,9 +537,9 @@ public class StoragePlugin extends OvmObject {
          * xmlDocument); Date_Time = xmlToMap(path+"/Date_Time", xmlDocument);
          * Generic = xmlToMap(path, xmlDocument);
          */
-        if (result != null)
+        if (result != null) {
             return true;
-
+        }
         return false;
     }
 
@@ -557,11 +555,13 @@ public class StoragePlugin extends OvmObject {
      * None
      */
 
-    /* TODO: is used for files and dirs..., we only implement files for now...
+    /*
+     * TODO: is used for files and dirs..., we only implement files for now...
      * storage_plugin_destroy, <class 'agent.api.storageplugin.StoragePlugin'>
      * argument: impl_name - default: None
      */
-    public Boolean storagePluginDestroy(String poolUuid, String file) throws XmlRpcException {
+    public Boolean storagePluginDestroy(String poolUuid, String file)
+            throws XmlRpcException {
         /* clean the props, the empty ones are checked, but not for content... */
         // String uuid = this.deDash(poolUuid);
         baseProps.put("uuid", "");
@@ -578,9 +578,9 @@ public class StoragePlugin extends OvmObject {
         Object x = (HashMap<String, Object>) callWrapper(
                 "storage_plugin_destroy", this.pluginType, this.baseProps,
                 this.ssProps, this.fileProps);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -589,9 +589,9 @@ public class StoragePlugin extends OvmObject {
         Object x = (HashMap<String, Object>) callWrapper(
                 "storage_plugin_destroy", this.pluginType, this.baseProps,
                 this.ssProps, this.fileProps);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -642,24 +642,23 @@ public class StoragePlugin extends OvmObject {
      * None
      */
     public Boolean storagePluginGetFileInfo() throws XmlRpcException {
-        fileProps = (HashMap<String, Object>)callWrapper("storage_plugin_getFileInfo",
-                this.pluginType, this.baseProps, this.fileProps);
-        if (fileProps == null)
+        fileProps = (HashMap<String, Object>) callWrapper(
+                "storage_plugin_getFileInfo", this.pluginType, this.baseProps,
+                this.fileProps);
+        if (fileProps == null) {
             return true;
-
+        }
         return false;
     }
 
     public Boolean storagePluginGetFileInfo(String file) throws XmlRpcException {
         fileProps.put("file_path", file);
-        fileProps = (HashMap<String, Object>)callWrapper("storage_plugin_getFileInfo",
-                this.pluginType,
-                this.ssProps,
-                this.baseProps,
-                this.fileProps);
-        if (fileProps == null)
+        fileProps = (HashMap<String, Object>) callWrapper(
+                "storage_plugin_getFileInfo", this.pluginType, this.ssProps,
+                this.baseProps, this.fileProps);
+        if (fileProps == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -675,24 +674,20 @@ public class StoragePlugin extends OvmObject {
         ssProps.put("ss_uuid", poolUuid);
         ssProps.put("name", "");
         fileProps.put("file_path", file);
-        fileProps = (HashMap<String, Object>)callWrapper("storage_plugin_getFileInfo",
-                this.pluginType,
-                this.ssProps,
-                this.baseProps,
-                this.fileProps);
-        if (fileProps == null)
+        fileProps = (HashMap<String, Object>) callWrapper(
+                "storage_plugin_getFileInfo", this.pluginType, this.ssProps,
+                this.baseProps, this.fileProps);
+        if (fileProps == null) {
             return true;
-
+        }
         return false;
     }
 
-    /* TODO: input checking of ss and base
     /*
-     * storage_plugin_getFileSystemInfo, <class
-     * 'agent.api.storageplugin.StoragePlugin'> argument: impl_name - default:
-     * None
-     * requires a minumum of uuid, access_host, storage_type
-     *   ss_uuid, access_path, uuid (the ss
+     * TODO: input checking of ss and base /* storage_plugin_getFileSystemInfo,
+     * <class 'agent.api.storageplugin.StoragePlugin'> argument: impl_name -
+     * default: None requires a minumum of uuid, access_host, storage_type
+     * ss_uuid, access_path, uuid (the ss
      */
     public Boolean storagePluginGetFileSystemInfo(String propUuid,
             String mntUuid, String nfsHost, String nfsPath)
@@ -708,9 +703,9 @@ public class StoragePlugin extends OvmObject {
                 "storage_plugin_getFileSystemInfo", this.pluginType,
                 this.baseProps, this.ssProps);
         this.ssProps = props;
-        if (props == null)
+        if (props == null) {
             return false;
-
+        }
         return true;
     }
 
@@ -721,9 +716,9 @@ public class StoragePlugin extends OvmObject {
                 this.baseProps, this.ssProps);
         this.ssProps = props;
         // System.out.println(props);
-        if (props == null)
+        if (props == null) {
             return false;
-
+        }
         return true;
     }
 
@@ -858,9 +853,9 @@ public class StoragePlugin extends OvmObject {
     public Boolean storagePluginListMounts() throws XmlRpcException {
         Object x = callWrapper("storage_plugin_listMountPoints",
                 this.pluginType, this.baseProps);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -868,9 +863,9 @@ public class StoragePlugin extends OvmObject {
         /* should allow for putting in the uuid */
         Object x = callWrapper("storage_plugin_listMountPoints",
                 this.pluginType, this.baseProps);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 }

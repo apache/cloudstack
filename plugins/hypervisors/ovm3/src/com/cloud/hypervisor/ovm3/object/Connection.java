@@ -12,6 +12,7 @@
  * limitations under the License.
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
+
 import java.net.URL;
 import java.util.TimeZone;
 import java.util.Vector;
@@ -56,7 +57,7 @@ public class Connection extends XmlRpcClient {
             // _config.setEnabledForExtensions(true);
             client.setConfig(_config);
             client.setTypeFactory(new RpcTypeFactory(client));
-        } catch (Throwable e) {
+        } catch (Exception e) {
             throw new XmlRpcException(e.getMessage());
         }
         return client;

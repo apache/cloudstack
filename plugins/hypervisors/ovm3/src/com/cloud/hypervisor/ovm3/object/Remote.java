@@ -31,9 +31,9 @@ public class Remote extends OvmObject {
      */
     public Boolean sysShutdown() throws XmlRpcException {
         Object x = callWrapper("sys_shutdown");
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -51,9 +51,9 @@ public class Remote extends OvmObject {
      */
     public Boolean sysReboot() throws XmlRpcException {
         Object x = callWrapper("sys_reboot");
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 

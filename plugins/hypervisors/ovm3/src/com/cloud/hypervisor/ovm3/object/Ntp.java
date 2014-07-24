@@ -31,16 +31,16 @@ public class Ntp extends OvmObject {
     }
 
     public List<String> addServer(String server) {
-        if (Servers.contains(server) == false)
+        if (Servers.contains(server) == false) {
             Servers.add(server);
-
+        }
         return Servers;
     }
 
     public List<String> removeServer(String server) {
-        if (Servers.contains(server))
+        if (Servers.contains(server)) {
             Servers.remove(server);
-
+        }
         return Servers;
     }
 
@@ -70,16 +70,16 @@ public class Ntp extends OvmObject {
         for (Object o : v) {
             // System.out.println(o.getClass());
             if (o instanceof java.lang.Boolean) {
-                if (c == 0)
+                if (c == 0) {
                     this.isServer = (Boolean) o;
-
-                if (c == 1)
+                }
+                if (c == 1) {
                     this.isRunning = (Boolean) o;
-
+                }
                 // should not get here
-                if (c > 1)
+                if (c > 1) {
                     return false;
-
+                }
                 c += 1;
             } else if (o instanceof java.lang.Object) {
                 Object[] S = (Object[]) o;
@@ -123,8 +123,9 @@ public class Ntp extends OvmObject {
      * default: None
      */
     public Boolean disableNtp() throws XmlRpcException {
-        if (callWrapper("disable_ntp") == null)
+        if (callWrapper("disable_ntp") == null) {
             return true;
+        }
         return false;
     }
 
@@ -133,8 +134,9 @@ public class Ntp extends OvmObject {
      * default: None
      */
     public Boolean enableNtp() throws XmlRpcException {
-        if (callWrapper("enable_ntp") == null)
+        if (callWrapper("enable_ntp") == null) {
             return true;
+        }
         return false;
     }
 }

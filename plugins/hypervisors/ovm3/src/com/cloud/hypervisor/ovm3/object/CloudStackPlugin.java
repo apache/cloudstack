@@ -12,6 +12,7 @@
  * limitations under the License.
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,23 +32,26 @@ public class CloudStackPlugin extends OvmObject {
     public boolean ovsUploadSshKey(String key, String content)
             throws XmlRpcException {
         Object x = callWrapper("ovs_upload_ssh_key", key, content);
-        if (x==null) {
+        if (x == null) {
             return false;
         }
         return true;
     }
+
     public boolean ovsUploadFile(String path, String file, String content)
             throws XmlRpcException {
         Object x = callWrapper("ovs_upload_file", path, file, content);
-        if (x==null) {
+        if (x == null) {
             return false;
         }
         return true;
     }
-    public boolean ovsDomrUploadFile(String domr, String path, String file, String content)
-            throws XmlRpcException {
-        Object x = callWrapper("ovs_domr_upload_file", domr, path, file, content);
-        if (x==null) {
+
+    public boolean ovsDomrUploadFile(String domr, String path, String file,
+            String content) throws XmlRpcException {
+        Object x = callWrapper("ovs_domr_upload_file", domr, path, file,
+                content);
+        if (x == null) {
             return false;
         }
         return true;
@@ -65,45 +69,53 @@ public class CloudStackPlugin extends OvmObject {
                 put("out", null);
             }
         };
+
         public void setValues(Map<String, String> m) {
             this._rc.putAll(m);
         }
+
         public Boolean getRc() {
             try {
                 Long rc = (Long) _rc.get("rc");
                 _rc.put("exit", rc);
-                if (rc != 0)
+                if (rc != 0) {
                     return false;
+                }
                 return true;
             } catch (Exception e) {
-
+                /* TODO: What to do here? */
             }
             return false;
         }
+
         public String getStdOut() {
             return (String) _rc.get("out");
         }
+
         public String getStdErr() {
             return (String) _rc.get("err");
         }
+
         public Integer getExit() {
-            if (_rc.get("exit") == null)
+            if (_rc.get("exit") == null) {
                 _rc.put("exit", _rc.get("rc"));
+            }
             return Integer.valueOf((String) _rc.get("exit"));
         }
     }
+
     public ReturnCode domrExec(String ip, String cmd) throws XmlRpcException {
         ReturnCode rc = new ReturnCode();
         rc.setValues((Map<String, String>) callWrapper("exec_domr", ip, cmd));
         return rc;
     }
 
-    public boolean domrCheckPort(String ip, Integer port, Integer retries, Integer interval)
-                throws XmlRpcException, InterruptedException {
-        Boolean x= false;
+    public boolean domrCheckPort(String ip, Integer port, Integer retries,
+            Integer interval) throws XmlRpcException, InterruptedException {
+        Boolean x = false;
         /* should deduct the interval from the timeout and sleep on it */
-        Integer sleep=interval;
-        while(x == false && retries > 0) {
+        Integer sleep = interval;
+        while (x == false && retries > 0) {
             x = (Boolean) callWrapper("check_domr_port", ip, port, interval);
             retries--;
             Thread.sleep(sleep * 1000);
@@ -111,19 +123,22 @@ public class CloudStackPlugin extends OvmObject {
         return x;
     }
 
-    public Map<String, String> ovsDom0Stats(String bridge) throws XmlRpcException {
-        Map<String, String> stats  = (Map<String, String>)
-                callWrapper("ovs_dom0_stats", bridge);
+    public Map<String, String> ovsDom0Stats(String bridge)
+            throws XmlRpcException {
+        Map<String, String> stats = (Map<String, String>) callWrapper(
+                "ovs_dom0_stats", bridge);
         return stats;
     }
 
-
-    public Map<String, String> ovsDomUStats(String domain) throws XmlRpcException {
-        Map<String, String> stats  = (Map<String, String>)
-                callWrapper("ovs_domU_stats", domain);
+    public Map<String, String> ovsDomUStats(String domain)
+            throws XmlRpcException {
+        Map<String, String> stats = (Map<String, String>) callWrapper(
+                "ovs_domU_stats", domain);
         return stats;
     }
-    public boolean domrCheckPort(String ip, Integer port) throws XmlRpcException {
+
+    public boolean domrCheckPort(String ip, Integer port)
+            throws XmlRpcException {
         Object x = callWrapper("check_domr_port", ip, port);
         return (Boolean) x;
     }
@@ -133,7 +148,8 @@ public class CloudStackPlugin extends OvmObject {
         return (Boolean) x;
     }
 
-    public boolean ovsControlInterface(String dev, String ip, String mask) throws XmlRpcException {
+    public boolean ovsControlInterface(String dev, String ip, String mask)
+            throws XmlRpcException {
         Object x = callWrapper("ovs_control_interface", dev, ip, mask);
         return (Boolean) x;
     }

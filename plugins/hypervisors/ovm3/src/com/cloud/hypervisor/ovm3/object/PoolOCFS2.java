@@ -62,9 +62,9 @@ public class PoolOCFS2 extends OvmObject {
         // should throw exception if no poolIps set
         Object x = callWrapper("destroy_pool_filesystem", type, target, uuid,
                 nfsbaseuuid);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -73,9 +73,9 @@ public class PoolOCFS2 extends OvmObject {
         // should throw exception if no poolIps set
         Object x = callWrapper("destroy_pool_filesystem", poolFsType,
                 poolFsTarget, poolFsId, poolFsNFSBaseId);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -100,9 +100,9 @@ public class PoolOCFS2 extends OvmObject {
         Object x = callWrapper("create_pool_filesystem", type, target,
                 clustername, fsid, nfsbaseid, managerid, id);
         // System.out.println(x);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -113,9 +113,9 @@ public class PoolOCFS2 extends OvmObject {
         Object x = callWrapper("create_pool_filesystem", type, target,
                 clustername, fsid, nfsbaseid, managerid, id, blocksize,
                 clustersize, journalsize);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -134,9 +134,9 @@ public class PoolOCFS2 extends OvmObject {
         poolFsType = poolFileSystem.get("Pool_Filesystem_Type");
         poolFsNFSBaseId = poolFileSystem.get("Pool_Filesystem_Nfsbase_Uuid");
         poolFsId = poolFileSystem.get("Pool_Filesystem_Uuid");
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 
@@ -149,9 +149,9 @@ public class PoolOCFS2 extends OvmObject {
             throws XmlRpcException {
         Object x = callWrapper("ocfs2_get_meta_data", device, filename);
         // System.out.println(x);
-        if (x == null)
+        if (x == null) {
             return true;
-
+        }
         return false;
     }
 }
