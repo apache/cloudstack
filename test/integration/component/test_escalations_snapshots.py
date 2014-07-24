@@ -16,18 +16,20 @@
 # under the License.
 
 # Import Local Modules
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackException import *
-from marvin.cloudstackAPI import *
-from marvin.sshClient import SshClient
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-from marvin.lib.utils import checkVolumeSize
-from marvin.codes import SUCCESS
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.lib.base import (VmSnapshot,
+                             Snapshot,
+                             DiskOffering,
+                             ServiceOffering,
+                             VirtualMachine,
+                             Account,
+                             Volume)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template)
+from marvin.lib.utils import validateList, cleanup_resources
+from marvin.codes import PASS
 from nose.plugins.attrib import attr
-from time import sleep
-from ctypes.wintypes import BOOLEAN
 
 class TestSnapshots(cloudstackTestCase):
 
