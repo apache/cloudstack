@@ -24,6 +24,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -49,7 +51,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
@@ -258,13 +259,11 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     public boolean canCopy(DataObject srcData, DataObject destData) {
         //BUG fix for CLOUDSTACK-4618
         DataStore store = destData.getDataStore();
-        if (store.getRole() == DataStoreRole.Primary) {
-            if ((srcData.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.TEMPLATE) ||
-                    (srcData.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.VOLUME)) {
-                StoragePoolVO storagePoolVO = primaryStoreDao.findById(store.getId());
-                if (storagePoolVO != null && storagePoolVO.getPoolType() == Storage.StoragePoolType.CLVM) {
-                    return true;
-                }
+        if (store.getRole() == DataStoreRole.Primary && srcData.getType() == DataObjectType.TEMPLATE
+                && (destData.getType() == DataObjectType.TEMPLATE || destData.getType() == DataObjectType.VOLUME)) {
+            StoragePoolVO storagePoolVO = primaryStoreDao.findById(store.getId());
+            if (storagePoolVO != null && storagePoolVO.getPoolType() == Storage.StoragePoolType.CLVM) {
+                return true;
             }
         }
         return false;
@@ -282,7 +281,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             }
 
             CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
-            EndPoint ep = this.epSelector.select(snapshot, StorageAction.TAKESNAPSHOT);
+            EndPoint ep = epSelector.select(snapshot, StorageAction.TAKESNAPSHOT);
             Answer answer = null;
 
             if (ep == null) {
