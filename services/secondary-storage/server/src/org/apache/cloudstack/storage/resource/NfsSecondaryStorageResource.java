@@ -1920,7 +1920,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         _configAuthScr = Script.findScript(getDefaultScriptsDir(), "config_auth.sh");
-        if (_configSslScr != null) {
+        if (_configAuthScr != null) {
             s_logger.info("config_auth.sh found in " + _configAuthScr);
         }
 
