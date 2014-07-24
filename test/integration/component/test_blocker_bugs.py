@@ -863,26 +863,9 @@ class TestTemplates(cloudstackTestCase):
                                    account=self.account.name,
                                    domainid=self.account.domainid
                                    )
-        self.debug("Created snapshot with ID: %s" % snapshot.id)
-        snapshots = Snapshot.list(
-                                   self.apiclient,
-                                   id=snapshot.id
-                                   )
-        self.assertEqual(
-                            isinstance(snapshots, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        self.assertNotEqual(
-                            snapshots,
-                            None,
-                            "Check if result exists in list snapshots call"
-                            )
-        self.assertEqual(
-                            snapshots[0].id,
-                            snapshot.id,
-                            "Check snapshot id in list resources call"
-                        )
+
+        response = snapshot.validateState(self.apiclient, Snapshot.BACKED_UP)
+        self.assertEqual(response[0], PASS, response[1])
 
         # Generate template from the snapshot
         template = Template.create_from_snapshot(
@@ -945,26 +928,8 @@ class TestTemplates(cloudstackTestCase):
                                    account=self.account.name,
                                    domainid=self.account.domainid
                                    )
-        self.debug("Created snapshot with ID: %s" % snapshot.id)
-        snapshots = Snapshot.list(
-                                   self.apiclient,
-                                   id=snapshot.id
-                                   )
-        self.assertEqual(
-                            isinstance(snapshots, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        self.assertNotEqual(
-                            snapshots,
-                            None,
-                            "Check if result exists in list snapshots call"
-                            )
-        self.assertEqual(
-                            snapshots[0].id,
-                            snapshot.id,
-                            "Check snapshot id in list resources call"
-                        )
+        response = snapshot.validateState(self.apiclient, Snapshot.BACKED_UP)
+        self.assertEqual(response[0], PASS, response[1])
 
         # Generate template from the snapshot
         template = Template.create_from_snapshot(
