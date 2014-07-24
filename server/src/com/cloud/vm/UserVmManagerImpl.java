@@ -35,10 +35,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.server.ManagementService;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -66,6 +62,7 @@ import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
+import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
@@ -87,6 +84,8 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -173,6 +172,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
@@ -195,6 +195,7 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ConfigurationServer;
+import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -246,6 +247,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.crypt.RSAHelper;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -261,8 +263,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
@@ -458,6 +460,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     VolumeApiService _volumeService;
     @Inject
     DataStoreManager _dataStoreMgr;
+    @Inject
+    VpcVirtualNetworkApplianceManager _virtualNetAppliance;
+    @Inject
+    DomainRouterDao _routerDao;
+    @Inject
+    protected VMNetworkMapDao _vmNetworkMapDao;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -754,7 +762,33 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (vm.getState() == State.Running && vm.getHostId() != null) {
             collectVmDiskStatistics(vm);
-            _itMgr.reboot(vm.getUuid(), null);
+            DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
+            try {
+                if (dc.getNetworkType() == DataCenter.NetworkType.Advanced) {
+                    //List all networks of vm
+                    List<Long> vmNetworks = _vmNetworkMapDao.getNetworks(vmId);
+                    List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
+                    //List the stopped routers
+                    for(long vmNetworkId : vmNetworks) {
+                        List<DomainRouterVO> router = _routerDao.listStopped(vmNetworkId);
+                        routers.addAll(router);
+                    }
+                    //A vm may not have many nics attached and even fewer routers might be stopped (only in exceptional cases)
+                    //Safe to start the stopped router serially, this is consistent with the way how multiple networks are added to vm during deploy
+                    //and routers are started serially ,may revisit to make this process parallel
+                    for(DomainRouterVO routerToStart : routers) {
+                        s_logger.warn("Trying to start router " + routerToStart.getInstanceName() + " as part of vm: " + vm.getInstanceName() + " reboot");
+                        _virtualNetAppliance.startRouter(routerToStart.getId(),true);
+                    }
+                }
+            } catch (ConcurrentOperationException e) {
+                throw new CloudRuntimeException("Concurrent operations on starting router. " + e);
+            } catch (Exception ex){
+                throw new CloudRuntimeException("Router start failed due to" + ex);
+            }finally {
+                s_logger.info("Rebooting vm " + vm.getInstanceName());
+                _itMgr.reboot(vm.getUuid(), null);
+            }
             return _vmDao.findById(vmId);
         } else {
             s_logger.error("Vm id=" + vmId + " is not in Running state, failed to reboot");
