@@ -9040,7 +9040,7 @@
                                 	var array1 = [];
                                 	
                                 	// ***** non XenServer (begin) *****
-                                	var hypervisors = ["Hyperv", "KVM", "VMware", "BareMetal"];
+                                	var hypervisors = ["Hyperv", "KVM", "VMware", "BareMetal", "LXC"];
                                 	
                                         	var supportSocketHypervisors = {
                                         		"Hyperv": 1, 
