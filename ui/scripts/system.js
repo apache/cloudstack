@@ -16347,6 +16347,10 @@
                                                     id: "SharedMountPoint",
                                                     description: "SharedMountPoint"
                                                 });
+                                                items.push({
+                                                    id: "rbd",
+                                                    description: "RBD"
+                                                });
                                                 args.response.success({
                                                     data: items
                                                 });
