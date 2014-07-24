@@ -1826,21 +1826,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     // Pair<internal CS name, vCenter display name>
     private Pair<String, String> composeVmNames(VirtualMachineTO vmSpec) {
-        String vmInternalCSName = null;
-        String vmNameOnVcenter = null;
-        if (vmSpec.getHostName() != null) {
-            vmInternalCSName = vmSpec.getName();
-            if (_instanceNameFlag == true) {
-                String[] tokens = vmInternalCSName.split("-");
-                assert (tokens.length >= 3); // vmInternalCSName has format i-x-y-<instance.name>
-                vmNameOnVcenter = String.format("%s-%s-%s-%s", tokens[0], tokens[1], tokens[2], vmSpec.getHostName());
-            }
-            else
-                vmNameOnVcenter = vmSpec.getName();
-        } else {
-            vmNameOnVcenter = vmInternalCSName = vmSpec.getName();
+        String vmInternalCSName = vmSpec.getName();
+        String vmNameOnVcenter = vmSpec.getName();
+        if (vmSpec.getType() == VirtualMachine.Type.User && _instanceNameFlag && vmSpec.getHostName() != null) {
+            String[] tokens = vmInternalCSName.split("-");
+            assert (tokens.length >= 3); // vmInternalCSName has format i-x-y-<instance.name>
+            vmNameOnVcenter = String.format("%s-%s-%s-%s", tokens[0], tokens[1], tokens[2], vmSpec.getHostName());
         }
-
         return new Pair<String, String>(vmInternalCSName, vmNameOnVcenter);
     }
 
