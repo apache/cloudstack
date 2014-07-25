@@ -1222,9 +1222,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 defaultVpcNetworkOfferingProviders.put(Service.PortForwarding, Provider.VPCVirtualRouter);
                 defaultVpcNetworkOfferingProviders.put(Service.Vpn, Provider.VPCVirtualRouter);
 
-                for (Service service : defaultVpcNetworkOfferingProviders.keySet()) {
-                    NetworkOfferingServiceMapVO offService =
-                            new NetworkOfferingServiceMapVO(defaultNetworkOfferingForVpcNetworks.getId(), service, defaultVpcNetworkOfferingProviders.get(service));
+                for (Map.Entry<Service,Provider> entry : defaultVpcNetworkOfferingProviders.entrySet()) {
+                     NetworkOfferingServiceMapVO offService =
+                            new NetworkOfferingServiceMapVO(defaultNetworkOfferingForVpcNetworks.getId(), entry.getKey(), entry.getValue());
                     _ntwkOfferingServiceMapDao.persist(offService);
                     s_logger.trace("Added service for the network offering: " + offService);
                 }
