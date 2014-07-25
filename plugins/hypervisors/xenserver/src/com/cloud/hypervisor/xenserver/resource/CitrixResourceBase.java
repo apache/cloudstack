@@ -562,9 +562,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     @Override
     public ExecutionResult executeInVR(String routerIP, String script, String args, int timeout) {
         Pair<Boolean, String> result;
+        String cmdline = "/opt/cloud/bin/router_proxy.sh " + script + " " + routerIP + " " + args;
+        // semicolon need to be escape for bash
+        cmdline = cmdline.replaceAll(";", "\\\\;");
         try {
-            s_logger.debug("Executing command in VR:  /opt/cloud/bin/router_proxy.sh " + script + " " + routerIP + " " + args);
-            result = SshHelper.sshExecute(_host.ip, 22, _username, null, _password.peek(), "/opt/cloud/bin/router_proxy.sh " + script + " " + routerIP + " " + args,
+            s_logger.debug("Executing command in VR: " + cmdline);
+            result = SshHelper.sshExecute(_host.ip, 22, _username, null, _password.peek(), cmdline,
                     60000, 60000, timeout * 1000);
         } catch (Exception e) {
             return new ExecutionResult(false, e.getMessage());
