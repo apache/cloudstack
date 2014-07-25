@@ -79,7 +79,6 @@ import com.cloud.agent.api.GetVmConfigAnswer;
 import com.cloud.agent.api.GetVmConfigAnswer.NicDetails;
 import com.cloud.agent.api.GetVmConfigCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
-import com.cloud.agent.api.ModifyVmNicConfigAnswer;
 import com.cloud.agent.api.ModifyVmNicConfigCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
@@ -249,8 +248,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
         if (!startCmd.getDataCenter().equals(defaultStartRoutCmd.getDataCenter())) {
             String errMsg =
-                String.format("Host %s (IP %s) changed zone/data center.  Was " + defaultStartRoutCmd.getDataCenter() + " NOW its " + startCmd.getDataCenter(), _name,
-                    _agentIp);
+                    String.format("Host %s (IP %s) changed zone/data center.  Was " + defaultStartRoutCmd.getDataCenter() + " NOW its " + startCmd.getDataCenter(), _name,
+                            _agentIp);
             s_logger.error(errMsg);
             // TODO: valid to return null, or should we throw?
             return null;
@@ -263,7 +262,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
         if (!startCmd.getCluster().equals(defaultStartRoutCmd.getCluster())) {
             String errMsg =
-                String.format("Host %s (IP %s) changed cluster.  Was " + defaultStartRoutCmd.getCluster() + " NOW its " + startCmd.getCluster(), _name, _agentIp);
+                    String.format("Host %s (IP %s) changed cluster.  Was " + defaultStartRoutCmd.getCluster() + " NOW its " + startCmd.getCluster(), _name, _agentIp);
             s_logger.error(errMsg);
             // TODO: valid to return null, or should we throw?
             return null;
@@ -276,8 +275,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
         if (!startCmd.getPrivateIpAddress().equals(defaultStartRoutCmd.getPrivateIpAddress())) {
             String errMsg =
-                String.format("Host %s (IP %s) IP address.  Was " + defaultStartRoutCmd.getPrivateIpAddress() + " NOW its " + startCmd.getPrivateIpAddress(), _name,
-                    _agentIp);
+                    String.format("Host %s (IP %s) IP address.  Was " + defaultStartRoutCmd.getPrivateIpAddress() + " NOW its " + startCmd.getPrivateIpAddress(), _name,
+                            _agentIp);
             s_logger.error(errMsg);
             // TODO: valid to return null, or should we throw?
             return null;
@@ -439,7 +438,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             return null;
         }
         if (cmd instanceof NetworkElementCommand) {
-        return _vrResource.executeRequest((NetworkElementCommand)cmd);
+            return _vrResource.executeRequest((NetworkElementCommand)cmd);
         }if (clazz == CheckSshCommand.class) {
             answer = execute((CheckSshCommand)cmd);
         } else if (clazz == GetDomRVersionCmd.class) {
@@ -777,7 +776,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 if (publicNicInfo < 0) {
                     if (ip.isAdd()) {
                         throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
-                        } else {
+                    } else {
                         s_logger.debug("VIF to deassociate IP with does not exist, return success");
                         continue;
                     }
@@ -935,18 +934,18 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         int i = 0;
 
         // Extract and build the arguments for the command to be sent to the VR.
-        String[][] rules = cmd.generateSRouteRules();
+        String[] rules = cmd.generateSRouteRules();
         StringBuilder sb = new StringBuilder();
-        String[] srRules = rules[0];
-        for (int j = 0; j < srRules.length; j++) {
-            sb.append(srRules[j]).append(',');
+
+        for (int j = 0; j < rules.length; j++) {
+            sb.append(rules[j]).append(',');
         }
         args += " -a " + sb.toString();
 
         // Send over the command for execution, via ssh, to the VR.
         try {
             Pair<Boolean, String> result =
-                SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_staticroute.sh " + args);
+                    SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_staticroute.sh " + args);
 
             if (s_logger.isDebugEnabled())
                 s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/vpc_staticroute.sh " + args);
@@ -986,7 +985,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
             if (!result.first()) {
                 s_logger.error("check site-to-site vpn connections command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " +
-                    result.second());
+                        result.second());
 
                 return new CheckS2SVpnConnectionsAnswer(cmd, false, result.second());
             }
@@ -1320,7 +1319,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         try {
             SshHelper.scpTo(controlIp, DEFAULT_DOMR_SSHPORT, "root", keyFile, null, "/tmp/", tmpCfgFileContents.toString().getBytes(Charset.forName("UTF-8")), routerIp.replace('.', '_') +
-                ".cfg", null);
+                    ".cfg", null);
 
             try {
                 String[] addRules = rules[LoadBalancerConfigurator.ADD];
@@ -1359,7 +1358,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 }
 
                 Pair<Boolean, String> result =
-                    SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "scp " + tmpCfgFilePath + " /etc/haproxy/haproxy.cfg.new");
+                        SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "scp " + tmpCfgFilePath + " /etc/haproxy/haproxy.cfg.new");
 
                 if (!result.first()) {
                     s_logger.error("Unable to copy haproxy configuration file");
@@ -1397,7 +1396,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         if (s_logger.isInfoEnabled()) {
 
             s_logger.info("Executing resource SavePasswordCommand. vmName: " + cmd.getVmName() + ", vmIp: " + cmd.getVmIpAddress() + ", password: " +
-                StringUtils.getMaskedPasswordForDisplay(cmd.getPassword()));
+                    StringUtils.getMaskedPasswordForDisplay(cmd.getPassword()));
         }
 
         String controlIp = getRouterSshControlIp(cmd);
@@ -1409,7 +1408,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Run command on domain router " + controlIp + ", /opt/cloud/bin/savepassword.sh " + args + " -p " +
-                StringUtils.getMaskedPasswordForDisplay(cmd.getPassword()));
+                    StringUtils.getMaskedPasswordForDisplay(cmd.getPassword()));
         }
 
         args += " -p " + password;
@@ -1417,7 +1416,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         try {
 
             Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/savepassword.sh " +
-                args);
+                    args);
 
             if (!result.first()) {
                 s_logger.error("savepassword command on domain router " + controlIp + " failed, message: " + result.second());
@@ -1893,7 +1892,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         s_logger.debug("executeRequest received response "
                 + s_gson.toJson(result));
         if (result.length > 0) {
-            ModifyVmNicConfigAnswer ans = ((ModifyVmNicConfigAnswer)result[0]);
         }
     }
 
@@ -1915,7 +1913,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         s_logger.debug("executeRequest received response "
                 + s_gson.toJson(result));
         if (result.length > 0) {
-            ModifyVmNicConfigAnswer ans = ((ModifyVmNicConfigAnswer)result[0]);
         }
     }
 
@@ -2176,7 +2173,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             }
 
             Pair<Boolean, String> result =
-                SshHelper.sshExecute(privateIpAddress, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/netusage.sh " + args);
+                    SshHelper.sshExecute(privateIpAddress, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/netusage.sh " + args);
 
             if (!result.first()) {
                 return null;
