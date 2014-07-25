@@ -625,12 +625,11 @@ public class ConfigHelper {
     private static List<ConfigItem> generateConfig(SetStaticRouteCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
-        String[][] rules = cmd.generateSRouteRules();
+        String[] rules = cmd.generateSRouteRules();
         StringBuilder sb = new StringBuilder();
-        String[] srRules = rules[0];
 
-        for (int i = 0; i < srRules.length; i++) {
-            sb.append(srRules[i]).append(',');
+        for (int i = 0; i < rules.length; i++) {
+            sb.append(rules[i]).append(',');
         }
 
         String args = " -a " + sb.toString();
