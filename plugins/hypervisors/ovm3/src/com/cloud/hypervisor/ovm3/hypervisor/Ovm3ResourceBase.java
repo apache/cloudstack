@@ -1286,11 +1286,10 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         return true;
     }
 
-    /* TODO: iptables/etables logic in the supporting libs ? */
     protected Boolean createVifs(Xen.Vm vm, VirtualMachineTO spec) {
         NicTO[] nics = spec.getNics();
         for (NicTO nic : nics) {
-            /* sec group only something for xenserver */
+            /* sec group only something for xenserver, requires iptables/ipnet integration */
             if (nic.isSecurityGroupEnabled() &&
                         spec.getType().equals(VirtualMachine.Type.User)) {
                     LOGGER.info("Security groups are not supported on Ovm3.");
@@ -1355,6 +1354,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             } else {
                 bridgeName = agentGuestNetworkName;
             }
+
+        /* VLANs for other mgmt traffic ? */
         } else if (nic.getType() == TrafficType.Control) {
             bridgeName = agentControlNetworkName;
         } else if (nic.getType() == TrafficType.Public) {
@@ -2244,14 +2245,19 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Preparing host for migrating " + vm.getName());
         }
+        NicTO[] nics = vm.getNics();
         try {
+            for (NicTO nic : nics) {
+                getNetwork(nic);
+            }
             synchronized (vmStateMap) {
                 vmStateMap.put(vm.getName(), State.Migrating);
             }
+            LOGGER.debug("VM " + vm.getName() + " is in Migrating state");
             return new PrepareForMigrationAnswer(cmd);
         } catch (Exception e) {
-            LOGGER.warn("Catch Exception " + e.getClass().getName()
-                    + " prepare for migration failed due to " + e.toString(), e);
+            LOGGER.error("Catch Exception " + e.getClass().getName()
+                    + " prepare for migration failed due to: " + e.getMessage());
             return new PrepareForMigrationAnswer(cmd, e);
         }
     }
