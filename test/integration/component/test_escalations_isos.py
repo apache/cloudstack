@@ -624,7 +624,7 @@ class TestIsos(cloudstackTestCase):
                           "Failed to list Zones"
                           )
         if not len(zones_list) > 1:
-            self.fail("Enough zones doesnot exists to copy iso")
+            self.skipTest("Enough zones doesnot exists to copy iso")
         else:
             # Listing all the ISO's for a User in Zone 1
             list_isos_zone1 = Iso.list(
