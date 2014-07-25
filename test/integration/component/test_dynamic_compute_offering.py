@@ -26,7 +26,8 @@
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (cleanup_resources,
                               validateList,
-                              random_gen)
+                              random_gen,
+                              get_hypervisor_type)
 from marvin.lib.base import (Account,
                              VirtualMachine,
                              ServiceOffering,
@@ -752,6 +753,10 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         # Validations:
         # 1. Scaling operation should be successful
 
+        hypervisor = get_hypervisor_type(self.apiclient)
+        if hypervisor.lower() == "kvm":
+            self.skipTest("Scaling VM in running state is not supported on KVM")
+
         isadmin=True
         if value == USER_ACCOUNT:
             isadmin=False
@@ -811,6 +816,10 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         # Validations:
         # 1. Scale operation in step 4 should be successful
         # 2. Scale operation in step 6 should fail
+
+        hypervisor = get_hypervisor_type(self.apiclient)
+        if hypervisor.lower() == "kvm":
+            self.skipTest("Scaling VM in running state is not supported on KVM")
 
         isadmin=True
         if value == USER_ACCOUNT:
@@ -886,6 +895,9 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Validations:
         # 1. Scale operation in step 4 should be successful
+        hypervisor = get_hypervisor_type(self.apiclient)
+        if hypervisor.lower() == "kvm":
+            self.skipTest("Scaling VM in running state is not supported on KVM")
 
         isadmin=True
         if value == USER_ACCOUNT:
@@ -951,6 +963,10 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         # 1. Scale operation in step 4 should be successful
         # 2. Scale operation in step 5 should be successful
         # 3. Scale operation in step 6 should fail
+
+        hypervisor = get_hypervisor_type(self.apiclient)
+        if hypervisor.lower() == "kvm":
+            self.skipTest("Scaling VM in running state is not supported on KVM")
 
         isadmin=True
         if value == USER_ACCOUNT:
