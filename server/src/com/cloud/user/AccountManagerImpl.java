@@ -1406,7 +1406,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         AccountVO account = _accountDao.findById(accountId);
 
         if (account == null || account.getRemoved() != null) {
-            s_logger.info("The account:" + account.getAccountName() + " is already removed");
+            if (account != null) {
+                s_logger.info("The account:" + account.getAccountName() + " is already removed");
+            }
             return true;
         }
 
