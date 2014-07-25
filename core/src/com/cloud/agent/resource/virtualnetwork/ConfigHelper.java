@@ -27,7 +27,9 @@ import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
 
+import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
@@ -37,7 +39,6 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.DnsMasqConfigCommand;
 import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.api.routing.IpAssocCommand;
-import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
@@ -65,6 +66,11 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.net.NetUtils;
 
 public class ConfigHelper {
+    private final static Gson gson;
+
+    static {
+        gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+    }
 
     public static List<ConfigItem> generateCommandCfg(NetworkElementCommand cmd) {
         List<ConfigItem> cfg;
@@ -635,84 +641,13 @@ public class ConfigHelper {
 
     private static List<ConfigItem> generateConfig(IpAssocCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
-        ConfigItem c;
+        // Reuse the IpAddressTO model
+        ConfigItem ipAssociationsFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, VRScripts.IP_ASSOCIATION_CONFIG, gson.toJson(cmd.getIpAddresses()));
+        cfg.add(ipAssociationsFile);
 
-        //Gson gson = new Gson();
-        //ConfigItem ipAssociationsFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, VRScripts.IP_ASSOCIATION_CONFIG, gson.toJson(cmd.getIpAddresses()));
-        //cfg.add(ipAssociationsFile);
+        ConfigItem updateIpAssociations = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, VRScripts.IP_ASSOCIATION_CONFIG);
+        cfg.add(updateIpAssociations);
 
-        if (cmd instanceof IpAssocVpcCommand) {
-            for (IpAddressTO ip : cmd.getIpAddresses()) {
-                String args = "";
-                String snatArgs = "";
-
-                if (ip.isAdd()) {
-                    args += " -A ";
-                    snatArgs += " -A ";
-                } else {
-                    args += " -D ";
-                    snatArgs += " -D ";
-                }
-
-                args += " -l ";
-                args += ip.getPublicIp();
-                String nicName = "eth" + ip.getNicDevId();
-                args += " -c ";
-                args += nicName;
-                args += " -g ";
-                args += ip.getVlanGateway();
-                args += " -m ";
-                args += Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
-                args += " -n ";
-                args += NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
-
-                c = new ScriptConfigItem(VRScripts.VPC_IPASSOC, args);
-                c.setInfo(ip.getPublicIp() + " - vpc_ipassoc");
-                cfg.add(c);
-
-                if (ip.isSourceNat()) {
-                    snatArgs += " -l " + ip.getPublicIp();
-                    snatArgs += " -c " + nicName;
-
-                    c = new ScriptConfigItem(VRScripts.VPC_PRIVATEGW, snatArgs);
-                    c.setInfo(ip.getPublicIp() + " - vpc_privategateway");
-                    cfg.add(c);
-                }
-            }
-        } else {
-            for (IpAddressTO ip : cmd.getIpAddresses()) {
-                String args = "";
-                if (ip.isAdd()) {
-                    args += "-A";
-                } else {
-                    args += "-D";
-                }
-                String cidrSize = Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
-                if (ip.isSourceNat()) {
-                    args += " -s";
-                }
-                if (ip.isFirstIP()) {
-                    args += " -f";
-                }
-                args += " -l ";
-                args += ip.getPublicIp() + "/" + cidrSize;
-
-                String publicNic = "eth" + ip.getNicDevId();
-                args += " -c ";
-                args += publicNic;
-
-                args += " -g ";
-                args += ip.getVlanGateway();
-
-                if (ip.isNewNic()) {
-                    args += " -n";
-                }
-
-                c = new ScriptConfigItem(VRScripts.IPASSOC, args);
-                c.setInfo(ip.getPublicIp());
-                cfg.add(c);
-            }
-        }
         return cfg;
     }
 

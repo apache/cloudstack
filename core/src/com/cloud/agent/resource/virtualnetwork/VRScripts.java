@@ -25,6 +25,9 @@ public class VRScripts {
     protected final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
     protected final static int DEFAULT_EXECUTEINVR_TIMEOUT = 120; //Seconds
 
+    // New scripts for use with chef
+    protected static final String UPDATE_CONFIG = "update_config.py";
+
     protected static final String S2SVPN_CHECK = "checkbatchs2svpn.sh";
     protected static final String S2SVPN_IPSEC = "ipsectunnel.sh";
     protected static final String DHCP = "edithosts.sh";
