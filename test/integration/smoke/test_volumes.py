@@ -560,16 +560,8 @@ class TestVolumes(cloudstackTestCase):
 
         cmd.id             = rootvolume.id
         cmd.diskofferingid = self.services['diskofferingid']
-        success            = False
-        try:
+        with self.assertRaises(Exception):
             self.apiClient.resizeVolume(cmd)
-        except Exception as ex:
-            if "Can only resize Data volumes" in str(ex):
-                success = True
-        self.assertEqual(
-                success,
-                True,
-                "ResizeVolume - verify root disks cannot be resized by disk offering id")
 
         # Ok, now let's try and resize a volume that is not custom.
         cmd.id             = self.volume.id
