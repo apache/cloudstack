@@ -1126,7 +1126,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         VIF vif = VIF.create(conn, vifr);
         if (s_logger.isDebugEnabled()) {
             vifr = vif.getRecord(conn);
-            s_logger.debug("Created a vif " + vifr.uuid + " on " + nic.getDeviceId());
+            if(vifr !=  null) {
+                s_logger.debug("Created a vif " + vifr.uuid + " on " + nic.getDeviceId());
+            }
         }
 
         return vif;
@@ -1468,7 +1470,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             for (VIF vif : vmr.VIFs) {
                 try {
                     VIF.Record rec = vif.getRecord(conn);
-                    networks.add(rec.network);
+                    if(rec != null) {
+                        networks.add(rec.network);
+                    } else {
+                        s_logger.warn("Unable to cleanup VIF: " + vif.toWireString() + " As vif record is null");
+                    }
                 } catch (Exception e) {
                     s_logger.warn("Unable to cleanup VIF", e);
                 }
@@ -1632,8 +1638,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             try {
                 VIF.Record vifr = v.getRecord(conn);
                 if (v.getNetwork(conn).getUuid(conn).equals(nw.getUuid(conn))) {
-                    Map<String, String> config = vifr.otherConfig;
-                    vifName = config.get("nameLabel");
+                    if(vifr != null) {
+                        Map<String, String> config = vifr.otherConfig;
+                        vifName = config.get("nameLabel");
+                    }
                     s_logger.debug("A VIF in dom0 for the network is found - so destroy the vif");
                     v.destroy(conn);
                     s_logger.debug("Destroy temp dom0 vif" + vifName + " success");
@@ -6110,37 +6118,39 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         try {
             serverpath = serverpath.replace("//", "/");
             Set<SR> srs = SR.getAll(conn);
-            for (SR sr : srs) {
-                if (!SRType.NFS.equals(sr.getType(conn))) {
-                    continue;
+            if(srs != null && !srs.isEmpty()) {
+                for (SR sr : srs) {
+                    if (!SRType.NFS.equals(sr.getType(conn))) {
+                        continue;
+                    }
+
+                    Set<PBD> pbds = sr.getPBDs(conn);
+                    if (pbds.isEmpty()) {
+                        continue;
+                    }
+
+                    PBD pbd = pbds.iterator().next();
+
+                    Map<String, String> dc = pbd.getDeviceConfig(conn);
+
+                    if (dc == null) {
+                        continue;
+                    }
+
+                    if (dc.get("server") == null) {
+                        continue;
+                    }
+
+                    if (dc.get("serverpath") == null) {
+                        continue;
+                    }
+
+                    if (server.equals(dc.get("server")) && serverpath.equals(dc.get("serverpath"))) {
+                        throw new CloudRuntimeException("There is a SR using the same configuration server:" + dc.get("server") + ", serverpath:" + dc.get("serverpath") +
+                                " for pool " + uuid + " on host:" + _host.uuid);
+                    }
+
                 }
-
-                Set<PBD> pbds = sr.getPBDs(conn);
-                if (pbds.isEmpty()) {
-                    continue;
-                }
-
-                PBD pbd = pbds.iterator().next();
-
-                Map<String, String> dc = pbd.getDeviceConfig(conn);
-
-                if (dc == null) {
-                    continue;
-                }
-
-                if (dc.get("server") == null) {
-                    continue;
-                }
-
-                if (dc.get("serverpath") == null) {
-                    continue;
-                }
-
-                if (server.equals(dc.get("server")) && serverpath.equals(dc.get("serverpath"))) {
-                    throw new CloudRuntimeException("There is a SR using the same configuration server:" + dc.get("server") + ", serverpath:" + dc.get("serverpath") +
-                            " for pool " + uuid + " on host:" + _host.uuid);
-                }
-
             }
             deviceConfig.put("server", server);
             deviceConfig.put("serverpath", serverpath);
