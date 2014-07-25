@@ -1308,6 +1308,16 @@
                                                     } else {
                                                         $newsize.hide();
                                                     }
+
+                                                    var $minIops = $form.find('.form-item[rel=minIops]');
+                                                    var $maxIops = $form.find('.form-item[rel=maxIops]');
+                                                    if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                                        $minIops.css('display', 'inline-block');
+                                                        $maxIops.css('display', 'inline-block');
+                                                    } else {
+                                                        $minIops.hide();
+                                                        $maxIops.hide();
+                                                    }
                                                 });
                                             }
                                         },
@@ -1323,6 +1333,22 @@
                                             label: 'label.resize.shrink.ok',
                                             isBoolean: true,
                                             isChecked: false
+                                        },
+                                        minIops: {
+                                            label: 'label.disk.iops.min',
+                                            validation: {
+                                                required: false,
+                                                number: true
+                                            },
+                                            isHidden: true
+                                        },
+                                        maxIops: {
+                                            label: 'label.disk.iops.max',
+                                            validation: {
+                                                required: false,
+                                                number: true
+                                            },
+                                            isHidden: true
                                         }
                                     }
                                 },
@@ -1340,6 +1366,23 @@
                                     if (newSize != null && newSize.length > 0) {
                                         array1.push("&size=" + todb(newSize));
                                     }
+
+                                    var minIops;
+                                    var maxIops
+
+                                    if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                        minIops = args.data.minIops;
+                                        maxIops = args.data.maxIops;
+                                    }
+
+                                    if (minIops != null && minIops.length > 0) {
+                                        array1.push("&miniops=" + todb(minIops));
+                                    }
+
+                                    if (maxIops != null && maxIops.length > 0) {
+                                        array1.push("&maxiops=" + todb(maxIops));
+                                    }
+
                                     $.ajax({
                                         url: createURL("resizeVolume&id=" + args.context.volumes[0].id + array1.join("")),
                                         dataType: "json",
