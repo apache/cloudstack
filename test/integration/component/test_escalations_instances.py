@@ -1939,9 +1939,12 @@ class TestInstances(cloudstackTestCase):
 
         self.apiClient = self.testClient.getApiClient()
         self.cleanup = []
+        self.cleanup_vm = []
 
     def tearDown(self):
         # Clean up, terminate the created resources
+        for vm in self.cleanup_vm:
+            vm.delete(self.apiClient, expunge=True)
         cleanup_resources(self.apiClient, self.cleanup)
         return
 
@@ -3418,7 +3421,7 @@ class TestInstances(cloudstackTestCase):
                              vm_created,
                              "VM creation failed"
                              )
-        self.cleanup.append(vm_created)
+        self.cleanup_vm.append(vm_created)
         # Listing all the VMs for a user again
         list_vms_after = VirtualMachine.list(
                                              self.userapiclient,
