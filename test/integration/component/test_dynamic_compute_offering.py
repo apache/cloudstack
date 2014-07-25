@@ -1345,7 +1345,7 @@ class TestAffinityGroup(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["basic","advanced"], BugId="7180")
     def test_deploy_VM_with_affinity_group(self, value):
         """Test deploy VMs with affinity group and dynamic compute offering"""
 
