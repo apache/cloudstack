@@ -1,0 +1,9 @@
+TODO
+
+Routes
+
+Default Route (work out differences between VR and VPCr)
+
+Adding marks via ip rule
+ie. ip rule add fwmark $tableNo table $tableName
+
