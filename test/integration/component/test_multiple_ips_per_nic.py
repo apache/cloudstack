@@ -197,7 +197,7 @@ class TestBasicOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["advanced"])
     def test_add_ip_to_nic(self, value):
         """ Add secondary IP to NIC of a VM"""
 
@@ -217,9 +217,6 @@ class TestBasicOperations(cloudstackTestCase):
 
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id)
         self.cleanup.append(self.account)
-
-        if(shouldTestBeSkipped(networkType=value, zoneType=self.mode)):
-            self.skipTest("Skipping test as %s network is not supported in basic zone" % value)
 
         network = createNetwork(self, value)
 
@@ -256,7 +253,7 @@ class TestBasicOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["advanced"])
     def test_remove_ip_from_nic(self, value):
         """ Remove secondary IP from NIC of a VM"""
 
@@ -273,9 +270,6 @@ class TestBasicOperations(cloudstackTestCase):
 
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id)
         self.cleanup.append(self.account)
-
-        if(shouldTestBeSkipped(networkType=value, zoneType=self.mode)):
-            self.skipTest("Skipping test as %s network is not supported in basic zone" % value)
 
         network = createNetwork(self, value)
 
@@ -303,7 +297,7 @@ class TestBasicOperations(cloudstackTestCase):
             self.debug("Removing invalid IP failed as expected with Exception %s" % e)
         return
 
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["advanced"])
     def test_remove_invalid_ip(self):
         """ Remove invalid ip"""
 
@@ -321,7 +315,7 @@ class TestBasicOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["advanced"])
     def test_list_nics(self, value):
         """Test listing nics associated with the ip address"""
 
@@ -347,9 +341,6 @@ class TestBasicOperations(cloudstackTestCase):
 
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id)
         self.cleanup.append(self.account)
-
-        if(shouldTestBeSkipped(networkType=value, zoneType=self.mode)):
-            self.skipTest("Skipping test as %s network is not supported in basic zone" % value)
 
         network = createNetwork(self, value)
 
@@ -403,7 +394,7 @@ class TestBasicOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["advanced"])
     def test_operations_non_root_admin_api_client(self, value):
         """Test basic operations using non root admin apii client"""
 
@@ -427,9 +418,6 @@ class TestBasicOperations(cloudstackTestCase):
         self.cleanup.append(child_domain)
 
         apiclient = self.testClient.getUserApiClient(UserName=self.account.name, DomainName=self.account.domain)
-
-        if(shouldTestBeSkipped(networkType=value, zoneType=self.mode)):
-            self.skipTest("Skipping test as %s network is not supported in basic zone" % value)
 
         network = createNetwork(self, value)
 
