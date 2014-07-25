@@ -57,7 +57,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
              gpuhosts=0
              for ghost in hosts :
                     if ghost.hypervisorversion >= "6.2.0":
-                       sshClient = SshClient(host=ghost.ipaddress, port=22, user='root',passwd=self.testdata["xen_host_password"]) 
+                       sshClient = SshClient(host=ghost.ipaddress, port=22, user='root',passwd=self.testdata["host_password"]) 
                        if ghost.hypervisorversion == "6.2.0":
                           res = sshClient.execute("xe patch-list uuid=0850b186-4d47-11e3-a720-001b2151a503")
                           if len(res) == 0:
