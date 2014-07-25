@@ -28,10 +28,11 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import Account, VirtualMachine, Cluster, Host, ServiceOffering, Configurations, SimulatorMock
 
 #utils - utility classes for common cleanup, external library wrappers etc
-from marvin.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources, validateList
 
 #common - commonly used methods for all tests are listed here
 from marvin.lib.common import get_zone, get_domain, get_template
+from marvin.codes import PASS
 
 from nose.plugins.attrib import attr
 
@@ -59,7 +60,9 @@ class TestDeployVMHA(cloudstackTestCase):
             if isinstance(self.hosts, list) and len(self.hosts) >= 2:
                 suitablecluster = cluster
                 break
-        self.assertTrue(isinstance(self.hosts, list) and len(self.hosts) >= 2, msg = "Atleast 2 hosts required in cluster for VM HA test")
+        self.assertEqual(validateList(self.hosts)[0], PASS, "hosts list validation failed")
+        if len(self.hosts) < 2:
+            self.skipTest("Atleast 2 hosts required in cluster for VM HA test")
         #update host tags
         for host in self.hosts:
             Host.update(self.apiclient, id=host.id, hosttags=self.testdata["service_offerings"]["hasmall"]["hosttags"])
