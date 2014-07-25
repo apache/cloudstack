@@ -136,7 +136,6 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.User;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
@@ -323,29 +322,29 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         String eventName;
         for (ResourceListener l : lst) {
-            if (event == ResourceListener.EVENT_DISCOVER_BEFORE) {
+            if (event.equals(ResourceListener.EVENT_DISCOVER_BEFORE)) {
                 l.processDiscoverEventBefore((Long)params[0], (Long)params[1], (Long)params[2], (URI)params[3], (String)params[4], (String)params[5],
                     (List<String>)params[6]);
                 eventName = "EVENT_DISCOVER_BEFORE";
-            } else if (event == ResourceListener.EVENT_DISCOVER_AFTER) {
+            } else if (event.equals(ResourceListener.EVENT_DISCOVER_AFTER)) {
                 l.processDiscoverEventAfter((Map<? extends ServerResource, Map<String, String>>)params[0]);
                 eventName = "EVENT_DISCOVER_AFTER";
-            } else if (event == ResourceListener.EVENT_DELETE_HOST_BEFORE) {
+            } else if (event.equals(ResourceListener.EVENT_DELETE_HOST_BEFORE)) {
                 l.processDeleteHostEventBefore((HostVO)params[0]);
                 eventName = "EVENT_DELETE_HOST_BEFORE";
-            } else if (event == ResourceListener.EVENT_DELETE_HOST_AFTER) {
+            } else if (event.equals(ResourceListener.EVENT_DELETE_HOST_AFTER)) {
                 l.processDeletHostEventAfter((HostVO)params[0]);
                 eventName = "EVENT_DELETE_HOST_AFTER";
-            } else if (event == ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE) {
+            } else if (event.equals(ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE)) {
                 l.processCancelMaintenaceEventBefore((Long)params[0]);
                 eventName = "EVENT_CANCEL_MAINTENANCE_BEFORE";
-            } else if (event == ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER) {
+            } else if (event.equals(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER)) {
                 l.processCancelMaintenaceEventAfter((Long)params[0]);
                 eventName = "EVENT_CANCEL_MAINTENANCE_AFTER";
-            } else if (event == ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE) {
+            } else if (event.equals(ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE)) {
                 l.processPrepareMaintenaceEventBefore((Long)params[0]);
                 eventName = "EVENT_PREPARE_MAINTENANCE_BEFORE";
-            } else if (event == ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER) {
+            } else if (event.equals(ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER)) {
                 l.processPrepareMaintenaceEventAfter((Long)params[0]);
                 eventName = "EVENT_PREPARE_MAINTENANCE_AFTER";
             } else {
@@ -798,7 +797,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @DB
     protected boolean doDeleteHost(final long hostId, boolean isForced, final boolean isForceDeleteStorage) {
-        User caller = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+        _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
         // Verify that host exists
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
@@ -1463,7 +1462,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 Map.Entry<String, ResourceStateAdapter> item = it.next();
                 ResourceStateAdapter adapter = item.getValue();
 
-                String msg = new String("Dispatching resource state event " + event + " to " + item.getKey());
+                String msg = "Dispatching resource state event " + event + " to " + item.getKey();
                 s_logger.debug(msg);
 
                 if (event == ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_CONNECTED) {
