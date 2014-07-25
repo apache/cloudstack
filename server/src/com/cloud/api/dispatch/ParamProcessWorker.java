@@ -33,7 +33,6 @@ import java.util.regex.Matcher;
 
 import javax.inject.Inject;
 
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -220,16 +219,17 @@ public class ParamProcessWorker implements DispatchWorker {
 
     private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
         Account caller = CallContext.current().getCallingAccount();
-        Account owner = _accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
+        // due to deleteAccount design flaw CLOUDSTACK-6588, we should still include those removed account as well to clean up leftover resources from that account
+        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 
         if (cmd instanceof BaseAsyncCreateCmd) {
             // check that caller can access the owner account.
-            _accountMgr.checkAccess(caller, null, true, owner);
+            _accountMgr.checkAccess(caller, null, false, owner);
         }
 
         if (!entitiesToAccess.isEmpty()) {
             // check that caller can access the owner account.
-            _accountMgr.checkAccess(caller, null, true, owner);
+            _accountMgr.checkAccess(caller, null, false, owner);
             for (Map.Entry<Object,AccessType>entry : entitiesToAccess.entrySet()) {
                 Object entity = entry.getKey();
                 if (entity instanceof ControlledEntity) {
