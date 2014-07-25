@@ -152,30 +152,33 @@ public class S3FileSystemBucketAdapter implements S3BucketAdapter {
             file.delete();
             file.createNewFile();
 
-            final FileOutputStream fos = new FileOutputStream(file);
-            byte[] buffer = new byte[4096];
+            try(final FileOutputStream fos = new FileOutputStream(file);) {
+                byte[] buffer = new byte[4096];
 
-            // -> get the input stream for the next file part
-            for (int i = 0; i < parts.length; i++) {
-                DataHandler nextPart = loadObject(mountedRoot, sourceBucket, parts[i].getPath());
-                InputStream is = nextPart.getInputStream();
+                // -> get the input stream for the next file part
+                for (int i = 0; i < parts.length; i++) {
+                    DataHandler nextPart = loadObject(mountedRoot, sourceBucket, parts[i].getPath());
+                    InputStream is = nextPart.getInputStream();
 
-                int len = 0;
-                while ((len = is.read(buffer)) > 0) {
-                    fos.write(buffer, 0, len);
-                    md5.update(buffer, 0, len);
-                    totalLength += len;
+                    int len = 0;
+                    while ((len = is.read(buffer)) > 0) {
+                        fos.write(buffer, 0, len);
+                        md5.update(buffer, 0, len);
+                        totalLength += len;
+                    }
+                    is.close();
+
+                    // -> after each file write tell the client we are still here to keep connection alive
+                    if (null != client) {
+                        client.write(new String(" ").getBytes());
+                        client.flush();
+                    }
                 }
-                is.close();
-
-                // -> after each file write tell the client we are still here to keep connection alive
-                if (null != client) {
-                    client.write(new String(" ").getBytes());
-                    client.flush();
-                }
+                return new OrderedPair<String, Long>(StringHelper.toHexString(md5.digest()), new Long(totalLength));
+            }catch (IOException e) {
+                logger.error("concatentateObjects unexpected exception " + e.getMessage(), e);
+                throw new OutOfStorageException(e);
             }
-            fos.close();
-            return new OrderedPair<String, Long>(StringHelper.toHexString(md5.digest()), new Long(totalLength));
             //Create an ordered pair whose first element is the MD4 digest as a (lowercase) hex String
         } catch (IOException e) {
             logger.error("concatentateObjects unexpected exception " + e.getMessage(), e);
