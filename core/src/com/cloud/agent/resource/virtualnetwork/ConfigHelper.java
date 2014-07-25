@@ -456,11 +456,10 @@ public class ConfigHelper {
             args += cmd.getPeerGatewayIp();
             args += " -N ";
             args += cmd.getPeerGuestCidrList();
-            // escape semicolon which may cause issue in bash
             args += " -e ";
-            args += "\"" + cmd.getEspPolicy().replaceAll(";", "\\\\;") + "\"";
+            args += "\"" + cmd.getEspPolicy() + "\"";
             args += " -i ";
-            args += "\"" + cmd.getIkePolicy().replaceAll(";", "\\\\;") + "\"";
+            args += "\"" + cmd.getIkePolicy() + "\"";
             args += " -t ";
             args += Long.toString(cmd.getIkeLifetime());
             args += " -T ";
