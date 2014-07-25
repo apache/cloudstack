@@ -65,6 +65,7 @@ public class Link {
     private boolean _gotFollowingPacket;
 
     private SSLEngine _sslEngine;
+    public static String keystoreFile = "/cloudmanagementserver.keystore";
 
     public Link(InetSocketAddress addr, NioConnection connection) {
         _addr = addr;
@@ -417,7 +418,7 @@ public class Link {
             final Properties dbProps = DbProperties.getDbProperties();
             char[] passphrase = dbProps.getProperty("db.cloud.keyStorePassphrase").toCharArray();
             String confPath = confFile.getParent();
-            String keystorePath = confPath + "/cloud.keystore";
+            String keystorePath = confPath + keystoreFile;
             if (new File(keystorePath).exists()) {
                 stream = new FileInputStream(keystorePath);
             } else {

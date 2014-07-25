@@ -43,6 +43,7 @@ import javax.crypto.SecretKey;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.nio.Link;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -616,7 +617,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
         if (null != confFile) {
             confPath = confFile.getParent();
-            keystorePath = confPath + "/cloud.keystore";
+            keystorePath = confPath + Link.keystoreFile;
             keystoreFile = new File(keystorePath);
         }
 
