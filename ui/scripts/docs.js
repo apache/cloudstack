@@ -1218,6 +1218,10 @@ cloudStack.docs = {
         desc: 'Check this if the template is used for deploying router.',
         externalLink: ''
     },
+    helpRegisterTemplateHvm: {
+        desc: 'Check this if the template requires hvm.',
+        externalLink: ''
+    },
     // Upload volume
     helpUploadVolumeName: {
         desc: 'A unique name for the volume. This will be visible to users, so choose something descriptive.',
