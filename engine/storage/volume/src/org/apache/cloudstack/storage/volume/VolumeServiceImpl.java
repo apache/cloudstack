@@ -1464,8 +1464,9 @@ public class VolumeServiceImpl implements VolumeService {
                     }
 
                     // Delete volumes which are not present on DB.
-                    for (Long uniqueName : volumeInfos.keySet()) {
-                        TemplateProp tInfo = volumeInfos.get(uniqueName);
+                    for (Map.Entry<Long,TemplateProp> entry : volumeInfos.entrySet()) {
+                        Long uniqueName = entry.getKey();
+                        TemplateProp tInfo = entry.getValue();
 
                         //we cannot directly call expungeVolumeAsync here to
                         // reuse delete logic since in this case, our db does not have
