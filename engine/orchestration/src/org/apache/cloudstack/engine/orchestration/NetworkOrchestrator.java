@@ -925,7 +925,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     boolean isNetworkImplemented(NetworkVO network) {
         Network.State state = network.getState();
-        if (state == Network.State.Implemented || state == Network.State.Implementing) {
+        if (state == Network.State.Implemented) {
             return true;
         } else if (state == Network.State.Setup) {
             DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
@@ -1277,7 +1277,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         });
 
         for (NicVO nic : nics) {
-            Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
+            Pair<NetworkGuru, NetworkVO> implemented = null;
+            if (vmProfile.getVirtualMachine().getType() != Type.DomainRouter) {
+                implemented = implementNetwork(nic.getNetworkId(), dest, context);
+            } else {
+                // At the time of implementing network (using implementNetwork() method), if the VR needs to be deployed then
+                // it follows the same path of regular VM deployment. This leads to a nested call to implementNetwork() while
+                // preparing VR nics. This flow creates issues in dealing with network state transitions. The original call
+                // puts network in "Implementing" state and then the nested call again tries to put it into same state resulting
+                // in issues. In order to avoid it, implementNetwork() call for VR is replaced with below code.
+                NetworkVO network = _networksDao.findById(nic.getNetworkId());
+                NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+                implemented = new Pair<NetworkGuru, NetworkVO>(guru, network);
+            }
             if (implemented == null || implemented.first() == null) {
                 s_logger.warn("Failed to implement network id=" + nic.getNetworkId() + " as a part of preparing nic id=" + nic.getId());
                 throw new CloudRuntimeException("Failed to implement network id=" + nic.getNetworkId() + " as a part preparing nic id=" + nic.getId());
