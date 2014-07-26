@@ -1880,7 +1880,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     StorageVol v = conn.storageVolLookupByPath(path);
                     int flags = 0;
 
-                    if (conn.getLibVirVersion() > 1001000 && vol.getFormat() == PhysicalDiskFormat.RAW) {
+                    if (conn.getLibVirVersion() > 1001000 && vol.getFormat() == PhysicalDiskFormat.RAW && pool.getType() != StoragePoolType.RBD) {
                         flags = 1;
                     }
                     if (shrinkOk) {
