@@ -24,7 +24,6 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressVO;
@@ -37,7 +36,6 @@ import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -106,63 +104,85 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     }
 
     @Override
+    protected int getNumberOfRoutersToDeploy() {
+        // TODO Should we make our changes here in order to enable Redundant Router for VPC?
+        return 1 - this.routers.size();
+    }
+
+    /**
+     * @see RouterDeploymentDefinition#executeDeployment()
+     */
+    @Override
     protected void executeDeployment()
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         //2) Return routers if exist, otherwise...
-        if (this.routers.size() < 1) {
-            Long offeringId = vpcOffDao.findById(vpc.getVpcOfferingId()).getServiceOfferingId();
-            if (offeringId == null) {
-                offeringId = offering.getId();
-            }
+        if (getNumberOfRoutersToDeploy() > 0) {
+            this.findVirtualProvider();
+            this.findOfferingId();
+            this.findSourceNatIP();
+
             //3) Deploy Virtual Router
-            List<? extends PhysicalNetwork> pNtwks = pNtwkDao.listByZone(vpc.getZoneId());
-
-            VirtualRouterProvider vpcVrProvider = null;
-
-            for (PhysicalNetwork pNtwk : pNtwks) {
-                PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(pNtwk.getId(), Type.VPCVirtualRouter.toString());
-                if (provider == null) {
-                    throw new CloudRuntimeException("Cannot find service provider " + Type.VPCVirtualRouter.toString() + " in physical network " + pNtwk.getId());
-                }
-                vpcVrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), Type.VPCVirtualRouter);
-                if (vpcVrProvider != null) {
-                    break;
-                }
-            }
-
-            PublicIp sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(this.owner, vpc);
-
-            DomainRouterVO router = deployVpcRouter(vpcVrProvider, offeringId, sourceNatIp);
+            DomainRouterVO router = deployVpcRouter(sourceNatIp);
             this.routers.add(router);
         }
     }
 
-    protected DomainRouterVO deployVpcRouter(final VirtualRouterProvider vrProvider,
-            final long svcOffId, final PublicIp sourceNatIp) throws ConcurrentOperationException, InsufficientAddressCapacityException,
+    @Override
+    protected void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
+        this.sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(this.owner, vpc);
+    }
+
+    @Override
+    protected void findVirtualProvider() {
+        List<? extends PhysicalNetwork> pNtwks = pNtwkDao.listByZone(vpc.getZoneId());
+
+        this.vrProvider = null;
+
+        for (PhysicalNetwork pNtwk : pNtwks) {
+            PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(pNtwk.getId(), Type.VPCVirtualRouter.toString());
+            if (provider == null) {
+                throw new CloudRuntimeException("Cannot find service provider " + Type.VPCVirtualRouter.toString() + " in physical network " + pNtwk.getId());
+            }
+            this.vrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), Type.VPCVirtualRouter);
+            if (this.vrProvider != null) {
+                break;
+            }
+        }
+    }
+
+    @Override
+    protected void findOfferingId() {
+        Long vpcOfferingId = vpcOffDao.findById(vpc.getVpcOfferingId()).getServiceOfferingId();
+        if (vpcOfferingId != null) {
+            this.offeringId = vpcOfferingId;
+        }
+    }
+
+    protected DomainRouterVO deployVpcRouter(final PublicIp sourceNatIp)
+            throws ConcurrentOperationException, InsufficientAddressCapacityException,
             InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
 
-        LinkedHashMap<Network, List<? extends NicProfile>> networks = createVpcRouterNetworks(
-                new Pair<Boolean, PublicIp>(true, sourceNatIp), this.vpc.getId());
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = createRouterNetworks();
 
         DomainRouterVO router =
-                nwHelper.deployRouter(this, vrProvider, svcOffId, networks, true, vpcMgr.getSupportedVpcHypervisors());
+                nwHelper.deployRouter(this, networks, true, vpcMgr.getSupportedVpcHypervisors());
 
         return router;
     }
 
-    protected LinkedHashMap<Network, List<? extends NicProfile>> createVpcRouterNetworks(
-            final Pair<Boolean, PublicIp> sourceNatIp, final long vpcId)
+    @Override
+    protected LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks()
                     throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
         TreeSet<String> publicVlans = new TreeSet<String>();
-        publicVlans.add(sourceNatIp.second().getVlanTag());
+        publicVlans.add(this.sourceNatIp.getVlanTag());
 
         //1) allocate nic for control and source nat public ip
-        LinkedHashMap<Network, List<? extends NicProfile>> networks = nwHelper.createRouterNetworks(this, null, sourceNatIp);
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = super.createRouterNetworks();
 
 
         //2) allocate nic for private gateways if needed
-        List<PrivateGateway> privateGateways = vpcMgr.getVpcPrivateGateways(vpcId);
+        List<PrivateGateway> privateGateways = vpcMgr.getVpcPrivateGateways(this.vpc.getId());
         if (privateGateways != null && !privateGateways.isEmpty()) {
             for (PrivateGateway privateGateway : privateGateways) {
                 NicProfile privateNic = vpcHelper.createPrivateNicProfileForGateway(privateGateway);
@@ -172,7 +192,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
         }
 
         //3) allocate nic for guest gateway if needed
-        List<? extends Network> guestNetworks = vpcMgr.getVpcNetworks(vpcId);
+        List<? extends Network> guestNetworks = vpcMgr.getVpcNetworks(this.vpc.getId());
         for (Network guestNetwork : guestNetworks) {
             if (networkModel.isPrivateGateway(guestNetwork.getId())) {
                 continue;
@@ -184,7 +204,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
         }
 
         //4) allocate nic for additional public network(s)
-        List<IPAddressVO> ips = ipAddressDao.listByAssociatedVpc(vpcId, false);
+        List<IPAddressVO> ips = ipAddressDao.listByAssociatedVpc(this.vpc.getId(), false);
         List<NicProfile> publicNics = new ArrayList<NicProfile>();
         Network publicNetwork = null;
         for (IPAddressVO ip : ips) {
