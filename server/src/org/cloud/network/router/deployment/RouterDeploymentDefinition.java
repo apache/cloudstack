@@ -62,10 +62,8 @@ import com.cloud.network.router.VpcVirtualNetworkHelperImpl;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -100,6 +98,7 @@ public class RouterDeploymentDefinition {
     protected NicDao nicDao;
     protected UserIpv6AddressDao ipv6Dao;
     protected IPAddressDao ipAddressDao;
+    protected VirtualRouterProvider vrProvider;
 
 
     @Inject
@@ -115,9 +114,10 @@ public class RouterDeploymentDefinition {
     protected boolean isRedundant;
     protected DeploymentPlan plan;
     protected List<DomainRouterVO> routers = new ArrayList<>();
-    protected ServiceOfferingVO offering;
+    protected Long offeringId;
     protected Long tableLockId;
-
+    protected boolean publicNetwork;
+    protected PublicIp sourceNatIp;
 
     protected RouterDeploymentDefinition(final Network guestNetwork, final DeployDestination dest,
             final Account owner, final Map<Param, Object> params, final boolean isRedundant) {
@@ -129,9 +129,10 @@ public class RouterDeploymentDefinition {
         this.isRedundant = isRedundant;
     }
 
-    protected void setOffering(ServiceOfferingVO offering) {
-        this.offering = offering;
+    public Long getOfferingId() {
+        return this.offeringId;
     }
+
     public Vpc getVpc() {
         return null;
     }
@@ -166,12 +167,12 @@ public class RouterDeploymentDefinition {
         return routers;
     }
 
-    public boolean isBasic() {
-        return this.dest.getDataCenter().getNetworkType() == NetworkType.Basic;
+    public VirtualRouterProvider getVirtualProvider() {
+        return this.vrProvider;
     }
 
-    public Long getOfferingId() {
-        return offering == null ? null : offering.getId();
+    public boolean isBasic() {
+        return this.dest.getDataCenter().getNetworkType() == NetworkType.Basic;
     }
 
     protected void generateDeploymentPlan() {
@@ -190,7 +191,7 @@ public class RouterDeploymentDefinition {
             throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
 
-        findOrDeployVirtualRouter();
+        this.findOrDeployVirtualRouter();
 
         return nwHelper.startRouters(this);
     }
@@ -288,225 +289,120 @@ public class RouterDeploymentDefinition {
         return destinations;
     }
 
-    protected void executeDeployment()
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        // 2) Figure out required routers count
-        int routerCount = 1;
-        if (this.isRedundant) {
-            routerCount = 2;
-            //Check current redundant routers, if possible(all routers are stopped), reset the priority
-            if (this.routers.size() != 0) {
-                checkAndResetPriorityOfRedundantRouter(this.routers);
-            }
+    protected int getNumberOfRoutersToDeploy() {
+        // TODO Are we sure this makes sense? Somebody said 5 was too many?
+        if (this.routers.size() >= 5) {
+            logger.error("Too many redundant routers!");
         }
 
         // If old network is redundant but new is single router, then routers.size() = 2 but routerCount = 1
-        if (this.routers.size() >= routerCount) {
-            return;
+        int routersExpected = 1;
+        if (this.isRedundant) {
+            routersExpected = 2;
         }
+        return routersExpected < this.routers.size() ?
+                0 : routersExpected - this.routers.size();
+    }
 
-        if (this.routers.size() >= 5) {
-            logger.error("Too much redundant routers!");
+    /**
+     * Executes preparation and deployment of the routers. After this method ends, {@link this#routers}
+     * should have all of the deployed routers ready for start, and no more.
+     *
+     * @throws ConcurrentOperationException
+     * @throws InsufficientCapacityException
+     * @throws ResourceUnavailableException
+     */
+    protected void executeDeployment()
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+
+        //Check current redundant routers, if possible(all routers are stopped), reset the priority
+        // TODO Why shouldn't we call this method also for VPC
+        setupPriorityOfRedundantRouter();
+
+        if (this.getNumberOfRoutersToDeploy() > 0) {
+            if (networkModel.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
+                this.owner = accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
+            }
+
+            // Check if public network has to be set on VR
+            this.publicNetwork = networkModel.isProviderSupportServiceInNetwork(
+                            guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter);
+
+            if (this.isRedundant && !this.publicNetwork) {
+                // TODO Shouldn't be this throw an exception instead of log error and empty list of routers
+                logger.error("Didn't support redundant virtual router without public network!");
+                this.routers = new ArrayList<>();
+            } else {
+                this.findVirtualProvider();
+                this.findOfferingId();
+                this.findSourceNatIP();
+                this.deployAllVirtualRouters();
+            }
         }
+    }
 
+    protected void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
+        this.sourceNatIp = null;
+        if (this.publicNetwork) {
+            this.sourceNatIp = this.ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(
+                    this.owner,this.guestNetwork);
+        }
+    }
+
+    protected void findOfferingId() {
+        Long networkOfferingId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
+        if (networkOfferingId != null) {
+            this.offeringId = networkOfferingId;
+        }
+    }
+
+    protected void findVirtualProvider() {
         // Check if providers are supported in the physical networks
         final Type type = Type.VirtualRouter;
         final Long physicalNetworkId = networkModel.getPhysicalNetworkId(guestNetwork);
-        final PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
+        final PhysicalNetworkServiceProvider provider =
+                physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
+
         if (provider == null) {
-            throw new CloudRuntimeException("Cannot find service provider " + type.toString() + " in physical network " + physicalNetworkId);
-        }
-        final VirtualRouterProvider vrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), type);
-        if (vrProvider == null) {
-            throw new CloudRuntimeException("Cannot find virtual router provider " + type.toString() + " as service provider " + provider.getId());
+            throw new CloudRuntimeException(
+                    String.format("Cannot find service provider %s  in physical network %s",
+                            type.toString(), physicalNetworkId));
         }
 
-        if (networkModel.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
-            this.owner = accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
+        this.vrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), type);
+        if (this.vrProvider == null) {
+            throw new CloudRuntimeException(
+                    String.format("Cannot find virtual router provider %s as service provider %s",
+                            type.toString(), provider.getId()));
         }
+    }
 
-        // Check if public network has to be set on VR
-        boolean publicNetwork = false;
-        if (networkModel.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter)) {
-            publicNetwork = true;
-        }
-        if (this.isRedundant && !publicNetwork) {
-            logger.error("Didn't support redundant virtual router without public network!");
-            this.routers = null;
-            return;
-        }
+    protected void deployAllVirtualRouters()
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
-        Long offeringId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
-        if (offeringId == null) {
-            offeringId = getOfferingId();
-        }
-
-        PublicIp sourceNatIp = null;
-        if (publicNetwork) {
-            sourceNatIp = ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(
-                    this.owner, guestNetwork);
-        }
-
-        // 3) deploy virtual router(s)
-        final int count = routerCount - this.routers.size();
-        for (int i = 0; i < count; i++) {
+        int routersToDeploy = this.getNumberOfRoutersToDeploy();
+        for(int i = 0; i < routersToDeploy; i++) {
             LinkedHashMap<Network, List<? extends NicProfile>> networks =
-                    createRouterNetworks(new Pair<Boolean, PublicIp>(
-                    publicNetwork, sourceNatIp));
+                    createRouterNetworks();
             //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
-            DomainRouterVO router = nwHelper.deployRouter(this, vrProvider, offeringId, networks, false, null);
+            DomainRouterVO router = nwHelper.deployRouter(this, networks, false, null);
 
             if (router != null) {
-                routerDao.addRouterToGuestNetwork(router, guestNetwork);
+                this.routerDao.addRouterToGuestNetwork(router, this.guestNetwork);
                 this.routers.add(router);
             }
         }
     }
 
-    @DB
-    protected void findOrDeployVirtualRouterOLD()
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-
-        final Network lock = networkDao.acquireInLockTable(guestNetwork.getId(), NetworkOrchestrationService.NetworkLockTimeout.value());
-        if (lock == null) {
-            throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
-        }
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("Lock is acquired for network id " + lock.getId() + " as a part of router startup in " + dest);
-        }
-
-        try {
-
-            assert guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup ||
-                    guestNetwork.getState() == Network.State.Implementing : "Network is not yet fully implemented: " + guestNetwork;
-            assert guestNetwork.getTrafficType() == TrafficType.Guest;
-
-            // 1) Get deployment plan and find out the list of routers
-
-            // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
-            final List<DeployDestination> destinations = new ArrayList<DeployDestination>();
-
-            // for basic zone, if 'dest' has pod set to null then this is network restart scenario otherwise it is a vm deployment scenario
-            if (this.isBasic() && dest.getPod() == null) {
-                // Find all pods in the data center with running or starting user vms
-                final long dcId = dest.getDataCenter().getId();
-                final List<HostPodVO> pods = listByDataCenterIdVMTypeAndStates(dcId, VirtualMachine.Type.User, VirtualMachine.State.Starting, VirtualMachine.State.Running);
-
-                // Loop through all the pods skip those with running or starting VRs
-                for (final HostPodVO pod : pods) {
-                    // Get list of VRs in starting or running state
-                    final long podId = pod.getId();
-                    final List<DomainRouterVO> virtualRouters = routerDao.listByPodIdAndStates(podId, VirtualMachine.State.Starting, VirtualMachine.State.Running);
-
-                    assert (virtualRouters.size() <= 1) : "Pod can have utmost one VR in Basic Zone, please check!";
-
-                    // Add virtualRouters to the routers, this avoids the situation when
-                    // all routers are skipped and VirtualRouterElement throws exception
-                    this.routers.addAll(virtualRouters);
-
-                    // If List size is one, we already have a starting or running VR, skip deployment
-                    if (virtualRouters.size() == 1) {
-                        logger.debug("Skipping VR deployment: Found a running or starting VR in Pod " + pod.getName() + " id=" + podId);
-                        continue;
-                    }
-                    // Add new DeployDestination for this pod
-                    destinations.add(new DeployDestination(dest.getDataCenter(), pod, null, null));
-                }
-            } else {
-                // Else, just add the supplied dest
-                destinations.add(dest);
-            }
-
-            // Except for Basic Zone, the for loop will iterate only once
-            for (final DeployDestination destination : destinations) {
-                this.dest = destination;
-                planDeploymentRouters();
-                this.generateDeploymentPlan();
-
-                // 2) Figure out required routers count
-                int routerCount = 1;
-                if (this.isRedundant) {
-                    routerCount = 2;
-                    //Check current redundant routers, if possible(all routers are stopped), reset the priority
-                    if (this.routers.size() != 0) {
-                        checkAndResetPriorityOfRedundantRouter(this.routers);
-                    }
-                }
-
-                // If old network is redundant but new is single router, then routers.size() = 2 but routerCount = 1
-                if (this.routers.size() >= routerCount) {
-                    return;
-                }
-
-                if (this.routers.size() >= 5) {
-                    logger.error("Too much redundant routers!");
-                }
-
-                // Check if providers are supported in the physical networks
-                final Type type = Type.VirtualRouter;
-                final Long physicalNetworkId = networkModel.getPhysicalNetworkId(guestNetwork);
-                final PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
-                if (provider == null) {
-                    throw new CloudRuntimeException("Cannot find service provider " + type.toString() + " in physical network " + physicalNetworkId);
-                }
-                final VirtualRouterProvider vrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), type);
-                if (vrProvider == null) {
-                    throw new CloudRuntimeException("Cannot find virtual router provider " + type.toString() + " as service provider " + provider.getId());
-                }
-
-                if (networkModel.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
-                    this.owner = accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
-                }
-
-                // Check if public network has to be set on VR
-                boolean publicNetwork = false;
-                if (networkModel.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter)) {
-                    publicNetwork = true;
-                }
-                if (this.isRedundant && !publicNetwork) {
-                    logger.error("Didn't support redundant virtual router without public network!");
-                    this.routers = null;
-                    return;
-                }
-
-                Long offeringId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
-                if (offeringId == null) {
-                    offeringId = getOfferingId();
-                }
-
-                PublicIp sourceNatIp = null;
-                if (publicNetwork) {
-                    sourceNatIp = ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(
-                            this.owner, guestNetwork);
-                }
-
-                // 3) deploy virtual router(s)
-                final int count = routerCount - this.routers.size();
-                for (int i = 0; i < count; i++) {
-                    LinkedHashMap<Network, List<? extends NicProfile>> networks =
-                            createRouterNetworks(new Pair<Boolean, PublicIp>(
-                            publicNetwork, sourceNatIp));
-                    //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
-                    DomainRouterVO router = nwHelper.deployRouter(this, vrProvider, offeringId, networks, false, null);
-
-                    if (router != null) {
-                        routerDao.addRouterToGuestNetwork(router, guestNetwork);
-                        this.routers.add(router);
-                    }
-                }
-            }
-        } finally {
-            if (lock != null) {
-                networkDao.releaseFromLockTable(lock.getId());
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Lock is released for network id " + lock.getId() + " as a part of router startup in " + dest);
-                }
-            }
-        }
-    }
-
-
+    /**
+     * Lists all pods given a Data Center Id, a {@link VirtualMachine.Type} and a list of
+     * {@link VirtualMachine.State}
+     *
+     * @param id
+     * @param type
+     * @param states
+     * @return
+     */
     protected List<HostPodVO> listByDataCenterIdVMTypeAndStates(final long id, final VirtualMachine.Type type, final VirtualMachine.State... states) {
         final SearchBuilder<VMInstanceVO> vmInstanceSearch = vmDao.createSearchBuilder();
         vmInstanceSearch.and("type", vmInstanceSearch.entity().getType(), SearchCriteria.Op.EQ);
@@ -535,69 +431,75 @@ public class RouterDeploymentDefinition {
         }
     }
 
-    private void checkAndResetPriorityOfRedundantRouter(final List<DomainRouterVO> routers) {
-        boolean allStopped = true;
-        for (final DomainRouterVO router : routers) {
+    /**
+     * Routers need reset if at least one of the routers is not redundant or stopped.
+     *
+     * @return
+     */
+    protected boolean routersNeedReset() {
+        boolean needReset = true;
+        for (final DomainRouterVO router : this.routers) {
             if (!router.getIsRedundantRouter() || router.getState() != VirtualMachine.State.Stopped) {
-                allStopped = false;
+                needReset = false;
                 break;
             }
         }
-        if (!allStopped) {
-            return;
-        }
 
-        for (final DomainRouterVO router : routers) {
-            // getUpdatedPriority() would update the value later
-            router.setPriority(0);
-            router.setIsPriorityBumpUp(false);
-            routerDao.update(router.getId(), router);
-        }
+        return needReset;
     }
-    protected LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(
-            final Pair<Boolean, PublicIp> publicNetwork)
-                    throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
-        final Network guestNetwork = this.guestNetwork;
-        boolean setupPublicNetwork = false;
-        if (publicNetwork != null) {
-            setupPublicNetwork = publicNetwork.first();
-        }
+    /**
+     * Only for redundant deployment and if any routers needed reset, we shall reset all
+     * routers priorities
+     */
+    protected void setupPriorityOfRedundantRouter() {
+            if (this.isRedundant && this.routersNeedReset()) {
+                for (final DomainRouterVO router : this.routers) {
+                    // getUpdatedPriority() would update the value later
+                    router.setPriority(0);
+                    router.setIsPriorityBumpUp(false);
+                    routerDao.update(router.getId(), router);
+                }
+            }
+    }
+
+    protected LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks()
+                    throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
         //Form networks
         LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
         //1) Guest network
         boolean hasGuestNetwork = false;
-        if (guestNetwork != null) {
-            logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
+        if (this.guestNetwork != null) {
+            logger.debug("Adding nic for Virtual Router in Guest network " + this.guestNetwork);
             String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
-            if (!setupPublicNetwork) {
-                final Nic placeholder = networkModel.getPlaceholderNicForRouter(guestNetwork, this.getPodId());
-                if (guestNetwork.getCidr() != null) {
+            if (!this.publicNetwork) {
+                final Nic placeholder = networkModel.getPlaceholderNicForRouter(this.guestNetwork, this.getPodId());
+                if (this.guestNetwork.getCidr() != null) {
                     if (placeholder != null && placeholder.getIp4Address() != null) {
-                        logger.debug("Requesting ipv4 address " + placeholder.getIp4Address() + " stored in placeholder nic for the network " + guestNetwork);
+                        logger.debug("Requesting ipv4 address " + placeholder.getIp4Address() + " stored in placeholder nic for the network " + this.guestNetwork);
                         defaultNetworkStartIp = placeholder.getIp4Address();
                     } else {
-                        final String startIp = networkModel.getStartIpAddress(guestNetwork.getId());
-                        if (startIp != null && ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
+                        final String startIp = networkModel.getStartIpAddress(this.guestNetwork.getId());
+                        if (startIp != null && ipAddressDao.findByIpAndSourceNetworkId(this.guestNetwork.getId(), startIp).getAllocatedTime() == null) {
                             defaultNetworkStartIp = startIp;
                         } else if (logger.isDebugEnabled()) {
-                            logger.debug("First ipv4 " + startIp + " in network id=" + guestNetwork.getId() +
+                            logger.debug("First ipv4 " + startIp + " in network id=" + this.guestNetwork.getId() +
                                     " is already allocated, can't use it for domain router; will get random ip address from the range");
                         }
                     }
                 }
 
-                if (guestNetwork.getIp6Cidr() != null) {
+                if (this.guestNetwork.getIp6Cidr() != null) {
                     if (placeholder != null && placeholder.getIp6Address() != null) {
-                        logger.debug("Requesting ipv6 address " + placeholder.getIp6Address() + " stored in placeholder nic for the network " + guestNetwork);
+                        logger.debug("Requesting ipv6 address " + placeholder.getIp6Address() + " stored in placeholder nic for the network " + this.guestNetwork);
                         defaultNetworkStartIpv6 = placeholder.getIp6Address();
                     } else {
-                        final String startIpv6 = networkModel.getStartIpv6Address(guestNetwork.getId());
-                        if (startIpv6 != null && ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
+                        final String startIpv6 = networkModel.getStartIpv6Address(this.guestNetwork.getId());
+                        if (startIpv6 != null && ipv6Dao.findByNetworkIdAndIp(this.guestNetwork.getId(), startIpv6) == null) {
                             defaultNetworkStartIpv6 = startIpv6;
                         } else if (logger.isDebugEnabled()) {
-                            logger.debug("First ipv6 " + startIpv6 + " in network id=" + guestNetwork.getId() +
+                            logger.debug("First ipv6 " + startIpv6 + " in network id=" + this.guestNetwork.getId() +
                                     " is already allocated, can't use it for domain router; will get random ipv6 address from the range");
                         }
                     }
@@ -605,23 +507,23 @@ public class RouterDeploymentDefinition {
             }
 
             final NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, defaultNetworkStartIpv6);
-            if (setupPublicNetwork) {
+            if (this.publicNetwork) {
                 if (this.isRedundant) {
-                    gatewayNic.setIp4Address(ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
+                    gatewayNic.setIp4Address(ipAddrMgr.acquireGuestIpAddress(this.guestNetwork, null));
                 } else {
-                    gatewayNic.setIp4Address(guestNetwork.getGateway());
+                    gatewayNic.setIp4Address(this.guestNetwork.getGateway());
                 }
-                gatewayNic.setBroadcastUri(guestNetwork.getBroadcastUri());
-                gatewayNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
-                gatewayNic.setIsolationUri(guestNetwork.getBroadcastUri());
-                gatewayNic.setMode(guestNetwork.getMode());
-                final String gatewayCidr = guestNetwork.getCidr();
+                gatewayNic.setBroadcastUri(this.guestNetwork.getBroadcastUri());
+                gatewayNic.setBroadcastType(this.guestNetwork.getBroadcastDomainType());
+                gatewayNic.setIsolationUri(this.guestNetwork.getBroadcastUri());
+                gatewayNic.setMode(this.guestNetwork.getMode());
+                final String gatewayCidr = this.guestNetwork.getCidr();
                 gatewayNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
             } else {
                 gatewayNic.setDefaultNic(true);
             }
 
-            networks.put(guestNetwork, new ArrayList<NicProfile>(Arrays.asList(gatewayNic)));
+            networks.put(this.guestNetwork, new ArrayList<NicProfile>(Arrays.asList(gatewayNic)));
             hasGuestNetwork = true;
         }
 
@@ -633,26 +535,25 @@ public class RouterDeploymentDefinition {
                 null, null, false).get(0);
         networks.put(controlConfig, new ArrayList<NicProfile>());
         //3) Public network
-        if (setupPublicNetwork) {
-            final PublicIp sourceNatIp = publicNetwork.second();
+        if (publicNetwork) {
             logger.debug("Adding nic for Virtual Router in Public network ");
             //if source nat service is supported by the network, get the source nat ip address
             final NicProfile defaultNic = new NicProfile();
             defaultNic.setDefaultNic(true);
-            defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
-            defaultNic.setGateway(sourceNatIp.getGateway());
-            defaultNic.setNetmask(sourceNatIp.getNetmask());
-            defaultNic.setMacAddress(sourceNatIp.getMacAddress());
+            defaultNic.setIp4Address(this.sourceNatIp.getAddress().addr());
+            defaultNic.setGateway(this.sourceNatIp.getGateway());
+            defaultNic.setNetmask(this.sourceNatIp.getNetmask());
+            defaultNic.setMacAddress(this.sourceNatIp.getMacAddress());
             // get broadcast from public network
             final Network pubNet = networkDao.findById(sourceNatIp.getNetworkId());
             if (pubNet.getBroadcastDomainType() == BroadcastDomainType.Vxlan) {
                 defaultNic.setBroadcastType(BroadcastDomainType.Vxlan);
-                defaultNic.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(sourceNatIp.getVlanTag()));
-                defaultNic.setIsolationUri(BroadcastDomainType.Vxlan.toUri(sourceNatIp.getVlanTag()));
+                defaultNic.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(this.sourceNatIp.getVlanTag()));
+                defaultNic.setIsolationUri(BroadcastDomainType.Vxlan.toUri(this.sourceNatIp.getVlanTag()));
             } else {
                 defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-                defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
-                defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
+                defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(this.sourceNatIp.getVlanTag()));
+                defaultNic.setIsolationUri(IsolationType.Vlan.toUri(this.sourceNatIp.getVlanTag()));
             }
             if (hasGuestNetwork) {
                 defaultNic.setDeviceId(2);

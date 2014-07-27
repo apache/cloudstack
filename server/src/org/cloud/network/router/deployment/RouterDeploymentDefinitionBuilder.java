@@ -27,7 +27,6 @@ import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.vm.DomainRouterVO;
@@ -82,10 +81,10 @@ public class RouterDeploymentDefinitionBuilder {
     @Inject
     protected VpcVirtualNetworkHelperImpl vpcHelper;
 
-    protected ServiceOfferingVO offering;
+    protected Long offeringId;
 
-    public void setOffering(ServiceOfferingVO offering) {
-        this.offering = offering;
+    public void setOfferingId(Long offeringId) {
+        this.offeringId = offeringId;
     }
 
     public IntermediateStateBuilder create() {
@@ -109,7 +108,7 @@ public class RouterDeploymentDefinitionBuilder {
         routerDeploymentDefinition.nicDao = this.nicDao;
         routerDeploymentDefinition.ipv6Dao = this.ipv6Dao;
         routerDeploymentDefinition.ipAddressDao = this.ipAddressDao;
-        routerDeploymentDefinition.offering = this.offering;
+        routerDeploymentDefinition.offeringId = this.offeringId;
 
         routerDeploymentDefinition.nwHelper = this.nwHelper;
         routerDeploymentDefinition.vpcHelper = this.vpcHelper;

@@ -654,7 +654,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
                 null, true, null, ProvisioningType.THIN, useLocalStorage, true, null, true, VirtualMachine.Type.DomainRouter, true);
         offering.setUniqueName(ServiceOffering.routerDefaultOffUniqueName);
         offering = _serviceOfferingDao.persistSystemServiceOffering(offering);
-        routerDeploymentManagerBuilder.setOffering(offering);
+        routerDeploymentManagerBuilder.setOfferingId(offering.getId());
 
         // this can sometimes happen, if DB is manually or programmatically manipulated
         if (offering == null) {
