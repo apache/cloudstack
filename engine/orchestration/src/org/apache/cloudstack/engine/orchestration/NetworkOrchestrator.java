@@ -38,10 +38,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
+import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -261,6 +262,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     protected IpAddressManager _ipAddrMgr;
     @Inject
     MessageBus _messageBus;
+    @Inject
+    VMNetworkMapDao _vmNetworkMapDao;
 
     List<NetworkGuru> networkGurus;
 
@@ -1517,6 +1520,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         });
 
+        // cleanup the entry in vm_network_map
+        if(vmProfile.getType().equals(VirtualMachine.Type.User)) {
+            NicVO nic = _nicDao.findById(nicId);
+            if(nic != null) {
+                NetworkVO vmNetwork = _networksDao.findById(nic.getNetworkId());
+                VMNetworkMapVO vno = _vmNetworkMapDao.findByVmAndNetworkId(vmProfile.getVirtualMachine().getId(), vmNetwork.getId());
+                if(vno != null) {
+                    _vmNetworkMapDao.remove(vno.getId());
+                }
+            }
+        }
+
         if (networkToRelease != null) {
             Network network = networkToRelease.first();
             NicProfile profile = networkToRelease.second();
@@ -1615,6 +1630,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
         guru.deallocate(network, profile, vm);
         _nicDao.remove(nic.getId());
+
         s_logger.debug("Removed nic id=" + nic.getId());
         //remove the secondary ip addresses corresponding to to this nic
         if (!removeVmSecondaryIpsOfNic(nic.getId())) {
@@ -3056,6 +3072,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 throw new CloudRuntimeException("Failed to allocate nic for vm " + vm + " in network " + network);
             }
 
+            //Update vm_network_map table
+            if(vmProfile.getType() == VirtualMachine.Type.User) {
+                VMNetworkMapVO vno = new VMNetworkMapVO(vm.getId(), network.getId());
+                _vmNetworkMapDao.persist(vno);
+            }
             s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network);
         }
 
