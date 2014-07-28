@@ -268,4 +268,32 @@ public class StringUtils {
         }
         return s;
     }
+
+    public static List<?> applyPagination(List<?> originalList, Long startIndex, Long pageSizeVal) {
+        // Most likely pageSize will never exceed int value, and we need integer to partition the listToReturn
+        boolean applyPagination = startIndex != null && pageSizeVal != null
+                && startIndex <= Integer.MAX_VALUE && startIndex >= Integer.MIN_VALUE && pageSizeVal <= Integer.MAX_VALUE
+                && pageSizeVal >= Integer.MIN_VALUE;
+        List<?> listWPagination = null;
+        if (applyPagination) {
+            listWPagination = new ArrayList<>();
+            int index = startIndex.intValue() == 0 ? 0 : startIndex.intValue() / pageSizeVal.intValue();
+            List<List<?>> partitions = StringUtils.partitionList(originalList, pageSizeVal.intValue());
+            if (index < partitions.size()) {
+                listWPagination = partitions.get(index);
+            }
+        }
+        return listWPagination;
+    }
+
+    private static List<List<?>> partitionList(List<?> originalList, int chunkSize) {
+        List<List<?>> listOfChunks = new ArrayList<List<?>>();
+        for (int i = 0; i < originalList.size() / chunkSize; i++) {
+            listOfChunks.add(originalList.subList(i * chunkSize, i * chunkSize + chunkSize));
+        }
+        if (originalList.size() % chunkSize != 0) {
+            listOfChunks.add(originalList.subList(originalList.size() - originalList.size() % chunkSize, originalList.size()));
+        }
+        return listOfChunks;
+    }
 }

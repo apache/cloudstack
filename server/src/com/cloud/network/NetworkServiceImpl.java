@@ -40,9 +40,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.security.SecurityGroupService;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
@@ -57,6 +54,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
@@ -129,6 +127,7 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.security.SecurityGroupService;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.network.vpc.Vpc;
@@ -1624,31 +1623,14 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         //Now apply pagination
-        //Most likely pageSize will never exceed int value, and we need integer to partition the listToReturn
-        boolean notNull = cmd.getStartIndex() != null && cmd.getPageSizeVal() != null;
-        if (notNull && cmd.getStartIndex() <= Integer.MAX_VALUE && cmd.getStartIndex() >= Integer.MIN_VALUE && cmd.getPageSizeVal() <= Integer.MAX_VALUE
-                && cmd.getPageSizeVal() >= Integer.MIN_VALUE) {
-            int index = cmd.getStartIndex().intValue() == 0 ? 0 : cmd.getStartIndex().intValue() / cmd.getPageSizeVal().intValue();
-            List<NetworkVO> wPagination = new ArrayList<NetworkVO>();
-            List<List<NetworkVO>> partitions = partitionNetworks(networksToReturn, cmd.getPageSizeVal().intValue());
-            if (index < partitions.size()) {
-                wPagination = partitions.get(index);
-            }
-            return new Pair<List<? extends Network>, Integer>(wPagination, networksToReturn.size());
+        List<?> wPagination = StringUtils.applyPagination(networksToReturn, cmd.getStartIndex(), cmd.getPageSizeVal());
+        if (wPagination != null) {
+            @SuppressWarnings("unchecked")
+            Pair<List<? extends Network>, Integer> listWPagination = new Pair<List<? extends Network>, Integer>((List<NetworkVO>) wPagination, networksToReturn.size());
+            return listWPagination;
         }
 
         return new Pair<List<? extends Network>, Integer>(networksToReturn, networksToReturn.size());
-    }
-
-    private static List<List<NetworkVO>> partitionNetworks(List<NetworkVO> originalList, int chunkSize) {
-        List<List<NetworkVO>> listOfChunks = new ArrayList<List<NetworkVO>>();
-        for (int i = 0; i < originalList.size() / chunkSize; i++) {
-            listOfChunks.add(originalList.subList(i * chunkSize, i * chunkSize + chunkSize));
-        }
-        if (originalList.size() % chunkSize != 0) {
-            listOfChunks.add(originalList.subList(originalList.size() - originalList.size() % chunkSize, originalList.size()));
-        }
-        return listOfChunks;
     }
 
     private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType,
