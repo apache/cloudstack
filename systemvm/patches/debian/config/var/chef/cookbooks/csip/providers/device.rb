@@ -81,7 +81,8 @@ def unPlumbDevice
     if ! execute("ip addr del dev #{current_resource.device} #{current_resource.cidrs}")
          Chef::Log.error "#{ @new_resource.device } failed to delete ip on interface"
          return false
-     end
+    end
+    execute("ip route del table Table_#{current_resource.device}")
     return true
 end
 
