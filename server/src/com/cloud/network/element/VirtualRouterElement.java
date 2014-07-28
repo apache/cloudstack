@@ -162,7 +162,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     NetworkTopologyContext networkTopologyContext;
 
     @Inject
-    private RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
+    protected RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
 
     protected boolean canHandle(final Network network, final Service service) {
         Long physicalNetworkId = _networkMdl.getPhysicalNetworkId(network);
