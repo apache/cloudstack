@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+LANG="C"
+export LANG
+
+usage() {
+    echo "$0 [ -p <pidfile> ]" >&2
+    exit 1
+}
+
+# Parse command line opts
+while [ $# -ne 0 ] ; do
+    arg="$1"
+    shift
+    case "$arg" in
+        "-p")
+            [ $# -eq 0 ] && usage
+            pidfile="$1"
+            shift
+            mkdir -p "$(dirname "$pidfile")"
+            echo $$ > "$pidfile"
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+XE_UPDATE_GUEST_ATTRS=${XE_UPDATE_GUEST_ATTRS:-/usr/sbin/xe-update-guest-attrs}
+XE_DAEMON_RATE=${XE_DAEMON_RATE:-60}                    # run once a minute by default
+XE_MEMORY_UPDATE_DIVISOR=${XE_MEMORY_UPDATE_DIVISOR:-2}  # update mem stats 1/2 as often by dflt
+
+# Delete xenstore cache following each reboot
+rm -rf /var/cache/xenstore
+
+MEMORY_UPDATE_COUNTER=0
+while true ; do 
+    if [ ${MEMORY_UPDATE_COUNTER} -eq 0 ] ; then
+	MEMORY=--memory
+	MEMORY_UPDATE_COUNTER=${XE_MEMORY_UPDATE_DIVISOR}
+    else
+	MEMORY=
+    fi
+    MEMORY_UPDATE_COUNTER=$((${MEMORY_UPDATE_COUNTER} - 1))
+    ${XE_UPDATE_GUEST_ATTRS} ${MEMORY}
+
+    sleep ${XE_DAEMON_RATE}
+done

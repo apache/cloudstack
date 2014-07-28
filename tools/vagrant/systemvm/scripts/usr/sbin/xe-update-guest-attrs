@@ -1,0 +1,226 @@
+#!/bin/sh
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# Script to write information about the guest to XenStore.
+#
+# Information collected (if --memory NOT passed in):
+#   - Distribution name
+#   - Distribution version (major and minor)
+#   - Kernel version (uname)
+#   - IP address for each Ethernet interface
+#
+# Information collected (if --memory IS passed in):
+#   - memtotal
+#   - memfree
+#
+# Memory stats are separated out because they change all the time
+# and so we may not want to update them as frequently
+
+LANG="C"
+export LANG
+
+
+XE_LINUX_DISTRIBUTION_CACHE=/var/cache/xe-linux-distribution
+
+IPADDR_RE="\([[:digit:]]\{1,3\}\.\)\{3\}[[:digit:]]\{1,3\}"
+
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+XENSTORE=${XENSTORE:-xenstore}
+
+XENSTORE_UPDATED=0
+
+# parse command line opts
+
+MEMORY_MODE=0 # do not update memory stats 
+while [ $# -ge 1 ] ; do 
+    if [ "$1" = "--memory" ] ; then
+	MEMORY_MODE=1	# update only memory stats 
+    fi
+    shift
+done
+
+xenstore_write_cached() {
+    key="$1" newval="$2"
+    cache=/var/cache/xenstore/$key
+    if [ -f $cache ] ; then
+	# cache exists
+	oldval=$(cat "$cache")
+	if [ "$oldval" = "$newval" ] ; then
+	    # value unchanged
+	    return 0
+	fi
+    else
+	# cache does not exist
+	if [ -e $cache ] ; then 
+	    # something (directory?) in its way
+	    rm -rf $cache
+	fi
+    fi
+    
+    # try to write and update cache if successfull
+    if $XENSTORE-write "$key" "$newval" ; then
+	mkdir -p $(dirname "$cache")
+	echo -n "$newval" > "$cache"
+	XENSTORE_UPDATED=1
+	return 0
+    fi
+    return 1
+}
+
+# If we detect a domain change then delete our cache and force a refresh
+domid=$(xenstore-read "domid")
+cache=/var/cache/xenstore/unique-domain-id
+newval=$(xenstore-read "/local/domain/${domid}/unique-domain-id")
+if [ -e $cache ]; then
+    oldval=$(cat "$cache")
+    if [ "$oldval" != "$newval" ]; then
+	# domain changed
+	rm -rf /var/cache/xenstore
+    fi
+fi
+mkdir -p $(dirname "$cache")
+echo -n "$newval" > "$cache"
+
+xenstore_rm_cached() {
+    key="$1"
+    cache=/var/cache/xenstore/$key
+    if [ ! -e $cache ] ; then
+	return 1
+    fi
+    # try to write and update cache if successfull
+    if $XENSTORE-rm "$key" ; then
+	rm -rf "$cache"
+	XENSTORE_UPDATED=1
+	return 0
+    fi
+    return 1
+}
+
+xenstore_list_interfaces_cached() {
+    topdir=/var/cache/xenstore/attr
+    if [ -d $topdir ] ; then
+	cd $topdir 
+	for dir in * ; do 
+	    [ -f $dir/ip ] && echo $dir
+	done
+    fi
+}
+
+if [ $MEMORY_MODE -eq 1 ] ; then
+    # Update the memory information
+    eval $(cat /proc/meminfo | \
+	sed -n -e 's/MemTotal\: *\([0-9]*\)[^$]*/memtotal=\1/gp;' \
+        -e 's/MemFree\: *\([0-9]*\)[^$]*/memfree=\1/gp;')
+    
+    xenstore_write_cached "data/meminfo_total" "${memtotal}"
+    xenstore_write_cached "data/meminfo_free" "${memfree}"
+fi
+
+
+
+# e.g.
+# $ ip addr show
+# 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue 
+#     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+#     inet 127.0.0.1/8 scope host lo
+#     inet6 ::1/128 scope host 
+#        valid_lft forever preferred_lft forever
+# 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast qlen 1000
+#     link/ether 00:13:20:95:e8:74 brd ff:ff:ff:ff:ff:ff
+#     inet 172.31.0.57/20 brd 172.31.15.255 scope global eth0
+#     inet6 fe80::213:20ff:fe95:e874/64 scope link 
+#        valid_lft forever preferred_lft forever
+# 3: sit0: <NOARP> mtu 1480 qdisc noop 
+#     link/sit 0.0.0.0 brd 0.0.0.0
+
+#eval $(ip addr show | \
+#       sed -n -e 's/^[[:digit:]]*: \([a-z0-9]*\): .*/ifs="\$ifs \1"; current="\1"; /gp;' \
+#	      -e 's/^[[:space:]]\{4\}inet \('${IPADDR_RE}'\)\/.*/eval inet_\${current}="\1"; /gp;')
+
+# e.g.
+# eth0      Link encap:Ethernet  HWaddr 00:13:20:95:E8:74  
+#           inet addr:172.31.0.57  Bcast:172.31.15.255  Mask:255.255.240.0
+#           inet6 addr: fe80::213:20ff:fe95:e874/64 Scope:Link
+#           UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+#           RX packets:98001128 errors:0 dropped:0 overruns:0 frame:0
+#           TX packets:87728920 errors:0 dropped:0 overruns:0 carrier:0
+#           collisions:0 txqueuelen:1000 
+#           RX bytes:35864034092 (33.4 GiB)  TX bytes:27544025180 (25.6 GiB)
+#           Interrupt:177 
+# 
+# lo        Link encap:Local Loopback  
+#           inet addr:127.0.0.1  Mask:255.0.0.0
+#           inet6 addr: ::1/128 Scope:Host
+#           UP LOOPBACK RUNNING  MTU:16436  Metric:1
+#           RX packets:32928 errors:0 dropped:0 overruns:0 frame:0
+#           TX packets:32928 errors:0 dropped:0 overruns:0 carrier:0
+#           collisions:0 txqueuelen:0 
+#           RX bytes:3604609 (3.4 MiB)  TX bytes:3604609 (3.4 MiB)
+
+eval $(/sbin/ifconfig | \
+        sed -n -e '/^[0-9a-z][0-9a-z]*\:/,/^$/d' \
+               -e 's/^\([0-9a-z][0-9a-z]*\) .*/ifs="\$ifs \1"; current="\1"; /gp;' \
+               -e 's/  *inet addr:\('$IPADDR_RE'\) .*/eval inet_\${current}="\1"; /gp;')
+
+# network
+for if in $ifs ; do
+
+	[ "${if}" = "lo" ] && continue
+	inet=$(eval echo \${inet_${if}})
+	[ -z "${inet}" ] && continue
+
+	xenstore_write_cached "attr/${if}/ip" "${inet}"
+done
+
+# remove any interfaces that have been unplugged or downed
+for at in $(xenstore_list_interfaces_cached) ; do
+    for if in $ifs ; do
+	[ "${if}" = "${at}" ] && continue 2
+    done
+    xenstore_rm_cached "attr/${at}"
+done
+
+# distro
+if [ -f ${XE_LINUX_DISTRIBUTION_CACHE} ] ; then
+    . ${XE_LINUX_DISTRIBUTION_CACHE}
+    for key in os_name os_majorver os_minorver os_uname os_distro ; do
+	new=$(eval echo \${${key}})
+	[ -n "${new}" ] || continue
+	xenstore_write_cached "data/${key}" "${new}"
+    done
+fi
+
+# whether I support ballooning or not
+xenstore_write_cached "control/feature-balloon" "1"
+
+# whether I support ballooning or not
+xenstore_write_cached "control/feature-balloon" "1"
+
+# build time addons
+xenstore_write_cached "attr/PVAddons/MajorVersion" "5"
+xenstore_write_cached "attr/PVAddons/MinorVersion" "6"
+xenstore_write_cached "attr/PVAddons/MicroVersion" "0" 
+xenstore_write_cached "attr/PVAddons/BuildVersion" "31188"
+xenstore_write_cached "attr/PVAddons/Installed" "1" 
+
+# update xenstore if necc
+if [ $XENSTORE_UPDATED -eq 1 ] ; then
+    xenstore_write_cached "data/updated" "$(date)"
+fi
+

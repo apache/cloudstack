@@ -1,0 +1,157 @@
+#!/bin/bash 
+### BEGIN INIT INFO
+# Provides:          cloud
+# Required-Start:    mountkernfs $local_fs cloud-early-config
+# Required-Stop:     $local_fs
+# Should-Start:      
+# Should-Stop:       
+# Default-Start:     
+# Default-Stop:      0 1 6
+# Short-Description: 	Start up the CloudStack cloud service
+### END INIT INFO
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+#set -x
+
+ENABLED=0
+[ -e /etc/default/cloud ] && . /etc/default/cloud
+
+CMDLINE=$(cat /var/cache/cloud/cmdline)
+
+if [ ! -z $CLOUD_DEBUG ];then
+  LOG_FILE=/var/log/cloud/cloud.out
+else
+  LOG_FILE=/dev/null
+fi
+
+TYPE="router"
+for i in $CMDLINE
+  do
+    # search for foo=bar pattern and cut out foo
+    FIRSTPATTERN=$(echo $i | cut -d= -f1)
+    case $FIRSTPATTERN in 
+      type)
+          TYPE=$(echo $i | cut -d= -f2)
+      ;;
+    esac
+done
+
+# Source function library.
+if [ -f /etc/init.d/functions ]
+then
+  . /etc/init.d/functions
+fi
+
+if [ -f ./lib/lsb/init-functions ]
+then
+  . /lib/lsb/init-functions
+fi
+
+_success() {
+  if [ -f /etc/init.d/functions ]
+  then
+    success
+  else
+    echo "Success"
+  fi
+}
+
+_failure() {
+  if [ -f /etc/init.d/functions ]
+  then
+    failure
+  else
+    echo "Failed"
+  fi
+}
+RETVAL=$?
+CLOUDSTACK_HOME="/usr/local/cloud"
+if [ -f  $CLOUDSTACK_HOME/systemvm/utils.sh ];
+then
+  . $CLOUDSTACK_HOME/systemvm/utils.sh
+else
+  _failure
+fi
+
+# mkdir -p /var/log/vmops
+
+start() {
+   local pid=$(get_pids)
+   if [ "$pid" != "" ]; then
+       echo "CloudStack cloud sevice is already running, PID = $pid"
+       return 0
+   fi
+
+   echo -n "Starting CloudStack cloud service (type=$TYPE) "
+   if [ -f $CLOUDSTACK_HOME/systemvm/run.sh ];
+   then
+     if [ "$pid" == "" ]
+     then
+       (cd $CLOUDSTACK_HOME/systemvm; nohup ./run.sh > $LOG_FILE 2>&1 & )
+       pid=$(get_pids)
+       echo $pid > /var/run/cloud.pid 
+     fi
+     _success
+   else
+     _failure
+   fi
+   echo
+   echo 'start' > $CLOUDSTACK_HOME/systemvm/user_request
+}
+
+stop() {
+  local pid
+  echo -n  "Stopping CloudStack cloud service (type=$TYPE): "
+  for pid in $(get_pids)
+  do
+    kill $pid
+  done
+  _success
+  echo
+  echo 'stop' > $CLOUDSTACK_HOME/systemvm/user_request
+}
+
+status() {
+  local pids=$(get_pids)
+  if [ "$pids" == "" ]
+  then
+    echo "CloudStack cloud service is not running"
+    return 1
+  fi
+  echo "CloudStack cloud service (type=$TYPE) is running: process id: $pids"
+  return 0
+}
+
+[ "$ENABLED" != 0 ] || exit 0 
+
+case "$1" in
+   start) start
+	  ;;
+    stop) stop
+ 	  ;;
+    status) status
+ 	  ;;
+ restart) stop
+          start
+ 	  ;;
+       *) echo "Usage: $0 {start|stop|status|restart}"
+	  exit 1
+	  ;;
+esac
+
+exit $RETVAL
