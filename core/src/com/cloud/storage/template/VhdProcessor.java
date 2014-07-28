@@ -22,7 +22,6 @@ package com.cloud.storage.template;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -105,7 +104,7 @@ public class VhdProcessor extends AdapterBase implements Processor {
     }
 
     @Override
-    public Long getVirtualSize(File file) {
+    public long getVirtualSize(File file) {
         FileInputStream strm = null;
         byte[] currentSize = new byte[8];
         byte[] creatorApp = new byte[4];
@@ -142,21 +141,4 @@ public class VhdProcessor extends AdapterBase implements Processor {
         return true;
     }
 
-    private void imageSignatureCheck(byte[] creatorApp) throws InternalErrorException {
-        boolean findKnownCreator = false;
-        for (int i = 0; i < citrixCreatorApp.length; i++) {
-            if (Arrays.equals(creatorApp, citrixCreatorApp[i])) {
-                findKnownCreator = true;
-                break;
-            }
-        }
-        if (!findKnownCreator) {
-            /*Only support VHD image created by citrix xenserver, and xenconverter*/
-            String readableCreator = "";
-            for (int j = 0; j < creatorApp.length; j++) {
-                readableCreator += (char)creatorApp[j];
-            }
-            throw new InternalErrorException("Image creator is:" + readableCreator + ", is not supported");
-        }
-    }
 }

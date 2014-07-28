@@ -798,7 +798,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     }
 
-    protected Long getVirtualSize(File file, ImageFormat format) {
+    protected long getVirtualSize(File file, ImageFormat format) {
         Processor processor = null;
         try {
             if (format == null) {
@@ -822,9 +822,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             processor.configure("template processor", new HashMap<String, Object>());
             return processor.getVirtualSize(file);
         } catch (Exception e) {
-            s_logger.debug("Failed to get virtual size:", e);
+            s_logger.warn("Failed to get virtual size, returning file size instead:", e);
+            return file.length();
         }
-        return file.length();
+
     }
 
     protected Answer copyFromNfsToS3(CopyCommand cmd) {

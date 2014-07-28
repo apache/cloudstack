@@ -61,7 +61,7 @@ public class IsoProcessor extends AdapterBase implements Processor {
     }
 
     @Override
-    public Long getVirtualSize(File file) {
+    public long getVirtualSize(File file) {
         return file.length();
     }
 
