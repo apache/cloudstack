@@ -37,6 +37,10 @@
         <property name="name" value="VpcVirtualRouter" />
     </bean>
 
+    <bean id="RouterDeploymentDefinitionBuilder" class="org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder">
+        <property name="name" value="RouterDeploymentDefinitionBuilder" />
+    </bean>
+
     <bean id="actionEventUtils" class="com.cloud.event.ActionEventUtils" />
     <bean id="alertGenerator" class="com.cloud.event.AlertGenerator" />
 

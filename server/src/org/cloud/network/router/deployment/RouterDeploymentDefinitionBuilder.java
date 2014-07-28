@@ -127,7 +127,6 @@ public class RouterDeploymentDefinitionBuilder {
         routerDeploymentDefinition.offeringId = this.offeringId;
 
         routerDeploymentDefinition.nwHelper = this.nwHelper;
-        routerDeploymentDefinition.vpcHelper = this.vpcHelper;
 
         if (routerDeploymentDefinition instanceof VpcRouterDeploymentDefinition) {
             this.injectVpcDependencies((VpcRouterDeploymentDefinition) routerDeploymentDefinition);
@@ -144,6 +143,7 @@ public class RouterDeploymentDefinitionBuilder {
         routerDeploymentDefinition.pNtwkDao = this.pNtwkDao;
         routerDeploymentDefinition.vpcMgr = this.vpcMgr;
         routerDeploymentDefinition.vlanDao = this.vlanDao;
+        routerDeploymentDefinition.vpcHelper = this.vpcHelper;
     }
 
 
