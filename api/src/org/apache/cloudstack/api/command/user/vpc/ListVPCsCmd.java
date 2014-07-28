@@ -19,8 +19,6 @@ package org.apache.cloudstack.api.command.user.vpc;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,8 +29,10 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.network.vpc.Vpc;
+import com.cloud.utils.Pair;
 
 
 @APICommand(name = "listVPCs", description = "Lists VPCs", responseObject = VpcResponse.class, responseView = ResponseView.Restricted, entityType = {Vpc.class},
@@ -129,18 +129,18 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute() {
-        List<? extends Vpc> vpcs =
+        Pair<List<? extends Vpc>, Integer> vpcs =
             _vpcService.listVpcs(getId(), getVpcName(), getDisplayText(), getSupportedServices(), getCidr(), getVpcOffId(), getState(), getAccountName(), getDomainId(),
                 getKeyword(), getStartIndex(), getPageSizeVal(), getZoneId(), isRecursive(), listAll(), getRestartRequired(), getTags(),
                 getProjectId(), getDisplay());
         ListResponse<VpcResponse> response = new ListResponse<VpcResponse>();
-        List<VpcResponse> offeringResponses = new ArrayList<VpcResponse>();
-        for (Vpc vpc : vpcs) {
+        List<VpcResponse> vpcResponses = new ArrayList<VpcResponse>();
+        for (Vpc vpc : vpcs.first()) {
             VpcResponse offeringResponse = _responseGenerator.createVpcResponse(ResponseView.Restricted, vpc);
-            offeringResponses.add(offeringResponse);
+            vpcResponses.add(offeringResponse);
         }
 
-        response.setResponses(offeringResponses);
+        response.setResponses(vpcResponses, vpcs.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
