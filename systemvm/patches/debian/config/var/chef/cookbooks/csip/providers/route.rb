@@ -83,6 +83,7 @@ def typeDevExists
 end
 
 def typeDefaultExists
+    puts "ip route show table #{@current_resource.table} dev #{@current_resource.dev} via #{@current_resource.ip}\n"
     executeReturn("ip route show table #{@current_resource.table} dev #{@current_resource.dev} via #{@current_resource.ip}").each do |line|
        next if ! line.include? "default"
        return true
