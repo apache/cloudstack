@@ -113,6 +113,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -608,9 +609,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Override
-    public List<? extends VpcOffering> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, Boolean isDefault, String keyword,
+    public Pair<List<? extends VpcOffering>,Integer> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, Boolean isDefault, String keyword,
         String state, Long startIndex, Long pageSizeVal) {
-        Filter searchFilter = new Filter(VpcOfferingVO.class, "created", false, startIndex, pageSizeVal);
+        Filter searchFilter = new Filter(VpcOfferingVO.class, "created", false, null, null);
         SearchCriteria<VpcOfferingVO> sc = _vpcOffDao.createSearchCriteria();
 
         if (keyword != null) {
@@ -670,9 +671,21 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
 
-            return supportedOfferings;
+            List<?> wPagination = StringUtils.applyPagination(supportedOfferings, startIndex, pageSizeVal);
+            if (wPagination != null) {
+                @SuppressWarnings("unchecked")
+                Pair<List<? extends VpcOffering>, Integer> listWPagination = new Pair<List<? extends VpcOffering>, Integer>((List<VpcOffering>) wPagination, supportedOfferings.size());
+                return listWPagination;
+            }
+            return new Pair<List<? extends VpcOffering>, Integer>(supportedOfferings, supportedOfferings.size());
         } else {
-            return offerings;
+            List<?> wPagination = StringUtils.applyPagination(offerings, startIndex, pageSizeVal);
+            if (wPagination != null) {
+                @SuppressWarnings("unchecked")
+                Pair<List<? extends VpcOffering>, Integer> listWPagination = new Pair<List<? extends VpcOffering>, Integer>((List<VpcOffering>) wPagination, offerings.size());
+                return listWPagination;
+            }
+            return new Pair<List<? extends VpcOffering>, Integer>(offerings, offerings.size());
         }
     }
 

@@ -19,16 +19,16 @@ package org.apache.cloudstack.api.command.user.vpc;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.network.vpc.VpcOffering;
+import com.cloud.utils.Pair;
 
 @APICommand(name = "listVPCOfferings", description = "Lists VPC offerings", responseObject = VpcOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -93,17 +93,17 @@ public class ListVPCOfferingsCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        List<? extends VpcOffering> offerings =
+        Pair<List<? extends VpcOffering>, Integer> offerings =
             _vpcProvSvc.listVpcOfferings(getId(), getVpcOffName(), getDisplayText(), getSupportedServices(), isDefault, this.getKeyword(), getState(),
                 this.getStartIndex(), this.getPageSizeVal());
         ListResponse<VpcOfferingResponse> response = new ListResponse<VpcOfferingResponse>();
         List<VpcOfferingResponse> offeringResponses = new ArrayList<VpcOfferingResponse>();
-        for (VpcOffering offering : offerings) {
+        for (VpcOffering offering : offerings.first()) {
             VpcOfferingResponse offeringResponse = _responseGenerator.createVpcOfferingResponse(offering);
             offeringResponses.add(offeringResponse);
         }
 
-        response.setResponses(offeringResponses);
+        response.setResponses(offeringResponses, offerings.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
