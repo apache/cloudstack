@@ -1184,13 +1184,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             if (s_logger.isDebugEnabled()) {
                 if (cmd instanceof PingRoutingCommand) {
                     final PingRoutingCommand ping = (PingRoutingCommand)cmd;
-                    if (ping.getNewStates().size() > 0) {
-                        s_logger.debug("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request);
-                    } else {
-                        logD = false;
-                        s_logger.debug("Ping from " + hostId);
-                        s_logger.trace("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request);
-                    }
+                    logD = false;
+                    s_logger.debug("Ping from " + hostId);
+                    s_logger.trace("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request);
                 } else if (cmd instanceof PingCommand) {
                     logD = false;
                     s_logger.debug("Ping from " + hostId);

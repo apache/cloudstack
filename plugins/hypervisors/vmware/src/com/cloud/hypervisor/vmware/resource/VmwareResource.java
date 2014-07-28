@@ -269,7 +269,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VmDetailConstants;
 
@@ -332,19 +331,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         s_powerStatesTable.put(VirtualMachinePowerState.POWERED_OFF, PowerState.PowerOff);
         s_powerStatesTable.put(VirtualMachinePowerState.SUSPENDED, PowerState.PowerOn);
     }
-
-    // TODO vmsync {
-    // deprecated, will delete after full replacement
-    //
-    protected static HashMap<VirtualMachinePowerState, State> s_statesTable;
-    static {
-        s_statesTable = new HashMap<VirtualMachinePowerState, State>();
-        s_statesTable.put(VirtualMachinePowerState.POWERED_ON, State.Running);
-        s_statesTable.put(VirtualMachinePowerState.POWERED_OFF, State.Stopped);
-        s_statesTable.put(VirtualMachinePowerState.SUSPENDED, State.Stopped);
-    }
-
-    // TODO vmsync }
 
     public Gson getGson() {
         return _gson;
@@ -1314,11 +1300,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
-            // mark VM as starting state so that sync can know not to report stopped too early
-            synchronized (_vms) {
-                _vms.put(vmInternalCSName, State.Starting);
-            }
-
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             DiskTO[] disks = validateDisks(vmSpec.getDisks());
             assert (disks.length > 0);
@@ -1727,13 +1708,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.warn(msg, e);
             return new StartAnswer(cmd, msg);
         } finally {
-            synchronized (_vms) {
-                if (state != State.Stopped) {
-                    _vms.put(vmInternalCSName, state);
-                } else {
-                    _vms.remove(vmInternalCSName);
-                }
-            }
         }
     }
 
@@ -2570,7 +2544,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         HashMap<String, VmStatsEntry> vmStatsMap = null;
 
         try {
-            HashMap<String, State> newStates = getVmStates();
+            HashMap<String, PowerState> vmPowerStates = getVmStates()
 
             // getVmNames should return all i-x-y values.
             List<String> requestedVmNames = cmd.getVmNames();
@@ -2578,7 +2552,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             if (requestedVmNames != null) {
                 for (String vmName : requestedVmNames) {
-                    if (newStates.get(vmName) != null) {
+                    if (vmPowerStates.get(vmName) != null) {
                         vmNames.add(vmName);
                     }
                 }
@@ -2653,40 +2627,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
                 }
 
-                State state = null;
-                synchronized (_vms) {
-                    state = _vms.get(cmd.getVmName());
-                    _vms.put(cmd.getVmName(), State.Stopping);
-                }
-
                 try {
                     vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, "0");
 
                     if (getVmPowerState(vmMo) != PowerState.PowerOff) {
                         if (vmMo.safePowerOff(_shutdownWaitMs)) {
-                            state = State.Stopped;
                             return new StopAnswer(cmd, "Stop VM " + cmd.getVmName() + " Succeed", true);
                         } else {
                             String msg = "Have problem in powering off VM " + cmd.getVmName() + ", let the process continue";
                             s_logger.warn(msg);
                             return new StopAnswer(cmd, msg, true);
                         }
-                    } else {
-                        state = State.Stopped;
                     }
 
                     String msg = "VM " + cmd.getVmName() + " is already in stopped state";
                     s_logger.info(msg);
                     return new StopAnswer(cmd, msg, true);
                 } finally {
-                    synchronized (_vms) {
-                        _vms.put(cmd.getVmName(), state);
-                    }
                 }
             } else {
-                synchronized (_vms) {
-                    _vms.remove(cmd.getVmName());
-                }
 
                 String msg = "VM " + cmd.getVmName() + " is no longer in vSphere";
                 s_logger.info(msg);
@@ -2773,7 +2732,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         final String vmName = cmd.getVmName();
-        State state = State.Unknown;
+        PowerState powerState = PowerState.Unknown;
         Integer vncPort = null;
 
         VmwareContext context = getServiceContext();
@@ -2782,16 +2741,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
             if (vmMo != null) {
-                state = getVmState(vmMo);
-                if (state == State.Running) {
-                    synchronized (_vms) {
-                        _vms.put(vmName, State.Running);
-                    }
-                }
-                return new CheckVirtualMachineAnswer(cmd, state, vncPort);
+                powerState = getVmPowerState(vmMo);
+                return new CheckVirtualMachineAnswer(cmd, powerState, vncPort);
             } else {
                 s_logger.warn("Can not find vm " + vmName + " to execute CheckVirtualMachineCommand");
-                return new CheckVirtualMachineAnswer(cmd, state, vncPort);
+                return new CheckVirtualMachineAnswer(cmd, powerState, vncPort);
             }
 
         } catch (Throwable e) {
@@ -2801,7 +2755,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
             s_logger.error("Unexpected exception: " + VmwareHelper.getExceptionMessage(e), e);
 
-            return new CheckVirtualMachineAnswer(cmd, state, vncPort);
+            return new CheckVirtualMachineAnswer(cmd, powerState, vncPort);
         }
     }
 
@@ -2875,13 +2829,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         final String vmName = cmd.getVmName();
-
-        State state = null;
-        synchronized (_vms) {
-            state = _vms.get(vmName);
-            _vms.put(vmName, State.Stopping);
-        }
-
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
@@ -2905,7 +2852,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception("Migration failed");
             }
 
-            state = State.Stopping;
             return new MigrateAnswer(cmd, true, "migration succeeded", null);
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
@@ -2916,10 +2862,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             String msg = "MigrationCommand failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.warn(msg, e);
             return new MigrateAnswer(cmd, false, msg, null);
-        } finally {
-            synchronized (_vms) {
-                _vms.put(vmName, state);
-            }
         }
     }
 
@@ -2931,12 +2873,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         VirtualMachineTO vmTo = cmd.getVirtualMachine();
         final String vmName = vmTo.getName();
-
-        State state = null;
-        synchronized (_vms) {
-            state = _vms.get(vmName);
-            _vms.put(vmName, State.Stopping);
-        }
 
         VmwareHypervisorHost srcHyperHost = null;
         VmwareHypervisorHost tgtHyperHost = null;
@@ -3082,7 +3018,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.debug("Successfully relocated VM " + vmName + " from " + _hostName + " to " + tgtHyperHost.getHyperHostName());
             }
 
-            state = State.Stopping;
             return new MigrateWithStorageAnswer(cmd, volumeToList);
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
@@ -3104,9 +3039,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             ". Please unmount manually to cleanup.");
                 }
                 s_logger.debug("Successfully unmounted datastore " + mountedDatastore + " at " + _hostName);
-            }
-            synchronized (_vms) {
-                _vms.put(vmName, state);
             }
         }
     }
@@ -3922,12 +3854,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     @Override
     public PingCommand getCurrentStatus(long id) {
         gcAndKillHungWorkerVMs();
-
-        HashMap<String, State> newStates = sync();
-        if (newStates == null) {
-            return null;
-        }
-
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
         try {
@@ -3938,7 +3864,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.error("Unexpected exception", e);
             return null;
         }
-        return new PingRoutingCommand(getType(), id, newStates, syncHostVmStates());
+        return new PingRoutingCommand(getType(), id, syncHostVmStates());
     }
 
     private void gcAndKillHungWorkerVMs() {
@@ -4043,22 +3969,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             StartupRoutingCommand cmd = new StartupRoutingCommand();
             fillHostInfo(cmd);
-
-            Map<String, State> changes = null;
-            synchronized (_vms) {
-                _vms.clear();
-                changes = sync();
-            }
-
             cmd.setHypervisorType(HypervisorType.VMware);
-
-            // TODO vmsync {
-            // deprecated after full replacement
-            cmd.setStateChanges(changes);
-            // TODO vmsync}
-
-            cmd.setHostVmStateReport(syncHostVmStates());
-
             cmd.setCluster(_cluster);
             cmd.setHypervisorVersion(hostApiVersion);
 
@@ -4246,114 +4157,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    protected HashMap<String, State> sync() {
-        HashMap<String, State> changes = new HashMap<String, State>();
-        HashMap<String, State> oldStates = null;
-
-        try {
-            synchronized (_vms) {
-                HashMap<String, State> newStates = getVmStates();
-                oldStates = new HashMap<String, State>(_vms.size());
-                oldStates.putAll(_vms);
-
-                for (final Map.Entry<String, State> entry : newStates.entrySet()) {
-                    final String vm = entry.getKey();
-
-                    State newState = entry.getValue();
-                    final State oldState = oldStates.remove(vm);
-
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("VM " + vm + ": vSphere has state " + newState + " and we have state " + (oldState != null ? oldState.toString() : "null"));
-                    }
-
-                    if (vm.startsWith("migrating")) {
-                        s_logger.debug("Migrating detected.  Skipping");
-                        continue;
-                    }
-
-                    if (oldState == null) {
-                        _vms.put(vm, newState);
-                        s_logger.debug("Detecting a new state but couldn't find a old state so adding it to the changes: " + vm);
-                        changes.put(vm, newState);
-                    } else if (oldState == State.Starting) {
-                        if (newState == State.Running) {
-                            _vms.put(vm, newState);
-                        } else if (newState == State.Stopped) {
-                            s_logger.debug("Ignoring vm " + vm + " because of a lag in starting the vm.");
-                        }
-                    } else if (oldState == State.Migrating) {
-                        if (newState == State.Running) {
-                            s_logger.debug("Detected that an migrating VM is now running: " + vm);
-                            _vms.put(vm, newState);
-                        }
-                    } else if (oldState == State.Stopping) {
-                        if (newState == State.Stopped) {
-                            _vms.put(vm, newState);
-                        } else if (newState == State.Running) {
-                            s_logger.debug("Ignoring vm " + vm + " because of a lag in stopping the vm. ");
-                        }
-                    } else if (oldState != newState) {
-                        _vms.put(vm, newState);
-                        if (newState == State.Stopped) {
-                            /*
-                             * if (_vmsKilled.remove(vm)) { s_logger.debug("VM " + vm + " has been killed for storage. ");
-                             * newState = State.Error; }
-                             */
-                        }
-                        changes.put(vm, newState);
-                    }
-                }
-
-                for (final Map.Entry<String, State> entry : oldStates.entrySet()) {
-                    final String vm = entry.getKey();
-                    final State oldState = entry.getValue();
-
-                    if (isVmInCluster(vm)) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("VM " + vm + " is now missing from host report but we detected that it might be migrated to other host by vCenter");
-                        }
-
-                        if (oldState != State.Starting && oldState != State.Migrating) {
-                            s_logger.debug("VM " + vm +
-                                    " is now missing from host report and VM is not at starting/migrating state, remove it from host VM-sync map, oldState: " + oldState);
-                            _vms.remove(vm);
-                        } else {
-                            s_logger.debug("VM " + vm + " is missing from host report, but we will ignore VM " + vm + " in transition state " + oldState);
-                        }
-                        continue;
-                    }
-
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("VM " + vm + " is now missing from host report");
-                    }
-
-                    if (oldState == State.Stopping) {
-                        s_logger.debug("Ignoring VM " + vm + " in transition state stopping.");
-                        _vms.remove(vm);
-                    } else if (oldState == State.Starting) {
-                        s_logger.debug("Ignoring VM " + vm + " in transition state starting.");
-                    } else if (oldState == State.Stopped) {
-                        _vms.remove(vm);
-                    } else if (oldState == State.Migrating) {
-                        s_logger.debug("Ignoring VM " + vm + " in migrating state.");
-                    } else {
-                        State state = State.Stopped;
-                        changes.put(entry.getKey(), state);
-                    }
-                }
-            }
-        } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            s_logger.error("Unable to perform sync information collection process at this point due to " + VmwareHelper.getExceptionMessage(e), e);
-            return null;
-        }
-        return changes;
-    }
-
     private boolean isVmInCluster(String vmName) throws Exception {
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
 
@@ -4515,8 +4318,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return newStates;
     }
 
-    // TODO vmsync {
-    private HashMap<String, State> getVmStates() throws Exception {
+
+    private HashMap<String, PowerState> getVmStates() throws Exception {
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
 
         int key = ((HostMO)hyperHost).getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
@@ -4560,13 +4363,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         name = VMInternalCSName;
 
                     if (!isTemplate) {
-                        newStates.put(name, convertState(powerState));
+                        newStates.put(name, convertPowerState(powerState));
                     }
                 }
             }
         }
         return newStates;
     }
+
+
 
     private HashMap<String, VmStatsEntry> getVmStats(List<String> vmNames) throws Exception {
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
@@ -4690,7 +4495,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return vmResponseMap;
     }
 
-    // TODO vmsync }
 
     protected String networkUsage(final String privateIpAddress, final String option, final String ethName) {
         String args = null;
@@ -4787,19 +4591,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected String connect(final String vmname, final String ipAddress) {
         return connect(vmname, ipAddress, 3922);
     }
-
-    // TODO vmsync {
-    // deprecated after full replacement
-    private static State convertState(VirtualMachinePowerState powerState) {
-        return s_statesTable.get(powerState);
-    }
-
-    public static State getVmState(VirtualMachineMO vmMo) throws Exception {
-        VirtualMachineRuntimeInfo runtimeInfo = vmMo.getRuntimeInfo();
-        return convertState(runtimeInfo.getPowerState());
-    }
-
-    // TODO vmsync }
 
     private static PowerState convertPowerState(VirtualMachinePowerState powerState) {
         return s_powerStatesTable.get(powerState);

@@ -23,23 +23,10 @@ import java.util.List;
 
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
-import com.cloud.vm.VirtualMachine;
 
 public class CreateVMSnapshotCommand extends VMSnapshotBaseCommand {
 
-    public CreateVMSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType, VirtualMachine.State vmState) {
+    public CreateVMSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType) {
         super(vmName, snapshot, volumeTOs, guestOSType);
-        this.vmState = vmState;
     }
-
-    private VirtualMachine.State vmState;
-
-    public VirtualMachine.State getVmState() {
-        return vmState;
-    }
-
-    public void setVmState(VirtualMachine.State vmState) {
-        this.vmState = vmState;
-    }
-
 }

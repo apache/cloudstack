@@ -30,7 +30,7 @@ import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 @Local(value = Investigator.class)
 public class CheckOnAgentInvestigator extends AdapterBase implements Investigator {
@@ -57,7 +57,7 @@ public class CheckOnAgentInvestigator extends AdapterBase implements Investigato
             }
 
             s_logger.debug("Agent responded with state " + answer.getState().toString());
-            return answer.getState() == State.Running;
+            return answer.getState() == PowerState.PowerOn;
         } catch (AgentUnavailableException e) {
             s_logger.debug("Unable to reach the agent for " + vm.toString() + ": " + e.getMessage());
             return null;

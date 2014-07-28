@@ -90,7 +90,6 @@ import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
@@ -211,8 +210,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         // Create default StartupRoutingCommand, then customise
         StartupRoutingCommand defaultStartRoutCmd =
-            new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.Hyperv, RouterPrivateIpStrategy.HostLocal, new HashMap<String, VmState>(),
-                new HashMap<String, HostVmStateReportEntry>());
+            new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.Hyperv, RouterPrivateIpStrategy.HostLocal);
 
         // Identity within the data centre is decided by CloudStack kernel,
         // and passed via ServerResource.configure()
@@ -224,7 +222,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         defaultStartRoutCmd.setPrivateIpAddress(_agentIp);
         defaultStartRoutCmd.setStorageIpAddress(_agentIp);
         defaultStartRoutCmd.setPool(_clusterGuid);
-        defaultStartRoutCmd.setHostVmStateReport(getHostVmStateReport());
 
         s_logger.debug("Generated StartupRoutingCommand for _agentIp \"" + _agentIp + "\"");
 
@@ -316,7 +313,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
     @Override
     public final PingCommand getCurrentStatus(final long id) {
-        PingCommand pingCmd = new PingRoutingCommand(getType(), id, null, getHostVmStateReport());
+        PingCommand pingCmd = new PingRoutingCommand(getType(), id, getHostVmStateReport());
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Ping host " + _name + " (IP " + _agentIp + ")");

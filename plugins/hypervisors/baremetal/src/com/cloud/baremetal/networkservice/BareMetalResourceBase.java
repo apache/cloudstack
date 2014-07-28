@@ -67,9 +67,7 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.script.Script2;
 import com.cloud.utils.script.Script2.ParamType;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -85,7 +83,6 @@ import java.util.concurrent.TimeUnit;
 @Local(value = ServerResource.class)
 public class BareMetalResourceBase extends ManagerBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(BareMetalResourceBase.class);
-    protected HashMap<String, State> _vms = new HashMap<String, State>(2);
     protected String _name;
     protected String _uuid;
     protected String _zone;
@@ -116,17 +113,6 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
     protected ConfigurationDao configDao;
     protected VMInstanceDao vmDao;
 
-    private void changeVmState(String vmName, VirtualMachine.State state) {
-        synchronized (_vms) {
-            _vms.put(vmName, state);
-        }
-    }
-
-    private State removeVmState(String vmName) {
-        synchronized (_vms) {
-            return _vms.remove(vmName);
-        }
-    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -341,37 +327,6 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
         return com.cloud.host.Host.Type.Routing;
     }
 
-    protected State getVmState() {
-        OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
-        if (!doScript(_getStatusCommand, interpreter)) {
-            s_logger.warn("Cannot get power status of " + _name + ", assume VM state was not changed");
-            return null;
-        }
-        if (isPowerOn(interpreter.getLines())) {
-            return State.Running;
-        } else {
-            return State.Stopped;
-        }
-    }
-
-    protected Map<String, State> fullSync() {
-        Map<String, State> states = new HashMap<String, State>();
-        if (hostId != null) {
-            final List<? extends VMInstanceVO> vms = vmDao.listByHostId(hostId);
-            for (VMInstanceVO vm : vms) {
-                states.put(vm.getInstanceName(), vm.getState());
-            }
-        }
-        /*
-         * Map<String, State> changes = new HashMap<String, State>();
-         *
-         * if (_vmName != null) { State state = getVmState(); if (state != null)
-         * { changes.put(_vmName, state); } }
-         */
-
-        return states;
-    }
-
     protected Map<String, HostVmStateReportEntry> getHostVmStateReport() {
         Map<String, HostVmStateReportEntry> states = new HashMap<String, HostVmStateReportEntry>();
         if (hostId != null) {
@@ -380,25 +335,18 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
                 states.put(
                     vm.getInstanceName(),
                     new HostVmStateReportEntry(
-                        vm.getState() == State.Running ? PowerState.PowerOn : PowerState.PowerOff, "host-" + hostId
+                        vm.getPowerState(), "host-" + hostId
                     )
                 );
             }
         }
-        /*
-         * Map<String, State> changes = new HashMap<String, State>();
-         *
-         * if (_vmName != null) { State state = getVmState(); if (state != null)
-         * { changes.put(_vmName, state); } }
-         */
-
         return states;
     }
 
     @Override
     public StartupCommand[] initialize() {
         StartupRoutingCommand cmd = new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.BareMetal,
-            new HashMap<String, String>(), null, null);
+            new HashMap<String, String>());
 
         cmd.setDataCenter(_zone);
         cmd.setPod(_pod);
@@ -413,7 +361,6 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
         cmd.setMemory(_memCapacity);
         cmd.setPrivateMacAddress(_mac);
         cmd.setPublicMacAddress(_mac);
-        cmd.setStateChanges(fullSync());
         return new StartupCommand[] { cmd };
     }
 
@@ -439,15 +386,15 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
         if (hostId != null) {
             final List<? extends VMInstanceVO> vms = vmDao.listByHostId(hostId);
             if (vms.isEmpty()) {
-                return new PingRoutingCommand(getType(), id, deltaSync(), getHostVmStateReport());
+                return new PingRoutingCommand(getType(), id, getHostVmStateReport());
             } else {
                 VMInstanceVO vm = vms.get(0);
                 SecurityGroupHttpClient client = new SecurityGroupHttpClient();
                 HashMap<String, Pair<Long, Long>> nwGrpStates = client.sync(vm.getInstanceName(), vm.getId(), vm.getPrivateIpAddress());
-                return new PingRoutingWithNwGroupsCommand(getType(), id, null, getHostVmStateReport(), nwGrpStates);
+                return new PingRoutingWithNwGroupsCommand(getType(), id, getHostVmStateReport(), nwGrpStates);
             }
         } else {
-            return new PingRoutingCommand(getType(), id, deltaSync(), getHostVmStateReport());
+            return new PingRoutingCommand(getType(), id, getHostVmStateReport());
         }
     }
 
@@ -487,7 +434,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
     }
 
     protected CheckVirtualMachineAnswer execute(final CheckVirtualMachineCommand cmd) {
-        return new CheckVirtualMachineAnswer(cmd, State.Stopped, null);
+        return new CheckVirtualMachineAnswer(cmd, PowerState.PowerOff, null);
     }
 
     protected Answer execute(IpmiBootorResetCommand cmd) {
@@ -608,85 +555,33 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 
     protected StartAnswer execute(StartCommand cmd) {
         VirtualMachineTO vm = cmd.getVirtualMachine();
-        State state = State.Stopped;
 
-        try {
-            changeVmState(vm.getName(), State.Starting);
+        OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
+        if (!doScript(_getStatusCommand, interpreter)) {
+            return new StartAnswer(cmd, "Cannot get current power status of " + _name);
+        }
 
-            OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
-            if (!doScript(_getStatusCommand, interpreter)) {
-                return new StartAnswer(cmd, "Cannot get current power status of " + _name);
+        if (isPowerOn(interpreter.getLines())) {
+            if (!doScript(_rebootCommand)) {
+                return new StartAnswer(cmd, "IPMI reboot failed");
             }
-
-            if (isPowerOn(interpreter.getLines())) {
-                if (!doScript(_rebootCommand)) {
-                    return new StartAnswer(cmd, "IPMI reboot failed");
-                }
-            } else {
-                if (!doScript(_powerOnCommand)) {
-                    return new StartAnswer(cmd, "IPMI power on failed");
-                }
-            }
-
-            if (_isEchoScAgent) {
-                SecurityGroupHttpClient hc = new SecurityGroupHttpClient();
-                boolean echoRet = hc.echo(vm.getNics()[0].getIp(), TimeUnit.MINUTES.toMillis(30), TimeUnit.MINUTES.toMillis(1));
-                if (!echoRet) {
-                    return new StartAnswer(cmd, String.format("Call security group agent on vm[%s] timeout", vm.getNics()[0].getIp()));
-                }
-            }
-
-            s_logger.debug("Start bare metal vm " + vm.getName() + "successfully");
-            state = State.Running;
-            _vmName = vm.getName();
-            return new StartAnswer(cmd);
-        } finally {
-            if (state != State.Stopped) {
-                changeVmState(vm.getName(), state);
-            } else {
-                removeVmState(vm.getName());
+        } else {
+            if (!doScript(_powerOnCommand)) {
+                return new StartAnswer(cmd, "IPMI power on failed");
             }
         }
-    }
 
-    protected HashMap<String, State> deltaSync() {
-        final HashMap<String, State> changes = new HashMap<String, State>();
-        /*
-         * Disable sync until we find a way that only tracks status but not does
-         * action
-         *
-         * The scenario is: Baremetal will reboot host when creating template.
-         * Given most servers take a long time to boot up, there would be a
-         * period that mgmt server finds the host is stopped through fullsync.
-         * Then mgmt server updates database with marking the host as stopped,
-         * after that, the host comes up and full sync then indicates it's
-         * running. Because in database the host is already stopped, mgmt server
-         * sends out a stop command. As a result, creating image gets never
-         * happened.
-         *
-         * if (_vmName == null) { return null; }
-         *
-         * State newState = getVmState(); if (newState == null) {
-         * s_logger.warn("Cannot get power state of VM " + _vmName); return
-         * null; }
-         *
-         * final State oldState = removeVmState(_vmName); if (oldState == null)
-         * { changeVmState(_vmName, newState); changes.put(_vmName, newState); }
-         * else if (oldState == State.Starting) { if (newState == State.Running)
-         * { changeVmState(_vmName, newState); } else if (newState ==
-         * State.Stopped) { s_logger.debug("Ignoring vm " + _vmName +
-         * " because of a lag in starting the vm."); } } else if (oldState ==
-         * State.Migrating) {
-         * s_logger.warn("How can baremetal VM get into migrating state???"); }
-         * else if (oldState == State.Stopping) { if (newState == State.Stopped)
-         * { changeVmState(_vmName, newState); } else if (newState ==
-         * State.Running) { s_logger.debug("Ignoring vm " + _vmName +
-         * " because of a lag in stopping the vm. "); } } else if (oldState !=
-         * newState) { changeVmState(_vmName, newState); changes.put(_vmName,
-         * newState); }
-         */
-        return changes;
+        if (_isEchoScAgent) {
+            SecurityGroupHttpClient hc = new SecurityGroupHttpClient();
+            boolean echoRet = hc.echo(vm.getNics()[0].getIp(), TimeUnit.MINUTES.toMillis(30), TimeUnit.MINUTES.toMillis(1));
+            if (!echoRet) {
+                return new StartAnswer(cmd, String.format("Call security group agent on vm[%s] timeout", vm.getNics()[0].getIp()));
+            }
+        }
 
+        s_logger.debug("Start bare metal vm " + vm.getName() + "successfully");
+        _vmName = vm.getName();
+        return new StartAnswer(cmd);
     }
 
     protected ReadyAnswer execute(ReadyCommand cmd) {

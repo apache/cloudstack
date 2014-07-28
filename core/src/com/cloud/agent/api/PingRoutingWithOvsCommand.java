@@ -24,7 +24,6 @@ import java.util.Map;
 
 import com.cloud.host.Host;
 import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine.State;
 
 public class PingRoutingWithOvsCommand extends PingRoutingCommand {
     List<Pair<String, Long>> states;
@@ -33,9 +32,9 @@ public class PingRoutingWithOvsCommand extends PingRoutingCommand {
         super();
     }
 
-    public PingRoutingWithOvsCommand(Host.Type type, long id, Map<String, State> states, Map<String, HostVmStateReportEntry> hostVmStateReport,
+    public PingRoutingWithOvsCommand(Host.Type type, long id, Map<String, HostVmStateReportEntry> hostVmStateReport,
             List<Pair<String, Long>> ovsStates) {
-        super(type, id, states, hostVmStateReport);
+        super(type, id, hostVmStateReport);
 
         this.states = ovsStates;
     }

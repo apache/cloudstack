@@ -220,10 +220,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
-    // TODO
-    static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced",
-            Boolean.class, "vm.job.enabled", "true",
-            "True to enable new VM sync model. false to use the old way", false);
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.job.check.interval", "3000",
             "Interval in milliseconds to check if the job is complete", false);
 
@@ -898,22 +894,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
 
-            if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+            if ( jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
                 // avoid re-entrance
 
                 VmWorkJobVO placeHolder = null;
 
-                if (VmJobEnabled.value()) {
-                    placeHolder = createPlaceHolderWork(userVm.getId());
-                }
+                placeHolder = createPlaceHolderWork(userVm.getId());
 
                 try {
                     return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops,
                             newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
                 } finally {
-                    if (VmJobEnabled.value()) {
-                        _workJobDao.expunge(placeHolder.getId());
-                    }
+                    _workJobDao.expunge(placeHolder.getId());
                 }
             } else {
                 Outcome<Volume> outcome = resizeVolumeThroughJobQueue(userVm.getId(), volume.getId(), currentSize, newSize, newMinIops, newMaxIops,
@@ -1328,18 +1320,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
-        if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+        if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
 
             VmWorkJobVO placeHolder = null;
-            if (VmJobEnabled.value()) {
-                placeHolder = createPlaceHolderWork(vmId);
-            }
+            placeHolder = createPlaceHolderWork(vmId);
             try {
                 return orchestrateAttachVolumeToVM(vmId, volumeId, deviceId);
             } finally {
-                if (VmJobEnabled.value())
-                    _workJobDao.expunge(placeHolder.getId());
+                _workJobDao.expunge(placeHolder.getId());
             }
 
         } else {
@@ -1536,17 +1525,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
-        if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+        if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
             VmWorkJobVO placeHolder = null;
-            if (VmJobEnabled.value()) {
-                placeHolder = createPlaceHolderWork(vmId);
-            }
+            placeHolder = createPlaceHolderWork(vmId);
             try {
                 return orchestrateDetachVolumeFromVM(vmId, volumeId);
             } finally {
-                if (VmJobEnabled.value())
-                    _workJobDao.expunge(placeHolder.getId());
+                _workJobDao.expunge(placeHolder.getId());
             }
         } else {
             Outcome<Volume> outcome = detachVolumeFromVmThroughJobQueue(vmId, volumeId);
@@ -1733,18 +1719,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (vm != null) {
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
-            if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+            if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
                 // avoid re-entrance
 
                 VmWorkJobVO placeHolder = null;
-                if (VmJobEnabled.value()) {
-                    placeHolder = createPlaceHolderWork(vm.getId());
-                }
+                placeHolder = createPlaceHolderWork(vm.getId());
                 try {
                     return orchestrateMigrateVolume(vol.getId(), destPool.getId(), liveMigrateVolume);
                 } finally {
-                    if ((VmJobEnabled.value())&&(placeHolder != null))
-                        _workJobDao.expunge(placeHolder.getId());
+                    _workJobDao.expunge(placeHolder.getId());
                 }
 
             } else {
@@ -1835,18 +1818,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (vm != null) {
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
-            if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+            if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
                 // avoid re-entrance
 
                 VmWorkJobVO placeHolder = null;
-                if (VmJobEnabled.value()) {
-                    placeHolder = createPlaceHolderWork(vm.getId());
-                }
+                placeHolder = createPlaceHolderWork(vm.getId());
                 try {
                     return orchestrateTakeVolumeSnapshot(volumeId, policyId, snapshotId, account, quiescevm);
                 } finally {
-                    if (VmJobEnabled.value())
-                        _workJobDao.expunge(placeHolder.getId());
+                    _workJobDao.expunge(placeHolder.getId());
                 }
 
             } else {

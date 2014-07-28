@@ -244,7 +244,6 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.snapshot.VMSnapshot;
 
 /**
@@ -271,7 +270,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected long _dcId;
     protected String _pod;
     protected String _cluster;
-    protected static final XenServerPoolVms s_vms = new XenServerPoolVms();
     protected String _privateNetworkName;
     protected String _linkLocalPrivateNetworkName;
     protected String _publicNetworkName;
@@ -328,28 +326,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected static final HashMap<Types.VmPowerState, PowerState> s_powerStatesTable;
+    protected static final HashMap<VmPowerState, PowerState> s_powerStatesTable;
     static {
-        s_powerStatesTable = new HashMap<Types.VmPowerState, PowerState>();
-        s_powerStatesTable.put(Types.VmPowerState.HALTED, PowerState.PowerOff);
-        s_powerStatesTable.put(Types.VmPowerState.PAUSED, PowerState.PowerOff);
-        s_powerStatesTable.put(Types.VmPowerState.RUNNING, PowerState.PowerOn);
-        s_powerStatesTable.put(Types.VmPowerState.SUSPENDED, PowerState.PowerOff);
-        s_powerStatesTable.put(Types.VmPowerState.UNRECOGNIZED, PowerState.PowerUnknown);
+        s_powerStatesTable = new HashMap<VmPowerState, PowerState>();
+        s_powerStatesTable.put(VmPowerState.HALTED, PowerState.PowerOff);
+        s_powerStatesTable.put(VmPowerState.PAUSED, PowerState.PowerOff);
+        s_powerStatesTable.put(VmPowerState.RUNNING, PowerState.PowerOn);
+        s_powerStatesTable.put(VmPowerState.SUSPENDED, PowerState.PowerOff);
+        s_powerStatesTable.put(VmPowerState.UNRECOGNIZED, PowerState.PowerUnknown);
     }
-
-    // TODO vmsync {
-    protected static final HashMap<Types.VmPowerState, State> s_statesTable;
-    static {
-        s_statesTable = new HashMap<Types.VmPowerState, State>();
-        s_statesTable.put(Types.VmPowerState.HALTED, State.Stopped);
-        s_statesTable.put(Types.VmPowerState.PAUSED, State.Running);
-        s_statesTable.put(Types.VmPowerState.RUNNING, State.Running);
-        s_statesTable.put(Types.VmPowerState.SUSPENDED, State.Running);
-        s_statesTable.put(Types.VmPowerState.UNRECOGNIZED, State.Unknown);
-    }
-
-    // TODO vmsync }
 
     public XsHost getHost() {
         return _host;
@@ -790,12 +775,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         VMSnapshot.Type vmSnapshotType = cmd.getTarget().getType();
         Boolean snapshotMemory = vmSnapshotType == VMSnapshot.Type.DiskAndMemory;
         Connection conn = getConnection();
-        VirtualMachine.State vmState = null;
+        PowerState vmState = null;
         VM vm = null;
         try {
-
-            // remove vm from s_vms, for delta sync
-            s_vms.remove(_cluster, _name, vmName);
 
             Set<VM> vmSnapshots = VM.getByNameLabel(conn, cmd.getTarget().getSnapshotName());
             if (vmSnapshots.size() == 0)
@@ -830,10 +812,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             if (!snapshotMemory) {
                 vm.destroy(conn);
-                vmState = VirtualMachine.State.Stopped;
+                vmState = PowerState.PowerOff;
             } else {
-                s_vms.put(_cluster, _name, vmName, State.Running);
-                vmState = VirtualMachine.State.Running;
+                vmState = PowerState.PowerOn;
             }
 
             // after revert, VM's volumes path have been changed, need to report to manager
@@ -1710,7 +1691,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         String vmName = vmSpec.getName();
-        State state = State.Stopped;
+        VmPowerState state = VmPowerState.HALTED;
         VM vm = null;
         // if a VDI is created, record its UUID to send back to the CS MS
         Map<String, String> iqnToPath = new HashMap<String, String>();
@@ -1732,9 +1713,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         return new StartAnswer(cmd, msg);
                     }
                 }
-            }
-            synchronized (_cluster.intern()) {
-                s_vms.put(_cluster, _name, vmName, State.Starting);
             }
             s_logger.debug("1. The VM " + vmName + " is in Starting state.");
 
@@ -1839,7 +1817,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
             }
 
-            state = State.Running;
+            state = VmPowerState.RUNNING;
 
             StartAnswer startAnswer = new StartAnswer(cmd);
 
@@ -1856,14 +1834,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             return startAnswer;
         } finally {
-            synchronized (_cluster.intern()) {
-                if (state != State.Stopped) {
-                    s_vms.put(_cluster, _name, vmName, state);
-                    s_logger.debug("2. The VM " + vmName + " is in " + state + " state.");
-                } else {
-                    s_vms.remove(_cluster, _name, vmName);
-                    s_logger.debug("The VM is in stopped state, detected problem during startup : " + vmName);
-                }
+            if (state != VmPowerState.HALTED) {
+                s_logger.debug("2. The VM " + vmName + " is in " + state + " state.");
+            } else {
+                s_logger.debug("The VM is in stopped state, detected problem during startup : " + vmName);
             }
         }
     }
@@ -2575,13 +2549,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     }
 
-    protected State convertToState(Types.VmPowerState ps) {
-        final State state = s_statesTable.get(ps);
-        return state == null ? State.Unknown : state;
-    }
-
-    private static PowerState convertPowerState(Types.VmPowerState powerState) {
-        return s_powerStatesTable.get(powerState);
+    private static PowerState convertToPowerState(VmPowerState ps) {
+        final PowerState powerState = s_powerStatesTable.get(ps);
+        return powerState == null ?  PowerState.PowerUnknown : powerState;
     }
 
     protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport(Connection conn) {
@@ -2629,7 +2599,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 if (host_uuid.equalsIgnoreCase(_host.uuid)) {
                     vmStates.put(
                             record.nameLabel,
-                            new HostVmStateReportEntry(convertPowerState(ps), host_uuid)
+                            new HostVmStateReportEntry(convertToPowerState(ps), host_uuid)
                             );
                 }
             }
@@ -2638,65 +2608,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return vmStates;
     }
 
-    // TODO vmsync {
-    protected HashMap<String, Pair<String, State>> getAllVms(Connection conn) {
-        final HashMap<String, Pair<String, State>> vmStates = new HashMap<String, Pair<String, State>>();
-        Map<VM, VM.Record> vm_map = null;
-        for (int i = 0; i < 2; i++) {
-            try {
-                vm_map = VM.getAllRecords(conn);  //USE THIS TO GET ALL VMS FROM  A CLUSTER
-                break;
-            } catch (final Throwable e) {
-                s_logger.warn("Unable to get vms", e);
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (final InterruptedException ex) {
-
-            }
-        }
-
-        if (vm_map == null) {
-            return null;
-        }
-        for (VM.Record record : vm_map.values()) {
-            if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
-                continue; // Skip DOM0
-            }
-
-            VmPowerState ps = record.powerState;
-            final State state = convertToState(ps);
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("VM " + record.nameLabel + ": powerstate = " + ps + "; vm state=" + state.toString());
-            }
-            Host host = record.residentOn;
-            String host_uuid = null;
-            if (!isRefNull(host)) {
-                try {
-                    host_uuid = host.getUuid(conn);
-                } catch (BadServerResponse e) {
-                    s_logger.error("Failed to get host uuid for host " + host.toWireString(), e);
-                } catch (XenAPIException e) {
-                    s_logger.error("Failed to get host uuid for host " + host.toWireString(), e);
-                } catch (XmlRpcException e) {
-                    s_logger.error("Failed to get host uuid for host " + host.toWireString(), e);
-                }
-                vmStates.put(record.nameLabel, new Pair<String, State>(host_uuid, state));
-            }
-        }
-
-        return vmStates;
-    }
-
-    // TODO vmsync }
-
-    protected State getVmState(Connection conn, final String vmName) {
+    protected PowerState getVmState(Connection conn, final String vmName) {
         int retry = 3;
         while (retry-- > 0) {
             try {
                 Set<VM> vms = VM.getByNameLabel(conn, vmName);
                 for (final VM vm : vms) {
-                    return convertToState(vm.getPowerState(conn));
+                    return convertToPowerState(vm.getPowerState(conn));
                 }
             } catch (final BadServerResponse e) {
                 // There is a race condition within xenserver such that if a vm is
@@ -2727,22 +2645,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         }
 
-        return State.Stopped;
+        return PowerState.PowerOff;
     }
 
     protected CheckVirtualMachineAnswer execute(final CheckVirtualMachineCommand cmd) {
         Connection conn = getConnection();
         final String vmName = cmd.getVmName();
-        final State state = getVmState(conn, vmName);
+        final PowerState powerState = getVmState(conn, vmName);
         Integer vncPort = null;
-        if (state == State.Running) {
-            synchronized (_cluster.intern()) {
-                s_vms.put(_cluster, _name, vmName, State.Running);
-            }
+        if (powerState == PowerState.PowerOn) {
             s_logger.debug("3. The VM " + vmName + " is in Running state");
         }
 
-        return new CheckVirtualMachineAnswer(cmd, state, vncPort);
+        return new CheckVirtualMachineAnswer(cmd, powerState, vncPort);
     }
 
     protected PrepareForMigrationAnswer execute(PrepareForMigrationCommand cmd) {
@@ -2759,9 +2674,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             for (NicTO nic : nics) {
                 getNetwork(conn, nic);
-            }
-            synchronized (_cluster.intern()) {
-                s_vms.put(_cluster, _name, vm.getName(), State.Migrating);
             }
             s_logger.debug("4. The VM " + vm.getName() + " is in Migrating state");
 
@@ -3000,14 +2912,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected MigrateAnswer execute(final MigrateCommand cmd) {
         Connection conn = getConnection();
         final String vmName = cmd.getVmName();
-        State state = null;
 
-        state = s_vms.getState(_cluster, vmName);
-
-        synchronized (_cluster.intern()) {
-            s_vms.put(_cluster, _name, vmName, State.Stopping);
-        }
-        s_logger.debug("5. The VM " + vmName + " is in Stopping state");
         try {
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
 
@@ -3037,52 +2942,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
                 migrateVM(conn, dsthost, vm, vmName);
                 vm.setAffinity(conn, dsthost);
-                state = State.Stopping;
             }
             return new MigrateAnswer(cmd, true, "migration succeeded", null);
         } catch (Exception e) {
             String msg = "Catch Exception " + e.getClass().getName() + ": Migration failed due to " + e.toString();
             s_logger.warn(msg, e);
             return new MigrateAnswer(cmd, false, msg, null);
-        } finally {
-            synchronized (_cluster.intern()) {
-                s_vms.put(_cluster, _name, vmName, state);
-            }
-            s_logger.debug("6. The VM " + vmName + " is in " + state + " state");
         }
 
-    }
-
-    protected State getRealPowerState(Connection conn, String label) {
-        int i = 0;
-        s_logger.trace("Checking on the HALTED State");
-        for (; i < 20; i++) {
-            try {
-                Set<VM> vms = VM.getByNameLabel(conn, label);
-                if (vms == null || vms.size() == 0) {
-                    continue;
-                }
-
-                VM vm = vms.iterator().next();
-
-                VmPowerState vps = vm.getPowerState(conn);
-                if (vps != null && vps != VmPowerState.HALTED && vps != VmPowerState.UNRECOGNIZED) {
-                    return convertToState(vps);
-                }
-            } catch (XenAPIException e) {
-                String msg = "Unable to get real power state due to " + e.toString();
-                s_logger.warn(msg, e);
-            } catch (XmlRpcException e) {
-                String msg = "Unable to get real power state due to " + e.getMessage();
-                s_logger.warn(msg, e);
-            }
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-            }
-        }
-        return State.Stopped;
     }
 
     protected Pair<VM, VM.Record> getControlDomain(Connection conn) throws XenAPIException, XmlRpcException {
@@ -3172,9 +3039,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     @Override
     public RebootAnswer execute(RebootCommand cmd) {
         Connection conn = getConnection();
-        synchronized (_cluster.intern()) {
-            s_vms.put(_cluster, _name, cmd.getVmName(), State.Starting);
-        }
         s_logger.debug("7. The VM " + cmd.getVmName() + " is in Starting state");
         try {
             Set<VM> vms = null;
@@ -3198,9 +3062,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             return new RebootAnswer(cmd, "reboot succeeded", true);
         } finally {
-            synchronized (_cluster.intern()) {
-                s_vms.put(_cluster, _name, cmd.getVmName(), State.Running);
-            }
             s_logger.debug("8. The VM " + cmd.getVmName() + " is in Running state");
         }
     }
@@ -3342,7 +3203,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 waitForTask(conn, task, 1000, 10 * 60 * 1000);
                 checkForSuccess(conn, task);
             } catch (Types.HandleInvalid e) {
-                if (vm.getPowerState(conn) == Types.VmPowerState.RUNNING) {
+                if (vm.getPowerState(conn) == VmPowerState.RUNNING) {
                     task = null;
                     return;
                 }
@@ -3390,7 +3251,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 waitForTask(conn, task, 1000, 10 * 60 * 1000);
                 checkForSuccess(conn, task);
             } catch (TimeoutException e) {
-                if (vm.getPowerState(conn) == Types.VmPowerState.HALTED) {
+                if (vm.getPowerState(conn) == VmPowerState.HALTED) {
                     task = null;
                     return;
                 }
@@ -3399,19 +3260,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } catch (XenAPIException e) {
             s_logger.debug("Unable to cleanShutdown VM(" + vmName + ") on host(" + _host.uuid + ") due to " + e.toString());
             try {
-                Types.VmPowerState state = vm.getPowerState(conn);
-                if (state == Types.VmPowerState.RUNNING) {
+                VmPowerState state = vm.getPowerState(conn);
+                if (state == VmPowerState.RUNNING) {
                     try {
                         vm.hardShutdown(conn);
                     } catch (Exception e1) {
                         s_logger.debug("Unable to hardShutdown VM(" + vmName + ") on host(" + _host.uuid + ") due to " + e.toString());
                         state = vm.getPowerState(conn);
-                        if (state == Types.VmPowerState.RUNNING) {
+                        if (state == VmPowerState.RUNNING) {
                             forceShutdownVM(conn, vm);
                         }
                         return;
                     }
-                } else if (state == Types.VmPowerState.HALTED) {
+                } else if (state == VmPowerState.HALTED) {
                     return;
                 } else {
                     String msg = "After cleanShutdown the VM status is " + state.toString() + ", that is not expected";
@@ -3443,14 +3304,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 waitForTask(conn, task, 1000, 10 * 60 * 1000);
                 checkForSuccess(conn, task);
             } catch (Types.HandleInvalid e) {
-                if (vm.getPowerState(conn) == Types.VmPowerState.RUNNING) {
+                if (vm.getPowerState(conn) == VmPowerState.RUNNING) {
                     s_logger.debug("VM " + vmName + " is in Running status");
                     task = null;
                     return;
                 }
                 throw new CloudRuntimeException("Start VM " + vmName + " catch HandleInvalid and VM is not in RUNNING state");
             } catch (TimeoutException e) {
-                if (vm.getPowerState(conn) == Types.VmPowerState.RUNNING) {
+                if (vm.getPowerState(conn) == VmPowerState.RUNNING) {
                     s_logger.debug("VM " + vmName + " is in Running status");
                     task = null;
                     return;
@@ -3593,10 +3454,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             if (vms.size() == 0) {
-                synchronized (_cluster.intern()) {
-                    s_logger.info("VM does not exist on XenServer" + _host.uuid);
-                    s_vms.remove(_cluster, _name, vmName);
-                }
                 return new StopAnswer(cmd, "VM does not exist", true);
             }
             for (VM vm : vms) {
@@ -3620,11 +3477,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     return new StopAnswer(cmd, msg, false);
                 }
 
-                State state = s_vms.getState(_cluster, vmName);
-
-                synchronized (_cluster.intern()) {
-                    s_vms.put(_cluster, _name, vmName, State.Stopping);
-                }
                 s_logger.debug("9. The VM " + vmName + " is in Stopping state");
 
                 try {
@@ -3668,7 +3520,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                                 networks.add(vif.getNetwork(conn));
                             }
                             vm.destroy(conn);
-                            state = State.Stopped;
                             SR sr = getISOSRbyVmName(conn, cmd.getVmName());
                             removeSR(conn, sr);
                             // Disable any VLAN networks that aren't used
@@ -3688,10 +3539,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         String msg = "VM destroy failed in Stop " + vmName + " Command due to " + e.getMessage();
                         s_logger.warn(msg, e);
                     } finally {
-                        synchronized (_cluster.intern()) {
-                            s_vms.put(_cluster, _name, vmName, state);
-                        }
-                        s_logger.debug("10. The VM " + vmName + " is in " + state + " state");
+                        s_logger.debug("10. The VM " + vmName + " is in Stopped state");
                     }
                 }
             }
@@ -4317,13 +4165,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             Connection conn = getConnection();
             if (!_canBridgeFirewall && !_isOvs) {
-                return new PingRoutingCommand(getType(), id, null, getHostVmStateReport(conn));
+                return new PingRoutingCommand(getType(), id, getHostVmStateReport(conn));
             } else if (_isOvs) {
                 List<Pair<String, Long>> ovsStates = ovsFullSyncStates();
-                return new PingRoutingWithOvsCommand(getType(), id, null, getHostVmStateReport(conn), ovsStates);
+                return new PingRoutingWithOvsCommand(getType(), id, getHostVmStateReport(conn), ovsStates);
             } else {
                 HashMap<String, Pair<Long, Long>> nwGrpStates = syncNetworkGroups(conn, id);
-                return new PingRoutingWithNwGroupsCommand(getType(), id, null, getHostVmStateReport(conn), nwGrpStates);
+                return new PingRoutingWithNwGroupsCommand(getType(), id, getHostVmStateReport(conn), nwGrpStates);
             }
         } catch (Exception e) {
             s_logger.warn("Unable to get current status", e);
@@ -4581,7 +4429,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         cmd.setHypervisorType(HypervisorType.XenServer);
         cmd.setCluster(_cluster);
         cmd.setPoolSync(false);
-        cmd.setHostVmStateReport(getHostVmStateReport(conn));
 
         Pool pool;
         try {
@@ -4589,10 +4436,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Pool.Record poolr = pool.getRecord(conn);
 
             Host.Record hostr = poolr.master.getRecord(conn);
-            if (_host.uuid.equals(hostr.uuid)) {
-                HashMap<String, Pair<String, State>> allStates = fullClusterSync(conn);
-                cmd.setClusterVMStateChanges(allStates);
-            }
         } catch (Throwable e) {
             s_logger.warn("Check for master failed, failing the FULL Cluster sync command");
         }
@@ -6411,7 +6254,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String vmName = cmd.getVmName();
         String vmSnapshotName = cmd.getTarget().getSnapshotName();
         List<VolumeObjectTO> listVolumeTo = cmd.getVolumeTOs();
-        VirtualMachine.State vmState = cmd.getVmState();
+        VmPowerState vmState = VmPowerState.HALTED;
         String guestOSType = cmd.getGuestOSType();
         String platformEmulator = cmd.getPlatformEmulator();
 
@@ -6446,6 +6289,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (task == null) {
                 try {
                     vm = getVM(conn, vmName);
+                    vmState = vm.getPowerState(conn);
                 } catch (Exception e) {
                     if (!snapshotMemory) {
                         vm = createWorkingVM(conn, vmName, guestOSType, platformEmulator, listVolumeTo);
@@ -6525,7 +6369,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         vmSnapshot.destroy(conn);
                     }
                 }
-                if (vmState == VirtualMachine.State.Stopped) {
+                if (vmState == VmPowerState.HALTED) {
                     if (vm != null) {
                         vm.destroy(conn);
                     }
@@ -7191,146 +7035,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             throw new CloudRuntimeException(msg);
         }
         return vmMetaDatum;
-    }
-
-    protected HashMap<String, Pair<String, State>> fullClusterSync(Connection conn) {
-        synchronized (_cluster.intern()) {
-            s_vms.clear(_cluster);
-        }
-        try {
-            Map<VM, VM.Record> vm_map = VM.getAllRecords(conn);  //USE THIS TO GET ALL VMS FROM  A CLUSTER
-            for (VM.Record record : vm_map.values()) {
-                if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
-                    continue; // Skip DOM0
-                }
-                String vm_name = record.nameLabel;
-                VmPowerState ps = record.powerState;
-                final State state = convertToState(ps);
-                Host host = record.residentOn;
-                String host_uuid = null;
-                if (!isRefNull(host)) {
-                    host_uuid = host.getUuid(conn);
-                    synchronized (_cluster.intern()) {
-                        s_vms.put(_cluster, host_uuid, vm_name, state);
-                    }
-                }
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("VM " + vm_name + ": powerstate = " + ps + "; vm state=" + state.toString());
-                }
-            }
-        } catch (final Throwable e) {
-            String msg = "Unable to get vms through host " + _host.uuid + " due to to " + e.toString();
-            s_logger.warn(msg, e);
-            throw new CloudRuntimeException(msg);
-        }
-        return s_vms.getClusterVmState(_cluster);
-    }
-
-    protected HashMap<String, Pair<String, State>> deltaClusterSync(Connection conn) {
-        final HashMap<String, Pair<String, State>> changes = new HashMap<String, Pair<String, State>>();
-
-        synchronized (_cluster.intern()) {
-            HashMap<String, Pair<String, State>> newStates = getAllVms(conn);
-            if (newStates == null) {
-                s_logger.warn("Unable to get the vm states so no state sync at this point.");
-                return null;
-            }
-            HashMap<String, Pair<String, State>> oldStates = new HashMap<String, Pair<String, State>>(s_vms.size(_cluster));
-            oldStates.putAll(s_vms.getClusterVmState(_cluster));
-
-            for (final Map.Entry<String, Pair<String, State>> entry : newStates.entrySet()) {
-                final String vm = entry.getKey();
-                State newState = entry.getValue().second();
-                String host_uuid = entry.getValue().first();
-                final Pair<String, State> oldState = oldStates.remove(vm);
-
-                //check if host is changed
-                if (host_uuid != null && oldState != null) {
-                    if (!host_uuid.equals(oldState.first()) && newState != State.Stopped && newState != State.Stopping) {
-                        s_logger.warn("Detecting a change in host for " + vm);
-                        changes.put(vm, new Pair<String, State>(host_uuid, newState));
-
-                        s_logger.debug("11. The VM " + vm + " is in " + newState + " state");
-                        s_vms.put(_cluster, host_uuid, vm, newState);
-                        continue;
-                    }
-                }
-
-                if (newState == State.Stopped && oldState != null && oldState.second() != State.Stopping && oldState.second() != State.Stopped) {
-                    newState = getRealPowerState(conn, vm);
-                }
-
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("VM " + vm + ": xenserver has state " + newState + " and we have state " + (oldState != null ? oldState.toString() : "null"));
-                }
-
-                if (vm.startsWith("migrating")) {
-                    s_logger.warn("Migrating from xenserver detected.  Skipping");
-                    continue;
-                }
-                if (oldState == null) {
-                    s_vms.put(_cluster, host_uuid, vm, newState);
-                    s_logger.warn("Detecting a new state but couldn't find a old state so adding it to the changes: " + vm);
-                    changes.put(vm, new Pair<String, State>(host_uuid, newState));
-                } else if (oldState.second() == State.Starting) {
-                    if (newState == State.Running) {
-                        s_logger.debug("12. The VM " + vm + " is in " + State.Running + " state");
-                        s_vms.put(_cluster, host_uuid, vm, newState);
-                    } else if (newState == State.Stopped) {
-                        s_logger.warn("Ignoring vm " + vm + " because of a lag in starting the vm.");
-                    }
-                } else if (oldState.second() == State.Migrating) {
-                    if (newState == State.Running) {
-                        s_logger.debug("Detected that an migrating VM is now running: " + vm);
-                        s_vms.put(_cluster, host_uuid, vm, newState);
-                    }
-                } else if (oldState.second() == State.Stopping) {
-                    if (newState == State.Stopped) {
-                        s_logger.debug("13. The VM " + vm + " is in " + State.Stopped + " state");
-                        s_vms.put(_cluster, host_uuid, vm, newState);
-                    } else if (newState == State.Running) {
-                        s_logger.warn("Ignoring vm " + vm + " because of a lag in stopping the vm. ");
-                    }
-                } else if (oldState.second() != newState) {
-                    s_logger.debug("14. The VM " + vm + " is in " + newState + " state was " + oldState.second());
-                    s_vms.put(_cluster, host_uuid, vm, newState);
-                    if (newState == State.Stopped) {
-                        /*
-                         * if (s_vmsKilled.remove(vm)) { s_logger.debug("VM " + vm + " has been killed for storage. ");
-                         * newState = State.Error; }
-                         */
-                    }
-                    changes.put(vm, new Pair<String, State>(host_uuid, newState));
-                }
-            }
-
-            for (final Map.Entry<String, Pair<String, State>> entry : oldStates.entrySet()) {
-                final String vm = entry.getKey();
-                final State oldState = entry.getValue().second();
-                String host_uuid = entry.getValue().first();
-
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("VM " + vm + " is now missing from xenserver so reporting stopped");
-                }
-
-                if (oldState == State.Stopping) {
-                    s_logger.warn("Ignoring VM " + vm + " in transition state stopping.");
-                    s_vms.remove(_cluster, host_uuid, vm);
-                } else if (oldState == State.Starting) {
-                    s_logger.warn("Ignoring VM " + vm + " in transition state starting.");
-                } else if (oldState == State.Stopped) {
-                    s_logger.debug("VM missing " + vm + " old state stopped so removing.");
-                    s_vms.remove(_cluster, host_uuid, vm);
-                } else if (oldState == State.Migrating) {
-                    s_logger.warn("Ignoring VM " + vm + " in migrating state.");
-                } else {
-                    State newState = State.Stopped;
-                    s_logger.warn("The VM is now missing marking it as Stopped " + vm);
-                    changes.put(vm, new Pair<String, State>(host_uuid, newState));
-                }
-            }
-        }
-        return changes;
     }
 
     /**

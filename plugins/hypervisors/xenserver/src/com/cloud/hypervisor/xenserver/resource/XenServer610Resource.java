@@ -62,7 +62,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachine.State;
 
 @Local(value = ServerResource.class)
 public class XenServer610Resource extends XenServer602Resource {
@@ -143,12 +142,7 @@ public class XenServer610Resource extends XenServer602Resource {
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         Map<VolumeTO, StorageFilerTO> volumeToFiler = cmd.getVolumeToFiler();
         final String vmName = vmSpec.getName();
-        State state = s_vms.getState(_cluster, vmName);
         Task task = null;
-
-        synchronized (_cluster.intern()) {
-            s_vms.put(_cluster, _name, vmName, State.Stopping);
-        }
 
         try {
             prepareISO(connection, vmSpec.getName());
@@ -196,8 +190,6 @@ public class XenServer610Resource extends XenServer602Resource {
             // Volume paths would have changed. Return that information.
             List<VolumeObjectTO> volumeToList = getUpdatedVolumePathsOfMigratedVm(connection, vmToMigrate, vmSpec.getDisks());
             vmToMigrate.setAffinity(connection, host);
-            state = State.Stopping;
-
             return new MigrateWithStorageAnswer(cmd, volumeToList);
         } catch (Exception e) {
             s_logger.warn("Catch Exception " + e.getClass().getName() + ". Storage motion failed due to " + e.toString(), e);
@@ -209,10 +201,6 @@ public class XenServer610Resource extends XenServer602Resource {
                 } catch (Exception e) {
                     s_logger.debug("Unable to destroy task " + task.toString() + " on host " + _host.uuid + " due to " + e.toString());
                 }
-            }
-
-            synchronized (_cluster.intern()) {
-                s_vms.put(_cluster, _name, vmName, state);
             }
         }
     }
@@ -260,15 +248,9 @@ public class XenServer610Resource extends XenServer602Resource {
         Map<NicTO, Object> nicToNetwork = cmd.getNicToNetwork();
         Map<String, String> token = cmd.getToken();
         final String vmName = vmSpec.getName();
-        State state = s_vms.getState(_cluster, vmName);
         Set<VolumeTO> volumeToSet = null;
         boolean migrated = false;
         Task task = null;
-
-        synchronized (_cluster.intern()) {
-            s_vms.put(_cluster, _name, vmName, State.Stopping);
-        }
-
         try {
             Set<VM> vms = VM.getByNameLabel(connection, vmSpec.getName());
             VM vmToMigrate = vms.iterator().next();
@@ -339,15 +321,6 @@ public class XenServer610Resource extends XenServer602Resource {
                     s_logger.debug("Unable to destroy task " + task.toString() + " on host " + _host.uuid + " due to " + e.toString());
                 }
             }
-
-            // Keep cluster/vm sync happy.
-            synchronized (_cluster.intern()) {
-                if (migrated) {
-                    s_vms.remove(_cluster, _name, vmName);
-                } else {
-                    s_vms.put(_cluster, _name, vmName, state);
-                }
-            }
         }
     }
 
@@ -368,10 +341,6 @@ public class XenServer610Resource extends XenServer602Resource {
             // Volume paths would have changed. Return that information.
             List<VolumeObjectTO> volumeToSet = getUpdatedVolumePathsOfMigratedVm(connection, migratedVm, vmSpec.getDisks());
             migratedVm.setAffinity(connection, host);
-
-            synchronized (_cluster.intern()) {
-                s_vms.put(_cluster, _name, vmSpec.getName(), State.Running);
-            }
 
             return new MigrateWithStorageCompleteAnswer(cmd, volumeToSet);
         } catch (CloudRuntimeException e) {

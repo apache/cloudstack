@@ -68,6 +68,7 @@ import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainBlockStats;
 import org.libvirt.DomainInfo;
+import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
@@ -268,7 +269,6 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.cloud.vm.VirtualMachine.State;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -461,31 +461,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _cmdsTimeout;
     protected int _stopTimeout;
 
-    // TODO vmsync {
-    protected static final HashMap<DomainInfo.DomainState, State> s_statesTable;
+    protected static final HashMap<DomainState, PowerState> s_powerStatesTable;
     static {
-        s_statesTable = new HashMap<DomainInfo.DomainState, State>();
-        s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF, State.Stopped);
-        s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_PAUSED, State.Running);
-        s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_RUNNING, State.Running);
-        s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_BLOCKED, State.Running);
-        s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_NOSTATE, State.Unknown);
-        s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_SHUTDOWN, State.Stopping);
-    }
-    // TODO vmsync }
-
-    protected static final HashMap<DomainInfo.DomainState, PowerState> s_powerStatesTable;
-    static {
-        s_powerStatesTable = new HashMap<DomainInfo.DomainState, PowerState>();
-        s_powerStatesTable.put(DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF, PowerState.PowerOff);
-        s_powerStatesTable.put(DomainInfo.DomainState.VIR_DOMAIN_PAUSED, PowerState.PowerOn);
-        s_powerStatesTable.put(DomainInfo.DomainState.VIR_DOMAIN_RUNNING, PowerState.PowerOn);
-        s_powerStatesTable.put(DomainInfo.DomainState.VIR_DOMAIN_BLOCKED, PowerState.PowerOn);
-        s_powerStatesTable.put(DomainInfo.DomainState.VIR_DOMAIN_NOSTATE, PowerState.PowerUnknown);
-        s_powerStatesTable.put(DomainInfo.DomainState.VIR_DOMAIN_SHUTDOWN, PowerState.PowerOff);
+        s_powerStatesTable = new HashMap<DomainState, PowerState>();
+        s_powerStatesTable.put(DomainState.VIR_DOMAIN_SHUTOFF, PowerState.PowerOff);
+        s_powerStatesTable.put(DomainState.VIR_DOMAIN_PAUSED, PowerState.PowerOn);
+        s_powerStatesTable.put(DomainState.VIR_DOMAIN_RUNNING, PowerState.PowerOn);
+        s_powerStatesTable.put(DomainState.VIR_DOMAIN_BLOCKED, PowerState.PowerOn);
+        s_powerStatesTable.put(DomainState.VIR_DOMAIN_NOSTATE, PowerState.PowerUnknown);
+        s_powerStatesTable.put(DomainState.VIR_DOMAIN_SHUTDOWN, PowerState.PowerOff);
     }
 
-    protected HashMap<String, State> _vms = new HashMap<String, State>(20);
     protected List<String> _vmsKilled = new ArrayList<String>();
 
     private VirtualRoutingResource _virtRouterResource;
@@ -2335,7 +2321,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String vmName = cmd.getVmName();
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
-            DomainInfo.DomainState state = null;
+            DomainState state = null;
             Domain vm = null;
             if (vmName != null) {
                 try {
@@ -2349,7 +2335,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             KVMStoragePool primaryPool = _storagePoolMgr.getStoragePool(cmd.getPool().getType(), cmd.getPool().getUuid());
 
             KVMPhysicalDisk disk = primaryPool.getPhysicalDisk(cmd.getVolumePath());
-            if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryPool.isExternalSnapshot()) {
+            if (state == DomainState.VIR_DOMAIN_RUNNING && !primaryPool.isExternalSnapshot()) {
                 String vmUuid = vm.getUUIDString();
                 Object[] args = new Object[] {snapshotName, vmUuid};
                 String snapshot = SnapshotXML.format(args);
@@ -2367,7 +2353,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                  */
                 vm = getDomain(conn, cmd.getVmName());
                 state = vm.getInfo().state;
-                if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
+                if (state == DomainState.VIR_DOMAIN_PAUSED) {
                     vm.resume();
                 }
             } else {
@@ -2525,7 +2511,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
             /* Delete the snapshot on primary */
 
-            DomainInfo.DomainState state = null;
+            DomainState state = null;
             Domain vm = null;
             if (vmName != null) {
                 try {
@@ -2537,7 +2523,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
 
             KVMStoragePool primaryStorage = _storagePoolMgr.getStoragePool(cmd.getPool().getType(), cmd.getPool().getUuid());
-            if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryStorage.isExternalSnapshot()) {
+            if (state == DomainState.VIR_DOMAIN_RUNNING && !primaryStorage.isExternalSnapshot()) {
                 String vmUuid = vm.getUUIDString();
                 Object[] args = new Object[] {snapshotName, vmUuid};
                 String snapshot = SnapshotXML.format(args);
@@ -2551,7 +2537,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                  */
                 vm = getDomain(conn, cmd.getVmName());
                 state = vm.getInfo().state;
-                if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
+                if (state == DomainState.VIR_DOMAIN_PAUSED) {
                     vm.resume();
                 }
             } else {
@@ -2965,23 +2951,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new ReadyAnswer(cmd);
     }
 
-    protected State convertToState(DomainInfo.DomainState ps) {
-        final State state = s_statesTable.get(ps);
-        return state == null ? State.Unknown : state;
-    }
-
-    protected PowerState convertToPowerState(DomainInfo.DomainState ps) {
+    protected PowerState convertToPowerState(DomainState ps) {
         final PowerState state = s_powerStatesTable.get(ps);
         return state == null ? PowerState.PowerUnknown : state;
     }
 
-    protected State getVmState(Connect conn, final String vmName) {
+    protected PowerState getVmState(Connect conn, final String vmName) {
         int retry = 3;
         Domain vms = null;
         while (retry-- > 0) {
             try {
                 vms = conn.domainLookupByName(vmName);
-                State s = convertToState(vms.getInfo().state);
+                PowerState s = convertToPowerState(vms.getInfo().state);
                 return s;
             } catch (final LibvirtException e) {
                 s_logger.warn("Can't get vm state " + vmName + e.getMessage() + "retry:" + retry);
@@ -2995,20 +2976,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
         }
-        return State.Stopped;
+        return PowerState.PowerOff;
     }
 
     private Answer execute(CheckVirtualMachineCommand cmd) {
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            final State state = getVmState(conn, cmd.getVmName());
+            final PowerState state = getVmState(conn, cmd.getVmName());
             Integer vncPort = null;
-            if (state == State.Running) {
+            if (state == PowerState.PowerOn) {
                 vncPort = getVncPort(conn, cmd.getVmName());
-
-                synchronized (_vms) {
-                    _vms.put(cmd.getVmName(), State.Running);
-                }
             }
 
             return new CheckVirtualMachineAnswer(cmd, state, vncPort);
@@ -3055,12 +3032,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private Answer execute(MigrateCommand cmd) {
         String vmName = cmd.getVmName();
 
-        State state = null;
         String result = null;
-        synchronized (_vms) {
-            state = _vms.get(vmName);
-            _vms.put(vmName, State.Stopping);
-        }
 
         List<InterfaceDef> ifaces = null;
         List<DiskDef> disks = null;
@@ -3119,7 +3091,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
 
                 // pause vm if we meet the vm.migrate.pauseafter threshold and not already paused
-                if (_migratePauseAfter > 0 && sleeptime > _migratePauseAfter && dm.getInfo().state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING ) {
+                if (_migratePauseAfter > 0 && sleeptime > _migratePauseAfter && dm.getInfo().state == DomainState.VIR_DOMAIN_RUNNING ) {
                     s_logger.info("Pausing VM " + vmName + " due to property vm.migrate.pauseafter setting to " + _migratePauseAfter+ "ms to complete migration");
                     try {
                         dm.suspend();
@@ -3170,9 +3142,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (result != null) {
-            synchronized (_vms) {
-                _vms.put(vmName, state);
-            }
         } else {
             destroy_network_rules_for_vm(conn, vmName);
             for (InterfaceDef iface : ifaces) {
@@ -3241,10 +3210,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (!_storagePoolMgr.connectPhysicalDisksViaVmSpec(vm)) {
                 skipDisconnect = true;
                 return new PrepareForMigrationAnswer(cmd, "failed to connect physical disks to host");
-            }
-
-            synchronized (_vms) {
-                _vms.put(vm.getName(), State.Migrating);
             }
 
             skipDisconnect = true;
@@ -3419,10 +3384,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private Answer execute(RebootCommand cmd) {
 
-        synchronized (_vms) {
-            _vms.put(cmd.getVmName(), State.Starting);
-        }
-
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             final String result = rebootVM(conn, cmd.getVmName());
@@ -3440,10 +3401,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         } catch (LibvirtException e) {
             return new RebootAnswer(cmd, e.getMessage(), false);
-        } finally {
-            synchronized (_vms) {
-                _vms.put(cmd.getVmName(), State.Running);
-            }
         }
     }
 
@@ -3504,7 +3461,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             try {
                 Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
                 Domain vm = conn.domainLookupByName(cmd.getVmName());
-                if (vm != null && vm.getInfo().state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING) {
+                if (vm != null && vm.getInfo().state == DomainState.VIR_DOMAIN_RUNNING) {
                     return new StopAnswer(cmd, "vm is still running on host", false);
                 }
             } catch (Exception e) {
@@ -3512,11 +3469,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        State state = null;
-        synchronized (_vms) {
-            state = _vms.get(vmName);
-            _vms.put(vmName, State.Stopping);
-        }
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
 
@@ -3538,18 +3490,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
 
-            state = State.Stopped;
             return new StopAnswer(cmd, result, true);
         } catch (LibvirtException e) {
             return new StopAnswer(cmd, e.getMessage(), false);
-        } finally {
-            synchronized (_vms) {
-                if (state != null) {
-                    _vms.put(vmName, state);
-                } else {
-                    _vms.remove(vmName);
-                }
-            }
         }
     }
 
@@ -3799,13 +3742,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String vmName = vmSpec.getName();
         LibvirtVMDef vm = null;
 
-        State state = State.Stopped;
+        DomainState  state = DomainState.VIR_DOMAIN_SHUTOFF;
         Connect conn = null;
         try {
-            synchronized (_vms) {
-                _vms.put(vmName, State.Starting);
-            }
-
             NicTO[] nics = vmSpec.getNics();
 
             for (NicTO nic : nics) {
@@ -3874,7 +3813,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
 
-            state = State.Running;
+            state = DomainState.VIR_DOMAIN_RUNNING;
             return new StartAnswer(cmd);
         } catch (LibvirtException e) {
             s_logger.warn("LibvirtException ", e);
@@ -3895,14 +3834,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
             return new StartAnswer(cmd, e.getMessage());
         } finally {
-            synchronized (_vms) {
-                if (state != State.Stopped) {
-                    _vms.put(vmName, state);
-                } else {
-                    _vms.remove(vmName);
-                }
-            }
-            if (state != State.Running) {
+            if (state != DomainState.VIR_DOMAIN_RUNNING) {
                 _storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vmSpec);
             }
         }
@@ -4221,13 +4153,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-        final HashMap<String, State> newStates = sync();
 
         if (!_canBridgeFirewall) {
-            return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, newStates, this.getHostVmStateReport());
+            return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, this.getHostVmStateReport());
         } else {
             HashMap<String, Pair<Long, Long>> nwGrpStates = syncNetworkGroups(id);
-            return new PingRoutingWithNwGroupsCommand(getType(), id, newStates, this.getHostVmStateReport(), nwGrpStates);
+            return new PingRoutingWithNwGroupsCommand(getType(), id, this.getHostVmStateReport(), nwGrpStates);
         }
     }
 
@@ -4249,19 +4180,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     @Override
     public StartupCommand[] initialize() {
-        Map<String, State> changes = null;
-
-        synchronized (_vms) {
-            _vms.clear();
-            changes = sync();
-        }
 
         final List<Object> info = getHostInfo();
 
         final StartupRoutingCommand cmd =
                 new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), _hypervisorType,
                         RouterPrivateIpStrategy.HostLocal);
-        cmd.setStateChanges(changes);
         cmd.setCpuSockets((Integer)info.get(5));
         fillNetworkInformation(cmd);
         _privateIp = cmd.getPrivateIpAddress();
@@ -4269,7 +4193,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setPool(_pool);
         cmd.setCluster(_clusterId);
         cmd.setGatewayIpAddress(_localGateway);
-        cmd.setHostVmStateReport(getHostVmStateReport());
         cmd.setIqn(getIqn());
 
         StartupStorageCommand sscmd = null;
@@ -4322,138 +4245,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    protected HashMap<String, State> sync() {
-        HashMap<String, State> newStates;
-        HashMap<String, State> oldStates = null;
-
-        final HashMap<String, State> changes = new HashMap<String, State>();
-
-        synchronized (_vms) {
-            newStates = getAllVms();
-            if (newStates == null) {
-                s_logger.debug("Unable to get the vm states so no state sync at this point.");
-                return changes;
-            }
-
-            oldStates = new HashMap<String, State>(_vms.size());
-            oldStates.putAll(_vms);
-
-            for (final Map.Entry<String, State> entry : newStates.entrySet()) {
-                final String vm = entry.getKey();
-
-                State newState = entry.getValue();
-                final State oldState = oldStates.remove(vm);
-
-                if (newState == State.Stopped && oldState != State.Stopping && oldState != null && oldState != State.Stopped) {
-                    newState = getRealPowerState(vm);
-                }
-
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("VM " + vm + ": libvirt has state " + newState + " and we have state " + (oldState != null ? oldState.toString() : "null"));
-                }
-
-                if (vm.startsWith("migrating")) {
-                    s_logger.debug("Migration detected.  Skipping");
-                    continue;
-                }
-                if (oldState == null) {
-                    _vms.put(vm, newState);
-                    s_logger.debug("Detecting a new state but couldn't find a old state so adding it to the changes: " + vm);
-                    changes.put(vm, newState);
-                } else if (oldState == State.Starting) {
-                    if (newState == State.Running) {
-                        _vms.put(vm, newState);
-                    } else if (newState == State.Stopped) {
-                        s_logger.debug("Ignoring vm " + vm + " because of a lag in starting the vm.");
-                    }
-                } else if (oldState == State.Migrating) {
-                    if (newState == State.Running) {
-                        s_logger.debug("Detected that an migrating VM is now running: " + vm);
-                        _vms.put(vm, newState);
-                    }
-                } else if (oldState == State.Stopping) {
-                    if (newState == State.Stopped) {
-                        _vms.put(vm, newState);
-                    } else if (newState == State.Running) {
-                        s_logger.debug("Ignoring vm " + vm + " because of a lag in stopping the vm. ");
-                    }
-                } else if (oldState != newState) {
-                    _vms.put(vm, newState);
-                    if (newState == State.Stopped) {
-                        if (_vmsKilled.remove(vm)) {
-                            s_logger.debug("VM " + vm + " has been killed for storage. ");
-                            newState = State.Error;
-                        }
-                    }
-                    changes.put(vm, newState);
-                }
-            }
-
-            for (final Map.Entry<String, State> entry : oldStates.entrySet()) {
-                final String vm = entry.getKey();
-                final State oldState = entry.getValue();
-
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("VM " + vm + " is now missing from libvirt so reporting stopped");
-                }
-
-                if (oldState == State.Stopping) {
-                    s_logger.debug("Ignoring VM " + vm + " in transition state stopping.");
-                    _vms.remove(vm);
-                } else if (oldState == State.Starting) {
-                    s_logger.debug("Ignoring VM " + vm + " in transition state starting.");
-                } else if (oldState == State.Stopped) {
-                    _vms.remove(vm);
-                } else if (oldState == State.Migrating) {
-                    s_logger.debug("Ignoring VM " + vm + " in migrating state.");
-                } else {
-                    _vms.remove(vm);
-                    State state = State.Stopped;
-                    if (_vmsKilled.remove(entry.getKey())) {
-                        s_logger.debug("VM " + vm + " has been killed by storage monitor");
-                        state = State.Error;
-                    }
-                    changes.put(entry.getKey(), state);
-                }
-            }
-        }
-
-        return changes;
-    }
-
-    protected State getRealPowerState(String vm) {
-        int i = 0;
-        s_logger.trace("Checking on the HALTED State");
-        Domain dm = null;
-        for (; i < 5; i++) {
-            try {
-                Connect conn = LibvirtConnection.getConnectionByVmName(vm);
-                dm = conn.domainLookupByName(vm);
-                DomainInfo.DomainState vps = dm.getInfo().state;
-                if (vps != null && vps != DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF && vps != DomainInfo.DomainState.VIR_DOMAIN_NOSTATE) {
-                    return convertToState(vps);
-                }
-            } catch (final LibvirtException e) {
-                s_logger.trace("Ignoring libvirt error.", e);
-            } finally {
-                try {
-                    if (dm != null) {
-                        dm.free();
-                    }
-                } catch (final LibvirtException l) {
-                    s_logger.trace("Ignoring libvirt error.", l);
-                }
-            }
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                s_logger.trace("Ignoring InterruptedException.", e);
-            }
-        }
-        return State.Stopped;
-    }
-
     protected List<String> getAllVmNames(Connect conn) {
         ArrayList<String> la = new ArrayList<String>();
         try {
@@ -4492,104 +4283,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return la;
-    }
-
-    private HashMap<String, State> getAllVms() {
-        final HashMap<String, State> vmStates = new HashMap<String, State>();
-        Connect conn = null;
-
-        if (_hypervisorType == HypervisorType.LXC) {
-            try {
-                conn = LibvirtConnection.getConnectionByType(HypervisorType.LXC.toString());
-                vmStates.putAll(getAllVms(conn));
-                conn = LibvirtConnection.getConnectionByType(HypervisorType.KVM.toString());
-                vmStates.putAll(getAllVms(conn));
-            } catch (LibvirtException e) {
-                s_logger.debug("Failed to get connection: " + e.getMessage());
-            }
-        }
-
-        if (_hypervisorType == HypervisorType.KVM) {
-            try {
-                conn = LibvirtConnection.getConnectionByType(HypervisorType.KVM.toString());
-                vmStates.putAll(getAllVms(conn));
-            } catch (LibvirtException e) {
-                s_logger.debug("Failed to get connection: " + e.getMessage());
-            }
-        }
-
-        return vmStates;
-    }
-
-    private HashMap<String, State> getAllVms(Connect conn) {
-        final HashMap<String, State> vmStates = new HashMap<String, State>();
-
-        String[] vms = null;
-        int[] ids = null;
-
-        try {
-            ids = conn.listDomains();
-        } catch (final LibvirtException e) {
-            s_logger.warn("Unable to listDomains", e);
-            return null;
-        }
-        try {
-            vms = conn.listDefinedDomains();
-        } catch (final LibvirtException e) {
-            s_logger.warn("Unable to listDomains", e);
-            return null;
-        }
-
-        Domain dm = null;
-        for (int i = 0; i < ids.length; i++) {
-            try {
-                dm = conn.domainLookupByID(ids[i]);
-
-                DomainInfo.DomainState ps = dm.getInfo().state;
-
-                final State state = convertToState(ps);
-
-                s_logger.trace("VM " + dm.getName() + ": powerstate = " + ps + "; vm state=" + state.toString());
-                String vmName = dm.getName();
-                vmStates.put(vmName, state);
-            } catch (final LibvirtException e) {
-                s_logger.warn("Unable to get vms", e);
-            } finally {
-                try {
-                    if (dm != null) {
-                        dm.free();
-                    }
-                } catch (LibvirtException e) {
-                    s_logger.trace("Ignoring libvirt error.", e);
-                }
-            }
-        }
-
-        for (int i = 0; i < vms.length; i++) {
-            try {
-
-                dm = conn.domainLookupByName(vms[i]);
-
-                DomainInfo.DomainState ps = dm.getInfo().state;
-                final State state = convertToState(ps);
-                String vmName = dm.getName();
-                s_logger.trace("VM " + vmName + ": powerstate = " + ps + "; vm state=" + state.toString());
-
-                vmStates.put(vmName, state);
-            } catch (final LibvirtException e) {
-                s_logger.warn("Unable to get vms", e);
-            } finally {
-                try {
-                    if (dm != null) {
-                        dm.free();
-                    }
-                } catch (LibvirtException e) {
-                    s_logger.trace("Ignoring libvirt error.", e);
-                }
-            }
-        }
-
-        return vmStates;
     }
 
     private HashMap<String, HostVmStateReportEntry> getHostVmStateReport() {
@@ -4643,7 +4336,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             try {
                 dm = conn.domainLookupByID(ids[i]);
 
-                DomainInfo.DomainState ps = dm.getInfo().state;
+                DomainState ps = dm.getInfo().state;
 
                 final PowerState state = convertToPowerState(ps);
 
@@ -4674,7 +4367,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
                 dm = conn.domainLookupByName(vms[i]);
 
-                DomainInfo.DomainState ps = dm.getInfo().state;
+                DomainState ps = dm.getInfo().state;
                 final PowerState state = convertToPowerState(ps);
                 String vmName = dm.getName();
                 s_logger.trace("VM " + vmName + ": powerstate = " + ps + "; vm state=" + state.toString());
@@ -4807,7 +4500,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected String stopVM(Connect conn, String vmName) {
-        DomainInfo.DomainState state = null;
+        DomainState state = null;
         Domain dm = null;
 
         s_logger.debug("Try to stop the vm at first");
@@ -4844,7 +4537,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return null;
             }
 
-            if (state != DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF) {
+            if (state != DomainState.VIR_DOMAIN_SHUTOFF) {
                 s_logger.debug("Try to destroy the vm");
                 ret = stopVM(conn, vmName, true);
                 if (ret != null) {
