@@ -125,6 +125,8 @@ public class RouterDeploymentDefinitionBuilder {
         routerDeploymentDefinition.ipAddressDao = ipAddressDao;
         routerDeploymentDefinition.offeringId = offeringId;
 
+        routerDeploymentDefinition.nwHelper = nwHelper;
+
         if (routerDeploymentDefinition instanceof VpcRouterDeploymentDefinition) {
             injectVpcDependencies((VpcRouterDeploymentDefinition) routerDeploymentDefinition);
         }
@@ -139,6 +141,7 @@ public class RouterDeploymentDefinitionBuilder {
         routerDeploymentDefinition.pNtwkDao = pNtwkDao;
         routerDeploymentDefinition.vpcMgr = vpcMgr;
         routerDeploymentDefinition.vlanDao = vlanDao;
+        routerDeploymentDefinition.vpcHelper = vpcHelper;
     }
 
     public class IntermediateStateBuilder {
@@ -203,5 +206,4 @@ public class RouterDeploymentDefinitionBuilder {
             return builder.injectDependencies(routerDeploymentDefinition);
         }
     }
-
 }
