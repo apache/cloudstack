@@ -17,7 +17,6 @@
 package org.cloud.network.router.deployment;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +42,6 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
-import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider;
@@ -56,11 +53,8 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.router.NetworkGeneralHelper;
-import com.cloud.network.router.VirtualNwStatus;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.network.router.VpcVirtualNetworkHelperImpl;
 import com.cloud.network.vpc.Vpc;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -69,11 +63,8 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile.Param;
@@ -103,8 +94,6 @@ public class RouterDeploymentDefinition {
 
     @Inject
     protected NetworkGeneralHelper nwHelper;
-    @Inject
-    protected VpcVirtualNetworkHelperImpl vpcHelper;
 
 
     protected Network guestNetwork;
@@ -116,7 +105,7 @@ public class RouterDeploymentDefinition {
     protected List<DomainRouterVO> routers = new ArrayList<>();
     protected Long offeringId;
     protected Long tableLockId;
-    protected boolean publicNetwork;
+    protected boolean isPublicNetwork;
     protected PublicIp sourceNatIp;
 
     protected RouterDeploymentDefinition(final Network guestNetwork, final DeployDestination dest,
@@ -173,6 +162,14 @@ public class RouterDeploymentDefinition {
 
     public boolean isBasic() {
         return this.dest.getDataCenter().getNetworkType() == NetworkType.Basic;
+    }
+
+    public boolean isPublicNetwork() {
+        return this.isPublicNetwork;
+    }
+
+    public PublicIp getSourceNatIP() {
+        return this.sourceNatIp;
     }
 
     protected void generateDeploymentPlan() {
@@ -325,10 +322,10 @@ public class RouterDeploymentDefinition {
             }
 
             // Check if public network has to be set on VR
-            this.publicNetwork = networkModel.isProviderSupportServiceInNetwork(
+            this.isPublicNetwork = networkModel.isProviderSupportServiceInNetwork(
                             guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter);
 
-            if (this.isRedundant && !this.publicNetwork) {
+            if (this.isRedundant && !this.isPublicNetwork) {
                 // TODO Shouldn't be this throw an exception instead of log error and empty list of routers
                 logger.error("Didn't support redundant virtual router without public network!");
                 this.routers = new ArrayList<>();
@@ -343,7 +340,7 @@ public class RouterDeploymentDefinition {
 
     protected void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         this.sourceNatIp = null;
-        if (this.publicNetwork) {
+        if (this.isPublicNetwork) {
             this.sourceNatIp = this.ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(
                     this.owner,this.guestNetwork);
         }
@@ -383,7 +380,7 @@ public class RouterDeploymentDefinition {
         int routersToDeploy = this.getNumberOfRoutersToDeploy();
         for(int i = 0; i < routersToDeploy; i++) {
             LinkedHashMap<Network, List<? extends NicProfile>> networks =
-                    createRouterNetworks();
+                    this.nwHelper.createRouterNetworks(this);
             //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
             DomainRouterVO router = nwHelper.deployRouter(this, networks, false, null);
 
@@ -461,117 +458,6 @@ public class RouterDeploymentDefinition {
                     routerDao.update(router.getId(), router);
                 }
             }
-    }
-
-    protected LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks()
-                    throws ConcurrentOperationException, InsufficientAddressCapacityException {
-
-        //Form networks
-        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
-        //1) Guest network
-        boolean hasGuestNetwork = false;
-        if (this.guestNetwork != null) {
-            logger.debug("Adding nic for Virtual Router in Guest network " + this.guestNetwork);
-            String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
-            if (!this.publicNetwork) {
-                final Nic placeholder = networkModel.getPlaceholderNicForRouter(this.guestNetwork, this.getPodId());
-                if (this.guestNetwork.getCidr() != null) {
-                    if (placeholder != null && placeholder.getIp4Address() != null) {
-                        logger.debug("Requesting ipv4 address " + placeholder.getIp4Address() + " stored in placeholder nic for the network " + this.guestNetwork);
-                        defaultNetworkStartIp = placeholder.getIp4Address();
-                    } else {
-                        final String startIp = networkModel.getStartIpAddress(this.guestNetwork.getId());
-                        if (startIp != null && ipAddressDao.findByIpAndSourceNetworkId(this.guestNetwork.getId(), startIp).getAllocatedTime() == null) {
-                            defaultNetworkStartIp = startIp;
-                        } else if (logger.isDebugEnabled()) {
-                            logger.debug("First ipv4 " + startIp + " in network id=" + this.guestNetwork.getId() +
-                                    " is already allocated, can't use it for domain router; will get random ip address from the range");
-                        }
-                    }
-                }
-
-                if (this.guestNetwork.getIp6Cidr() != null) {
-                    if (placeholder != null && placeholder.getIp6Address() != null) {
-                        logger.debug("Requesting ipv6 address " + placeholder.getIp6Address() + " stored in placeholder nic for the network " + this.guestNetwork);
-                        defaultNetworkStartIpv6 = placeholder.getIp6Address();
-                    } else {
-                        final String startIpv6 = networkModel.getStartIpv6Address(this.guestNetwork.getId());
-                        if (startIpv6 != null && ipv6Dao.findByNetworkIdAndIp(this.guestNetwork.getId(), startIpv6) == null) {
-                            defaultNetworkStartIpv6 = startIpv6;
-                        } else if (logger.isDebugEnabled()) {
-                            logger.debug("First ipv6 " + startIpv6 + " in network id=" + this.guestNetwork.getId() +
-                                    " is already allocated, can't use it for domain router; will get random ipv6 address from the range");
-                        }
-                    }
-                }
-            }
-
-            final NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, defaultNetworkStartIpv6);
-            if (this.publicNetwork) {
-                if (this.isRedundant) {
-                    gatewayNic.setIp4Address(ipAddrMgr.acquireGuestIpAddress(this.guestNetwork, null));
-                } else {
-                    gatewayNic.setIp4Address(this.guestNetwork.getGateway());
-                }
-                gatewayNic.setBroadcastUri(this.guestNetwork.getBroadcastUri());
-                gatewayNic.setBroadcastType(this.guestNetwork.getBroadcastDomainType());
-                gatewayNic.setIsolationUri(this.guestNetwork.getBroadcastUri());
-                gatewayNic.setMode(this.guestNetwork.getMode());
-                final String gatewayCidr = this.guestNetwork.getCidr();
-                gatewayNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
-            } else {
-                gatewayNic.setDefaultNic(true);
-            }
-
-            networks.put(this.guestNetwork, new ArrayList<NicProfile>(Arrays.asList(gatewayNic)));
-            hasGuestNetwork = true;
-        }
-
-        //2) Control network
-        logger.debug("Adding nic for Virtual Router in Control network ");
-        List<? extends NetworkOffering> offerings = networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
-        NetworkOffering controlOffering = offerings.get(0);
-        Network controlConfig = networkMgr.setupNetwork(VirtualNwStatus.account, controlOffering, this.plan,
-                null, null, false).get(0);
-        networks.put(controlConfig, new ArrayList<NicProfile>());
-        //3) Public network
-        if (publicNetwork) {
-            logger.debug("Adding nic for Virtual Router in Public network ");
-            //if source nat service is supported by the network, get the source nat ip address
-            final NicProfile defaultNic = new NicProfile();
-            defaultNic.setDefaultNic(true);
-            defaultNic.setIp4Address(this.sourceNatIp.getAddress().addr());
-            defaultNic.setGateway(this.sourceNatIp.getGateway());
-            defaultNic.setNetmask(this.sourceNatIp.getNetmask());
-            defaultNic.setMacAddress(this.sourceNatIp.getMacAddress());
-            // get broadcast from public network
-            final Network pubNet = networkDao.findById(sourceNatIp.getNetworkId());
-            if (pubNet.getBroadcastDomainType() == BroadcastDomainType.Vxlan) {
-                defaultNic.setBroadcastType(BroadcastDomainType.Vxlan);
-                defaultNic.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(this.sourceNatIp.getVlanTag()));
-                defaultNic.setIsolationUri(BroadcastDomainType.Vxlan.toUri(this.sourceNatIp.getVlanTag()));
-            } else {
-                defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-                defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(this.sourceNatIp.getVlanTag()));
-                defaultNic.setIsolationUri(IsolationType.Vlan.toUri(this.sourceNatIp.getVlanTag()));
-            }
-            if (hasGuestNetwork) {
-                defaultNic.setDeviceId(2);
-            }
-            final NetworkOffering publicOffering = networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
-            final List<? extends Network> publicNetworks = networkMgr.setupNetwork(VirtualNwStatus.account, publicOffering,
-                    this.plan, null, null, false);
-            final String publicIp = defaultNic.getIp4Address();
-            // We want to use the identical MAC address for RvR on public interface if possible
-            final NicVO peerNic = nicDao.findByIp4AddressAndNetworkId(publicIp, publicNetworks.get(0).getId());
-            if (peerNic != null) {
-                logger.info("Use same MAC as previous RvR, the MAC is " + peerNic.getMacAddress());
-                defaultNic.setMacAddress(peerNic.getMacAddress());
-            }
-            networks.put(publicNetworks.get(0), new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
-        }
-
-        return networks;
     }
 
 }
