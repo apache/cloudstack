@@ -843,7 +843,7 @@ class TestRVRInternals(cloudstackTestCase):
         self.debug(master_router.linklocalip)
 
         # Check eth2 port for master router
-        if self.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
             result = get_process_status(
                                 self.apiclient.connection.mgtSvr,
                                 22,
@@ -879,7 +879,7 @@ class TestRVRInternals(cloudstackTestCase):
                          )
 
         # Check eth2 port for backup router
-        if self.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
             result = get_process_status(
                                 self.apiclient.connection.mgtSvr,
                                 22,

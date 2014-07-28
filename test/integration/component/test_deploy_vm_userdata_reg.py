@@ -179,7 +179,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         host.passwd="password"
         cmd="cat /var/www/html/userdata/"+deployVmResponse.ipaddress+"/user-data"
 
-        if self.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
 
             try:
                 result = get_process_status(

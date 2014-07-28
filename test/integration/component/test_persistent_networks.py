@@ -131,8 +131,8 @@ class TestPersistentNetworks(cloudstackTestCase):
 
         hypervisor = str(get_hypervisor_type(self.api_client))
 
-        if hypervisor.lower() == 'vmware':
-            #SSH is done via management server for Vmware
+        if hypervisor.lower() in ('vmware', 'hyperv'):
+            #SSH is done via management server for Vmware and Hyper-V
             sourceip = self.api_client.connection.mgtSvr
         else:
             #For others, we will have to get the ipaddress of host connected to vm
@@ -1410,8 +1410,8 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
 
         hypervisor = str(get_hypervisor_type(self.api_client))
 
-        if hypervisor.lower() == 'vmware':
-            #SSH is done via management server for Vmware
+        if hypervisor.lower() in ('vmware', 'hyperv'):
+            #SSH is done via management server for Vmware and Hyper-V
             sourceip = self.api_client.connection.mgtSvr
         else:
             #For others, we will have to get the ipaddress of host connected to vm
