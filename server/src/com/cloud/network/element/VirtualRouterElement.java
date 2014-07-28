@@ -172,7 +172,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     NetworkTopologyContext networkTopologyContext;
 
     @Inject
-    private RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
+    protected RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
 
     protected boolean canHandle(final Network network, final Service service) {
         Long physicalNetworkId = _networkMdl.getPhysicalNetworkId(network);

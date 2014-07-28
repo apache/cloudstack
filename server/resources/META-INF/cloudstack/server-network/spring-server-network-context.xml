@@ -61,4 +61,8 @@
         <property name="name" value="VirtualRouter" />
     </bean>
 
+    <bean id="RouterDeploymentDefinitionBuilder" class="org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder">
+        <property name="name" value="RouterDeploymentDefinitionBuilder" />
+    </bean>
+
 </beans>
