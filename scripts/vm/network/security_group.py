@@ -937,7 +937,10 @@ def getvmId(vmName):
 
     conn.close()
 
-    return dom.ID()
+    res = dom.ID()
+    if isinstance(res, int):
+        res = str(res)
+    return res
 
 def getBrfw(brname):
     cmd = "iptables-save |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' | grep -w " + brname  + "|awk '{print $9}' | head -1"
