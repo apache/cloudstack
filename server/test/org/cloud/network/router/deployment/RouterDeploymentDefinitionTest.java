@@ -35,133 +35,53 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Pod;
-import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
-import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.element.VirtualRouterProviderVO;
-import com.cloud.network.router.NetworkGeneralHelper;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfile.Param;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
-public class RouterDeploymentDefinitionTest {
+public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTestBase {
 
-    private static final long OFFERING_ID = 16L;
-    private static final String NUMBER_OF_ROUTERS_TO_DEPLOY_IS_NOT_THE_EXPECTED = "Number of routers to deploy is not the expected";
-    private static final String ONLY_THE_PROVIDED_AS_DEFAULT_DESTINATION_WAS_EXPECTED = "Only the provided as default destination was expected";
-    protected static final Long DATA_CENTER_ID = 100l;
-    protected static final Long NW_ID = 102l;
-    protected static final Long POD_ID1 = 111l;
-    protected static final Long POD_ID2 = 112l;
-    protected static final Long POD_ID3 = 113l;
-    protected static final Long ROUTER1_ID = 121l;
-    protected static final Long ROUTER2_ID = 122l;
-    private static final long PROVIDER_ID = 131L;
-    private static final long PHYSICAL_NW_ID = 141L;
-
-    // General delegates (Daos, Mgrs...)
-    @Mock
-    protected NetworkDao mockNwDao;
-
-    // Instance specific parameters to use during build
-    @Mock
-    protected DeployDestination mockDestination;
-    @Mock
-    protected DataCenter mockDataCenter;
-    @Mock
-    protected Pod mockPod;
-    @Mock
-    protected HostPodVO mockHostPodVO1;
-    @Mock
-    protected HostPodVO mockHostPodVO2;
-    @Mock
-    protected HostPodVO mockHostPodVO3;
     @Mock
     protected NetworkVO mockNw;
-    @Mock
-    NetworkOfferingVO mockNwOfferingVO;
-    @Mock
-    protected Account mockOwner;
-    @Mock
-    protected DomainRouterDao mockRouterDao;
-    @Mock
-    protected NetworkGeneralHelper mockNetworkGeneralHelper;
-    @Mock
-    protected VMInstanceDao mockVmDao;
-    @Mock
-    protected HostPodDao mockPodDao;
-    @Mock
-    protected VirtualRouterProviderDao mockVrProviderDao;
-    @Mock
-    protected PhysicalNetworkServiceProviderDao physicalProviderDao;
-    @Mock
-    protected NetworkModel mockNetworkModel;
-    @Mock
-    protected IpAddressManager mockIpAddrMgr;
-    @Mock
-    protected NetworkOfferingDao mockNetworkOfferingDao;
-    @Mock
-    protected AccountManager mockAccountMgr;
-
-
-    protected List<HostPodVO> mockPods = new ArrayList<>();
-    protected Map<Param, Object> params = new HashMap<>();
-
-    @InjectMocks
-    protected RouterDeploymentDefinitionBuilder builder = new RouterDeploymentDefinitionBuilder();
 
     protected RouterDeploymentDefinition deployment;
 
 
-    @Before
-    public void initTest() {
+    @Override
+    protected void initMocks() {
         when(this.mockDestination.getDataCenter()).thenReturn(this.mockDataCenter);
         when(this.mockDataCenter.getId()).thenReturn(DATA_CENTER_ID);
         when(this.mockPod.getId()).thenReturn(POD_ID1);
@@ -169,11 +89,17 @@ public class RouterDeploymentDefinitionTest {
         when(this.mockHostPodVO2.getId()).thenReturn(POD_ID2);
         when(this.mockHostPodVO3.getId()).thenReturn(POD_ID3);
         when(this.mockNw.getId()).thenReturn(NW_ID);
+    }
+
+    @Before
+    public void initTest() {
+        this.initMocks();
 
         this.deployment = this.builder.create()
                 .setGuestNetwork(this.mockNw)
                 .setDeployDestination(this.mockDestination)
                 .setAccountOwner(this.mockOwner)
+                .setParams(this.params)
                 .build();
     }
 
@@ -201,25 +127,24 @@ public class RouterDeploymentDefinitionTest {
         // Offering null
         this.deployment.offeringId = null;
         assertNull(this.deployment.getOfferingId());
-        // Offering null
-        ServiceOfferingVO offeringVO = mock(ServiceOfferingVO.class);
         this.deployment.offeringId = OFFERING_ID;
         assertEquals(OFFERING_ID, this.deployment.getOfferingId().longValue());
-        // Routers
         assertNotNull(this.deployment.getRouters());
-        // Guest network
         assertNotNull(this.deployment.getGuestNetwork());
-        // Deploy Destination
         assertNotNull(this.deployment.getDest());
-        // Account owner
         assertNotNull(this.deployment.getOwner());
-        // Deployment plan
         this.deployment.plan = mock(DeploymentPlan.class);
         assertNotNull(this.deployment.getPlan());
         // Redundant : by default is not
         assertFalse(this.deployment.isRedundant());
         this.deployment.isRedundant = true;
         assertTrue(this.deployment.isRedundant());
+        assertFalse(this.deployment.isPublicNetwork());
+        this.deployment.isPublicNetwork = true;
+        assertTrue(this.deployment.isPublicNetwork());
+        // This could never be a Vpc deployment
+        assertNull(this.deployment.getVpc());
+        assertEquals(this.params, this.deployment.getParams());
     }
 
     @Test
@@ -233,7 +158,8 @@ public class RouterDeploymentDefinitionTest {
 
         // Assert
         verify(this.mockNwDao, times(1)).acquireInLockTable(NW_ID, 600);
-        assertNotNull(this.deployment.tableLockId);
+        assertNotNull(LOCK_NOT_CORRECTLY_GOT, this.deployment.tableLockId);
+        assertEquals(LOCK_NOT_CORRECTLY_GOT, NW_ID, NW_ID, this.deployment.tableLockId.longValue());
     }
 
     @Test(expected = ConcurrentOperationException.class)
@@ -243,11 +169,14 @@ public class RouterDeploymentDefinitionTest {
         .thenReturn(null);
 
         // Execute
-        this.deployment.lock();
+        try {
+            this.deployment.lock();
+        } finally {
+            // Assert
+            verify(this.mockNwDao, times(1)).acquireInLockTable(NW_ID, 600);
+            assertNull(this.deployment.tableLockId);
+        }
 
-        // Assert
-        verify(this.mockNwDao, times(1)).acquireInLockTable(NW_ID, 600);
-        assertNotNull(this.deployment.tableLockId);
     }
 
     @Test
@@ -592,8 +521,6 @@ public class RouterDeploymentDefinitionTest {
         // Execute
         try {
             deploymentUT.findOrDeployVirtualRouter();
-        } catch (ConcurrentOperationException e) {
-            throw e;
         } finally {
             // Assert
             verify(deploymentUT, times(1)).lock();
@@ -801,7 +728,7 @@ public class RouterDeploymentDefinitionTest {
         PublicIp sourceNatIp = mock(PublicIp.class);
         when(this.mockIpAddrMgr.assignSourceNatIpAddressToGuestNetwork(
                 this.mockOwner, this.mockNw)).thenReturn(sourceNatIp);
-        this.deployment.publicNetwork = true;
+        this.deployment.isPublicNetwork = true;
 
         // It should be null until this method finds it
         assertNull(this.deployment.sourceNatIp);
@@ -818,7 +745,7 @@ public class RouterDeploymentDefinitionTest {
         PublicIp sourceNatIp = mock(PublicIp.class);
         when(this.mockIpAddrMgr.assignSourceNatIpAddressToGuestNetwork(
                 this.mockOwner, this.mockNw)).thenReturn(sourceNatIp);
-        this.deployment.publicNetwork = false;
+        this.deployment.isPublicNetwork = false;
 
         // It should be null until this method finds it
         assertNull(this.deployment.sourceNatIp);
@@ -872,7 +799,7 @@ public class RouterDeploymentDefinitionTest {
         //this.deployment.routers.add(routerVO1);
         RouterDeploymentDefinition deploymentUT = Mockito.spy(this.deployment);
         doReturn(2).when(deploymentUT).getNumberOfRoutersToDeploy();
-        doReturn(null).when(deploymentUT).createRouterNetworks();
+        doReturn(null).when(this.mockNetworkGeneralHelper).createRouterNetworks(deploymentUT);
 
         final DomainRouterVO routerVO1 = mock(DomainRouterVO.class);
         final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
@@ -992,7 +919,7 @@ public class RouterDeploymentDefinitionTest {
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         // Prepare
         this.deployment.isRedundant = true;
-        this.deployment.publicNetwork = false;
+        this.deployment.isPublicNetwork = false;
         RouterDeploymentDefinition deploymentUT = Mockito.spy(this.deployment);
         doNothing().when(deploymentUT).setupPriorityOfRedundantRouter();
         doReturn(0).when(deploymentUT).getNumberOfRoutersToDeploy();
