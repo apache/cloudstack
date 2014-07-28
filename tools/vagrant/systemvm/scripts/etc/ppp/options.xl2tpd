@@ -1,0 +1,14 @@
+proxyarp
+ipcp-accept-local
+ipcp-accept-remote
+noccp
+idle 1800
+auth
+crtscts
+mtu 1410
+mru 1410
+nodefaultroute
+debug
+lock
+connect-delay 5000
+ms-dns 10.1.1.1

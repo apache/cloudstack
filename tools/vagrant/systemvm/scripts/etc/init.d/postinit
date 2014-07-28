@@ -1,0 +1,178 @@
+#!/bin/bash -e
+### BEGIN INIT INFO
+# Provides:          postinit
+# Required-Start:    mountkernfs $local_fs cloud-early-config
+# Required-Stop:     $local_fs
+# Should-Start:      
+# Should-Stop:       
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: 	post-init
+### END INIT INFO
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+replace_in_file() {
+  local filename=$1
+  local keyname=$2
+  local value=$3
+  sed -i /$keyname=/d $filename
+  echo "$keyname=$value" >> $filename
+  return $?
+}
+
+setup_secstorage() {
+  public_ip=$ETH2_IP
+  sed -i /$NAME/d /etc/hosts
+  echo "$public_ip $NAME" >> /etc/hosts
+  [ -f /etc/httpd/conf/httpd.conf ] && sed -i -e "s/^Listen.*:80$/Listen $public_ip:80/" /etc/httpd/conf/httpd.conf
+  [ -f /etc/httpd/conf/httpd.conf ] && sed -i -e "s/^Listen.*:443$/Listen $public_ip:443/" /etc/httpd/conf/httpd.conf
+}
+
+setup_console_proxy() {
+  public_ip=$ETH2_IP
+  sed -i /$NAME/d /etc/hosts
+  echo "$public_ip $NAME" >> /etc/hosts
+}
+
+setup_redundant_router() {
+  if [ "$RROUTER" != "1" ]
+  then
+      return 1
+  fi
+  rrouter_bin_path="/ramdisk/rrouter"
+  eth2mac=`ip link show eth2 | awk '/ether/ {print $2}'`
+  sed -i "s/\[ETH2MAC\]/$eth2mac/g" $rrouter_bin_path/enable_pubip.sh
+}
+
+start() {
+  case $TYPE in 
+     secstorage)
+         [ "$NAME" == "" ] && NAME=secstorage
+         setup_secstorage;
+	  ;;
+     consoleproxy)
+         [ "$NAME" == "" ] && NAME=consoleproxy
+         setup_console_proxy;
+	  ;;
+     router)
+         [ "$NAME" == "" ] && NAME=router
+         setup_redundant_router;
+      ;;
+
+  esac
+}
+
+stop() {
+   echo ""
+}
+
+status() {
+   echo ""
+}
+
+CMDLINE=$(cat /var/cache/cloud/cmdline)
+TYPE="router"
+BOOTPROTO="static"
+
+for i in $CMDLINE
+  do
+    # search for foo=bar pattern and cut out foo
+    KEY=$(echo $i | cut -d= -f1)
+    VALUE=$(echo $i | cut -d= -f2)
+    case $KEY in 
+      eth0ip)
+          ETH0_IP=$VALUE
+          ;;
+      eth1ip)
+          ETH1_IP=$VALUE
+          ;;
+      eth2ip)
+          ETH2_IP=$VALUE
+          ;;
+      gateway)
+          GW=$VALUE
+          ;;
+      eth0mask)
+          ETH0_MASK=$VALUE
+          ;;
+      eth1mask)
+          ETH1_MASK=$VALUE
+          ;;
+      eth2mask)
+          ETH2_MASK=$VALUE
+          ;;
+      dns1)
+          NS1=$VALUE
+          ;;
+      dns2)
+          NS2=$VALUE
+          ;;
+      domain)
+          DOMAIN=$VALUE
+          ;;
+      mgmtcidr)
+          MGMTNET=$VALUE
+          ;;
+      localgw)
+          LOCAL_GW=$VALUE
+          ;;
+      template)
+        TEMPLATE=$VALUE
+      	;;
+      name)
+	NAME=$VALUE
+	;;
+      dhcprange)
+        DHCP_RANGE=$(echo $VALUE | tr ':' ',')
+      	;;
+      bootproto)
+        BOOTPROTO=$VALUE 
+      	;;
+      type)
+        TYPE=$VALUE	
+	;;
+      redundant_router)
+        RROUTER=$VALUE
+    ;;
+    esac
+done
+
+if [ "$BOOTPROTO" == "static" -a "$RROUTER" != "1" ]
+then
+    exit 0
+fi
+
+ETH1_IP=$(ifconfig eth1|grep 'inet addr:'|cut -d : -f 2|cut -d \  -f 1)
+ETH2_IP=$(ifconfig eth2|grep 'inet addr:'|cut -d : -f 2|cut -d \  -f 1)
+
+
+case "$1" in
+   start) start
+	  ;;
+    stop) stop
+ 	  ;;
+    status) status
+ 	  ;;
+ restart) stop
+          start
+ 	  ;;
+       *) echo "Usage: $0 {start|stop|status|restart}"
+	  exit 1
+	  ;;
+esac

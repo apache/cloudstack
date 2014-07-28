@@ -1,0 +1,10 @@
+/var/log/haproxy.log {
+    daily
+    rotate 5
+    missingok
+    notifempty
+    size 10M
+    postrotate  
+      /bin/kill -HUP `cat /var/run/rsyslog.pid 2> /dev/null` 2> /dev/null || true
+    endscript
+}
