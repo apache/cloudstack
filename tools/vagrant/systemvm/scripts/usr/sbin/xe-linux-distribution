@@ -1,0 +1,267 @@
+#! /bin/sh
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# Script to write information about the current distribution to stdout or a file.
+# Information collected:
+#   - Distribution name
+#   - Distribution version (major and minor)
+#   - Kernel version (uname)
+
+LANG="C"
+export LANG
+
+
+write_to_output()
+{
+    local distro="$1"
+    local major="$2"
+    local minor="$3"
+    local name="$4"
+    local uname=$(uname -r)
+
+    if [ -n "${TEST_RESULT}" ] ; then
+	MAJOR=$major
+	MINOR=$minor
+	DISTRO=$distro
+	UNAME=$uname
+	return 0
+    fi
+
+    echo "os_distro=\"${distro}\""
+    echo "os_majorver=\"${major}\""
+    echo "os_minorver=\"${minor}\""
+    echo "os_uname=\"${uname}\""
+    echo "os_name=\"${name}\""
+
+    return 0
+}
+
+identify_debian()
+{
+    local debian_version="$1"
+    local major
+    local minor
+
+    # 3.1
+    # 4.0
+    # Ignores testing and unstable which contain ".*/sid".
+
+    if [ ! -f "${debian_version}" ] ; then
+	return 1
+    fi
+
+    eval $(awk -F. '/^[0-9]*\.[0-9]*/ \
+                        { print "major="$1 ; print "minor="$2 ; exit 0 }' \
+                   "${debian_version}")
+    
+    if [ -z "${major}" ] && [ -z "${minor}" ] && ! grep -q /sid "${debian_version}" ; then
+	return 1
+    fi
+
+    write_to_output "debian" "${major}" "${minor}" "Debian $(head -n 1 $debian_version)"
+
+    return 0
+}
+
+identify_redhat()
+{
+    redhat_release="$1"
+    local distro
+    local major
+    local minor
+    local beta
+
+    # distro=rhel
+    # Red Hat Enterprise Linux AS release 3 (Taroon Update 6)
+    # Red Hat Enterprise Linux AS release 3 (Taroon Update 8)
+    # Red Hat Enterprise Linux AS release 4 (Nahant)
+    # Red Hat Enterprise Linux AS release 4 (Nahant Update 1)
+    # Red Hat Enterprise Linux AS release 4 (Nahant Update 2)
+    # Red Hat Enterprise Linux AS release 4 (Nahant Update 3)
+    # Red Hat Enterprise Linux AS release 4 (Nahant Update 4)
+    # Red Hat Enterprise Linux Server release 4.92 (Tikanga)
+    # Red Hat Enterprise Linux Server release 5 (Tikanga)
+    # Red Hat Enterprise Linux Server release 5.1 Beta (Tikanga)
+
+    # distro=xe-ddk
+    # \@PRODUCT_BRAND\@ DDK release \@PRODUCT_VERSION\@-\@BUILD_NUMBER\@ (\@PRODUCT_NAME\@)
+    # Rio DDK release 0.5.6-2991c (xenenterprise)
+
+    # distro=xe-sdk
+    # \@PRODUCT_BRAND\@ SDK release \@PRODUCT_VERSION\@-\@BUILD_NUMBER\@ (\@PRODUCT_NAME\@)
+    # Rio SDK release 0.5.6-2991c (xenenterprise)
+
+    # distro=fedora
+    # Fedora Core release 3 (Heidelberg)
+
+    # distro=centos
+    # CentOS release 4.0 (Final)
+    # CentOS release 5 (Final)
+
+    # distro=oracle
+    # Enterprise Linux Enterprise Linux Server release 5 (Carthage)
+    
+    if [ ! -f "${redhat_release}" ] ; then
+	return 1
+    fi
+
+    eval $(sed -n \
+               -e 's/^\(.*\) DDK release \(.*\)-\(.*\) (.*)$/distro=xe-ddk;major=\2;minor=\3/gp;' \
+               -e 's/^\(.*\) SDK release \(.*\)-\(.*\) (.*)$/distro=xe-sdk;major=\2;minor=\3/gp;' \
+               -e 's/^Red Hat Enterprise Linux .* release \([0-9]*\) (.* Update \(.*\))$/distro=rhel;major=\1;minor=\2/gp;'\
+               -e 's/^Red Hat Enterprise Linux .* release \([0-9]*\) (.*)$/distro=rhel;major=\1/gp;' \
+               -e 's/^Red Hat Enterprise Linux .* release \([0-9]*\)\.\([0-9]*\) \([Bb]eta \)\?(.*)$/distro=rhel;major=\1;minor=\2;beta=\3;/gp;' \
+               -e 's/^Fedora.*release \([0-9]*\) (.*)$/distro=fedora;major=\1/gp;' \
+               -e 's/^CentOS release \([0-9]*\)\.\([0-9]*\) (.*)/distro=centos;major=\1;minor=\2/gp;' \
+               -e 's/^CentOS release \([0-9]*\) (.*)/distro=centos;major=\1/gp;' \
+               -e 's/^Enterprise Linux Enterprise Linux .* release \([0-9]*\)\.\([0-9]*\) (.*)$/distro=oracle;major=\1;minor=\2;/gp;' \
+               -e 's/^Enterprise Linux Enterprise Linux .* release \([0-9]*\) (.*)$/distro=oracle;major=\1/gp;' \
+                         "${redhat_release}")
+
+    if [ -z "${major}" -o -z "${distro}" ] ; then
+        return 1
+    fi
+
+    if [ -z "${minor}" ] ; then
+        minor=0
+    fi
+
+    # HACK to handle RHEL betas
+    if [ "${distro}" == "rhel" ] && [ ${minor} -gt 90 ] ; then
+    	major=$(expr ${major} + 1 )
+	minor=0
+	beta=Beta
+    fi
+
+    if [ -n "${beta}" ] ; then
+	minor="${minor}beta"
+    fi
+
+    write_to_output "${distro}" "${major}" "${minor}" "$(head -n 1 ${redhat_release})"
+
+}
+
+identify_sles()
+{
+    suse_release="$1"
+    local major
+    local minor
+    local _major
+
+    # SUSE LINUX Enterprise Server 9 (i586)
+    # VERSION = 9
+    #
+    # SUSE LINUX Enterprise Server 9 (i586)
+    # VERSION = 9
+    # PATCHLEVEL = 2
+    #
+    # SUSE LINUX Enterprise Server 9 (i586)
+    # VERSION = 9
+    # PATCHLEVEL = 3
+    #
+    # SUSE Linux Enterprise Server 10 (i586)
+    # VERSION = 10
+    #
+    # SUSE Linux Enterprise Server 10 (i586)
+    # VERSION = 10
+    # PATCHLEVEL = 1
+    #
+    # SUSE Linux Enterprise Server 11 (i586)
+    # VERSION = 11
+    # PATCHLEVEL = 0
+
+    if [ ! -f "${suse_release}" ] ; then
+        return 1
+    fi
+
+    eval $(sed -n \
+               -e 's/^SUSE L\(inux\|INUX\) Enterprise Server \([0-9]*\) (.*)/_major=\2;/gp;' \
+               -e 's/^VERSION = \([0-9]*\)$/major=\1;/gp;' \
+               -e 's/^PATCHLEVEL = \([0-9]*\)$/minor=\1;/gp;' \
+               "${suse_release}")
+
+    if [ -z "${major}" -o -z "${_major}" ] ; then
+        return 1
+    fi
+
+    if [ "${major}" != "${_major}" ] ; then
+        return 1
+    fi
+
+    if [ -z "${minor}" ] ; then
+        minor=0
+    fi
+
+    write_to_output "sles" "${major}" "${minor}" "$(head -n 1 ${suse_release})"
+
+}
+
+identify_lsb()
+{
+    lsb_release="$1"
+
+    if [ ! -x "${lsb_release}" ] ; then
+	saved_IFS=$IFS
+	IFS=:
+	for i in $PATH ; do
+	    if [ -x "${i}/${lsb_release}" ] ; then
+		lsb_release="${i}/${lsb_release}"
+		break
+	    fi
+	done
+	IFS=$saved_IFS
+    fi
+
+    if [ ! -x "${lsb_release}" ] ; then
+	return 1
+    fi
+    
+    distro=$(${lsb_release} --short --id | tr 'A-Z' 'a-z')
+    description=$(${lsb_release} --short --description | sed -e 's/^"\(.*\)"$/\1/g')
+    release=$(${lsb_release} --short --release)
+
+    if [ -z "${distro}" -o -z "${release}" ] ; then
+	return 1
+    fi
+
+    eval $(echo $release | awk -F. -- '{ print "major=" $1 ; print "minor=" $2 }')
+
+    if [ -z "${major}" -o -z "${distro}" ] ; then
+        return 1
+    fi
+
+    write_to_output "${distro}" "${major}" "${minor}" "${description}"
+}
+
+if [ $# -eq 1 ] ; then
+    exec 1>"$1"
+fi
+
+if [ -z "${TEST}" ] ; then
+    identify_redhat /etc/redhat-release && exit 0
+    identify_sles   /etc/SuSE-release   && exit 0
+    identify_lsb    lsb_release         && exit 0
+    identify_debian /etc/debian_version && exit 0
+
+    if [ $# -eq 1 ] ; then
+	rm -f "$1"
+    fi
+
+    exit 1
+fi
