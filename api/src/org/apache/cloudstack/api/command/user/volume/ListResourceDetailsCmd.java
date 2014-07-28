@@ -44,6 +44,10 @@ public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCm
     @Parameter(name = ApiConstants.KEY, type = CommandType.STRING, description = "list by key")
     private String key;
 
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, description = "list by key, value. Needs to be passed only along with key" ,
+            since = "4.4", authorized = { RoleType.Admin })
+    private String value;
+
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "if set to true, only details marked with display=true, are returned."
             + " False by default", since = "4.3", authorized = { RoleType.Admin })
     private Boolean forDisplay;
@@ -54,6 +58,10 @@ public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCm
 
     public String getKey() {
         return key;
+    }
+
+    public String getValue() {
+        return value;
     }
 
     @Override

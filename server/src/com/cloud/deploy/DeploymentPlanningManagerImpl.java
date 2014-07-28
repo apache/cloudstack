@@ -198,6 +198,8 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     protected StoragePoolHostDao _poolHostDao;
 
     @Inject
+    protected DataCenterDao _zoneDao;
+    @Inject
     protected VolumeDao _volsDao;
     @Inject
     protected CapacityManager _capacityMgr;
@@ -1270,7 +1272,18 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             boolean useLocalStorage = false;
             if (vmProfile.getType() != VirtualMachine.Type.User) {
                 String ssvmUseLocalStorage = _configDao.getValue(Config.SystemVMUseLocalStorage.key());
-                if (ssvmUseLocalStorage.equalsIgnoreCase("true")) {
+
+                DataCenterVO zone = _zoneDao.findById(plan.getDataCenterId());
+
+                // It should not happen to have a "null" zone here. There can be NO instance if there is NO zone,
+                // so this part of the code would never be reached if no zone has been created.
+                //
+                // Added the check and the comment just to make it clear.
+                boolean zoneUsesLocalStorage = zone != null ? zone.isLocalStorageEnabled() : false;
+
+                // Local storage is used for the NON User VMs if, and only if, the Zone is marked to use local storage AND
+                // the global settings (ssvmUseLocalStorage) is set to true. Otherwise, the global settings won't be applied.
+                if (ssvmUseLocalStorage.equalsIgnoreCase("true") && zoneUsesLocalStorage) {
                     useLocalStorage = true;
                 }
             } else {

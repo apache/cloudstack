@@ -21,7 +21,7 @@
 import unittest
 from nose.plugins.attrib           import attr
 from marvin.cloudstackTestCase     import cloudstackTestCase
-from marvin.integration.lib.base   import (Account,
+from marvin.lib.base   import (Account,
                                            Domain,
                                            Router,
                                            Network,
@@ -31,14 +31,14 @@ from marvin.integration.lib.base   import (Account,
                                            FireWallRule,
                                            NATRule,
                                            PublicIPAddress)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            list_routers,
                                            wait_for_cleanup,
                                            list_virtual_machines
                                            )
-from marvin.integration.lib.utils import cleanup_resources, validateList
+from marvin.lib.utils import cleanup_resources, validateList
 from marvin.cloudstackAPI import rebootRouter
 from marvin.cloudstackAPI.createEgressFirewallRule import createEgressFirewallRuleCmd
 from marvin.cloudstackAPI.deleteEgressFirewallRule import deleteEgressFirewallRuleCmd
@@ -132,12 +132,13 @@ class TestEgressFWRules(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(TestEgressFWRules,
-                               cls).getClsTestClient().getApiClient()
-        cls.services  = Services().services
-        # Get Zone  Domain and create Domains and sub Domains.
-        cls.domain           = get_domain(cls.api_client, cls.services)
-        cls.zone             = get_zone(cls.api_client, cls.services)
+        cls.testClient = super(TestEgressFWRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         # Get and set template id for VM creation.
         cls.template = get_template(cls.api_client,
@@ -274,7 +275,10 @@ class TestEgressFWRules(cloudstackTestCase):
             self.debug("script: %s" % script+exec_cmd_params)
             self.debug("result: %s" % result)
 
-            str_result = str(str(result).strip())
+            if isinstance(result, list):
+                str_result = str([str(x) for x in result])
+            else:
+                str_result = str(result)
             str_expected_result = str(expected_result).strip()
             if str_result == str_expected_result:
                 exec_success = True

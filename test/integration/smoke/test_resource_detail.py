@@ -21,113 +21,46 @@ import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 #Import System modules
 import time
 
 _multiprocess_shared_ = True
-class Services:
-    """Test VM Life Cycle Services
-    """
-
-    def __init__(self):
-        self.services = {
-
-                "account": {
-                    "email": "test@test.com",
-                    "firstname": "Test",
-                    "lastname": "User",
-                    "username": "test",
-                    # Random characters are appended in create account to 
-                    # ensure unique username generated each time
-                    "password": "password",
-                },
-                "small":
-                # Create a small virtual machine instance with disk offering 
-                {
-                    "displayname": "testserver",
-                    "username": "root", # VM creds for SSH
-                    "password": "password",
-                    "ssh_port": 22,
-                    "hypervisor": 'XenServer',
-                    "privateport": 22,
-                    "publicport": 22,
-                    "protocol": 'TCP',
-                },
-                "disk_offering": {
-                            "displaytext": "Small",
-                            "name": "Small",
-                            "storagetype": "shared",
-                            "disksize": 1
-                },
-                "service_offerings":
-                {
-                 "small":
-                    {
-                     # Small service offering ID to for change VM 
-                     # service offering from medium to small
-                        "name": "SmallInstance",
-                        "displaytext": "SmallInstance",
-                        "cpunumber": 1,
-                        "cpuspeed": 100,
-                        "memory": 256,
-                    },
-                "big":
-                    {
-                     # Big service offering ID to for change VM 
-                        "name": "BigInstance",
-                        "displaytext": "BigInstance",
-                        "cpunumber": 1,
-                        "cpuspeed": 100,
-                        "memory": 512,
-                    }
-                },
-                #Change this
-                "template": {
-                    "displaytext": "xs",
-                    "name": "xs",
-                    "passwordenabled": False,
-                },
-            "sleep": 60,
-            "timeout": 10,
-            #Migrate VM to hostid
-            "ostype": 'CentOS 5.6 (64-bit)',
-            # CentOS 5.3 (64-bit)
-        }
 
 class TestResourceDetail(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestResourceDetail, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        testClient = super(TestResourceDetail, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        domain = get_domain(cls.api_client, cls.services)
-        zone = get_zone(cls.api_client, cls.services)
+        domain = get_domain(cls.apiclient)
+        zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = zone.networktype
 
         # Set Zones and disk offerings ??
 
         # Create account, service offerings, vm.
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=domain.id
                             )
 
  
         cls.disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
 
         #create a volume
         cls.volume = Volume.create(
-                                   cls.api_client,
+                                   cls.apiclient,
                                    { "diskname" : "ndm"},
                                    zoneid=zone.id,
                                    account=cls.account.name,
@@ -142,8 +75,8 @@ class TestResourceDetail(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.api_client = super(TestResourceDetail, cls).getClsTestClient().getApiClient()
-        cleanup_resources(cls.api_client, cls._cleanup)
+        cls.apiclient = super(TestResourceDetail, cls).getClsTestClient().getApiClient()
+        cleanup_resources(cls.apiclient, cls._cleanup)
         return
 
     def setUp(self):
@@ -175,7 +108,7 @@ class TestResourceDetail(cloudstackTestCase):
         listResourceDetailCmd = listResourceDetails.listResourceDetailsCmd()
         listResourceDetailCmd.resourceid = self.volume.id
         listResourceDetailCmd.resourcetype = "Volume"
-        listResourceDetailResponse = self.api_client.listResourceDetails(listResourceDetailCmd)
+        listResourceDetailResponse = self.apiclient.listResourceDetails(listResourceDetailCmd)
 
         self.assertEqual(listResourceDetailResponse, None, "Check if the list API \
                             returns an empty response")

@@ -22,6 +22,11 @@
 import marvin
 from utils import is_server_ssh_ready, random_gen
 from marvin.cloudstackAPI import *
+from marvin.codes import (FAILED, FAIL, PASS, RUNNING, STOPPED,
+                          STARTING, DESTROYED, EXPUNGING,
+                          STOPPING)
+from marvin.cloudstackException import GetDetailExceptionInfo
+from marvin.lib.utils import validateList
 # Import System modules
 import time
 import hashlib
@@ -219,6 +224,16 @@ class User:
 class VirtualMachine:
     """Manage virtual machine lifecycle"""
 
+    '''Class level variables'''
+    # Variables denoting VM state - start
+    STOPPED = STOPPED
+    RUNNING = RUNNING
+    DESTROYED = DESTROYED
+    EXPUNGING = EXPUNGING
+    STOPPING = STOPPING
+    STARTING = STARTING
+    # Varibles denoting VM state - end
+
     def __init__(self, items, services):
         self.__dict__.update(items)
         if "username" in services:
@@ -255,6 +270,7 @@ class VirtualMachine:
                 apiclient,
                 account=cmd.account,
                 domainid=cmd.domainid,
+                listall=True,
                 securitygroupname="basic_sec_grp"
             )
 
@@ -324,7 +340,7 @@ class VirtualMachine:
                     domainid=None, zoneid=None, networkids=None, serviceofferingid=None,
                     securitygroupids=None, projectid=None, startvm=None,
                     diskofferingid=None, affinitygroupnames=None, affinitygroupids=None, group=None,
-                    hostid=None, keypair=None, ipaddress=None, mode='default', method='GET',
+                    hostid=None, keypair=None, ipaddress=None, mode='default', method='GET',hypervisor=None,
                     customcpunumber=None, customcpuspeed=None, custommemory=None, rootdisksize=None):
         """Create the instance"""
 
@@ -339,7 +355,7 @@ class VirtualMachine:
             cmd.zoneid = zoneid
         elif "zoneid" in services:
             cmd.zoneid = services["zoneid"]
-        cmd.hypervisor = apiclient.hypervisor
+        cmd.hypervisor = hypervisor
 
         if "displayname" in services:
             cmd.displayname = services["displayname"]
@@ -459,12 +475,22 @@ class VirtualMachine:
         cmd = startVirtualMachine.startVirtualMachineCmd()
         cmd.id = self.id
         apiclient.startVirtualMachine(cmd)
+        response = self.getState(apiclient, VirtualMachine.RUNNING)
+        if response[0] == FAIL:
+            raise Exception(response[1])
+        return
 
-    def stop(self, apiclient):
+    def stop(self, apiclient, forced=None):
         """Stop the instance"""
         cmd = stopVirtualMachine.stopVirtualMachineCmd()
         cmd.id = self.id
+        if forced:
+            cmd.forced = forced
         apiclient.stopVirtualMachine(cmd)
+        response = self.getState(apiclient, VirtualMachine.STOPPED)
+        if response[0] == FAIL:
+            raise Exception(response[1])
+        return
 
     def reboot(self, apiclient):
         """Reboot the instance"""
@@ -515,6 +541,37 @@ class VirtualMachine:
                                                     keyPairFileLocation=keyPairFileLocation
                                                 )
         return self.ssh_client
+
+    def getState(self, apiclient, state, timeout=600):
+        """List VM and check if its state is as expected
+        @returnValue - List[Result, Reason]
+                       1) Result - FAIL if there is any exception
+                       in the operation or VM state does not change
+                       to expected state in given time else PASS
+                       2) Reason - Reason for failure"""
+
+        returnValue = [FAIL, "VM state not trasited to %s,\
+                        operation timed out" % state]
+
+        while timeout>0:
+            try:
+                projectid = None
+                if hasattr(self, "projectid"):
+                    projectid = self.projectid
+                vms = VirtualMachine.list(apiclient, projectid=projectid,
+				          id=self.id, listAll=True)
+                validationresult = validateList(vms)
+                if validationresult[0] == FAIL:
+                    raise Exception("VM list validation failed: %s" % validationresult[2])
+                elif str(vms[0].state).lower() == str(state).lower():
+                    returnValue = [PASS, None]
+                    break
+            except Exception as e:
+                returnValue = [FAIL, e]
+                break
+            time.sleep(60)
+            timeout -= 60
+        return returnValue
 
     def resetSshKey(self, apiclient, **kwargs):
         """Resets SSH key"""
@@ -594,8 +651,15 @@ class VirtualMachine:
     def detach_iso(self, apiclient):
         """Detach ISO to instance"""
         cmd = detachIso.detachIsoCmd()
-        cmd.id = self.id
+        cmd.virtualmachineid = self.id
         return apiclient.detachIso(cmd)
+    
+    def scale_virtualmachine(self, apiclient, serviceOfferingId):
+        """ Scale up of service offering for the Instance"""
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
+        cmd.id = self.id
+        cmd.serviceofferingid = serviceOfferingId
+        return apiclient.scaleVirtualMachine(cmd)
 
     def change_service_offering(self, apiclient, serviceOfferingId):
         """Change service offering of the instance"""
@@ -825,6 +889,16 @@ class Volume:
         return
 
     @classmethod
+    def extract(cls, apiclient, volume_id, zoneid, mode):
+        """Extracts the volume"""
+        
+        cmd = extractVolume.extractVolumeCmd()
+        cmd.id = volume_id
+        cmd.zoneid = zoneid
+        cmd.mode = mode
+        return Volume(apiclient.extractVolume(cmd).__dict__)
+
+    @classmethod
     def migrate(cls, apiclient, **kwargs):
         """Migrate a volume"""
         cmd = migrateVolume.migrateVolumeCmd()
@@ -917,7 +991,7 @@ class Template:
 
     @classmethod
     def register(cls, apiclient, services, zoneid=None,
-                                                account=None, domainid=None):
+                                                account=None, domainid=None, hypervisor=None):
         """Create template from URL"""
 
         # Create template from Virtual machine and Volume ID
@@ -925,7 +999,7 @@ class Template:
         cmd.displaytext = services["displaytext"]
         cmd.name = "-".join([services["name"], random_gen()])
         cmd.format = services["format"]
-        cmd.hypervisor = apiclient.hypervisor
+        cmd.hypervisor = hypervisor 
 
         if "ostypeid" in services:
             cmd.ostypeid = services["ostypeid"]
@@ -1064,6 +1138,25 @@ class Template:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.updateTemplatePermissions(cmd))
 
+    def update(self, apiclient, **kwargs):
+        """Updates the template details"""
+
+        cmd = updateTemplate.updateTemplateCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.updateTemplate(cmd))
+
+    @classmethod
+    def copy(cls, apiclient, id, sourcezoneid, destzoneid):
+        "Copy Template from source Zone to Destination Zone"
+
+        cmd = copyTemplate.copyTemplateCmd()
+        cmd.id = id
+        cmd.sourcezoneid = sourcezoneid
+        cmd.destzoneid = destzoneid
+
+        return apiclient.copyTemplate(cmd)
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """List all templates matching criteria"""
@@ -1164,6 +1257,36 @@ class Iso:
         return
 
     @classmethod
+    def extract(cls, apiclient, id, mode, zoneid=None):
+        "Extract ISO "
+
+        cmd = extractIso.extractIsoCmd()
+        cmd.id = id
+        cmd.mode = mode
+        cmd.zoneid = zoneid
+
+        return apiclient.extractIso(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Updates the ISO details"""
+
+        cmd = updateIso.updateIsoCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.updateIso(cmd))
+
+    @classmethod
+    def copy(cls, apiclient, id, sourcezoneid, destzoneid):
+        "Copy ISO from source Zone to Destination Zone"
+
+        cmd = copyIso.copyIsoCmd()
+        cmd.id = id
+        cmd.sourcezoneid = sourcezoneid
+        cmd.destzoneid = destzoneid
+
+        return apiclient.copyIso(cmd)
+
+    @classmethod
     def list(cls, apiclient, **kwargs):
         """Lists all available ISO files."""
 
@@ -1236,7 +1359,8 @@ class NATRule:
 
     @classmethod
     def create(cls, apiclient, virtual_machine, services, ipaddressid=None,
-               projectid=None, openfirewall=False, networkid=None, vpcid=None):
+               projectid=None, openfirewall=False, networkid=None, vpcid=None,
+               vmguestip=None):
         """Create Port forwarding rule"""
         cmd = createPortForwardingRule.createPortForwardingRuleCmd()
 
@@ -1265,6 +1389,10 @@ class NATRule:
 
         if vpcid:
             cmd.vpcid = vpcid
+
+        if vmguestip:
+            cmd.vmguestip = vmguestip
+
         return NATRule(apiclient.createPortForwardingRule(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -1331,7 +1459,8 @@ class StaticNATRule:
         return(apiclient.listIpForwardingRules(cmd))
 
     @classmethod
-    def enable(cls, apiclient, ipaddressid, virtualmachineid, networkid=None):
+    def enable(cls, apiclient, ipaddressid, virtualmachineid, networkid=None,
+            vmguestip=None):
         """Enables Static NAT rule"""
 
         cmd = enableStaticNat.enableStaticNatCmd()
@@ -1339,6 +1468,9 @@ class StaticNATRule:
         cmd.virtualmachineid = virtualmachineid
         if networkid:
             cmd.networkid = networkid
+
+        if vmguestip:
+            cmd.vmguestip = vmguestip
         apiclient.enableStaticNat(cmd)
         return
 
@@ -1462,6 +1594,9 @@ class ServiceOffering:
         if "tags" in services:
             cmd.tags = services["tags"]
 
+        if "hosttags" in services:
+            cmd.hosttags = services["hosttags"]
+
         if "deploymentplanner" in services:
             cmd.deploymentplanner = services["deploymentplanner"]
 
@@ -1470,6 +1605,9 @@ class ServiceOffering:
 
         if "isvolatile" in services:
             cmd.isvolatile = services["isvolatile"]
+
+        if "offerha" in services:
+            cmd.offerha = services["offerha"]
 
         # Service Offering private to that domain
         if domainid:
@@ -1643,6 +1781,20 @@ class SnapshotPolicy:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listSnapshotPolicies(cmd))
 
+class Hypervisor:
+    """Manage Hypervisor"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """Lists hypervisors"""
+
+        cmd = listHypervisors.listHypervisorsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listHypervisors(cmd))
+
 
 class LoadBalancerRule:
     """Manage Load Balancer rule"""
@@ -1771,11 +1923,11 @@ class Cluster:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, zoneid=None, podid=None):
+    def create(cls, apiclient, services, zoneid=None, podid=None, hypervisor=None):
         """Create Cluster"""
         cmd = addCluster.addClusterCmd()
         cmd.clustertype = services["clustertype"]
-        cmd.hypervisor = apiclient.hypervisor
+        cmd.hypervisor = hypervisor
 
         if zoneid:
             cmd.zoneid = zoneid
@@ -1821,36 +1973,59 @@ class Host:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, cluster, services, zoneid=None, podid=None):
-        """Create Host in cluster"""
+    def create(cls, apiclient, cluster, services, zoneid=None, podid=None, hypervisor=None):
+        """
+        1. Creates the host based upon the information provided.
+        2. Verifies the output of the adding host and its state post addition
+           Returns FAILED in case of an issue, else an instance of Host
+        """
+        try:
+            cmd = addHost.addHostCmd()
+            cmd.hypervisor = hypervisor
+            cmd.url = services["url"]
+            cmd.clusterid = cluster.id
 
-        cmd = addHost.addHostCmd()
-        cmd.hypervisor = apiclient.hypervisor
-        cmd.url = services["url"]
-        cmd.clusterid = cluster.id
+            if zoneid:
+                cmd.zoneid = zoneid
+            else:
+                cmd.zoneid = services["zoneid"]
 
-        if zoneid:
-            cmd.zoneid = zoneid
-        else:
-            cmd.zoneid = services["zoneid"]
+            if podid:
+                cmd.podid = podid
+            else:
+                cmd.podid = services["podid"]
 
-        if podid:
-            cmd.podid = podid
-        else:
-            cmd.podid = services["podid"]
+            if "clustertype" in services:
+                cmd.clustertype = services["clustertype"]
+            if "username" in services:
+                cmd.username = services["username"]
+            if "password" in services:
+                cmd.password = services["password"]
 
-        if "clustertype" in services:
-            cmd.clustertype = services["clustertype"]
-        if "username" in services:
-            cmd.username = services["username"]
-        if "password" in services:
-            cmd.password = services["password"]
-
-        # Add host
-        host = apiclient.addHost(cmd)
-
-        if isinstance(host, list):
-            return Host(host[0].__dict__)
+            '''
+            Adds a Host,
+            If response is valid and host is up return
+            an instance of Host.
+            If response is invalid, returns FAILED.
+            If host state is not up, verify through listHosts call
+            till host status is up and return accordingly. Max 3 retries
+            '''
+            host = apiclient.addHost(cmd)
+            ret = validateList(host)
+            if ret[0] == PASS:
+                if str(host[0].state).lower() == 'up':
+                    return Host(host[0].__dict__)
+                retries = 3
+                while retries:
+                    lh_resp = apiclient.listHosts(host[0].id)
+                    ret = validateList(lh_resp)
+                    if (ret[0] == PASS) and (str(ret[1].state).lower() == 'up'):
+                        return Host(host[0].__dict__)
+                    retries += -1
+            return FAILED
+        except Exception, e:
+            print "Exception Occurred Under Host.create : %s" % GetDetailExceptionInfo(e)
+            return FAILED
 
     def delete(self, apiclient):
         """Delete Host"""
@@ -2383,7 +2558,8 @@ class PublicIpRange:
         cmd.startip = services["startip"]
         cmd.endip = services["endip"]
         cmd.zoneid = services["zoneid"]
-        cmd.podid = services["podid"]
+        if "podid" in services:
+            cmd.podid = services["podid"]
         cmd.vlan = services["vlan"]
 
         return PublicIpRange(apiclient.createVlanIpRange(cmd).__dict__)
@@ -2617,7 +2793,7 @@ class SecurityGroup:
         """Create security group"""
         cmd = createSecurityGroup.createSecurityGroupCmd()
 
-        cmd.name = services["name"]
+        cmd.name = "-".join([services["name"], random_gen()])
         if account:
             cmd.account = account
         if domainid:
@@ -2717,6 +2893,76 @@ class SecurityGroup:
         cmd = listSecurityGroups.listSecurityGroupsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listSecurityGroups(cmd))
+
+
+class VpnCustomerGateway:
+    """Manage VPN Customer Gateway"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, name, gateway, cidrlist,
+                        account=None, domainid=None):
+        """Create VPN Customer Gateway"""
+        cmd = createVpnCustomerGateway.createVpnCustomerGatewayCmd()
+        cmd.name = name
+        cmd.gateway = gateway
+        cmd.cidrlist = cidrlist
+        if "ipsecpsk" in services:
+            cmd.ipsecpsk = services["ipsecpsk"]
+        if "ikepolicy" in services:
+            cmd.ikepolicy = services["ikepolicy"]
+        if "ikelifetime" in services:
+            cmd.ikelifetime = services["ikelifetime"]
+        if "esppolicy" in services:
+            cmd.esppolicy = services["esppolicy"]
+        if "esplifetime" in services:
+            cmd.esplifetime = services["esplifetime"]
+        if "dpd" in services:
+            cmd.dpd = services["dpd"]
+        if account:
+            cmd.account = account
+        if domainid:
+            cmd.domainid = domainid
+        return VpnCustomerGateway(apiclient.createVpnCustomerGateway(cmd).__dict__)
+
+    def update(self, apiclient, services, name, gateway, cidrlist):
+        """Updates VPN Customer Gateway"""
+
+        cmd = updateVpnCustomerGateway.updateVpnCustomerGatewayCmd()
+        cmd.id = self.id
+        cmd.name = name
+        cmd.gateway = gateway
+        cmd.cidrlist = cidrlist
+        if "ipsecpsk" in services:
+            cmd.ipsecpsk = services["ipsecpsk"]
+        if "ikepolicy" in services:
+            cmd.ikepolicy = services["ikepolicy"]
+        if "ikelifetime" in services:
+            cmd.ikelifetime = services["ikelifetime"]
+        if "esppolicy" in services:
+            cmd.esppolicy = services["esppolicy"]
+        if "esplifetime" in services:
+            cmd.esplifetime = services["esplifetime"]
+        if "dpd" in services:
+            cmd.dpd = services["dpd"]
+        return(apiclient.updateVpnCustomerGateway(cmd))
+
+    def delete(self, apiclient):
+        """Delete VPN Customer Gateway"""
+
+        cmd = deleteVpnCustomerGateway.deleteVpnCustomerGatewayCmd()
+        cmd.id = self.id
+        apiclient.deleteVpnCustomerGateway(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all VPN customer Gateway"""
+
+        cmd = listVpnCustomerGateways.listVpnCustomerGatewaysCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listVpnCustomerGateways(cmd))
 
 
 class Project:
@@ -3340,6 +3586,14 @@ class SSHKeyPair:
             cmd.projectid = projectid
         return (apiclient.createSSHKeyPair(cmd))
 
+    @classmethod
+    def register(cls, apiclient, name, publickey):
+        """Registers SSH keypair"""
+        cmd = registerSSHKeyPair.registerSSHKeyPairCmd()
+        cmd.name = name
+        cmd.publickey = publickey
+        return (apiclient.registerSSHKeyPair(cmd))
+
     def delete(self, apiclient):
         """Delete SSH key pair"""
         cmd = deleteSSHKeyPair.deleteSSHKeyPairCmd()
@@ -3735,8 +3989,8 @@ class IAMGroup:
     def list(cls, apiclient, **kwargs):
         cmd = listIAMGroups.listIAMGroupsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return apiclient.listIAMGroups(cmd)
-
+        return apiclient.listIAMGroupsCmd(cmd)  
+    
     def addAccount(self, apiclient, accts):
         """Add accounts to iam group"""
         cmd = addAccountToIAMGroup.addAccountToIAMGroupCmd()
@@ -3796,7 +4050,7 @@ class IAMPolicy:
     def list(cls, apiclient, **kwargs):
         cmd = listIAMPolicies.listIAMPoliciesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return apiclient.listIAMPolicies(cmd)
+        return apiclient.listIAMPoliciesCmd(cmd)  
 
     def addPermission(self, apiclient, permission):
         """Add permission to iam policy"""
@@ -3834,4 +4088,50 @@ class IAMPolicy:
         cmd.id = self.id
         cmd.accounts = [str(acct.id) for acct in accts]
         apiclient.removeIAMPolicyFromAccount(cmd)
-        return           
+        return
+
+class SimulatorMock:
+    """Manage simulator mock lifecycle"""
+    def __init__(self, items):
+        self.__dict__.update(items)
+    
+    @classmethod
+    def create(cls, apiclient, command, zoneid=None, podid=None, clusterid=None, hostid=None, value="result:fail", count=None, jsonresponse=None):
+        """Creates simulator mock"""
+        
+        cmd = configureSimulator.configureSimulatorCmd()
+        cmd.zoneid = zoneid
+        cmd.podid = podid
+        cmd.clusterid = clusterid
+        cmd.hostid = hostid
+        cmd.name = command
+        cmd.value = value
+        cmd.count = count
+        cmd.jsonresponse = jsonresponse
+        try:
+            simulatormock = apiclient.configureSimulator(cmd)
+            if simulatormock is not None:
+                return SimulatorMock(simulatormock.__dict__)
+        except Exception as e:
+            raise e
+    
+    def delete(self, apiclient):
+        """Removes simulator mock"""
+        
+        cmd = cleanupSimulatorMock.cleanupSimulatorMockCmd()
+        cmd.id = self.id
+        return apiclient.cleanupSimulatorMock(cmd)
+    
+    def query(self, apiclient):
+        """Queries simulator mock"""
+        
+        cmd = querySimulatorMock.querySimulatorMockCmd()
+        cmd.id = self.id
+        try:
+            simulatormock = apiclient.querySimulatorMock(cmd)
+            if simulatormock is not None:
+                return SimulatorMock(simulatormock.__dict__)
+        except Exception as e:
+            raise e
+
+

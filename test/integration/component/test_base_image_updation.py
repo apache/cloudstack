@@ -26,11 +26,12 @@
 
 #Import Local Modules
 from marvin.codes import (PASS,
+                          FAIL,
                           RECURRING)
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 
-from marvin.integration.lib.base import (ServiceOffering,
+from marvin.lib.base import (ServiceOffering,
                                          Account,
                                          VirtualMachine,
                                          Volume,
@@ -40,13 +41,13 @@ from marvin.integration.lib.base import (ServiceOffering,
                                          Template
                                          )
 
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            list_templates
                                            )
 
-from marvin.integration.lib.utils import (validateList,
+from marvin.lib.utils import (validateList,
                                           cleanup_resources)
 
 import time
@@ -160,14 +161,14 @@ class TestBaseImageUpdate(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestBaseImageUpdate,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestBaseImageUpdate, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -237,6 +238,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
@@ -426,7 +428,8 @@ class TestBaseImageUpdate(cloudstackTestCase):
                                         v,
                                         zoneid=self.zone.id,
                                         account=self.account.name,
-                                        domainid=self.account.domainid
+                                        domainid=self.account.domainid,
+                                        hypervisor=self.hypervisor
                                         )
                 self.debug(
                     "Registered a template of format: %s with ID: %s" % (
@@ -647,9 +650,13 @@ class TestBaseImageUpdate(cloudstackTestCase):
                    Here we are passing root disk id of vm before reboot which does not exist hence\
                    listing should fail")
 
-        with self.assertRaises(Exception):
-            list_snapshots_policy = SnapshotPolicy.list(
-                                                     self.apiclient,
-                                                     volumeid=vm_with_reset_root_disk_id
-                                                     )
+        try:
+            listSnapshotPolicies = SnapshotPolicy.list(
+                                        self.apiclient,
+                                        volumeid=vm_with_reset_root_disk_id)
+        except Exception as e:
+            self.fail("Failed to list snapshot policies: %s" % e)
+
+        self.assertEqual(validateList(listSnapshotPolicies)[0], FAIL,\
+                "Snapshot policies list should be empty")
         return

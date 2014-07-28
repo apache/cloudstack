@@ -21,25 +21,11 @@
     Feature Specifications: https://cwiki.apache.org/confluence/display/CLOUDSTACK/portable+public+IP
 """
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.utils import cleanup_resources
-from marvin.integration.lib.base import (Account,
-                                         NetworkOffering,
-                                         ServiceOffering,
-                                         Network,
-                                         VirtualMachine,
-                                         PublicIPAddress,
-                                         FireWallRule,
-                                         NATRule,
-                                         PortablePublicIpRange,
-                                         StaticNATRule)
-from marvin.integration.lib.common import (get_zone,
-                                           get_pod,
-                                           get_domain,
-                                           get_region,
-                                           get_template,
-                                           get_portable_ip_range_services,
-                                           is_public_ip_in_correct_state)
-from netaddr import IPAddress
+from marvin.cloudstackException import CloudstackAPIException
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
+from netaddr import *
 from marvin.sshClient import SshClient
 
 from nose.plugins.attrib import attr
@@ -144,6 +130,14 @@ class Services:
                                   "protocol": 'TCP',
                         },
                         "ostype": 'CentOS 5.3 (64-bit)',
+                        "portableIpRange": {
+                            "gateway" : "10.223.252.195",
+                            "netmask" : "255.255.255.192",
+                            "startip" : "10.223.252.196",
+                            "endip"   : "10.223.252.197",
+                            "vlan"    : "1001"
+                        }
+
           }
 
 class TestCreatePortablePublicIpRanges(cloudstackTestCase):
@@ -153,13 +147,15 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestCreatePortablePublicIpRanges, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestCreatePortablePublicIpRanges, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.region = get_region(cls.api_client, cls.services)
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
+        cls.region = get_region(cls.api_client)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.pod = get_pod(cls.api_client, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -199,7 +195,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
         # 1. Create new portable ip range with root admin api
         # 2. Portable ip range should be created successfully
 
-        portable_ip_range_services = get_portable_ip_range_services(self.config)
+        portable_ip_range_services = self.services["portableIpRange"]
 
         self.debug(portable_ip_range_services)
 
@@ -238,12 +234,12 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
                             domainid=self.domain.id
                             )
 
-        self.api_client_user = self.testClient.createUserApiClient(
+        self.api_client_user = self.testClient.getUserApiClient(
                                             UserName=self.account.name,
                                             DomainName=self.account.domain
                                             )
 
-        portable_ip_range_services = get_portable_ip_range_services(self.config)
+        portable_ip_range_services = self.services["portableIpRange"]
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -265,7 +261,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
         # 1. Try to create new portable ip range with invalid region id
         # 2. Portable ip range creation should fail
 
-        portable_ip_range_services = get_portable_ip_range_services(self.config)
+        portable_ip_range_services = self.services["portableIpRange"]
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -289,13 +285,15 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestDeletePortablePublicIpRanges, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeletePortablePublicIpRanges, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.region = get_region(cls.api_client, cls.services)
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
+        cls.region = get_region(cls.api_client)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.pod = get_pod(cls.api_client, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -317,7 +315,7 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
 
-        portable_ip_range_services = get_portable_ip_range_services(self.config)
+        portable_ip_range_services = self.services["portableIpRange"]
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -378,7 +376,7 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
 
         self.cleanup.append(self.account)
 
-        self.api_client_user = self.testClient.createUserApiClient(
+        self.api_client_user = self.testClient.getUserApiClient(
                                             UserName=self.account.name,
                                             DomainName=self.account.domain
                                             )
@@ -461,13 +459,15 @@ class TestListPortablePublicIpRanges(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestListPortablePublicIpRanges, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestListPortablePublicIpRanges, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.region = get_region(cls.api_client, cls.services)
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
+        cls.region = get_region(cls.api_client)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.pod = get_pod(cls.api_client, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -490,7 +490,7 @@ class TestListPortablePublicIpRanges(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
 
         #create new portable ip range
-        self.portable_ip_range_services = get_portable_ip_range_services(self.config)
+        self.portable_ip_range_services = self.services["portableIpRange"]
 
         if self.portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -569,7 +569,7 @@ class TestListPortablePublicIpRanges(cloudstackTestCase):
 
         self.cleanup.append(self.account)
 
-        self.api_client_user = self.testClient.createUserApiClient(
+        self.api_client_user = self.testClient.getUserApiClient(
                                             UserName=self.account.name,
                                             DomainName=self.account.domain
                                             )
@@ -585,13 +585,15 @@ class TestAssociatePublicIp(cloudstackTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestAssociatePublicIp, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAssociatePublicIp, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.region = get_region(cls.api_client, cls.services)
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
+        cls.region = get_region(cls.api_client)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.pod = get_pod(cls.api_client, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -651,7 +653,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
 
         self.cleanup = []
 
-        portable_ip_range_services = get_portable_ip_range_services(self.config)
+        portable_ip_range_services = self.services["portableIpRange"]
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -909,13 +911,15 @@ class TestDisassociatePublicIp(cloudstackTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestDisassociatePublicIp, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDisassociatePublicIp, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.region = get_region(cls.api_client, cls.services)
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
+        cls.region = get_region(cls.api_client)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.pod = get_pod(cls.api_client, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -993,7 +997,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
-        portable_ip_range_services = get_portable_ip_range_services(self.config)
+        portable_ip_range_services = self.services["portableIpRange"]
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -1144,7 +1148,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
                             domainid=self.domain.id
                             )
 
-        self.api_client_user = self.testClient.createUserApiClient(
+        self.api_client_user = self.testClient.getUserApiClient(
                                             UserName=self.user_account.name,
                                             DomainName=self.user_account.domain
                                             )
@@ -1168,14 +1172,16 @@ class TestDeleteAccount(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestDeleteAccount, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeleteAccount, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.region = get_region(cls.api_client, cls.services)
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.region = get_region(cls.api_client)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
+        cls.pod = get_pod(cls.api_client, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -1213,7 +1219,7 @@ class TestDeleteAccount(cloudstackTestCase):
                             )
         self.cleanup = []
 
-        portable_ip_range_services = get_portable_ip_range_services(self.config)
+        portable_ip_range_services = self.services["portableIpRange"]
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -1393,13 +1399,15 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestPortableIpTransferAcrossNetworks, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestPortableIpTransferAcrossNetworks, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.region = get_region(cls.api_client, cls.services)
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
+        cls.region = get_region(cls.api_client)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.pod = get_pod(cls.api_client, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -1488,7 +1496,7 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
 
         #create new portable ip range
-        self.portable_ip_range_services = get_portable_ip_range_services(self.config)
+        self.portable_ip_range_services = self.services["portableIpRange"]
 
         if self.portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')

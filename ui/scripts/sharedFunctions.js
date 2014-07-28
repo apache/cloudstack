@@ -18,6 +18,7 @@ var g_mySession = null;
 var g_sessionKey = null;
 var g_role = null; // roles - root, domain-admin, ro-admin, user
 var g_username = null;
+var g_userid = null;
 var g_account = null;
 var g_domainid = null;
 var g_loginCmdText = null;
@@ -47,8 +48,6 @@ var md5HashedLogin = false;
 //page size for API call (e.g."listXXXXXXX&pagesize=N" )
 var pageSize = 20;
 //var pageSize = 1; //for testing only
-
-var rootAccountId = 1;
 
 //async action
 var pollAsyncJobResult = function(args) {
@@ -764,18 +763,6 @@ var addGuestNetworkDialog = {
         return (g_role == 0);
     }
 
-    function isSelfOrChildDomainUser(username, useraccounttype, userdomainid, iscallerchilddomain) {
-        if (username == g_username) { //is self
-            return true;
-        } else if (isDomainAdmin() && !iscallerchilddomain && (useraccounttype == 0)) { //domain admin to user
-            return true;
-        } else if (isDomainAdmin() && iscallerchilddomain && (userdomainid != g_domainid)) { //domain admin to subdomain admin and user
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     // FUNCTION: Handles AJAX error callbacks.  You can pass in an optional function to
     // handle errors that are not already handled by this method.
 
@@ -1130,6 +1117,16 @@ cloudStack.converters = {
     }
 }
 
+function isModuleIncluded(moduleName) {    
+    for(var moduleIndex = 0; moduleIndex < cloudStack.modules.length; moduleIndex++) {
+        if (cloudStack.modules[moduleIndex] == moduleName) {
+            return true;            
+            break;            
+        }
+    }    
+    return false;
+}
+
 //data parameter passed to API call in listView
 
 function listViewDataProvider(args, data, options) {
@@ -1182,10 +1179,7 @@ var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {
     jsonObj.networkofferingidText = jsonObj.networkofferingid;
 
     if (jsonObj.acltype == "Domain") {
-        if (jsonObj.domainid == rootAccountId)
-            jsonObj.scope = "All";
-        else
-            jsonObj.scope = "Domain (" + jsonObj.domain + ")";
+        jsonObj.scope = "Domain (" + jsonObj.domain + ")";
     } else if (jsonObj.acltype == "Account") {
         if (jsonObj.project != null)
             jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.project + ")";

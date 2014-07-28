@@ -24,24 +24,13 @@
     Feature Specifications: https://cwiki.apache.org/confluence/display/CLOUDSTACK/Dynamic+Compute+Offering+FS
 """
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.utils import (cleanup_resources,
-                                          validateList,
-                                          random_gen)
-from marvin.integration.lib.base import (ServiceOffering,
-                                         VirtualMachine,
-                                         Account,
-                                         Resources,
-                                         AffinityGroup,
-                                         Host)
-from marvin.integration.lib.common import (get_domain,
-                                           get_zone,
-                                           get_template,
-                                           verifyComputeOfferingCreation)
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, ADMIN_ACCOUNT, USER_ACCOUNT
 from ddt import ddt, data
-import time
 
 @ddt
 class TestDynamicServiceOffering(cloudstackTestCase):
@@ -50,21 +39,22 @@ class TestDynamicServiceOffering(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestDynamicServiceOffering,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-
-        # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestDynamicServiceOffering, cls).getClsTestClient()
+        cls.api_client = cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.mode = str(cls.zone.networktype).lower()
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
+
         cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls._cleanup = []
@@ -235,7 +225,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
 
         # Create Account
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -297,7 +287,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
 
         # Create Account and its api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -364,7 +354,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
 
         # Create Account and api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -424,11 +414,11 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         cls.api_client = cloudstackTestClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cloudstackTestClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cloudstackTestClient.getZoneForTests())
         cls.mode = str(cls.zone.networktype).lower()
         cls.template = get_template(
                             cls.api_client,
@@ -512,7 +502,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Create Account
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -577,7 +567,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Create Account and api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -661,7 +651,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Create account and api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -729,7 +719,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Create Account
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -805,7 +795,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Create Account and api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -865,7 +855,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Crate account and api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -940,7 +930,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Create account and api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -1005,7 +995,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Create account and api client
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.createUserApiClient(
+        apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         self.cleanup.append(self.account)
@@ -1068,11 +1058,11 @@ class TestAccountLimits(cloudstackTestCase):
         cls.api_client = cloudstackTestClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cloudstackTestClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cloudstackTestClient.getZoneForTests())
         cls.mode = str(cls.zone.networktype).lower()
         cls.template = get_template(
                             cls.api_client,
@@ -1345,11 +1335,11 @@ class TestAffinityGroup(cloudstackTestCase):
         cls.api_client = cloudstackTestClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cloudstackTestClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cloudstackTestClient.getZoneForTests())
         cls.mode = str(cls.zone.networktype).lower()
         cls.template = get_template(
                             cls.api_client,

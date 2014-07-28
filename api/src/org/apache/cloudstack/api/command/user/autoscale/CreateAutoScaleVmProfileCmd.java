@@ -131,8 +131,17 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         return templateId;
     }
 
+    @Deprecated
     public Boolean getDisplay() {
         return display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if(display == null)
+            return true;
+        else
+            return display;
     }
 
     public Map getCounterParamList() {

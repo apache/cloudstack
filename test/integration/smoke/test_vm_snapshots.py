@@ -16,83 +16,45 @@
 # under the License.
 
 # Import Local Modules
-import marvin
+from marvin.codes import FAILED, KVM
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-
-class Services:
-    """Test Snapshots Services
-    """
-
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                # Random characters are appended for unique
-                # username
-                "password": "password",
-            },
-            "service_offering": {
-                "name": "Tiny Instance",
-                "displaytext": "Tiny Instance",
-                "cpunumber": 1,
-                "cpuspeed": 200, # in MHz
-                "memory": 256, # In MBs
-            },
-            "server": {
-                "displayname": "TestVM",
-                "username": "root",
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-            "mgmt_server": {
-                "ipaddress": '1.2.2.152',
-                "username": "root",
-                "password": "password",
-                "port": 22,
-            },
-            "templates": {
-                "displaytext": 'Template',
-                "name": 'Template',
-                "ostype": "CentOS 5.3 (64-bit)",
-                "templatefilter": 'self',
-            },
-            "test_dir": "/tmp",
-            "random_data": "random.data",
-            "snapshot_name": "TestSnapshot",
-            "snapshot_displaytext": "Test",
-            "ostype": "CentOS 5.3 (64-bit)",
-            "sleep": 60,
-            "timeout": 10,
-            "mode": 'advanced', # Networking mode: Advanced, Basic
-        }
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import startVirtualMachine
+from marvin.lib.utils import random_gen, cleanup_resources
+from marvin.lib.base import (Account,
+                             ServiceOffering,
+                             VirtualMachine,
+                             VmSnapshot)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               list_virtual_machines)
+import time
 
 class TestVmSnapshot(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestVmSnapshot, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        testClient = super(TestVmSnapshot, cls).getClsTestClient()
+
+        hypervisor = testClient.getHypervisorInfo()
+        if hypervisor.lower() == KVM.lower():
+            raise unittest.SkipTest("VM snapshot feature is not supported on KVM")
+
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
 
         template = get_template(
-                    cls.api_client,
+                    cls.apiclient,
                     cls.zone.id,
                     cls.services["ostype"]
                     )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.services["domainid"] = cls.domain.id
         cls.services["server"]["zoneid"] = cls.zone.id
         cls.services["templates"]["ostypeid"] = template.ostypeid
@@ -100,27 +62,27 @@ class TestVmSnapshot(cloudstackTestCase):
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
-                    cls.api_client,
+                    cls.apiclient,
                     cls.services["account"],
                     domainid=cls.domain.id
                     )
 
-        cls.services["account"] = cls.account.name
-
         cls.service_offering = ServiceOffering.create(
-                            cls.api_client,
-                            cls.services["service_offering"]
+                            cls.apiclient,
+                            cls.services["service_offerings"]
                             )
         cls.virtual_machine = VirtualMachine.create(
-                    cls.api_client,
+                    cls.apiclient,
                     cls.services["server"],
                     templateid=template.id,
                     accountid=cls.account.name,
                     domainid=cls.account.domainid,
                     serviceofferingid=cls.service_offering.id,
-                    mode=cls.services["mode"]
+                    mode=cls.zone.networktype
                     )
         cls.random_data_0 = random_gen(size=100)
+        cls.test_dir = "/tmp"
+        cls.random_data = "random.data"
         cls._cleanup = [
                 cls.service_offering,
                 cls.account,
@@ -131,7 +93,7 @@ class TestVmSnapshot(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -160,8 +122,8 @@ class TestVmSnapshot(cloudstackTestCase):
             ssh_client = self.virtual_machine.get_ssh_client()
 
             cmds = [
-                "echo %s > %s/%s" % (self.random_data_0, self.services["test_dir"], self.services["random_data"]),
-                "cat %s/%s" % (self.services["test_dir"], self.services["random_data"])
+                "echo %s > %s/%s" % (self.random_data_0, self.test_dir, self.random_data),
+                "cat %s/%s" % (self.test_dir, self.random_data)
             ]
 
             for c in cmds:
@@ -184,8 +146,8 @@ class TestVmSnapshot(cloudstackTestCase):
             self.apiclient,
             self.virtual_machine.id,
             "false",
-            self.services["snapshot_name"],
-            self.services["snapshot_displaytext"]
+            "TestSnapshot",
+            "Dsiplay Text"
         )
         self.assertEqual(
             vm_snapshot.state,
@@ -203,8 +165,8 @@ class TestVmSnapshot(cloudstackTestCase):
             ssh_client = self.virtual_machine.get_ssh_client()
 
             cmds = [
-                "rm -rf %s/%s" % (self.services["test_dir"], self.services["random_data"]),
-                "ls %s/%s" % (self.services["test_dir"], self.services["random_data"])
+                "rm -rf %s/%s" % (self.test_dir, self.random_data),
+                "ls %s/%s" % (self.test_dir, self.random_data)
             ]
 
             for c in cmds:
@@ -263,7 +225,7 @@ class TestVmSnapshot(cloudstackTestCase):
             ssh_client = self.virtual_machine.get_ssh_client(reconnect=True)
 
             cmds = [
-                "cat %s/%s" % (self.services["test_dir"], self.services["random_data"])
+                "cat %s/%s" % (self.test_dir, self.random_data)
             ]
 
             for c in cmds:

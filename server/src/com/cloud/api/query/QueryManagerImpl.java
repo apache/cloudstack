@@ -3382,23 +3382,40 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Boolean forDisplay = cmd.getDisplay();
         ResourceTag.ResourceObjectType resourceType = cmd.getResourceType();
         String resourceIdStr = cmd.getResourceId();
+        String value = cmd.getValue();
         Long resourceId = null;
+
+        //Validation - 1.1 - resourceId and value cant be null.
+        if(resourceIdStr == null && value == null){
+            throw new InvalidParameterValueException("Insufficient parameters passed for listing by resourceId OR key,value pair. Please check your params and try again.");
+        }
+
+        //Validation - 1.2 - Value has to be passed along with key.
+        if(value != null && key == null){
+            throw new InvalidParameterValueException("Listing by (key, value) but key is null. Please check the params and try again");
+        }
+
+        //Validation - 1.3
         if (resourceIdStr != null) {
             resourceId = _taggedResourceMgr.getResourceId(resourceIdStr, resourceType);
+            if (resourceId == null) {
+                throw new InvalidParameterValueException("Cannot find resource with resourceId " + resourceIdStr + " and of resource type " + resourceType);
+            }
         }
-        if (resourceId == null) {
-            throw new InvalidParameterValueException("Cannot find resource with resourceId " + resourceIdStr + " and of resource type " + resourceType);
-        }
+
+
         List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();
         ResourceDetail requestedDetail = null;
 
         if (key == null) {
             detailList = _resourceMetaDataMgr.getDetailsList(resourceId, resourceType, forDisplay);
-        } else {
+        } else if (value == null){
             requestedDetail = _resourceMetaDataMgr.getDetail(resourceId, resourceType, key);
             if (requestedDetail != null && forDisplay != null && requestedDetail.isDisplay() != forDisplay) {
                 requestedDetail = null;
             }
+        }else {
+            detailList = _resourceMetaDataMgr.getDetails(resourceType, key, value, forDisplay);
         }
 
         List<ResourceDetailResponse> responseList = new ArrayList<ResourceDetailResponse>();

@@ -866,9 +866,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (volumesForVm != null) {
             for (VolumeVO volumeForVm : volumesForVm) {
                 VolumeInfo volumeInfo = volFactory.getVolume(volumeForVm.getId());
-                DataStore dataStore = dataStoreMgr.getDataStore(volumeForVm.getPoolId(), DataStoreRole.Primary);
-
-                volService.disconnectVolumeFromHost(volumeInfo, host, dataStore);
+                // pool id can be null for the VM's volumes in Allocated state
+                if (volumeForVm.getPoolId() != null) {
+                    DataStore dataStore = dataStoreMgr.getDataStore(volumeForVm.getPoolId(), DataStoreRole.Primary);
+                    volService.disconnectVolumeFromHost(volumeInfo, host, dataStore);
+                }
             }
         }
     }

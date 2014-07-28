@@ -21,9 +21,9 @@ import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 import telnetlib
 
@@ -38,8 +38,12 @@ class TestPVLAN(cloudstackTestCase):
     vlan = 1234
     isolatedpvlan = 567
 
-    def setUp(self):
-        self.apiClient = self.testClient.getApiClient()
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(TestPVLAN, cls).getClsTestClient()
+        cls.apiClient = cls.testClient.getApiClient()
+        cls.zone = get_zone(cls.apiClient, cls.testClient.getZoneForTests())
+        cls.zoneId = cls.zone.id
 
     @attr(tags = ["advanced", "selfservice"])
     def test_create_pvlan_network(self):
@@ -76,12 +80,6 @@ class TestPVLAN(cloudstackTestCase):
         createNetworkCmd.ip6cidr="fc00:1234::/64"
         createNetworkCmd.startipv6="fc00:1234::10"
         createNetworkCmd.endipv6="fc00:1234::20"
-        err = 0;
-        try:
-            createNetworkResponse = self.apiClient.createNetwork(createNetworkCmd)
-        except Exception as e:
-            err = 1;
-            self.debug("Try alloc with ipv6, got:%s" % e)
-        self.assertEqual(err, 1, "Shouldn't allow create PVLAN network with IPv6");
-
-
+        err = 0
+        with self.assertRaises(Exception):
+            self.apiClient.createNetwork(createNetworkCmd)

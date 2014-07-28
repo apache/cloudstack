@@ -136,7 +136,7 @@
                                                 clearInterval(uploadCustomCertificateIntervalID);
                                                 if (result.jobstatus == 1) {
                                                     cloudStack.dialog.notice({
-                                                        message: 'Update SSL Certiciate succeeded'
+                                                        message: 'Update SSL Certificate succeeded'
                                                     });
                                                 } else if (result.jobstatus == 2) {
                                                     cloudStack.dialog.notice({

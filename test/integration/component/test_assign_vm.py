@@ -20,7 +20,7 @@
 #Import Local Modules
 from nose.plugins.attrib           import attr
 from marvin.cloudstackTestCase     import cloudstackTestCase
-from marvin.integration.lib.base   import (Account,
+from marvin.lib.base   import (Account,
                                            Domain,
                                            User,
                                            Project,
@@ -29,7 +29,7 @@ from marvin.integration.lib.base   import (Account,
                                            DiskOffering,
                                            ServiceOffering,
                                            VirtualMachine)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            list_volumes,
@@ -37,7 +37,7 @@ from marvin.integration.lib.common import (get_domain,
                                            list_networks,
                                            list_snapshots,
                                            list_virtual_machines)
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 
 def log_test_exceptions(func):
     def test_wrap_exception_log(self, *args, **kwargs):
@@ -98,12 +98,13 @@ class TestVMOwnership(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(TestVMOwnership,
-                               cls).getClsTestClient().getApiClient()
-        cls.services  = Services().services
-        # Get Zone  Domain and create Domains and sub Domains.
-        cls.domain           = get_domain(cls.api_client, cls.services)
-        cls.zone             = get_zone(cls.api_client, cls.services)
+        cls.testClient = super(TestVMOwnership, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         # Get and set template id for VM creation.
         cls.template = get_template(cls.api_client,
@@ -353,8 +354,8 @@ class TestVMOwnership(cloudstackTestCase):
         # 1. deploy VM in sub subdomain1
         # 2. stop VM in sub subdomain1
         # 3. assignVirtualMachine to subdomain2
-        userapiclient = self.testClient.getUserApiClient(account=self.sdomain_account_user1['account'].name,
-                                                         domain=self.sdomain_account_user1['domain'].name,
+        userapiclient = self.testClient.getUserApiClient(UserName=self.sdomain_account_user1['account'].name,
+                                                         DomainName=self.sdomain_account_user1['domain'].name,
                                                          type=2)
         self.create_vm(self.sdomain_account_user1['account'], self.sdomain_account_user1['domain'])
         self.assertRaises(Exception, self.virtual_machine.assign_virtual_machine, userapiclient, self.sdomain_account_user2['account'].name ,self.sdomain_account_user2['domain'].id)
@@ -389,8 +390,8 @@ class TestVMOwnership(cloudstackTestCase):
         # Validate the following:
         # 1. deploy VM in sub subdomain1 with volumes.
         # 3. assignVirtualMachine to subdomain2
-        userapiclient = self.testClient.getUserApiClient(account=self.sdomain_account_user1['account'].name,
-                                                         domain=self.sdomain_account_user1['domain'].name,
+        userapiclient = self.testClient.getUserApiClient(UserName=self.sdomain_account_user1['account'].name,
+                                                         DomainName=self.sdomain_account_user1['domain'].name,
                                                          type=2)
         self.create_vm(self.sdomain_account_user1['account'], self.sdomain_account_user1['domain'],volume=self.sdomain_account_user1['volume'])
         self.assertRaises(Exception, self.virtual_machine.assign_virtual_machine, userapiclient, self.sdomain_account_user2['account'].name ,self.sdomain_account_user2['domain'].id)
@@ -431,8 +432,8 @@ class TestVMOwnership(cloudstackTestCase):
         # Validate the following:
         # 1. deploy VM in sub subdomain1 with snapshot.
         # 3. assignVirtualMachine to subdomain2
-        userapiclient = self.testClient.getUserApiClient(account=self.sdomain_account_user1['account'].name,
-                                                         domain=self.sdomain_account_user1['domain'].name,
+        userapiclient = self.testClient.getUserApiClient(UserName=self.sdomain_account_user1['account'].name,
+                                                         DomainName=self.sdomain_account_user1['domain'].name,
                                                          type=2)
         self.create_vm(self.sdomain_account_user1['account'], self.sdomain_account_user1['domain'], project=self.sdomain_account_user1['project'])
         self.assertRaises(Exception, self.virtual_machine.assign_virtual_machine, userapiclient, self.sdomain_account_user2['account'].name ,self.sdomain_account_user2['domain'].id)
@@ -450,8 +451,8 @@ class TestVMOwnership(cloudstackTestCase):
                               account=self.sdomain_account_user2['account'].name,
                               domainid=self.sdomain_account_user2['domain'].id,
                               max=0)
-        userapiclient = self.testClient.getUserApiClient(account=self.sdomain_account_user1['account'].name,
-                                                         domain=self.sdomain_account_user1['domain'].name,
+        userapiclient = self.testClient.getUserApiClient(UserName=self.sdomain_account_user1['account'].name,
+                                                         DomainName=self.sdomain_account_user1['domain'].name,
                                                          type=2)
         self.create_vm(self.sdomain_account_user1['account'], self.sdomain_account_user1['domain'], snapshot=True)
         self.assertRaises(Exception, self.virtual_machine.assign_virtual_machine, userapiclient, self.sdomain_account_user2['account'].name ,self.sdomain_account_user2['domain'].id)
@@ -470,8 +471,8 @@ class TestVMOwnership(cloudstackTestCase):
                               account=self.sdomain_account_user2['account'].name,
                               domainid=self.sdomain_account_user2['domain'].id,
                               max=0)
-        userapiclient = self.testClient.getUserApiClient(account=self.sdomain_account_user1['account'].name,
-                                                         domain=self.sdomain_account_user1['domain'].name,
+        userapiclient = self.testClient.getUserApiClient(UserName=self.sdomain_account_user1['account'].name,
+                                                         DomainName=self.sdomain_account_user1['domain'].name,
                                                          type=2)
         self.create_vm(self.sdomain_account_user1['account'], self.sdomain_account_user1['domain'], snapshot=True, volume=self.sdomain_account_user1['volume'])
         self.assertRaises(Exception, self.virtual_machine.assign_virtual_machine, userapiclient, self.sdomain_account_user2['account'].name ,self.sdomain_account_user2['domain'].id)

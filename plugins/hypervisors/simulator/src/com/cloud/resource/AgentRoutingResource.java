@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.resource;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,15 +51,21 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
+import com.cloud.serializer.GsonHelper;
+import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockVMVO;
 import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 
 public class AgentRoutingResource extends AgentStorageResource {
     private static final Logger s_logger = Logger.getLogger(AgentRoutingResource.class);
+    private static final Gson s_gson = GsonHelper.getGson();
 
     protected Map<String, State> _vms = new HashMap<String, State>();
     private Map<String, Pair<Long, Long>> _runningVms = new HashMap<String, Pair<Long, Long>>();
@@ -104,6 +111,51 @@ public class AgentRoutingResource extends AgentStorageResource {
 
     @Override
     public PingCommand getCurrentStatus(long id) {
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
+        try {
+            MockConfigurationVO config = _simMgr.getMockConfigurationDao().findByNameBottomUP(agentHost.getDataCenterId(), agentHost.getPodId(), agentHost.getClusterId(), agentHost.getId(), "PingCommand");
+            if (config != null) {
+                Map<String, String> configParameters = config.getParameters();
+                for (Map.Entry<String, String> entry : configParameters.entrySet()) {
+                    if (entry.getKey().equalsIgnoreCase("result")) {
+                        String value = entry.getValue();
+                        if (value.equalsIgnoreCase("fail")) {
+                            return null;
+                        }
+                    }
+                }
+            }
+
+            config = _simMgr.getMockConfigurationDao().findByNameBottomUP(agentHost.getDataCenterId(), agentHost.getPodId(), agentHost.getClusterId(), agentHost.getId(), "PingRoutingWithNwGroupsCommand");
+            if (config != null) {
+                String message = config.getJsonResponse();
+                if (message != null) {
+                    // json response looks like {"<Type>":....}
+                    String objectType = message.split(":")[0].substring(2).replace("\"", "");
+                    String objectData = message.substring(message.indexOf(':') + 1, message.length() - 1);
+                    if (objectType != null) {
+                        Class<?> clz = null;
+                        try {
+                            clz = Class.forName(objectType);
+                        } catch (ClassNotFoundException e) {
+                        }
+                        if (clz != null) {
+                            StringReader reader = new StringReader(objectData);
+                            JsonReader jsonReader = new JsonReader(reader);
+                            jsonReader.setLenient(true);
+                            return (PingCommand)s_gson.fromJson(jsonReader, clz);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            txn.rollback();
+        } finally {
+            txn.close();
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
+        }
+
         if (isStopped()) {
             return null;
         }
@@ -279,8 +331,16 @@ public class AgentRoutingResource extends AgentStorageResource {
     protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport() {
         HashMap<String, HostVmStateReportEntry> report = new HashMap<String, HostVmStateReportEntry>();
 
-        for (String vmName : _runningVms.keySet()) {
-            report.put(vmName, new HostVmStateReportEntry(PowerState.PowerOn, agentHost.getName()));
+        Map<String, State> states = _simMgr.getVmStates(this.hostGuid);
+        for (String vmName : states.keySet()) {
+            State state = states.get(vmName);
+            if (state == State.Running) {
+                report.put(vmName, new HostVmStateReportEntry(PowerState.PowerOn, agentHost.getName()));
+            } else if (state == State.Stopped) {
+                report.put(vmName, new HostVmStateReportEntry(PowerState.PowerOff, agentHost.getName()));
+            } else {
+                report.put(vmName, new HostVmStateReportEntry(PowerState.PowerUnknown, agentHost.getName()));
+            }
         }
 
         return report;

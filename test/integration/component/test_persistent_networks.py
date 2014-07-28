@@ -14,64 +14,35 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" Tests for Persistent Networks without running VMs feature
-
-    Test Plan: https://cwiki.apache.org/confluence/display/CLOUDSTACK/Persistent+Networks+without+a+running+VM
-
-    Issue Link: https://issues.apache.org/jira/browse/CLOUDSTACK-2232
-
-    Feature Specifications: https://cwiki.apache.org/confluence/display/CLOUDSTACK/FS+-+Persistent+Networks
-"""
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.utils import (cleanup_resources,
-                                          validateList,
-                                          get_hypervisor_type)
-from marvin.integration.lib.base import (Account,
-                                         ServiceOffering,
-                                         NetworkOffering,
-                                         Network,
-                                         VirtualMachine,
-                                         PublicIPAddress,
-                                         FireWallRule,
-                                         Router,
-                                         Host,
-                                         NATRule,
-                                         Project,
-                                         LoadBalancerRule,
-                                         VpcOffering,
-                                         VPC,
-                                         Domain,
-                                         StaticNATRule,
-                                         NetworkACL)
-from marvin.integration.lib.common import (get_domain,
-                                           get_zone,
-                                           get_template,
-                                           wait_for_cleanup,
-                                           add_netscaler,
-                                           verifyNetworkState)
-
+""" Tests for Persistent Networks without running VMs feature"""
+from marvin.cloudstackException import CloudstackAPIException
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
+import netaddr
 from nose.plugins.attrib import attr
-from marvin.codes import PASS, FAIL
+from marvin.codes import PASS, FAIL, FAILED
 from marvin.sshClient import SshClient
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from ddt import ddt, data
 import time
 
 @ddt
 class TestPersistentNetworks(cloudstackTestCase):
-    """Test Persistent Networks without running VMs
-    """
-
+    '''
+    Test Persistent Networks without running VMs
+    '''
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestPersistentNetworks,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestPersistentNetworks, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -190,8 +161,8 @@ class TestPersistentNetworks(cloudstackTestCase):
             retriesCount -= 1
             # end while
 
-	    if not isVmExpunged:
-	        self.fail("Failed to expunge vm even after 20 minutes")
+        if not isVmExpunged:
+            self.fail("Failed to expunge vm even after 20 minutes")
         return
 
     def setUp(self):
@@ -227,7 +198,13 @@ class TestPersistentNetworks(cloudstackTestCase):
                                           accountid=self.account.name,domainid=self.domain.id,
                                           zoneid=self.zone.id)
         self.cleanup.append(network)
-        verifyNetworkState(self.apiclient, network.id, "implemented")
+        response = verifyNetworkState(self.apiclient, network.id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         self.assertIsNotNone(network.vlan, "vlan must not be null for persistent network")
 
         try:
@@ -246,6 +223,12 @@ class TestPersistentNetworks(cloudstackTestCase):
         wait_for_cleanup(self.api_client, ["network.gc.interval", "network.gc.wait"])
 
         verifyNetworkState(self.api_client, network.id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         return
 
     @attr(tags=["advanced", "selfservice"])
@@ -333,7 +316,13 @@ class TestPersistentNetworks(cloudstackTestCase):
                                           networkofferingid=networkOffering.id,
                                           accountid=account.name,domainid=self.domain.id,
                                           zoneid=self.zone.id)
-        verifyNetworkState(self.api_client, isolated_network.id, "allocated")
+        response = verifyNetworkState(self.api_client, isolated_network.id, "allocated")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
 
         # Update the network with persistent network offering
         isolated_network.update(self.apiclient, networkofferingid=self.isolated_persistent_network_offering.id, changecidr=changecidr)
@@ -377,7 +366,13 @@ class TestPersistentNetworks(cloudstackTestCase):
         wait_for_cleanup(self.api_client, ["network.gc.interval", "network.gc.wait"])
 
         # Check network state now, this will bolster that network updation has taken effect
-        verifyNetworkState(self.api_client, isolated_network.id, "implemented")
+        response = verifyNetworkState(self.api_client, isolated_network.id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         return
 
     @attr(tags=["advanced"])
@@ -402,7 +397,13 @@ class TestPersistentNetworks(cloudstackTestCase):
                                                      networkofferingid=self.isolated_network_offering.id,
                                                      accountid=account.name,domainid=self.domain.id,
                                                      zoneid=self.zone.id)
-        verifyNetworkState(self.api_client, isolated_network.id, "allocated")
+        response = verifyNetworkState(self.api_client, isolated_network.id, "allocated")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
 
         # Update network with network offering which has RVR
         isolated_network.update(self.apiclient, networkofferingid=self.isolated_persistent_network_offering_RVR.id)
@@ -444,7 +445,13 @@ class TestPersistentNetworks(cloudstackTestCase):
         wait_for_cleanup(self.api_client, ["network.gc.interval", "network.gc.wait"])
 
         # Check network state now, this will bolster that network updation has taken effect
-        verifyNetworkState(self.api_client, isolated_network.id, "implemented")
+        response = verifyNetworkState(self.api_client, isolated_network.id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         return
 
     @attr(tags=["advanced", "advancedns"])
@@ -475,7 +482,13 @@ class TestPersistentNetworks(cloudstackTestCase):
                                                      networkofferingid=self.isolated_network_offering_netscaler.id,
                                                      accountid=account.name,domainid=self.domain.id,
                                                      zoneid=self.zone.id)
-        verifyNetworkState(self.api_client, isolated_network.id, "allocated")
+        response = verifyNetworkState(self.api_client, isolated_network.id, "allocated")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
 
         isolated_network.update(self.apiclient, networkofferingid=self.isolated_persistent_network_offering_netscaler.id, changecidr=True)
 
@@ -515,7 +528,13 @@ class TestPersistentNetworks(cloudstackTestCase):
         wait_for_cleanup(self.api_client, ["network.gc.interval", "network.gc.wait"])
 
         # Check network state now, this will bolster that network updation has taken effect
-        verifyNetworkState(self.api_client, isolated_network.id, "implemented")
+        response = verifyNetworkState(self.api_client, isolated_network.id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         return
 
     @data("LB-VR","LB-Netscaler")
@@ -888,7 +907,13 @@ class TestPersistentNetworks(cloudstackTestCase):
         wait_for_cleanup(self.api_client, ["network.gc.interval", "network.gc.wait"])
 
         # Check network state now, this will bolster that network updation has taken effect
-        verifyNetworkState(self.api_client, network.id, "allocated")
+        response = verifyNetworkState(self.api_client, network.id, "allocated")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         return
 
     @attr(tags=["advanced"])
@@ -951,20 +976,22 @@ class TestAssignVirtualMachine(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestAssignVirtualMachine,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestAssignVirtualMachine, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -1070,7 +1097,13 @@ class TestAssignVirtualMachine(cloudstackTestCase):
                                                      networkofferingid=network_offering.id,
                                                      accountid=account_1.name,domainid=self.domain.id,
                                                      zoneid=self.zone.id)
-        verifyNetworkState(self.api_client, network.id, "implemented")
+        response = verifyNetworkState(self.api_client, network.id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         self.assertIsNotNone(network.vlan, "vlan must not be null for persistent network")
 
         try:
@@ -1105,20 +1138,22 @@ class TestProjectAccountOperations(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestProjectAccountOperations,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestProjectAccountOperations, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -1181,7 +1216,13 @@ class TestProjectAccountOperations(cloudstackTestCase):
                                                      networkofferingid=self.isolated_persistent_network_offering.id,
                                                      accountid=account.name,domainid=self.domain.id,
                                                      zoneid=self.zone.id)
-        verifyNetworkState(self.api_client, network.id, "implemented")
+        response = verifyNetworkState(self.api_client, network.id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         self.assertIsNotNone(network.vlan, "vlan must not be null for persistent network")
 
         if value == "disabled":
@@ -1199,7 +1240,13 @@ class TestProjectAccountOperations(cloudstackTestCase):
         networks = Network.list(self.apiclient, account=account.name, domainid = account.domainid)
         self.assertEqual(validateList(networks)[0], PASS, "networks list validation failed, list is %s" % networks)
 
-        verifyNetworkState(self.api_client, networks[0].id, "implemented")
+        response = verifyNetworkState(self.api_client, networks[0].id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         self.assertIsNotNone(networks[0].vlan, "vlan must not be null for persistent network")
         return
 
@@ -1250,7 +1297,13 @@ class TestProjectAccountOperations(cloudstackTestCase):
         # Wait for network cleanup interval
         wait_for_cleanup(self.api_client, ["network.gc.interval", "network.gc.wait"])
 
-        verifyNetworkState(self.apiclient, network.id, "implemented")
+        response = verifyNetworkState(self.apiclient, network.id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         return
 
 @ddt
@@ -1260,20 +1313,22 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestRestartPersistentNetwork,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestRestartPersistentNetwork, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -1384,7 +1439,13 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
                                                      networkofferingid=self.isolated_persistent_network_offering.id,
                                                      accountid=account.name,domainid=self.domain.id,
                                                      zoneid=self.zone.id)
-        verifyNetworkState(self.apiclient, isolated_persistent_network.id, "implemented")
+        response = verifyNetworkState(self.apiclient, isolated_persistent_network.id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         self.assertIsNotNone(isolated_persistent_network.vlan, "vlan must not be null for persistent network")
 
         self.debug("Listing routers for network: %s" % isolated_persistent_network.name)
@@ -1419,6 +1480,12 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
         self.assertEqual(validateList(networks)[0], PASS, "networks list validation failed, list is %s" % networks)
 
         verifyNetworkState(self.apiclient, networks[0].id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         self.assertIsNotNone(networks[0].vlan, "vlan must not be null for persistent network")
 
         # Deploy VM
@@ -1459,7 +1526,13 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
                                                      networkofferingid=self.isolated_persistent_network_offering_netscaler.id,
                                                      accountid=account.name,domainid=self.domain.id,
                                                      zoneid=self.zone.id)
-        verifyNetworkState(self.apiclient, isolated_persistent_network.id, "implemented")
+        response = verifyNetworkState(self.apiclient, isolated_persistent_network.id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         self.assertIsNotNone(isolated_persistent_network.vlan, "vlan must not be null for persistent network")
 
         self.debug("Listing routers for network: %s" % isolated_persistent_network.name)
@@ -1489,7 +1562,13 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
         networks = Network.list(self.apiclient, account=account.name, domainid = account.domainid)
         self.assertEqual(validateList(networks)[0], PASS, "networks list validation failed, list is %s" % networks)
 
-        verifyNetworkState(self.apiclient, networks[0].id, "implemented")
+        response = verifyNetworkState(self.apiclient, networks[0].id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         self.assertIsNotNone(networks[0].vlan, "vlan must not be null for persistent network")
 
         # Deploy VM
@@ -1516,25 +1595,28 @@ class TestVPCNetworkOperations(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestVPCNetworkOperations,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestVPCNetworkOperations, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.services["service_offerings"]["small"]
                                             )
         cls.persistent_network_offering_NoLB = NetworkOffering.create(cls.api_client, cls.services["nw_off_persistent_VPCVR_NoLB"],
                                                                        conservemode=False)
@@ -1688,21 +1770,45 @@ class TestVPCNetworkOperations(cloudstackTestCase):
                                               networkofferingid=self.persistent_network_offering_NoLB.id,
                                               accountid=account.name,domainid=self.domain.id,
                                               zoneid=self.zone.id, vpcid=vpc.id, gateway="10.1.1.1", netmask="255.255.255.0")
-        verifyNetworkState(self.apiclient, persistent_network_1.id, "implemented")
+        response = verifyNetworkState(self.apiclient, persistent_network_1.id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         self.assertIsNotNone(persistent_network_1.vlan, "vlan must not be null for persistent network %s" % persistent_network_1.id)
 
         persistent_network_2 = Network.create(self.api_client,self.services["isolated_network"],
                                               networkofferingid=self.persistent_network_offering_NoLB.id,
                                               accountid=account.name,domainid=self.domain.id,
                                               zoneid=self.zone.id, vpcid=vpc.id, gateway="10.1.2.1", netmask="255.255.255.0")
-        verifyNetworkState(self.apiclient, persistent_network_2.id, "implemented")
+        response = verifyNetworkState(self.apiclient, persistent_network_2.id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         self.assertIsNotNone(persistent_network_2.vlan, "vlan must not be null for persistent network: %s" % persistent_network_2.id)
 
         if value == "restart":
             # Restart VPC
             vpc.restart(self.apiclient)
-            verifyNetworkState(self.apiclient, persistent_network_1.id, "implemented")
-            verifyNetworkState(self.apiclient, persistent_network_2.id, "implemented")
+            response = verifyNetworkState(self.apiclient, persistent_network_1.id, "implemented")
+            exceptionOccured = response[0]
+            isNetworkInDesiredState = response[1]
+            exceptionMessage = response[2]
+
+            if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
+            response = verifyNetworkState(self.apiclient, persistent_network_2.id, "implemented")
+            exceptionOccured = response[0]
+            isNetworkInDesiredState = response[1]
+            exceptionMessage = response[2]
+
+            if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
 
         elif value == "delete":
             vpc.delete(self.apiclient)
@@ -1726,47 +1832,88 @@ class TestVPCNetworkOperations(cloudstackTestCase):
         # 3. Restart/delete VPC network
 
         # Validations
-        # 1. In case of Restart operation, restart should be successful and persistent networks should be back in persistent state
-        # 2. In case of Delete operation, VR servicing the VPC should get destroyed and sourceNAT ip should get released
+        # 1. In case of Restart operation, restart should be successful
+        #    and persistent networks should be back in persistent state
+        # 2. In case of Delete operation, VR servicing the VPC should
+        #    get destroyed and sourceNAT ip should get released
 
-        child_domain = Domain.create(self.apiclient,services=self.services["domain"],
+        child_domain = Domain.create(self.apiclient,
+                                     services=self.services["domain"],
                                      parentdomainid=self.domain.id)
 
-        account_1 = Account.create(self.apiclient,self.services["account"],domainid=child_domain.id)
-        account_2 = Account.create(self.apiclient,self.services["account"],domainid=child_domain.id)
+        try:
+            account_1 = Account.create(
+                            self.apiclient,self.services["account"],
+                            domainid=child_domain.id
+                            )
+            account_2 = Account.create(
+                            self.apiclient,self.services["account"],
+                            domainid=child_domain.id
+                            )
 
-        self.services["vpc"]["cidr"] = "10.1.1.1/16"
-        vpc_1 = VPC.create(self.apiclient, self.services["vpc"],
+            self.services["vpc"]["cidr"] = "10.1.1.1/16"
+            vpc_1 = VPC.create(self.apiclient, self.services["vpc"],
                          vpcofferingid=self.vpc_off.id, zoneid=self.zone.id,
                          account=account_1.name, domainid=account_1.domainid)
-        vpcs = VPC.list(self.apiclient, id=vpc_1.id)
-        self.assertEqual(validateList(vpcs)[0], PASS, "VPC list validation failed, vpc list is %s" % vpcs)
+            vpcs = VPC.list(self.apiclient, id=vpc_1.id)
+            self.assertEqual(validateList(vpcs)[0], PASS,\
+                    "VPC list validation failed, vpc list is %s" % vpcs)
 
-        vpc_2 = VPC.create(self.apiclient, self.services["vpc"],
+            vpc_2 = VPC.create(self.apiclient, self.services["vpc"],
                          vpcofferingid=self.vpc_off.id, zoneid=self.zone.id,
                          account=account_2.name, domainid=account_2.domainid)
-        vpcs = VPC.list(self.apiclient, id=vpc_2.id)
-        self.assertEqual(validateList(vpcs)[0], PASS, "VPC list validation failed, vpc list is %s" % vpcs)
+            vpcs = VPC.list(self.apiclient, id=vpc_2.id)
+            self.assertEqual(validateList(vpcs)[0], PASS,\
+                    "VPC list validation failed, vpc list is %s" % vpcs)
 
-        persistent_network_1 = Network.create(self.api_client,self.services["isolated_network"],
-                                              networkofferingid=self.persistent_network_offering_NoLB.id,
-                                              accountid=account_1.name,domainid=account_1.domainid,
-                                              zoneid=self.zone.id, vpcid=vpc_1.id, gateway="10.1.1.1", netmask="255.255.255.0")
-        verifyNetworkState(self.apiclient, persistent_network_1.id, "implemented")
-        self.assertIsNotNone(persistent_network_1.vlan, "vlan must not be null for persistent network %s" % persistent_network_1.id)
+            persistent_network_1 = Network.create(
+                self.api_client,self.services["isolated_network"],
+                networkofferingid=self.persistent_network_offering_NoLB.id,
+                accountid=account_1.name,domainid=account_1.domainid,
+                zoneid=self.zone.id, vpcid=vpc_1.id, gateway="10.1.1.1",
+                netmask="255.255.255.0")
 
-        persistent_network_2 = Network.create(self.api_client,self.services["isolated_network"],
-                                              networkofferingid=self.persistent_network_offering_NoLB.id,
-                                              accountid=account_2.name,domainid=account_2.domainid,
-                                              zoneid=self.zone.id, vpcid=vpc_2.id, gateway="10.1.1.1", netmask="255.255.255.0")
-        verifyNetworkState(self.apiclient, persistent_network_2.id, "implemented")
-        self.assertIsNotNone(persistent_network_2.vlan, "vlan must not be null for persistent network: %s" % persistent_network_2.id)
+            response = verifyNetworkState(self.apiclient,
+                                          persistent_network_1.id,
+                                          "implemented"
+                                          )
+            exceptionOccured = response[0]
+            isNetworkInDesiredState = response[1]
+            exceptionMessage = response[2]
 
-        # Force delete domain
-        try:
+            if (exceptionOccured or (not isNetworkInDesiredState)):
+                raise Exception(exceptionMessage)
+            self.assertIsNotNone(
+                    persistent_network_1.vlan,\
+                    "vlan must not be null for persistent network %s" %\
+                    persistent_network_1.id)
+
+            persistent_network_2 = Network.create(
+                self.api_client,self.services["isolated_network"],
+                networkofferingid=self.persistent_network_offering_NoLB.id,
+                accountid=account_2.name,domainid=account_2.domainid,
+                zoneid=self.zone.id, vpcid=vpc_2.id, gateway="10.1.1.1",
+                netmask="255.255.255.0")
+            response = verifyNetworkState(self.apiclient, persistent_network_2.id,
+                                          "implemented")
+            exceptionOccured = response[0]
+            isNetworkInDesiredState = response[1]
+            exceptionMessage = response[2]
+
+            if (exceptionOccured or (not isNetworkInDesiredState)):
+                raise Exception(exceptionMessage)
+            self.assertIsNotNone(persistent_network_2.vlan,\
+                    "vlan must not be null for persistent network: %s" %\
+                    persistent_network_2.id)
+
+            # Force delete domain
             child_domain.delete(self.apiclient, cleanup=True)
+
         except Exception as e:
-            self.fail("Failed to delete domain: %s" % e)
+            self.cleanup.append(account_1)
+            self.cleanup.append(account_2)
+            self.cleanup.append(child_domain)
+            self.fail(e)
 
         self.debug("Waiting for account.cleanup.interval" +
                 " to cleanup any remaining resouces")
@@ -1774,11 +1921,17 @@ class TestVPCNetworkOperations(cloudstackTestCase):
         wait_for_cleanup(self.apiclient, ["account.cleanup.interval"]*3)
         self.VerifyDomainCleanup(child_domain.id)
 
-        with self.assertRaises(Exception) as e:
-            Account.list(self.apiclient,name=account_1.name, domainid=account_1.domainid,listall=True)
+        with self.assertRaises(Exception):
+            Account.list(
+                    self.apiclient,name=account_1.name,
+                    domainid=account_1.domainid,listall=True
+                    )
 
-        with self.assertRaises(Exception) as e:
-            Account.list(self.apiclient,name=account_2.name, domainid=account_2.domainid,listall=True)
+        with self.assertRaises(Exception):
+            Account.list(
+                    self.apiclient,name=account_2.name,
+                    domainid=account_2.domainid,listall=True
+                    )
 
         self.VerifyVpcCleanup(vpc_1.id)
         self.VerifyVpcCleanup(vpc_2.id)
@@ -1797,34 +1950,46 @@ class TestVPCNetworkOperations(cloudstackTestCase):
         # 1. In case of Restart operation, restart should be successful and persistent networks should be back in persistent state
         # 2. In case of Delete operation, VR servicing the VPC should get destroyed and sourceNAT ip should get released
 
-        # Create Account
-        account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id)
+        try:
+            # Create Account
+            account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id)
 
-        # Create VPC
-        self.services["vpc"]["cidr"] = "10.1.1.1/16"
-        vpc = VPC.create(self.apiclient, self.services["vpc"],
+            # Create VPC
+            self.services["vpc"]["cidr"] = "10.1.1.1/16"
+            vpc = VPC.create(self.apiclient, self.services["vpc"],
                          vpcofferingid=self.vpc_off.id, zoneid=self.zone.id,
                          account=account.name, domainid=account.domainid)
-        vpcs = VPC.list(self.apiclient, id=vpc.id)
-        self.assertEqual(validateList(vpcs)[0], PASS, "VPC list validation failed, vpc list is %s" % vpcs)
+            vpcs = VPC.list(self.apiclient, id=vpc.id)
+            self.assertEqual(validateList(vpcs)[0], PASS, "VPC list validation failed, vpc list is %s" % vpcs)
 
-        # Create Persistent Networks as tiers of VPC
-        persistent_network_1 = Network.create(self.api_client,self.services["isolated_network"],
+            # Create Persistent Networks as tiers of VPC
+            persistent_network_1 = Network.create(self.api_client,self.services["isolated_network"],
                                               networkofferingid=self.persistent_network_offering_NoLB.id,
                                               accountid=account.name,domainid=account.domainid,
                                               zoneid=self.zone.id, vpcid=vpc.id, gateway="10.1.1.1", netmask="255.255.255.0")
-        verifyNetworkState(self.apiclient, persistent_network_1.id, "implemented")
-        self.assertIsNotNone(persistent_network_1.vlan, "vlan must not be null for persistent network %s" % persistent_network_1.id)
+            response = verifyNetworkState(self.apiclient, persistent_network_1.id, "implemented")
+            exceptionOccured = response[0]
+            isNetworkInDesiredState = response[1]
+            exceptionMessage = response[2]
 
-        persistent_network_2 = Network.create(self.api_client,self.services["isolated_network"],
+            if (exceptionOccured or (not isNetworkInDesiredState)):
+                raise Exception(exceptionMessage)
+            self.assertIsNotNone(persistent_network_1.vlan, "vlan must not be null for persistent network %s" % persistent_network_1.id)
+
+            persistent_network_2 = Network.create(self.api_client,self.services["isolated_network"],
                                               networkofferingid=self.persistent_network_offering_LB.id,
                                               accountid=account.name,domainid=account.domainid,
                                               zoneid=self.zone.id, vpcid=vpc.id, gateway="10.1.2.1", netmask="255.255.255.0")
-        verifyNetworkState(self.apiclient, persistent_network_2.id, "implemented")
-        self.assertIsNotNone(persistent_network_2.vlan, "vlan must not be null for persistent network: %s" % persistent_network_2.id)
+            response = verifyNetworkState(self.apiclient, persistent_network_2.id, "implemented")
+            exceptionOccured = response[0]
+            isNetworkInDesiredState = response[1]
+            exceptionMessage = response[2]
 
-        # Deploy VMs in above networks (VM1, VM2 in network1 and VM3, VM4 in network2)
-        try:
+            if (exceptionOccured or (not isNetworkInDesiredState)):
+                raise Exception(exceptionMessage)
+            self.assertIsNotNone(persistent_network_2.vlan, "vlan must not be null for persistent network: %s" % persistent_network_2.id)
+
+            # Deploy VMs in above networks (VM1, VM2 in network1 and VM3, VM4 in network2)
             virtual_machine_1 = VirtualMachine.create(self.apiclient,self.services["virtual_machine"],
                                                     networkids=[persistent_network_1.id],serviceofferingid=self.service_offering.id,
                                                     accountid=account.name,domainid=self.domain.id)
@@ -1840,38 +2005,39 @@ class TestVPCNetworkOperations(cloudstackTestCase):
             virtual_machine_4 = VirtualMachine.create(self.apiclient,self.services["virtual_machine"],
                                                     networkids=[persistent_network_2.id],serviceofferingid=self.service_offering.id,
                                                     accountid=account.name,domainid=self.domain.id)
-        except Exception as e:
-            self.fail("vm creation failed: %s" % e)
 
-        # Associate IP addresses to persistent networks
-        ipaddress_1 = self.GetAssociatedIpForNetwork(persistent_network_1.id, vpcid=vpc.id, account=account)
-        ipaddress_2 = self.GetAssociatedIpForNetwork(persistent_network_1.id, vpcid=vpc.id, account=account)
-        ipaddress_3 = self.GetAssociatedIpForNetwork(persistent_network_2.id, vpcid=vpc.id, account=account)
+            # Associate IP addresses to persistent networks
+            ipaddress_1 = self.GetAssociatedIpForNetwork(persistent_network_1.id, vpcid=vpc.id, account=account)
+            ipaddress_2 = self.GetAssociatedIpForNetwork(persistent_network_1.id, vpcid=vpc.id, account=account)
+            ipaddress_3 = self.GetAssociatedIpForNetwork(persistent_network_2.id, vpcid=vpc.id, account=account)
 
-        # Create NAT rule for VM 1
-        NATRule.create(self.api_client, virtual_machine_1,
+            # Create NAT rule for VM 1
+            NATRule.create(self.api_client, virtual_machine_1,
                        self.services["natrule"],ipaddressid=ipaddress_1.ipaddress.id,
                        networkid=persistent_network_1.id)
 
-        # Create Static NAT rule for VM 2
-        StaticNATRule.enable(self.apiclient, ipaddressid=ipaddress_2.ipaddress.id,
+            # Create Static NAT rule for VM 2
+            StaticNATRule.enable(self.apiclient, ipaddressid=ipaddress_2.ipaddress.id,
                               virtualmachineid=virtual_machine_2.id,
                               networkid=persistent_network_1.id)
 
-        # Create load balancer rule for ipaddress3 and assign to VM3 and VM4
-        lb_rule = LoadBalancerRule.create(self.apiclient,self.services["lbrule"],
+            # Create load balancer rule for ipaddress3 and assign to VM3 and VM4
+            lb_rule = LoadBalancerRule.create(self.apiclient,self.services["lbrule"],
                                           ipaddressid=ipaddress_3.ipaddress.id, accountid=account.name,
                                           networkid=persistent_network_2.id, domainid=account.domainid)
-        lb_rule.assign(self.api_client, [virtual_machine_3, virtual_machine_4])
+            lb_rule.assign(self.api_client, [virtual_machine_3, virtual_machine_4])
 
-        # Create network ACL for both ther persistent networks (tiers of VPC)
-        ingressAclNetwork1, egressAclNetwork1 = self.CreateIngressEgressNetworkACLForNetwork(persistent_network_1.id)
-        ingressAclNetwork2, egressAclNetwork2 = self.CreateIngressEgressNetworkACLForNetwork(persistent_network_2.id)
+            # Create network ACL for both ther persistent networks (tiers of VPC)
+            ingressAclNetwork1, egressAclNetwork1 = self.CreateIngressEgressNetworkACLForNetwork(persistent_network_1.id)
+            ingressAclNetwork2, egressAclNetwork2 = self.CreateIngressEgressNetworkACLForNetwork(persistent_network_2.id)
 
-        self.CheckIngressEgressConnectivityofVM(virtual_machine_1, ipaddress_1.ipaddress.ipaddress)
-        self.CheckIngressEgressConnectivityofVM(virtual_machine_2, ipaddress_2.ipaddress.ipaddress)
-        self.CheckIngressEgressConnectivityofVM(virtual_machine_3, ipaddress_3.ipaddress.ipaddress)
-        self.CheckIngressEgressConnectivityofVM(virtual_machine_4, ipaddress_3.ipaddress.ipaddress)
+            self.CheckIngressEgressConnectivityofVM(virtual_machine_1, ipaddress_1.ipaddress.ipaddress)
+            self.CheckIngressEgressConnectivityofVM(virtual_machine_2, ipaddress_2.ipaddress.ipaddress)
+            self.CheckIngressEgressConnectivityofVM(virtual_machine_3, ipaddress_3.ipaddress.ipaddress)
+            self.CheckIngressEgressConnectivityofVM(virtual_machine_4, ipaddress_3.ipaddress.ipaddress)
+        except Exception as e:
+            self.cleanup.append(account)
+            self.fail(e)
 
         # Delete account
         account.delete(self.apiclient)
@@ -1924,14 +2090,26 @@ class TestVPCNetworkOperations(cloudstackTestCase):
                                               networkofferingid=self.persistent_network_offering_NoLB.id,
                                               accountid=account.name,domainid=account.domainid,
                                               zoneid=self.zone.id, vpcid=vpc.id, gateway="10.1.1.1", netmask="255.255.255.0")
-        verifyNetworkState(self.apiclient, persistent_network_1.id, "implemented")
+        response = verifyNetworkState(self.apiclient, persistent_network_1.id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         self.assertIsNotNone(persistent_network_1.vlan, "vlan must not be null for persistent network %s" % persistent_network_1.id)
 
         persistent_network_2 = Network.create(self.api_client,self.services["isolated_network"],
                                               networkofferingid=self.persistent_network_offering_LB.id,
                                               accountid=account.name,domainid=account.domainid,
                                               zoneid=self.zone.id, vpcid=vpc.id, gateway="10.1.2.1", netmask="255.255.255.0")
-        verifyNetworkState(self.apiclient, persistent_network_2.id, "implemented")
+        response = verifyNetworkState(self.apiclient, persistent_network_2.id, "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+                self.fail(exceptionMessage)
         self.assertIsNotNone(persistent_network_2.vlan, "vlan must not be null for persistent network: %s" % persistent_network_2.id)
 
         # Deploy VMs in above networks (VM1, VM2 in network1 and VM3, VM4 in network2)

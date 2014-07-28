@@ -2358,7 +2358,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // If no network is specified, find system security group enabled network
         if (networkIdList == null || networkIdList.isEmpty()) {
-            Network networkWithSecurityGroup = _networkModel.getNetworkWithSecurityGroupEnabled(zone.getId());
+            Network networkWithSecurityGroup = _networkModel.getNetworkWithSGWithFreeIPs(zone.getId());
             if (networkWithSecurityGroup == null) {
                 throw new InvalidParameterValueException("No network with security enabled is found in zone id=" + zone.getId());
             }
@@ -4670,10 +4670,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             newVol = volumeMgr.allocateDuplicateVolume(root, null);
         }
-        // Save usage event and update resource count for user vm volumes
+        // 1. Save usage event and update resource count for user vm volumes
         if (vm instanceof UserVm) {
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
         }
+        //2. Create Usage event for the newly created volume
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, newVol.getAccountId(), newVol.getDataCenterId(), newVol.getId(), newVol.getName(), newVol.getDiskOfferingId(), templateId, newVol.getSize());
+        _usageEventDao.persist(usageEvent);
 
         handleManagedStorage(vm, root);
 

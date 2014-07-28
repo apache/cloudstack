@@ -236,6 +236,7 @@ namespace HypervResource
                     {
                         TemplateObjectTO dataStore = disk.templateObjectTO;
                         NFSTO share = dataStore.nfsDataStoreTO;
+                        Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
                         string diskPath = Utils.NormalizePath(Path.Combine(share.UncPath, dataStore.path));
                         wmiCallsV2.AttachIso(vmName, diskPath);
                         result = true;
@@ -243,6 +244,11 @@ namespace HypervResource
                     else if (disk.type.Equals("DATADISK"))
                     {
                         VolumeObjectTO volume = disk.volumeObjectTO;
+                        PrimaryDataStoreTO primary = volume.primaryDataStore;
+                        if (!primary.isLocal)
+                        {
+                            Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
+                        }
                         string diskPath = Utils.NormalizePath(volume.FullFileName);
                         wmiCallsV2.AttachDisk(vmName, diskPath, disk.diskSequence);
                         result = true;
@@ -298,7 +304,6 @@ namespace HypervResource
                     else if (disk.type.Equals("DATADISK"))
                     {
                         VolumeObjectTO volume = disk.volumeObjectTO;
-                        PrimaryDataStoreTO primary = volume.primaryDataStore;
                         string diskPath = Utils.NormalizePath(volume.FullFileName);
                         wmiCallsV2.DetachDisk(vmName, diskPath);
                         result = true;
@@ -448,6 +453,7 @@ namespace HypervResource
                 {
                     // Assert
                     String errMsg = "No 'volume' details in " + CloudStackTypes.DestroyCommand + " " + Utils.CleanString(cmd.ToString());
+
                     VolumeObjectTO destVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.data);
 
                     if (destVolumeObjectTO.name == null)
@@ -619,7 +625,6 @@ namespace HypervResource
                 string newCopyFileName = null;
 
                 string poolLocalPath = cmd.localPath;
-                string poolUuid = cmd.poolUuid;
                 if (!Directory.Exists(poolLocalPath))
                 {
                     details = "None existent local path " + poolLocalPath;
@@ -786,299 +791,99 @@ namespace HypervResource
                 logger.Info(CloudStackTypes.CheckOnHostCommand + Utils.CleanString(cmd.ToString()));
                 string details = "host is not alive";
                 bool result = true;
+
                 try
                 {
-                    foreach (string poolPath in config.getAllPrimaryStorages())
-                    {
-                        if (IsHostAlive(poolPath, (string)cmd.host.privateNetwork.ip))
-                        {
-                            result = false;
-                            details = "host is alive";
-                            break;
-                        }
-                    }
+                    details = "NOP - success";
                 }
-                catch (Exception e)
-                {
-                    logger.Error("Error Occurred in " + CloudStackTypes.CheckOnHostCommand + " : " + e.Message);
-                }
-
-                object ansContent = new
-                {
-                    result = result,
-                    details = details,
-                    contextMap = contextMap
-                };
-                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckOnHostAnswer);
-            }
-        }
-
-        private bool IsHostAlive(string poolPath, string privateIp)
-        {
-            bool hostAlive = false;
-            try
-            {
-                string hbFile = Path.Combine(poolPath, "hb-" + privateIp);
-                FileInfo file = new FileInfo(hbFile);
-                using (StreamReader sr = file.OpenText())
-                {
-                    string epoch = sr.ReadLine();
-                    string[] dateTime = epoch.Split('@');
-                    string[] date = dateTime[0].Split('-');
-                    string[] time = dateTime[1].Split(':');
-                    DateTime epochTime = new DateTime(Convert.ToInt32(date[0]), Convert.ToInt32(date[1]), Convert.ToInt32(date[2]), Convert.ToInt32(time[0]),
-                        Convert.ToInt32(time[1]), Convert.ToInt32(time[2]), DateTimeKind.Utc);
-                    DateTime currentTime = DateTime.UtcNow;
-                    DateTime ThreeMinuteLaterEpoch = epochTime.AddMinutes(3);
-                    if (currentTime.CompareTo(ThreeMinuteLaterEpoch) < 0)
-                    {
-                        hostAlive = true;
-                    }
-                    sr.Close();
-                }
-            }
-            catch (Exception e)
-            {
-                logger.Info("Exception occurred in verifying host " + e.Message);
-            }
-
-            return hostAlive;
-        }
-
-        // POST api/HypervResource/CheckSshCommand
-        // TODO: create test
-        [HttpPost]
-        [ActionName(CloudStackTypes.CheckSshCommand)]
-        public JContainer CheckSshCommand([FromBody]dynamic cmd)
-        {
-            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
-            {
-                logger.Info(CloudStackTypes.CheckSshCommand + Utils.CleanString(cmd.ToString()));
-                object ansContent = new
-                {
-                    result = true,
-                    details = "NOP, TODO: implement properly",
-                    contextMap = contextMap
-                };
-                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckSshAnswer);
-            }
-        }
-
-        // POST api/HypervResource/CheckVirtualMachineCommand
-        [HttpPost]
-        [ActionName(CloudStackTypes.CheckVirtualMachineCommand)]
-        public JContainer CheckVirtualMachineCommand([FromBody]dynamic cmd)
-        {
-            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
-            {
-                logger.Info(CloudStackTypes.CheckVirtualMachineCommand + Utils.CleanString(cmd.ToString()));
-                string details = null;
-                bool result = false;
-                string vmName = cmd.vmName;
-                string state = null;
-
-                // TODO: Look up the VM, convert Hyper-V state to CloudStack version.
-                var sys = wmiCallsV2.GetComputerSystem(vmName);
-                if (sys == null)
-                {
-                    details = CloudStackTypes.CheckVirtualMachineCommand + " requested unknown VM " + vmName;
-                    logger.Error(details);
-                }
-                else
-                {
-                    state = EnabledState.ToCloudStackState(sys.EnabledState); // TODO: V2 changes?
-                    result = true;
-                }
-
-                object ansContent = new
-                {
-                    result = result,
-                    details = details,
-                    state = state,
-                    contextMap = contextMap
-                };
-                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckVirtualMachineAnswer);
-            }
-        }
-
-        // POST api/HypervResource/DeleteStoragePoolCommand
-        [HttpPost]
-        [ActionName(CloudStackTypes.DeleteStoragePoolCommand)]
-        public JContainer DeleteStoragePoolCommand([FromBody]dynamic cmd)
-        {
-            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
-            {
-                logger.Info(CloudStackTypes.DeleteStoragePoolCommand + Utils.CleanString(cmd.ToString()));
-                object ansContent = new
-                {
-                    result = true,
-                    details = "Current implementation does not delete local path corresponding to storage pool!",
-                    contextMap = contextMap
-                };
-                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
-            }
-        }
-
-        /// <summary>
-        /// NOP - legacy command -
-        /// POST api/HypervResource/CreateStoragePoolCommand
-        /// </summary>
-        /// <param name="cmd"></param>
-        /// <returns></returns>
-        [HttpPost]
-        [ActionName(CloudStackTypes.CreateStoragePoolCommand)]
-        public JContainer CreateStoragePoolCommand([FromBody]dynamic cmd)
-        {
-            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
-            {
-                logger.Info(CloudStackTypes.CreateStoragePoolCommand + Utils.CleanString(cmd.ToString()));
-                object ansContent = new
-                {
-                    result = true,
-                    details = "success - NOP",
-                    contextMap = contextMap
-                };
-                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
-            }
-        }
-
-        // POST api/HypervResource/ModifyStoragePoolCommand
-        [HttpPost]
-        [ActionName(CloudStackTypes.ModifyStoragePoolCommand)]
-        public JContainer ModifyStoragePoolCommand([FromBody]dynamic cmd)
-        {
-            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
-            {
-                logger.Info(CloudStackTypes.ModifyStoragePoolCommand + Utils.CleanString(cmd.ToString()));
-                string details = null;
-                string localPath;
-                StoragePoolType poolType;
-                object ansContent;
-
-                bool result = ValidateStoragePoolCommand(cmd, out localPath, out poolType, ref details);
-                if (!result)
-                {
-                    ansContent = new
-                    {
-                        result = result,
-                        details = details,
-                        contextMap = contextMap
-                    };
-                    return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
-                }
-
-                var tInfo = new Dictionary<string, string>();
-                long capacityBytes = 0;
-                long availableBytes = 0;
-                string hostPath = null;
-                if (poolType == StoragePoolType.Filesystem)
-                {
-                    GetCapacityForLocalPath(localPath, out capacityBytes, out availableBytes);
-                    hostPath = localPath;
-                }
-                else if (poolType == StoragePoolType.NetworkFilesystem ||
-                    poolType == StoragePoolType.SMB)
-                {
-                    NFSTO share = new NFSTO();
-                    String uriStr = "cifs://" + (string)cmd.pool.host + (string)cmd.pool.path;
-                    share.uri = new Uri(uriStr);
-                    hostPath = Utils.NormalizePath(share.UncPath);
-
-                    // Check access to share.
-                    Utils.GetShareDetails(share.UncPath, out capacityBytes, out availableBytes);
-                    config.setPrimaryStorage((string)cmd.pool.uuid, hostPath);
-                }
-                else
+                catch (Exception sysEx)
                 {
                     result = false;
+                    details = CloudStackTypes.PrepareForMigrationCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
                 }
 
-                String uuid = null;
-                var poolInfo = new
-                {
-                    uuid = uuid,
-                    host = cmd.pool.host,
-                    hostPath = cmd.pool.path,
-                    localPath = hostPath,
-                    poolType = cmd.pool.type,
-                    capacityBytes = capacityBytes,
-                    availableBytes = availableBytes
-                };
-
-                ansContent = new
+                object ansContent = new
                 {
                     result = result,
                     details = details,
-                    localPath = hostPath,
-                    templateInfo = tInfo,
-                    poolInfo = poolInfo,
                     contextMap = contextMap
                 };
 
-                if (result)
-                {
-                    try
-                    {
-                        if ((bool)cmd.add)
-                        {
-                            logger.Info("Adding HeartBeat Task to task scheduler for pool " + (string)cmd.pool.uuid);
-                            Utils.AddHeartBeatTask((string)cmd.pool.uuid, hostPath, config.PrivateIpAddress);
-                        }
-                        else
-                        {
-                            logger.Info("Deleting HeartBeat Task from task scheduler for pool " + (string)cmd.pool.uuid);
-                            Utils.RemoveHeartBeatTask(cmd.pool.uuid);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        logger.Error("Error occurred in adding/delete HeartBeat Task to/from Task Scheduler : " + e.Message);
-                    }
-                }
-
-                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.ModifyStoragePoolAnswer);
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.PrepareForMigrationAnswer);
             }
         }
 
-        private bool ValidateStoragePoolCommand(dynamic cmd, out string localPath, out StoragePoolType poolType, ref string details)
-        {
-            dynamic pool = cmd.pool;
-            string poolTypeStr = pool.type;
-            localPath = cmd.localPath;
-            if (!Enum.TryParse<StoragePoolType>(poolTypeStr, out poolType))
-            {
-                details = "Request to create / modify unsupported pool type: " + (poolTypeStr == null ? "NULL" : poolTypeStr) + "in cmd " + JsonConvert.SerializeObject(cmd);
-                logger.Error(details);
-                return false;
-            }
-
-            if (poolType != StoragePoolType.Filesystem &&
-                poolType != StoragePoolType.NetworkFilesystem &&
-                poolType != StoragePoolType.SMB)
-            {
-                details = "Request to create / modify unsupported pool type: " + (poolTypeStr == null ? "NULL" : poolTypeStr) + "in cmd " + JsonConvert.SerializeObject(cmd);
-                logger.Error(details);
-                return false;
-            }
-
-            return true;
-        }
-
-        // POST api/HypervResource/PlugNicCommand
+        // POST api/HypervResource/MigrateCommand
         [HttpPost]
-        [ActionName(CloudStackTypes.PlugNicCommand)]
-        public JContainer PlugNicCommand([FromBody]dynamic cmd)
+        [ActionName(CloudStackTypes.MigrateCommand)]
+        public JContainer MigrateCommand([FromBody]dynamic cmd)
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.PlugNicCommand + Utils.CleanString(cmd.ToString()));
+                logger.Info(CloudStackTypes.MigrateCommand + Utils.CleanString(cmd.ToString()));
+
+                string details = null;
+                bool result = false;
+
+                try
+                {
+                    string vm = (string)cmd.vmName;
+                    string destination = (string)cmd.destIp;
+                    wmiCallsV2.MigrateVm(vm, destination);
+                    result = true;
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.MigrateCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
                 object ansContent = new
                 {
-                    result = true,
-                    details = "Hot Nic plug not supported, change any empty virtual network adapter network settings",
+                    result = result,
+                    details = details,
                     contextMap = contextMap
                 };
-                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.PlugNicAnswer);
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.MigrateAnswer);
+            }
+        }
+
+        // POST api/HypervResource/MigrateVolumeCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.MigrateVolumeCommand)]
+        public JContainer MigrateVolumeCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.MigrateVolumeCommand + Utils.CleanString(cmd.ToString()));
+
+                string details = null;
+                bool result = false;
+
+                try
+                {
+                    string vm = (string)cmd.attachedVmName;
+                    string volume = (string)cmd.volumePath;
+                    wmiCallsV2.MigrateVolume(vm, volume, GetStoragePoolPath(cmd.pool));
+                    result = true;
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.MigrateVolumeCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    volumePath = (string)cmd.volumePath,
+                    details = details,
+                    contextMap = contextMap
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.MigrateVolumeAnswer);
             }
         }
 
@@ -1276,6 +1081,7 @@ namespace HypervResource
                     {
                         volumePath = @"\\" + primary.uri.Host + primary.uri.LocalPath + @"\" + volumeName;
                         volumePath = Utils.NormalizePath(volumePath);
+                        Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
                     }
                     volume.path = volume.uuid;
                     wmiCallsV2.CreateDynamicVirtualHardDisk(volumeSize, volumePath);
@@ -1378,97 +1184,227 @@ namespace HypervResource
 
         // POST api/HypervResource/ModifyVmVnicVlanCommand
         [HttpPost]
-        [ActionName(CloudStackTypes.ModifyVmNicConfigCommand)]
-        public JContainer ModifyVmNicConfigCommand([FromBody]dynamic cmd)
+        [ActionName(CloudStackTypes.MigrateWithStorageCommand)]
+        public JContainer MigrateWithStorageCommand([FromBody]dynamic cmd)
         {
-
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.ModifyVmNicConfigCommand + Utils.CleanString(cmd.ToString()));
+                logger.Info(CloudStackTypes.MigrateWithStorageCommand + Utils.CleanString(cmd.ToString()));
+
+                string details = null;
                 bool result = false;
-                String vmName = cmd.vmName;
-                String vlan = cmd.vlan;
-                string macAddress = cmd.macAddress;
-                uint pos = cmd.index;
-                bool enable = cmd.enable;
-                string switchLableName = cmd.switchLableName;
-                if (macAddress != null)
+                List<dynamic> volumeTos = new List<dynamic>();
+
+                try
                 {
-                    wmiCallsV2.ModifyVmVLan(vmName, vlan, macAddress);
+                    string vm = (string)cmd.vm.name;
+                    string destination = (string)cmd.tgtHost;
+                    var volumeToPoolList = cmd.volumeToFilerAsList;
+                    var volumeToPool = new Dictionary<string, string>();
+                    foreach (var item in volumeToPoolList)
+                    {
+                        volumeTos.Add(item.t);
+                        string poolPath = GetStoragePoolPath(item.u);
+                        volumeToPool.Add((string)item.t.path, poolPath);
+                    }
+
+                    wmiCallsV2.MigrateVmWithVolume(vm, destination, volumeToPool);
                     result = true;
                 }
-                else if (pos >= 1)
+                catch (Exception sysEx)
                 {
-                    wmiCallsV2.ModifyVmVLan(vmName, vlan, pos, enable, switchLableName);
-                    result = true;
+                    details = CloudStackTypes.MigrateWithStorageCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
                 }
 
                 object ansContent = new
                 {
-                    vmName = vmName,
                     result = result,
+                    volumeTos = JArray.FromObject(volumeTos),
+                    details = details,
                     contextMap = contextMap
                 };
-                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.ModifyVmNicConfigAnswer);
-            }
 
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.MigrateWithStorageAnswer);
+            }
         }
 
-        // POST api/HypervResource/GetVmConfigCommand
+        private string GetStoragePoolPath(dynamic pool)
+        {
+            string poolTypeStr = pool.type;
+            StoragePoolType poolType;
+            if (!Enum.TryParse<StoragePoolType>(poolTypeStr, out poolType))
+            {
+                throw new ArgumentException("Invalid pool type " + poolTypeStr);
+            }
+            else if (poolType == StoragePoolType.SMB)
+            {
+                NFSTO share = new NFSTO();
+                String uriStr = "cifs://" + (string)pool.host + (string)pool.path;
+                share.uri = new Uri(uriStr);
+                return Utils.NormalizePath(share.UncPath);
+            }
+            else if (poolType == StoragePoolType.Filesystem)
+            {
+                return pool.path;
+            }
+
+            throw new ArgumentException("Couldn't parse path for pool type " + poolTypeStr);
+        }
+
+        // POST api/HypervResource/StartupCommand
         [HttpPost]
-        [ActionName(CloudStackTypes.GetVmConfigCommand)]
-        public JContainer GetVmConfigCommand([FromBody]dynamic cmd)
+        [ActionName(CloudStackTypes.StartupCommand)]
+        public JContainer StartupCommand([FromBody]dynamic cmdArray)
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.GetVmConfigCommand + Utils.CleanString(cmd.ToString()));
-                bool result = false;
-                String vmName = cmd.vmName;
-                ComputerSystem vm = wmiCallsV2.GetComputerSystem(vmName);
-                List<NicDetails> nicDetails = new List<NicDetails>();
-                var nicSettingsViaVm = wmiCallsV2.GetEthernetPortSettings(vm);
-                NicDetails nic = null;
-                int index = 0;
-                int[] nicStates = new int[8];
-                int[] nicVlan = new int[8];
-                int vlanid = 1;
+                logger.Info(cmdArray.ToString());
+                // Log agent configuration
+                logger.Info("Agent StartupRoutingCommand received " + cmdArray.ToString());
+                dynamic strtRouteCmd = cmdArray[0][CloudStackTypes.StartupRoutingCommand];
 
-                var ethernetConnections = wmiCallsV2.GetEthernetConnections(vm);
-                foreach (EthernetPortAllocationSettingData item in ethernetConnections)
+                // Insert networking details
+                string privateIpAddress = strtRouteCmd.privateIpAddress;
+                config.PrivateIpAddress = privateIpAddress;
+                string subnet;
+                System.Net.NetworkInformation.NetworkInterface privateNic = GetNicInfoFromIpAddress(privateIpAddress, out subnet);
+                strtRouteCmd.privateIpAddress = privateIpAddress;
+                strtRouteCmd.privateNetmask = subnet;
+                strtRouteCmd.privateMacAddress = privateNic.GetPhysicalAddress().ToString();
+                string storageip = strtRouteCmd.storageIpAddress;
+                System.Net.NetworkInformation.NetworkInterface storageNic = GetNicInfoFromIpAddress(storageip, out subnet);
+
+                strtRouteCmd.storageIpAddress = storageip;
+                strtRouteCmd.storageNetmask = subnet;
+                strtRouteCmd.storageMacAddress = storageNic.GetPhysicalAddress().ToString();
+                strtRouteCmd.gatewayIpAddress = storageNic.GetPhysicalAddress().ToString();
+                strtRouteCmd.hypervisorVersion = System.Environment.OSVersion.Version.Major.ToString() + "." +
+                        System.Environment.OSVersion.Version.Minor.ToString();
+                strtRouteCmd.caps = "hvm";
+
+                dynamic details = strtRouteCmd.hostDetails;
+                if (details != null)
                 {
-                    EthernetSwitchPortVlanSettingData vlanSettings = wmiCallsV2.GetVlanSettings(item);
-                    if (vlanSettings == null)
+                    string productVersion = System.Environment.OSVersion.Version.Major.ToString() + "." +
+                        System.Environment.OSVersion.Version.Minor.ToString();
+                    details.Add("product_version", productVersion);
+                    details.Add("rdp.server.port", 2179);
+                }
+
+                // Detect CPUs, speed, memory
+                uint cores;
+                uint mhz;
+                uint sockets;
+                wmiCallsV2.GetProcessorResources(out sockets, out cores, out mhz);
+                strtRouteCmd.cpus = cores;
+                strtRouteCmd.speed = mhz;
+                strtRouteCmd.cpuSockets = sockets;
+                ulong memoryKBs;
+                ulong freeMemoryKBs;
+                wmiCallsV2.GetMemoryResources(out memoryKBs, out freeMemoryKBs);
+                strtRouteCmd.memory = memoryKBs * 1024;   // Convert to bytes
+
+                // Need 2 Gig for DOM0, see http://technet.microsoft.com/en-us/magazine/hh750394.aspx
+                strtRouteCmd.dom0MinMemory = config.ParentPartitionMinMemoryMb * 1024 * 1024;  // Convert to bytes
+
+                // Insert storage pool details.
+                //
+                // Read the localStoragePath for virtual disks from the Hyper-V configuration
+                // See http://blogs.msdn.com/b/virtual_pc_guy/archive/2010/05/06/managing-the-default-virtual-machine-location-with-hyper-v.aspx
+                // for discussion of Hyper-V file locations paths.
+                string localStoragePath = wmiCallsV2.GetDefaultVirtualDiskFolder();
+                if (localStoragePath != null)
+                {
+                    // GUID arbitrary.  Host agents deals with storage pool in terms of localStoragePath.
+                    // We use HOST guid.
+                    string poolGuid = strtRouteCmd.guid;
+
+                    if (poolGuid == null)
                     {
-                        vlanid = -1;
+                        poolGuid = Guid.NewGuid().ToString();
+                        logger.InfoFormat("Setting Startup StoragePool GUID to " + poolGuid);
                     }
                     else
                     {
-                        vlanid = vlanSettings.AccessVlanId;
+                        logger.InfoFormat("Setting Startup StoragePool GUID same as HOST, i.e. " + poolGuid);
                     }
-                    nicStates[index] = (Int32)(item.EnabledState);
-                    nicVlan[index] = vlanid;
-                    index++;
+
+                    long capacity;
+                    long available;
+                    GetCapacityForLocalPath(localStoragePath, out capacity, out available);
+
+                    logger.Debug(CloudStackTypes.StartupStorageCommand + " set available bytes to " + available);
+
+                    string ipAddr = strtRouteCmd.privateIpAddress;
+                    var vmStates = wmiCallsV2.GetVmSync(config.PrivateIpAddress);
+                    strtRouteCmd.vms = Utils.CreateCloudStackMapObject(vmStates);
+
+                    StoragePoolInfo pi = new StoragePoolInfo(
+                        poolGuid.ToString(),
+                        ipAddr,
+                        localStoragePath,
+                        localStoragePath,
+                        StoragePoolType.Filesystem.ToString(),
+                        capacity,
+                        available);
+
+                    // Build StartupStorageCommand using an anonymous type
+                    // See http://stackoverflow.com/a/6029228/939250
+                    object ansContent = new
+                    {
+                        poolInfo = pi,
+                        guid = pi.uuid,
+                        dataCenter = strtRouteCmd.dataCenter,
+                        resourceType = StorageResourceType.STORAGE_POOL.ToString(),  // TODO: check encoding
+                        contextMap = contextMap
+                    };
+                    JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.StartupStorageCommand, ansContent);
+                    cmdArray.Add(ansObj);
                 }
 
-                index = 0;
-                foreach (SyntheticEthernetPortSettingData item in nicSettingsViaVm)
+                // Convert result to array for type correctness?
+                logger.Info(CloudStackTypes.StartupCommand + " result is " + cmdArray.ToString());
+                return cmdArray;
+            }
+        }
+
+        // POST api/HypervResource/GetVncPortCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.GetVncPortCommand)]
+        public JContainer GetVncPortCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.GetVncPortCommand + Utils.CleanString(cmd.ToString()));
+
+                string details = null;
+                bool result = false;
+                string address = null;
+                int port = -9;
+
+                try
                 {
-                    nic = new NicDetails(item.Address, nicVlan[index], nicStates[index]);
-                    index++;
-                    nicDetails.Add(nic);
+                    string vmName = (string)cmd.name;
+                    var sys = wmiCallsV2.GetComputerSystem(vmName);
+                    address = "instanceId=" + sys.Name ;
+                    result = true;
                 }
-
-
-                result = true;
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.GetVncPortAnswer + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
 
                 object ansContent = new
                 {
-                    vmName = vmName,
-                    nics = nicDetails,
                     result = result,
-                    contextMap = contextMap
+                    details = details,
+                    address = address,
+                    port = port
                 };
-                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.GetVmConfigAnswer);
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.GetVncPortAnswer);
             }
         }
 
@@ -1537,8 +1473,6 @@ namespace HypervResource
 
                 try
                 {
-                    dynamic timeout = cmd.wait;  // TODO: Useful?
-
                     srcTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.srcTO);
                     destTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.destTO);
                     srcVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.srcTO);
@@ -1550,10 +1484,17 @@ namespace HypervResource
                         if (destTemplateObjectTO.primaryDataStore != null)
                         {
                             destFile = destTemplateObjectTO.FullFileName;
+                            if (!destTemplateObjectTO.primaryDataStore.isLocal)
+                            {
+                                PrimaryDataStoreTO primary = destTemplateObjectTO.primaryDataStore;
+                                Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
+                            }
                         }
                         else if (destTemplateObjectTO.nfsDataStoreTO != null)
                         {
                             destFile = destTemplateObjectTO.FullFileName;
+                            NFSTO store = destTemplateObjectTO.nfsDataStoreTO;
+                            Utils.ConnectToRemote(store.UncPath, store.Domain, store.User, store.Password);
                         }
                     }
 
@@ -1924,7 +1865,6 @@ namespace HypervResource
                 try
                 {
                     StoragePoolType poolType;
-                    string poolId = (string)cmd.id;
                     string hostPath = null;
                     if (!Enum.TryParse<StoragePoolType>((string)cmd.pooltype, out poolType))
                     {

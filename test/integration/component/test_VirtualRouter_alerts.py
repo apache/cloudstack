@@ -20,10 +20,11 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
+from marvin.codes import FAILED
 import time
 
 
@@ -96,12 +97,13 @@ class Services:
 class TestVRServiceFailureAlerting(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestVRServiceFailureAlerting, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVRServiceFailureAlerting, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
         cls.services = Services().services
 
         # Get Zone, Domain and templates
-        domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -109,6 +111,9 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         # Set Zones and disk offerings ??
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
@@ -148,6 +153,7 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.cleanup = []
 
     def tearDown(self):
@@ -202,7 +208,7 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
 
         alertSubject = "Monitoring Service on VR " + router.name
 
-        if self.apiclient.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() == 'vmware':
             result = get_process_status(
                         self.apiclient.connection.mgtSvr,
                         22,
@@ -210,7 +216,7 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
                         self.apiclient.connection.passwd,
                         router.linklocalip,
                         "service dnsmasq status",
-                        hypervisor=self.apiclient.hypervisor
+                        hypervisor=self.hypervisor
                         )
         else:
             try:

@@ -20,20 +20,20 @@
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.base import (
+from marvin.lib.base import (
                                         Account,
                                         ServiceOffering,
                                         VirtualMachine,
                                         Domain,
                                         Project
                                         )
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         findSuitableHostForMigration,
                                         get_resource_type
                                         )
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 from marvin.codes import ERROR_NO_HOST_FOR_MIGRATION
 
 class Services:
@@ -91,12 +91,13 @@ class TestProjectsCPULimits(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestProjectsCPULimits,
-                               cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestProjectsCPULimits, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -137,7 +138,7 @@ class TestProjectsCPULimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupProjectAccounts()
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
             UserName=self.admin.name,
             DomainName=self.admin.domain)
 
@@ -171,7 +172,8 @@ class TestProjectsCPULimits(cloudstackTestCase):
                         projectid=project.id,
                         networkids=networks,
                         serviceofferingid=service_off.id)
-            vms = VirtualMachine.list(api_client, id=self.vm.id, listall=True)
+            vms = VirtualMachine.list(api_client, projectid=project.id,
+			              id=self.vm.id, listall=True)
             self.assertIsInstance(vms,
                     list,
                     "List VMs should return a valid response")

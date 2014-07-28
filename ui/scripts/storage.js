@@ -904,7 +904,12 @@
                                                         hypervisor: args.context.volumes[0].hypervisor
                                                     });
                                                 }
-
+                                                                                              
+                                                var volumeDrEnabled = false;                                               
+                                                if (isModuleIncluded("dr")) {
+                                                    volumeDrEnabled = cloudStack.dr.sharedFunctions.isVolumeDrEnabled(args.context.volumes[0]);                                                    
+                                                }   
+                                                
                                                 $(['Running', 'Stopped']).each(function() {
                                                     $.ajax({
                                                         url: createURL('listVirtualMachines'),
@@ -914,11 +919,21 @@
                                                         async: false,
                                                         success: function(json) {
                                                             var instanceObjs = json.listvirtualmachinesresponse.virtualmachine;
-                                                            $(instanceObjs).each(function() {
-                                                                items.push({
-                                                                    id: this.id,
-                                                                    description: this.displayname ? this.displayname : this.name
-                                                                });
+                                                            $(instanceObjs).each(function() {                                                               
+                                                                if (isModuleIncluded("dr")) {
+                                                                    var vmDrEnabled = cloudStack.dr.sharedFunctions.isVmDrEnabled(this);
+                                                                    if (vmDrEnabled == volumeDrEnabled) {
+                                                                        items.push({
+                                                                            id: this.id,
+                                                                            description: this.displayname ? this.displayname : this.name
+                                                                        });
+                                                                    } 
+                                                                } else {
+                                                                    items.push({
+                                                                        id: this.id,
+                                                                        description: this.displayname ? this.displayname : this.name
+                                                                    });
+                                                                }                                                                
                                                             });
                                                         }
                                                     });
@@ -1483,6 +1498,11 @@
                                         async: true,
                                         success: function(json) {
                                             var jsonObj = json.listvolumesresponse.volume[0];
+                                            
+                                            if (isModuleIncluded("dr")) {
+                                                cloudStack.dr.sharedFunctions.addExtraProperties(jsonObj, "Volume");
+                                            }                                            
+                                            
                                             args.response.success({
                                                 actionFilter: volumeActionfilter,
                                                 data: jsonObj
@@ -1993,7 +2013,7 @@
         }
 
         if (jsonObj.state != "Creating") {
-            if (jsonObj.type == "ROOT") {
+            if (jsonObj.type == "ROOT") {                
                 if (jsonObj.vmstate == "Stopped") {
                     allowedActions.push("createTemplate");
                 }

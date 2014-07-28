@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,139 +18,67 @@
 """
 #Import Local Modules
 import marvin
-from marvin.cloudstackException import cloudstackAPIException
+from marvin.codes import FAILED
+from marvin.cloudstackException import CloudstackAPIException
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 #Import System modules
 import time
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test Network Services
-    """
-
-    def __init__(self):
-        self.services = {
-                            "ostype": "CentOS 5.3 (64-bit)",
-                            # Cent OS 5.3 (64 bit)
-                            "lb_switch_wait": 10,
-                            # Time interval after which LB switches the requests
-                            "sleep": 60,
-                            "timeout":10,
-                            "network_offering": {
-                                    "name": 'Test Network offering',
-                                    "displaytext": 'Test Network offering',
-                                    "guestiptype": 'Isolated',
-                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
-                                    "traffictype": 'GUEST',
-                                    "availability": 'Optional',
-                                    "serviceProviderList" : {
-                                            "Dhcp": 'VirtualRouter',
-                                            "Dns": 'VirtualRouter',
-                                            "SourceNat": 'VirtualRouter',
-                                            "PortForwarding": 'VirtualRouter',
-                                        },
-                                },
-                            "network": {
-                                  "name": "Test Network",
-                                  "displaytext": "Test Network",
-                                },
-                            "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,
-                                    # in MHz
-                                    "memory": 256,
-                                    # In MBs
-                                    },
-                            "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    "password": "password",
-                                    },
-                            "server":
-                                    {
-                                    "displayname": "Small Instance",
-                                    "username": "root",
-                                    "password": "password",
-                                    "hypervisor": 'XenServer',
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "ssh_port": 22,
-                                    "protocol": 'TCP',
-                                },
-                        "natrule":
-                                {
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "protocol": "TCP"
-                                },
-                        "lbrule":
-                                {
-                                    "name": "SSH",
-                                    "alg": "roundrobin",
-                                    # Algorithm used for load balancing
-                                    "privateport": 22,
-                                    "publicport": 2222,
-                                    "protocol": 'TCP'
-                                }
-                        }
-
 
 class TestPublicIP(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.services = Services().services
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestPublicIP, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        testClient = super(TestPublicIP, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         # Create Accounts & networks
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             admin=True,
                             domainid=cls.domain.id
                             )
 
         cls.user = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
         cls.services["network"]["zoneid"] = cls.zone.id
 
         cls.network_offering = NetworkOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["network_offering"],
                                     )
         # Enable Network offering
-        cls.network_offering.update(cls.api_client, state='Enabled')
+        cls.network_offering.update(cls.apiclient, state='Enabled')
 
         cls.services["network"]["networkoffering"] = cls.network_offering.id
         cls.account_network = Network.create(
-                                             cls.api_client,
+                                             cls.apiclient,
                                              cls.services["network"],
                                              cls.account.name,
                                              cls.account.domainid
                                              )
         cls.user_network = Network.create(
-                                             cls.api_client,
+                                             cls.apiclient,
                                              cls.services["network"],
                                              cls.user.name,
                                              cls.user.domainid
@@ -158,13 +86,13 @@ class TestPublicIP(cloudstackTestCase):
 
         # Create Source NAT IP addresses
         account_src_nat_ip = PublicIPAddress.create(
-                                            cls.api_client,
+                                            cls.apiclient,
                                             cls.account.name,
                                             cls.zone.id,
                                             cls.account.domainid
                                             )
         user_src_nat_ip = PublicIPAddress.create(
-                                            cls.api_client,
+                                            cls.apiclient,
                                             cls.user.name,
                                             cls.zone.id,
                                             cls.user.domainid
@@ -182,7 +110,7 @@ class TestPublicIP(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -223,6 +151,7 @@ class TestPublicIP(cloudstackTestCase):
                     )
 
         ip_address.delete(self.apiclient)
+        time.sleep(30)
 
         # Validate the following:
         # 1.listPublicIpAddresses should no more return the released address
@@ -230,11 +159,10 @@ class TestPublicIP(cloudstackTestCase):
                                               self.apiclient,
                                               id=ip_address.ipaddress.id
                                               )
-        self.assertEqual(
-                    list_pub_ip_addr_resp,
-                    None,
-                    "Check if disassociated IP Address is no longer available"
-                    )
+        if list_pub_ip_addr_resp is None:
+            return
+        if (list_pub_ip_addr_resp) and (isinstance(list_pub_ip_addr_resp, list)) and (len(list_pub_ip_addr_resp) > 0):
+            self.fail("list public ip response is not empty")
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
@@ -293,32 +221,35 @@ class TestPortForwarding(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestPortForwarding, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
-
+        testClient = super(TestPortForwarding, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         #Create an account, network, VM and IP addresses
         cls.account = Account.create(
-                                cls.api_client,
+                                cls.apiclient,
                                 cls.services["account"],
                                 admin=True,
                                 domainid=cls.domain.id
                                 )
-        cls.services["server"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.service_offering = ServiceOffering.create(
-                                cls.api_client,
-                                cls.services["service_offering"]
+                                cls.apiclient,
+                                cls.services["service_offerings"]
                                 )
         cls.virtual_machine = VirtualMachine.create(
-                                    cls.api_client,
-                                    cls.services["server"],
+                                    cls.apiclient,
+                                    cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
@@ -338,8 +269,8 @@ class TestPortForwarding(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestPortForwarding, cls).getClsTestClient().getApiClient()
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cls.apiclient = super(TestPortForwarding, cls).getClsTestClient().getApiClient()
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -390,7 +321,7 @@ class TestPortForwarding(cloudstackTestCase):
                             'Running',
                             "VM state should be Running before creating a NAT rule."
                         )
-        # Open up firewall port for SSH        
+        # Open up firewall port for SSH
         fw_rule = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=src_nat_ip_addr.id,
@@ -437,6 +368,12 @@ class TestPortForwarding(cloudstackTestCase):
                                     ))
 
             self.virtual_machine.get_ssh_client(src_nat_ip_addr.ipaddress)
+            vm_response = VirtualMachine.list(
+                                           self.apiclient,
+                                           id=self.virtual_machine.id
+                                           )
+            if vm_response[0].state != 'Running':
+                self.fail("State of VM : %s is not found to be Running" % str(self.virtual_machine.ipaddress))
 
         except Exception as e:
             self.fail(
@@ -444,15 +381,15 @@ class TestPortForwarding(cloudstackTestCase):
                       (self.virtual_machine.ipaddress, e)
                       )
 
-        nat_rule.delete(self.apiclient)
-
         try:
-            list_nat_rule_response = list_nat_rules(
-                                                self.apiclient,
-                                                id=nat_rule.id
-                                                )
-        except cloudstackAPIException:
-            self.debug("Nat Rule is deleted")
+            nat_rule.delete(self.apiclient)
+        except Exception as e:
+            self.fail("NAT Rule Deletion Failed: %s" % e)
+
+        # NAT rule listing should fail as the nat rule does not exist
+        with self.assertRaises(Exception):
+            list_nat_rules(self.apiclient,
+                           id=nat_rule.id)
 
         # Check if the Public SSH port is inaccessible
         with self.assertRaises(Exception):
@@ -464,9 +401,7 @@ class TestPortForwarding(cloudstackTestCase):
                                             src_nat_ip_addr.ipaddress,
                                             self.virtual_machine.ssh_port,
                                             self.virtual_machine.username,
-                                            self.virtual_machine.password,
-                                            retries=2,
-                                            delay=0
+                                            self.virtual_machine.password
                                             )
         return
 
@@ -483,7 +418,7 @@ class TestPortForwarding(cloudstackTestCase):
                                             self.account.name,
                                             self.zone.id,
                                             self.account.domainid,
-                                            self.services["server"]
+                                            self.services["virtual_machine"]
                                             )
         self.cleanup.append(ip_address)
 
@@ -509,7 +444,7 @@ class TestPortForwarding(cloudstackTestCase):
                             'Running',
                             "VM state should be Running before creating a NAT rule."
                         )
-        # Open up firewall port for SSH        
+        # Open up firewall port for SSH
         fw_rule = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=ip_address.ipaddress.id,
@@ -569,7 +504,7 @@ class TestPortForwarding(cloudstackTestCase):
                                                 self.apiclient,
                                                 id=nat_rule.id
                                                 )
-        except cloudstackAPIException:
+        except CloudstackAPIException:
             self.debug("Nat Rule is deleted")
 
         # Check if the Public SSH port is inaccessible
@@ -596,17 +531,19 @@ class TestRebootRouter(cloudstackTestCase):
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
-        self.services = Services().services
+        self.services = self.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        self.domain = get_domain(self.apiclient, self.services)
-        self.zone = get_zone(self.apiclient, self.services)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         template = get_template(
                             self.apiclient,
                             self.zone.id,
                             self.services["ostype"]
                             )
-        self.services["server"]["zoneid"] = self.zone.id
+        if template == FAILED:
+            self.fail("get_template() failed to return template with description %s" % self.services["ostype"])
+        self.services["virtual_machine"]["zoneid"] = self.zone.id
 
         #Create an account, network, VM and IP addresses
         self.account = Account.create(
@@ -617,11 +554,11 @@ class TestRebootRouter(cloudstackTestCase):
                                       )
         self.service_offering = ServiceOffering.create(
                                             self.apiclient,
-                                            self.services["service_offering"]
+                                            self.services["service_offerings"]
                                             )
         self.vm_1 = VirtualMachine.create(
                                     self.apiclient,
-                                    self.services["server"],
+                                    self.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,
@@ -646,7 +583,7 @@ class TestRebootRouter(cloudstackTestCase):
                                             self.vm_1.account,
                                             self.vm_1.zoneid,
                                             self.vm_1.domainid,
-                                            self.services["server"]
+                                            self.services["virtual_machine"]
                                             )
         #Open up firewall port for SSH
         fw_rule = FireWallRule.create(
@@ -762,17 +699,17 @@ class TestReleaseIP(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.services = Services().services
+        self.services = self.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        self.domain = get_domain(self.apiclient, self.services)
-        self.zone = get_zone(self.apiclient, self.services)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         template = get_template(
                             self.apiclient,
                             self.zone.id,
                             self.services["ostype"]
                             )
-        self.services["server"]["zoneid"] = self.zone.id
+        self.services["virtual_machine"]["zoneid"] = self.zone.id
 
         #Create an account, network, VM, Port forwarding rule, LB rules
         self.account = Account.create(
@@ -784,12 +721,12 @@ class TestReleaseIP(cloudstackTestCase):
 
         self.service_offering = ServiceOffering.create(
                                            self.apiclient,
-                                           self.services["service_offering"]
+                                           self.services["service_offerings"]
                                          )
 
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
-                                    self.services["server"],
+                                    self.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,
@@ -843,7 +780,7 @@ class TestReleaseIP(cloudstackTestCase):
 
         self.ip_address.delete(self.apiclient)
 
-        # Sleep to ensure that deleted state is reflected in other calls 
+        # Sleep to ensure that deleted state is reflected in other calls
         time.sleep(self.services["sleep"])
 
         # ListPublicIpAddresses should not list deleted Public IP address
@@ -867,7 +804,7 @@ class TestReleaseIP(cloudstackTestCase):
                                         id=self.nat_rule.id
                                         )
             self.debug("List NAT Rule response" + str(list_nat_rule))
-        except cloudstackAPIException:
+        except CloudstackAPIException:
             self.debug("Port Forwarding Rule is deleted")
 
         # listLoadBalancerRules should not list
@@ -878,7 +815,7 @@ class TestReleaseIP(cloudstackTestCase):
                                      id=self.lb_rule.id
                                      )
             self.debug("List LB Rule response" + str(list_lb_rule))
-        except cloudstackAPIException:
+        except CloudstackAPIException:
             self.debug("Port Forwarding Rule is deleted")
 
         # SSH Attempt though public IP should fail
@@ -899,17 +836,17 @@ class TestDeleteAccount(cloudstackTestCase):
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
-        self.services = Services().services
+        self.services = self.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        self.domain = get_domain(self.apiclient, self.services)
-        self.zone = get_zone(self.apiclient, self.services)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         template = get_template(
                             self.apiclient,
                             self.zone.id,
                             self.services["ostype"]
                             )
-        self.services["server"]["zoneid"] = self.zone.id
+        self.services["virtual_machine"]["zoneid"] = self.zone.id
 
         #Create an account, network, VM and IP addresses
         self.account = Account.create(
@@ -920,11 +857,11 @@ class TestDeleteAccount(cloudstackTestCase):
                                 )
         self.service_offering = ServiceOffering.create(
                                     self.apiclient,
-                                    self.services["service_offering"]
+                                    self.services["service_offerings"]
                                     )
         self.vm_1 = VirtualMachine.create(
                                     self.apiclient,
-                                    self.services["server"],
+                                    self.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,
@@ -993,7 +930,7 @@ class TestDeleteAccount(cloudstackTestCase):
                                     account=self.account.name,
                                     domainid=self.account.domainid
                                     )
-        except cloudstackAPIException:
+        except CloudstackAPIException:
             self.debug("Port Forwarding Rule is deleted")
 
         # ListPortForwardingRules should not
@@ -1004,7 +941,7 @@ class TestDeleteAccount(cloudstackTestCase):
                                     account=self.account.name,
                                     domainid=self.account.domainid
                         )
-        except cloudstackAPIException:
+        except CloudstackAPIException:
             self.debug("NATRule is deleted")
 
         #Retrieve router for the user account
@@ -1019,7 +956,7 @@ class TestDeleteAccount(cloudstackTestCase):
                              None,
                              "Check routers are properly deleted."
                    )
-        except cloudstackAPIException:
+        except CloudstackAPIException:
             self.debug("Router is deleted")
 
         except Exception as e:

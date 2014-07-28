@@ -87,8 +87,18 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
         return passive;
     }
 
+    @Deprecated
     public Boolean getDisplay() {
         return display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if (display != null) {
+            return display;
+        } else {
+            return true;
+        }
     }
 
     /////////////////////////////////////////////////////

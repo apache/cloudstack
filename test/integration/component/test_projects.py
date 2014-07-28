@@ -21,9 +21,9 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from marvin.sshClient import SshClient
 import datetime
 
@@ -103,20 +103,14 @@ class TestMultipleProjectCreation(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestMultipleProjectCreation,
-                               cls
-                               ).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = cls.zone.networktype
+        cls.testClient = super(TestMultipleProjectCreation, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        # Create domains, account etc.
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
 
         configs = Configurations.list(
                                       cls.api_client,
@@ -320,18 +314,14 @@ class TestCrossDomainAccountAdd(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestCrossDomainAccountAdd,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestCrossDomainAccountAdd, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
 
         configs = Configurations.list(
                                       cls.api_client,
@@ -454,18 +444,14 @@ class TestDeleteAccountWithProject(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestDeleteAccountWithProject,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeleteAccountWithProject, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
 
         configs = Configurations.list(
                                       cls.api_client,
@@ -567,13 +553,12 @@ class TestDeleteDomainWithProject(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestDeleteDomainWithProject,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeleteDomainWithProject, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         configs = Configurations.list(
@@ -708,17 +693,13 @@ class TestProjectOwners(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestProjectOwners,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestProjectOwners, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
 
         configs = Configurations.list(
@@ -1136,18 +1117,14 @@ class TestProjectResources(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestProjectResources,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestProjectResources, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
 
         configs = Configurations.list(
                                       cls.api_client,
@@ -1440,18 +1417,14 @@ class TestProjectSuspendActivate(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestProjectSuspendActivate,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestProjectSuspendActivate, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, domain, template etc
-        cls.zone = get_zone(cls.api_client, cls.services)
+        # Get Zone
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
         cls.template = get_template(
                                     cls.api_client,
                                     cls.zone.id,
@@ -1501,6 +1474,7 @@ class TestProjectSuspendActivate(cloudstackTestCase):
         cls._cleanup = [
                         cls.project,
                         cls.account,
+                        cls.user,
                         cls.disk_offering,
                         cls.service_offering
                         ]

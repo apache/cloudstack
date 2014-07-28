@@ -23,13 +23,15 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 #Import Integration Libraries
 
 #base - contains all resources as entities and defines create, delete, list operations on them
-from marvin.integration.lib.base import Account, VirtualMachine, ServiceOffering
+from marvin.lib.base import Account, VirtualMachine, ServiceOffering
 
 #utils - utility classes for common cleanup, external library wrappers etc
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 
 #common - commonly used methods for all tests are listed here
-from marvin.integration.lib.common import get_zone, get_domain, get_template, list_volumes
+from marvin.lib.common import get_zone, get_domain, get_template, list_volumes
+
+from marvin.codes import FAILED
 
 from nose.plugins.attrib import attr
 
@@ -71,12 +73,15 @@ class TestDeployVM(cloudstackTestCase):
     def setUp(self):
         self.testdata = TestData().testdata
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
 
         # Get Zone, Domain and Default Built-in template
-        self.domain = get_domain(self.apiclient, self.testdata)
-        self.zone = get_zone(self.apiclient, self.testdata)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.testdata["mode"] = self.zone.networktype
         self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
+        if self.template == FAILED:
+            assert False, "get_template() failed to return template "
 #       for testing with specific template
 #        self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"], templatetype='USER', services = {"template":'31f52a4d-5681-43f7-8651-ad4aaf823618'})
         
@@ -107,7 +112,7 @@ class TestDeployVM(cloudstackTestCase):
         # 2. root disk has new size per listVolumes
         # 3. Rejects non-supported hypervisor types
         """
-        if(self.apiclient.hypervisor == 'kvm'):
+        if(self.hypervisor == 'kvm'):
             newrootsize = (self.template.size >> 30) + 2 
             self.virtual_machine = VirtualMachine.create(
                 self.apiclient,
@@ -174,7 +179,7 @@ class TestDeployVM(cloudstackTestCase):
                              "Check if the root volume resized appropriately"
                             )
         else:
-            self.debug("hypervisor %s unsupported for test 00, verifying it errors properly" % self.apiclient.hypervisor)
+            self.debug("hypervisor %s unsupported for test 00, verifying it errors properly" % self.hypervisor)
 
             newrootsize = (self.template.size >> 30) + 2
             success = False
@@ -195,13 +200,13 @@ class TestDeployVM(cloudstackTestCase):
                 else:
                     self.debug("virtual machine create did not fail appropriately. Error was actually : " + str(ex));
 
-            self.assertEqual(success, True, "Check if unsupported hypervisor %s fails appropriately" % self.apiclient.hypervisor)
+            self.assertEqual(success, True, "Check if unsupported hypervisor %s fails appropriately" % self.hypervisor)
 
     @attr(tags = ['advanced', 'simulator', 'basic', 'sg', 'provisioning'])
     def test_01_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize of 0 
         """
-        if (self.apiclient.hypervisor == 'kvm'):
+        if (self.hypervisor == 'kvm'):
             newrootsize = 0
             success = False
             try:
@@ -223,13 +228,13 @@ class TestDeployVM(cloudstackTestCase):
 
             self.assertEqual(success, True, "Check if passing 0 as rootdisksize fails appropriately")
         else:
-            self.debug("test 01 does not support hypervisor type " + self.apiclient.hypervisor);
+            self.debug("test 01 does not support hypervisor type " + self.hypervisor);
 
     @attr(tags = ['advanced', 'simulator', 'basic', 'sg', 'provisioning'])
     def test_02_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize less than template size
         """
-        if (self.apiclient.hypervisor == 'kvm'):
+        if (self.hypervisor == 'kvm'):
             newrootsize = (self.template.size >> 30) - 1
             
             self.assertEqual(newrootsize > 0, True, "Provided template is less than 1G in size, cannot run test")
@@ -254,7 +259,7 @@ class TestDeployVM(cloudstackTestCase):
 
             self.assertEqual(success, True, "Check if passing rootdisksize < templatesize fails appropriately")
         else:
-            self.debug("test 01 does not support hypervisor type " + self.apiclient.hypervisor);
+            self.debug("test 01 does not support hypervisor type " + self.hypervisor);
 
     def tearDown(self):
         try:

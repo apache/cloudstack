@@ -105,8 +105,8 @@ public class EncryptionSecretKeyChanger {
         PropertiesConfiguration backupDBProps = null;
 
         System.out.println("Parsing db.properties file");
-        try {
-            dbProps.load(new FileInputStream(dbPropsFile));
+        try(FileInputStream db_prop_fstream = new FileInputStream(dbPropsFile);) {
+            dbProps.load(db_prop_fstream);
             backupDBProps = new PropertiesConfiguration(dbPropsFile);
         } catch (FileNotFoundException e) {
             System.out.println("db.properties file not found while reading DB secret key" + e.getMessage());
@@ -142,11 +142,10 @@ public class EncryptionSecretKeyChanger {
                 //db.properties updated successfully
                 if (encryptionType.equals("file")) {
                     //update key file with new MS key
-                    try {
-                        FileWriter fwriter = new FileWriter(keyFile);
-                        BufferedWriter bwriter = new BufferedWriter(fwriter);
+                    try (FileWriter fwriter = new FileWriter(keyFile);
+                         BufferedWriter bwriter = new BufferedWriter(fwriter);)
+                    {
                         bwriter.write(newMSKey);
-                        bwriter.close();
                     } catch (IOException e) {
                         System.out.println("Failed to write new secret to file. Please update the file manually");
                     }
@@ -180,11 +179,10 @@ public class EncryptionSecretKeyChanger {
             }
             if (encryptionType.equals("file")) {
                 //revert secret key in file
-                try {
-                    FileWriter fwriter = new FileWriter(keyFile);
-                    BufferedWriter bwriter = new BufferedWriter(fwriter);
+                try (FileWriter fwriter = new FileWriter(keyFile);
+                     BufferedWriter bwriter = new BufferedWriter(fwriter);)
+                {
                     bwriter.write(oldMSKey);
-                    bwriter.close();
                 } catch (IOException e) {
                     System.out.println("Failed to revert to old secret to file. Please update the file manually");
                 }

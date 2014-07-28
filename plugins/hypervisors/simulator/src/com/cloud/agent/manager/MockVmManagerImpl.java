@@ -27,6 +27,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.network.VirtualNetworkApplianceService;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -41,6 +42,8 @@ import com.cloud.agent.api.CreateVMSnapshotAnswer;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.FenceAnswer;
+import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetVmStatsAnswer;
@@ -661,4 +664,8 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         return maps;
     }
 
+    @Override
+    public Answer fence(FenceCommand cmd) {
+       return new FenceAnswer(cmd);
+    }
 }

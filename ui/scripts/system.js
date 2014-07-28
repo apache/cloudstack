@@ -1954,6 +1954,11 @@
                                                         success: function (json) {
                                                             selectedGuestNetworkObj = json.listnetworksresponse.network[0];
                                                             addExtraPropertiesToGuestNetworkObject(selectedGuestNetworkObj);
+                                                                                                           
+                                                            if (isModuleIncluded("dr")) {
+                                                                cloudStack.dr.sharedFunctions.addExtraProperties(selectedGuestNetworkObj, "Network");  
+                                                            }
+                                                            
                                                             args.response.success({
                                                                 actionFilter: cloudStack.actionFilter.guestNetwork,
                                                                 data: selectedGuestNetworkObj
@@ -6172,7 +6177,7 @@
                                     args.response.success({
                                         actionFilter: virtualRouterProviderActionFilter,
                                         data: $.extend(nspMap[ "Ovs"], {
-                                            supportedServices: nspMap[ "Ovs"].servicelist.join(', ')
+                                            supportedServices: nspMap["Ovs"] == undefined? "": nspMap["Ovs"].servicelist.join(', ')
                                         })
                                     });
                                 }
@@ -7590,6 +7595,10 @@
                                                         }
                                                         //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});
                                                     });
+                                                                                                       
+                                                    if (isModuleIncluded("dr")) {
+                                                        cloudStack.dr.sharedFunctions.addExtraProperties(selectedZoneObj, "Zone");
+                                                    }
                                                     
                                                     args.response.success({
                                                         actionFilter: zoneActionfilter,
@@ -15427,17 +15436,19 @@
                                         dependsOn: 'clusterId',
                                         select: function (args) {
                                             var clusterId = args.clusterId;
-                                            if (clusterId == null)
+                                            if (clusterId == null || clusterId.length == 0) {
+                                            	args.response.success({
+                                                    data: []
+                                                });
                                             return;
-                                            var items =[];
+                                            }
+                                            
                                             $(clusterObjs).each(function () {
                                                 if (this.id == clusterId) {
                                                     selectedClusterObj = this;
                                                     return false; //break the $.each() loop
                                                 }
                                             });
-                                            if (selectedClusterObj == null)
-                                            return;
                                             
                                             if (selectedClusterObj.hypervisortype == "KVM") {
                                                 var items =[];
@@ -19423,11 +19434,14 @@
             });
         }
         
+        if ($.grep(nspHardcodingArray, function(e) { return e.id == 'Ovs'; }).length == 0 ) {
         nspHardcodingArray.push({
-            id: 'OVS',
-            name: 'OVS',
+                id: 'Ovs',
+                name: 'Ovs',
             state: nspMap.Ovs ? nspMap.Ovs.state : 'Disabled'
         });        
+        }
+
     };
     
     cloudStack.actionFilter.physicalNetwork = function (args) {

@@ -737,6 +737,31 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
+    public NetworkVO getNetworkWithSGWithFreeIPs(Long zoneId) {
+        List<NetworkVO> networks = _networksDao.listByZoneSecurityGroup(zoneId);
+        if (networks == null || networks.isEmpty()) {
+            return null;
+        }
+        NetworkVO ret_network = null;
+        for (NetworkVO nw : networks) {
+            List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(nw.getId());
+            for (VlanVO vlan : vlans) {
+                if (_ipAddressDao.countFreeIpsInVlan(vlan.getId()) > 0) {
+                    ret_network = nw;
+                    break;
+                }
+            }
+            if (ret_network != null) {
+                break;
+            }
+        }
+        if (ret_network == null) {
+            s_logger.debug("Can not find network with security group enabled with free IPs");
+        }
+        return ret_network;
+    }
+
+    @Override
     public NetworkVO getNetworkWithSecurityGroupEnabled(Long zoneId) {
         List<NetworkVO> networks = _networksDao.listByZoneSecurityGroup(zoneId);
         if (networks == null || networks.isEmpty()) {

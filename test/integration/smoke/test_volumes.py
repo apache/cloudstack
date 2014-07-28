@@ -17,14 +17,15 @@
 """ BVT tests for Volumes
 """
 #Import Local Modules
-import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackException import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
+from marvin.lib.utils import checkVolumeSize
+from marvin.codes import SUCCESS
 from nose.plugins.attrib import attr
 #Import System modules
 import os
@@ -34,103 +35,51 @@ import tempfile
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test Volume Services
-    """
-
-    def __init__(self):
-        self.services = {
-                         "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                         },
-                         "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,    # in MHz
-                                    "memory": 260       # In MBs
-
-                        },
-                        "disk_offering": {
-                                    "displaytext": "Small",
-                                    "name": "Small",
-                                    "disksize": 1
-                        },
-                        'resized_disk_offering': {
-                                    "displaytext": "Resized",
-                                    "name": "Resized",
-                                    "disksize": 3
-                        },
-                        "volume_offerings": {
-                            0: {
-                                "diskname": "TestDiskServ",
-                            },
-                        },
-                        "customdisksize": 1,    # GBs
-                        "username": "root",     # Creds for SSH to VM
-                        "password": "password",
-                        "ssh_port": 22,
-                        "diskname": "TestDiskServ",
-                        "hypervisor": 'KVM',
-                        "privateport": 22,
-                        "publicport": 22,
-                        "protocol": 'TCP',
-                        "ostype": 'CentOS 5.5 (64-bit)',
-                        "sleep": 10,
-                        "timeout": 600,
-                    }
-
-
 class TestCreateVolume(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestCreateVolume, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
-
+        testClient = super(TestCreateVolume, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
         cls.custom_disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["disk_offering"],
                                     custom=True
                                     )
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
         cls.services["template"] = template.id
         cls.services["customdiskofferingid"] = cls.custom_disk_offering.id
-
+        cls.services["diskname"] = cls.services["volume"]["diskname"]
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-
-        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.apiclient,
+                                            cls.services["service_offerings"]
                                             )
         cls.virtual_machine = VirtualMachine.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
@@ -227,7 +176,6 @@ class TestCreateVolume(cloudstackTestCase):
                                             )
 
                 if isinstance(list_vm_response, list):
-
                     vm = list_vm_response[0]
                     if vm.state == 'Running':
                         self.debug("VM state: %s" % vm.state)
@@ -236,31 +184,17 @@ class TestCreateVolume(cloudstackTestCase):
                 if timeout == 0:
                     raise Exception(
                         "Failed to start VM (ID: %s) " % vm.id)
-
                 timeout = timeout - 1
 
-            try:
-                ssh = self.virtual_machine.get_ssh_client(
+            vol_sz = str(list_volume_response[0].size)
+            ssh = self.virtual_machine.get_ssh_client(
                                                       reconnect=True
                                                       )
-                c = "/sbin/fdisk -l"
-                res = ssh.execute(c)
-
-            except Exception as e:
-                self.fail("SSH access failed for VM: %s - %s" %
-                                (self.virtual_machine.ipaddress, e))
-
-            # Disk /dev/sda doesn't contain a valid partition table
-            # Disk /dev/sda: 21.5 GB, 21474836480 bytes
-            result = str(res)
-            self.debug("fdisk result: %s" % result)
-
-            self.assertEqual(
-                             str(list_volume_response[0].size) in result,
-                             True,
-                             "Check if promised disk size actually available"
-                             )
+            ret = checkVolumeSize(ssh_handle=ssh,size_to_verify=vol_sz)
+            self.debug(" Volume Size Expected %s  Actual :%s" %(vol_sz,ret[1]))
             self.virtual_machine.detach_volume(self.apiClient, volume)
+            self.assertEqual(ret[0],SUCCESS,"Check if promised disk size actually available")
+            time.sleep(self.services["sleep"])
 
     def tearDown(self):
         #Clean up, terminate the created volumes
@@ -270,8 +204,8 @@ class TestCreateVolume(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestCreateVolume, cls).getClsTestClient().getApiClient()
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cls.apiclient = super(TestCreateVolume, cls).getClsTestClient().getApiClient()
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -280,31 +214,36 @@ class TestVolumes(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestVolumes, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        testClient = super(TestVolumes, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
         cls.resized_disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["resized_disk_offering"]
                                     )
         cls.custom_resized_disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["resized_disk_offering"],
                                     custom=True
                                     )
 
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
         cls.services["template"] = template.id
@@ -314,18 +253,16 @@ class TestVolumes(cloudstackTestCase):
 
         # Create VMs, VMs etc
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-
-        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.apiclient,
+                                            cls.services["service_offerings"]
                                         )
         cls.virtual_machine = VirtualMachine.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
@@ -334,7 +271,7 @@ class TestVolumes(cloudstackTestCase):
                                 )
 
         cls.volume = Volume.create(
-                                   cls.api_client,
+                                   cls.apiclient,
                                    cls.services,
                                    account=cls.account.name,
                                    domainid=cls.account.domainid
@@ -351,7 +288,7 @@ class TestVolumes(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -536,7 +473,7 @@ class TestVolumes(cloudstackTestCase):
                 % (extract_vol.url, self.volume.id)
             )
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "provisioning"])
     def test_07_resize_fail(self):
         """Test resize (negative) non-existent volume"""
         # Verify the size is the new size is what we wanted it to be.
@@ -545,7 +482,7 @@ class TestVolumes(cloudstackTestCase):
         # first, an invalid id
         cmd                = resizeVolume.resizeVolumeCmd()
         cmd.id             = "invalid id"
-        cmd.diskofferingid = self.services['resizeddiskofferingid']
+        cmd.diskofferingid = self.services['customresizeddiskofferingid']
         success            = False
         try:
             response = self.apiClient.resizeVolume(cmd)
@@ -677,7 +614,7 @@ class TestVolumes(cloudstackTestCase):
 
         cmd                = resizeVolume.resizeVolumeCmd()
         cmd.id             = self.volume.id
-        cmd.diskofferingid = self.services['resizeddiskofferingid']
+        cmd.diskofferingid = self.services['customresizeddiskofferingid']
 
         self.apiClient.resizeVolume(cmd)
 
@@ -720,6 +657,7 @@ class TestVolumes(cloudstackTestCase):
         cmd                = resizeVolume.resizeVolumeCmd()
         cmd.id             = rootvolume.id
         cmd.size           = 10
+        cmd.shrinkok       = "true"
 
         self.apiClient.resizeVolume(cmd)
 
@@ -752,7 +690,7 @@ class TestVolumes(cloudstackTestCase):
             time.sleep(30)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke","basic", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke","basic", "selfservice"], BugId="CLOUDSTACK-6875")
     def test_09_delete_detached_volume(self):
         """Delete a Volume unattached to an VM
         """
@@ -766,7 +704,7 @@ class TestVolumes(cloudstackTestCase):
         self.debug("Delete Volume ID: %s" % self.volume.id)
 
         self.volume_1 = Volume.create(
-                                   self.api_client,
+                                   self.apiclient,
                                    self.services,
                                    account=self.account.name,
                                    domainid=self.account.domainid
