@@ -37,9 +37,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.StorageManager;
-
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -87,6 +84,7 @@ import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -180,6 +178,7 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
@@ -4273,10 +4272,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
-    public List<? extends NetworkOffering> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd) {
+    public Pair<List<? extends NetworkOffering>, Integer> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd) {
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
         isAscending = (isAscending == null ? true : isAscending);
-        Filter searchFilter = new Filter(NetworkOfferingVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(NetworkOfferingVO.class, "sortKey", isAscending, null, null);
         Account caller = CallContext.current().getCallingAccount();
         SearchCriteria<NetworkOfferingVO> sc = _networkOfferingDao.createSearchCriteria();
 
@@ -4356,7 +4355,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (zone.getNetworkType() == NetworkType.Basic) {
                 // return empty list as we don't allow to create networks in
                 // basic zone, and shouldn't display networkOfferings
-                return new ArrayList<NetworkOffering>();
+                return new Pair<List<? extends NetworkOffering>, Integer>(new ArrayList<NetworkOffering>(), 0);
             }
         }
 
@@ -4385,7 +4384,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (!offeringIds.isEmpty()) {
                 sc.addAnd("id", SearchCriteria.Op.IN, offeringIds.toArray());
             } else {
-                return new ArrayList<NetworkOffering>();
+                return new Pair<List<? extends NetworkOffering>, Integer>(new ArrayList<NetworkOffering>(), 0);
             }
         }
 
@@ -4487,9 +4486,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             }
 
-            return supportedOfferings;
+            // Now apply pagination
+            List<?> wPagination = StringUtils.applyPagination(supportedOfferings, cmd.getStartIndex(), cmd.getPageSizeVal());
+            if (wPagination != null) {
+                @SuppressWarnings("unchecked")
+                Pair<List<? extends NetworkOffering>, Integer> listWPagination = new Pair<List<? extends NetworkOffering>, Integer>((List<NetworkOffering>) wPagination, offerings.size());
+                return listWPagination;
+            }
+            return new Pair<List<? extends NetworkOffering>, Integer>(supportedOfferings, supportedOfferings.size());
         } else {
-            return offerings;
+            List<?> wPagination = StringUtils.applyPagination(offerings, cmd.getStartIndex(), cmd.getPageSizeVal());
+            if (wPagination != null) {
+                @SuppressWarnings("unchecked")
+                Pair<List<? extends NetworkOffering>, Integer> listWPagination = new Pair<List<? extends NetworkOffering>, Integer>((List<NetworkOffering>) wPagination, offerings.size());
+                return listWPagination;
+            }
+            return new Pair<List<? extends NetworkOffering>, Integer>(offerings, offerings.size());
         }
     }
 
