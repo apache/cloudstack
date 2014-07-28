@@ -112,7 +112,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     public static class Provider {
         private static List<Provider> supportedProviders = new ArrayList<Provider>();
 
-        public static final Provider VirtualRouter = new Provider("VirtualRouter", false);
+        public static final Provider VirtualRouter = new Provider("VirtualRouter", false, false);
         public static final Provider JuniperContrailRouter = new Provider("JuniperContrailRouter", false);
         public static final Provider JuniperContrailVpcRouter = new Provider("JuniperContrailVpcRouter", false);
         public static final Provider JuniperSRX = new Provider("JuniperSRX", true);
@@ -140,9 +140,21 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         private final String name;
         private final boolean isExternal;
 
+        // set to true, if on network shutdown resources (acquired/configured at implemented phase) needed to cleaned up. set to false
+        // if no clean-up is required ( for e.g appliance based providers like VirtualRouter, VM is destroyed so there is no need to cleanup).
+        private final boolean needCleanupOnShutdown;
+
         public Provider(String name, boolean isExternal) {
             this.name = name;
             this.isExternal = isExternal;
+            needCleanupOnShutdown = true;
+            supportedProviders.add(this);
+        }
+
+        public Provider(String name, boolean isExternal, boolean needCleanupOnShutdown) {
+            this.name = name;
+            this.isExternal = isExternal;
+            this.needCleanupOnShutdown = needCleanupOnShutdown;
             supportedProviders.add(this);
         }
 
@@ -152,6 +164,10 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
         public boolean isExternal() {
             return isExternal;
+        }
+
+        public boolean cleanupNeededOnShutdown() {
+            return needCleanupOnShutdown;
         }
 
         public static Provider getProvider(String providerName) {
