@@ -329,3 +329,103 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
             and async_job.instance_type = 'StoragePool'
             and async_job.job_status = 0;
 
+
+DROP VIEW IF EXISTS `cloud`.`template_view`;
+CREATE VIEW `cloud`.`template_view` AS
+    select
+        vm_template.id,
+        vm_template.uuid,
+        vm_template.unique_name,
+        vm_template.name,
+        vm_template.public,
+        vm_template.featured,
+        vm_template.type,
+        vm_template.hvm,
+        vm_template.bits,
+        vm_template.url,
+        vm_template.format,
+        vm_template.created,
+        vm_template.checksum,
+        vm_template.display_text,
+        vm_template.enable_password,
+        vm_template.dynamically_scalable,
+        vm_template.state template_state,
+        vm_template.guest_os_id,
+        guest_os.uuid guest_os_uuid,
+        guest_os.display_name guest_os_name,
+        vm_template.bootable,
+        vm_template.prepopulate,
+        vm_template.cross_zones,
+        vm_template.hypervisor_type,
+        vm_template.extractable,
+        vm_template.template_tag,
+        vm_template.sort_key,
+        vm_template.removed,
+        vm_template.enable_sshkey,
+        source_template.id source_template_id,
+        source_template.uuid source_template_uuid,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        launch_permission.account_id lp_account_id,
+        template_store_ref.store_id,
+        image_store.scope as store_scope,
+        template_store_ref.state,
+        template_store_ref.download_state,
+        template_store_ref.download_pct,
+        template_store_ref.error_str,
+        template_store_ref.size,
+        template_store_ref.destroyed,
+        template_store_ref.created created_on_store,
+        vm_template_details.name detail_name,
+        vm_template_details.value detail_value,
+        resource_tags.id tag_id,
+        resource_tags.uuid tag_uuid,
+        resource_tags.key tag_key,
+        resource_tags.value tag_value,
+        resource_tags.domain_id tag_domain_id,
+        resource_tags.account_id tag_account_id,
+        resource_tags.resource_id tag_resource_id,
+        resource_tags.resource_uuid tag_resource_uuid,
+        resource_tags.resource_type tag_resource_type,
+        resource_tags.customer tag_customer,
+        CONCAT(vm_template.id, '_', IFNULL(data_center.id, 0)) as temp_zone_pair
+    from
+        `cloud`.`vm_template`
+            inner join
+        `cloud`.`guest_os` ON guest_os.id = vm_template.guest_os_id
+            inner join
+        `cloud`.`account` ON account.id = vm_template.account_id
+            inner join
+        `cloud`.`domain` ON domain.id = account.domain_id
+            left join
+        `cloud`.`projects` ON projects.project_account_id = account.id
+            left join
+        `cloud`.`vm_template_details` ON vm_template_details.template_id = vm_template.id
+            left join
+        `cloud`.`vm_template` source_template ON source_template.id = vm_template.source_template_id
+            left join
+        `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id and template_store_ref.store_role = 'Image' and template_store_ref.destroyed=0
+            left join
+        `cloud`.`image_store` ON image_store.removed is NULL AND template_store_ref.store_id is not NULL AND image_store.id = template_store_ref.store_id
+            left join
+        `cloud`.`template_zone_ref` ON template_zone_ref.template_id = vm_template.id AND template_store_ref.store_id is NULL AND template_zone_ref.removed is null
+            left join
+        `cloud`.`data_center` ON (image_store.data_center_id = data_center.id OR template_zone_ref.zone_id = data_center.id)
+            left join
+        `cloud`.`launch_permission` ON launch_permission.template_id = vm_template.id
+            left join
+        `cloud`.`resource_tags` ON resource_tags.resource_id = vm_template.id
+            and (resource_tags.resource_type = 'Template' or resource_tags.resource_type='ISO');
+
