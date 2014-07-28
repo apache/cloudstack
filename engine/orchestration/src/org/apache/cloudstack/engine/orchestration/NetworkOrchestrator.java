@@ -2037,11 +2037,24 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     public boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean cleanupElements, Network network) {
+
+        // get providers to shutdown
+        List<Provider> providersToShutdown = getNetworkProviders(network.getId());
+
         // 1) Cleanup all the rules for the network. If it fails, just log the failure and proceed with shutting down
         // the elements
         boolean cleanupResult = true;
+        boolean cleanupNeeded = false;
         try {
-            cleanupResult = shutdownNetworkResources(network.getId(), context.getAccount(), context.getCaller().getId());
+            for (Provider provider: providersToShutdown) {
+                if (provider.cleanupNeededOnShutdown()) {
+                    cleanupNeeded = true;
+                    break;
+                }
+            }
+            if (cleanupNeeded) {
+                cleanupResult = shutdownNetworkResources(network.getId(), context.getAccount(), context.getCaller().getId());
+            }
         } catch (Exception ex) {
             s_logger.warn("shutdownNetworkRules failed during the network " + network + " shutdown due to ", ex);
         } finally {
@@ -2052,8 +2065,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         // 2) Shutdown all the network elements
-        // get providers to shutdown
-        List<Provider> providersToShutdown = getNetworkProviders(network.getId());
         boolean success = true;
         for (NetworkElement element : _networkElements) {
             if (providersToShutdown.contains(element.getProvider())) {
