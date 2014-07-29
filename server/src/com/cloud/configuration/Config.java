@@ -1062,7 +1062,7 @@ public enum Config {
             Boolean.class,
             "vm.instancename.flag",
             "false",
-            "If set to true, will set guest VM's name as it appears on the hypervisor, to its hostname",
+            "If set to true, will set guest VM's name as it appears on the hypervisor, to its hostname. The flag is supported for VMware hypervisor only",
             "true,false"),
     IncorrectLoginAttemptsAllowed(
             "Advanced",
