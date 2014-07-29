@@ -13,15 +13,13 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
 
-import org.apache.xmlrpc.XmlRpcException;
-
 /*
  * should become an interface implementation
  */
 public class Remote extends OvmObject {
 
     public Remote(Connection c) {
-        client = c;
+        setClient(c);
     }
 
     /*
@@ -29,12 +27,8 @@ public class Remote extends OvmObject {
      * 'agent.api.remote.linux_remote.LinuxRemoteManagement'> argument: self -
      * default: None
      */
-    public Boolean sysShutdown() throws XmlRpcException {
-        Object x = callWrapper("sys_shutdown");
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean sysShutdown() throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("sys_shutdown");
     }
 
     /*
@@ -49,12 +43,8 @@ public class Remote extends OvmObject {
      * sys_reboot, <class 'agent.api.remote.linux_remote.LinuxRemoteManagement'>
      * argument: self - default: None
      */
-    public Boolean sysReboot() throws XmlRpcException {
-        Object x = callWrapper("sys_reboot");
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean sysReboot() throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("sys_reboot");
     }
 
     /*

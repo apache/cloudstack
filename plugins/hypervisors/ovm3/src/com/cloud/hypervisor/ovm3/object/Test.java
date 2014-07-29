@@ -41,37 +41,29 @@ class Test {
      * &s=-1&lb=p&t=2
      * &p=1dd5e891d9d0edbd81c2a69ab3d1b7ea%2C2f3b7fca202045058ae388d22f21f508'
      */
-    private static Socket getSocket(String hostname, Integer port) throws UnknownHostException, IOException {
+    private static Socket getSocket(String hostname, Integer port) throws IOException {
         Socket client = null;
         try {
             client = new Socket(hostname, port);
             LOGGER.error("Host " + hostname + " is connected");
         } catch (UnknownHostException e) {
-            LOGGER.error("Host " + hostname + "not known: " + e.getMessage());
+            LOGGER.error("Host " + hostname + "not known: ", e);
         } catch (IOException e) {
-            LOGGER.error("Host " + hostname + " IOException " + e.getMessage());
+            LOGGER.error("Host " + hostname + " IOException ", e);
         } catch (Exception e) {
-            LOGGER.error("Host " + hostname + " General Exception;: " + e.getMessage());
+            LOGGER.error("Host " + hostname + " General Exception;: ", e);
         }
         return client;
     }
-    private static Connection agentConnect(String host, Integer port, String user, String pass) throws XmlRpcException, Exception {
+    private static Connection agentConnect(String host, Integer port, String user, String pass) throws XmlRpcException {
         Connection c;
-        try {
-            c = new Connection(host, port, user, pass);
-            LOGGER.debug("Agent connection to " + host + " succeeded");
-        } catch (XmlRpcException e) {
-            LOGGER.info("Agent connection for " + host + " caught XmlRpcException" + e.getMessage());
-            throw new XmlRpcException(e.getMessage());
-        } catch (Exception e) {
-            LOGGER.info("Agent connection for " + host + " caught Exception" + e.getMessage());
-            throw new Exception(e.getMessage());
-        }
+        c = new Connection(host, port, user, pass);
+        LOGGER.debug("Agent connection to " + host + " succeeded");
         return c;
     }
 
 
-    public static void main(final String[] args) throws Exception {
+    public static void main(final String[] args) {
         boolean checkNet = false;
         boolean checkNtp = false;
         boolean checkLinux = false;
@@ -85,13 +77,13 @@ class Test {
         boolean checkVnc = false;
 
         boolean checkCombine = false;
-        boolean checkVmInfo = false;
+        boolean checkVmInfo = true;
         boolean checkUuid = false;
         boolean checkBridge = false;
         boolean checkFs = false;
-        boolean checkPlugin = true;
+        boolean checkPlugin = false;
 
-        String[] hostnames = {"ovm-1", "ovm-2", "localhost"};
+        String[] hostnames = {"ovm-2", "ovm-1", "localhost"};
         Integer port = 8899;
         String agentuser = "oracle";
         String agentpass = "test123";
@@ -121,22 +113,11 @@ class Test {
                 try {
                     LOGGER.debug(csp.ovsUploadSshKey("test",
                             "testing 123"));
-                    // FileUtils.readFileToString(new File(""))));
                     String ip = "169.254.1.202";
                     String domain = "i-2-29-VM";
                     String pubnic = "bond0";
-                    // LOGGER.debug(csp.ovsDom0Stats(pubnic));
-                    // LOGGER.debug(csp.domrcheckPort(ip, 3922, 3, 3));
-                    // LOGGER.debug(csp.domrcheckSsh(ip));
                     LOGGER.debug("vnc Port: " + csp.getVncPort(domain));
-                    // LOGGER.debug(csp.domrExec(ip,
-                    // "ls -l").getStdOut());
                     Map<String, String> stats = csp.ovsDomUStats(domain);
-                    /*
-                     * for (final Entry<String, String> stat : stats.entrySet())
-                     * { LOGGER.debug(stat.getKey() + " " +
-                     * Double.parseDouble(stat.getValue())); }
-                     */
                     Thread.sleep(1000);
                     Map<String, String> stats2 = csp.ovsDomUStats(domain);
                     for (final Entry<String, String> stat : stats2.entrySet()) {
@@ -153,8 +134,8 @@ class Test {
                     Double cpupct = d_cpu / d_time * 100 * cpus;
                     LOGGER.debug(cpupct);
                 } catch (Exception e) {
-                    LOGGER.debug("nooooo!!!" + e.getMessage());
-                    throw new Exception(e.getMessage());
+                    LOGGER.error("nooooo!!!", e);
+                    throw new Exception(e);
                 }
             }
             if (checkFs) {
@@ -172,14 +153,12 @@ class Test {
             if (checkNet) {
                 Network net = new Network(c);
                 LOGGER.debug(net.getInterfaceByName("c0a80100"));
-                // net.discoverNetwork();
                 LOGGER.debug(net.getInterfaceByName("c0a80100")
                         .getAddress());
                 LOGGER.debug(net.getInterfaceByIp("192.168.1.65")
                         .getName());
-                // LOGGER.debug(bridge.getMac());
             }
-            if (checkCommon == true) {
+            if (checkCommon) {
                 Common Com = new Common(c);
                 String x = Com.getApiVersion();
                 LOGGER.debug("Api Version: " + x);
@@ -187,13 +166,9 @@ class Test {
                 LOGGER.debug("Sleep: " + y);
                 String msg = Com.echo("testing 1 2 3");
                 LOGGER.debug("Echo: " + msg);
-                /*
-                 * String disp = Com.dispatch ("192.168.1.60", "hoeleboele");
-                 * System.out. println("dispatch" + disp);
-                 */
             }
             /* check stuff */
-            if (checkLinux == true) {
+            if (checkLinux) {
                 Linux Host = new Linux(c);
                 Host.discoverHardware();
                 Host.discoverServer();
@@ -206,12 +181,12 @@ class Test {
                 LOGGER.debug("time: " + Host.getTimeUTC());
                 Calendar now = Calendar.getInstance();
                 int year = now.get(Calendar.YEAR);
-                int month = now.get(Calendar.MONTH); // Note: zero based!
+                // Note: zero based!
+                int month = now.get(Calendar.MONTH);
                 int day = now.get(Calendar.DAY_OF_MONTH);
                 int hour = now.get(Calendar.HOUR_OF_DAY);
                 int minute = now.get(Calendar.MINUTE);
                 int second = now.get(Calendar.SECOND);
-                int millis = now.get(Calendar.MILLISECOND);
                 LOGGER.debug("set time to now: "
                         + Host.setDateTime(year, month, day, hour, minute,
                                 second));
@@ -228,17 +203,15 @@ class Test {
                         + Host.setTimeZone("Europe/Amsterdam", true));
                 LOGGER.debug("time zone: " + Host.getTimeZone() + ", "
                         + Host.getTimeZ() + ", " + Host.getTimeUTC());
-                // LOGGER.debug("Luns: " + Host.discoverPhysicalLuns());
-
             }
 
             /* setting up ntp */
-            if (checkNtp == true) {
+            if (checkNtp) {
                 Ntp ntp = new Ntp(c);
                 ntp.getDetails();
                 LOGGER.debug("ntp isServer: " + ntp.isServer());
                 LOGGER.debug("ntp isRunning: " + ntp.isRunning());
-                LOGGER.debug("ntp Servers: " + ntp.servers());
+                LOGGER.debug("ntp Servers: " + ntp.getServers());
                 ntp.addServer("192.168.1.1");
                 ntp.addServer("192.168.1.61");
                 LOGGER.debug("ntp set: " + ntp.setNtp(true));
@@ -246,12 +219,12 @@ class Test {
                 ntp.getDetails();
                 LOGGER.debug("ntp isServer: " + ntp.isServer());
                 LOGGER.debug("ntp isRunning: " + ntp.isRunning());
-                LOGGER.debug("ntp Servers: " + ntp.servers());
+                LOGGER.debug("ntp Servers: " + ntp.getServers());
                 LOGGER.debug("ntp disable: " + ntp.disableNtp());
                 LOGGER.debug("ntp reset: " + ntp.setNtp("", false));
             }
 
-            if (checkNFSPlugin == true) {
+            if (checkNFSPlugin) {
                 Linux lin = new Linux(c);
                 lin.discoverServer();
                 LOGGER.debug(lin.getCapabilities());
@@ -265,44 +238,10 @@ class Test {
                 BigInteger freemem = BigInteger.valueOf(lin.getFreeMemory()
                         .longValue());
                 LOGGER.debug(totalmem.subtract(freemem));
-                /*
-                 * for (final Map.Entry<String, Linux.FileSystem> entry : fsList
-                 * .entrySet()) { Linux.FileSystem fs = entry.getValue();
-                 * StoragePlugin sp = new StoragePlugin(c); String propUuid =
-                 * sp.deDash(fs.getUuid()); String mntUuid = fs.getUuid();
-                 * String fsType = "FileSys"; sp.setUuid(propUuid);
-                 * sp.setSsUuid(propUuid); sp.setName(propUuid);
-                 * sp.setFsType(fsType); sp.setFsServer(fs.getHost());
-                 * sp.setFsSourcePath(fs.getDevice());
-                 * sp.storagePluginGetFileSystemInfo(); }
-                 */
-                /*
-                 * StoragePlugin sp = new StoragePlugin(c); String propUuid =
-                 * sp.deDash(sp.newUuid()); String mntUuid = sp.newUuid();
-                 * String nfsHost = "cs-mgmt"; String nfsPath =
-                 * "/volumes/cs-data/primary"; String fsType = "FileSys";
-                 * sp.setUuid(propUuid); sp.setName(propUuid);
-                 * sp.setFsType(fsType); sp.setFsServer(nfsHost);
-                 * sp.setFsSourcePath(nfsHost + ":" + nfsPath); //
-                 * sp.fsTarget("/nfsmnt/" + mntUuid);
-                 * sp.setFsMountPoint("/nfsmnt/" + mntUuid);
-                 * sp.setMntUuid(mntUuid); sp.setSsUuid(propUuid);
-                 * sp.setSsName("nfs:" + nfsPath); if (sp.storagePluginMount()
-                 * != null) { lin.discoverMountedFs("nfs"); //
-                 * LOGGER.debug(sp.extprops); StoragePlugin store = new
-                 * StoragePlugin(c); store.setUuid(propUuid);
-                 * store.setSsUuid(propUuid); store.setMntUuid(mntUuid);
-                 * store.setFsHost(nfsHost); store.setFsSourcePath(nfsHost + ":"
-                 * + nfsPath); // store.setFsMountPoint(pool.getPath());
-                 * store.storagePluginGetFileSystemInfo();
-                 * LOGGER.debug(store.getTotalSize());
-                 * sp.setFsSourcePath(nfsHost + ":" + nfsPath);
-                 * sp.storagePluginUnmount(); }
-                 */
             }
 
             /* still needs to be finished! */
-            if (checkRepo == true) {
+            if (checkRepo) {
                 Repository repo = new Repository(c);
                 String repouuid = repo.deDash(repo.newUuid());
                 String remote = "cs-mgmt:/volumes/cs-data/secondary";
@@ -316,7 +255,6 @@ class Test {
                 repo.mountRepoFs(remote, local);
                 repo.createRepo(remote, repouuid, repouuid, "My Comment");
                 repo.discoverRepoDb();
-                // repo.discoverRepo(repouuid);
                 repo.importIso(iso, isouuid + ".iso", repouuid, "");
                 repo.importVirtualDisk(vhd, vmuuid + ".img", repouuid, "");
                 repo.deleteRepo(repouuid, true);
@@ -325,7 +263,7 @@ class Test {
                 repo.discoverRepo(repouuid);
             }
 
-            if (checkPool == true) {
+            if (checkPool) {
                 LOGGER.debug("checking pool");
                 Pool pool = new Pool(c);
                 pool.discoverServerPool();
@@ -339,53 +277,49 @@ class Test {
                 List<String> ips = new ArrayList<String>();
                 ips.add("192.168.1.64");
                 ips.add("192.168.1.65");
-                /*
-                 * pool.setPoolIps(ips); pool.setPoolMemberIpList();
-                 */
-                /*
-                 * if (pool.poolFsId != null) {
-                 * pool.leaveServerPool(pool.poolFsId); }
-                 */
                 LOGGER.debug("pool members: "
                         + pool.getPoolMemberIpList());
             }
 
-            if (checkOcfs2 == true) {
+            if (checkOcfs2) {
                 PoolOCFS2 poolocfs = new PoolOCFS2(c);
                 poolocfs.discoverPoolFs();
-                // poolocfs.ocfs2GetMetaData();
+                // ocfs2GetMetaData
             }
 
-            if (checkCluster == true) {
+            if (checkCluster) {
                 Pool pool = new Pool(c);
                 pool.discoverServerPool();
-                Cluster Clos = new Cluster(c);
-                // Clos.destroyCluster(pool.poolFsId);
+                Cluster clos = new Cluster(c);
                 if (pool.getPoolId() != null) {
-                    // Clos.deconfigureServerForCluster(pool.poolId);
+                    LOGGER.debug("Pool found: " + pool.getPoolId());
                 }
-                LOGGER.debug("Cluster online: " + Clos.isClusterOnline());
+                LOGGER.debug("Cluster online: " + clos.isClusterOnline());
                 LOGGER.debug("Cluster discover: "
-                        + Clos.discoverCluster());
+                        + clos.discoverCluster());
 
             }
 
-            if (checkXen == true) {
-                Xen xen = new Xen(c);
-                xen.listVms();
-                xen.createVm("xx", "xx");
-                /* xen.deleteVm(repoId, vmId); */
+            if (checkXen) {
+                try {
+                    Xen xen = new Xen(c);
+                    Xen.Vm vm = xen.getVmConfig("s-1-VM");
+                    Xen.Vm vm1 = xen.getRunningVmConfig("v-2-VM");
+                    LOGGER.debug(vm.getVmUuid() + " " + vm1.getVmUuid());
+                } catch (Exception e) {
+                    throw e;
+                }
             }
 
             /* check the combination of stuff */
-            if (checkCombine == true) {
+            if (checkCombine) {
                 /* prepare host, mgr should have "steady uuid" */
-                OvmObject Go = new OvmObject();
-                String masterUuid = Go.deDash(Go.newUuid());
+                OvmObject go = new OvmObject();
+                String masterUuid = go.deDash(go.newUuid());
 
                 /* check capabilities */
-                Linux Host = new Linux(c);
-                Host.discoverServer();
+                Linux host = new Linux(c);
+                host.discoverServer();
                 /* setup pool and role, needs utility to be able to do shit */
                 Pool pool = new Pool(c);
 
@@ -393,11 +327,11 @@ class Test {
                  * Info comes from Linux, not the pool, but needs to be set in
                  * the pool -sigh-
                  */
-                if (Host.Get("Server_Roles").contentEquals(
+                if (host.get("Server_Roles").contentEquals(
                         pool.getValidRoles().toString())) {
                     pool.setServerRoles(pool.getValidRoles());
                 }
-                if (Host.Get("Membership_State").contentEquals("Unowned")) {
+                if (host.get("Membership_State").contentEquals("Unowned")) {
                     pool.takeOwnership(masterUuid, "");
                 }
                 /* get primary storage mounted and registered */
@@ -434,7 +368,6 @@ class Test {
                 repo.mountRepoFs(remote, repopath);
                 repo.createRepo(remote, repouuid, repouuid, "My Comment");
                 repo.discoverRepoDb();
-                // repo.discoverRepo(repouuid);
                 String isoname = isouuid + ".iso";
                 String imgname = vmuuid + ".img";
                 repo.importIso(iso, isoname, repouuid, "");
@@ -461,7 +394,7 @@ class Test {
                      * 'file:/OVS/Repositories/0004fb0000030000aeaca859e4a8f8c0/VirtualDisks/0004fb0000120000c444117fd87ea251.img,xvda,w']
                      */
                     /* 'vif': ['mac=00:21:f6:00:00:00,bridge=c0a80100'] */
-                    String vmName = Go.deDash(Go.newUuid());
+                    String vmName = go.deDash(go.newUuid());
 
                     Xen.Vm vm = xen.getVmConfig();
                     vm.setVmName(vmName);
@@ -473,10 +406,6 @@ class Test {
                     vm.setVnc("0.0.0.0");
                     xen.createVm(repouuid, vm.getVmName());
                     xen.startVm(repouuid, vm.getVmName());
-                    /*
-                     * vm.stopVm(repouuid, vm.vmUuid); vm.deleteVm(repouuid,
-                     * vm.vmUuid);
-                     */
                     LOGGER.debug("Created VM with: " + vmName);
                     LOGGER.debug("repo: " + repouuid);
                     LOGGER.debug("image: " + imgname);
@@ -484,11 +413,8 @@ class Test {
                     LOGGER.debug("master: " + masterUuid);
                 }
             }
-            if (checkVmInfo == true) {
+            if (checkVmInfo) {
                 Xen host = new Xen(c);
-                /* make an itterator */
-                // String vmId = "14fc3846-45e5-3c08-ad23-432ceb07407b";
-                // String repoId = "f12842eb-f5ed-3fe7-8da1-eb0e17f5ede8";
                 String vmName = "s-1-VM";
                 Xen.Vm vm = null;
                 Xen.Vm ovm = null;
@@ -496,26 +422,26 @@ class Test {
                     /* backwards for now: */
                     ovm = host.getRunningVmConfig(vmName);
                     LOGGER.debug(ovm.getVmRootDiskPoolId());
+
                     /* new style */
                     vm = host.getVmConfig(vmName);
                     vm.addIso("test.iso");
-                    if (vm.getVmUuid().equals("")) {
+                    if ("".equals(vm.getVmUuid())) {
                         LOGGER.debug("no vm found");
                     } else {
                         LOGGER.debug(vm.getVmParams());
-                        LOGGER.debug(vm.getVmDisks());
                         LOGGER.debug(vm.getVmUuid());
                         LOGGER.debug(vm.getPrimaryPoolUuid());
                         vm.removeDisk("test.iso");
                         LOGGER.debug(vm.getVmParams().get("disk"));
                     }
 
-                } catch (XmlRpcException e) {
-                    LOGGER.debug("Failed to get VM details for " + vmName
-                            + " on " + c.getIp());
+                } catch (Exception e) {
+                    LOGGER.error("Failed to get VM details for " + vmName
+                            + " on " + c.getIp(), e);
                 }
             }
-            if (checkVnc == true) {
+            if (checkVnc) {
                 Xen vms = new Xen(c);
                 Xen.Vm vm = vms.listVms().get("Domain-0");
                 vm.setVncAddress("0.0.0.0");
@@ -545,22 +471,10 @@ class Test {
                 if (net.getInterfaceByName(brName) == null) {
                     net.startOvsBrConfig(brName, physVlanInt);
                 }
-                // net.startOvsLocalConfig("control0");
-                // net.ovsBrConfig("start", "control0", "lo");
-                // net.ovsIpConfig("control0", "static", "169.254.0.1",
-                // "255.255.0.0");
-                // execOverSsh("route del -net 169.254.0.0/16");
             }
-            /* cleanup */
-            /*
-             * repo.deleteRepo(repouuid, true); repo.unmountRepoFs(repopath);
-             * repo.discoverRepoDb(); repo.discoverRepo(repouuid);
-             * sp.storagePluginUnmount();
-             */
             client.close();
         } catch (Exception e) {
-            // TODO Auto-generated catch block
-            LOGGER.debug(e.getMessage());
+            LOGGER.error("Something went wrong, I know for sure!", e);
         }
     }
 }

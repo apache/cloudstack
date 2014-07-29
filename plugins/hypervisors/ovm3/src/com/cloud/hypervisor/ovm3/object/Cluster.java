@@ -13,27 +13,20 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
 
-import org.apache.xmlrpc.XmlRpcException;
-
 /*
  * should become an interface implementation
  */
-public class Cluster extends OvmObject {
-
+class Cluster extends OvmObject {
     public Cluster(Connection c) {
-        client = c;
+        setClient(c);
     }
 
     /*
      * leave_cluster, <class 'agent.api.cluster.o2cb.ClusterO2CB'> argument:
      * self - default: None argument: poolfsUuid - default: None
      */
-    public Boolean leaveCluster(String poolfsUuid) throws XmlRpcException {
-        Object x = callWrapper("leave_cluster", poolfsUuid);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean leaveCluster(String poolfsUuid) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("leave_cluster", poolfsUuid);
     }
 
     /*
@@ -44,13 +37,8 @@ public class Cluster extends OvmObject {
      * default: None argument: poolfsUuid - default: None argument:
      * poolfs_nfsbase_uuid - default: None
      */
-    public Boolean configureServerForCluster(String poolfsUuid)
-            throws XmlRpcException {
-        Object x = callWrapper("configure_server_for_cluster", poolfsUuid);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean configureServerForCluster(String poolfsUuid) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("configure_server_for_cluster", poolfsUuid);
     }
 
     /*
@@ -58,25 +46,16 @@ public class Cluster extends OvmObject {
      * 'agent.api.cluster.o2cb.ClusterO2CB'> argument: self - default: None
      * argument: poolfsUuid - default: None
      */
-    public Boolean deconfigureServerForCluster(String poolfsUuid)
-            throws XmlRpcException {
-        Object x = callWrapper("deconfigure_server_for_cluster", poolfsUuid);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean deconfigureServerForCluster(String poolfsUuid) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("deconfigure_server_for_cluster", poolfsUuid);
     }
 
     /*
      * join_cluster, <class 'agent.api.cluster.o2cb.ClusterO2CB'> argument: self
      * - default: None argument: poolfsUuid - default: None
      */
-    public Boolean joinCLuster(String poolfsUuid) throws XmlRpcException {
-        Object x = callWrapper("join_cluster", poolfsUuid);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean joinCLuster(String poolfsUuid) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("join_cluster", poolfsUuid);
     }
 
     /*
@@ -103,10 +82,8 @@ public class Cluster extends OvmObject {
      * </Cluster_Information> </Discover_Cluster_Result>
      */
     /* TODO: Intepret existing clusters... */
-    public Boolean discoverCluster() throws XmlRpcException {
-        Object x = callWrapper("discover_cluster");
-        // System.out.println(x);
-        return false;
+    public Boolean discoverCluster() throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("discover_cluster");
     }
 
     /*
@@ -117,32 +94,23 @@ public class Cluster extends OvmObject {
      * "heartbeat:\n\tregion = 0004FB0000050000E70FBDDEB802208F\n\tcluster = ba9aaf00ae5e2d72\n\nnode:\n\tip_port = 7777\n\tip_address = 192.168.1.64\n\tnumber = 0\n\tname = ovm-1\n\tcluster = ba9aaf00ae5e2d72\n\nnode:\n\tip_port = 7777\n\tip_address = 192.168.1.65\n\tnumber = 1\n\tname = ovm-2\n\tcluster = ba9aaf00ae5e2d72\n\ncluster:\n\tnode_count = 2\n\theartbeat_mode = global\n\tname = ba9aaf00ae5e2d72\n"
      * )
      */
-    public Boolean updateClusterConfiguration(String clusterConf)
-            throws XmlRpcException {
-        Object x = callWrapper("update_clusterConfiguration", clusterConf);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean updateClusterConfiguration(String clusterConf) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("update_clusterConfiguration", clusterConf);
     }
 
     /*
      * destroy_cluster, <class 'agent.api.cluster.o2cb.ClusterO2CB'> argument:
      * self - default: None argument: poolfsUuid - default: None
      */
-    public Boolean destroyCluster(String poolfsUuid) throws XmlRpcException {
-        Object x = callWrapper("destroy_cluster", poolfsUuid);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean destroyCluster(String poolfsUuid) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("destroy_cluster", poolfsUuid);
     }
 
     /*
      * is_cluster_online, <class 'agent.api.cluster.o2cb.ClusterO2CB'> argument:
      * self - default: None
      */
-    public Boolean isClusterOnline() throws XmlRpcException {
+    public Boolean isClusterOnline() throws Ovm3ResourceException {
         Object x = callWrapper("is_cluster_online");
         return Boolean.valueOf(x.toString());
     }
@@ -151,11 +119,7 @@ public class Cluster extends OvmObject {
      * create_cluster, <class 'agent.api.cluster.o2cb.ClusterO2CB'> argument:
      * self - default: None argument: poolfsUuid - default: None
      */
-    public Boolean createCluster(String poolfsUuid) throws XmlRpcException {
-        Object x = callWrapper("create_cluster", poolfsUuid);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean createCluster(String poolfsUuid) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("create_cluster", poolfsUuid);
     }
 }

@@ -13,22 +13,18 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
 
-import org.apache.xmlrpc.XmlRpcException;
-
 /*
  * should become an interface implementation
  */
 public class Common extends OvmObject {
-    public String apiVersion;
-
     public Common(Connection c) {
-        client = c;
+        setClient(c);
     }
 
     /*
      * get_api_version, <class 'agent.api.common.Common'>
      */
-    public String getApiVersion() throws XmlRpcException {
+    public String getApiVersion() throws Ovm3ResourceException {
         return callString("get_api_version");
 
     }
@@ -36,7 +32,7 @@ public class Common extends OvmObject {
     /*
      * sleep, <class 'agent.api.common.Common'> argument: secs - default: None
      */
-    public String sleep(int seconds) throws XmlRpcException {
+    public String sleep(int seconds) throws Ovm3ResourceException {
         return callString("sleep", seconds);
     }
 
@@ -49,15 +45,14 @@ public class Common extends OvmObject {
      * function join_server_pool to server
      * https://oracle:******@192.168.1.67:8899/api/3/
      */
-    public <T> String dispatch(String url, String function, T... args)
-            throws XmlRpcException {
+    public <T> String dispatch(String url, String function, T... args) throws Ovm3ResourceException {
         return callString("dispatch", url, function, args);
     }
 
     /*
      * echo, <class 'agent.api.common.Common'> argument: msg - default: None
      */
-    public String echo(String msg) throws XmlRpcException {
+    public String echo(String msg) throws Ovm3ResourceException {
         return callString("echo", msg);
     }
 

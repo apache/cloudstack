@@ -15,7 +15,6 @@ package com.cloud.hypervisor.ovm3.object;
 
 import java.util.Map;
 
-import org.apache.xmlrpc.XmlRpcException;
 
 /*
  * should become an interface implementation
@@ -23,19 +22,20 @@ import org.apache.xmlrpc.XmlRpcException;
 public class Repository extends OvmObject {
 
     public Repository(Connection c) {
-        client = c;
+        setClient(c);
     }
 
     /*
      * delete_repository, <class 'agent.api.repository.Repository'> argument:
      * repo_uuid - default: None argument: erase - default: None
      */
-    public Boolean deleteRepo(String id, Boolean erase) throws XmlRpcException {
-        Object x = callWrapper("delete_repository", id, erase);
-        if (x == null) {
+    public Boolean deleteRepo(String id, Boolean erase) throws Ovm3ResourceException {
+        Object res = callWrapper("delete_repository", id, erase);
+        if (res == null) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     /*
@@ -45,22 +45,14 @@ public class Repository extends OvmObject {
      */
     /* should add timeout ? */
     public Boolean importVirtualDisk(String url, String vdiskid, String repoid,
-            String option) throws XmlRpcException {
-        Object x = callWrapper("import_virtual_disk", url, vdiskid, repoid,
+            String option) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("import_virtual_disk", url, vdiskid, repoid,
                 option);
-        if (x == null) {
-            return true;
-        }
-        return false;
     }
 
     public Boolean importVirtualDisk(String url, String vdiskid, String repoid)
-            throws XmlRpcException {
-        Object x = callWrapper("import_virtual_disk", url, vdiskid, repoid);
-        if (x == null) {
-            return true;
-        }
-        return false;
+            throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("import_virtual_disk", url, vdiskid, repoid);
     }
 
     /*
@@ -72,7 +64,7 @@ public class Repository extends OvmObject {
      * </Discover_Repositories_Result>
      */
     public Boolean discoverRepo(Map<String, String> args)
-            throws XmlRpcException {
+            throws Ovm3ResourceException {
         Object x = callWrapper("discover_repositories", args);
         if (x == null) {
             return true;
@@ -80,31 +72,23 @@ public class Repository extends OvmObject {
         return false;
     }
 
-    public Boolean discoverRepo(String id) throws XmlRpcException {
-        Object x = callWrapper("discover_repositories", id);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean discoverRepo(String id) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("discover_repositories", id);
     }
 
     /*
      * add_repository, <class 'agent.api.repository.Repository'> argument:
      * fs_location - default: None argument: mount_point - default: None
      */
-    public Boolean addRepo(String remote, String local) throws XmlRpcException {
-        Object x = callWrapper("add_repository", remote, local);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean addRepo(String remote, String local) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("add_repository", remote, local);
     }
 
     /*
      * get_repository_meta_data, <class 'agent.api.repository.Repository'>
      * argument: repo_mount_point - default: None
      */
-    public Boolean getRepoMetaData(String local) throws XmlRpcException {
+    public Boolean getRepoMetaData(String local) throws Ovm3ResourceException {
         Object x = callWrapper("get_repository_meta_data", local);
         if (x == null) {
             return true;
@@ -117,24 +101,16 @@ public class Repository extends OvmObject {
      * fs_location - default: None argument: mount_point - default: None
      */
     public Boolean mountRepoFs(String remote, String local)
-            throws XmlRpcException {
-        Object x = callWrapper("mount_repository_fs", remote, local);
-        if (x == null) {
-            return true;
-        }
-        return false;
+            throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("mount_repository_fs", remote, local);
     }
 
     /*
      * unmount_repository_fs, <class 'agent.api.repository.Repository'>
      * argument: mount_point - default: None
      */
-    public Boolean unmountRepoFs(String local) throws XmlRpcException {
-        Object x = callWrapper("unmount_repository_fs", local);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean unmountRepoFs(String local) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("unmount_repository_fs", local);
     }
 
     /*
@@ -143,13 +119,9 @@ public class Repository extends OvmObject {
      * argument: repo_uuid - default: None argument: repo_alias - default: None
      */
     public Boolean createRepo(String remote, String local, String repoid,
-            String repoalias) throws XmlRpcException {
-        Object x = callWrapper("create_repository", remote, local, repoid,
+            String repoalias) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("create_repository", remote, local, repoid,
                 repoalias);
-        if (x == null) {
-            return true;
-        }
-        return false;
     }
 
     /*
@@ -165,9 +137,8 @@ public class Repository extends OvmObject {
      * <Status>Unmounted</Status> </Repository> <Repository> ... </Repository>
      * </RepositoryDbList> </Discover_Repository_Db_Result>
      */
-    public Boolean discoverRepoDb() throws XmlRpcException {
+    public Boolean discoverRepoDb() throws Ovm3ResourceException {
         Object x = callWrapper("discover_repository_db");
-        // System.out.println(x);
         if (x == null) {
             return true;
         }
@@ -179,12 +150,8 @@ public class Repository extends OvmObject {
      * repo_uuid - default: None argument: db_changes - default: None
      */
     public Boolean editRepoDb(String repoId, Map<String, String> changes)
-            throws XmlRpcException {
-        Object x = callWrapper("edit_repository_db", repoId, changes);
-        if (x == null) {
-            return true;
-        }
-        return false;
+            throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("edit_repository_db", repoId, changes);
     }
 
     /*
@@ -198,11 +165,7 @@ public class Repository extends OvmObject {
      * too
      */
     public Boolean importIso(String url, String isoId, String repoId,
-            String option) throws XmlRpcException {
-        Object x = callWrapper("import_ISO", url, isoId, repoId);
-        if (x == null) {
-            return true;
-        }
-        return false;
+            String option) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("import_ISO", url, isoId, repoId);
     }
 }

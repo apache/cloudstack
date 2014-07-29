@@ -13,15 +13,11 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
 import org.w3c.dom.Document;
 
 /*
@@ -36,7 +32,7 @@ public class Linux extends OvmObject {
      * use capabilities to match things later, perhaps also hardware discovery ?
      * wrap getters and setters.... for Mapps...
      */
-    private Map<String, String> Capabilities = new HashMap<String, String>();
+    private Map<String, String> ovmCapabilities = new HashMap<String, String>();
     /**
      * MAX_CONCURRENT_MIGRATION_IN=1, ALL_VM_CPU_OVERSUBSCRIBE=True,
      * HIGH_AVAILABILITY=True, LOCAL_STORAGE_ELEMENT=True, NFS=True,
@@ -48,11 +44,11 @@ public class Linux extends OvmObject {
      * PER_VM_CPU_OVERSUBSCRIBE=True, POWER_ON_WOL=True, FIBRE_CHANNEL=True,
      * ISCSI=True, HVM_MAX_VNICS=8}
      */
-    private Map<String, String> VMM = new HashMap<String, String>();
-    private Map<String, String> VMMc = new HashMap<String, String>();
-    private Map<String, String> NTP = new HashMap<String, String>();
-    private Map<String, String> DateTime = new HashMap<String, String>();
-    private Map<String, String> Generic = new HashMap<String, String>();
+    private Map<String, String> ovmHypervisorDetails = new HashMap<String, String>();
+    private Map<String, String> ovmHypervisor = new HashMap<String, String>();
+    private Map<String, String> ovmNTP = new HashMap<String, String>();
+    private Map<String, String> ovmDateTime = new HashMap<String, String>();
+    private Map<String, String> ovmGeneric = new HashMap<String, String>();
     /**
      * {OS_Major_Version=5, Statistic=20, Membership_State=Unowned,
      * OVM_Version=3.2.1-517, OS_Type=Linux, Hypervisor_Name=Xen,
@@ -66,195 +62,167 @@ public class Linux extends OvmObject {
      * Unique_Id=1d:d5:e8:91:d9:d0:ed:bd:81:c2:a6:9a:b3:d1:b7:ea,
      * Manager_Unique_Id=none, Cluster_State=Offline, Hostname=ovm-1}
      */
-    private Map<String, String> hwVMM = new HashMap<String, String>();
-    private Map<String, String> hwSystem = new HashMap<String, String>();
+    private Map<String, String> hwPhysicalInfo = new HashMap<String, String>();
+    private Map<String, String> hwSystemInfo = new HashMap<String, String>();
     private int localTime;
     private int lastBootTime;
     private String timeZ;
     private String timeUTC;
     private List<String> mounts = null;
+    private Map<String, FileSystem> fsList = null;
 
     public Linux(Connection c) {
-        client = c;
+        setClient(c);
     }
 
     /*
      * discover_server, <class 'agent.api.host.linux.Linux'> argument: self -
      * default: None
      */
-    public Boolean discoverServer() throws ParserConfigurationException, IOException, Exception {
-        String cmd = "discover_server";
-        Object result = callWrapper(cmd);
+    public Boolean discoverServer() throws Ovm3ResourceException {
+        Object result = callWrapper("discover_server");
         if (result == null) {
             return false;
         }
-        try {
-            Document xmlDocument = prepParse((String) result);
-            /* could be more subtle */
-            String path = "//Discover_Server_Result/Server";
-            Capabilities = xmlToMap(path + "/Capabilities", xmlDocument);
-            VMM = xmlToMap(path + "/VMM/Version", xmlDocument);
-            VMMc = xmlToMap(path + "/VMM", xmlDocument);
-            NTP = xmlToMap(path + "/NTP", xmlDocument);
-            DateTime = xmlToMap(path + "/Date_Time", xmlDocument);
-            Generic = xmlToMap(path, xmlDocument);
-        } catch (ParserConfigurationException e) {
-            String msg = "Unable to parse output for server discovery: " + result + ", " + e.getMessage();
-            LOGGER.error(msg);
-            return false;
-        }
+        Document xmlDocument = prepParse((String) result);
+        /* could be more subtle */
+        String path = "//Discover_Server_Result/Server";
+        ovmCapabilities = xmlToMap(path + "/Capabilities", xmlDocument);
+        ovmHypervisorDetails = xmlToMap(path + "/VMM/Version", xmlDocument);
+        ovmHypervisor = xmlToMap(path + "/VMM", xmlDocument);
+        ovmNTP = xmlToMap(path + "/NTP", xmlDocument);
+        ovmDateTime = xmlToMap(path + "/Date_Time", xmlDocument);
+        ovmGeneric = xmlToMap(path, xmlDocument);
         return true;
     }
 
-    public String getAgentVersion() throws ParserConfigurationException,
-            IOException, Exception {
-        return this.Get("Agent_Version");
+    public String getAgentVersion() {
+        return this.get("Agent_Version");
     }
 
-    public String getHostKernelRelease() throws ParserConfigurationException,
-            IOException, Exception {
-        return this.Get("Host_Kernel_Release");
+    public String getHostKernelRelease() {
+        return this.get("Host_Kernel_Release");
     }
 
-    public String getHostOs() throws ParserConfigurationException, IOException,
-            Exception {
-        return this.Get("OS_Name");
+    public String getHostOs() {
+        return this.get("OS_Name");
     }
 
-    public String getHostOsVersion() throws ParserConfigurationException,
-            IOException, Exception {
-        String ver = this.Get("OS_Major_Version") + "."
-                + this.Get("OS_Minor_Version");
-        return ver;
+    public String getHostOsVersion() {
+        return this.get("OS_Major_Version") + "."
+                + this.get("OS_Minor_Version");
     }
 
-    public String getHypervisorName() throws ParserConfigurationException,
-            IOException, Exception {
-        return this.Get("Hypervisor_Name");
+    public String getHypervisorName() {
+        return this.get("Hypervisor_Name");
     }
 
-    public String getHypervisorVersion() throws ParserConfigurationException,
-            IOException, Exception {
-        String ver = this.getHypervisorMajor() + "."
+    public String getHypervisorVersion() {
+        return this.getHypervisorMajor() + "."
                 + this.getHypervisorMinor() + "." + this.getHypervisorExtra();
-        return ver;
     }
 
-    public String getCapabilities() throws ParserConfigurationException,
-            IOException, Exception {
-        return this.Get("Capabilities");
+    public String getCapabilities() {
+        return this.get("Capabilities");
     }
 
-    public String getHypervisorMajor() throws ParserConfigurationException,
-            IOException, Exception {
-        return this.Get("Major");
+    public String getHypervisorMajor() {
+        return this.get("Major");
     }
 
-    public String getHypervisorMinor() throws ParserConfigurationException,
-            IOException, Exception {
-        return this.Get("Minor");
+    public String getHypervisorMinor() {
+        return this.get("Minor");
     }
 
-    public String getHypervisorExtra() throws ParserConfigurationException,
-            IOException, Exception {
-        return this.Get("Extra").replace(".", "");
+    public String getHypervisorExtra() {
+        return this.get("Extra").replace(".", "");
     }
 
-    public String getManagerUuid() throws ParserConfigurationException,
-            IOException, Exception {
-        return this.Get("Manager_Unique_Id");
+    public String getManagerUuid() {
+        return this.get("Manager_Unique_Id");
     }
 
-    public String getMembershipState() throws ParserConfigurationException,
-            IOException, Exception {
-        return this.Get("Membership_State");
+    public String getMembershipState() {
+        return this.get("Membership_State");
     }
 
-    public String getServerRoles() throws ParserConfigurationException,
-            IOException, Exception {
-        return this.Get("Server_Roles");
+    public String getServerRoles() {
+        return this.get("Server_Roles");
     }
 
-    public boolean getIsMaster() throws ParserConfigurationException,
-            IOException, Exception {
-        return Boolean.parseBoolean(this.Get("Is_Current_Master"));
+    public boolean getIsMaster() {
+        return Boolean.parseBoolean(this.get("Is_Current_Master"));
     }
 
-    public String getOvmVersion() throws ParserConfigurationException,
-            IOException, Exception {
-        return this.Get("OVM_Version");
+    public String getOvmVersion() {
+        return this.get("OVM_Version");
     }
 
-    public String getHostName() throws ParserConfigurationException,
-            IOException, Exception {
-        return this.Get("Hostname");
+    public String getHostName() {
+        return this.get("Hostname");
     }
 
-    public Integer getCpuKhz() throws NumberFormatException,
-            ParserConfigurationException, IOException, Exception {
-        return Integer.valueOf(this.Get("CPUKHz"));
+    public Integer getCpuKhz() {
+        return Integer.valueOf(this.get("CPUKHz"));
     }
 
-    public Integer getCpuSockets() throws NumberFormatException,
-            ParserConfigurationException, IOException, Exception {
-        return Integer.valueOf(this.Get("SocketsPerNode"));
+    public Integer getCpuSockets() {
+        return Integer.valueOf(this.get("SocketsPerNode"));
     }
 
-    public Integer getCpuThreads() throws NumberFormatException,
-            ParserConfigurationException, IOException, Exception {
-        return Integer.valueOf(this.Get("ThreadsPerCore"));
+    public Integer getCpuThreads() {
+        return Integer.valueOf(this.get("ThreadsPerCore"));
     }
 
-    public Integer getCpuCores() throws NumberFormatException,
-            ParserConfigurationException, IOException, Exception {
-        return Integer.valueOf(this.Get("CoresPerSocket"));
+    public Integer getCpuCores() {
+        return Integer.valueOf(this.get("CoresPerSocket"));
     }
 
-    public Integer getTotalThreads() throws NumberFormatException,
-            ParserConfigurationException, IOException, Exception {
+    public Integer getTotalThreads() {
         return this.getCpuSockets() * this.getCpuCores() * this.getCpuThreads();
     }
 
-    public Double getMemory() throws NumberFormatException,
-            ParserConfigurationException, IOException, Exception {
-        return Double.valueOf(this.Get("TotalPages")) * 4096;
+    public Double getMemory() {
+        return Double.valueOf(this.get("TotalPages")) * 4096;
     }
 
-    public Double getFreeMemory() throws NumberFormatException,
-            ParserConfigurationException, IOException, Exception {
-        return Double.valueOf(this.Get("FreePages")) * 4096;
+    public Double getFreeMemory() {
+        return Double.valueOf(this.get("FreePages")) * 4096;
     }
 
-    public String getUuid() throws NumberFormatException,
-            ParserConfigurationException, IOException, Exception {
-        return this.Get("Unique_Id");
+    public String getUuid() {
+        return this.get("Unique_Id");
     }
 
-    public String Get(String element) throws ParserConfigurationException,
-            IOException, Exception {
+    private void initMaps() throws Ovm3ResourceException {
         if (this.initMaps == 1) {
             this.discoverHardware();
             this.discoverServer();
             this.initMaps = 0;
+         }
+    }
+
+    public String get(String element) {
+        /* TODO: Figure out if this is smart */
+        try {
+            initMaps();
+        } catch (Ovm3ResourceException e) {
+            LOGGER.info("Unable to discover host: " + e.getMessage(), e);
         }
-        if (Generic.containsKey(element)) {
-            return Generic.get(element);
+        if (ovmGeneric.containsKey(element)) {
+            return ovmGeneric.get(element);
+        } else if (ovmHypervisor.containsKey(element)) {
+            return ovmHypervisor.get(element);
+        } else if (ovmHypervisorDetails.containsKey(element)) {
+            return ovmHypervisorDetails.get(element);
+        } else if (hwPhysicalInfo.containsKey(element)) {
+            return hwPhysicalInfo.get(element);
+        } else if (hwSystemInfo.containsKey(element)) {
+            return hwSystemInfo.get(element);
+        } else if (ovmCapabilities.containsKey(element)) {
+            return ovmCapabilities.get(element);
         }
-        if (VMMc.containsKey(element)) {
-            return VMMc.get(element);
-        }
-        if (VMM.containsKey(element)) {
-            return VMM.get(element);
-        }
-        if (hwVMM.containsKey(element)) {
-            return hwVMM.get(element);
-        }
-        if (hwSystem.containsKey(element)) {
-            return hwSystem.get(element);
-        }
-        if (Capabilities.containsKey(element)) {
-            return Capabilities.get(element);
-        }
+
         return "";
     }
 
@@ -267,8 +235,8 @@ public class Linux extends OvmObject {
      * get_last_boot_time, <class 'agent.api.host.linux.Linux'> argument: self -
      * default: None
      */
-    public Integer getLastBootTime() throws XmlRpcException {
-        HashMap<String, Long> result = callMap("get_last_boot_time");
+    public Integer getLastBootTime() throws Ovm3ResourceException {
+        Map<String, Long> result = callMap("get_last_boot_time");
         if (result == null) {
             return null;
         }
@@ -301,12 +269,8 @@ public class Linux extends OvmObject {
      * argument: min - default: None argument: sec - default: None
      */
     public Boolean setDateTime(int year, int month, int day, int hour, int min,
-            int sec) throws XmlRpcException {
-        Object x = callWrapper("set_datetime", year, month, day, hour, min, sec);
-        if (x == null) {
-            return true;
-        }
-        return false;
+            int sec) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("set_datetime", year, month, day, hour, min, sec);
     }
 
     /*
@@ -318,9 +282,8 @@ public class Linux extends OvmObject {
      * discover_physical_luns, <class 'agent.api.host.linux.Linux'> argument:
      * self - default: None argument: args - default: None
      */
-    public String discoverPhysicalLuns() throws XmlRpcException {
-        String x = (String) callWrapper("discover_physical_luns", "");
-        return x;
+    public String discoverPhysicalLuns() throws Ovm3ResourceException {
+        return (String) callWrapper("discover_physical_luns", "");
     }
 
     /*
@@ -359,7 +322,7 @@ public class Linux extends OvmObject {
      * default: None argument: timezone - default: None argument: utc - default:
      * None
      */
-    public Boolean setTimeZone(String tz, Boolean utc) throws XmlRpcException {
+    public Boolean setTimeZone(String tz, Boolean utc) throws Ovm3ResourceException {
         Object x = callWrapper("set_timezone", tz, utc);
         if (x == null) {
             return true;
@@ -372,7 +335,7 @@ public class Linux extends OvmObject {
      * None argument: src - default: None argument: dst - default: None
      * argument: sparse - default: None argument: update_period - default: None
      */
-    public Boolean copyFile(String src, String dst) throws XmlRpcException {
+    public Boolean copyFile(String src, String dst) throws Ovm3ResourceException {
         Object x = callWrapper("copy_file", src, dst, false);
         if (x == null) {
             return true;
@@ -380,8 +343,7 @@ public class Linux extends OvmObject {
         return false;
     }
 
-    public Boolean copyFile(String src, String dst, Boolean sparse)
-            throws XmlRpcException {
+    public Boolean copyFile(String src, String dst, Boolean sparse) throws Ovm3ResourceException {
         Object x = callWrapper("copy_file", src, dst, sparse);
         if (x == null) {
             return true;
@@ -393,18 +355,7 @@ public class Linux extends OvmObject {
      * discover_mounted_file_systems, <class 'agent.api.host.linux.Linux'>
      * argument: self - default: None argument: args - default: None
      */
-    /*
-     * <Discover_Mounted_File_Systems_Result> <Filesystem Type="nfs"> <Mount
-     * Dir="/nfsmnt/e080e318-91c2-47e5-a5ab-f3ab53790162">
-     * <Device>cs-mgmt:/volumes/cs-data/secondary/</Device>
-     * <Mount_Options>rw,relatime
-     * ,vers=3,rsize=524288,wsize=524288,namlen=255,hard
-     * ,proto=tcp,port=65535,timeo
-     * =600,retrans=2,sec=sys,local_lock=none,addr=192.168.1.61</Mount_Options>
-     * </Mount> </Filesystem> ... </Discover_Mounted_File_Systems_Result>
-     */
-
-    public Boolean discoverMountedFs() throws XmlRpcException {
+    public Boolean discoverMountedFs() throws Ovm3ResourceException {
         Object x = callWrapper("discover_mounted_file_systems");
         if (x == null) {
             return true;
@@ -412,11 +363,7 @@ public class Linux extends OvmObject {
         return false;
     }
 
-    /* Filesystem bits and bobs */
-    private Map<String, FileSystem> fsList = null;
-
-    public Map<String, FileSystem> getFileSystemList(String type)
-            throws ParserConfigurationException, IOException, Exception {
+    public Map<String, FileSystem> getFileSystemList(String type) throws Ovm3ResourceException {
         if (fsList == null) {
             this.discoverMountedFs(type);
         }
@@ -427,8 +374,8 @@ public class Linux extends OvmObject {
         fsList = list;
     }
 
-    public class FileSystem {
-        public Map<String, Object> _fs = new HashMap<String, Object>() {
+    public static class FileSystem {
+        private Map<String, Object> fileSys = new HashMap<String, Object>() {
             {
                 put("Mount_Options", null);
                 put("Name", null);
@@ -440,70 +387,79 @@ public class Linux extends OvmObject {
             }
         };
 
+        public Boolean setDetails(Map<String, Object> fs) {
+            fileSys = fs;
+            return true;
+        }
+        public Map<String, Object> getDetails() {
+            return fileSys;
+        }
         public String getUuid() {
-            return (String) _fs.get("Uuid");
+            return (String) fileSys.get("Uuid");
         }
 
         public String setUuid(String uuid) {
-            return (String) _fs.put("Uuid", uuid);
+            return (String) fileSys.put("Uuid", uuid);
         }
 
         public String getName() {
-            return (String) _fs.get("Name");
+            return (String) fileSys.get("Name");
         }
 
         public String setName(String name) {
-            return (String) _fs.put("Name", name);
+            return (String) fileSys.put("Name", name);
         }
 
         public String getDevice() {
-            return (String) _fs.get("Device");
+            return (String) fileSys.get("Device");
         }
 
         public String setDevice(String dev) {
-            return (String) _fs.put("Device", dev);
+            return (String) fileSys.put("Device", dev);
         }
 
         public String getHost() {
             if (getDevice() != null && getDevice().contains(":")) {
-                String spl[] = getDevice().split(":");
+                String[] spl = getDevice().split(":");
                 setHost(spl[0]);
                 setMountPoint(spl[1]);
             } else {
                 return null;
             }
-            return (String) _fs.get("Host");
+            return (String) fileSys.get("Host");
         }
 
         public String setHost(String host) {
-            return (String) _fs.put("Host", host);
+            return (String) fileSys.put("Host", host);
         }
 
         public String getDir() {
-            return (String) _fs.get("Dir");
+            return (String) fileSys.get("Dir");
         }
 
         public String setDir(String dir) {
-            return (String) _fs.put("Dir", dir);
+            return (String) fileSys.put("Dir", dir);
         }
 
         public String getMountPoint() {
             if (getHost() != null) {
-                return (String) _fs.get("Mount_Point");
+                return (String) fileSys.get("Mount_Point");
             }
             return null;
         }
 
         public String setMountPoint(String pnt) {
-            return (String) _fs.put("Mount_Point", pnt);
+            return (String) fileSys.put("Mount_Point", pnt);
         }
-    };
+    }
 
     /* should actually be called "getMountedsFsDevice" or something */
-    public Map<String, FileSystem> discoverMountedFs(String type)
-            throws ParserConfigurationException, IOException, Exception {
+    public Map<String, FileSystem> discoverMountedFs(String type) throws Ovm3ResourceException {
         this.fsList = new HashMap<String, FileSystem>();
         Object x = callWrapper("discover_mounted_file_systems", type);
+        if (x == null) {
+            return this.fsList;
+        }
         Document xmlDocument = prepParse((String) x);
         String bpath = "//Discover_Mounted_File_Systems_Result/Filesystem";
         String mpath = bpath + "/Mount/@Dir";
@@ -512,7 +468,7 @@ public class Linux extends OvmObject {
             String dpath = bpath + "/Mount[@Dir='" + mnt + "']";
             Map<String, Object> fs = xmlToMap(dpath, xmlDocument);
             FileSystem f = new FileSystem();
-            f._fs = fs;
+            f.setDetails(fs);
             String[] spl = mnt.split("/");
             String uuid = spl[spl.length - 1];
             f.setUuid(uuid);
@@ -520,10 +476,6 @@ public class Linux extends OvmObject {
             fsList.put(uuid, f);
         }
         setFileSystemList(fsList);
-        if (x == null) {
-            return this.fsList;
-        }
-
         return this.fsList;
     }
 
@@ -542,8 +494,7 @@ public class Linux extends OvmObject {
      * self - default: None argument: username - default: None argument:
      * password - default: None
      */
-    public Boolean updateAgentPassword(String user, String pass)
-            throws XmlRpcException {
+    public Boolean updateAgentPassword(String user, String pass) throws Ovm3ResourceException {
         Object x = callWrapper("update_agent_password", user, pass);
         if (x == null) {
             return true;
@@ -560,20 +511,18 @@ public class Linux extends OvmObject {
      * discover_hardware, <class 'agent.api.host.linux.Linux'> argument: self -
      * default: None
      */
-    public Boolean discoverHardware() throws ParserConfigurationException,
-            IOException, Exception {
+    public Boolean discoverHardware() throws Ovm3ResourceException {
         Object result = callWrapper("discover_hardware");
-
-        Document xmlDocument = prepParse((String) result);
+        if (result == null) {
+            return false;
+        }
+        Document xmlDocument;
+        xmlDocument = prepParse((String) result);
         /* could be more subtle */
         String path = "//Discover_Hardware_Result/NodeInformation";
-        hwVMM = xmlToMap(path + "/VMM/PhysicalInfo", xmlDocument);
-        hwSystem = xmlToMap(path + "/DMTF/System", xmlDocument);
-
-        if (result == null) {
-            return true;
-        }
-        return false;
+        hwPhysicalInfo = xmlToMap(path + "/VMM/PhysicalInfo", xmlDocument);
+        hwSystemInfo = xmlToMap(path + "/DMTF/System", xmlDocument);
+        return true;
     }
 
     /*
@@ -586,7 +535,7 @@ public class Linux extends OvmObject {
      * get_datetime, <class 'agent.api.host.linux.Linux'> argument: self -
      * default: None
      */
-    public Integer getDateTime() throws XmlRpcException {
+    public Integer getDateTime() throws Ovm3ResourceException {
         this.getLastBootTime();
         return this.localTime;
     }
@@ -601,13 +550,13 @@ public class Linux extends OvmObject {
      * get_yum_config, <class 'agent.api.host.linux.Linux'> argument: self -
      * default: None
      */
-    public Boolean getYumConfig() throws XmlRpcException {
+    /* TODO: need to parse this */
+    public Boolean getYumConfig() throws Ovm3ResourceException {
         Object x = callWrapper("get_yum_config");
-        // System.out.println(x);
         if (x == null) {
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
     /*
@@ -619,12 +568,8 @@ public class Linux extends OvmObject {
      * set_statistic_interval, <class 'agent.api.host.linux.Linux'> argument:
      * interval - default: None
      */
-    public Boolean setStatisticsInterval(int val) throws XmlRpcException {
-        Object x = callWrapper("set_statistics_interval", val);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean setStatisticsInterval(int val) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("set_statistics_interval", val);
     }
 
     /*
@@ -638,7 +583,7 @@ public class Linux extends OvmObject {
      * get_timezone, <class 'agent.api.host.linux.Linux'> argument: self -
      * default: None
      */
-    public Boolean getTimeZone() throws XmlRpcException {
+    public Boolean getTimeZone() throws Ovm3ResourceException  {
         Object[] result = (Object[]) callWrapper("get_timezone");
         if (result != null) {
             this.setTimeZ(result[0].toString());

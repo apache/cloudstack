@@ -16,18 +16,14 @@
 package com.cloud.hypervisor.ovm3.object;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
 /*
  * should become an interface implementation
  */
@@ -39,20 +35,20 @@ public class Xen extends OvmObject {
     private Vm defVm = new Vm();
 
     public Xen(Connection c) {
-        client = c;
+        setClient(c);
     }
 
     /* a vm class.... Setting up a VM is different than retrieving one from OVM.
      * It's either a list retrieval or /usr/lib64/python2.4/site-packages/agent/lib/xenvm.py */
-    public class Vm {
+    public static class Vm {
         /* 'vfb': [ 'type=vnc,vncunused=1,vnclisten=127.0.0.1,keymap=en-us'] */
         private List<String> vmVncElement = new ArrayList<String>();
         private Map<String, String> vmVnc = new HashMap<String, String>() {
             {
-                put(new String("type"), "vnc");
-                put(new String("vncunused"), "1");
-                put(new String("vnclisten"), "127.0.0.1");
-                put(new String("keymap"), "en-us");
+                put("type", "vnc");
+                put("vncunused", "1");
+                put("vnclisten", "127.0.0.1");
+                put("keymap", "en-us");
             }
         };
 
@@ -62,20 +58,20 @@ public class Xen extends OvmObject {
         private List<String> vmDisks = new ArrayList<String>();
         private Map<String, String> vmDisk = new HashMap<String, String>() {
             {
-                put(new String("id"), "");
-                put(new String("uuid"), "");
-                put(new String("dev"), "");
-                put(new String("bootable"), "1");
-                put(new String("mode"), "w");
-                put(new String("VDI"), "");
-                put(new String("backend"), "0");
-                put(new String("protocol"), "x86_32-abi");
-                put(new String("uname"), "");
+                put("id", "");
+                put("uuid", "");
+                put("dev", "");
+                put("bootable", "1");
+                put("mode", "w");
+                put("VDI", "");
+                put("backend", "0");
+                put("protocol", "x86_32-abi");
+                put("uname", "");
             }
         };
 
         /* 'vif': [ 'mac=00:21:f6:00:00:00,bridge=c0a80100'] */
-        String[] vmVifs = new String[6];
+        private String[] vmVifs = new String[6];
         private  List<String> vmVifsPrep = new ArrayList<String>();
         private String vmSimpleName = "";
         private String vmName = "";
@@ -108,12 +104,12 @@ public class Xen extends OvmObject {
         private String vmCpuCompatGroup = "";
         /* pv is default */
         private String vmDomainType = "xen_pvm";
-        /* TODO: check of we really need this: private String vmState = "------"; */
+        /* TODO: check of we really vmState, defaults to "------" */
         /* start counting disks at A -> 0 */
         private int diskZero = 97;
         private int diskCount = diskZero;
 
-        /* vmparameters */
+        /* TODO: Subclass vm parameters */
         private Map<String, Object> vmParams = new HashMap<String, Object>() {
             {
                 put("vif", vmVifsPrep);
@@ -138,7 +134,7 @@ public class Xen extends OvmObject {
                 put("OVM_cpu_compat_group", vmCpuCompatGroup);
                 put("OVM_domain_type", vmDomainType);
                 put("extra", vmExtra);
-            };
+            }
         };
 
         public boolean isControlDomain() {
@@ -184,7 +180,7 @@ public class Xen extends OvmObject {
         }
 
         public String getVmBootArgs() {
-            return (String) vmParams.get("bootargs");
+            return (String) vmParams.get("bootloader_args");
         }
 
         public Boolean setVmMaxCpus(Integer val) {
@@ -320,13 +316,19 @@ public class Xen extends OvmObject {
         }
 
         public Boolean removeVif(String bridge, String mac) {
-            /* TODO: vmVfbs.remove("mac="+mac+",bridge="+bridge); */
-            return true;
+            String vifLine = "mac="+mac+",bridge="+bridge;
+            for (String vif : vmVifsPrep) {
+                if (vifLine.equals(vif)) {
+                    return vmVifsPrep.remove(vif);
+                }
+            }
+            LOGGER.debug("No vif found corresponding to mac: " + mac + ", bridge " + bridge);
+            return false;
         }
 
         /* 'file:/OVS/Repositories/d5f5a4480515467ca1638554f085b278/ISOs/e14c811ebbf84f0b8221e5b7404a554e.iso,hdc:cdrom,r' */
         /* device is coupled with vmtype enumerate and cdboot ? */
-        public Boolean addRootDisk(String image) throws Exception {
+        public Boolean addRootDisk(String image) {
             Boolean ret = false;
             if (diskCount > diskZero) {
                 Integer oVmDisk = diskCount;
@@ -339,19 +341,19 @@ public class Xen extends OvmObject {
             return ret;
         }
 
-        public Boolean addDataDisk(String image) throws Exception {
+        public Boolean addDataDisk(String image) {
             /* w! means we're able to share the disk is that wise, should be an
              * option in CS ?
              */
             return addDisk(image, "w!");
         }
 
-        public Boolean addIso(String image) throws Exception {
+        public Boolean addIso(String image) {
             /* should we check for .iso ? */
             return addDisk(image, "r!");
         }
 
-        public Boolean addDisk(String image, String mode) throws Exception {
+        public Boolean addDisk(String image, String mode) {
             String devName = null;
             /* better accounting then diskCount += 1 */
             diskCount = diskZero + vmDisks.size();
@@ -371,12 +373,7 @@ public class Xen extends OvmObject {
         }
 
         /* should be on device id too, or else we get random attaches... */
-        private Boolean addDiskToDisks(String image, String devName, String mode)
-                throws Exception {
-            if (getVmDomainType() == null) {
-                throw new Exception("Unable to add disk without domain type "
-                        + "(hvm, xen_pvm, ldoms_pvm (sparc), default)");
-            }
+        private Boolean addDiskToDisks(String image, String devName, String mode) {
             /* TODO: needs to become "checkDisk" */
             for (String disk : vmDisks) {
                 if (disk.contains(image)) {
@@ -388,32 +385,36 @@ public class Xen extends OvmObject {
             return true;
         }
 
-        public Boolean removeDisk(String image) throws Exception {
+        public Boolean removeDisk(String image) {
             for (String disk : vmDisks) {
                 if (disk.contains(image)) {
                     return vmDisks.remove(disk);
                 }
             }
+            LOGGER.debug("No disk found corresponding to image: " +image);
             return false;
         }
 
-        /* TODO: the conflict between getVm and getVmConfig becomes clear */
-        /* FIX: me */
-        public String getVmRootDiskPoolId() {
+        /* The conflict between getVm and getVmConfig becomes clear */
+        public String getVmRootDiskPoolId() throws Ovm3ResourceException {
             String poolId = getVmDiskPoolId(0);
             this.setPrimaryPoolUuid(poolId);
             return poolId;
         }
 
         /* TODO: need to fork out vifs, disks and vnc stuff fill them nicely too */
-        public String getVmDiskPoolId(int disk) {
+        public String getVmDiskPoolId(int disk) throws Ovm3ResourceException {
+            int fi = 3;
             String diskPath = "";
-            diskPath = getViskDetailFromMap(disk, "uname");
+            diskPath = getVmDiskDetailFromMap(disk, "uname");
             String[] st = diskPath.split(File.separator);
-            return st[3];
+            if (st.length < fi) {
+                throw new Ovm3ResourceException("No valid disk found for id: " + disk);
+            }
+            return st[fi];
         }
 
-        private String getViskDetailFromMap(int disk, String dest) {
+        private String getVmDiskDetailFromMap(int disk, String dest) {
             Map<String, Object[]> o = (Map<String, Object[]>) vmParams
                     .get("device");
             vmDisk = (Map<String, String>) o.get("vbd")[disk];
@@ -439,7 +440,7 @@ public class Xen extends OvmObject {
         }
 
         public Boolean setVnc(String type, String address, String map) {
-            /* unused off is domid + 5900, with unused=1 it will be "smart" */
+            /* unused off is domid + 5900, with unused=1 it will be "smart" and not work */
             vmVnc.put("type", type);
             vmVnc.put("vncunused", this.getVncUsed());
             vmVnc.put("vnclisten", address);
@@ -539,7 +540,7 @@ public class Xen extends OvmObject {
      * list_vms, <class 'agent.api.hypervisor.xenxm.Xen'> argument: self -
      * default: None
      */
-    public Map<String, Vm> listVms() throws Exception {
+    public Map<String, Vm> listVms() throws Ovm3ResourceException {
         Object[] result = (Object[]) callWrapper("list_vms");
         if (result == null) {
             return null;
@@ -551,14 +552,13 @@ public class Xen extends OvmObject {
                 /* put the vmparams in, as x is a hashmap */
                 Vm vm = new Vm();
                 vm.setVmParams((Map<String, Object>) x);
-                this.vmList.put((String) vm.get("name"), vm);
+                vmList.put((String) vm.get("name"), vm);
             }
         } catch (Exception e) {
             String msg = "Unable to list VMs: " + e.getMessage();
-            LOGGER.debug(msg);
-            throw new Exception(msg);
+            throw new Ovm3ResourceException(msg, e);
         }
-        return this.vmList;
+        return vmList;
     }
 
     /*
@@ -566,21 +566,11 @@ public class Xen extends OvmObject {
      * configuration file, while getVm returns the "live" configuration. It
      * makes perfect sense if you think about it..... ....long enough
      */
-    public Vm getRunningVmConfig(String name)
-            throws Exception {
-        listVms();
-        try {
-            Xen.Vm vm = this.vmList.get(name);
-            return vm;
-        } catch (Exception e) {
-            String msg = "Unable to get running VM configuration" + e.getMessage();
-            LOGGER.debug(msg);
-            return null;
-        }
+    public Vm getRunningVmConfig(String name) throws Ovm3ResourceException {
+        return getRunningVmConfigs().get(name);
     }
 
-    public Map<String, Vm> getRunningVmConfigs()
-            throws ParserConfigurationException, IOException, Exception {
+    public Map<String, Vm> getRunningVmConfigs() throws Ovm3ResourceException {
         return listVms();
     }
 
@@ -595,12 +585,8 @@ public class Xen extends OvmObject {
      * default: None argument: repo_id - default: None argument: vm_id -
      * default: None
      */
-    public Boolean deleteVm(String repoId, String vmId) throws XmlRpcException {
-        Object x = callWrapper("delete_vm", repoId, vmId);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean deleteVm(String repoId, String vmId) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("delete_vm", repoId, vmId);
     }
 
     /*
@@ -608,12 +594,8 @@ public class Xen extends OvmObject {
      * default: None argument: repo_id - default: None argument: vm_id -
      * default: None argument: checkpoint - default: None
      *//* add checkpoint */
-    public Boolean saveVm(String repoId, String vmId) throws XmlRpcException {
-        Object x = callWrapper("save_vm", repoId, vmId);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean saveVm(String repoId, String vmId) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("save_vm", repoId, vmId);
     }
 
     /*
@@ -633,7 +615,7 @@ public class Xen extends OvmObject {
      * default: None argument: repo_id - default: None argument: vm_id -
      * default: None
      */
-    public Boolean listVm(String repoId, String vmId) throws XmlRpcException {
+    public Boolean listVm(String repoId, String vmId) throws Ovm3ResourceException {
         defVm = (Vm) callWrapper("list_vm", repoId, vmId);
         if (defVm == null) {
             return false;
@@ -691,16 +673,11 @@ public class Xen extends OvmObject {
      * default: None argument: params - default: None
      */
     public Boolean configureVm(String repoId, String vmId,
-            Map<String, Object> params) throws XmlRpcException {
-        Object x = callWrapper("configure_vm", repoId, vmId, params);
-        if (x == null) {
-            return true;
-        }
-        return false;
+            Map<String, Object> params) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("configure_vm", repoId, vmId, params);
     }
 
-    public Boolean configureVm(String repoId, String vmId)
-            throws XmlRpcException {
+    public Boolean configureVm(String repoId, String vmId) throws Ovm3ResourceException {
         return configureVm(repoId, vmId, this.defVm.getVmParams());
     }
 
@@ -715,12 +692,8 @@ public class Xen extends OvmObject {
      * default: None argument: repo_id - default: None argument: vm_id -
      * default: None
      */
-    public Boolean pauseVm(String repoId, String vmId) throws XmlRpcException {
-        Object x = callWrapper("pause_vm", repoId, vmId);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean pauseVm(String repoId, String vmId) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("pause_vm", repoId, vmId);
     }
 
     /*
@@ -741,7 +714,7 @@ public class Xen extends OvmObject {
      * default: None argument: repo_id - default: None argument: vm_id -
      * default: None argument: force - default: None
      */
-    public Boolean stopVm(String repoId, String vmId) throws XmlRpcException {
+    public Boolean stopVm(String repoId, String vmId) throws Ovm3ResourceException {
         Object x = callWrapper("stop_vm", repoId, vmId, false);
         if (x == null) {
             return true;
@@ -749,8 +722,7 @@ public class Xen extends OvmObject {
         return false;
     }
 
-    public Boolean stopVm(String repoId, String vmId, Boolean force)
-            throws XmlRpcException {
+    public Boolean stopVm(String repoId, String vmId, Boolean force) throws Ovm3ResourceException{
         Object x = callWrapper("stop_vm", repoId, vmId, force);
         if (x == null) {
             return true;
@@ -777,17 +749,12 @@ public class Xen extends OvmObject {
      * default: None argument: dest - default: None argument: live - default:
      * None argument: ssl - default: None
      */
-    public Boolean migrateVm(String repoId, String vmId, String dest)
-            throws XmlRpcException {
-        Object x = callWrapper("migrate_vm", repoId, vmId, dest);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean migrateVm(String repoId, String vmId, String dest) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("migrate_vm", repoId, vmId, dest);
     }
 
     public Boolean migrateVm(String repoId, String vmId, String dest,
-            boolean live, boolean ssl) throws XmlRpcException {
+            boolean live, boolean ssl) throws Ovm3ResourceException {
         Object x = callWrapper("migrate_vm", repoId, vmId, dest, live, ssl);
         if (x == null) {
             return true;
@@ -800,8 +767,7 @@ public class Xen extends OvmObject {
      * default: None argument: repo_id - default: None argument: vm_id -
      * default: None argument: enable_ha - default: None
      */
-    public Boolean configureVmHa(String repoId, String vmId, Boolean ha)
-            throws XmlRpcException {
+    public Boolean configureVmHa(String repoId, String vmId, Boolean ha) throws Ovm3ResourceException {
         Object x = callWrapper("configure_vm_ha", repoId, vmId, ha);
         if (x == null) {
             return true;
@@ -814,21 +780,13 @@ public class Xen extends OvmObject {
      * default: None argument: repo_id - default: None argument: vm_id -
      * default: None argument: params - default: None
      */
-    public Boolean createVm(String repoId, String vmId) throws XmlRpcException {
-        Object x = callWrapper("create_vm", repoId, vmId, defVm.getVmParams());
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean createVm(String repoId, String vmId) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("create_vm", repoId, vmId, defVm.getVmParams());
     }
 
     public Boolean createVm(String repoId, String vmId,
-            Map<String, Object> vmParams) throws XmlRpcException {
-        Object x = callWrapper("create_vm", repoId, vmId, vmParams);
-        if (x == null) {
-            return true;
-        }
-        return false;
+            Map<String, Object> vmParams) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("create_vm", repoId, vmId, vmParams);
     }
 
     /*
@@ -848,12 +806,8 @@ public class Xen extends OvmObject {
      * default: None argument: repo_id - default: None argument: vm_id -
      * default: None
      */
-    public Boolean startVm(String repoId, String vmId) throws XmlRpcException {
-        Object x = callWrapper("start_vm", repoId, vmId);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean startVm(String repoId, String vmId) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("start_vm", repoId, vmId);
     }
 
     /*
@@ -861,12 +815,8 @@ public class Xen extends OvmObject {
      * default: None argument: repo_id - default: None argument: vm_id -
      * default: None
      */
-    public Boolean unpauseVm(String repoId, String vmId) throws XmlRpcException {
-        Object x = callWrapper("unpause_vm", repoId, vmId);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean unpauseVm(String repoId, String vmId) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("unpause_vm", repoId, vmId);
     }
 
     /*
@@ -893,8 +843,7 @@ public class Xen extends OvmObject {
      * default: None argument: repo_id - default: None argument: vm_id -
      * default: None argument: wait - default: None
      */
-    public Boolean rebootVm(String repoId, String vmId, int wait)
-            throws XmlRpcException {
+    public Boolean rebootVm(String repoId, String vmId, int wait) throws Ovm3ResourceException {
         Object x = callWrapper("reboot_vm", repoId, vmId, wait);
         if (x == null) {
             return true;
@@ -902,7 +851,7 @@ public class Xen extends OvmObject {
         return false;
     }
 
-    public Boolean rebootVm(String repoId, String vmId) throws XmlRpcException {
+    public Boolean rebootVm(String repoId, String vmId) throws Ovm3ResourceException {
         Object x = callWrapper("reboot_vm", repoId, vmId, 3);
         if (x == null) {
             return true;
@@ -921,22 +870,12 @@ public class Xen extends OvmObject {
      * default: None argument: repo_id - default: None argument: vm_id -
      * default: None
      */
-    public Vm getVmConfig(String vmName) throws XmlRpcException, Exception {
-        try {
-            defVm = this.getRunningVmConfig(vmName);
-            if (defVm == null) {
-                return defVm;
-            }
-            return getVmConfig(defVm.getVmRootDiskPoolId(), defVm.getVmUuid());
-        } catch (XmlRpcException e) {
-            String msg = "XmlRpcxception: retrieving VM configuration for " + vmName + ": " + e.getMessage();
-            LOGGER.error(msg);
-            throw new XmlRpcException(msg);
-        } catch (Exception e) {
-            String msg = "Exception: retrieving VM configuration for " + vmName + ": " + e.getMessage();
-            LOGGER.error(msg);
-            throw new Exception(msg);
+    public Vm getVmConfig(String vmName) throws Ovm3ResourceException {
+        defVm = this.getRunningVmConfig(vmName);
+        if (defVm == null) {
+            return defVm;
         }
+        return getVmConfig(defVm.getVmRootDiskPoolId(), defVm.getVmUuid());
     }
 
     public Vm getVmConfig() {
@@ -947,7 +886,8 @@ public class Xen extends OvmObject {
      * returns the configuration file contents, so we parse it for configuration
      * alterations we might want to do (/$repo/VirtualMachines/$uuid/vm.cfg)
      */
-    public Vm getVmConfig(String repoId, String vmId) throws XmlRpcException {
+    public Vm getVmConfig(String repoId, String vmId) throws Ovm3ResourceException {
+        try {
         Xen.Vm nVm = new Xen.Vm();
         Map<String, Object[]> x = (Map<String, Object[]>) callWrapper(
                 "get_vm_config", repoId, vmId);
@@ -972,6 +912,9 @@ public class Xen extends OvmObject {
         /* to make sure stuff doesn't blow up in our face... */
         defVm = nVm;
         return nVm;
+        } catch (Ovm3ResourceException e) {
+            throw e;
+        }
     }
 
     /*

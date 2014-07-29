@@ -13,64 +13,49 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.apache.xmlrpc.XmlRpcException;
 import org.w3c.dom.Document;
 
 /*
  * should become an interface implementation
  */
 public class StoragePlugin extends OvmObject {
-    /* nfs or iscsi should be an "enabled" flag */
-    /*
-     * storage_plugin_mount('oracle.generic.NFSPlugin.GenericNFSPlugin', {
-     * 'status': '', 'admin_user': '', 'admin_host': '', 'uuid':
-     * '0004fb00000900000c2461c2f62ba43e', 'total_sz': 0, 'admin_passwd':
-     * '******', 'storage_desc': '', 'free_sz': 0, 'access_host': 'cs-mgmt',
-     * 'storage_type': 'FileSys', 'alloc_sz': 0, 'access_grps': [], 'used_sz':
-     * 0, 'name': '0004fb00000900000c2461c2f62ba43e'}, { 'status': '', 'uuid':
-     * 'b8ca41cb-3469-4f74-a086-dddffe37dc2d', 'ss_uuid':
-     * '0004fb00000900000c2461c2f62ba43e', 'size': '263166853120', 'free_sz':
-     * '259377299456', 'state': 1, 'access_grp_names': [], 'access_path':
-     * 'cs-mgmt:/volumes/cs-data/secondary', 'name':
-     * 'nfs:/volumes/cs-data/secondary'},
-     * '/nfsmnt/b8ca41cb-3469-4f74-a086-dddffe37dc2d', '', True, [])
-     */
     private String pluginType = "oracle.generic.NFSPlugin.GenericNFSPlugin";
+    private String unknown = ""; /* empty */
+    private Boolean active = true;
+    private List<String> someList = new ArrayList<String>(); /* empty */
 
-    /* TODO: subclass */
-    /*
-     * Json, but then it's xml... {'status': '', 'admin_user': '', 'admin_host':
-     * '', 'uuid': '0004fb00000900000c2461c2f62ba43e', 'total_sz': 0,
-     * 'admin_passwd': '******', 'storage_desc': '', 'free_sz': 0,
-     * 'access_host': 'cs-mgmt', 'storage_type': 'FileSys', 'alloc_sz': 0,
-     * 'access_grps': [], 'used_sz': 0, 'name':
-     * '0004fb00000900000c2461c2f62ba43e'}
-     */
+    public StoragePlugin(Connection c) {
+        setClient(c);
+    }
+    /* TODO: subclass Storage Base Properties*/
     private Map<String, Object> baseProps = new HashMap<String, Object>() {
         {
-            put("status", ""); /* empty */
-            put("admin_user", ""); /* auth */
-            put("admin_host", ""); /* auth host */
-            put("uuid", ""); /* no dash uuid */
+            put("status", "");
+            /* iscsi */
+            put("admin_user", "");
+            put("admin_host", "");
+            /* no dash uuid */
+            put("uuid", "");
             put("total_sz", "");
-            put("admin_passwd", ""); /* iscsi or fc */
-            put("storage_desc", ""); /* description */
+            /* iscsi or fc */
+            put("admin_passwd", "");
+            put("storage_desc", "");
             put("free_sz", 0);
-            put("access_host", ""); /* remote host for fs */
-            put("storage_type", "FileSys"); /* type, guess lun ? */
+            /* remote host for fs */
+            put("access_host", "");
+            /* type, guess lun ? */
+            put("storage_type", "FileSys");
             put("alloc_size", 0);
             put("access_groups", new ArrayList<String>());
             put("sed_size", 0);
-            put("name", ""); /* uuid no dashes */
-        };
+            /* uuid no dashes */
+            put("name", "");
+        }
     };
 
     public String setUuid(String val) {
@@ -117,31 +102,26 @@ public class StoragePlugin extends OvmObject {
         return this.getFsHost();
     }
 
-    /* TODO: subclass */
-    /*
-     * Meh {'status': '', 'uuid': 'b8ca41cb-3469-4f74-a086-dddffe37dc2d',
-     * 'ss_uuid': '0004fb00000900000c2461c2f62ba43e', 'size': '263166853120',
-     * 'free_sz': '259377299456', 'state': 1, 'access_grp_names': [],
-     * 'access_path': 'cs-mgmt:/volumes/cs-data/secondary', 'name':
-     * 'nfs:/volumes/cs-data/secondary'}
-     */
+    /* TODO: subclass Storage Specific Properties */
     private Map<String, Object> ssProps = new HashMap<String, Object>() {
         {
-            put("status", ""); /* empty */
-            put("uuid", ""); /* with dashes */
-            put("ss_uuid", ""); /* no dashes */
+            /* empty */
+            put("status", "");
+            /* with dashes */
+            put("uuid", "");
+            /* no dashes */
+            put("ss_uuid", "");
             put("size", "");
             put("free_sz", "");
-            put("state", 1); /* guess this is active ? */
+            /* guess this is active ? */
+            put("state", 1);
             put("access_grp_names", new ArrayList<String>());
-            put("access_path", ""); /* remote path */
-            put("name", ""); /* just a name */
-            put("mount_options", new ArrayList<String>()); /*
-                                                            * array of values
-                                                            * which match normal
-                                                            * mount options
-                                                            */
-        };
+            /* remote path */
+            put("access_path", "");
+            put("name", "");
+            /* array of values that match normal mount options */
+            put("mount_options", new ArrayList<String>());
+        }
     };
 
     public String setFsSourcePath(String val) {
@@ -192,13 +172,7 @@ public class StoragePlugin extends OvmObject {
         return this.ssProps.get("size").toString();
     }
 
-    /* TODO: subclass */
-    /*
-     * {'fr_type': 'File', 'ondisk_sz': '48193536', 'fs_uuid':
-     * '7718562d-872f-47a7-b454-8f9cac4ffa3a', 'file_path':
-     * '/nfsmnt/7718562d-872f-47a7-b454-8f9cac4ffa3a/0004fb0000060000d4a1d2ec05a5e799.img',
-     * 'file_sz': '52380672'}
-     */
+    /* TODO: subclass FileProperties */
     private Map<String, Object> fileProps = new HashMap<String, Object>() {
         {
             put("fr_type", "");
@@ -228,14 +202,7 @@ public class StoragePlugin extends OvmObject {
         return mountPoint;
     }
 
-    public String unknown = ""; /* empty */
-    public Boolean active = true;
-    public List<String> someList = new ArrayList<String>(); /* empty */
-
-    public StoragePlugin(Connection c) {
-        client = c;
-    }
-
+    /* Actions for the storage plugin */
     /*
      * storage_plugin_resizeFileSystem, <class
      * 'agent.api.storageplugin.StoragePlugin'> argument: impl_name - default:
@@ -263,7 +230,7 @@ public class StoragePlugin extends OvmObject {
      * None - calls resize secretly.. after "create"
      */
     public Boolean storagePluginCreate(String poolUuid, String host,
-            String file, Long size) throws XmlRpcException {
+            String file, Long size) throws Ovm3ResourceException{
         /* this is correct ordering stuff */
         String uuid = this.deDash(poolUuid);
         ssProps.put("uuid", uuid);
@@ -290,19 +257,9 @@ public class StoragePlugin extends OvmObject {
         baseProps.put("name", "");
         baseProps.put("size", "");
 
-        /*
-         * fileProps.put("fr_type", "File"); fileProps.put("fs_uuid", ssuuid);
-         * fileProps.put("file_path", file); fileProps.put("file_sz", "");
-         * fileProps.put("ondisk_sz", "");
-         */
-        Object x = (HashMap<String, Object>) callWrapper(
+        return nullIsTrueCallWrapper(
                 "storage_plugin_create", this.pluginType, this.ssProps,
                 this.baseProps, file, "File", size);
-
-        if (x == null) {
-            return true;
-        }
-        return true;
     }
 
     /*
@@ -328,19 +285,15 @@ public class StoragePlugin extends OvmObject {
      * 'agent.api.storageplugin.StoragePlugin'> argument: impl_name - default:
      * None
      */
-    public Boolean storagePluginListFs(String type) throws XmlRpcException {
+    public Boolean storagePluginListFs(String type) throws Ovm3ResourceException {
         this.pluginType = type;
         return storagePluginListFs();
     }
 
-    public Boolean storagePluginListFs() throws XmlRpcException {
+    public Boolean storagePluginListFs() throws Ovm3ResourceException {
         Map<String, String> y = new HashMap<String, String>();
-        Object x = callWrapper("storage_plugin_listFileSystems",
+        return nullIsTrueCallWrapper("storage_plugin_listFileSystems",
                 this.pluginType, y);
-        if (x == null) {
-            return true;
-        }
-        return false;
     }
 
     /*
@@ -372,7 +325,7 @@ public class StoragePlugin extends OvmObject {
      * argument: impl_name - default: None
      */
     public final Boolean storagePluginMount(String nfsHost, String nfsPath,
-            String mntUuid, String mountPoint) throws XmlRpcException {
+            String mntUuid, String mountPoint) throws Ovm3ResourceException {
         String propUuid = this.deDash(mntUuid);
         this.setUuid(propUuid);
         this.setName(propUuid);
@@ -383,50 +336,17 @@ public class StoragePlugin extends OvmObject {
         this.setSsName("nfs:" + nfsPath);
         this.setFsMountPoint(mountPoint);
         this.storagePluginMount();
-        Map<String, Object> x = (Map<String, Object>) callWrapper(
+        return nullIsTrueCallWrapper(
                 "storage_plugin_mount", this.pluginType, this.baseProps,
                 this.ssProps, this.mountPoint, this.unknown, this.active,
                 this.someList);
-        // System.out.println(x);
-        if (x == null) {
-            return true;
-        }
-        return false;
     }
 
-    /*
-     * {ss_uuid=eb1dbafadee9450d876239bb5e3b7f4a,
-     * mount_options=[Ljava.lang.Object;@2d8dea20, status=,
-     * name=nfs:/volumes/cs-data/secondary, state=1,
-     * access_path=cs-mgmt:/volumes/cs-data/secondary,
-     * uuid=6ab917b0-a070-4254-8fe2-e2163ee0e885,
-     * access_grp_names=[Ljava.lang.Object;@4005f23d, free_sz=, size=}
-     */
-    public Boolean storagePluginMount() throws XmlRpcException {
-        Map<String, Object> x = (Map<String, Object>) callWrapper(
+    public Boolean storagePluginMount() throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper(
                 "storage_plugin_mount", this.pluginType, this.baseProps,
                 this.ssProps, this.mountPoint, this.unknown, this.active,
                 this.someList);
-        // System.out.println(x);
-        if (x == null) {
-            return true;
-        }
-        // System.out.println(x);
-        /*
-         * {ss_uuid=1b8685bf625642cb92ddd4c0d7b18620,
-         * mount_options=[Ljava.lang.Object;@6f479e5f, status=,
-         * name=nfs:/volumes/cs-data/secondary, state=1,
-         * access_path=cs-mgmt:/volumes/cs-data/secondary,
-         * uuid=54d78233-508f-4632-92a6-97fc1311ca23,
-         * access_grp_names=[Ljava.lang.Object;@46eea80c, free_sz=, size=}
-         */
-
-        /*
-         * if (!x.get("ss_uuid").equals(this.ssProps.get("ss_uuid"))) { return
-         * false; } this.ssProps.put("mount_options", x.get("mount_options"));
-         * this.ssProps.put("access_grp_names", x.get("access_grp_names"));
-         */
-        return false;
     }
 
     /**
@@ -434,15 +354,11 @@ public class StoragePlugin extends OvmObject {
      * argument: impl_name - default: None
      *
      * @return boolean
-     * @throws XmlRpcException
+     *
      */
-    public final Boolean storagePluginUnmount() throws XmlRpcException {
-        Object x = callWrapper("storage_plugin_unmount", this.pluginType,
+    public final Boolean storagePluginUnmount() throws Ovm3ResourceException{
+        return nullIsTrueCallWrapper("storage_plugin_unmount", this.pluginType,
                 this.baseProps, this.ssProps, this.mountPoint, this.active);
-        if (x == null) {
-            return true;
-        }
-        return false;
     }
 
     /*
@@ -494,49 +410,11 @@ public class StoragePlugin extends OvmObject {
     /*
      * discover_storage_plugins, <class 'agent.api.storageplugin.StoragePlugin'>
      */
-    /*
-     * <Discover_Storage_Plugins_Result> <storage_plugin_info_list>
-     * <storage_plugin_info plugin_impl_name="oracle.ocfs2.OCFS2.OCFS2Plugin">
-     * <fs_api_version>1,2,7</fs_api_version>
-     * <generic_plugin>False</generic_plugin>
-     * <plugin_version>0.1.0-38</plugin_version>
-     * <filesys_type>LocalFS</filesys_type>
-     * <extended_api_version>None</extended_api_version> <plugin_desc>Oracle
-     * OCFS2 File system Storage Connect Plugin</plugin_desc>
-     * <cluster_required>True</cluster_required> <plugin_name>Oracle OCFS2 File
-     * system</plugin_name> <fs_extra_info_help>None</fs_extra_info_help>
-     * <required_api_vers>1,2,7</required_api_vers>
-     * <file_extra_info_help>None</file_extra_info_help>
-     * <ss_extra_info_help>None</ss_extra_info_help>
-     * <filesys_name>ocfs2</filesys_name> <vendor_name>Oracle</vendor_name>
-     * <plugin_type>ifs</plugin_type> <abilities>
-     * <resize_is_sync>YES</resize_is_sync> <clone_is_sync>YES</clone_is_sync>
-     * <access_control>NO</access_control>
-     * <custom_clone_name>YES</custom_clone_name>
-     * <require_storage_name>NO</require_storage_name>
-     * <backing_device_type>DEVICE_SINGLE</backing_device_type>
-     * <splitclone_while_open>NO</splitclone_while_open>
-     * <custom_snap_name>YES</custom_snap_name> <snapshot>ONLINE</snapshot>
-     * <splitclone>UNSUPPORTED</splitclone> <snap_is_sync>YES</snap_is_sync>
-     * <snapclone>ONLINE</snapclone> <splitclone_is_sync>NO</splitclone_is_sync>
-     * <clone>ONLINE</clone> <resize>ONLINE</resize>
-     * <snapclone_is_sync>YES</snapclone_is_sync> </abilities>
-     * </storage_plugin_info> <storage_plugin_info
-     * plugin_impl_name="oracle.generic.SCSIPlugin.GenericPlugin"> ....
-     */
-    public Boolean discoverStoragePlugins()
-            throws ParserConfigurationException, IOException, Exception {
+    public Boolean discoverStoragePlugins() throws Ovm3ResourceException{
         Object result = callWrapper("discover_storage_plugins");
-        // System.out.println(result);
+        /* TODO: Actually parse this */
         Document xmlDocument = prepParse((String) result);
-        /* could be more subtle */
         String path = "//Discover_Storage_Plugins_Result/storage_plugin_info_list";
-        /*
-         * Capabilities = xmlToMap(path+"/Capabilities", xmlDocument); VMM =
-         * xmlToMap(path+"/VMM", xmlDocument); NTP = xmlToMap(path+"/NTP",
-         * xmlDocument); Date_Time = xmlToMap(path+"/Date_Time", xmlDocument);
-         * Generic = xmlToMap(path, xmlDocument);
-         */
         if (result != null) {
             return true;
         }
@@ -560,10 +438,8 @@ public class StoragePlugin extends OvmObject {
      * storage_plugin_destroy, <class 'agent.api.storageplugin.StoragePlugin'>
      * argument: impl_name - default: None
      */
-    public Boolean storagePluginDestroy(String poolUuid, String file)
-            throws XmlRpcException {
-        /* clean the props, the empty ones are checked, but not for content... */
-        // String uuid = this.deDash(poolUuid);
+    public Boolean storagePluginDestroy(String poolUuid, String file) throws Ovm3ResourceException{
+        /* TODO: clean the props, the empty ones are checked, but not for content... */
         baseProps.put("uuid", "");
         baseProps.put("access_host", "");
         baseProps.put("storage_type", "FileSys");
@@ -575,24 +451,16 @@ public class StoragePlugin extends OvmObject {
         fileProps.put("file_path", file);
         fileProps.put("file_sz", "");
         fileProps.put("ondisk_sz", "");
-        Object x = (HashMap<String, Object>) callWrapper(
+        return nullIsTrueCallWrapper(
                 "storage_plugin_destroy", this.pluginType, this.baseProps,
                 this.ssProps, this.fileProps);
-        if (x == null) {
-            return true;
-        }
-        return false;
     }
 
-    public Boolean storagePluginDestroy() throws XmlRpcException {
-        /* clean the props */
-        Object x = (HashMap<String, Object>) callWrapper(
+    public Boolean storagePluginDestroy() throws Ovm3ResourceException{
+        /* TODO: clean the props */
+        return nullIsTrueCallWrapper(
                 "storage_plugin_destroy", this.pluginType, this.baseProps,
                 this.ssProps, this.fileProps);
-        if (x == null) {
-            return true;
-        }
-        return false;
     }
 
     /*
@@ -641,29 +509,29 @@ public class StoragePlugin extends OvmObject {
      * 'agent.api.storageplugin.StoragePlugin'> argument: impl_name - default:
      * None
      */
-    public Boolean storagePluginGetFileInfo() throws XmlRpcException {
+    public Boolean storagePluginGetFileInfo() throws Ovm3ResourceException {
         fileProps = (HashMap<String, Object>) callWrapper(
                 "storage_plugin_getFileInfo", this.pluginType, this.baseProps,
                 this.fileProps);
         if (fileProps == null) {
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
-    public Boolean storagePluginGetFileInfo(String file) throws XmlRpcException {
+    public Boolean storagePluginGetFileInfo(String file) throws Ovm3ResourceException{
         fileProps.put("file_path", file);
         fileProps = (HashMap<String, Object>) callWrapper(
                 "storage_plugin_getFileInfo", this.pluginType, this.ssProps,
                 this.baseProps, this.fileProps);
         if (fileProps == null) {
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
     public Boolean storagePluginGetFileInfo(String poolUuid, String host,
-            String file) throws XmlRpcException {
+            String file) throws Ovm3ResourceException {
         /* file path is the full path */
         String uuid = this.deDash(poolUuid);
         baseProps.put("uuid", poolUuid);
@@ -678,9 +546,9 @@ public class StoragePlugin extends OvmObject {
                 "storage_plugin_getFileInfo", this.pluginType, this.ssProps,
                 this.baseProps, this.fileProps);
         if (fileProps == null) {
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
     /*
@@ -690,8 +558,7 @@ public class StoragePlugin extends OvmObject {
      * ss_uuid, access_path, uuid (the ss
      */
     public Boolean storagePluginGetFileSystemInfo(String propUuid,
-            String mntUuid, String nfsHost, String nfsPath)
-            throws XmlRpcException {
+            String mntUuid, String nfsHost, String nfsPath) throws Ovm3ResourceException{
         /* clean the props */
         this.setUuid(propUuid);
         this.setSsUuid(propUuid);
@@ -710,12 +577,11 @@ public class StoragePlugin extends OvmObject {
     }
 
     /* TODO: double check base and ss ordering!!!! */
-    public Boolean storagePluginGetFileSystemInfo() throws XmlRpcException {
-        HashMap<String, Object> props = (HashMap<String, Object>) callWrapper(
+    public Boolean storagePluginGetFileSystemInfo() throws Ovm3ResourceException {
+        Map<String, Object> props = (HashMap<String, Object>) callWrapper(
                 "storage_plugin_getFileSystemInfo", this.pluginType,
                 this.baseProps, this.ssProps);
         this.ssProps = props;
-        // System.out.println(props);
         if (props == null) {
             return false;
         }
@@ -850,7 +716,7 @@ public class StoragePlugin extends OvmObject {
      * None
      */
     /* should really make that stuff a class as this is weird now... */
-    public Boolean storagePluginListMounts() throws XmlRpcException {
+    public Boolean storagePluginListMounts() throws Ovm3ResourceException {
         Object x = callWrapper("storage_plugin_listMountPoints",
                 this.pluginType, this.baseProps);
         if (x == null) {
@@ -859,7 +725,7 @@ public class StoragePlugin extends OvmObject {
         return false;
     }
 
-    public Boolean storagePluginListMounts(String uuid) throws XmlRpcException {
+    public Boolean storagePluginListMounts(String uuid) throws Ovm3ResourceException {
         /* should allow for putting in the uuid */
         Object x = callWrapper("storage_plugin_listMountPoints",
                 this.pluginType, this.baseProps);

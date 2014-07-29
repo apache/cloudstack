@@ -13,35 +13,32 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.apache.xmlrpc.XmlRpcException;
+import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 
 /*
  * should become an interface implementation
  */
 public class Network extends OvmObject {
+    private static final Logger LOGGER = Logger
+            .getLogger(Network.class);
+    private Map<String, Interface> interfaceList = null;
+    private Object postDiscovery = null;
+    private List<String> netInterfaces = new ArrayList<String>();
 
     public Network(Connection c) {
-        client = c;
+        setClient(c);
     }
 
-    private Map<String, Interface> interfaceList = null;
-
-    public Map<String, Interface> getInterfaceList()
-            throws ParserConfigurationException, IOException, Exception {
-        try {
+    public Map<String, Interface> getInterfaceList() throws Ovm3ResourceException {
+        if (postDiscovery == null) {
             this.discoverNetwork();
-        } catch (Exception e) {
-            throw new Exception(e.getMessage());
         }
         return interfaceList;
     }
@@ -50,8 +47,8 @@ public class Network extends OvmObject {
         interfaceList = list;
     }
 
-    public class Interface {
-        private final Map<String, String> _interface = new HashMap<String, String>() {
+    public static class Interface {
+        private final Map<String, String> iFace = new HashMap<String, String>() {
             {
                 put("Type", null);
                 put("Physical", null);
@@ -62,114 +59,108 @@ public class Network extends OvmObject {
                 put("Vlan", null);
             }
         };
+        public Interface() {
+        }
 
         public void setIfType(String t) {
-            this._interface.put("Type", t);
+            iFace.put("Type", t);
         }
 
         public String getIfType() {
-            return this._interface.get("Type");
+            return iFace.get("Type");
         }
 
         public void setInterface(Map<String, String> itf) {
-            this._interface.putAll(itf);
+            iFace.putAll(itf);
         }
 
         public String getName() {
-            return _interface.get("Name");
+            return iFace.get("Name");
         }
 
         public String getPhysical() {
-            return _interface.get("Physical");
+            return iFace.get("Physical");
         }
 
         public String getAddress() {
-            return _interface.get("Address");
+            return iFace.get("Address");
         }
 
         public String getBroadcast() {
-            return _interface.get("Broadcast");
+            return iFace.get("Broadcast");
         }
 
         public String getMac() {
-            return _interface.get("MAC");
+            return iFace.get("MAC");
         }
 
         public String setName(String name) {
-            return _interface.put("Name", name);
+            return iFace.put("Name", name);
         }
 
         public String setPhysical(String ph) {
-            return _interface.put("Physical", ph);
+            return iFace.put("Physical", ph);
         }
 
         public String setAddress(String addr) {
-            return _interface.put("Address", addr);
+            return iFace.put("Address", addr);
         }
 
         public String setBroadcast(String bcast) {
-            return _interface.put("Broadcast", bcast);
+            return iFace.put("Broadcast", bcast);
         }
 
         public String setMac(String mac) {
-            return _interface.put("MAC", mac);
+            return iFace.put("MAC", mac);
         }
     }
 
-    private Network.Interface _getInterface(String key, String val)
-            throws ParserConfigurationException, IOException, Exception {
-        HashMap<String, Network.Interface> ifaces = new HashMap<String, Network.Interface>();
-        ifaces = (HashMap<String, Interface>) this.getInterfaceList();
+    private Network.Interface getNetIface(String key, String val) throws Ovm3ResourceException {
+        Map<String, Network.Interface> ifaces = (HashMap<String, Interface>) this.getInterfaceList();
         for (final Entry<String, Interface> iface : ifaces.entrySet()) {
             String match = "default";
-            if (key.equals("Address")) {
+            if ("Address".equals(key)) {
                 match = iface.getValue().getAddress();
             }
-            if (key.equals("Name")) {
+            if ("Name".equals(key)) {
                 match = iface.getKey();
             }
             if (match != null && match.equals(val)) {
                 return iface.getValue();
             }
         }
+        LOGGER.debug("Unable to find " + key + " Interface by value: " + val);
         return null;
     }
 
-    public Network.Interface getInterfaceByIp(String ip)
-            throws ParserConfigurationException, IOException, Exception {
-        return _getInterface("Address", ip);
+    public Network.Interface getInterfaceByIp(String ip) throws Ovm3ResourceException {
+        return getNetIface("Address", ip);
     }
 
-    public Network.Interface getInterfaceByName(String name)
-            throws ParserConfigurationException, IOException, Exception {
-        return _getInterface("Name", name);
+    public Network.Interface getInterfaceByName(String name) throws Ovm3ResourceException {
+        return getNetIface("Name", name);
     }
 
     /* check if it is a BRIDGE */
-    public String getPhysicalByBridgeName(String name)
-            throws ParserConfigurationException, IOException, Exception {
+    public String getPhysicalByBridgeName(String name) throws Ovm3ResourceException {
         return getInterfaceByName(name).getPhysical();
     }
 
-    public Network.Interface getBridgeByName(String name)
-            throws ParserConfigurationException, IOException, Exception {
-        if (_getInterface("Name", name).getIfType().contentEquals("Bridge")) {
-            return _getInterface("Name", name);
+    public Network.Interface getBridgeByName(String name) throws Ovm3ResourceException  {
+        if (getNetIface("Name", name).getIfType().contentEquals("Bridge")) {
+            return getNetIface("Name", name);
         }
+        LOGGER.debug("Unable to find bridge by name: " + name);
         return null;
     }
 
-    public Network.Interface getBridgeByIp(String ip)
-            throws ParserConfigurationException, IOException, Exception {
-        if (_getInterface("Address", ip).getIfType().contentEquals("Bridge")) {
-            return _getInterface("Address", ip);
+    public Network.Interface getBridgeByIp(String ip) throws Ovm3ResourceException {
+        if (getNetIface("Address", ip).getIfType().contentEquals("Bridge")) {
+            return getNetIface("Address", ip);
         }
+        LOGGER.debug("Unable to find bridge by ip: " + ip);
         return null;
     }
-
-    private Object postDiscovery = null;
-
-    private List<String> netInterfaces = new ArrayList<String>();
 
     /*
      * ovs_bond_mode, <class 'agent.api.network.linux_network.LinuxNetwork'>
@@ -184,12 +175,8 @@ public class Network extends OvmObject {
      * exception on failure Restriction: -bond must be one of the logical
      * channel bonds (bond0, bond1 ...etc)
      */
-    public Boolean ovsBondMode(String bond, String mode) throws XmlRpcException {
-        Object x = callWrapper("ovs_bond_mode", bond, mode);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean ovsBondMode(String bond, String mode) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("ovs_bond_mode", bond, mode);
     }
 
     /*
@@ -211,7 +198,7 @@ public class Network extends OvmObject {
      * -VLAN MTU must less or equal to the MTU of the underlying physical
      * interface.
      */
-    public Boolean ovsChangeMtu(String net, int mtu) throws XmlRpcException {
+    public Boolean ovsChangeMtu(String net, int mtu) throws Ovm3ResourceException {
         Object x = callWrapper("ovs_change_mtu", net, mtu);
         if (x == null) {
             return true;
@@ -224,13 +211,8 @@ public class Network extends OvmObject {
      * argument: self - default: None argument: action - default: None argument:
      * br_name - default: None argument: net_dev - default: None
      */
-    public Boolean ovsAsyncBridge(String action, String bridge, String netdev)
-            throws XmlRpcException {
-        Object x = callWrapper("ovs_async_bridge", action, bridge, netdev);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean ovsAsyncBridge(String action, String bridge, String netdev) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("ovs_async_bridge", action, bridge, netdev);
     }
 
     /*
@@ -238,13 +220,8 @@ public class Network extends OvmObject {
      * argument: self - default: None argument: action - default: None argument:
      * bond - default: None argument: backup - default: None
      */
-    public Boolean ovsBondOp(String action, String bond, String backup)
-            throws XmlRpcException {
-        Object x = callWrapper("ovs_bond_op", action, bond, backup);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean ovsBondOp(String action, String bond, String backup) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("ovs_bond_op", action, bond, backup);
     }
 
     /*
@@ -253,13 +230,8 @@ public class Network extends OvmObject {
      * None argument: virtual_ip - default: None argument: base_ip - default:
      * None
      */
-    public Boolean configureVip(String vip, String baseip)
-            throws XmlRpcException {
-        Object x = callWrapper("configure_virtual_ip", vip, baseip);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean configureVip(String vip, String baseip) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("configure_virtual_ip", vip, baseip);
     }
 
     /*
@@ -288,13 +260,8 @@ public class Network extends OvmObject {
      * not be a bridge port, or slave to a bond -Addresses must be valid in a
      * decimal notation
      */
-    public Boolean ovsIpConfig(String net, String optype, String ip,
-            String netmask) throws XmlRpcException {
-        Object x = callWrapper("ovs_ip_config", net, optype, ip, netmask);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean ovsIpConfig(String net, String optype, String ip, String netmask) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("ovs_ip_config", net, optype, ip, netmask);
     }
 
     /*
@@ -320,12 +287,8 @@ public class Network extends OvmObject {
      * rejected ovs_if_meta('bond0',
      * 'ethernet:c0a80100{192.168.1.0}:MANAGEMENT,CLUSTER_HEARTBEAT,LIVE_MIGRATE,VIRTUAL_MACHINE,STORAGE')
      */
-    public Boolean ovsIfMeta(String net, String data) throws XmlRpcException {
-        Object x = callWrapper("ovs_if_meta", net, data);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean ovsIfMeta(String net, String data) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("ovs_if_meta", net, data);
     }
 
     /*
@@ -333,13 +296,8 @@ public class Network extends OvmObject {
      * argument: self - default: None argument: action - default: None argument:
      * bond - default: None
      */
-    public Boolean ovsBondConfig(String action, String bond)
-            throws XmlRpcException {
-        Object x = callWrapper("ovs_bond_config", action, bond);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean ovsBondConfig(String action, String bond) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("ovs_bond_config", action, bond);
     }
 
     /*
@@ -355,56 +313,15 @@ public class Network extends OvmObject {
      * @param None
      *
      * @return Returns the discovery data as an XML document. Raises an
-     * exception on failure. <?xml version="1.0" ?> <Discover_Network_Result>
-     * <Network><Active><Network> <Device Name="eth0">
-     * <MAC>52:54:00:24:47:70</MAC> <Flags>(0x1843) IFF_UP IFF_BROADCAST
-     * IFF_RUNNING IFF_SLAVE IFF_MULTICAST</Flags> <ETHTOOL> <Autonegotiate>
-     * <State>Complete</State> <Speed>1000baseT-FD</Speed> </Autonegotiate>
-     * <Link>ok</Link> <Capabilities>10baseT-HD 10baseT-FD 100baseT-HD
-     * 100baseT-FD 1000baseT-FD</Capabilities> <Advertising>10baseT-HD
-     * 10baseT-FD 100baseT-HD 100baseT-FD 1000baseT-FD</Advertising> </ETHTOOL>
-     * <WOL> <WakeOnLan>disabled</WakeOnLan> </WOL> <SysFS>
-     * <uevent>INTERFACE=eth0 IFINDEX=2</uevent>
-     * <addr_assign_type>0</addr_assign_type> <addr_len>6</addr_len>
-     * <dev_id>0x0</dev_id> <ifalias/> <iflink>2</iflink> <ifindex>2</ifindex>
-     * <features>0x40014ba9</features> <type>1</type> <link_mode>0</link_mode>
-     * <carrier>1</carrier> <speed>1000</speed> <duplex>full</duplex>
-     * <dormant>0</dormant> <operstate>up</operstate> <mtu>1500</mtu>
-     * <flags>0x1903</flags> <tx_queue_len>1000</tx_queue_len>
-     * <netdev_group>0</netdev_group> <SysFSDev> <vendor>0x8086</vendor>
-     * <device>0x100e</device> <subsystem_vendor>0x1af4</subsystem_vendor>
-     * <subsystem_device>0x1100</subsystem_device> <class>0x020000</class>
-     * </SysFSDev> </SysFS> <BootProto>none</BootProto> </Device> ....
-     * </Network> <Bonding> <Device Name="bond0">
-     * <Bonding_Mode>active-backup</Bonding_Mode> <Primary_Slave>eth0
-     * (primary_reselect always)</Primary_Slave>
-     * <Currently_Active_Slave>eth0</Currently_Active_Slave>
-     * <MII_Status>up</MII_Status>
-     * <MII_Polling_Interval>250</MII_Polling_Interval> <Up_Delay>500</Up_Delay>
-     * <Down_Delay>500</Down_Delay> <Slave_Interface Name="eth0">
-     * <MII_Status>up</MII_Status> <Speed>1000 Mbps</Speed>
-     * <Duplex>full</Duplex> <Link_Failure_Count>0</Link_Failure_Count>
-     * <Permanent_HW_addr>52:54:00:24:47:70</Permanent_HW_addr>
-     * </Slave_Interface> <Family Type="AF_INET"> <MAC>52:54:00:24:47:70</MAC>
-     * <mtu>1500</mtu> </Family> <BootProto>none</BootProto>
-     * <MetaData>ethernet:c0a80100
-     * {192.168.1.0}:MANAGEMENT,CLUSTER_HEARTBEAT,LIVE_MIGRATE
-     * ,VIRTUAL_MACHINE,STORAGE</MetaData> </Device> </Bonding> <Bridges>
-     * <Device Name="c0a80100"> <Family Type="AF_INET">
-     * <MAC>52:54:00:24:47:70</MAC> <Address>192.168.1.64</Address>
-     * <Netmask>255.255.255.0</Netmask> <Broadcast>192.168.1.255</Broadcast>
-     * </Family> <Interfaces> <PhyInterface>bond0</PhyInterface> </Interfaces>
-     * <BootProto>static</BootProto></Device> </Bridges> <Infiniband>
-     * </Infiniband> </Active></Network></Discover_Network_Result>
+     * exception on failure.
      */
     /* put more in when required, for now ok */
-    public Boolean discoverNetwork() throws ParserConfigurationException,
-            IOException, Exception {
-        // if (postDiscovery == null) {
+    public Boolean discoverNetwork() throws Ovm3ResourceException {
         postDiscovery = callWrapper("discover_network");
+        if (postDiscovery == null) {
+            return false;
+        }
         this.interfaceList = new HashMap<String, Interface>();
-        // }
-        // System.out.println(postDiscovery);
         Document xmlDocument = prepParse((String) postDiscovery);
         String path = "//Discover_Network_Result/Network/Active";
         String bpath = path + "/Bridges/Device";
@@ -443,9 +360,6 @@ public class Network extends OvmObject {
             interfaceList.put(p, iface);
         }
         /* add virtual interfaces ? */
-        if (postDiscovery == null) {
-            return false;
-        }
         return true;
     }
 
@@ -463,21 +377,16 @@ public class Network extends OvmObject {
      * @return If successful, returns the name of the bridge Raises an exception
      * on failure
      */
-    public Boolean startOvsLocalConfig(String br) throws XmlRpcException {
+    public Boolean startOvsLocalConfig(String br) throws Ovm3ResourceException {
         return ovsLocalConfig("start", br);
     }
 
-    public Boolean stopOvsLocalConfig(String br) throws XmlRpcException {
+    public Boolean stopOvsLocalConfig(String br) throws Ovm3ResourceException {
         return ovsLocalConfig("stop", br);
     }
 
-    public Boolean ovsLocalConfig(String action, String br)
-            throws XmlRpcException {
-        Object x = callWrapper("ovs_local_config", action, br);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean ovsLocalConfig(String action, String br) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("ovs_local_config", action, br);
     }
 
     /*
@@ -500,18 +409,15 @@ public class Network extends OvmObject {
      * member of a bridge, or slave to a bond -VLAN ID must not exist on the
      * same interface
      */
-    public Boolean startOvsVlanConfig(String dev, int vlan)
-            throws XmlRpcException {
+    public Boolean startOvsVlanConfig(String dev, int vlan) throws Ovm3ResourceException {
         return ovsVlanConfig("add", dev, vlan);
     }
 
-    public Boolean stopOvsVlanConfig(String dev, int vlan)
-            throws XmlRpcException {
+    public Boolean stopOvsVlanConfig(String dev, int vlan) throws Ovm3ResourceException {
         return ovsVlanConfig("remove", dev, vlan);
     }
 
-    public Boolean ovsVlanConfig(String action, String net, int vlan)
-            throws XmlRpcException {
+    public Boolean ovsVlanConfig(String action, String net, int vlan) throws Ovm3ResourceException {
         Object x = callWrapper("ovs_vlan_config", action, net, vlan);
         if (x == null) {
             return true;
@@ -539,23 +445,16 @@ public class Network extends OvmObject {
      * physical, or bond -net_dev must not be member of a bridge, or slave to a
      * bond
      */
-    public Boolean startOvsBrConfig(String br, String dev)
-            throws XmlRpcException {
+    public Boolean startOvsBrConfig(String br, String dev) throws Ovm3ResourceException {
         return ovsBrConfig("start", br, dev);
     }
 
-    public Boolean stopOvsBrConfig(String br, String dev)
-            throws XmlRpcException {
+    public Boolean stopOvsBrConfig(String br, String dev) throws Ovm3ResourceException {
         return ovsBrConfig("stop", br, dev);
     }
 
-    public Boolean ovsBrConfig(String action, String br, String net)
-            throws XmlRpcException {
-        Object x = callWrapper("ovs_br_config", action, br, net);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean ovsBrConfig(String action, String br, String net) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("ovs_br_config", action, br, net);
     }
 
     /*
@@ -576,18 +475,15 @@ public class Network extends OvmObject {
      * @return If successful, returns the names of the bridge and it's VLAN
      * interface Raises an exception on failure
      */
-    public Boolean stopOvsVlanBridge(String br, String net, int vlan)
-            throws XmlRpcException {
+    public Boolean stopOvsVlanBridge(String br, String net, int vlan) throws Ovm3ResourceException {
         return ovsVlanBridge("stop", br, net, vlan);
     }
 
-    public Boolean startOvsVlanBridge(String br, String net, int vlan)
-            throws XmlRpcException {
+    public Boolean startOvsVlanBridge(String br, String net, int vlan) throws Ovm3ResourceException {
         return ovsVlanBridge("start", br, net, vlan);
     }
 
-    public Boolean ovsVlanBridge(String action, String br, String net, int vlan)
-            throws XmlRpcException {
+    public Boolean ovsVlanBridge(String action, String br, String net, int vlan) throws Ovm3ResourceException {
         Object x = callWrapper("ovs_vlan_bridge", action, br, net, vlan);
         if (x == null) {
             return true;
@@ -600,12 +496,8 @@ public class Network extends OvmObject {
      * 'agent.api.network.linux_network.LinuxNetwork'> argument: self - default:
      * None argument: virtual_ip - default: None
      */
-    public Boolean deconfigureVip(String vip) throws XmlRpcException {
-        Object x = callWrapper("deconfigure_virtual_ip", vip);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean deconfigureVip(String vip) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("deconfigure_virtual_ip", vip);
     }
 
     /*
@@ -613,12 +505,7 @@ public class Network extends OvmObject {
      * argument: self - default: None argument: action - default: None argument:
      * bond - default: None
      */
-    public Boolean ovsAsyncBond(String action, String bond)
-            throws XmlRpcException {
-        Object x = callWrapper("ovs_async_bond", action, bond);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean ovsAsyncBond(String action, String bond) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("ovs_async_bond", action, bond);
     }
 }

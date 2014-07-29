@@ -41,30 +41,30 @@ import com.cloud.vm.VirtualMachine;
 
 @Local(value = FenceBuilder.class)
 public class Ovm3Fencer extends AdapterBase implements FenceBuilder {
-    Map<String, Object> _params;
-    private static final Logger s_logger = Logger.getLogger(Ovm3Fencer.class);
+    Map<String, Object> fenceParams;
+    private static final Logger LOGGER = Logger.getLogger(Ovm3Fencer.class);
     @Inject
-    AgentManager _agentMgr;
+    AgentManager agentMgr;
     @Inject
-    ResourceManager _resourceMgr;
+    ResourceManager resourceMgr;
 
 
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
-        _params = params;
+        fenceParams = params;
         return true;
     }
 
     @Override
     public boolean start() {
-        // TODO Auto-generated method stub
+        /* start the agent here ? */
         return true;
     }
 
     @Override
     public boolean stop() {
-        // TODO Auto-generated method stub
+        /* stop the agent here ? */
         return true;
     }
 
@@ -75,55 +75,40 @@ public class Ovm3Fencer extends AdapterBase implements FenceBuilder {
     @Override
     public Boolean fenceOff(VirtualMachine vm, Host host) {
         if (host.getHypervisorType() != HypervisorType.Ovm3) {
-            s_logger.debug("Don't know how to fence non Ovm3 hosts "
+            LOGGER.debug("Don't know how to fence non Ovm3 hosts "
                     + host.getHypervisorType());
-            return null;
+            return false;
         } else {
-            s_logger.debug("Fencing " + vm + " on host " + host
-                    + " with params: "+ _params );
+            LOGGER.debug("Fencing " + vm + " on host " + host
+                    + " with params: "+ fenceParams );
         }
 
-        List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(host
+        List<HostVO> hosts = resourceMgr.listAllHostsInCluster(host
                 .getClusterId());
         FenceCommand fence = new FenceCommand(vm, host);
 
         for (HostVO h : hosts) {
-            if (h.getHypervisorType() != HypervisorType.Ovm3) {
-                continue;
-            }
-
-            if (h.getStatus() != Status.Up) {
-                continue;
-            }
-
-            if (h.getId() == host.getId()) {
-                continue;
-            }
-
-            FenceAnswer answer;
-            try {
-                answer = (FenceAnswer) _agentMgr.send(h.getId(), fence);
-            } catch (AgentUnavailableException e) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Moving on to the next host because "
-                            + h.toString() + " is unavailable");
+            if (h.getHypervisorType() == HypervisorType.Ovm3 &&
+                    h.getStatus() == Status.Up &&
+                    h.getId() != host.getId()) {
+                FenceAnswer answer;
+                try {
+                    answer = (FenceAnswer) agentMgr.send(h.getId(), fence);
+                } catch (AgentUnavailableException | OperationTimedoutException e) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Moving on to the next host because "
+                                + h.toString() + " is unavailable", e);
+                    }
+                    continue;
                 }
-                continue;
-            } catch (OperationTimedoutException e) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Moving on to the next host because "
-                            + h.toString() + " is unavailable");
+                if (answer != null && answer.getResult()) {
+                    return true;
                 }
-                continue;
-            }
-
-            if (answer != null && answer.getResult()) {
-                return true;
             }
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Unable to fence off " + vm.toString() + " on "
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Unable to fence off " + vm.toString() + " on "
                     + host.toString());
         }
 

@@ -45,7 +45,7 @@ public class RpcTypeFactory extends TypeFactoryImpl {
             NamespaceContextImpl pContext, String pURI, String pLocalName) {
         if ("".equals(pURI) && NullSerializer.NIL_TAG.equals(pLocalName)) {
             return new NullParser();
-        } else if (pLocalName.equals("i8")) {
+        } else if ("i8".equals(pLocalName)) {
             return new LongTypeParser();
         } else {
             return super.getParser(pConfig, pContext, pURI, pLocalName);
@@ -82,7 +82,7 @@ public class RpcTypeFactory extends TypeFactoryImpl {
     private class LongTypeParser extends AtomicParser {
         protected void setResult(String pResult) throws SAXException {
             try {
-                super.setResult(new Long(pResult.trim()));
+                super.setResult(Long.valueOf(pResult.trim()));
             } catch (NumberFormatException e) {
                 throw new SAXParseException("Failed to parse long value: "
                         + pResult, getDocumentLocator());

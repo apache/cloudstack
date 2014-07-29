@@ -13,9 +13,10 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
 
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 import java.util.TimeZone;
-import java.util.Vector;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
@@ -24,122 +25,134 @@ import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 
 public class Connection extends XmlRpcClient {
-    private static final Logger s_logger = Logger.getLogger(Connection.class);
-    private final XmlRpcClientConfigImpl _config = new XmlRpcClientConfigImpl();
-    private XmlRpcClient _client;
-    private String _username;
-    private String _password;
-    private String _ip;
-    private Integer _port = 8898;
-    private Boolean _isSsl = false;
+    private static final Logger LOGGER = Logger.getLogger(Connection.class);
+    private final XmlRpcClientConfigImpl xmlClientConfig = new XmlRpcClientConfigImpl();
+    private XmlRpcClient xmlClient;
+    private String hostUser;
+    private String hostPass;
+    private String hostIp;
+    private Integer hostPort = 8898;
+    private Boolean hostUseSsl = false;
     private String cert = "";
     private String key = "";
-    private Integer timeout = 1200; /* seconds */
-    private Integer _timeout = timeout * 1000; /* native is ms */
+    /* default to 20 mins ? */
+    private Integer timeoutMs = 1200;
+    private Integer timeoutS = timeoutMs * 1000;
 
-    private XmlRpcClient getXmlClient() throws XmlRpcException {
-        // check ssl boolean
+    public Connection(String ip, Integer port, String username, String password) {
+        hostIp = ip;
+        hostPort = port;
+        hostUser = username;
+        hostPass = password;
+        xmlClient = getXmlClient();
+    }
+
+    public Connection(String ip, String username, String password) {
+        hostIp = ip;
+        hostUser = username;
+        hostPass = password;
+        xmlClient = getXmlClient();
+    }
+
+    private XmlRpcClient getXmlClient() {
         final XmlRpcClient client = new XmlRpcClient();
 
         URL url;
         try {
-            // here too
-            url = new URL("http://" + _ip + ":" + _port.toString());
-            _config.setTimeZone(TimeZone.getTimeZone("UTC"));
-            _config.setServerURL(url);
-            _config.setReplyTimeout(0); // disable, we use asyncexecute to
-                                        // control timeout
-            _config.setConnectionTimeout(60000);
-            _config.setReplyTimeout(60 * 15000);
-            _config.setBasicUserName(_username);
-            _config.setBasicPassword(_password);
-            _config.setXmlRpcServer(null);
-            // _config.setEnabledForExtensions(true);
-            client.setConfig(_config);
+            /* TODO: should add SSL checking here! */
+            url = new URL("http://" + hostIp + ":" + hostPort.toString());
+            xmlClientConfig.setTimeZone(TimeZone.getTimeZone("UTC"));
+            xmlClientConfig.setServerURL(url);
+            /* disable, we use asyncexecute to control timeout */
+            xmlClientConfig.setReplyTimeout(0);
+            /* default to 60 secs */
+            xmlClientConfig.setConnectionTimeout(60000);
+            /* reply time is 5 mins */
+            xmlClientConfig.setReplyTimeout(60 * 15000);
+            xmlClientConfig.setBasicUserName(hostUser);
+            xmlClientConfig.setBasicPassword(hostPass);
+            xmlClientConfig.setXmlRpcServer(null);
+            client.setConfig(xmlClientConfig);
             client.setTypeFactory(new RpcTypeFactory(client));
-        } catch (Exception e) {
-            throw new XmlRpcException(e.getMessage());
+        } catch (MalformedURLException e) {
+            LOGGER.info("Incorrect URL: ", e);
         }
         return client;
     }
 
-    public Connection(String ip, Integer port, String username, String password)
+    public Object call(String method, List<?> params) throws XmlRpcException {
+        return callTimeoutInSec(method, params, this.timeoutS);
+    }
+
+    public Object call(String method, List<?> params, boolean debug)
             throws XmlRpcException {
-        _ip = ip;
-        _port = port;
-        _username = username;
-        _password = password;
-        _client = getXmlClient();
+        return callTimeoutInSec(method, params, this.timeoutS, debug);
     }
 
-    public Connection(String ip, String username, String password)
-            throws XmlRpcException {
-        _ip = ip;
-        _username = username;
-        _password = password;
-        _client = getXmlClient();
-    }
-
-    public Object call(String method, Vector<?> params) throws XmlRpcException {
-        /* default timeout is 10 mins */
-        return callTimeoutInSec(method, params, this._timeout);
-    }
-
-    public Object call(String method, Vector<?> params, boolean debug)
-            throws XmlRpcException {
-        /* default timeout is 10 mins */
-        return callTimeoutInSec(method, params, this._timeout, debug);
-    }
-
-    public Object callTimeoutInSec(String method, Vector<?> params,
+    public Object callTimeoutInSec(String method, List<?> params,
             int timeout, boolean debug) throws XmlRpcException {
         TimingOutCallback callback = new TimingOutCallback(timeout * 1000);
         if (debug) {
             /*
-             * some parameters including user password should not be printed in
+             * some parameters including hostUser password should not be printed in
              * log
              */
-            s_logger.debug("Call Ovm3 agent: " + method + " with " + params);
-        }
 
+            LOGGER.debug("Call Ovm3 agent: " + method + " with " + params);
+        }
         long startTime = System.currentTimeMillis();
-        _client.executeAsync(method, params, callback);
         try {
+            xmlClient.executeAsync(method, params, callback);
             return callback.waitForResponse();
-        } catch (TimingOutCallback.TimeoutException to) {
-            throw to;
+        } catch (TimingOutCallback.TimeoutException e) {
+            LOGGER.info("Timeout: ", e);
+            throw new XmlRpcException(e.getMessage());
+        } catch (XmlRpcException e) {
+            LOGGER.info("XML RPC Exception occured: ", e);
+            throw e;
+        } catch (RuntimeException e) {
+            LOGGER.info("Runtime Exception: ", e);
+            throw new XmlRpcException(e.getMessage());
         } catch (Throwable e) {
-            throw new XmlRpcException(-2, e.getMessage());
+            LOGGER.error("Holy crap batman!: ", e);
+            throw new XmlRpcException(e.getMessage());
         } finally {
             long endTime = System.currentTimeMillis();
-            float during = (endTime - startTime) / 1000; // in secs
-            s_logger.debug("Ovm3 call " + method + " finished in " + during
-                    + " secs, on " + _ip + ":" + _port);
+            /* in seconds */
+            float during = (endTime - startTime) / (float) 1000;
+            LOGGER.debug("Ovm3 call " + method + " finished in " + during
+                    + " secs, on " + hostIp + ":" + hostPort);
         }
     }
 
-    public Object callTimeoutInSec(String method, Vector<?> params, int timeout)
-            throws XmlRpcException {
+    public Object callTimeoutInSec(String method, List<?> params, int timeout)  throws XmlRpcException {
         return callTimeoutInSec(method, params, timeout, true);
     }
 
     public String getIp() {
-        return _ip;
+        return hostIp;
     }
 
     public Integer getPort() {
-        return _port;
+        return hostPort;
     }
 
     public String getUserName() {
-        return _username;
+        return hostUser;
     }
 
     public String getPassword() {
-        return _password;
+        return hostPass;
     }
 
-    public Boolean getIsSsl() {
-        return _isSsl;
+    public Boolean getUseSsl() {
+        return hostUseSsl;
+    }
+
+    public String getCert() {
+        return cert;
+    }
+    public String getKey() {
+        return key;
     }
 }

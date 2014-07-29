@@ -13,41 +13,59 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.apache.xmlrpc.XmlRpcException;
+import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 
 /* should ingest this into Pool */
 public class PoolOCFS2 extends OvmObject {
-    public Map<String, String> poolFileSystem = new HashMap<String, String>();
-    public String poolFsTarget;
-    public String poolFsType;
-    public String poolFsNFSBaseId;
-    public String poolFsId;
+    private static final Logger LOGGER = Logger
+            .getLogger(Pool.class);
+    private Map<String, String> poolFileSystem = new HashMap<String, String>();
+    private String poolFsTarget;
+    private String poolFsType;
+    private String poolFsNFSBaseId;
+    private String poolFsId = "";
 
-    public String poolFsNFSBaseId() {
+    public PoolOCFS2(Connection c) {
+        setClient(c);
+    }
+
+    public String getPoolFsNFSBaseId() {
         return this.poolFsNFSBaseId;
     }
 
-    public String poolFsId() {
+    public String getPoolFsId() {
         return this.poolFsId;
     }
 
-    public String poolFsUuid() {
+    public String getPoolFsUuid() {
         return this.poolFsId;
     }
 
-    public String poolFsTarget() {
+    public String getPoolFsTarget() {
         return this.poolFsTarget;
     }
 
-    public PoolOCFS2(Connection c) {
-        client = c;
+    public Boolean hasPoolFs(String id) throws Ovm3ResourceException {
+        if (poolFsId.isEmpty()) {
+            this.discoverPoolFs();
+        }
+        if (poolFsId.equals(id)) {
+            return true;
+        }
+        return false;
+    }
+    public Boolean hasAPoolFs() throws Ovm3ResourceException {
+        if (poolFsId.isEmpty()) {
+            discoverPoolFs();
+        }
+        if ("".equals(poolFsId)) {
+            return false;
+        }
+        return true;
     }
 
     /*
@@ -57,26 +75,16 @@ public class PoolOCFS2 extends OvmObject {
      * None argument: poolfs_nfsbase_uuid - default: None
      */
     public Boolean destroyPoolFs(String type, String target, String uuid,
-            String nfsbaseuuid) throws ParserConfigurationException,
-            IOException, Exception {
+            String nfsbaseuuid) throws Ovm3ResourceException {
         // should throw exception if no poolIps set
-        Object x = callWrapper("destroy_pool_filesystem", type, target, uuid,
+        return nullIsTrueCallWrapper("destroy_pool_filesystem", type, target, uuid,
                 nfsbaseuuid);
-        if (x == null) {
-            return true;
-        }
-        return false;
     }
 
-    public Boolean destroyPoolFs() throws ParserConfigurationException,
-            IOException, Exception {
+    public Boolean destroyPoolFs() throws Ovm3ResourceException {
         // should throw exception if no poolIps set
-        Object x = callWrapper("destroy_pool_filesystem", poolFsType,
+        return nullIsTrueCallWrapper("destroy_pool_filesystem", poolFsType,
                 poolFsTarget, poolFsId, poolFsNFSBaseId);
-        if (x == null) {
-            return true;
-        }
-        return false;
     }
 
     /*
@@ -95,38 +103,47 @@ public class PoolOCFS2 extends OvmObject {
      * '0004fb00000100000af70d20dcce7d65', '0004fb0000020000ba9aaf00ae5e2d73')
      */
     public Boolean createPoolFs(String type, String target, String clustername,
-            String fsid, String nfsbaseid, String managerid, String id)
-            throws XmlRpcException {
-        Object x = callWrapper("create_pool_filesystem", type, target,
-                clustername, fsid, nfsbaseid, managerid, id);
-        // System.out.println(x);
-        if (x == null) {
+            String fsid, String nfsbaseid, String managerid, String id) throws Ovm3ResourceException {
+        if (!this.hasAPoolFs()) {
+            return nullIsTrueCallWrapper("create_pool_filesystem", type, target,
+                    clustername, fsid, nfsbaseid, managerid, id);
+        } else if (this.hasPoolFs(fsid)) {
             return true;
+        } else {
+            throw new Ovm3ResourceException("Unable to add pool filesystem to host, "+
+                    "pool filesystem with other id found: " + this.poolFsId);
         }
-        return false;
     }
 
     public Boolean createPoolFs(String type, String target, String clustername,
             String fsid, String nfsbaseid, String managerid, String id,
-            int blocksize, int clustersize, int journalsize)
-            throws XmlRpcException {
-        Object x = callWrapper("create_pool_filesystem", type, target,
-                clustername, fsid, nfsbaseid, managerid, id, blocksize,
-                clustersize, journalsize);
-        if (x == null) {
+            int blocksize, int clustersize, int journalsize) throws Ovm3ResourceException {
+        if (!this.hasAPoolFs()) {
+            Object x = callWrapper("create_pool_filesystem", type, target,
+                    clustername, fsid, nfsbaseid, managerid, id, blocksize,
+                    clustersize, journalsize);
+            if (x == null) {
+                return true;
+            }
+            return false;
+        } else if (this.hasPoolFs(fsid)) {
             return true;
+        } else {
+            throw new Ovm3ResourceException("Unable to add pool filesystem to host, "+
+                    "pool filesystem with other id found: " + this.poolFsId);
         }
-        return false;
     }
 
     /*
      * discover_pool_filesystem, <class 'agent.api.poolfs.ocfs2.PoolOCFS2'>
      * argument: self - default: None
      */
-    public Boolean discoverPoolFs() throws ParserConfigurationException,
-            IOException, Exception {
+    public Boolean discoverPoolFs() throws Ovm3ResourceException{
         // should throw exception if no poolIps set
         Object x = callWrapper("discover_pool_filesystem");
+        if (x == null) {
+            return false;
+        }
         Document xmlDocument = prepParse((String) x);
         String path = "//Discover_Pool_Filesystem_Result";
         poolFileSystem = xmlToMap(path + "/Pool_Filesystem", xmlDocument);
@@ -134,10 +151,7 @@ public class PoolOCFS2 extends OvmObject {
         poolFsType = poolFileSystem.get("Pool_Filesystem_Type");
         poolFsNFSBaseId = poolFileSystem.get("Pool_Filesystem_Nfsbase_Uuid");
         poolFsId = poolFileSystem.get("Pool_Filesystem_Uuid");
-        if (x == null) {
-            return true;
-        }
-        return false;
+        return true;
     }
 
     /*
@@ -145,10 +159,8 @@ public class PoolOCFS2 extends OvmObject {
      * self - default: None argument: device - default: None argument: filename
      * - default: None
      */
-    public Boolean ocfs2GetMetaData(String device, String filename)
-            throws XmlRpcException {
+    public Boolean ocfs2GetMetaData(String device, String filename) throws Ovm3ResourceException {
         Object x = callWrapper("ocfs2_get_meta_data", device, filename);
-        // System.out.println(x);
         if (x == null) {
             return true;
         }

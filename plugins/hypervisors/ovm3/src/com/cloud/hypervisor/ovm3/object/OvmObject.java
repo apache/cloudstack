@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.Vector;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -36,63 +35,94 @@ import org.apache.xmlrpc.XmlRpcException;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-
-import com.cloud.hypervisor.ovm3.hypervisor.Ovm3ResourceBase;
+import org.xml.sax.SAXException;
 
 public class OvmObject {
-    public static Connection client = null;
-    public static Vector<?> emptyParams = new Vector<Object>();
+    /* figure  this one out! */
+    private static volatile Connection client = null;
+    private static List<?> emptyParams = new ArrayList<Object>();
     private static final Logger LOGGER = Logger
-            .getLogger(Ovm3ResourceBase.class);
+            .getLogger(OvmObject.class);
+
+    public OvmObject() {
+    }
+
+    public OvmObject(Connection c) {
+        OvmObject.setClient(c);
+    }
+
+    public Connection getClient() {
+      return client;
+    }
+
+    public static synchronized void setClient(Connection c) {
+      client = c;
+    }
 
     /* remove dashes from uuids */
     public String deDash(String str) {
-        final String x = str.replaceAll("-", "");
-        return x;
+        return str.replaceAll("-", "");
     }
 
     /* generate a uuid */
     public String newUuid() {
-        final String uuid = UUID.randomUUID().toString();
-        return uuid;
+        return UUID.randomUUID().toString();
     }
 
     /* generate a uuid */
     public String newUuid(String str) {
-        final String uuid = UUID.nameUUIDFromBytes(str.getBytes()).toString();
-        return uuid;
+        return UUID.nameUUIDFromBytes(str.getBytes()).toString();
     }
 
     /* capture most of the calls here */
-    public static Object callWrapper(String call) throws XmlRpcException {
+    public static Object callWrapper(String call) throws Ovm3ResourceException {
         try {
-            Object res = client.call(call, emptyParams);
-            return res;
+            return client.call(call, emptyParams);
         } catch (XmlRpcException e) {
-            throw new XmlRpcException(e.getMessage());
+            String msg = "Client call " + call + " went wrong: ";
+            throw new Ovm3ResourceException(msg, e);
         }
     }
 
     /* nice try but doesn't work like that .. */
     @SafeVarargs
     public static <T> Object callWrapper(String call, T... args)
-            throws XmlRpcException {
-        Vector<T> params = new Vector<T>();
+            throws Ovm3ResourceException {
+        List<T> params = new ArrayList<T>();
         for (T param : args) {
             params.add(param);
         }
-        // return
-        Object res = client.call(call, params);
-        return res;
+        try {
+            return client.call(call, params);
+        } catch (XmlRpcException e) {
+            String msg = "Client call " + call + " with " + params + " went wrong: ";
+            throw new Ovm3ResourceException(msg, e);
+        }
+    }
+
+    public static <T> Boolean nullCallWrapper(String call, Boolean nullReturn, T... args) throws Ovm3ResourceException {
+        Object x = callWrapper(call, args);
+        if (x == null) {
+            return nullReturn;
+        }
+        if (nullReturn) {
+            return false;
+        }
+        return true;
+    }
+    public static <T> Boolean nullIsFalseCallWrapper(String call, T... args) throws Ovm3ResourceException {
+        return nullCallWrapper(call, false, args);
+    }
+    public static <T> Boolean nullIsTrueCallWrapper(String call, T... args) throws Ovm3ResourceException {
+        return nullCallWrapper(call, true, args);
     }
 
     /* returns a single string */
-    public HashMap<String, Long> callMap(String call) throws XmlRpcException {
-        HashMap<String, Long> result = (HashMap<String, Long>) callWrapper(call);
-        return result;
+    public Map<String, Long> callMap(String call) throws Ovm3ResourceException {
+        return (HashMap<String, Long>) callWrapper(call);
     }
 
-    public <T> String callString(String call, T... args) throws XmlRpcException {
+    public <T> String callString(String call, T... args) throws Ovm3ResourceException {
         Object result = callWrapper(call, args);
         if (result == null) {
             return null;
@@ -103,8 +133,8 @@ public class OvmObject {
 
         Object[] results = (Object[]) result;
 
+        /* TODO: check if we need this */
         if (results.length == 0) {
-            // return results[0].toString();
             return null;
         }
         if (results.length == 1) {
@@ -115,94 +145,90 @@ public class OvmObject {
 
     /* was String, Object before */
     public <E> Map<String, E> xmlToMap(String path, Document xmlDocument)
-            throws XPathExpressionException {
+            throws Ovm3ResourceException {
         XPathFactory factory = javax.xml.xpath.XPathFactory.newInstance();
         XPath xPath = factory.newXPath();
         // capabilities, date_time etc
-        XPathExpression xPathExpression = xPath.compile(path);
-        NodeList nodeList = (NodeList) xPathExpression.evaluate(xmlDocument,
-                XPathConstants.NODESET);
-
-        Map<String, E> myMap = new HashMap<String, E>();
-        for (int ind = 0; ind < nodeList.getLength(); ind++) {
-            NodeList nodeListFor = nodeList.item(ind).getChildNodes();
-            for (int index = 0; index < nodeListFor.getLength(); index++) {
-                String rnode = nodeListFor.item(index).getNodeName();
-                NodeList nodeListFor2 = nodeListFor.item(index).getChildNodes();
-                if (nodeListFor2.getLength() > 1) {
-                    // System.out.println("multiball");
-                    /*
-                     * for (int i = 0; i < nodeListFor2.getLength(); i++) {
-                     * String node = nodeListFor2.item(i).getNodeName(); String
-                     * element = nodeListFor2.item(i).getTextContent();
-                     * System.out.println("rnode: " + rnode + " -> node " + node
-                     * + " ---> " + element); myMap.put(node, element); }
-                     */
-                } else {
-                    String element = nodeListFor.item(index).getTextContent();
-                    // System.out.println("rnode " + rnode + " ---> " +
-                    // element);
-                    myMap.put(rnode, (E) element);
+        try {
+            XPathExpression xPathExpression = xPath.compile(path);
+            NodeList nodeList = (NodeList) xPathExpression.evaluate(xmlDocument,
+                    XPathConstants.NODESET);
+            Map<String, E> myMap = new HashMap<String, E>();
+            for (int ind = 0; ind < nodeList.getLength(); ind++) {
+                NodeList nodeListFor = nodeList.item(ind).getChildNodes();
+                for (int index = 0; index < nodeListFor.getLength(); index++) {
+                    String rnode = nodeListFor.item(index).getNodeName();
+                    NodeList nodeListFor2 = nodeListFor.item(index).getChildNodes();
+                    if (nodeListFor2.getLength() > 1) {
+                        /* Do we need to figure out all the sub elements here and put them in a map? */
+                    } else {
+                        String element = nodeListFor.item(index).getTextContent();
+                        myMap.put(rnode, (E) element);
+                    }
                 }
             }
+            return myMap;
+        } catch (XPathExpressionException e) {
+            throw new Ovm3ResourceException("Problem parsing XML to Map:", e);
         }
-        return myMap;
     }
 
     public List<String> xmlToList(String path, Document xmlDocument)
-            throws XPathExpressionException {
+            throws Ovm3ResourceException {
         List<String> list = new ArrayList<String>();
         XPathFactory factory = javax.xml.xpath.XPathFactory.newInstance();
         XPath xPath = factory.newXPath();
-
-        XPathExpression xPathExpression = xPath.compile(path);
-        NodeList nodeList = (NodeList) xPathExpression.evaluate(xmlDocument,
-                XPathConstants.NODESET);
-
-        for (int ind = 0; ind < nodeList.getLength(); ind++) {
-            // System.out.println(nodeList.item(ind).getTextContent());
-            if (!nodeList.item(ind).getTextContent().isEmpty()) {
-                list.add("" + nodeList.item(ind).getTextContent());
-            } else {
-                list.add("" + nodeList.item(ind).getNodeValue());
+        try {
+            XPathExpression xPathExpression = xPath.compile(path);
+            NodeList nodeList = (NodeList) xPathExpression.evaluate(xmlDocument,
+                    XPathConstants.NODESET);
+            for (int ind = 0; ind < nodeList.getLength(); ind++) {
+                if (!nodeList.item(ind).getTextContent().isEmpty()) {
+                    list.add("" + nodeList.item(ind).getTextContent());
+                } else {
+                    list.add("" + nodeList.item(ind).getNodeValue());
+                }
             }
+            return list;
+        } catch (XPathExpressionException e) {
+            throw new Ovm3ResourceException("Problem parsing XML to List: ", e);
         }
-        return list;
     }
 
     public String xmlToString(String path, Document xmlDocument)
-            throws XPathExpressionException {
-
+            throws Ovm3ResourceException {
         XPathFactory factory = javax.xml.xpath.XPathFactory.newInstance();
         XPath xPath = factory.newXPath();
-
-        XPathExpression xPathExpression = xPath.compile(path);
-        NodeList nodeList = (NodeList) xPathExpression.evaluate(xmlDocument,
-                XPathConstants.NODESET);
-        // put a try in here too, so we can get the subbies
-        String x = nodeList.item(0).getTextContent();
-        return x;
+        try {
+            XPathExpression xPathExpression = xPath.compile(path);
+            NodeList nodeList = (NodeList) xPathExpression.evaluate(xmlDocument,
+                    XPathConstants.NODESET);
+            return nodeList.item(0).getTextContent();
+        } catch (XPathExpressionException e) {
+            throw new Ovm3ResourceException("Problem parsing XML to String: ", e);
+        }
     }
 
     public Document prepParse(String input)
-            throws ParserConfigurationException, Exception, IOException {
+             throws Ovm3ResourceException {
         DocumentBuilderFactory builderfactory = DocumentBuilderFactory
                 .newInstance();
         builderfactory.setNamespaceAware(true);
 
-        DocumentBuilder builder = builderfactory.newDocumentBuilder();
-        Document xmlDocument = builder.parse(new InputSource(new StringReader(
-                (String) input)));
+        DocumentBuilder builder;
+        try {
+            builder = builderfactory.newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            throw new Ovm3ResourceException("Unable to create document Builder: ", e);
+        }
+        Document xmlDocument;
+        try {
+            xmlDocument = builder.parse(new InputSource(new StringReader(
+                    (String) input)));
+        } catch (SAXException | IOException e) {
+            LOGGER.info(e.getClass() + ": ", e);
+            throw new Ovm3ResourceException("Unable to parse XML: ", e);
+        }
         return xmlDocument;
     }
-    /*
-     * returns a list of strings public <T> ArrayList<String> call(String call,
-     * T... args) throws XmlRpcException { ArrayList<String> data = new
-     * ArrayList<String>(); Object[] result = (Object[]) callWrapper(call,
-     * args);
-     *
-     * if (result[result.length] != null) return null;
-     *
-     * for(Object x : result) { data.add(x.toString()); } return data; }
-     */
 }

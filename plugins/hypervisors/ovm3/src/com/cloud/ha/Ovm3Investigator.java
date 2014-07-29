@@ -38,21 +38,21 @@ import com.cloud.utils.component.AdapterBase;
 
 @Local(value = Investigator.class)
 public class Ovm3Investigator extends AdapterBase implements Investigator {
-    private final static Logger s_logger = Logger.getLogger(Ovm3Investigator.class);
+    private static final Logger LOGGER = Logger.getLogger(Ovm3Investigator.class);
     @Inject
-    HostDao _hostDao;
+    HostDao hostDao;
     @Inject
-    AgentManager _agentMgr;
+    AgentManager agentMgr;
     @Inject
-    ResourceManager _resourceMgr;
+    ResourceManager resourceMgr;
 
     @Override
     public Boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) {
         Status status = isAgentAlive(host);
         if (status == null) {
-            return null;
+            return false;
         }
-        return status == Status.Up ? true : null;
+        return status == Status.Up ? true : false;
     }
 
     @Override
@@ -61,18 +61,18 @@ public class Ovm3Investigator extends AdapterBase implements Investigator {
             return null;
         }
         CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
-        List<HostVO> neighbors = _resourceMgr.listHostsInClusterByStatus(agent.getClusterId(), Status.Up);
+        List<HostVO> neighbors = resourceMgr.listHostsInClusterByStatus(agent.getClusterId(), Status.Up);
         for (HostVO neighbor : neighbors) {
             if (neighbor.getId() == agent.getId() || neighbor.getHypervisorType() != Hypervisor.HypervisorType.Ovm3) {
                 continue;
             }
             try {
-                Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
+                Answer answer = agentMgr.easySend(neighbor.getId(), cmd);
                 if (answer != null) {
                     return answer.getResult() ? Status.Down : Status.Up;
                 }
             } catch (Exception e) {
-                s_logger.debug("Failed to send command to host: " + neighbor.getId());
+                LOGGER.error("Failed to send command to host: " + neighbor.getId(), e);
             }
         }
 

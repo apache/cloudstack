@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.ovm3.hypervisor;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -29,7 +30,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.AgentManager;
@@ -44,7 +44,7 @@ import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.ClusterDetailsDao;
-// import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.DiscoveryException;
 import com.cloud.host.HostInfo;
 import com.cloud.host.HostVO;
 import com.cloud.host.Host;
@@ -66,45 +66,44 @@ import com.cloud.utils.ssh.SSHCmdHelper;
 @Local(value = Discoverer.class)
 public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
         Listener, ResourceStateAdapter {
-    private static final Logger s_logger = Logger
+    private static final Logger LOGGER = Logger
             .getLogger(Ovm3Discoverer.class);
-    protected String _publicNetworkDevice;
-    protected String _privateNetworkDevice;
-    protected String _guestNetworkDevice;
-    protected String _storageNetworkDevice;
-    private String _ovsAgentPath = "/etc/ovs-agent/agent.ini";
+    protected String publicNetworkDevice;
+    protected String pricateNetworkDevice;
+    protected String guestNetworkDevice;
+    protected String storageNetworkDevice;
 
     @Inject
-    ClusterDao _clusterDao;
+    ClusterDao clusterDao;
     @Inject
-    ClusterDetailsDao _clusterDetailsDao;
+    ClusterDetailsDao clusterDetailsDao;
     @Inject
-    ResourceManager _resourceMgr;
+    ResourceManager resourceMgr;
     @Inject
-    AgentManager _agentMgr;
+    AgentManager agentMgr;
     @Inject
-    HostDao _hostDao = null;
+    HostDao hostDao = null;
+
+    protected Ovm3Discoverer() {
+    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
         super.configure(name, params);
         /* these are in Config.java */
-        _publicNetworkDevice = _params.get(Config.Ovm3PublicNetwork.key());
-        _privateNetworkDevice = _params.get(Config.Ovm3PrivateNetwork.key());
-        _guestNetworkDevice = _params.get(Config.Ovm3GuestNetwork.key());
-        _storageNetworkDevice = _params.get(Config.Ovm3StorageNetwork.key());
-        _resourceMgr.registerResourceStateAdapter(this.getClass()
+        publicNetworkDevice = _params.get(Config.Ovm3PublicNetwork.key());
+        pricateNetworkDevice = _params.get(Config.Ovm3PrivateNetwork.key());
+        guestNetworkDevice = _params.get(Config.Ovm3GuestNetwork.key());
+        storageNetworkDevice = _params.get(Config.Ovm3StorageNetwork.key());
+        resourceMgr.registerResourceStateAdapter(this.getClass()
                 .getSimpleName(), this);
         return true;
     }
 
-    protected Ovm3Discoverer() {
-    }
-
     @Override
     public boolean stop() {
-        _resourceMgr.unregisterResourceStateAdapter(this.getClass()
+        resourceMgr.unregisterResourceStateAdapter(this.getClass()
                 .getSimpleName());
         return super.stop();
     }
@@ -122,66 +121,65 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     public Map<? extends ServerResource, Map<String, String>> find(long dcId,
             Long podId, Long clusterId, URI url, String username,
             String password, List<String> hostTags)
-            throws CloudRuntimeException {
+            throws DiscoveryException {
         Connection c = null;
 
-        if (url.getScheme().equals("http") || url.getScheme().equals("https")) {
+        if ("http".equals(url.getScheme()) || "https".equals(url.getScheme())) {
             String msg = "Discovering " + url
                 + ": " + _params;
-            s_logger.debug(msg);
+            LOGGER.debug(msg);
         } else {
             String msg = "urlString is not http(s) so we're not taking care of the discovery for this: "
                     + url;
-            s_logger.debug(msg);
-            throw new CloudRuntimeException(msg);
+            LOGGER.info(msg);
+            throw new DiscoveryException(msg);
         }
 
         if (clusterId == null) {
             String msg = "must specify cluster Id when add host";
-            s_logger.debug(msg);
-            throw new CloudRuntimeException(msg);
+            LOGGER.info(msg);
+            throw new DiscoveryException(msg);
         }
 
         if (podId == null) {
             String msg = "must specify pod Id when add host";
-            s_logger.debug(msg);
-            throw new CloudRuntimeException(msg);
+            LOGGER.info(msg);
+            throw new DiscoveryException(msg);
         }
 
-        ClusterVO cluster = _clusterDao.findById(clusterId);
+        ClusterVO cluster = clusterDao.findById(clusterId);
         if (cluster == null
                 || (cluster.getHypervisorType() != HypervisorType.Ovm3)) {
             String msg = "invalid cluster id or cluster is not for Ovm3 hypervisors";
-            s_logger.info(msg);
-            throw new CloudRuntimeException(msg);
+            LOGGER.info(msg);
+            throw new DiscoveryException(msg);
         } else {
-            s_logger.info("cluster: " + cluster);
+            LOGGER.debug("cluster: " + cluster);
         }
 
         String agentUsername = _params.get("agentusername");
         if (agentUsername == null) {
             String msg = "Agent user name must be specified";
-            s_logger.info(msg);
-            throw new CloudRuntimeException(msg);
+            LOGGER.info(msg);
+            throw new DiscoveryException(msg);
         }
 
         String agentPassword = _params.get("agentpassword");
         if (agentPassword == null) {
             String msg = "Agent password must be specified";
-            s_logger.info(msg);
-            throw new CloudRuntimeException(msg);
+            LOGGER.info(msg);
+            throw new DiscoveryException(msg);
         }
 
         String agentPort = _params.get("agentport");
         if (agentPort == null) {
             String msg = "Agent port must be specified";
-            s_logger.info(msg);
-            throw new CloudRuntimeException(msg);
+            LOGGER.info(msg);
+            throw new DiscoveryException(msg);
         }
 
         try {
             String hostname = url.getHost();
-            /* port = url.getPort(); */
 
             InetAddress ia = InetAddress.getByName(hostname);
             String hostIp = ia.getHostAddress();
@@ -189,19 +187,19 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
 
             if (checkIfExisted(guid)) {
                 String msg = "The host " + hostIp + " has been added before";
-                s_logger.debug(msg);
-                throw new CloudRuntimeException(msg);
+                LOGGER.info(msg);
+                throw new DiscoveryException(msg);
             }
 
-            s_logger.debug("Ovm3 discover is going to disover host having guid "
+            LOGGER.debug("Ovm3 discover is going to disover host having guid "
                     + guid);
 
-            ClusterVO clu = _clusterDao.findById(clusterId);
+            ClusterVO clu = clusterDao.findById(clusterId);
             if (clu.getGuid() == null) {
                 clu.setGuid(UUID.randomUUID().toString());
             }
-            _clusterDao.update(clusterId, clu);
-            Map<String, String> clusterDetails = _clusterDetailsDao
+            clusterDao.update(clusterId, clu);
+            Map<String, String> clusterDetails = clusterDetailsDao
                     .findDetails(clusterId);
             String ovm3vip = (clusterDetails.get("ovm3vip") == null) ? ""
                     : clusterDetails.get("ovm3vip");
@@ -217,10 +215,10 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
             sshConnection = SSHCmdHelper.acquireAuthorizedConnection(hostIp,
                     username, password);
             if (sshConnection == null) {
-                String msg = String.format("Cannot connect to Ovm3 host(IP=%1$s, username=%2$s, password=*******), discovery failed",
-                        hostIp, username);
-                s_logger.warn(msg);
-                throw new CloudRuntimeException(msg);
+                String msg = "Cannot Ssh to Ovm3 host(IP=" + hostIp + ", username=" + username +
+                        ", password=*******), discovery failed";
+                LOGGER.warn(msg);
+                throw new DiscoveryException(msg);
             }
 
             Map<String, String> details = new HashMap<String, String>();
@@ -240,21 +238,21 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
             details.put("ovm3pool", ovm3pool);
             details.put("ovm3cluster", ovm3cluster);
 
-            if (_publicNetworkDevice != null) {
-                details.put("public.network.device", _publicNetworkDevice);
+            if (publicNetworkDevice != null) {
+                details.put("public.network.device", publicNetworkDevice);
             }
-            if (_privateNetworkDevice != null) {
-                details.put("private.network.device", _privateNetworkDevice);
+            if (pricateNetworkDevice != null) {
+                details.put("private.network.device", pricateNetworkDevice);
             }
-            if (_guestNetworkDevice != null) {
-                details.put("guest.network.device", _guestNetworkDevice);
+            if (guestNetworkDevice != null) {
+                details.put("guest.network.device", guestNetworkDevice);
             }
-            if (_storageNetworkDevice != null) {
-                details.put("storage.network.device", _storageNetworkDevice);
+            if (storageNetworkDevice != null) {
+                details.put("storage.network.device", storageNetworkDevice);
             }
-            s_logger.warn("network devices: " + _guestNetworkDevice + " "
-                    + _privateNetworkDevice + " " + _publicNetworkDevice + " "
-                    + _storageNetworkDevice);
+            LOGGER.warn("network devices: " + guestNetworkDevice + " "
+                    + pricateNetworkDevice + " " + publicNetworkDevice + " "
+                    + storageNetworkDevice);
 
             Map<String, Object> params = new HashMap<String, Object>();
             params.putAll(details);
@@ -262,14 +260,8 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
             ovmResource.configure(hostname, params);
             ovmResource.start();
 
-            try {
-                c = new Connection(hostIp, Integer.parseInt(agentPort), agentUsername, agentPassword);
-            } catch (Exception e) {
-                String msg = String.format("Cannot connect to Ovm3 agent(IP=%1$s, Port=%1$, username=%3$s, password=*******), discovery failed",
-                        hostIp, agentPort, agentUsername);
-                s_logger.warn(msg);
-                throw new CloudRuntimeException(msg);
-            }
+            c = new Connection(hostIp, Integer.parseInt(agentPort), agentUsername, agentPassword);
+
             /* After resource start, we are able to execute our agent api */
             Linux host = new Linux(c);
             details.put("agentVersion", host.getAgentVersion());
@@ -283,22 +275,18 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
             Map<Ovm3ResourceBase, Map<String, String>> resources = new HashMap<Ovm3ResourceBase, Map<String, String>>();
             resources.put(ovmResource, details);
             return resources;
-        } catch (XmlRpcException e) {
-            s_logger.debug("XmlRpc exception, Unable to discover Ovm3 host: " + url.getHost(),
-                    e);
-            return null;
         } catch (UnknownHostException e) {
-            s_logger.debug(
+            LOGGER.error(
                     "Host name resolve failed exception, Unable to discover Ovm3 host: "
                             + url.getHost(), e);
             return null;
         } catch (ConfigurationException e) {
-            s_logger.debug(
+            LOGGER.error(
                     "Configure resource failed, Unable to discover Ovm3 host: " + url.getHost(),
                     e);
             return null;
-        } catch (Exception e) {
-            s_logger.debug("Unable to discover Ovm3 host: " + url.getHost(), e);
+        } catch (IOException e) {
+            LOGGER.error("Unable to discover Ovm3 host: " + url.getHost(), e);
             return null;
         }
     }
@@ -307,7 +295,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     public void postDiscovery(List<HostVO> hosts, long msId)
             throws CloudRuntimeException {
         // TODO Auto-generated method stub
-        s_logger.debug("postDiscovery" + hosts);
+        LOGGER.debug("postDiscovery" + hosts);
     }
 
     @Override
@@ -350,6 +338,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     @Override
     public void processConnect(Host host, StartupCommand cmd,
             boolean forRebalance) {
+        // Should we check the connect status here or something ?
     }
 
     @Override
@@ -385,13 +374,13 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
             return null;
         }
 
-        StartupRoutingCommand ssCmd = ((StartupRoutingCommand) firstCmd);
+        StartupRoutingCommand ssCmd = (StartupRoutingCommand) firstCmd;
         if (ssCmd.getHypervisorType() != HypervisorType.Ovm3) {
             return null;
         }
 
         // TODO: Double check this
-        return _resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.Ovm3,
+        return resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.Ovm3,
                 details, hostTags);
     }
 
@@ -404,7 +393,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
             return null;
         }
 
-        _resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
+        resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
         return new DeleteHostAnswer(true);
     }
 

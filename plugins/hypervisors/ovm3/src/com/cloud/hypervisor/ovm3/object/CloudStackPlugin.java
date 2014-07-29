@@ -16,52 +16,36 @@ package com.cloud.hypervisor.ovm3.object;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.xmlrpc.XmlRpcException;
+import org.apache.log4j.Logger;
 
 public class CloudStackPlugin extends OvmObject {
+    private static final Logger LOGGER = Logger
+            .getLogger(CloudStackPlugin.class);
 
     public CloudStackPlugin(Connection c) {
-        client = c;
+        setClient(c);
     }
 
-    public String getVncPort(String vmName) throws XmlRpcException {
-        String x = (String) callWrapper("get_vncport", vmName);
-        return x;
+    public String getVncPort(String vmName) throws Ovm3ResourceException {
+        return (String) callWrapper("get_vncport", vmName);
     }
 
-    public boolean ovsUploadSshKey(String key, String content)
-            throws XmlRpcException {
-        Object x = callWrapper("ovs_upload_ssh_key", key, content);
-        if (x == null) {
-            return false;
-        }
-        return true;
+    public boolean ovsUploadSshKey(String key, String content) throws Ovm3ResourceException{
+        return nullIsFalseCallWrapper("ovs_upload_ssh_key", key, content);
     }
 
-    public boolean ovsUploadFile(String path, String file, String content)
-            throws XmlRpcException {
-        Object x = callWrapper("ovs_upload_file", path, file, content);
-        if (x == null) {
-            return false;
-        }
-        return true;
+    public boolean ovsUploadFile(String path, String file, String content) throws Ovm3ResourceException {
+        return nullIsFalseCallWrapper("ovs_upload_file", path, file, content);
     }
 
     public boolean ovsDomrUploadFile(String domr, String path, String file,
-            String content) throws XmlRpcException {
-        Object x = callWrapper("ovs_domr_upload_file", domr, path, file,
+            String content) throws Ovm3ResourceException {
+        return nullIsFalseCallWrapper("ovs_domr_upload_file", domr, path, file,
                 content);
-        if (x == null) {
-            return false;
-        }
-        return true;
     }
 
-    public class ReturnCode {
-        public ReturnCode() {
-        }
-
-        private Map<String, Object> _rc = new HashMap<String, Object>() {
+    public static class ReturnCode {
+        private Map<String, Object> returnCode = new HashMap<String, Object>() {
             {
                 put("rc", null);
                 put("exit", null);
@@ -69,97 +53,97 @@ public class CloudStackPlugin extends OvmObject {
                 put("out", null);
             }
         };
+        public ReturnCode() {
+        }
 
         public void setValues(Map<String, String> m) {
-            this._rc.putAll(m);
+            returnCode.putAll(m);
         }
 
         public Boolean getRc() {
             try {
-                Long rc = (Long) _rc.get("rc");
-                _rc.put("exit", rc);
+                Long rc = (Long) returnCode.get("rc");
+                returnCode.put("exit", rc);
                 if (rc != 0) {
                     return false;
                 }
                 return true;
             } catch (Exception e) {
-                /* TODO: What to do here? */
+                LOGGER.error("Unable to get return code!", e);
             }
             return false;
         }
 
         public String getStdOut() {
-            return (String) _rc.get("out");
+            return (String) returnCode.get("out");
         }
 
         public String getStdErr() {
-            return (String) _rc.get("err");
+            return (String) returnCode.get("err");
         }
 
         public Integer getExit() {
-            if (_rc.get("exit") == null) {
-                _rc.put("exit", _rc.get("rc"));
+            if (returnCode.get("exit") == null) {
+                returnCode.put("exit", returnCode.get("rc"));
             }
-            return Integer.valueOf((String) _rc.get("exit"));
+            return Integer.valueOf((String) returnCode.get("exit"));
         }
     }
 
-    public ReturnCode domrExec(String ip, String cmd) throws XmlRpcException {
+    public ReturnCode domrExec(String ip, String cmd) throws Ovm3ResourceException {
         ReturnCode rc = new ReturnCode();
         rc.setValues((Map<String, String>) callWrapper("exec_domr", ip, cmd));
         return rc;
     }
 
     public boolean domrCheckPort(String ip, Integer port, Integer retries,
-            Integer interval) throws XmlRpcException, InterruptedException {
+            Integer interval) throws Ovm3ResourceException {
         Boolean x = false;
         /* should deduct the interval from the timeout and sleep on it */
         Integer sleep = interval;
-        while (x == false && retries > 0) {
+        while (!x && retries > 0) {
             x = (Boolean) callWrapper("check_domr_port", ip, port, interval);
             retries--;
-            Thread.sleep(sleep * 1000);
+            try {
+                Thread.sleep(sleep * 1000);
+            } catch (InterruptedException e) {
+                LOGGER.info("Domr port check interrupted: " + e.getMessage());
+            }
         }
         return x;
     }
 
-    public Map<String, String> ovsDom0Stats(String bridge)
-            throws XmlRpcException {
-        Map<String, String> stats = (Map<String, String>) callWrapper(
+    public Map<String, String> ovsDom0Stats(String bridge) throws Ovm3ResourceException {
+        return (Map<String, String>) callWrapper(
                 "ovs_dom0_stats", bridge);
-        return stats;
     }
 
-    public Map<String, String> ovsDomUStats(String domain)
-            throws XmlRpcException {
-        Map<String, String> stats = (Map<String, String>) callWrapper(
+    public Map<String, String> ovsDomUStats(String domain) throws Ovm3ResourceException {
+        return (Map<String, String>) callWrapper(
                 "ovs_domU_stats", domain);
-        return stats;
     }
 
-    public boolean domrCheckPort(String ip, Integer port)
-            throws XmlRpcException {
+    public boolean domrCheckPort(String ip, Integer port) throws Ovm3ResourceException{
         Object x = callWrapper("check_domr_port", ip, port);
         return (Boolean) x;
     }
 
-    public boolean domrCheckSsh(String ip) throws XmlRpcException {
+    public boolean domrCheckSsh(String ip) throws Ovm3ResourceException {
         Object x = callWrapper("check_domr_ssh", ip);
         return (Boolean) x;
     }
 
-    public boolean ovsControlInterface(String dev, String ip, String mask)
-            throws XmlRpcException {
+    public boolean ovsControlInterface(String dev, String ip, String mask) throws Ovm3ResourceException {
         Object x = callWrapper("ovs_control_interface", dev, ip, mask);
         return (Boolean) x;
     }
 
-    public boolean ping(String host) throws XmlRpcException {
+    public boolean ping(String host) throws Ovm3ResourceException {
         Object x = callWrapper("ping", host);
         return (Boolean) x;
     }
 
-    public boolean ovsCheckFile(String file) throws XmlRpcException {
+    public boolean ovsCheckFile(String file) throws Ovm3ResourceException {
         Object x = callWrapper("ovs_check_file", file);
         return (Boolean) x;
     }

@@ -13,18 +13,12 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
 
 /*
  * synonym to the pool python lib in the ovs-agent
@@ -32,31 +26,23 @@ import org.apache.xmlrpc.XmlRpcException;
 public class Pool extends OvmObject {
     private static final Logger LOGGER = Logger
             .getLogger(Pool.class);
-    /*
-     * {Pool_Filesystem_Target=cs-mgmt:/volumes/cs-data/secondary,
-     * Pool_Filesystem_Type=nfs,
-     * Pool_Filesystem_Nfsbase_Uuid=b8ca41cb-3469-4f74-a086-dddffe37dc2d,
-     * Pool_Filesystem_Uuid=0004fb0000050000e70fbddeb802208f}
-     */
+
     private List<String> validRoles = new ArrayList<String>() {
         {
             add("utility");
             add("xen");
         }
     };
-    private Boolean _poolDisc = false;
-    public Map<String, String> poolFileSystem = new HashMap<String, String>();
-    public List<String> poolIps = new ArrayList<String>();
+    private Boolean discoverPool = false;
+    private List<String> poolIps = new ArrayList<String>();
     private List<String> poolRoles = new ArrayList<String>();
-    public List<String> poolMembers = new ArrayList<String>();
-    public String poolMasterVip;
-    public String poolAlias;
-    public String poolId = "";
+    private List<String> poolMembers = new ArrayList<String>();
+    private String poolMasterVip;
+    private String poolAlias;
+    private String poolId = "";
 
-    public Pool(Connection c) throws ParserConfigurationException, IOException,
-            Exception {
-        client = c;
-        discoverServerPool();
+    public Pool(Connection c) {
+        setClient(c);
     }
 
     public String getPoolMasterVip() {
@@ -81,6 +67,26 @@ public class Pool extends OvmObject {
         this.poolIps.addAll(ips);
     }
 
+    public Boolean isInPool(String id) throws Ovm3ResourceException {
+        if (poolIps.isEmpty()) {
+            discoverServerPool();
+        }
+        if (poolId.equals(id)) {
+            return true;
+        }
+        return false;
+    }
+
+    public Boolean isInAPool() throws Ovm3ResourceException {
+        if (poolIps.isEmpty()) {
+            discoverServerPool();
+        }
+        if ("".equals(poolId)) {
+            return false;
+        }
+        return true;
+    }
+
     /*
      * create_server_pool, <class 'agent.api.serverpool.ServerPool'> argument:
      * self - default: None argument: pool_alias - default: None argument:
@@ -90,26 +96,30 @@ public class Pool extends OvmObject {
      * default: None
      */
     public Boolean createServerPool(String alias, String id, String vip,
-            int num, String name, String ip, List<String> roles)
-            throws XmlRpcException {
+            int num, String name, String ip, List<String> roles) throws Ovm3ResourceException{
         String role = roles.toString();
         role = "xen,utility";
-        Object x = callWrapper("create_server_pool", alias, id, vip, num, name,
-                ip, role);
-        if (x == null) {
+        if (!this.isInAPool()) {
+            Object x = callWrapper("create_server_pool", alias, id, vip, num, name,
+                    ip, role);
+            if (x == null) {
+                return true;
+            }
+            return false;
+        } else if (this.isInPool(id)) {
             return true;
+        } else {
+            throw new Ovm3ResourceException("Unable to add host is already in  a pool with id : " + this.poolId);
         }
-        return false;
     }
 
     public Boolean createServerPool(String alias, String id, String vip,
-            int num, String name, String ip) throws XmlRpcException {
-        return this.createServerPool(alias, id, vip, num, name, ip,
+            int num, String name, String ip) throws Ovm3ResourceException {
+        return createServerPool(alias, id, vip, num, name, ip,
                 getValidRoles());
     }
 
-    public Boolean createServerPool(int num, String name, String ip)
-            throws XmlRpcException {
+    public Boolean createServerPool(int num, String name, String ip) throws Ovm3ResourceException{
         return createServerPool(poolAlias, poolId, poolMasterVip, num, name,
                 ip, poolRoles);
     }
@@ -118,7 +128,7 @@ public class Pool extends OvmObject {
      * update_pool_virtual_ip, <class 'agent.api.serverpool.ServerPool'>
      * argument: self - default: None argument: new_pool_vip - default: None
      */
-    public Boolean updatePoolVirtualIp(String ip) throws XmlRpcException {
+    public Boolean updatePoolVirtualIp(String ip) throws Ovm3ResourceException {
         Object x = callWrapper("update_pool_virtual_ip", ip);
         if (x == null) {
             this.poolMasterVip = ip;
@@ -131,19 +141,15 @@ public class Pool extends OvmObject {
      * leave_server_pool, <class 'agent.api.serverpool.ServerPool'> argument:
      * self - default: None argument: pool_uuid - default: None
      */
-    public Boolean leaveServerPool(String uuid) throws XmlRpcException {
-        Object x = callWrapper("leave_server_pool", uuid);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean leaveServerPool(String uuid) throws Ovm3ResourceException{
+        return nullIsTrueCallWrapper("leave_server_pool", uuid);
     }
 
     /*
      * set_server_pool_alias, <class 'agent.api.serverpool.ServerPool'>
      * argument: self - default: None argument: pool_alias - default: None
      */
-    public Boolean setServerPoolAlias(String alias) throws XmlRpcException {
+    public Boolean setServerPoolAlias(String alias) throws Ovm3ResourceException{
         Object x = callWrapper("set_server_pool_alias", alias);
         if (x == null) {
             this.poolAlias = alias;
@@ -160,37 +166,24 @@ public class Pool extends OvmObject {
      * 'https://2f55e3b9efa6f067ad54a7b144bb6f2e:
      * ******@0.0.0.0:7002/ovm/core/OVMManagerCoreServlet')
      */
-    public Boolean takeOwnership(String uuid, String apiurl)
-            throws XmlRpcException {
-        Object x = callWrapper("take_ownership", uuid, apiurl);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean takeOwnership(String uuid, String apiurl) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("take_ownership", uuid, apiurl);
     }
 
     /*
      * destroy_server_pool, <class 'agent.api.serverpool.ServerPool'> argument:
      * self - default: None argument: pool_uuid - default: None
      */
-    public Boolean destroyServerPool(String uuid) throws XmlRpcException {
-        Object x = callWrapper("destroy_server_pool", uuid);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean destroyServerPool(String uuid) throws Ovm3ResourceException{
+        return nullIsTrueCallWrapper("destroy_server_pool", uuid);
     }
 
     /*
      * release_ownership, <class 'agent.api.serverpool.ServerPool'> argument:
      * self - default: None argument: manager_uuid - default: None
      */
-    public Boolean releaseOwnership(String uuid) throws XmlRpcException {
-        Object x = callWrapper("release_ownership", uuid);
-        if (x == null) {
-            return true;
-        }
-        return false;
+    public Boolean releaseOwnership(String uuid) throws Ovm3ResourceException{
+        return nullIsTrueCallWrapper("release_ownership", uuid);
     }
 
     /* server.discover_pool_filesystem */
@@ -198,35 +191,21 @@ public class Pool extends OvmObject {
      * discover_server_pool, <class 'agent.api.serverpool.ServerPool'> argument:
      * self - default: None
      */
-    public Boolean discoverServerPool() throws ParserConfigurationException,
-            IOException, Exception {
-        /* forcefull rediscover for now */
-        if (this._poolDisc) {
-            return true;
-        }
+    public Boolean discoverServerPool() throws Ovm3ResourceException {
         Object x = callWrapper("discover_server_pool");
         if (x == null) {
             return false;
         }
 
-        try {
-            Document xmlDocument = prepParse((String) x);
-            String path = "//Discover_Server_Pool_Result/Server_Pool";
-            this.poolId = xmlToString(path + "/Unique_Id", xmlDocument);
-            this.poolAlias = xmlToString(path + "/Pool_Alias", xmlDocument);
-            this.poolMasterVip = xmlToString(path + "/Master_Virtual_Ip",
-                    xmlDocument);
-            this.poolMembers = xmlToList(path + "/Member_List", xmlDocument);
-            this.poolIps
-                    .addAll(xmlToList(path + "//Registered_IP", xmlDocument));
-            this._poolDisc = true;
-        } catch (Exception e) {
-            if (e.getMessage() == null) {
-                LOGGER.debug("No pool to discover: " + e.getMessage());
-            } else {
-                LOGGER.debug("Error in pooldiscovery: " + e.getMessage());
-            }
-        }
+        Document xmlDocument = prepParse((String) x);
+        String path = "//Discover_Server_Pool_Result/Server_Pool";
+        this.poolId = xmlToString(path + "/Unique_Id", xmlDocument);
+        this.poolAlias = xmlToString(path + "/Pool_Alias", xmlDocument);
+        this.poolMasterVip = xmlToString(path + "/Master_Virtual_Ip",
+                xmlDocument);
+        this.poolMembers = xmlToList(path + "/Member_List", xmlDocument);
+        this.poolIps.addAll(xmlToList(path + "//Registered_IP", xmlDocument));
+        this.discoverPool = true;
 
         return true;
     }
@@ -235,39 +214,36 @@ public class Pool extends OvmObject {
      * update_server_roles, <class 'agent.api.serverpool.ServerPool'> argument:
      * self - default: None argument: roles - default: None ?> list or sring
      */
-    private Boolean validPoolRole(String role) throws Exception {
+    private Boolean validPoolRole(String role)  {
         for (String r : this.validRoles) {
             if (r.contentEquals(role)) {
                 return true;
             }
         }
-        throw new Exception("Illegal role: " + role);
+        LOGGER.info("Illegal role: " + role);
+        return false;
     }
 
-    private Boolean validPoolRole(List<String> roles) throws Exception {
+    private Boolean validPoolRole(List<String> roles) {
         for (String r : roles) {
             return validPoolRole(r);
         }
         return false;
     }
 
-    public Boolean setServerRoles() throws XmlRpcException, Exception {
+    public Boolean setServerRoles() throws Ovm3ResourceException{
         validPoolRole(this.poolRoles);
         String roles = StringUtils.join(this.poolRoles.toArray(), ",");
-        Object x = callWrapper("update_server_roles", roles);
-        if (x == null) {
-            return true;
-        }
-        return false;
+        return nullIsTrueCallWrapper("update_server_roles", roles);
     }
 
     /* do some sanity check on the valid poolroles */
-    public Boolean setServerRoles(List<String> roles) throws Exception {
+    public Boolean setServerRoles(List<String> roles) throws Ovm3ResourceException {
         this.poolRoles.addAll(roles);
         return setServerRoles();
     }
 
-    public void addServerRole(String role) throws Exception {
+    public void addServerRole(String role) {
         validPoolRole(role);
         this.poolRoles.add(role);
     }
@@ -295,23 +271,28 @@ public class Pool extends OvmObject {
      */
     /* allow these to be set before ? */
     public Boolean joinServerPool(String alias, String id, String vip, int num,
-            String name, String ip, List<String> roles) throws XmlRpcException {
+            String name, String ip, List<String> roles) throws Ovm3ResourceException{
         String role = StringUtils.join(roles.toArray(), ",");
-        Object x = callWrapper("join_server_pool", alias, id, vip, num, name,
-                ip, role);
-        if (x == null) {
+        if (!this.isInAPool()) {
+            Object x = callWrapper("join_server_pool", alias, id, vip, num, name,
+                    ip, role);
+            if (x == null) {
+                return true;
+            }
+            return false;
+        } else if (this.isInPool(id)) {
             return true;
+        } else {
+            throw new Ovm3ResourceException("Unable to add host is already in  a pool with id : " + this.poolId);
         }
-        return false;
     }
 
     public Boolean joinServerPool(String alias, String id, String vip, int num,
-            String name, String ip) throws XmlRpcException {
+            String name, String ip) throws Ovm3ResourceException {
         return joinServerPool(alias, id, vip, num, name, ip, getValidRoles());
     }
 
-    public Boolean joinServerPool(int num, String name, String ip)
-            throws XmlRpcException {
+    public Boolean joinServerPool(int num, String name, String ip) throws Ovm3ResourceException{
         return joinServerPool(poolAlias, poolId, poolMasterVip, num, name, ip,
                 poolRoles);
     }
@@ -320,38 +301,33 @@ public class Pool extends OvmObject {
      * set_pool_member_ip_list, <class 'agent.api.serverpool.ServerPool'>
      * argument: self - default: None argument: ip_list - default: None
      */
-    public Boolean setPoolMemberIpList() throws XmlRpcException {
+    public Boolean setPoolMemberIpList() throws Ovm3ResourceException {
         // should throw exception if no poolIps set
-        Object x = callWrapper("set_pool_member_ip_list", this.poolIps);
-        if (x == null) {
-            return true;
-        }
-        return false;
+        return nullIsTrueCallWrapper("set_pool_member_ip_list", this.poolIps);
     }
 
-    public List getPoolMemberIpList() throws XmlRpcException, Exception {
-        if (poolIps.size() == 0) {
-            this.discoverServerPool();
+    public List getPoolMemberIpList() throws Ovm3ResourceException {
+        if (poolIps.isEmpty()) {
+            discoverServerPool();
         }
         return poolIps;
     }
 
     /* TODO: need to change the logic here */
-    public Boolean setPoolMemberIpList(String ip) throws XmlRpcException {
+    public Boolean setPoolMemberIpList(String ip) throws Ovm3ResourceException {
         this.poolIps = new ArrayList<String>();
         this.poolIps.add(ip);
         return setPoolMemberIpList();
     }
 
-    public Boolean addPoolMemberIp(String ip) throws XmlRpcException, Exception {
+    public Boolean addPoolMemberIp(String ip) throws Ovm3ResourceException{
         this.getPoolMemberIpList();
         this.poolIps.add(ip);
         return setPoolMemberIpList();
     }
 
     /* meh */
-    public Boolean removePoolMemberIp(String ip) throws XmlRpcException,
-            Exception {
+    public Boolean removePoolMemberIp(String ip) throws Ovm3ResourceException {
         this.getPoolMemberIpList();
         this.poolIps.remove(ip);
         return setPoolMemberIpList();

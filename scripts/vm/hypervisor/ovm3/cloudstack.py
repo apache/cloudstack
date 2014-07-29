@@ -237,24 +237,24 @@ def restartService(service):
     return True
 
 # sets the control interface and removes the route net entry
-def ovsControlInterface(dev, ip, mask):
-    controlRoute = False
-    command = ['route', '-n'];
+def ovsControlInterface(dev, cidr):
+    controlRoute = False 
+    command = ['ip route show']; 
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     while True:
-        line= p.stdout.readline()
+        line=p.stdout.readline()
         if line == '' and p.poll() != None:
-            break
+            break   
         if line != '':
-            if re.search("%s" % (ip), line) and not re.search("%s" % (dev), line):
-                command = ['route','del','-net', ip, 'gw', '0.0.0.0', 'netmask', mask]
+            if re.search("%s" % (cidr), line) and not re.search("%s" % (dev), line):
+                command = ['ip', 'route', 'del', cidr]
                 subprocess.call(command, shell=False)
                 print "removed: %s" % (line)
-            elif re.search("%s" % (ip), line) and re.search("%s" % (dev), line):
+            elif re.search("%s" % (cidr), line) and re.search("%s" % (dev), line):
                 controlRoute = True
     
     if controlRoute == False:
-        command = ['route', 'add', '-net', ip, 'netmask', mask, 'dev', dev];
+        command = ['ip', 'route', 'add', cidr, 'dev', dev];
         subprocess.call(command, shell=False)
 
     command = ['ifconfig', dev, 'arp']

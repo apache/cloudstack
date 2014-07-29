@@ -31,10 +31,8 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = HypervisorGuru.class)
 public class Ovm3Guru extends HypervisorGuruBase implements HypervisorGuru {
-    // private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
-
     @Inject
-    GuestOSDao _guestOsDao;
+    GuestOSDao guestOsDao;
 
     protected Ovm3Guru() {
         super();
@@ -51,7 +49,7 @@ public class Ovm3Guru extends HypervisorGuruBase implements HypervisorGuru {
         to.setBootloader(vm.getBootLoaderType());
 
         // Determine the VM's OS description
-        GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine()
+        GuestOSVO guestOS = guestOsDao.findById(vm.getVirtualMachine()
                 .getGuestOSId());
         to.setOs(guestOS.getDisplayName());
 
