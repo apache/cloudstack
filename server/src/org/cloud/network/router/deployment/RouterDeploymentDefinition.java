@@ -301,6 +301,12 @@ public class RouterDeploymentDefinition {
                 0 : routersExpected - this.routers.size();
     }
 
+    protected void setupAccountOwner() {
+        if (networkModel.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
+            this.owner = accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
+        }
+    }
+
     /**
      * It executes last pending tasks to prepare the deployment and checks the deployment
      * can proceed. If it can't it return false
@@ -308,15 +314,13 @@ public class RouterDeploymentDefinition {
      * @return if the deployment can proceed
      */
     protected boolean prepareDeployment() {
-        boolean canProceed = true;
-        if (networkModel.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
-            this.owner = accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
-        }
+        this.setupAccountOwner();
 
         // Check if public network has to be set on VR
         this.isPublicNetwork = networkModel.isProviderSupportServiceInNetwork(
                         guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter);
 
+        boolean canProceed = true;
         if (this.isRedundant && !this.isPublicNetwork) {
             // TODO Shouldn't be this throw an exception instead of log error and empty list of routers
             logger.error("Didn't support redundant virtual router without public network!");
