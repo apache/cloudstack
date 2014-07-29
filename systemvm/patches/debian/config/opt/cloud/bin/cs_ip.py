@@ -20,8 +20,8 @@ def merge(dbag, ip):
         if mac == "id":
            continue
         for address in dbag[mac]:
-            if address['publicIp'] == ip['publicIp']:
+            if address['public_ip'] == ip['public_ip']:
                dbag[mac].remove(address)
     if ip['add']:
-       dbag.setdefault('eth' + str(ip['nicDevId']), []).append( ip )
+       dbag.setdefault('eth' + str(ip['nic_dev_id']), []).append( ip )
     return dbag
