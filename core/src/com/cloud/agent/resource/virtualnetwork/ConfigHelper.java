@@ -56,10 +56,10 @@ import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
-import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
+import com.cloud.agent.resource.virtualnetwork.model.GuestNetwork;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.rules.FirewallRule;
@@ -511,12 +511,11 @@ public class ConfigHelper {
     }
 
     private static List<ConfigItem> generateConfig(SetupGuestNetworkCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
-
         NicTO nic = cmd.getNic();
         String routerGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
         String gateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
         String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
+        String netmask = NetUtils.getSubNet(routerGIP, nic.getNetmask());
         String domainName = cmd.getNetworkDomain();
         String dns = cmd.getDefaultDns1();
 
@@ -529,30 +528,17 @@ public class ConfigHelper {
             }
         }
 
-        String dev = "eth" + nic.getDeviceId();
-        String netmask = NetUtils.getSubNet(routerGIP, nic.getNetmask());
-        String args = "";
-        if (cmd.isAdd() == false) {
-            //pass the argument to script to delete the network
-            args += " -D";
-        } else {
-            // pass create option argument if the ip needs to be added to eth device
-            args += " -C";
-        }
-        args += " -M " + nic.getMac();
-        args += " -d " + dev;
-        args += " -i " + routerGIP;
-        args += " -g " + gateway;
-        args += " -m " + cidr;
-        args += " -n " + netmask;
-        if (dns != null && !dns.isEmpty()) {
-            args += " -s " + dns;
-        }
-        if (domainName != null && !domainName.isEmpty()) {
-            args += " -e " + domainName;
-        }
+        GuestNetwork guestNetwork = new GuestNetwork(cmd.isAdd(), nic.getMac(), "eth" + nic.getDeviceId(), routerGIP, netmask, gateway,
+                cidr, dns, domainName);
 
-        cfg.add(new ScriptConfigItem(VRScripts.VPC_GUEST_NETWORK, args));
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
+        ConfigItem guestNetworkConfig = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, VRScripts.GUEST_NETWORK_CONFIG, gson.toJson(guestNetwork));
+        cfg.add(guestNetworkConfig);
+
+        ConfigItem updateGuestNetwork = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, VRScripts.GUEST_NETWORK_CONFIG);
+        cfg.add(updateGuestNetwork);
+
         return cfg;
     }
 
@@ -593,15 +579,17 @@ public class ConfigHelper {
     private static List<ConfigItem> generateConfig(SetSourceNatCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
-        IpAddressTO pubIP = cmd.getIpAddress();
-        String dev = "eth" + pubIP.getNicDevId();
-        String args = "-A";
-        args += " -l ";
-        args += pubIP.getPublicIp();
-        args += " -c ";
-        args += dev;
+        /* FIXME This seems useless as we already pass this info with the ipassoc
+         * IpAddressTO pubIP = cmd.getIpAddress();
+         * String dev = "eth" + pubIP.getNicDevId();
+         * String args = "-A";
+         * args += " -l ";
+         * args += pubIP.getPublicIp();
+         * args += " -c ";
+         * args += dev;
+         * cfg.add(new ScriptConfigItem(VRScripts.VPC_SOURCE_NAT, args));
+         */
 
-        cfg.add(new ScriptConfigItem(VRScripts.VPC_SOURCE_NAT, args));
         return cfg;
     }
 
