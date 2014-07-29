@@ -302,6 +302,32 @@ public class RouterDeploymentDefinition {
     }
 
     /**
+     * It executes last pending tasks to prepare the deployment and checks the deployment
+     * can proceed. If it can't it return false
+     *
+     * @return if the deployment can proceed
+     */
+    protected boolean prepareDeployment() {
+        boolean canProceed = true;
+        if (networkModel.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
+            this.owner = accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
+        }
+
+        // Check if public network has to be set on VR
+        this.isPublicNetwork = networkModel.isProviderSupportServiceInNetwork(
+                        guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter);
+
+        if (this.isRedundant && !this.isPublicNetwork) {
+            // TODO Shouldn't be this throw an exception instead of log error and empty list of routers
+            logger.error("Didn't support redundant virtual router without public network!");
+            this.routers = new ArrayList<>();
+            canProceed = false;
+        }
+
+        return canProceed;
+    }
+
+    /**
      * Executes preparation and deployment of the routers. After this method ends, {@link this#routers}
      * should have all of the deployed routers ready for start, and no more.
      *
@@ -313,28 +339,13 @@ public class RouterDeploymentDefinition {
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         //Check current redundant routers, if possible(all routers are stopped), reset the priority
-        // TODO Why shouldn't we call this method also for VPC
-        setupPriorityOfRedundantRouter();
+        this.setupPriorityOfRedundantRouter();
 
-        if (this.getNumberOfRoutersToDeploy() > 0) {
-            if (networkModel.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
-                this.owner = accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
-            }
-
-            // Check if public network has to be set on VR
-            this.isPublicNetwork = networkModel.isProviderSupportServiceInNetwork(
-                            guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter);
-
-            if (this.isRedundant && !this.isPublicNetwork) {
-                // TODO Shouldn't be this throw an exception instead of log error and empty list of routers
-                logger.error("Didn't support redundant virtual router without public network!");
-                this.routers = new ArrayList<>();
-            } else {
-                this.findVirtualProvider();
-                this.findOfferingId();
-                this.findSourceNatIP();
-                this.deployAllVirtualRouters();
-            }
+        if (this.getNumberOfRoutersToDeploy() > 0 && this.prepareDeployment()) {
+            this.findVirtualProvider();
+            this.findOfferingId();
+            this.findSourceNatIP();
+            this.deployAllVirtualRouters();
         }
     }
 

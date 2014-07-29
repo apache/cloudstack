@@ -64,7 +64,12 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
 
     @Test
     public void testConstructionFieldsAndFlags() {
-        assertTrue("", this.deployment instanceof VpcRouterDeploymentDefinition);
+        assertTrue("Not really a VpcRouterDeploymentDefinition what the builder created",
+                this.deployment instanceof VpcRouterDeploymentDefinition);
+        assertTrue("A VpcRouterDeploymentDefinition should declare it is",
+                this.deployment.isVpcRouter());
+        assertEquals("A VpcRouterDeploymentDefinition should have a Vpc",
+                this.mockVpc, this.deployment.getVpc());
     }
 
     @Test
