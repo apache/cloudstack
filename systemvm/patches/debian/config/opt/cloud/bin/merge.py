@@ -76,7 +76,7 @@ class updateDataBag:
            dp['sourceNat'] = False
            dp['add'] = True
            dp['oneToOneNat'] = False
-           dp['vlanGateway'] = ??
+           #dp['vlanGateway'] = ??
            dp['nicDevId'] = num
            return 
             
