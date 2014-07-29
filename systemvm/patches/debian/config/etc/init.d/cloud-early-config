@@ -1339,7 +1339,7 @@ VM_PASSWORD=""
 CHEF_TMP_FILE=/tmp/cmdline.json
 COMMA="\t"
 echo -e "{\n\"id\": \"cmdline\"," > ${CHEF_TMP_FILE}
-echo -e "{\n\"cmd_line\": {" > ${CHEF_TMP_FILE}
+echo -e "{\n\"cmdline\": {" > ${CHEF_TMP_FILE}
 
 for i in $CMDLINE
   do
@@ -1488,7 +1488,7 @@ done
 echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}
 if [ "$TYPE" != "unknown" ]
 then
-	mv ${CHEF_TMP_FILE} /var/chef/data_bags/vr/cmd_line.json
+	mv ${CHEF_TMP_FILE} /var/chef/data_bags/vr/cmdline.json
 fi
 
 [ $ETH0_IP ] && LOCAL_ADDRS=$ETH0_IP
