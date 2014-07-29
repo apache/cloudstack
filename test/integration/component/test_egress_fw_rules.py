@@ -430,7 +430,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 4. ping public network.
         # 5. public network should not be reachable from the VM.
         self.create_vm()
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['100']",
@@ -447,7 +447,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 5. ping public network.
         # 6. public network should be reachable from the VM.
         self.create_vm(egress_policy=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['0']",
@@ -467,7 +467,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['0']",
                                     negative_test=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         #Egress rule is set for ICMP other traffic is allowed
         self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico 2>&1',
                                     "| grep -oP 'failed:'",
@@ -488,7 +488,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['100']",
                                     negative_test=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         #Egress rule is set for ICMP other traffic is not allowed
         self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico 2>&1',
                                     "| grep -oP 'failed:'",
@@ -504,7 +504,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. create egress rule with specific CIDR + port range.
         # 3. check the table Firewall_Rules, Firewall and Traffic_type should be "Egress".
         self.create_vm()
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         qresultset = self.dbclient.execute("select purpose, traffic_type from firewall_rules where uuid='%s';" % self.egressruleid)
         self.assertEqual(isinstance(qresultset, list),
                          True,
@@ -541,7 +541,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. create egress rule with specific CIDR + port range.
         # 3. check the table Firewall_Rules, Firewall and Traffic_type should be "Egress".
         self.create_vm(egress_policy=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         qresultset = self.dbclient.execute("select purpose, traffic_type from firewall_rules where uuid='%s';" % self.egressruleid)
         self.assertEqual(isinstance(qresultset, list),
                          True,
@@ -583,7 +583,7 @@ class TestEgressFWRules(cloudstackTestCase):
         #  -A FW_EGRESS_RULES -d 10.147.28.0/24 -p tcp -m tcp --dport 22 -j ACCEPT
         #  -A FW_EGRESS_RULES -j DROP
         self.create_vm()
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         #TODO: Query VR for expected route rules.
 
 
@@ -602,7 +602,7 @@ class TestEgressFWRules(cloudstackTestCase):
         #  -A FW_EGRESS_RULES -d 10.147.28.0/24 -p tcp -m tcp --dport 22 -j ACCEPT
         #  -A FW_EGRESS_RULES -j DROP
         self.create_vm(egress_policy=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         #TODO: Query VR for expected route rules.
 
 
@@ -648,7 +648,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. login to VM.
         # 4. access to public network should not be successfull.
         self.create_vm()
-        self.createEgressRule(protocol='tcp', start_port=80)
+        self.createEgressRule(protocol='tcp', start_port=80, cidr=TestEgressFWRules.zone.guestcidraddress)
         self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico 2>&1',
                                     "| grep -oP 'failed:'",
                                     "['failed:']",
@@ -664,7 +664,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. login to VM.
         # 4. access to public network for tcp port 80 is blocked.
         self.create_vm()
-        self.createEgressRule(protocol='tcp', start_port=80)
+        self.createEgressRule(protocol='tcp', start_port=80, cidr=TestEgressFWRules.zone.guestcidraddress)
         self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico 2>&1',
                                     "| grep -oP 'failed:'",
                                     "['failed:']",
@@ -680,7 +680,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. create egress rule with specific CIDR + port range.
         # 3. Egress should not impact pf rule.
         self.create_vm(pfrule=True)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
 
     @unittest.skip("Skip")
     @attr(tags=["advanced", "NotRun"])
@@ -692,7 +692,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. create egress rule with specific CIDR + port range.
         # 3. Egress should not impact pf rule.
         self.create_vm(pfrule=True, egress_policy=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
 
 
     @attr(tags=["advanced", "provisioning"])
@@ -708,7 +708,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 4. delete egress rule.
         # 5. connection to public network should be reachable.
         self.create_vm()
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['100']",
@@ -732,7 +732,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 4. delete egress rule.
         # 5. connection to public network should not be reachable.
         self.create_vm(egress_policy=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['0']",
@@ -753,7 +753,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. create egress rule invalid cidr invalid port range.
         # 3. egress rule creation should fail.
         self.create_vm()
-        self.assertRaises(Exception, self.createEgressRule, '10.2.2.0/24')
+        self.assertRaises(Exception, self.createEgressRule, cidr='10.2.2.0/24')
 
     @attr(tags=["advanced", "selfservice"])
     def test_10_1_egress_fr10(self):
@@ -764,7 +764,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. create egress rule invalid cidr invalid port range.
         # 3. egress rule creation should fail.
         self.create_vm(egress_policy=False)
-        self.assertRaises(Exception, self.createEgressRule, '10.2.2.0/24')
+        self.assertRaises(Exception, self.createEgressRule, cidr='10.2.2.0/24')
 
 
     @attr(tags=["advanced", "selfservice"])
@@ -797,7 +797,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. reboot router.
         # 4. access to public network should not be successfull.
         self.create_vm()
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.reboot_Router()
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
@@ -814,7 +814,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. reboot router.
         # 4. access to public network should be successfull.
         self.create_vm(egress_policy=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.reboot_Router()
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
@@ -832,7 +832,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. All should work fine.
         #TODO: setup network with RR
         self.create_vm(RR=True)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         vm_network_id = self.virtual_machine.nic[0].networkid
         self.debug("Listing routers for network: %s" % vm_network_id)
         routers = Router.list(self.apiclient,
@@ -887,7 +887,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. All should work fine.
         #TODO: setup network with RR
         self.create_vm(RR=True, egress_policy=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         vm_network_id = self.virtual_machine.nic[0].networkid
         self.debug("Listing routers for network: %s" % vm_network_id)
         routers = Router.list(self.apiclient,
