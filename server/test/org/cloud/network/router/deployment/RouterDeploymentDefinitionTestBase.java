@@ -57,7 +57,8 @@ public class RouterDeploymentDefinitionTestBase {
 
     protected static final long OFFERING_ID = 16L;
     protected static final Long DATA_CENTER_ID = 100l;
-    protected static final Long NW_ID = 102l;
+    protected static final Long NW_ID_1 = 101l;
+    protected static final Long NW_ID_2= 102l;
     protected static final Long POD_ID1 = 111l;
     protected static final Long POD_ID2 = 112l;
     protected static final Long POD_ID3 = 113l;
@@ -125,6 +126,6 @@ public class RouterDeploymentDefinitionTestBase {
         when(this.mockHostPodVO1.getId()).thenReturn(POD_ID1);
         when(this.mockHostPodVO2.getId()).thenReturn(POD_ID2);
         when(this.mockHostPodVO3.getId()).thenReturn(POD_ID3);
-        when(this.mockNw.getId()).thenReturn(NW_ID);
+        when(this.mockNw.getId()).thenReturn(NW_ID_1);
     }
 }
