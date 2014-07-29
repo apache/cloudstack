@@ -15,11 +15,32 @@
 # specific language governing permissions and limitations
 # under the License.
 """ Tests for Persistent Networks without running VMs feature"""
-from marvin.cloudstackException import CloudstackAPIException
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-import netaddr
+from marvin.lib.utils import (cleanup_resources,
+                              validateList,
+                              get_hypervisor_type)
+from marvin.lib.base import (Account,
+                             VPC,
+                             VirtualMachine,
+                             LoadBalancerRule,
+                             Network,
+                             Domain,
+                             Router,
+                             NetworkACL,
+                             PublicIPAddress,
+                             VpcOffering,
+                             ServiceOffering,
+                             Project,
+                             NetworkOffering,
+                             NATRule,
+                             FireWallRule,
+                             Host,
+                             StaticNATRule)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               verifyNetworkState,
+                               add_netscaler,
+                               wait_for_cleanup)
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, FAIL, FAILED
 from marvin.sshClient import SshClient
@@ -991,7 +1012,7 @@ class TestAssignVirtualMachine(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template"
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -1111,24 +1132,20 @@ class TestAssignVirtualMachine(cloudstackTestCase):
                                                     networkids=[network.id],
                                                     serviceofferingid=self.service_offering.id,
                                                     accountid=account_1.name,domainid=self.domain.id)
+
+            virtual_machine.stop(self.apiclient)
+
+            # Assign virtual machine to different account
+            virtual_machine.assign_virtual_machine(self.apiclient, account=account_2.name, domainid=self.domain.id)
+
+            # Start VM
+            virtual_machine.start(self.apiclient)
+
+            # Verify that new network is created in other account
+            networks = Network.list(self.apiclient, account=account_2.name, domainid = account_2.domainid)
+            self.assertEqual(validateList(networks)[0], PASS, "networks list validation failed, list is %s" % networks)
         except Exception as e:
-            self.fail("vm creation failed: %s" % e)
-
-        virtual_machine.stop(self.apiclient)
-
-        vms = VirtualMachine.list(self.apiclient, id=virtual_machine.id)
-        self.assertEqual(validateList(vms)[0], PASS, "vm list validation failed, vm list is %s" % vms)
-        self.assertEqual(str(vms[0].state).lower(), "stopped", "vm state should be stopped, it is %s" % vms[0].state)
-
-        # Assign virtual machine to different account
-        virtual_machine.assign_virtual_machine(self.apiclient, account=account_2.name, domainid=self.domain.id)
-
-        # Start VM
-        virtual_machine.start(self.apiclient)
-
-        # Verify that new network is created in other account
-        networks = Network.list(self.apiclient, account=account_2.name, domainid = account_2.domainid)
-        self.assertEqual(validateList(networks)[0], PASS, "networks list validation failed, list is %s" % networks)
+            self.fail("Exception occured: %s" % e)
         return
 
 @ddt
@@ -1153,7 +1170,7 @@ class TestProjectAccountOperations(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template"
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -1328,7 +1345,7 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template"
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -1610,7 +1627,7 @@ class TestVPCNetworkOperations(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template"
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id

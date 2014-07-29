@@ -272,8 +272,8 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                             cls.services["account"]
                             )
 
-        cls._cleanup = [
-                        cls.service_offering,
+        cls._cleanup =  [cls.account,
+                         cls.service_offering,
                         ]
         return
 
@@ -773,6 +773,13 @@ class TestTemplateHierarchy(cloudstackTestCase):
                             domainid=cls.domain_2.id
                             )
 
+        cls._cleanup = [
+                        cls.account_2,
+                        cls.domain_2,
+                        cls.account_1,
+                        cls.domain_1,
+                        ]
+
         builtin_info = get_builtin_template_info(cls.api_client, cls.zone.id)
         cls.services["template"]["url"] = builtin_info[0] 
         cls.services["template"]["hypervisor"] = builtin_info[1]     
@@ -793,14 +800,6 @@ class TestTemplateHierarchy(cloudstackTestCase):
 
         # Wait for template status to be changed across
         time.sleep(60)
-
-        cls._cleanup = [
-                        cls.account_2,
-                        cls.domain_2,
-                        cls.template,
-                        cls.account_1,
-                        cls.domain_1,
-                        ]
         return
 
     @classmethod
@@ -926,6 +925,13 @@ class TestAddVmToSubDomain(cloudstackTestCase):
                                     cls.services["service_offering"],
                                     domainid=cls.domain.id
                                     )
+
+        cls._cleanup = [
+                        cls.account_2,
+                        cls.account_1,
+                        cls.sub_domain,
+                        cls.service_offering
+                        ]
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -949,12 +955,6 @@ class TestAddVmToSubDomain(cloudstackTestCase):
                                     domainid=cls.account_2.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
-        cls._cleanup = [
-                        cls.account_2,
-                        cls.account_1,
-                        cls.sub_domain,
-                        cls.service_offering
-                        ]
         return
 
     @classmethod
@@ -1573,16 +1573,17 @@ class TestDomainForceRemove(cloudstackTestCase):
                                      domainid=domain.id
                                      )
 
-        self.debug("Creating a tiny service offering for VM deployment")
-        self.service_offering = ServiceOffering.create(
+        try:
+            self.debug("Creating a tiny service offering for VM deployment")
+            self.service_offering = ServiceOffering.create(
                                     self.apiclient,
                                     self.services["service_offering"],
                                     domainid=self.domain.id
                                     )
 
-        self.debug("Deploying virtual machine in account 1: %s" %
+            self.debug("Deploying virtual machine in account 1: %s" %
                                                 self.account_1.name)
-        vm_1 = VirtualMachine.create(
+            vm_1 = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
@@ -1591,9 +1592,9 @@ class TestDomainForceRemove(cloudstackTestCase):
                                     serviceofferingid=self.service_offering.id
                                     )
 
-        self.debug("Deploying virtual machine in account 2: %s" %
+            self.debug("Deploying virtual machine in account 2: %s" %
                                                 self.account_2.name)
-        vm_2 = VirtualMachine.create(
+            VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
@@ -1602,22 +1603,22 @@ class TestDomainForceRemove(cloudstackTestCase):
                                     serviceofferingid=self.service_offering.id
                                     )
 
-        networks = Network.list(
+            networks = Network.list(
                                 self.apiclient,
                                 account=self.account_1.name,
                                 domainid=self.account_1.domainid,
                                 listall=True
                                 )
-        self.assertEqual(
+            self.assertEqual(
                          isinstance(networks, list),
                          True,
                          "List networks should return a valid response"
                          )
-        network_1 = networks[0]
-        self.debug("Default network in account 1: %s is %s" % (
+            network_1 = networks[0]
+            self.debug("Default network in account 1: %s is %s" % (
                                                 self.account_1.name,
                                                 network_1.name))
-        src_nat_list = PublicIPAddress.list(
+            src_nat_list = PublicIPAddress.list(
                                     self.apiclient,
                                     associatednetworkid=network_1.id,
                                     account=self.account_1.name,
@@ -1625,44 +1626,48 @@ class TestDomainForceRemove(cloudstackTestCase):
                                     listall=True,
                                     issourcenat=True,
                                     )
-        self.assertEqual(
+            self.assertEqual(
                          isinstance(src_nat_list, list),
                          True,
                          "List Public IP should return a valid source NAT"
                          )
-        self.assertNotEqual(
+            self.assertNotEqual(
                     len(src_nat_list),
                     0,
                     "Length of response from listPublicIp should not be 0"
                     )
 
-        src_nat = src_nat_list[0]
+            src_nat = src_nat_list[0]
 
-        self.debug(
-            "Trying to create a port forwarding rule in source NAT: %s" %
+            self.debug(
+                      "Trying to create a port forwarding rule in source NAT: %s" %
                                                             src_nat.ipaddress)
-        #Create NAT rule
-        nat_rule = NATRule.create(
+            #Create NAT rule
+            nat_rule = NATRule.create(
                                   self.apiclient,
                                   vm_1,
                                   self.services["natrule"],
                                   ipaddressid=src_nat.id
                            )
-        self.debug("Created PF rule on source NAT: %s" % src_nat.ipaddress)
+            self.debug("Created PF rule on source NAT: %s" % src_nat.ipaddress)
 
-        nat_rules = NATRule.list(self.apiclient, id=nat_rule.id)
+            nat_rules = NATRule.list(self.apiclient, id=nat_rule.id)
 
-        self.assertEqual(
+            self.assertEqual(
                          isinstance(nat_rules, list),
                          True,
                          "List NAT should return a valid port forwarding rules"
                          )
 
-        self.assertNotEqual(
+            self.assertNotEqual(
                     len(nat_rules),
                     0,
                     "Length of response from listLbRules should not be 0"
                     )
+        except Exception as e:
+            self.clenaup.append(self.account_1)
+            self.cleanup.append(self.account_2)
+            self.fail(e)
 
         self.debug("Deleting domain with force option")
         try:
@@ -1759,7 +1764,7 @@ class TestDomainForceRemove(cloudstackTestCase):
 
         self.debug("Deploying virtual machine in account 2: %s" %
                                                 self.account_2.name)
-        vm_2 = VirtualMachine.create(
+        VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,

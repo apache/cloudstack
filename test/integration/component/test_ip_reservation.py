@@ -23,10 +23,22 @@
     Feature Specifications: https://cwiki.apache.org/confluence/display/CLOUDSTACK/FS+-+IP+Range+Reservation+within+a+Network
 """
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.cloudstackException import CloudstackAPIException
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.lib.utils import validateList, cleanup_resources, verifyRouterState
+from marvin.lib.base import (Account,
+                             Network,
+                             VirtualMachine,
+                             Router,
+                             ServiceOffering,
+                             NetworkOffering)
+from marvin.lib.common import (get_zone,
+                               get_template,
+                               get_domain,
+                               wait_for_cleanup,
+                               createEnabledNetworkOffering,
+                               createNetworkRulesForVM,
+                               verifyNetworkState)
+from marvin.codes import (PASS, FAIL, FAILED, UNKNOWN, FAULT, MASTER,
+                          NAT_RULE, STATIC_NAT_RULE, ERROR_CODE_530)
 import netaddr
 
 import random
@@ -952,12 +964,16 @@ class TestRouterOperations(cloudstackTestCase):
         self.assertEqual(validateList(routers)[0], PASS, "Routers list validation failed")
 
         # Destroy Router
-        result = Router.destroy(self.apiclient, id=routers[0].id)
-        if result[0] == FAIL:
-            self.fail("Failed to destroy router: %s" % result[2])
+        try:
+            Router.destroy(self.apiclient, id=routers[0].id)
+        except Exception as e:
+            self.fail("Failed to destroy router: %s" % e)
 
         #Restart Network
-        isolated_network.restart(self.apiclient)
+        try:
+            isolated_network.restart(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to restart network: %s" % e)
 
         try:
             virtual_machine_2 = createVirtualMachine(self, network_id=isolated_network.id)
@@ -1052,19 +1068,6 @@ class TestFailureScnarios(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    def create_virtual_machine(self, network_id=None, ip_address=None):
-        virtual_machine = VirtualMachine.create(self.apiclient,
-                                                          self.services["virtual_machine"],
-                                                          networkids=network_id,
-                                                          serviceofferingid=self.service_offering.id,
-                                                          accountid=self.account.name,
-                                                          domainid=self.domain.id,
-                                                          ipaddress=ip_address
-                                                          )
-        self.debug("Virtual Machine is created: " + virtual_machine.id)
-        self.cleanup.append(virtual_machine)
-        return virtual_machine
-
     @attr(tags=["advanced", "selfservice"])
     def test_network_not_implemented(self):
         # steps
@@ -1072,11 +1075,19 @@ class TestFailureScnarios(cloudstackTestCase):
         #
         # validation
         # should throw exception as network is not in implemented state as no vm is created
-        try:
-            update_response = Network.update(self.isolated_network, self.apiclient, id=isolated_network.id, guestvmcidr="10.1.1.0/26")
-            self.fail("Network Update of guest VM CIDR is successful withot any VM deployed in network")
-        except Exception as e:
-            self.debug("Network Update of guest VM CIDR should fail as there is no VM deployed in network")
+
+        networkOffering = self.isolated_network_offering
+        resultSet = createIsolatedNetwork(self, networkOffering.id)
+        if resultSet[0] == FAIL:
+            self.fail("Failed to create isolated network")
+        else:
+            isolated_network = resultSet[1]
+
+        response = isolated_network.update(self.apiclient, guestvmcidr="10.1.1.0/26")
+        self.assertEqual(response.errorcode, ERROR_CODE_530, "Job should \
+                         have failed with error code %s, instead got response \
+                         %s" % (ERROR_CODE_530, response))
+        return
 
     @attr(tags=["advanced", "selfservice"])
     def test_vm_create_after_reservation(self):
@@ -1089,14 +1100,31 @@ class TestFailureScnarios(cloudstackTestCase):
         # 1. guest vm cidr should be successfully updated with correct value
         # 2. existing guest vm ip should not be changed after reservation
         # 3. newly created VM should get ip in guestvmcidr
-        guest_vm_cidr = u"10.1.1.0/29"
+
+        networkOffering = self.isolated_persistent_network_offering
+        subnet = "10.1."+str(random.randrange(1,254))
+        gateway = subnet + ".1"
+        isolated_persistent_network = None
+        resultSet = createIsolatedNetwork(self, networkOffering.id, gateway=gateway)
+        if resultSet[0] == FAIL:
+            self.fail("Failed to create isolated network")
+        else:
+            isolated_persistent_network = resultSet[1]
+        guest_vm_cidr = subnet +".0/29"
         virtual_machine_1 = None
         try:
-            virtual_machine_1 = self.create_virtual_machine(network_id=self.isolated_persistent_network.id, ip_address=u"10.1.1.3")
+            virtual_machine_1 = VirtualMachine.create(self.apiclient,
+                                                          self.testData["virtual_machine"],
+                                                          networkids=isolated_persistent_network.id,
+                                                          serviceofferingid=self.service_offering.id,
+                                                          accountid=self.account.name,
+                                                          domainid=self.domain.id,
+                                                          ipaddress=subnet+".3"
+                                                          )
         except Exception as e:
-            self.skipTest("VM creation fails in network ")
+            self.fail("VM creation fails in network: %s" % e)
 
-        update_response = Network.update(self.isolated_persistent_network, self.apiclient, id=self.isolated_persistent_network.id, guestvmcidr=guest_vm_cidr)
+        update_response = Network.update(isolated_persistent_network, self.apiclient, id=isolated_persistent_network.id, guestvmcidr=guest_vm_cidr)
         self.assertEqual(guest_vm_cidr, update_response.cidr, "cidr in response is not as expected")
         vm_list = VirtualMachine.list(self.apiclient,
                                        id=virtual_machine_1.id)
@@ -1107,11 +1135,18 @@ class TestFailureScnarios(cloudstackTestCase):
                           virtual_machine_1.ipaddress,
                            "VM IP should not change after reservation")
         try:
-            virtual_machine_2 = self.create_virtual_machine(network_id=self.isolated_persistent_network.id)
+            virtual_machine_2 = VirtualMachine.create(self.apiclient,
+                                                          self.testData["virtual_machine"],
+                                                          networkids=isolated_persistent_network.id,
+                                                          serviceofferingid=self.service_offering.id,
+                                                          accountid=self.account.name,
+                                                          domainid=self.domain.id
+                                                          )
             if netaddr.IPAddress(virtual_machine_2.ipaddress) not in netaddr.IPNetwork(guest_vm_cidr):
                 self.fail("Newly created VM doesn't get IP from reserverd CIDR")
         except Exception as e:
-            self.skipTest("VM creation fails, cannot validate the condition")
+            self.skipTest("VM creation fails, cannot validate the condition: %s" % e)
+        return
 
     @attr(tags=["advanced", "selfservice"])
     def test_reservation_after_router_restart(self):
@@ -1122,30 +1157,43 @@ class TestFailureScnarios(cloudstackTestCase):
         # validation
         # 1. guest vm cidr should be successfully updated with correct value
         # 2. network cidr should remain same after router restart
-        guest_vm_cidr = u"10.1.1.0/29"
+        networkOffering = self.isolated_persistent_network_offering
+        subnet = "10.1."+str(random.randrange(1,254))
+        gateway = subnet + ".1"
+        isolated_persistent_network = None
+        resultSet = createIsolatedNetwork(self, networkOffering.id, gateway=gateway)
+        if resultSet[0] == FAIL:
+            self.fail("Failed to create isolated network")
+        else:
+            isolated_persistent_network = resultSet[1]
 
-        update_response = Network.update(self.isolated_persistent_network, self.apiclient, id=self.isolated_persistent_network.id, guestvmcidr=guest_vm_cidr)
+        response = verifyNetworkState(self.apiclient, isolated_persistent_network.id,\
+                        "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+            self.fail(exceptionMessage)
+        guest_vm_cidr = subnet +".0/29"
+
+        update_response = Network.update(isolated_persistent_network, self.apiclient, id=isolated_persistent_network.id, guestvmcidr=guest_vm_cidr)
         self.assertEqual(guest_vm_cidr, update_response.cidr, "cidr in response is not as expected")
 
         routers = Router.list(self.apiclient,
-                             networkid=self.isolated_persistent_network.id,
+                             networkid=isolated_persistent_network.id,
                              listall=True)
-        self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return valid response"
-                    )
-        if not routers:
-            self.skipTest("Router list should not be empty, skipping test")
+        self.assertEqual(validateList(routers)[0], PASS,
+                    "routers list validation failed")
 
         Router.reboot(self.apiclient, routers[0].id)
-        networks = Network.list(self.apiclient, id=self.isolated_persistent_network.id)
+        networks = Network.list(self.apiclient, id=isolated_persistent_network.id)
         self.assertEqual(
-                    isinstance(networks, list),
-                    True,
+                    validateList(networks)[0], PASS,
                     "list Networks should return valid response"
                     )
         self.assertEqual(networks[0].cidr, guest_vm_cidr, "guestvmcidr should match after router reboot")
+        return
 
     @attr(tags=["advanced", "selfservice"])
     def test_vm_create_outside_cidr_after_reservation(self):
@@ -1156,11 +1204,25 @@ class TestFailureScnarios(cloudstackTestCase):
         # validation
         # 1. guest vm cidr should be successfully updated with correct value
         # 2  newly created VM should not be created and result in exception
-        guest_vm_cidr = u"10.1.1.0/29"
-        update_response = Network.update(self.isolated_persistent_network, self.apiclient, id=self.isolated_persistent_network.id, guestvmcidr=guest_vm_cidr)
+        networkOffering = self.isolated_persistent_network_offering
+        subnet = "10.1."+str(random.randrange(1,254))
+        gateway = subnet + ".1"
+        isolated_persistent_network = None
+        resultSet = createIsolatedNetwork(self, networkOffering.id, gateway=gateway)
+        if resultSet[0] == FAIL:
+            self.fail("Failed to create isolated network")
+        else:
+            isolated_persistent_network = resultSet[1]
+        guest_vm_cidr = subnet +".0/29"
+        update_response = Network.update(isolated_persistent_network, self.apiclient, id=isolated_persistent_network.id, guestvmcidr=guest_vm_cidr)
         self.assertEqual(guest_vm_cidr, update_response.cidr, "cidr in response is not as expected")
-        try:
-            self.create_virtual_machine(network_id=self.isolated_persistent_network.id, ip_address=u"10.1.1.9")
-            self.fail("vm should not be created ")
-        except Exception as e:
-            self.debug("exception as IP is outside of guestvmcidr")
+        with self.assertRaises(Exception):
+            VirtualMachine.create(self.apiclient,
+                                  self.testData["virtual_machine"],
+                                  networkids=isolated_persistent_network.id,
+                                  serviceofferingid=self.service_offering.id,
+                                  accountid=self.account.name,
+                                  domainid=self.domain.id,
+                                  ipaddress="10.1.1.9"
+                                  )
+        return

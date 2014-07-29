@@ -23,12 +23,33 @@
     Design Document: https://cwiki.apache.org/confluence/display/CLOUDSTACK/Multiple+IP+address+per+NIC
 """
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-
+from marvin.lib.utils import (cleanup_resources,
+                              validateList,
+                              random_gen)
+from marvin.lib.base import (Account,
+                             VirtualMachine,
+                             ServiceOffering,
+                             PublicIPAddress,
+                             NIC,
+                             FireWallRule,
+                             NATRule,
+                             StaticNATRule,
+                             VpcOffering,
+                             Domain,
+                             Network,
+                             Router,
+                             VPC
+                             )
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               get_free_vlan,
+                               setSharedNetworkParams,
+                               createEnabledNetworkOffering,
+                               shouldTestBeSkipped,
+                               wait_for_cleanup)
 from nose.plugins.attrib import attr
-from marvin.codes import PASS, ISOLATED_NETWORK, VPC_NETWORK, SHARED_NETWORK, FAIL
+from marvin.codes import PASS, ISOLATED_NETWORK, VPC_NETWORK, SHARED_NETWORK, FAIL, FAILED
 from ddt import ddt, data
 import time
 
@@ -150,7 +171,7 @@ class TestBasicOperations(cloudstackTestCase):
                                                                       cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
         cls.mode = cls.zone.networktype
-        if cls.mode == "advanced":
+        if cls.mode.lower() == "advanced":
             cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client,
                                                                       cls.services["isolated_network_offering"])
             cls._cleanup.append(cls.isolated_network_offering)
@@ -501,7 +522,7 @@ class TestNetworkRules(cloudstackTestCase):
                                         cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
         cls.mode = cls.zone.networktype
-        if cls.mode == "advanced":
+        if cls.mode.lower() == "advanced":
             cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
             cls._cleanup.append(cls.isolated_network_offering)
             cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client, cls.services["nw_offering_isolated_vpc"])
@@ -876,7 +897,7 @@ class TestVmNetworkOperations(cloudstackTestCase):
                                         cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
         cls.mode = cls.zone.networktype
-        if cls.mode == "advanced":
+        if cls.mode.lower() == "advanced":
             cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
             cls._cleanup.append(cls.isolated_network_offering)
             cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client, cls.services["nw_offering_isolated_vpc"])

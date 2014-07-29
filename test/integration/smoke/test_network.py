@@ -115,7 +115,7 @@ class TestPublicIP(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_public_ip_admin_account(self):
         """Test for Associate/Disassociate public IP address for admin account"""
 
@@ -165,7 +165,7 @@ class TestPublicIP(cloudstackTestCase):
             self.fail("list public ip response is not empty")
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_public_ip_user_account(self):
         """Test for Associate/Disassociate public IP address for user account"""
 
@@ -278,7 +278,7 @@ class TestPortForwarding(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_01_port_fwd_on_src_nat(self):
         """Test for port forwarding on source NAT"""
 
@@ -405,7 +405,7 @@ class TestPortForwarding(cloudstackTestCase):
                                             )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_02_port_fwd_on_non_src_nat(self):
         """Test for port forwarding on non source NAT"""
 
@@ -617,7 +617,7 @@ class TestRebootRouter(cloudstackTestCase):
                         ]
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_reboot_router(self):
         """Test for reboot router"""
 
@@ -633,7 +633,8 @@ class TestRebootRouter(cloudstackTestCase):
         routers = list_routers(
                                 self.apiclient,
                                 account=self.account.name,
-                                domainid=self.account.domainid
+                                domainid=self.account.domainid,
+                                listall=True
                                )
         self.assertEqual(
                             isinstance(routers, list),
@@ -743,7 +744,8 @@ class TestReleaseIP(cloudstackTestCase):
         ip_addrs = list_publicIP(
                                     self.apiclient,
                                     account=self.account.name,
-                                    domainid=self.account.domainid
+                                    domainid=self.account.domainid,
+                                    issourcenat=False
                                   )
         try:
             self.ip_addr = ip_addrs[0]
@@ -772,7 +774,7 @@ class TestReleaseIP(cloudstackTestCase):
     def tearDown(self):
         cleanup_resources(self.apiclient, self.cleanup)
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_releaseIP(self):
         """Test for release public IP address"""
 
@@ -780,21 +782,22 @@ class TestReleaseIP(cloudstackTestCase):
 
         self.ip_address.delete(self.apiclient)
 
-        # Sleep to ensure that deleted state is reflected in other calls
-        time.sleep(self.services["sleep"])
+        retriesCount = 10
+        isIpAddressDisassociated = False
 
-        # ListPublicIpAddresses should not list deleted Public IP address
-        list_pub_ip_addr_resp = list_publicIP(
+        while retriesCount > 0:
+            listResponse = list_publicIP(
                                     self.apiclient,
                                     id=self.ip_addr.id
-                                  )
-        self.debug("List Public IP response" + str(list_pub_ip_addr_resp))
+                                    )
+            if listResponse is None:
+                isIpAddressDisassociated = True
+                break
+            retriesCount -= 1
+            time.sleep(60)
+        # End while
 
-        self.assertEqual(
-                     list_pub_ip_addr_resp,
-                     None,
-                    "Check if disassociated IP Address is no longer available"
-                   )
+        self.assertTrue(isIpAddressDisassociated, "Failed to disassociate IP address")
 
         # ListPortForwardingRules should not list
         # associated rules with Public IP address
@@ -897,7 +900,7 @@ class TestDeleteAccount(cloudstackTestCase):
         self.cleanup = []
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_delete_account(self):
         """Test for delete account"""
 
@@ -949,7 +952,8 @@ class TestDeleteAccount(cloudstackTestCase):
             routers = list_routers(
                           self.apiclient,
                           account=self.account.name,
-                          domainid=self.account.domainid
+                          domainid=self.account.domainid,
+                          listall=True
                         )
             self.assertEqual(
                              routers,

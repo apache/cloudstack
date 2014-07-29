@@ -97,8 +97,8 @@ def startMarvin(cfg_file, load_flag):
             print "\nMarvin Initialization Failed"
             exit(1)
     except Exception as e:
-            print "\n Exception occurred while starting Marvin %s" % str(e)
-            exit(1)
+        print "\n Exception occurred while starting Marvin %s" % str(e)
+        exit(1)
 
 
 def runTCs(num_iter, inp1, inp2):

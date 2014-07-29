@@ -17,12 +17,19 @@
 """ P1 tests for user provide hostname cases
 """
 #Import Local Modules
-import marvin
+
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.utils import (cleanup_resources,
+                              random_gen)
+from marvin.lib.base import (ServiceOffering,
+                             Configurations,
+                             VirtualMachine,
+                             Account)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               is_config_suitable)
 
 
 class Services:

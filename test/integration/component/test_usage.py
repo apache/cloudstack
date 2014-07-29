@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,16 +17,27 @@
 """ P1 tests for Snapshots
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-from marvin.sshClient import SshClient
-import datetime
-
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import deleteVolume
+from marvin.lib.utils import (cleanup_resources)
+from marvin.lib.base import (Account,
+                             ServiceOffering,
+                             NATRule,
+                             VirtualMachine,
+                             Snapshot,
+                             Iso,
+                             ImageStore,
+                             LoadBalancerRule,
+                             PublicIPAddress,
+                             DiskOffering,
+                             Template,
+                             VpnUser,
+                             Vpn,
+                             Volume)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template)
 
 class Services:
     """Test Snapshots Services
@@ -193,14 +204,19 @@ class TestVmUsage(cloudstackTestCase):
         #    VM.Destroy and volume .delete Event for the created account
         # 4. Delete the account
 
-        self.debug("Stopping the VM: %s" % self.virtual_machine.id)
-        # Stop the VM
-        self.virtual_machine.stop(self.apiclient)
+        try:
+            self.debug("Stopping the VM: %s" % self.virtual_machine.id)
+            # Stop the VM
+            self.virtual_machine.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop instance: %s" % e)
 
-        time.sleep(self.services["sleep"])
-        # Destroy the VM
-        self.debug("Destroying the VM: %s" % self.virtual_machine.id)
-        self.virtual_machine.delete(self.apiclient)
+        try:
+            # Destroy the VM
+            self.debug("Destroying the VM: %s" % self.virtual_machine.id)
+            self.virtual_machine.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to destroy VM: %s" % e)
 
         # Fetch account ID from account_uuid
         self.debug("select id from account where uuid = '%s';" \
@@ -536,16 +552,18 @@ class TestVolumeUsage(cloudstackTestCase):
         # 4. Destroy the Data disk. Volume.delete event is generated for data
         #    disk of the destroyed VM
 
-        # Stop VM
-        self.debug("Stopping VM with ID: %s" % self.virtual_machine.id)
-        self.virtual_machine.stop(self.apiclient)
+        try:
+            # Stop VM
+            self.debug("Stopping VM with ID: %s" % self.virtual_machine.id)
+            self.virtual_machine.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop instance: %s" % e)
 
-        volume_response = list_volumes(
-                                    self.apiclient,
-                                    virtualmachineid=self.virtual_machine.id,
-                                    type='DATADISK',
-                                    listall=True
-                                    )
+        volume_response = Volume.list(
+                                self.apiclient,
+                                virtualmachineid=self.virtual_machine.id,
+                                type='DATADISK',
+                                listall=True)
         self.assertEqual(
                          isinstance(volume_response, list),
                          True,
@@ -643,19 +661,23 @@ class TestTemplateUsage(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
-        cls.account = Account.create(
+        cls._cleanup = []
+        try:
+            cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.name
+            cls._cleanup.append(cls.account)
+            cls.services["account"] = cls.account.name
 
-        cls.service_offering = ServiceOffering.create(
+            cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
-        #create virtual machine
-        cls.virtual_machine = VirtualMachine.create(
+            cls._cleanup.append(cls.service_offering)
+            #create virtual machine
+            cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["server"],
                                     templateid=template.id,
@@ -665,24 +687,21 @@ class TestTemplateUsage(cloudstackTestCase):
                                     mode=cls.services["mode"]
                                     )
 
-        #Stop virtual machine
-        cls.virtual_machine.stop(cls.api_client)
+            #Stop virtual machine
+            cls.virtual_machine.stop(cls.api_client)
 
-        #Wait before server has be successfully stopped
-        time.sleep(30)
-        list_volume = list_volumes(
-                                   cls.api_client,
-                                   virtualmachineid=cls.virtual_machine.id,
-                                   type='ROOT',
-                                   listall=True
-                                   )
-        if isinstance(list_volume, list):
-            cls.volume = list_volume[0]
-        else:
-            raise Exception("List Volumes failed!")
-        cls._cleanup = [
-                        cls.account,
-                        ]
+            list_volume = Volume.list(
+                            cls.api_client,
+                            virtualmachineid=cls.virtual_machine.id,
+                            type='ROOT',
+                            listall=True)
+            if isinstance(list_volume, list):
+                cls.volume = list_volume[0]
+            else:
+                raise Exception("List Volumes failed!")
+        except Exception as e:
+            cls.tearDownClass()
+            raise unittest.SkipTest("Exception in setUpClass: %s" % e)
         return
 
     @classmethod
@@ -1180,19 +1199,16 @@ class TestSnapshotUsage(cloudstackTestCase):
         # 3. Delete the account
 
         # Get the Root disk of VM
-        volumes = list_volumes(
-                            self.apiclient,
-                            virtualmachineid=self.virtual_machine.id,
-                            type='ROOT',
-                            listall=True
-                            )
+        volumes = Volume.list(
+                    self.apiclient,
+                    virtualmachineid=self.virtual_machine.id,
+                    type='ROOT',
+                    listall=True)
         self.assertEqual(
                          isinstance(volumes, list),
                          True,
                          "Check if list volumes return a valid data"
                         )
-
-        volume = volumes[0]
 
         # Create a snapshot from the ROOTDISK
         self.debug("Creating snapshot from volume: %s" % volumes[0].id)

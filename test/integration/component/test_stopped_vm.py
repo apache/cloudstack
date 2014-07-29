@@ -18,13 +18,27 @@
 """ P1 for stopped Virtual Maschine life cycle
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Account,
+                             VirtualMachine,
+                             ServiceOffering,
+                             Volume,
+                             Router,
+                             DiskOffering,
+                             Host,
+                             Iso,
+                             Cluster,
+                             StoragePool,
+                             Configurations,
+                             Template)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               get_builtin_template_info,
+                               update_resource_limit)
 #Import System modules
 import time
 
@@ -194,7 +208,7 @@ class TestDeployVM(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -245,7 +259,7 @@ class TestDeployVM(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -297,7 +311,7 @@ class TestDeployVM(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -340,17 +354,17 @@ class TestDeployVM(cloudstackTestCase):
             )
         self.debug("Instance destroyed..waiting till expunge interval")
 
-        interval = list_configurations(
+        interval = Configurations.list(
                                     self.apiclient,
                                     name='expunge.interval'
                                     )
-        delay = list_configurations(
+        delay = Configurations.list(
                                     self.apiclient,
                                     name='expunge.delay'
                                     )
         # Sleep to ensure that all resources are deleted
         time.sleep((int(interval[0].value) + int(delay[0].value)))
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -387,7 +401,7 @@ class TestDeployVM(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -425,7 +439,7 @@ class TestDeployVM(cloudstackTestCase):
         try:
             self.virtual_machine.attach_volume(self.apiclient, volume)
         except Exception as e:
-            self.fail("Attach volume failed!")
+            self.fail("Attach volume failed with Exception: %s" % e)
         return
 
     @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
@@ -452,7 +466,7 @@ class TestDeployVM(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -528,7 +542,7 @@ class TestDeployVM(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -566,7 +580,7 @@ class TestDeployVM(cloudstackTestCase):
         try:
             self.virtual_machine.attach_volume(self.apiclient, volume)
         except Exception as e:
-            self.fail("Attach volume failed!")
+            self.fail("Attach volume failed with Exception: %s" % e)
 
         self.debug("Detaching the disk: %s" % volume.name)
         self.virtual_machine.detach_volume(self.apiclient, volume)
@@ -611,7 +625,7 @@ class TestDeployVM(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -702,7 +716,7 @@ class TestDeployVM(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine_1.id
                                                  )
@@ -738,7 +752,7 @@ class TestDeployVM(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine_2.id
                                                  )
@@ -868,7 +882,7 @@ class TestDeployVM(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -889,28 +903,10 @@ class TestDeployVM(cloudstackTestCase):
                             "Running",
                             "VM should be in Running state after deployment"
                         )
-        self.debug("Stopping instance: %s" % self.virtual_machine.name)
-        self.virtual_machine.stop(self.apiclient)
-        self.debug("Instance is stopped!")
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-        self.assertEqual(
-                            vm_response.state,
-                            "Stopped",
-                            "VM should be in Stopped state after stoping vm"
-                        )
+        try:
+            self.virtual_machine.stop(self.apiclient)
+        except Exception as e:
+            self.fail("failed to stop instance: %s" % e)
         volumes = Volume.list(
                               self.apiclient,
                               virtualmachineid=self.virtual_machine.id,
@@ -1047,7 +1043,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -1112,7 +1108,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -1161,7 +1157,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -1278,7 +1274,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine_1.id
                                                  )
@@ -1328,7 +1324,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine_2.id
                                                  )
@@ -1375,11 +1371,11 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
         self.virtual_machine_2.delete(self.apiclient)
         self.debug("Instance destroyed..waiting till expunge interval")
 
-        interval = list_configurations(
+        interval = Configurations.list(
                                     self.apiclient,
                                     name='expunge.interval'
                                     )
-        delay = list_configurations(
+        delay = Configurations.list(
                                     self.apiclient,
                                     name='expunge.delay'
                                     )
@@ -1518,8 +1514,8 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
                             )
 
         builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
-        self.services["template"]["url"] = builtin_info[0] 
-        self.services["template"]["hypervisor"] = builtin_info[1]     
+        self.services["template"]["url"] = builtin_info[0]
+        self.services["template"]["hypervisor"] = builtin_info[1]
         self.services["template"]["format"] = builtin_info[2]
 
         # Register new template
@@ -1578,7 +1574,7 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -1605,7 +1601,7 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
         self.virtual_machine.start(self.apiclient)
         self.debug("Started the instance: %s" % self.virtual_machine.name)
 
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )

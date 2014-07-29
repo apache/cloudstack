@@ -21,7 +21,7 @@ from marvin.lib.base import PhysicalNetwork
 from marvin.lib.common import setNonContiguousVlanIds, get_zone
 from nose.plugins.attrib import attr
 
-@attr(tags = ["simulator", "advanced", "selfservice"], BugId="CLOUDSTACK-6776")
+
 class TestUpdatePhysicalNetwork(cloudstackTestCase):
     """
     Test to extend physical network vlan range
@@ -38,7 +38,7 @@ class TestUpdatePhysicalNetwork(cloudstackTestCase):
             raise Exception("Failed to set non contiguous vlan ids to test. Free some ids from \
                         from existing physical networks at ends")
 
-
+    @attr(tags = ["advanced"], required_hardware="false")
     def test_extendPhysicalNetworkVlan(self):
         """
         Test to update a physical network and extend its vlan

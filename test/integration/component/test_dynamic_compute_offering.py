@@ -24,12 +24,21 @@
     Feature Specifications: https://cwiki.apache.org/confluence/display/CLOUDSTACK/Dynamic+Compute+Offering+FS
 """
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-
+from marvin.lib.utils import (cleanup_resources,
+                              validateList,
+                              random_gen)
+from marvin.lib.base import (Account,
+                             VirtualMachine,
+                             ServiceOffering,
+                             Resources,
+                             AffinityGroup,
+                             Host)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               verifyComputeOfferingCreation)
 from nose.plugins.attrib import attr
-from marvin.codes import PASS, ADMIN_ACCOUNT, USER_ACCOUNT
+from marvin.codes import PASS, ADMIN_ACCOUNT, USER_ACCOUNT, FAILED
 from ddt import ddt, data
 
 @ddt
@@ -460,27 +469,6 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    def stopVM(self, vm):
-        """Stop VM and verify that it is indeed in stopped state"""
-        try:
-            vm.stop(self.apiclient)
-        except Exception as e:
-            self.fail("Failed to stop VM: %s" % e)
-
-        retriesCount = 10
-        while True:
-            vmlist = VirtualMachine.list(self.apiclient, id=vm.id)
-            if str(vmlist[0].state).lower() == "stopped":
-                break
-            elif retriesCount == 0:
-                self.fail("Failed to stop VM even after 10 minutes")
-            else:
-                retriesCount -= 1
-                time.sleep(60)
-                continue
-        # End while
-        return
-
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
     @attr(tags=["basic","advanced"])
     def test_change_so_stopped_vm_static_to_static(self, value):
@@ -500,46 +488,43 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         if value == USER_ACCOUNT:
             isadmin=False
 
-        # Create Account
-        self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.getUserApiClient(
+        try:
+            # Create Account
+            self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
+            self.cleanup.append(self.account)
+            apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
-        self.cleanup.append(self.account)
 
-        # Create static service offerings (Second offering should have
-        # one of the custom values greater than 1st one, scaling down is not allowed
-        self.services["service_offering"]["cpunumber"] = "2"
-        self.services["service_offering"]["cpuspeed"] = "256"
-        self.services["service_offering"]["memory"] = "128"
+            # Create static service offerings (Second offering should have
+            # one of the custom values greater than 1st one, scaling down is not allowed
+            self.services["service_offering"]["cpunumber"] = "2"
+            self.services["service_offering"]["cpuspeed"] = "256"
+            self.services["service_offering"]["memory"] = "128"
 
-        serviceOffering_static_1 = ServiceOffering.create(self.apiclient,
+            serviceOffering_static_1 = ServiceOffering.create(self.apiclient,
                                                  self.services["service_offering"])
 
-        self.services["service_offering"]["cpunumber"] = "4"
+            self.services["service_offering"]["cpunumber"] = "4"
 
-        serviceOffering_static_2 = ServiceOffering.create(self.apiclient,
+            serviceOffering_static_2 = ServiceOffering.create(self.apiclient,
                                                  self.services["service_offering"])
 
-        self.cleanup_co.append(serviceOffering_static_1)
-        self.cleanup_co.append(serviceOffering_static_2)
+            self.cleanup_co.append(serviceOffering_static_1)
+            self.cleanup_co.append(serviceOffering_static_2)
 
-        # Deploy VM
-        try:
+            # Deploy VM
             virtualMachine = VirtualMachine.create(apiclient,self.services["virtual_machine"],
                 serviceofferingid=serviceOffering_static_1.id,
                 accountid=self.account.name,domainid=self.account.domainid)
-        except Exception as e:
-            self.fail("vm creation failed: %s" % e)
 
-        # Stop VM and verify it is in stopped state
-        self.stopVM(virtualMachine)
+            # Stop VM
+            virtualMachine.stop(apiclient)
 
-        # Scale VM to new static service offering
-        try:
+            # Scale VM to new static service offering
             virtualMachine.scale(apiclient, serviceOfferingId=serviceOffering_static_2.id)
         except Exception as e:
-            self.fail("Failure while changing service offering: %s" % e)
+            self.fail("Exception occured: %s" % e)
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
@@ -565,69 +550,59 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         if value == USER_ACCOUNT:
             isadmin=False
 
-        # Create Account and api client
-        self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.getUserApiClient(
+        try:
+            # Create Account and api client
+            self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
+            apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
-        self.cleanup.append(self.account)
+            self.cleanup.append(self.account)
 
-        # Create static and dynamic service offerings
-        self.services["service_offering"]["cpunumber"] = "2"
-        self.services["service_offering"]["cpuspeed"] = "256"
-        self.services["service_offering"]["memory"] = "128"
+            # Create static and dynamic service offerings
+            self.services["service_offering"]["cpunumber"] = "2"
+            self.services["service_offering"]["cpuspeed"] = "256"
+            self.services["service_offering"]["memory"] = "128"
 
-        serviceOffering_static = ServiceOffering.create(self.apiclient,
+            serviceOffering_static = ServiceOffering.create(self.apiclient,
                                                  self.services["service_offering"])
 
 
-        self.services["service_offering"]["cpunumber"] = ""
-        self.services["service_offering"]["cpuspeed"] = ""
-        self.services["service_offering"]["memory"] = ""
+            self.services["service_offering"]["cpunumber"] = ""
+            self.services["service_offering"]["cpuspeed"] = ""
+            self.services["service_offering"]["memory"] = ""
 
-        serviceOffering_dynamic = ServiceOffering.create(self.apiclient,
+            serviceOffering_dynamic = ServiceOffering.create(self.apiclient,
                                                  self.services["service_offering"])
 
-        self.cleanup_co.append(serviceOffering_static)
-        self.cleanup_co.append(serviceOffering_dynamic)
+            self.cleanup_co.append(serviceOffering_static)
+            self.cleanup_co.append(serviceOffering_dynamic)
 
-        # Deploy VM with static service offering
-        try:
+            # Deploy VM with static service offering
             virtualMachine_1 = VirtualMachine.create(apiclient,self.services["virtual_machine"],
                 serviceofferingid=serviceOffering_static.id,
                 accountid=self.account.name,domainid=self.account.domainid)
-        except Exception as e:
-            self.fail("vm creation failed: %s" % e)
 
-        # Stop VM and verify it is in stopped state
-        self.stopVM(virtualMachine_1)
+            # Stop VM
+            virtualMachine_1.stop(apiclient)
 
-        # Scale VM to dynamic service offering proving all custom values
-        try:
+            # Scale VM to dynamic service offering proving all custom values
             virtualMachine_1.scale(apiclient, serviceOfferingId=serviceOffering_dynamic.id,
                                  customcpunumber=4, customcpuspeed=256, custommemory=128)
-        except Exception as e:
-            self.fail("Failure while changing service offering: %s" % e)
 
-        # Deploy VM with static service offering
-        try:
+            # Deploy VM with static service offering
             virtualMachine_2 = VirtualMachine.create(apiclient,self.services["virtual_machine"],
                 serviceofferingid=serviceOffering_static.id,
                 accountid=self.account.name,domainid=self.account.domainid)
+
+            # Stop VM
+            virtualMachine_2.stop(apiclient)
         except Exception as e:
-            self.fail("vm creation failed: %s" % e)
+            self.fail("Exception occuered: %s" % e)
 
-        # Stop VM and verify it is in stopped state
-        self.stopVM(virtualMachine_2)
-
-        # Scale VM to dynamic service offering proving only custom cpu number
-        try:
+            # Scale VM to dynamic service offering proving only custom cpu number
+        with self.assertRaises(Exception):
             virtualMachine_2.scale(apiclient, serviceOfferingId=serviceOffering_dynamic.id,
                                  customcpunumber=4)
-            self.fail("Changing service offering with incomplete data should have failed, it succeded")
-        except Exception as e:
-            self.debug("Failure while changing service offering as expected: %s" % e)
-
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
@@ -649,48 +624,45 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         if value == USER_ACCOUNT:
             isadmin=False
 
-        # Create account and api client
-        self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.getUserApiClient(
+        try:
+            # Create account and api client
+            self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
+            apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
-        self.cleanup.append(self.account)
+            self.cleanup.append(self.account)
 
-        # Create dynamic and static service offering
-        self.services["service_offering"]["cpunumber"] = ""
-        self.services["service_offering"]["cpuspeed"] = ""
-        self.services["service_offering"]["memory"] = ""
+            # Create dynamic and static service offering
+            self.services["service_offering"]["cpunumber"] = ""
+            self.services["service_offering"]["cpuspeed"] = ""
+            self.services["service_offering"]["memory"] = ""
 
-        serviceOffering_dynamic = ServiceOffering.create(self.apiclient,
+            serviceOffering_dynamic = ServiceOffering.create(self.apiclient,
                                                  self.services["service_offering"])
 
-        self.services["service_offering"]["cpunumber"] = "4"
-        self.services["service_offering"]["cpuspeed"] = "256"
-        self.services["service_offering"]["memory"] = "128"
+            self.services["service_offering"]["cpunumber"] = "4"
+            self.services["service_offering"]["cpuspeed"] = "256"
+            self.services["service_offering"]["memory"] = "128"
 
-        serviceOffering_static = ServiceOffering.create(self.apiclient,
+            serviceOffering_static = ServiceOffering.create(self.apiclient,
                                                  self.services["service_offering"])
 
-        self.cleanup_co.append(serviceOffering_static)
-        self.cleanup_co.append(serviceOffering_dynamic)
+            self.cleanup_co.append(serviceOffering_static)
+            self.cleanup_co.append(serviceOffering_dynamic)
 
-        # Deploy VM with dynamic service offering
-        try:
+            # Deploy VM with dynamic service offering
             virtualMachine = VirtualMachine.create(apiclient,self.services["virtual_machine"],
                 serviceofferingid=serviceOffering_dynamic.id,
                 accountid=self.account.name,domainid=self.account.domainid,
                 customcpunumber=2, customcpuspeed=256, custommemory=128)
-        except Exception as e:
-            self.fail("vm creation failed: %s" % e)
 
-        # Stop VM and verify that it is in stopped state
-        self.stopVM(virtualMachine)
+            # Stop VM and verify that it is in stopped state
+            virtualMachine.stop(apiclient)
 
-        # Scale VM to static service offering
-        try:
+            # Scale VM to static service offering
             virtualMachine.scale(apiclient, serviceOfferingId=serviceOffering_static.id)
         except Exception as e:
-            self.fail("Failure while changing service offering: %s" % e)
+            self.fail("Exception occured: %s" % e)
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
@@ -717,62 +689,52 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         if value == USER_ACCOUNT:
             isadmin=False
 
-        # Create Account
-        self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
-        apiclient = self.testClient.getUserApiClient(
+        try:
+            # Create Account
+            self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id, admin=isadmin)
+            apiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
-        self.cleanup.append(self.account)
+            self.cleanup.append(self.account)
 
-        # Create dynamic service offerings
-        self.services["service_offering"]["cpunumber"] = ""
-        self.services["service_offering"]["cpuspeed"] = ""
-        self.services["service_offering"]["memory"] = ""
+            # Create dynamic service offerings
+            self.services["service_offering"]["cpunumber"] = ""
+            self.services["service_offering"]["cpuspeed"] = ""
+            self.services["service_offering"]["memory"] = ""
 
-        serviceOffering_dynamic_1 = ServiceOffering.create(self.apiclient,
+            serviceOffering_dynamic_1 = ServiceOffering.create(self.apiclient,
                                                  self.services["service_offering"])
 
-        serviceOffering_dynamic_2 = ServiceOffering.create(self.apiclient,
+            serviceOffering_dynamic_2 = ServiceOffering.create(self.apiclient,
                                                  self.services["service_offering"])
 
-        self.cleanup_co.append(serviceOffering_dynamic_1)
-        self.cleanup_co.append(serviceOffering_dynamic_2)
+            self.cleanup_co.append(serviceOffering_dynamic_1)
+            self.cleanup_co.append(serviceOffering_dynamic_2)
 
-        # Deploy VM with dynamic service offering
-        try:
+            # Deploy VM with dynamic service offering
             virtualMachine = VirtualMachine.create(apiclient,self.services["virtual_machine"],
                 serviceofferingid=serviceOffering_dynamic_1.id,
                 accountid=self.account.name,domainid=self.account.domainid,
                 customcpunumber=2, customcpuspeed=256, custommemory=128)
-        except Exception as e:
-            self.fail("vm creation failed: %s" % e)
 
-        # Stop VM and verify that it is in stopped state
-        self.stopVM(virtualMachine)
+            # Stop VM
+            virtualMachine.stop(apiclient)
 
-        # Scale VM with same dynamic service offering
-        try:
+            # Scale VM with same dynamic service offering
             virtualMachine.scale(apiclient, serviceOfferingId=serviceOffering_dynamic_1.id,
                                  customcpunumber=4, customcpuspeed=512, custommemory=256)
-        except Exception as e:
-            self.fail("Failure while changing service offering: %s" % e)
 
-        # Scale VM with other dynamic service offering
-        try:
+            # Scale VM with other dynamic service offering
             virtualMachine.scale(apiclient, serviceOfferingId=serviceOffering_dynamic_2.id,
                                  customcpunumber=4, customcpuspeed=512, custommemory=256)
         except Exception as e:
-            self.fail("Failure while changing service offering: %s" % e)
+            self.fail("Exception occured: %s" % e)
 
         # Scale VM with dynamic service offering proving custom value
         # only for cpu number
-        try:
+        with self.assertRaises(Exception):
             virtualMachine.scale(apiclient, serviceOfferingId=serviceOffering_dynamic_1.id,
                                  customcpunumber=4)
-            self.fail("Changing service offering should have failed, it succeded")
-        except Exception as e:
-            self.debug("Failure while changing service offering: %s" % e)
-
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)

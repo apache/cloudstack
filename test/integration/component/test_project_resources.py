@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,7 +18,7 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (VirtualMachine,
                                          Account,
                                          Project,
@@ -458,7 +458,6 @@ class TestNetwork(cloudstackTestCase):
                          True,
                          "Check for the valid network list response"
                          )
-        network_response = networks[0]
 
         self.debug("Deploying VM with network: %s" % network.id)
 
@@ -631,53 +630,56 @@ class TestTemplates(cloudstackTestCase):
         # 3. Verify that template created in project can be used in project
         #    without any restrictions
 
-        self.debug("Deploying VM for with public template: %s" %
+        try:
+            self.debug("Deploying VM for with public template: %s" %
                                                         self.template.id)
-        virtual_machine_1 = VirtualMachine.create(
+            virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
                                 serviceofferingid=self.service_offering.id,
                                 projectid=self.project.id
                                 )
-        self.cleanup.append(virtual_machine_1)
-        # Verify VM state
-        self.assertEqual(
+            self.cleanup.append(virtual_machine_1)
+            # Verify VM state
+            self.assertEqual(
                             virtual_machine_1.state,
                             'Running',
                             "Check VM state is Running or not"
                         )
-        virtual_machine_1.stop(self.apiclient)
-        # Get the Root disk of VM
-        volumes = list_volumes(
+            virtual_machine_1.stop(self.apiclient)
+            # Get the Root disk of VM
+            volumes = list_volumes(
                             self.apiclient,
                             projectid=self.project.id,
                             type='ROOT',
                             listall=True
                             )
-        self.assertEqual(
+            self.assertEqual(
                         isinstance(volumes, list),
                         True,
                         "Check for list volume response return valid data"
                         )
-        volume = volumes[0]
+            volume = volumes[0]
 
-        self.debug("Creating template from volume: %s" % volume.id)
-        # Create a template from the ROOTDISK
-        template_1 = Template.create(
+            self.debug("Creating template from volume: %s" % volume.id)
+            # Create a template from the ROOTDISK
+            template_1 = Template.create(
                             self.apiclient,
                             self.services["template"],
                             volumeid=volume.id,
                             projectid=self.project.id
                             )
 
-        self.cleanup.append(template_1)
-        # Verify Template state
-        self.assertEqual(
+            self.cleanup.append(template_1)
+            # Verify Template state
+            self.assertEqual(
                             template_1.isready,
                             True,
                             "Check Template is in ready state or not"
                         )
+        except Exception as e:
+            self.fail("Exception occured: %s" % e)
         return
 
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "selfservice"])
@@ -690,83 +692,83 @@ class TestTemplates(cloudstackTestCase):
         #    be granted to the Project (use API 'updateTemplatePermissions'
         #    with project id to achieve that).
 
-        self.debug("Deploying VM for with public template: %s" %
+        try:
+            self.debug("Deploying VM for with public template: %s" %
                                                         self.template.id)
-        virtual_machine_1 = VirtualMachine.create(
+            virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
                                 serviceofferingid=self.service_offering.id,
                                 projectid=self.project.id
                                 )
-        self.cleanup.append(virtual_machine_1)
-        # Verify VM state
-        self.assertEqual(
-                            virtual_machine_1.state,
-                            'Running',
-                            "Check VM state is Running or not"
-                        )
-        self.debug("Stopping the VM: %s" % virtual_machine_1.id)
-        virtual_machine_1.stop(self.apiclient)
-        # Get the Root disk of VM
-        volumes = list_volumes(
+            self.cleanup.append(virtual_machine_1)
+            # Verify VM state
+            self.assertEqual(virtual_machine_1.state,
+                         'Running',
+                         "Check VM state is Running or not")
+            virtual_machine_1.stop(self.apiclient)
+            # Get the Root disk of VM
+            volumes = list_volumes(
                             self.apiclient,
                             projectid=self.project.id,
                             type='ROOT',
                             listall=True
                             )
-        self.assertEqual(
+            self.assertEqual(
                         isinstance(volumes, list),
                         True,
                         "Check for list volume response return valid data"
                         )
-        volume = volumes[0]
+            volume = volumes[0]
 
-        self.debug("Creating template from volume: %s" % volume.id)
-        # Create a template from the ROOTDISK
-        template_1 = Template.create(
+            self.debug("Creating template from volume: %s" % volume.id)
+            # Create a template from the ROOTDISK
+            template_1 = Template.create(
                             self.apiclient,
                             self.services["template"],
                             volumeid=volume.id,
                             projectid=self.project.id
                             )
 
-        self.cleanup.append(template_1)
-        # Verify Template state
-        self.assertEqual(
+            self.cleanup.append(template_1)
+            # Verify Template state
+            self.assertEqual(
                             template_1.isready,
                             True,
                             "Check Template is in ready state or not"
                         )
 
-        # Update template permissions to grant permission to project
-        self.debug(
-          "Updating template permissions:%s to grant access to project: %s" % (
+            # Update template permissions to grant permission to project
+            self.debug(
+                        "Updating template permissions:%s to grant access to project: %s" % (
                                                             template_1.id,
                                                             self.project.id
                                                         ))
 
-        template_1.updatePermissions(
+            template_1.updatePermissions(
                                      self.apiclient,
                                      op='add',
                                      projectids=self.project.id
                                      )
-        self.debug("Deploying VM for with privileged template: %s" %
+            self.debug("Deploying VM for with privileged template: %s" %
                                                         self.template.id)
-        virtual_machine_2 = VirtualMachine.create(
+            virtual_machine_2 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=template_1.id,
                                 serviceofferingid=self.service_offering.id,
                                 projectid=self.project.id
                                 )
-        self.cleanup.append(virtual_machine_2)
-        # Verify VM state
-        self.assertEqual(
+            self.cleanup.append(virtual_machine_2)
+            # Verify VM state
+            self.assertEqual(
                             virtual_machine_2.state,
                             'Running',
                             "Check VM state is Running or not"
                         )
+        except Exception as e:
+            self.fail("Exception occured: %s" % e)
         return
 
 
@@ -882,7 +884,6 @@ class TestSnapshots(cloudstackTestCase):
                         True,
                         "Check for list volume response return valid data"
                         )
-        volume = volumes[0]
 
         self.debug("Creating snapshot from volume: %s" % volumes[0].id)
         # Create a snapshot from the ROOTDISK

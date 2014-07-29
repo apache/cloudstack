@@ -30,12 +30,28 @@
 @DateAdded: 20th October 2013
 """
 
+'''
+VM STATES - START
+'''
 RUNNING = "Running"
 STOPPED = "Stopped"
 STOPPING = "Stopping"
 STARTING = "Starting"
 DESTROYED = "Destroyed"
 EXPUNGING = "Expunging"
+'''
+VM STATES - END
+'''
+
+'''
+Snapshot States - START
+'''
+BACKED_UP = "backedup"
+BACKING_UP = "backingup"
+'''
+Snapshot States - END
+'''
+
 RECURRING = "RECURRING"
 ENABLED = "Enabled"
 NETWORK_OFFERING = "network_offering"
@@ -60,6 +76,7 @@ JOB_INPROGRESS = 0
 JOB_SUCCEEDED = 1
 JOB_FAILED = 2
 JOB_CANCELLED = 3
+ERROR_CODE_530 = 530
 '''
 User Related Codes
 '''
@@ -79,5 +96,18 @@ ADMIN = 1
 DOMAIN_ADMIN = 2
 USER = 0
 XEN_SERVER = "XenServer"
-ADMIN_ACCOUNT='ADMIN_ACCOUNT'
-USER_ACCOUNT='USER_ACCOUNT'
+ADMIN_ACCOUNT = 'ADMIN_ACCOUNT'
+USER_ACCOUNT = 'USER_ACCOUNT'
+RESOURCE_CPU = 8
+RESOURCE_MEMORY = 9
+RESOURCE_PRIMARY_STORAGE = 10
+RESOURCE_SECONDARY_STORAGE = 11
+KVM = "kvm"
+VMWARE = "vmware"
+ROOT_DOMAIN_ADMIN="root domain admin"
+CHILD_DOMAIN_ADMIN="child domain admin"
+
+'''
+Network states
+'''
+ALLOCATED = "Allocated"

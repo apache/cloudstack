@@ -103,7 +103,7 @@ class TestDeployVM(cloudstackTestCase):
             self.account
         ]
 
-    @attr(tags = ['advanced', 'simulator', 'basic', 'sg', 'provisioning'])
+    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true")
     def test_00_deploy_vm_root_resize(self):
         """Test deploy virtual machine with root resize
 
@@ -122,7 +122,8 @@ class TestDeployVM(cloudstackTestCase):
                 domainid=self.account.domainid,
                 serviceofferingid=self.service_offering.id,
                 templateid=self.template.id,
-                rootdisksize=newrootsize
+                rootdisksize=newrootsize,
+                hypervisor=self.hypervisor
             )
 
             list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
@@ -192,7 +193,8 @@ class TestDeployVM(cloudstackTestCase):
                     domainid=self.account.domainid,
                     serviceofferingid=self.service_offering.id,
                     templateid=self.template.id,
-                    rootdisksize=newrootsize
+                    rootdisksize=newrootsize,
+                    hypervisor=self.hypervisor
                 )
             except Exception as ex:
                 if "Hypervisor XenServer does not support rootdisksize override" in str(ex):
@@ -202,7 +204,7 @@ class TestDeployVM(cloudstackTestCase):
 
             self.assertEqual(success, True, "Check if unsupported hypervisor %s fails appropriately" % self.hypervisor)
 
-    @attr(tags = ['advanced', 'simulator', 'basic', 'sg', 'provisioning'])
+    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true")
     def test_01_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize of 0 
         """
@@ -218,7 +220,8 @@ class TestDeployVM(cloudstackTestCase):
                     domainid=self.account.domainid,
                     serviceofferingid=self.service_offering.id,
                     templateid=self.template.id,
-                    rootdisksize=newrootsize
+                    rootdisksize=newrootsize,
+                    hypervisor=self.hypervisor
                 )
             except Exception as ex:
                 if "rootdisk size should be a non zero number" in str(ex):
@@ -230,7 +233,7 @@ class TestDeployVM(cloudstackTestCase):
         else:
             self.debug("test 01 does not support hypervisor type " + self.hypervisor);
 
-    @attr(tags = ['advanced', 'simulator', 'basic', 'sg', 'provisioning'])
+    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true", BugId="6984")
     def test_02_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize less than template size
         """
@@ -249,7 +252,8 @@ class TestDeployVM(cloudstackTestCase):
                     domainid=self.account.domainid,
                     serviceofferingid=self.service_offering.id,
                     templateid=self.template.id,
-                    rootdisksize=newrootsize
+                    rootdisksize=newrootsize,
+                    hypervisor=self.hypervisor
                 )
             except Exception as ex:
                 if "rootdisksize override is smaller than template size" in str(ex):
