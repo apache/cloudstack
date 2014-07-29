@@ -11,7 +11,9 @@ if ( len(sys.argv) != 2 ):
     print "Invalid usage"
     sys.exit(1)
 
-qf = loadQueueFile()
-qf.setType("ips")
-qf.setFile(sys.argv[1])
-qf.load()
+# ip files 
+if(sys.argv[1] == 'ip_associations.json'):
+    qf = loadQueueFile()
+    qf.setType("ips")
+    qf.setFile(sys.argv[1])
+    qf.load()
