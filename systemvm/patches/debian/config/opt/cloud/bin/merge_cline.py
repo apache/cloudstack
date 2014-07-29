@@ -12,6 +12,7 @@ if ( len(sys.argv) != 2 ):
     sys.exit(1)
 
 qf = loadQueueFile()
-qf.setType("ips")
-qf.setFile(sys.argv[1])
+qf.setType("cl")
+qf.setFile("cmdline.json")
+qf.setPath("/var/chef/data_bags/vr")
 qf.load()
