@@ -12,7 +12,7 @@ if ( len(sys.argv) != 2 ):
     sys.exit(1)
 
 # ip files 
-if(sys.argv[1] == 'ip_associations.json'):
+if(sys.argv[1].startswith('ip')):
     qf = loadQueueFile()
     qf.setType("ips")
     qf.setFile(sys.argv[1])

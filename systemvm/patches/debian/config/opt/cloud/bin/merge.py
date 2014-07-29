@@ -45,12 +45,13 @@ class updateDataBag:
         return data
 
     def process(self):
+        if self.qFile.type == 'cl':
+           self.transformCL()
+           self.qFile.data = self.newData
         dbag = self.load( self.qFile.type )
         logging.info("Command of type %s received", self.qFile.type)
         if self.qFile.type == 'ips':
            dbag = self.processIP(dbag)
-        if self.qFile.type == 'cl':
-           dbag = self.processCL(dbag)
         self.save(dbag)
   
     def processIP(self, dbag):
@@ -58,27 +59,30 @@ class updateDataBag:
             dbag = cs_ip.merge(dbag, ip)
         return dbag
 
-    def processCL(self, dbag):
+    def transformCL(self):
         # Convert the ip stuff to an ip object and pass that into cs_ip_merge
         # "eth0ip": "192.168.56.32",
         # "eth0mask": "255.255.255.0",
-        dbag['id'] = self.qFile.type
-        self.processCLItem('0', dbag)
-        self.processCLItem('1', dbag)
-        return dbag
+        self.newData = []
+        self.qFile.setType("ips")
+        self.processCLItem('0')
+        self.processCLItem('1')
 
-    def processCLItem(self, num, dbag):
+    def processCLItem(self, num):
         key = 'eth' + num + 'ip'
         dp  = {}
         if(key in self.qFile.data['cmdline']):
-           dp['publicIp']    = self.qFile.data['cmdline'][key]
-           dp['vlanNetmask'] = self.qFile.data['cmdline']['eth' + num + 'mask']
-           dp['sourceNat'] = False
+           dp['public_ip']    = self.qFile.data['cmdline'][key]
+           dp['vlan_netmask'] = self.qFile.data['cmdline']['eth' + num + 'mask']
+           dp['source_nat'] = False
            dp['add'] = True
-           dp['oneToOneNat'] = False
-           #dp['vlanGateway'] = ??
-           dp['nicDevId'] = num
-           return 
+           dp['one_to_one_nat'] = False
+           if('localgw' in self.qFile.data['cmdline']):
+               dp['vlan_gateway'] = self.qFile.data['cmdline']['localgw']
+           else:
+               dp['vlan_gateway'] = 'None'
+           dp['nic_dev_id'] = num
+           self.newData.append(dp)
             
 class loadQueueFile:
 
