@@ -19,7 +19,7 @@
 
 package com.cloud.agent.resource.virtualnetwork.model;
 
-public class GuestNetwork {
+public class GuestNetwork extends ConfigBase {
     private boolean add;
     private String macAddress;
     private String device;
@@ -32,11 +32,12 @@ public class GuestNetwork {
 
     public GuestNetwork() {
         // Empty constructor for (de)serialization
+        setType("guestnetwork");
     }
 
     public GuestNetwork(boolean add, String macAddress, String device, String routerGuestIp, String routerGuestNetmask, String routerGuestGateway, String cidr, String dns,
             String domainName) {
-        super();
+        setType("guestnetwork");
         this.add = add;
         this.macAddress = macAddress;
         this.device = device;
