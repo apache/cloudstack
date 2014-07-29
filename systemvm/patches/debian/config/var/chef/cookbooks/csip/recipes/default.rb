@@ -21,6 +21,12 @@ rescue
     raise format('Cannot find the %s databag item within the %s databag. Please correct this', 'vr', 'ips')
 end
 
+begin
+    cmdline = data_bag_item('vr', 'cmdline')
+rescue
+    raise format('Cannot find the %s databag item within the %s databag. Please correct this', 'vr', 'ips')
+end
+
 # List configured ips on this node and remove any that are not in the configuration
 listIPs(vr_ips).each do |dev, ip|
     csip_device "#{dev}-#{ip}" do
@@ -55,15 +61,15 @@ vr_ips.each do |name,data|
       csip_route "#{name}-dev" do
          type "dev"
          table "Table_#{name}"
-         ip ipo['publicIp']
-         mask ipo['vlanNetmask']
+         ip ipo['public_ip']
+         mask ipo['vlan_netmask']
          dev name
       end
       csip_route "#{name}-default" do
          type "default"
          table "Table_#{name}"
-         ip ipo['vlanGateway']
-         mask ipo['vlanNetmask']
+         ip ipo['vlan_gateway']
+         mask ipo['vlan_netmask']
          dev name
       end
   end

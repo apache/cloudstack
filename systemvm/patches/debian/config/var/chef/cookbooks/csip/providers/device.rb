@@ -28,7 +28,7 @@ def load_current_resource
   @current_resource.object(@new_resource.object)
   @current_resource.exists = false
   if new_resource.cidrs.nil?
-     @current_resource.cidrs(new_resource.object['publicIp'] + '/' + IPAddr.new( new_resource.object['vlanNetmask']).to_i.to_s(2).count("1").to_s)
+     @current_resource.cidrs(new_resource.object['public_ip'] + '/' + IPAddr.new( new_resource.object['vlan_netmask']).to_i.to_s(2).count("1").to_s)
   else
      @current_resource.cidrs(@new_resource.cidrs)
   end
@@ -66,13 +66,13 @@ def plumbDevice
        end
     end
     if ! current_resource.contrack
-       if ! execute("iptables -t mangle -A PREROUTING -i #{current_resource.device} -m state --state NEW -j CONNMARK --set-mark #{current_resource.object['nicDevId']}")
+       if ! execute("iptables -t mangle -A PREROUTING -i #{current_resource.device} -m state --state NEW -j CONNMARK --set-mark #{current_resource.object['nic_dev_id']}")
           Chef::Log.error "#{ @new_resource.device } failed to set set conmark"
           return false
        end
     end
-    execute("arping -c 1 -I #{current_resource.device} -A -U -s #{current_resource.object['publicIp']} #{current_resource.object['publicIp']}")
-    execute("arping -c 1 -I #{current_resource.device} -A -U -s #{current_resource.object['publicIp']} #{current_resource.object['publicIp']}")
+    execute("arping -c 1 -I #{current_resource.device} -A -U -s #{current_resource.object['public_ip']} #{current_resource.object['public_ip']}")
+    execute("arping -c 1 -I #{current_resource.device} -A -U -s #{current_resource.object['public_ip']} #{current_resource.object['public_ip']}")
     return true
 end
 
