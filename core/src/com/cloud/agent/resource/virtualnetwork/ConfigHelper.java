@@ -60,6 +60,7 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.resource.virtualnetwork.model.GuestNetwork;
+import com.cloud.agent.resource.virtualnetwork.model.NetworkACL;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.rules.FirewallRule;
@@ -560,18 +561,13 @@ public class ConfigHelper {
 
         String rule = sb.toString();
 
-        String args = " -d " + dev;
-        args += " -M " + nic.getMac();
-        if (privateGw != null) {
-            args += " -a " + rule;
+        NetworkACL networkACL = new NetworkACL(dev, nic.getMac(), privateGw != null, nic.getIp(), netmask, rule);
+        ConfigItem networkAclFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, VRScripts.NETWORK_ACL_CONFIG, gson.toJson(networkACL));
+        cfg.add(networkAclFile);
 
-            cfg.add(new ScriptConfigItem(VRScripts.VPC_PRIVATEGW_ACL, args));
-        } else {
-            args += " -i " + nic.getIp();
-            args += " -m " + netmask;
-            args += " -a " + rule;
-            cfg.add(new ScriptConfigItem(VRScripts.VPC_ACL, args));
-        }
+        ConfigItem updateNetworkACL = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, VRScripts.NETWORK_ACL_CONFIG);
+        cfg.add(updateNetworkACL);
+
 
         return cfg;
     }

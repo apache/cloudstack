@@ -480,14 +480,15 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         _count ++;
         switch (_count) {
         case 1:
-            assertEquals(script, VRScripts.VPC_ACL);
-            assertEquals(args, " -d eth3 -M 01:23:45:67:89:AB -i 192.168.1.1 -m 24 -a Egress:ALL:0:0:192.168.0.1/24-192.168.0.2/24:ACCEPT:," +
-                    "Ingress:ICMP:0:0:192.168.0.1/24-192.168.0.2/24:DROP:,Ingress:TCP:20:80:192.168.0.1/24-192.168.0.2/24:ACCEPT:,");
+            // FIXME Check the json content
+            assertEquals(VRScripts.UPDATE_CONFIG, script);
+            assertEquals(VRScripts.NETWORK_ACL_CONFIG, args);
+            // assertEquals(args, " -d eth3 -M 01:23:45:67:89:AB -i 192.168.1.1 -m 24 -a Egress:ALL:0:0:192.168.0.1/24-192.168.0.2/24:ACCEPT:," +
+            //        "Ingress:ICMP:0:0:192.168.0.1/24-192.168.0.2/24:DROP:,Ingress:TCP:20:80:192.168.0.1/24-192.168.0.2/24:ACCEPT:,");
             break;
         case 2:
-            assertEquals(script, VRScripts.VPC_PRIVATEGW_ACL);
-            assertEquals(args, " -d eth3 -M 01:23:45:67:89:AB -a Egress:ALL:0:0:192.168.0.1/24-192.168.0.2/24:ACCEPT:," +
-                    "Ingress:ICMP:0:0:192.168.0.1/24-192.168.0.2/24:DROP:,Ingress:TCP:20:80:192.168.0.1/24-192.168.0.2/24:ACCEPT:,");
+            assertEquals(VRScripts.UPDATE_CONFIG, script);
+            assertEquals(VRScripts.NETWORK_ACL_CONFIG, args);
             break;
         default:
             fail();
