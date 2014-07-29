@@ -99,7 +99,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 public class VmwareStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(VmwareStorageProcessor.class);
@@ -1611,7 +1611,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         List<NetworkDetails> networks = vmMo.getNetworksWithDetails();
 
                         // tear down all devices first before we destroy the VM to avoid accidently delete disk backing files
-                        if (VmwareResource.getVmState(vmMo) != State.Stopped) {
+                        if (VmwareResource.getVmState(vmMo) != PowerState.PowerOff) {
                             vmMo.safePowerOff(_shutdownWaitMs);
                         }
 

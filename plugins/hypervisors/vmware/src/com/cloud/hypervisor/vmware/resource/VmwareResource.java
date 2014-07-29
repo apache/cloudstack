@@ -312,7 +312,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected static ThreadLocal<VmwareContext> s_serviceContext = new ThreadLocal<VmwareContext>();
     protected String _hostName;
 
-    protected HashMap<String, State> _vms = new HashMap<String, State>(71);
     protected List<PropertyMapDynamicBean> _cmdMBeans = new ArrayList<PropertyMapDynamicBean>();
 
     protected Gson _gson;
@@ -1295,7 +1294,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String vmNameOnVcenter = names.second();
 
         // Thus, vmInternalCSName always holds i-x-y, the cloudstack generated internal VM name.
-        State state = State.Stopped;
         VmwareContext context = getServiceContext();
         try {
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
@@ -1690,8 +1688,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (!vmMo.powerOn()) {
                 throw new Exception("Failed to start VM. vmName: " + vmInternalCSName + " with hostname " + vmNameOnVcenter);
             }
-
-            state = State.Running;
 
             StartAnswer startAnswer = new StartAnswer(cmd);
 
@@ -2544,7 +2540,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         HashMap<String, VmStatsEntry> vmStatsMap = null;
 
         try {
-            HashMap<String, PowerState> vmPowerStates = getVmStates()
+            HashMap<String, PowerState> vmPowerStates = getVmStates();
 
             // getVmNames should return all i-x-y values.
             List<String> requestedVmNames = cmd.getVmNames();
@@ -2732,7 +2728,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         final String vmName = cmd.getVmName();
-        PowerState powerState = PowerState.Unknown;
+        PowerState powerState = PowerState.PowerUnknown;
         Integer vncPort = null;
 
         VmwareContext context = getServiceContext();
@@ -2805,10 +2801,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (morSecDs == null) {
                 String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
                 throw new Exception(msg);
-            }
-
-            synchronized (_vms) {
-                _vms.put(vm.getName(), State.Migrating);
             }
             return new PrepareForMigrationAnswer(cmd);
         } catch (Throwable e) {
@@ -4332,7 +4324,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         // the internal CS name, but the custom field CLOUD_VM_INTERNAL_NAME always stores the internal CS name.
         ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(new String[] {"name", "runtime.powerState", "config.template", instanceNameCustomField});
 
-        HashMap<String, State> newStates = new HashMap<String, State>();
+        HashMap<String, PowerState> newStates = new HashMap<String, PowerState>();
         if (ocs != null && ocs.length > 0) {
             for (ObjectContent oc : ocs) {
                 List<DynamicProperty> objProps = oc.getPropSet();
@@ -4591,6 +4583,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected String connect(final String vmname, final String ipAddress) {
         return connect(vmname, ipAddress, 3922);
     }
+
+    public static PowerState getVmState(VirtualMachineMO vmMo) throws Exception {
+        VirtualMachineRuntimeInfo runtimeInfo = vmMo.getRuntimeInfo();
+        return convertPowerState(runtimeInfo.getPowerState());
+    }
+
 
     private static PowerState convertPowerState(VirtualMachinePowerState powerState) {
         return s_powerStatesTable.get(powerState);
