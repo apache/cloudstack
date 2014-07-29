@@ -87,7 +87,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         when(this.mockHostPodVO1.getId()).thenReturn(POD_ID1);
         when(this.mockHostPodVO2.getId()).thenReturn(POD_ID2);
         when(this.mockHostPodVO3.getId()).thenReturn(POD_ID3);
-        when(this.mockNw.getId()).thenReturn(NW_ID);
+        when(this.mockNw.getId()).thenReturn(NW_ID_1);
     }
 
     @Before
@@ -149,22 +149,22 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test
     public void testLock() {
         // Prepare
-        when(this.mockNwDao.acquireInLockTable(NW_ID, NetworkOrchestrationService.NetworkLockTimeout.value()))
+        when(this.mockNwDao.acquireInLockTable(NW_ID_1, NetworkOrchestrationService.NetworkLockTimeout.value()))
         .thenReturn(mockNw);
 
         // Execute
         this.deployment.lock();
 
         // Assert
-        verify(this.mockNwDao, times(1)).acquireInLockTable(NW_ID, 600);
+        verify(this.mockNwDao, times(1)).acquireInLockTable(NW_ID_1, 600);
         assertNotNull(LOCK_NOT_CORRECTLY_GOT, this.deployment.tableLockId);
-        assertEquals(LOCK_NOT_CORRECTLY_GOT, NW_ID, NW_ID, this.deployment.tableLockId.longValue());
+        assertEquals(LOCK_NOT_CORRECTLY_GOT, NW_ID_1, NW_ID_1, this.deployment.tableLockId.longValue());
     }
 
     @Test(expected = ConcurrentOperationException.class)
     public void testLockFails() {
         // Prepare
-        when(this.mockNwDao.acquireInLockTable(NW_ID, NetworkOrchestrationService.NetworkLockTimeout.value()))
+        when(this.mockNwDao.acquireInLockTable(NW_ID_1, NetworkOrchestrationService.NetworkLockTimeout.value()))
         .thenReturn(null);
 
         // Execute
@@ -172,7 +172,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
             this.deployment.lock();
         } finally {
             // Assert
-            verify(this.mockNwDao, times(1)).acquireInLockTable(NW_ID, 600);
+            verify(this.mockNwDao, times(1)).acquireInLockTable(NW_ID_1, 600);
             assertNull(this.deployment.tableLockId);
         }
 
@@ -181,13 +181,13 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test
     public void testUnlock() {
         // Prepare
-        this.deployment.tableLockId = NW_ID;
+        this.deployment.tableLockId = NW_ID_1;
 
         // Execute
         this.deployment.unlock();
 
         // Assert
-        verify(this.mockNwDao, times(1)).releaseFromLockTable(NW_ID);
+        verify(this.mockNwDao, times(1)).releaseFromLockTable(NW_ID_1);
     }
 
     @Test
@@ -817,85 +817,87 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
                 routerVO2, this.deployment.routers.get(1));
     }
 
-
-
-
-
-
-
-
-
-
-
     @Test
-    public void testPrepareDeploymentPublicNw() {
+    public void testSetupAccountOwner() {
         // Prepare
-        this.deployment.isRedundant = true;
-
         when(this.mockNetworkModel.isNetworkSystem(this.mockNw)).thenReturn(true);
         Account newAccountOwner = mock(Account.class);
         when(this.mockAccountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM)).thenReturn(newAccountOwner);
-
-        when(this.mockNetworkModel.isProviderSupportServiceInNetwork(
-                            NW_ID, Service.SourceNat, Provider.VirtualRouter)).thenReturn(true);
-
-        // Execute
-        boolean canProceedDeployment = this.deployment.prepareDeployment();
-
+        //Execute
+        this.deployment.setupAccountOwner();
         // Assert
         assertEquals("New account owner not properly set", newAccountOwner, this.deployment.owner);
+    }
+
+    @Test
+    public void testSetupAccountOwnerNotNetworkSystem() {
+        // Prepare
+        when(this.mockNetworkModel.isNetworkSystem(this.mockNw)).thenReturn(false);
+        when(this.mockNw.getGuestType()).thenReturn(Network.GuestType.Shared);
+        Account newAccountOwner = mock(Account.class);
+        when(this.mockAccountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM)).thenReturn(newAccountOwner);
+        //Execute
+        this.deployment.setupAccountOwner();
+        // Assert
+        assertEquals("New account owner not properly set", newAccountOwner, this.deployment.owner);
+    }
+
+    @Test
+    public void testSetupAccountOwnerNotSharedNeitherNetworkSystem() {
+        // Prepare
+        when(this.mockNetworkModel.isNetworkSystem(this.mockNw)).thenReturn(false);
+        when(this.mockNw.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(this.mockAccountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM)).thenReturn(null);
+        //Execute
+        this.deployment.setupAccountOwner();
+        // Assert
+        assertEquals("New account shouldn't have been updated", this.mockOwner, this.deployment.owner);
+    }
+
+
+
+
+    protected void driveTestPrepareDeployment(final boolean isRedundant, final boolean isPublicNw) {
+        // Prepare
+        this.deployment.isRedundant = isRedundant;
+        when(this.mockNetworkModel.isProviderSupportServiceInNetwork(
+                NW_ID_1, Service.SourceNat, Provider.VirtualRouter)).thenReturn(isPublicNw);
+        // Execute
+        final boolean canProceedDeployment = this.deployment.prepareDeployment();
+        // Assert
+        boolean shouldProceedDeployment = true;
+        if (isRedundant && !isPublicNw) {
+            shouldProceedDeployment = false;
+        }
+        assertEquals(shouldProceedDeployment, canProceedDeployment);
+        if (!shouldProceedDeployment) {
+            assertEquals("Since deployment cannot proceed we should empty the list of routers",
+                    0, this.deployment.routers.size());
+        }
+    }
+
+    @Test
+    public void testPrepareDeploymentPublicNw() {
+        this.driveTestPrepareDeployment(true, true);
     }
 
     @Test
     public void testPrepareDeploymentNonRedundant() {
-        // Prepare
-        this.deployment.isRedundant = false;
-
-        when(this.mockNetworkModel.isNetworkSystem(this.mockNw)).thenReturn(true);
-        Account newAccountOwner = mock(Account.class);
-        when(this.mockAccountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM)).thenReturn(newAccountOwner);
-
-        when(this.mockNetworkModel.isProviderSupportServiceInNetwork(
-                            NW_ID, Service.SourceNat, Provider.VirtualRouter)).thenReturn(false);
-
-        // Execute
-        boolean canProceedDeployment = this.deployment.prepareDeployment();
-
-        // Assert
-        assertEquals("New account owner not properly set", newAccountOwner, deployment.owner);
+        this.driveTestPrepareDeployment(false, true);
     }
 
     @Test
     public void testPrepareDeploymentRedundantNonPublicNw() {
-        // Prepare
-        this.deployment.isRedundant = false;
-
-        when(this.mockNetworkModel.isNetworkSystem(this.mockNw)).thenReturn(true);
-        Account newAccountOwner = mock(Account.class);
-        when(this.mockAccountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM)).thenReturn(newAccountOwner);
-
-        when(this.mockNetworkModel.isProviderSupportServiceInNetwork(
-                            NW_ID, Service.SourceNat, Provider.VirtualRouter)).thenReturn(false);
-
-        // Execute
-        boolean canProceedDeployment = this.deployment.prepareDeployment();
-
-        // Assert
-        assertEquals("New account owner not properly set", newAccountOwner, this.deployment.owner);
-        assertEquals("Since is redundant deployment in non public nw there should be 0 routers to start",
-                0, this.deployment.routers.size());
-        verify(this.mockNetworkModel, times(1)).isNetworkSystem(this.mockNw);
+        this.driveTestPrepareDeployment(true, false);
     }
 
-    @Test
-    public void testExecuteDeploymentPublicNw()
+    protected void driveTestExecuteDeployment(final int noOfRoutersToDeploy, boolean passPreparation)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         // Prepare
-        this.deployment.isRedundant = true;
         RouterDeploymentDefinition deploymentUT = spy(this.deployment);
         doNothing().when(deploymentUT).setupPriorityOfRedundantRouter();
-        doReturn(1).when(deploymentUT).getNumberOfRoutersToDeploy();
-        doReturn(true).when(deploymentUT).prepareDeployment();
+        doReturn(noOfRoutersToDeploy).when(deploymentUT).getNumberOfRoutersToDeploy();
+        doReturn(passPreparation).when(deploymentUT).prepareDeployment();
         doNothing().when(deploymentUT).findVirtualProvider();
         doNothing().when(deploymentUT).findOfferingId();
         doNothing().when(deploymentUT).findSourceNatIP();
@@ -905,90 +907,37 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         deploymentUT.executeDeployment();
 
         // Assert
-        verify(deploymentUT, times(1)).prepareDeployment();
-        verify(deploymentUT, times(1)).findVirtualProvider();
-        verify(deploymentUT, times(1)).findOfferingId();
-        verify(deploymentUT, times(1)).findSourceNatIP();
-        verify(deploymentUT, times(1)).deployAllVirtualRouters();
-    }
-
-    @Test
-    public void testExecuteDeploymentNonRedundant()
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        // Prepare
-        this.deployment.isRedundant = false;
-        RouterDeploymentDefinition deploymentUT = spy(this.deployment);
-        doNothing().when(deploymentUT).setupPriorityOfRedundantRouter();
-        doReturn(1).when(deploymentUT).getNumberOfRoutersToDeploy();
-        doReturn(true).when(deploymentUT).prepareDeployment();
-        doNothing().when(deploymentUT).findVirtualProvider();
-        doNothing().when(deploymentUT).findOfferingId();
-        doNothing().when(deploymentUT).findSourceNatIP();
-        doNothing().when(deploymentUT).deployAllVirtualRouters();
-
-        // Execute
-        deploymentUT.executeDeployment();
-
-        // Assert
-        verify(deploymentUT, times(0)).prepareDeployment();
-        verify(deploymentUT, times(1)).findVirtualProvider();
-        verify(deploymentUT, times(1)).findOfferingId();
-        verify(deploymentUT, times(1)).findSourceNatIP();
-        verify(deploymentUT, times(1)).deployAllVirtualRouters();
-    }
-
-    @Test
-    public void testExecuteDeploymentRedundantNonPublicNw()
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        // Prepare
-        this.deployment.isRedundant = true;
-        RouterDeploymentDefinition deploymentUT = spy(this.deployment);
-        doNothing().when(deploymentUT).setupPriorityOfRedundantRouter();
-        doReturn(2).when(deploymentUT).getNumberOfRoutersToDeploy();
-        doNothing().when(deploymentUT).findVirtualProvider();
-        doNothing().when(deploymentUT).findOfferingId();
-        doNothing().when(deploymentUT).findSourceNatIP();
-        doNothing().when(deploymentUT).deployAllVirtualRouters();
-
-        // Execute
-        deploymentUT.executeDeployment();
-
-        // Assert
-        verify(deploymentUT, times(0)).findVirtualProvider();
-        verify(deploymentUT, times(0)).findOfferingId();
-        verify(deploymentUT, times(0)).findSourceNatIP();
-        verify(deploymentUT, times(0)).deployAllVirtualRouters();
+        verify(deploymentUT, times(1)).setupPriorityOfRedundantRouter();
+        verify(deploymentUT, times(1)).getNumberOfRoutersToDeploy();
+        int proceedToDeployment = 0;
+        if (noOfRoutersToDeploy > 0) {
+            verify(deploymentUT, times(1)).prepareDeployment();
+            if (passPreparation) {
+                proceedToDeployment = 1;
+            }
+        }
+        verify(deploymentUT, times(proceedToDeployment)).findVirtualProvider();
+        verify(deploymentUT, times(proceedToDeployment)).findOfferingId();
+        verify(deploymentUT, times(proceedToDeployment)).findSourceNatIP();
+        verify(deploymentUT, times(proceedToDeployment)).deployAllVirtualRouters();
     }
 
     @Test
     public void testExecuteDeploymentNoRoutersToDeploy()
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        // Prepare
-        this.deployment.isRedundant = true;
-        this.deployment.isPublicNetwork = false;
-        RouterDeploymentDefinition deploymentUT = spy(this.deployment);
-        doNothing().when(deploymentUT).setupPriorityOfRedundantRouter();
-        doReturn(0).when(deploymentUT).getNumberOfRoutersToDeploy();
-        doNothing().when(deploymentUT).findVirtualProvider();
-        doNothing().when(deploymentUT).findOfferingId();
-        doNothing().when(deploymentUT).findSourceNatIP();
-        doNothing().when(deploymentUT).deployAllVirtualRouters();
-
-        // Execute
-        deploymentUT.executeDeployment();
-
-        // Assert
-        assertEquals("New account owner not properly set", this.mockOwner, deploymentUT.owner);
-        verify(this.mockNetworkModel, times(0)).isNetworkSystem((Network)anyObject());
-        verify(deploymentUT, times(0)).findVirtualProvider();
-        verify(deploymentUT, times(0)).findOfferingId();
-        verify(deploymentUT, times(0)).findSourceNatIP();
-        verify(deploymentUT, times(0)).deployAllVirtualRouters();
+        this.driveTestExecuteDeployment(0, true);
     }
 
     @Test
-    public void testCreateRouterNetworks() {
-        // TODO Implement this test
+    public void testExecuteDeploymentFailPreparation()
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        this.driveTestExecuteDeployment(2, false);
+    }
+
+    @Test
+    public void testExecuteDeployment()
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        this.driveTestExecuteDeployment(2, true);
     }
 
 }
