@@ -24,4 +24,5 @@ def merge(dbag, ip):
                dbag[mac].remove(address)
     if ip['add']:
        dbag.setdefault('eth' + str(ip['nic_dev_id']), []).append( ip )
+    pprint(dbag)
     return dbag
