@@ -31,14 +31,11 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider.Type;
-import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.router.VpcVirtualNetworkHelperImpl;
 import com.cloud.network.vpc.Vpc;
@@ -123,21 +120,19 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     }
 
     /**
-     * @see RouterDeploymentDefinition#executeDeployment()
+     * @see RouterDeploymentDefinition#prepareDeployment()
+     *
+     * @return if the deployment can proceed
      */
     @Override
-    protected void executeDeployment()
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        //2) Return routers if exist, otherwise...
-        if (getNumberOfRoutersToDeploy() > 0) {
-            this.findVirtualProvider();
-            this.findOfferingId();
-            this.findSourceNatIP();
+    protected boolean prepareDeployment() {
+        return true;
+    }
 
-            //3) Deploy Virtual Router
-            DomainRouterVO router = deployVpcRouter(sourceNatIp);
-            this.routers.add(router);
-        }
+    @Override
+    protected void setupPriorityOfRedundantRouter() {
+        // Nothing to do for now
+        // TODO Shouldn't we add this behavior once Redundant Router works for Vpc too
     }
 
     @Override
@@ -171,16 +166,18 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
         }
     }
 
-    protected DomainRouterVO deployVpcRouter(final PublicIp sourceNatIp)
-            throws ConcurrentOperationException, InsufficientAddressCapacityException,
-            InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
+    @Override
+    protected void deployAllVirtualRouters()
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         LinkedHashMap<Network, List<? extends NicProfile>> networks = this.nwHelper.createVpcRouterNetworks(this);
 
         DomainRouterVO router =
                 nwHelper.deployRouter(this, networks, true, vpcMgr.getSupportedVpcHypervisors());
 
-        return router;
+        if (router != null) {
+            this.routers.add(router);
+        }
     }
 
     @Override
