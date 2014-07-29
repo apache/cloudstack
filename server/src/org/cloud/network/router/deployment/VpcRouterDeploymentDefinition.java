@@ -116,7 +116,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     @Override
     protected int getNumberOfRoutersToDeploy() {
         // TODO Should we make our changes here in order to enable Redundant Router for VPC?
-        return 1 - this.routers.size();
+        return this.routers.isEmpty() ? 1 : 0;
     }
 
     /**
@@ -143,8 +143,6 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     @Override
     protected void findVirtualProvider() {
         List<? extends PhysicalNetwork> pNtwks = pNtwkDao.listByZone(vpc.getZoneId());
-
-        this.vrProvider = null;
 
         for (PhysicalNetwork pNtwk : pNtwks) {
             PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(pNtwk.getId(), Type.VPCVirtualRouter.toString());
