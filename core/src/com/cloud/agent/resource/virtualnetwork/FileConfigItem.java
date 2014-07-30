@@ -72,4 +72,14 @@ public class FileConfigItem extends ConfigItem {
         return sb.toString();
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("FileConfigItem, copying ");
+        sb.append(fileContents.length());
+        sb.append(" characters to ");
+        sb.append(fileName);
+        return sb.toString();
+    }
+
 }
