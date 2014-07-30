@@ -91,6 +91,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 @Component
 @Local(value = {MockVmManager.class})
@@ -354,7 +355,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             }
 
             txn.commit();
-            return new CheckVirtualMachineAnswer(cmd, vm.getState(), vm.getVncPort());
+            return new CheckVirtualMachineAnswer(cmd, vm.getState()==State.Running? PowerState.PowerOn: PowerState.PowerOff, vm.getVncPort());
         } catch (Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("unable to fetch vm state " + cmd.getVmName(), ex);
@@ -504,7 +505,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             return new RevertToVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
         }
         s_logger.debug("Reverted to snapshot " + snapshot + " of VM " + vm);
-        return new RevertToVMSnapshotAnswer(cmd, cmd.getVolumeTOs(), vmVo.getState());
+        return new RevertToVMSnapshotAnswer(cmd, cmd.getVolumeTOs(), vmVo.getState()== State.Running? PowerState.PowerOn: PowerState.PowerOff);
     }
 
     @Override

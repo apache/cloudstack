@@ -227,17 +227,15 @@ public class AgentRoutingResource extends AgentStorageResource {
         if (this.totalCpu < (vmSpec.getCpus() * vmSpec.getMaxSpeed() + this.usedCpu) || this.totalMem < (vmSpec.getMaxRam() + this.usedMem)) {
             return new StartAnswer(cmd, "Not enough resource to start the vm");
         }
-        try {
-            Answer result = _simMgr.simulate(cmd, hostGuid);
-            if (!result.getResult()) {
-                return new StartAnswer(cmd, result.getDetails());
-            }
-
-            this.usedCpu += vmSpec.getCpus() * vmSpec.getMaxSpeed();
-            this.usedMem += vmSpec.getMaxRam();
-            _runningVms.put(vmName, new Pair<Long, Long>(Long.valueOf(vmSpec.getCpus() * vmSpec.getMaxSpeed()), vmSpec.getMaxRam()));
-
+        Answer result = _simMgr.simulate(cmd, hostGuid);
+        if (!result.getResult()) {
+            return new StartAnswer(cmd, result.getDetails());
         }
+
+        this.usedCpu += vmSpec.getCpus() * vmSpec.getMaxSpeed();
+        this.usedMem += vmSpec.getMaxRam();
+        _runningVms.put(vmName, new Pair<Long, Long>(Long.valueOf(vmSpec.getCpus() * vmSpec.getMaxSpeed()), vmSpec.getMaxRam()));
+
 
         return new StartAnswer(cmd);
 
@@ -248,21 +246,19 @@ public class AgentRoutingResource extends AgentStorageResource {
         StopAnswer answer = null;
         String vmName = cmd.getVmName();
 
-        try {
-            Answer result = _simMgr.simulate(cmd, hostGuid);
+        Answer result = _simMgr.simulate(cmd, hostGuid);
 
-            if (!result.getResult()) {
-                return new StopAnswer(cmd, result.getDetails(), false);
-            }
-
-            answer = new StopAnswer(cmd, null, true);
-            Pair<Long, Long> data = _runningVms.get(vmName);
-            if (data != null) {
-                this.usedCpu -= data.first();
-                this.usedMem -= data.second();
-            }
-
+        if (!result.getResult()) {
+            return new StopAnswer(cmd, result.getDetails(), false);
         }
+
+        answer = new StopAnswer(cmd, null, true);
+        Pair<Long, Long> data = _runningVms.get(vmName);
+        if (data != null) {
+            this.usedCpu -= data.first();
+            this.usedMem -= data.second();
+         }
+
 
         return answer;
     }
