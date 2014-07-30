@@ -1,0 +1,85 @@
+#-*- mode: ruby -*-
+# vi: set ft=ruby :
+include RbConfig
+
+VAGRANTFILE_API_VERSION = '2'
+
+unless ENV['VPC_IP']
+  puts 'Please specify the VPC IP by settings the VPC_IP environment variable'
+  puts 'Example: export VPC_IP=192.168.56.30'
+  puts ''
+  exit 1
+end
+VPC_NAME='r-' + ENV['VPC_IP'].split('.').last + '-VM'
+
+if ARGV[0] == 'up'
+  iso_util=''
+  case CONFIG['host_os']
+    when /mswin|windows/i
+      puts 'Windows is not supported'
+      exit 1
+    when /linux|arch/i
+      iso_util='mkisofs -J -o systemvm.iso ./iso'
+    when /sunos|solaris/i
+      puts 'Solaris is not supported'
+      exit 1
+    when /darwin/i
+      iso_util='hdiutil makehybrid -iso -joliet -o systemvm.iso ./iso/'
+    else
+      puts 'This OS is not supported'
+      exit 1
+  end
+
+  system 'rm -rf ./systemvm.iso'
+  system 'mkdir -p iso/'
+  unless File.exist? '../../../../../../systemvm/dist/cloud-scripts.tgz'
+    puts 'No cloud-scripts.tgz found. Did you run the maven build?'
+    exit 1
+  end
+  system 'cp ../../../../../../systemvm/dist/cloud-scripts.tgz iso/'
+  unless File.exist? '../../../../../../systemvm/dist/systemvm.zip'
+    puts 'No systemvm.zip found. Did you run the maven build?'
+    exit 1
+  end
+  system 'cp ../../../../../../systemvm/dist/systemvm.zip iso/'
+
+  unless File.exist? '../../../vagrant.pub'
+    puts 'No vagrant.pub found!'
+    exit 1
+  end
+  system 'cp ../../../vagrant.pub iso/authorized_keys'
+  system 'chmod 600 iso/authorized_keys'
+
+  system iso_util
+end
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = 'cloudstack/systemvm'
+  config.vm.network 'private_network', ip: ENV['VPC_IP'], auto_config: false
+  config.vm.synced_folder 'vagrant', '/vagrant', disabled: true
+<% config[:synced_folders].each do |source, destination, options| %>
+  config.vm.synced_folder "<%= source %>", "<%= destination %>", type: 'rsync', <%= options %>
+<% end %>
+  config.ssh.forward_agent = true
+  config.ssh.username = 'root'
+  config.ssh.host = ENV['VPC_IP']
+  config.ssh.port = 3922
+  config.ssh.guest_port = 3922
+
+  config.vm.provider 'virtualbox' do |vb|
+    # enable or disable headless mode
+    vb.gui = true
+    vb.customize ['modifyvm', :id, '--memory', '256']
+    vb.customize ['storagectl', :id, '--name', 'IDE Controller', '--remove']
+    vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', '1', '--type', 'dvddrive',
+                  '--medium', './systemvm.iso']
+    vb.customize('pre-boot', ['modifyvm', :id, '--nic1', 'none'])
+    extra_data='cmdline:console=hvc0 vpccidr=172.16.0.0/16 domain=devcloud.local dns1=8.8.8.8 dns2=8.8.8.4' +
+        " template=domP name=#{VPC_NAME} eth0ip=#{ENV['VPC_IP']}" +
+        ' eth0mask=255.255.255.0 type=vpcrouter disable_rp_filter=true'
+    vb.customize('pre-boot', ['setextradata', :id, 'VBoxInternal/Devices/pcbios/0/Config/DmiOEMVBoxRev', extra_data])
+
+    # for internet access
+    vb.customize ['modifyvm', :id, '--nic8', 'nat']
+  end
+end
