@@ -62,14 +62,14 @@ vr_ips.each do |name,data|
          type "dev"
          table "Table_#{name}"
          ip ipo['public_ip']
-         mask ipo['vlan_netmask']
+         mask ipo['netmask']
          dev name
       end
       csip_route "#{name}-default" do
          type "default"
          table "Table_#{name}"
-         ip ipo['vlan_gateway']
-         mask ipo['vlan_netmask']
+         ip ipo['gateway']
+         mask ipo['netmask']
          dev name
       end
   end
