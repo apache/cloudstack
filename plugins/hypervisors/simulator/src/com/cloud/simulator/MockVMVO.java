@@ -25,7 +25,7 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 @Entity
 @Table(name = "mockvm")
@@ -44,8 +44,8 @@ public class MockVMVO implements MockVm, InternalIdentity {
     @Column(name = "type")
     private String vmType;
 
-    @Column(name = "state")
-    private State state;
+    @Column(name = "power_state")
+    protected PowerState powerState;
 
     @Column(name = "vnc_port")
     private int vncPort;
@@ -96,18 +96,19 @@ public class MockVMVO implements MockVm, InternalIdentity {
     }
 
     @Override
-    public State getState() {
-        return this.state;
+    public PowerState getPowerState() {
+        return powerState;
     }
+
+    @Override
+    public void setPowerState(PowerState powerState) {
+        this.powerState = powerState;
+    }
+
 
     @Override
     public String getType() {
         return this.vmType;
-    }
-
-    @Override
-    public void setState(State state) {
-        this.state = state;
     }
 
     @Override

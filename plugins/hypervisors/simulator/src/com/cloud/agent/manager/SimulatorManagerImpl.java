@@ -128,7 +128,7 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
@@ -453,7 +453,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
     }
 
     @Override
-    public Map<String, State> getVmStates(String hostGuid) {
+    public Map<String, PowerState> getVmStates(String hostGuid) {
         return _mockVmMgr.getVmStates(hostGuid);
     }
 

@@ -59,7 +59,6 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
@@ -288,18 +287,7 @@ public class AgentRoutingResource extends AgentStorageResource {
     protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport() {
         HashMap<String, HostVmStateReportEntry> report = new HashMap<String, HostVmStateReportEntry>();
 
-        Map<String, State> states = _simMgr.getVmStates(this.hostGuid);
-        for (String vmName : states.keySet()) {
-            State state = states.get(vmName);
-            if (state == State.Running) {
-                report.put(vmName, new HostVmStateReportEntry(PowerState.PowerOn, agentHost.getName()));
-            } else if (state == State.Stopped) {
-                report.put(vmName, new HostVmStateReportEntry(PowerState.PowerOff, agentHost.getName()));
-            } else {
-                report.put(vmName, new HostVmStateReportEntry(PowerState.PowerUnknown, agentHost.getName()));
-            }
-        }
-
+        Map<String, PowerState> states = _simMgr.getVmStates(this.hostGuid);
         return report;
     }
 
