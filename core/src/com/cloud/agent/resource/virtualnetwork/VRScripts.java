@@ -24,6 +24,7 @@ public class VRScripts {
     protected final static String IP_ASSOCIATION_CONFIG = "ip_associations.json";
     protected final static String GUEST_NETWORK_CONFIG = "guest_network.json";
     protected final static String NETWORK_ACL_CONFIG = "network_acl.json";
+    protected final static String VM_METADATA_CONFIG = "vm_metadata.json";
 
     protected final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
     protected final static int DEFAULT_EXECUTEINVR_TIMEOUT = 120; //Seconds

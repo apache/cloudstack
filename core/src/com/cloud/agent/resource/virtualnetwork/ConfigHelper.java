@@ -19,14 +19,9 @@
 
 package com.cloud.agent.resource.virtualnetwork;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.codec.binary.Base64;
 
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -71,6 +66,7 @@ import com.cloud.agent.resource.virtualnetwork.model.NetworkACL;
 import com.cloud.agent.resource.virtualnetwork.model.ProtocolAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.TcpAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.UdpAclRule;
+import com.cloud.agent.resource.virtualnetwork.model.VmData;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.rules.FirewallRule;
@@ -106,7 +102,7 @@ public class ConfigHelper {
         } else if (cmd instanceof DeleteIpAliasCommand) {
             cfg = generateConfig((DeleteIpAliasCommand)cmd);
         } else if (cmd instanceof VmDataCommand) {
-            cfg = generateConfig((VmDataCommand)cmd);
+            cfg = generateConfig((VmDataCommand)cmd); // Migrated
         } else if (cmd instanceof SetFirewallRulesCommand) {
             cfg = generateConfig((SetFirewallRulesCommand)cmd);
         } else if (cmd instanceof BumpUpPriorityCommand) {
@@ -120,13 +116,13 @@ public class ConfigHelper {
         } else if (cmd instanceof SetMonitorServiceCommand) {
             cfg = generateConfig((SetMonitorServiceCommand)cmd);
         } else if (cmd instanceof SetupGuestNetworkCommand) {
-            cfg = generateConfig((SetupGuestNetworkCommand)cmd);
+            cfg = generateConfig((SetupGuestNetworkCommand)cmd); // Migrated
         } else if (cmd instanceof SetNetworkACLCommand) {
-            cfg = generateConfig((SetNetworkACLCommand)cmd);
+            cfg = generateConfig((SetNetworkACLCommand)cmd); // Migrated
         } else if (cmd instanceof SetSourceNatCommand) {
-            cfg = generateConfig((SetSourceNatCommand)cmd);
+            cfg = generateConfig((SetSourceNatCommand)cmd); // Migrated - ignored
         } else if (cmd instanceof IpAssocCommand) {
-            cfg = generateConfig((IpAssocCommand)cmd);
+            cfg = generateConfig((IpAssocCommand)cmd); // Migrated
         } else {
             return null;
         }
@@ -322,21 +318,15 @@ public class ConfigHelper {
     }
 
     private static List<ConfigItem> generateConfig(VmDataCommand cmd) {
+        VmData vmData = new VmData(cmd.getVmIpAddress(), cmd.getVmData());
+
         LinkedList<ConfigItem> cfg = new LinkedList<>();
-        Map<String, List<String[]>> data = new HashMap<String, List<String[]>>();
-        data.put(cmd.getVmIpAddress(), cmd.getVmData());
+        ConfigItem networkAclFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, VRScripts.VM_METADATA_CONFIG, gson.toJson(vmData));
+        cfg.add(networkAclFile);
 
-        String json = new Gson().toJson(data);
-        String encoded;
-        try {
-            encoded = Base64.encodeBase64String(json.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalArgumentException("Unable retrieve UTF-8 encoded data from vmdata");
-        }
+        ConfigItem updateNetworkACL = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, VRScripts.VM_METADATA_CONFIG);
+        cfg.add(updateNetworkACL);
 
-        String args = "-d " + encoded;
-
-        cfg.add(new ScriptConfigItem(VRScripts.VMDATA, args));
         return cfg;
     }
 

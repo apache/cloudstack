@@ -713,13 +713,8 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     }
 
     private void verifyArgs(VmDataCommand cmd, String script, String args) {
-        assertEquals(script, VRScripts.VMDATA);
-        assertEquals(args, "-d eyIxMC4xLjEwLjQiOltbInVzZXJkYXRhIiwidXNlci1kYXRhIiwidXNlci1kYXRhIl0sWyJtZXRhZGF0YSIsInN" +
-                "lcnZpY2Utb2ZmZXJpbmciLCJzZXJ2aWNlT2ZmZXJpbmciXSxbIm1ldGFkYXRhIiwiYXZhaWxhYmlsaXR5LXpvbmUiLCJ6b25lTmFt" +
-                "ZSJdLFsibWV0YWRhdGEiLCJsb2NhbC1pcHY0IiwiMTAuMS4xMC40Il0sWyJtZXRhZGF0YSIsImxvY2FsLWhvc3RuYW1lIiwidGVzd" +
-                "C12bSJdLFsibWV0YWRhdGEiLCJwdWJsaWMtaXB2NCIsIjExMC4xLjEwLjQiXSxbIm1ldGFkYXRhIiwicHVibGljLWhvc3RuYW1lIi" +
-                "wiaG9zdG5hbWUiXSxbIm1ldGFkYXRhIiwiaW5zdGFuY2UtaWQiLCJpLTQtVk0iXSxbIm1ldGFkYXRhIiwidm0taWQiLCI0Il0sWyJ" +
-                "tZXRhZGF0YSIsInB1YmxpYy1rZXlzIiwicHVibGlja2V5Il0sWyJtZXRhZGF0YSIsImNsb3VkLWlkZW50aWZpZXIiLCJDbG91ZFN0YWNrLXt0ZXN0fSJdXX0=");
+        assertEquals(script, VRScripts.UPDATE_CONFIG);
+        assertEquals(args, VRScripts.VM_METADATA_CONFIG);
     }
 
     @Test
