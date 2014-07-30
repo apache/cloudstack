@@ -68,7 +68,7 @@ class TestDeployVM(cloudstackTestCase):
             self.account
         ]
 
-    @attr(tags = ['advanced'], BugId="CLOUDSTACK-6873", required_hardware="false")
+    @attr(tags = ['advanced'], required_hardware="false")
     def test_deploy_vm(self):
         """Test Deploy Virtual Machine
 
@@ -111,7 +111,7 @@ class TestDeployVM(cloudstackTestCase):
             msg="VM is not in Running state"
         )
 
-    @attr(tags = ['advanced','basic','sg'], BugId="CLOUDSTACK-6873", required_hardware="false") 
+    @attr(tags = ['advanced','basic','sg'], required_hardware="false")
     def test_deploy_vm_multiple(self):
         """Test Multiple Deploy Virtual Machine
 
@@ -207,7 +207,7 @@ class TestDeployVMVolumeCreationFailure(cloudstackTestCase):
         ]
 
 
-    @attr(tags = ['advanced'], BugId="CLOUDSTACK-6873", required_hardware="false")
+    @attr(tags = ['advanced'], required_hardware="false")
     def test_deploy_vm_volume_creation_failure(self):
         """Test Deploy Virtual Machine - volume creation failure and retry
 
@@ -318,7 +318,7 @@ class TestDeployVMStartFailure(cloudstackTestCase):
             self.mock_start_failure
         ]
 
-    @attr(tags = ['advanced'], BugId="CLOUDSTACK-6873", required_hardware="false")
+    @attr(tags = ['advanced'], required_hardware="false")
     def test_deploy_vm_start_failure(self):
         """Test Deploy Virtual Machine - start operation failure and retry
 
