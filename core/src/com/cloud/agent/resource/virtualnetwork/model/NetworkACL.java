@@ -25,20 +25,22 @@ public class NetworkACL extends ConfigBase {
     private boolean privateGatewayAcl;
     private String nicIp;
     private String nicNetmask;
-    private String rule;
+    private AclRule[] ingressRules;
+    private AclRule[] egressRules;
 
     public NetworkACL() {
         setType("networkacl");
     }
 
-    public NetworkACL(String device, String macAddress, boolean privateGatewayAcl, String nicIp, String nicNetmask, String rule) {
+    public NetworkACL(String device, String macAddress, boolean privateGatewayAcl, String nicIp, String nicNetmask, AclRule[] ingressRules, AclRule[] egressRules) {
         setType("networkacl");
         this.device = device;
         this.macAddress = macAddress;
         this.privateGatewayAcl = privateGatewayAcl;
         this.nicIp = nicIp;
         this.nicNetmask = nicNetmask;
-        this.rule = rule; //FIXME Split this in o
+        this.ingressRules = ingressRules;
+        this.egressRules = egressRules;
     }
 
     public String getDevice() {
@@ -81,12 +83,20 @@ public class NetworkACL extends ConfigBase {
         this.nicNetmask = nicNetmask;
     }
 
-    public String getRule() {
-        return rule;
+    public AclRule[] getIngressRules() {
+        return ingressRules;
     }
 
-    public void setRule(String rule) {
-        this.rule = rule;
+    public void setIngressRules(AclRule[] ingressRules) {
+        this.ingressRules = ingressRules;
+    }
+
+    public AclRule[] getEgressRules() {
+        return egressRules;
+    }
+
+    public void setEgressRules(AclRule[] egressRules) {
+        this.egressRules = egressRules;
     }
 
 }
