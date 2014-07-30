@@ -58,7 +58,7 @@ class updateDataBag:
         self.save(dbag)
   
     def processGuestNetwork(self, dbag):
-        dbag = cs_guestnetwork.merge(dbag, self.qFile.data)
+        return cs_guestnetwork.merge(dbag, self.qFile.data)
 
     def processIP(self, dbag):
         for ip in self.qFile.data["ip_address"]:
