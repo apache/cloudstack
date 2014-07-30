@@ -58,6 +58,17 @@ class updateDataBag:
         self.save(dbag)
   
     def processGuestNetwork(self, dbag):
+        d = self.qFile.data
+        dp = {}
+        dp['public_ip']      = d['router_guest_ip']
+        dp['netmask']        = d['router_guest_netmask']
+        dp['source_nat']     = False
+        dp['add']            = d['add']
+        dp['one_to_one_nat'] = False
+        dp['gateway']        = d['router_guest_gateway']
+        dp['nic_dev_id']     = d['device'][3]
+        qf = loadQueueFile()
+        qf.load({ 'ip_address' : [ dp ], 'type' : 'ips'})
         return cs_guestnetwork.merge(dbag, self.qFile.data)
 
     def processIP(self, dbag):
@@ -73,22 +84,23 @@ class updateDataBag:
         self.qFile.setType("ips")
         self.processCLItem('0')
         self.processCLItem('1')
+        self.processCLItem('2')
 
     def processCLItem(self, num):
         key = 'eth' + num + 'ip'
         dp  = {}
         if(key in self.qFile.data['cmdline']):
            dp['public_ip']    = self.qFile.data['cmdline'][key]
-           dp['vlan_netmask'] = self.qFile.data['cmdline']['eth' + num + 'mask']
+           dp['netmask'] = self.qFile.data['cmdline']['eth' + num + 'mask']
            dp['source_nat'] = False
            dp['add'] = True
            dp['one_to_one_nat'] = False
            if('localgw' in self.qFile.data['cmdline']):
-               dp['vlan_gateway'] = self.qFile.data['cmdline']['localgw']
+               dp['gateway'] = self.qFile.data['cmdline']['localgw']
            else:
-               dp['vlan_gateway'] = 'None'
+               dp['gateway'] = 'None'
            dp['nic_dev_id'] = num
-           self.newData.append(dp)
+           self.newData = { 'ip_address' : [ dp ], 'type' : 'ips'}
             
 class loadQueueFile:
 
@@ -96,7 +108,12 @@ class loadQueueFile:
     dpath = "/etc/cloudstack"
     data = {}
 
-    def load(self):
+    def load(self, data):
+        if data is not None:
+            self.data = data
+            self.type = self.data["type"]
+            proc = updateDataBag(self)
+            return
         fn = self.dpath + '/' + self.fileName
         try:
             handle = open(fn)
