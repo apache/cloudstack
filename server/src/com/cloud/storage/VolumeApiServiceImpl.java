@@ -1669,6 +1669,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         boolean liveMigrateVolume = false;
         Long instanceId = vol.getInstanceId();
+        Long srcClusterId = null;
         VMInstanceVO vm = null;
         if (instanceId != null) {
             vm = _vmInstanceDao.findById(instanceId);
@@ -1686,6 +1687,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 HypervisorCapabilitiesVO capabilities = null;
                 if (host != null) {
                     capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(host.getHypervisorType(), host.getHypervisorVersion());
+                    srcClusterId = host.getClusterId();
                 }
 
                 if (capabilities != null) {
@@ -1711,6 +1713,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (_volumeMgr.volumeOnSharedStoragePool(vol)) {
             if (destPool.isLocal()) {
                 throw new InvalidParameterValueException("Migration of volume from shared to local storage pool is not supported");
+            } else {
+                // If the volume is attached to a running vm and the volume is on a shared storage pool, check
+                // to make sure that the destination storage pool is in the same cluster as the vm.
+                if (liveMigrateVolume && destPool.getClusterId() != null && srcClusterId != null) {
+                    if (!srcClusterId.equals(destPool.getClusterId())) {
+                        throw new InvalidParameterValueException("Cannot migrate a volume of a virtual machine to a storage pool in a different cluster");
+                    }
+                }
             }
         } else {
             throw new InvalidParameterValueException("Migration of volume from local storage pool is not supported");
