@@ -2632,6 +2632,9 @@ class TestInstances(cloudstackTestCase):
                           len(list_volumes_page1),
                           "VM's volume count is not matching in page 1"
                           )
+        # stopping VM before detaching volumes
+        vm_created.stop(self.userapiclient)
+
         # Detaching all the volumes attached from VM
         for i in range(0, len(list_volumes_page1)):
             vm_created.detach_volume(
