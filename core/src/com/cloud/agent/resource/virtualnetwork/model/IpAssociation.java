@@ -19,15 +19,24 @@
 
 package com.cloud.agent.resource.virtualnetwork.model;
 
-public abstract class ConfigBase {
-    private String type = "unknown";
+public class IpAssociation extends ConfigBase {
+    private IpAddress[] ipAddress;
 
-    public String getType() {
-        return type;
+    public IpAssociation() {
+        setType("ips");
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public IpAssociation(IpAddress[] ipAddress) {
+        setType("ips");
+        this.ipAddress = ipAddress;
+    }
+
+    public IpAddress[] getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(IpAddress[] ipAddress) {
+        this.ipAddress = ipAddress;
     }
 
 }

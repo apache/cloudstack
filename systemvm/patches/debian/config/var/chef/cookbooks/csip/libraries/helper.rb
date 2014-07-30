@@ -39,7 +39,7 @@ def inConfig(ips, dev, tip)
        return false 
     end
     ips[dev].each do |o|
-       oip = o['publicIp'] + '/' << IPAddr.new(o['vlanNetmask']).to_i.to_s(2).count("1").to_s
+       oip = o['public_ip'] + '/' << IPAddr.new(o['netmask']).to_i.to_s(2).count("1").to_s
        if oip == tip
           return true
        end
