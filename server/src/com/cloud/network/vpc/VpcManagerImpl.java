@@ -671,18 +671,16 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
 
-            List<?> wPagination = StringUtils.applyPagination(supportedOfferings, startIndex, pageSizeVal);
+            List<? extends VpcOffering> wPagination = StringUtils.applyPagination(supportedOfferings, startIndex, pageSizeVal);
             if (wPagination != null) {
-                @SuppressWarnings("unchecked")
-                Pair<List<? extends VpcOffering>, Integer> listWPagination = new Pair<List<? extends VpcOffering>, Integer>((List<VpcOffering>) wPagination, supportedOfferings.size());
+                Pair<List<? extends VpcOffering>, Integer> listWPagination = new Pair<List<? extends VpcOffering>, Integer>(wPagination, supportedOfferings.size());
                 return listWPagination;
             }
             return new Pair<List<? extends VpcOffering>, Integer>(supportedOfferings, supportedOfferings.size());
         } else {
-            List<?> wPagination = StringUtils.applyPagination(offerings, startIndex, pageSizeVal);
+            List<? extends VpcOffering> wPagination = StringUtils.applyPagination(offerings, startIndex, pageSizeVal);
             if (wPagination != null) {
-                @SuppressWarnings("unchecked")
-                Pair<List<? extends VpcOffering>, Integer> listWPagination = new Pair<List<? extends VpcOffering>, Integer>((List<VpcOffering>) wPagination, offerings.size());
+                Pair<List<? extends VpcOffering>, Integer> listWPagination = new Pair<List<? extends VpcOffering>, Integer>(wPagination, offerings.size());
                 return listWPagination;
             }
             return new Pair<List<? extends VpcOffering>, Integer>(offerings, offerings.size());
@@ -1128,18 +1126,16 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
 
-            List<?> wPagination = StringUtils.applyPagination(supportedVpcs, startIndex, pageSizeVal);
+            List<? extends Vpc> wPagination = StringUtils.applyPagination(supportedVpcs, startIndex, pageSizeVal);
             if (wPagination != null) {
-                @SuppressWarnings("unchecked")
-                Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<List<? extends Vpc>, Integer>((List<Vpc>) wPagination, supportedVpcs.size());
+                Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<List<? extends Vpc>, Integer>(wPagination, supportedVpcs.size());
                 return listWPagination;
             }
             return new Pair<List<? extends Vpc>, Integer>(supportedVpcs, supportedVpcs.size());
         } else {
-            List<?> wPagination = StringUtils.applyPagination(vpcs, startIndex, pageSizeVal);
+            List<? extends Vpc> wPagination = StringUtils.applyPagination(vpcs, startIndex, pageSizeVal);
             if (wPagination != null) {
-                @SuppressWarnings("unchecked")
-                Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<List<? extends Vpc>, Integer>((List<Vpc>) wPagination, vpcs.size());
+                Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<List<? extends Vpc>, Integer>(wPagination, vpcs.size());
                 return listWPagination;
             }
             return new Pair<List<? extends Vpc>, Integer>(vpcs, vpcs.size());

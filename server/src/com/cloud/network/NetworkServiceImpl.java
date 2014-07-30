@@ -1623,10 +1623,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         //Now apply pagination
-        List<?> wPagination = StringUtils.applyPagination(networksToReturn, cmd.getStartIndex(), cmd.getPageSizeVal());
+        List<? extends Network> wPagination = StringUtils.applyPagination(networksToReturn, cmd.getStartIndex(), cmd.getPageSizeVal());
         if (wPagination != null) {
-            @SuppressWarnings("unchecked")
-            Pair<List<? extends Network>, Integer> listWPagination = new Pair<List<? extends Network>, Integer>((List<NetworkVO>) wPagination, networksToReturn.size());
+            Pair<List<? extends Network>, Integer> listWPagination = new Pair<List<? extends Network>, Integer>(wPagination, networksToReturn.size());
             return listWPagination;
         }
 

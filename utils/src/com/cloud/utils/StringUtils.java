@@ -269,16 +269,16 @@ public class StringUtils {
         return s;
     }
 
-    public static List<?> applyPagination(List<?> originalList, Long startIndex, Long pageSizeVal) {
+    public static <T> List<T> applyPagination(List<T> originalList, Long startIndex, Long pageSizeVal) {
         // Most likely pageSize will never exceed int value, and we need integer to partition the listToReturn
         boolean applyPagination = startIndex != null && pageSizeVal != null
                 && startIndex <= Integer.MAX_VALUE && startIndex >= Integer.MIN_VALUE && pageSizeVal <= Integer.MAX_VALUE
                 && pageSizeVal >= Integer.MIN_VALUE;
-        List<?> listWPagination = null;
+        List<T> listWPagination = null;
         if (applyPagination) {
             listWPagination = new ArrayList<>();
             int index = startIndex.intValue() == 0 ? 0 : startIndex.intValue() / pageSizeVal.intValue();
-            List<List<?>> partitions = StringUtils.partitionList(originalList, pageSizeVal.intValue());
+            List<List<T>> partitions = StringUtils.partitionList(originalList, pageSizeVal.intValue());
             if (index < partitions.size()) {
                 listWPagination = partitions.get(index);
             }
@@ -286,8 +286,8 @@ public class StringUtils {
         return listWPagination;
     }
 
-    private static List<List<?>> partitionList(List<?> originalList, int chunkSize) {
-        List<List<?>> listOfChunks = new ArrayList<List<?>>();
+    private static <T> List<List<T>> partitionList(List<T> originalList, int chunkSize) {
+        List<List<T>> listOfChunks = new ArrayList<List<T>>();
         for (int i = 0; i < originalList.size() / chunkSize; i++) {
             listOfChunks.add(originalList.subList(i * chunkSize, i * chunkSize + chunkSize));
         }

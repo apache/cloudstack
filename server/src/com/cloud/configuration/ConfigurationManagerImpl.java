@@ -4487,18 +4487,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             // Now apply pagination
-            List<?> wPagination = StringUtils.applyPagination(supportedOfferings, cmd.getStartIndex(), cmd.getPageSizeVal());
+            List<? extends NetworkOffering> wPagination = StringUtils.applyPagination(supportedOfferings, cmd.getStartIndex(), cmd.getPageSizeVal());
             if (wPagination != null) {
-                @SuppressWarnings("unchecked")
-                Pair<List<? extends NetworkOffering>, Integer> listWPagination = new Pair<List<? extends NetworkOffering>, Integer>((List<NetworkOffering>) wPagination, offerings.size());
+                Pair<List<? extends NetworkOffering>, Integer> listWPagination = new Pair<List<? extends NetworkOffering>, Integer>(wPagination, offerings.size());
                 return listWPagination;
             }
             return new Pair<List<? extends NetworkOffering>, Integer>(supportedOfferings, supportedOfferings.size());
         } else {
-            List<?> wPagination = StringUtils.applyPagination(offerings, cmd.getStartIndex(), cmd.getPageSizeVal());
+            List<? extends NetworkOffering> wPagination = StringUtils.applyPagination(offerings, cmd.getStartIndex(), cmd.getPageSizeVal());
             if (wPagination != null) {
-                @SuppressWarnings("unchecked")
-                Pair<List<? extends NetworkOffering>, Integer> listWPagination = new Pair<List<? extends NetworkOffering>, Integer>((List<NetworkOffering>) wPagination, offerings.size());
+                Pair<List<? extends NetworkOffering>, Integer> listWPagination = new Pair<List<? extends NetworkOffering>, Integer>(wPagination, offerings.size());
                 return listWPagination;
             }
             return new Pair<List<? extends NetworkOffering>, Integer>(offerings, offerings.size());
