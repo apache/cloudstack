@@ -1,0 +1,5 @@
+source 'https://rubygems.org'
+
+gem 'test-kitchen', :git => 'https://github.com/test-kitchen/test-kitchen.git', :branch => 'master'
+gem 'kitchen-vagrant'
+gem 'vagrant-wrapper'
