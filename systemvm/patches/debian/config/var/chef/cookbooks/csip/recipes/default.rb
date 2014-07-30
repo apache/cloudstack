@@ -21,11 +21,11 @@ rescue
     raise format('Cannot find the %s databag item within the %s databag. Please correct this', 'vr', 'ips')
 end
 
-begin
-    cmdline = data_bag_item('vr', 'cmdline')
-rescue
-    raise format('Cannot find the %s databag item within the %s databag. Please correct this', 'vr', 'cmdline')
-end
+#begin
+#    cmdline = data_bag_item('vr', 'cmdline')
+#rescue
+#    raise format('Cannot find the %s databag item within the %s databag. Please correct this', 'vr', 'cmdline')
+#end
 
 # List configured ips on this node and remove any that are not in the configuration
 listIPs(vr_ips).each do |dev, ip|
