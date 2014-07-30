@@ -3,8 +3,7 @@ package com.cloud.baremetal.networkservice;
 /**
  * Created by frank on 7/23/14.
  */
-public class BaremetalVritualRouterCommands {
-    public static String PREPARE_PXE_URL = "/baremetal/pxe/prepare";
+public class BaremetalVirtualRouterCommands {
 
     public abstract static class AgentCommand {
     }
@@ -32,9 +31,18 @@ public class BaremetalVritualRouterCommands {
 
     public static class PreparePxeCmd extends AgentCommand {
         private String guestMac;
+        private String templateUuid;
         private String kickStartUrl;
         private String initrdUrl;
         private String kernelUrl;
+
+        public String getTemplateUuid() {
+            return templateUuid;
+        }
+
+        public void setTemplateUuid(String templateUuid) {
+            this.templateUuid = templateUuid;
+        }
 
         public String getGuestMac() {
             return guestMac;
@@ -70,5 +78,29 @@ public class BaremetalVritualRouterCommands {
     }
 
     public static class PreparePxeRsp extends AgentResponse {
+    }
+
+    public static class PrepareSourceNatCmd extends AgentCommand {
+        private String internalStorageServerIp;
+        private String managementNicIp;
+
+        public String getInternalStorageServerIp() {
+            return internalStorageServerIp;
+        }
+
+        public void setInternalStorageServerIp(String internalStorageServerIp) {
+            this.internalStorageServerIp = internalStorageServerIp;
+        }
+
+        public String getManagementNicIp() {
+            return managementNicIp;
+        }
+
+        public void setManagementNicIp(String managementNicIp) {
+            this.managementNicIp = managementNicIp;
+        }
+    }
+
+    public static class PrepareSourceNatRsp extends AgentResponse {
     }
 }

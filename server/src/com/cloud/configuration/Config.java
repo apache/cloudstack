@@ -1766,8 +1766,16 @@ public enum Config {
             ManagementServer.class,
             String.class,
             "baremetal.peer.hypervisor.type",
-            "XenServer",
+            "Vmware",
             "Hypervisor[Xenserver/KVM/VMWare] used to spring up virtual router for baremetal instances. The cluster having this hypervisor type must be in the same zone with baremetal cluster",
+            null),
+    BaremetalInternalStorageServer(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "baremetal.internal.storage.server.ip",
+            null,
+            "the ip address of server that stores kickstart file, kernel, initrd, ISO for advanced networking baremetal provisioning",
             null),
     ExternalBaremetalSystemUrl(
             "Advanced",
