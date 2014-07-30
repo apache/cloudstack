@@ -150,16 +150,15 @@ class TestBasicOperations(cloudstackTestCase):
                                                                       cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
         cls.mode = cls.zone.networktype
-        if cls.mode == "advanced":
-            cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client,
+        cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client,
                                                                       cls.services["isolated_network_offering"])
-            cls._cleanup.append(cls.isolated_network_offering)
-            cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client,
+        cls._cleanup.append(cls.isolated_network_offering)
+        cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client,
                                                     cls.services["nw_offering_isolated_vpc"])
-            cls._cleanup.append(cls.isolated_network_offering_vpc)
-            cls.vpc_off = VpcOffering.create(cls.api_client, cls.services["vpc_offering"])
-            cls.vpc_off.update(cls.api_client, state='Enabled')
-            cls._cleanup.append(cls.vpc_off)
+        cls._cleanup.append(cls.isolated_network_offering_vpc)
+        cls.vpc_off = VpcOffering.create(cls.api_client, cls.services["vpc_offering"])
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+        cls._cleanup.append(cls.vpc_off)
         return
 
     @classmethod
@@ -489,14 +488,13 @@ class TestNetworkRules(cloudstackTestCase):
                                         cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
         cls.mode = cls.zone.networktype
-        if cls.mode == "advanced":
-            cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
-            cls._cleanup.append(cls.isolated_network_offering)
-            cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client, cls.services["nw_offering_isolated_vpc"])
-            cls._cleanup.append(cls.isolated_network_offering_vpc)
-            cls.vpc_off = VpcOffering.create(cls.api_client, cls.services["vpc_offering"])
-            cls.vpc_off.update(cls.api_client, state='Enabled')
-            cls._cleanup.append(cls.vpc_off)
+        cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
+        cls._cleanup.append(cls.isolated_network_offering)
+        cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client, cls.services["nw_offering_isolated_vpc"])
+        cls._cleanup.append(cls.isolated_network_offering_vpc)
+        cls.vpc_off = VpcOffering.create(cls.api_client, cls.services["vpc_offering"])
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+        cls._cleanup.append(cls.vpc_off)
         return
 
     @classmethod
@@ -864,14 +862,13 @@ class TestVmNetworkOperations(cloudstackTestCase):
                                         cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
         cls.mode = cls.zone.networktype
-        if cls.mode == "advanced":
-            cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
-            cls._cleanup.append(cls.isolated_network_offering)
-            cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client, cls.services["nw_offering_isolated_vpc"])
-            cls._cleanup.append(cls.isolated_network_offering_vpc)
-            cls.vpc_off = VpcOffering.create(cls.api_client, cls.services["vpc_offering"])
-            cls.vpc_off.update(cls.api_client, state='Enabled')
-            cls._cleanup.append(cls.vpc_off)
+        cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
+        cls._cleanup.append(cls.isolated_network_offering)
+        cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client, cls.services["nw_offering_isolated_vpc"])
+        cls._cleanup.append(cls.isolated_network_offering_vpc)
+        cls.vpc_off = VpcOffering.create(cls.api_client, cls.services["vpc_offering"])
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+        cls._cleanup.append(cls.vpc_off)
         return
 
     @classmethod
