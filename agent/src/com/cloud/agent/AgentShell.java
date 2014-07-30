@@ -424,11 +424,25 @@ public class AgentShell implements IAgentShell, Daemon {
                 ipv6disabled = Boolean.parseBoolean(ipv6);
             }
 
+            boolean ipv6prefer = false;
+            String ipv6p = getProperty(null, "ipv6prefer");
+            if (ipv6p != null) {
+                ipv6prefer = Boolean.parseBoolean(ipv6p);
+            }
+
             if (ipv6disabled) {
-                s_logger.debug("Preferring IPv4 address family for agent connection");
+                s_logger.info("Preferring IPv4 address family for agent connection");
                 System.setProperty("java.net.preferIPv4Stack", "true");
+                if (ipv6prefer) {
+                    s_logger.info("ipv6prefer is set to true, but ipv6disabled is false. Not preferring IPv6 for agent connection");
+                }
             } else {
-                s_logger.debug("Preferring IPv6 address family for agent connection");
+                if (ipv6prefer) {
+                    s_logger.info("Preferring IPv6 address family for agent connection");
+                    System.setProperty("java.net.preferIPv6Addresses", "true");
+                } else {
+                    s_logger.info("Using default Java settings for IPv6 preference for agent connection");
+                }
             }
 
             String instance = getProperty(null, "instance");
