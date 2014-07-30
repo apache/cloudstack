@@ -5,8 +5,8 @@ def merge(dbag, gn):
     for dev in dbag:
         if dev == "id":
            continue
-        if dev == n['device']:
-           dbag[dev].remove(dev)
+        if dbag[dev][0]['device'] == gn['device']:
+           dbag[dev].remove(dbag[dev][0])
     if gn['add']:
        dbag.setdefault(gn['device'], []).append( gn )
     return dbag
