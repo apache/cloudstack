@@ -15,7 +15,7 @@ if ( len(sys.argv) != 2 ):
 
 qf = loadQueueFile()
 qf.setFile(sys.argv[1])
-qf.load()
+qf.load(None)
 
 # Converge
 chefrun = subprocess.Popen(["/usr/bin/chef-solo",
