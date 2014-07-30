@@ -227,7 +227,7 @@ class TestVmUsage(cloudstackTestCase):
         try:
             # Destroy the VM
             self.debug("Destroying the VM: %s" % self.virtual_machine.id)
-            self.virtual_machine.delete(self.apiclient)
+            self.virtual_machine.delete(self.apiclient, expunge=True)
         except Exception as e:
             self.fail("Failed to delete VM: %s" % e)
 

@@ -534,10 +534,7 @@ class TestNetwork(cloudstackTestCase):
                         )
 
         # Delete VM before network gets deleted in cleanup
-        virtual_machine.delete(self.apiclient)
-
-        # Wait for expunge interval to cleanup VM
-        wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
 

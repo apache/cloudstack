@@ -317,13 +317,11 @@ class TestBrocadeVcs(cloudstackTestCase):
                         )
 
         # Deleting a single VM
-        VirtualMachine.delete(virtual_machine_1, self.apiclient)
-        VirtualMachine.expung(virtual_machine_1, self.apiclient)
+        VirtualMachine.delete(virtual_machine_1, self.apiclient, expunge=True)
 
 
         # Deleting a single VM
-        VirtualMachine.delete(virtual_machine_2, self.apiclient)
-        VirtualMachine.expung(virtual_machine_2, self.apiclient)
+        VirtualMachine.delete(virtual_machine_2, self.apiclient, expunge=True)
 
 
         # Delete Network

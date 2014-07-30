@@ -218,7 +218,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
             )
             cls._cleanup.append(cls.pw_ssh_enabled_template)
             # Delete the VM - No longer needed
-            cls.virtual_machine.delete(cls.api_client)
+            cls.virtual_machine.delete(cls.api_client, expunge=True)
         except Exception as e:
             cls.tearDownClass()
             raise unittest.SkipTest("Exception in setUpClass: %s" % e)
@@ -359,7 +359,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to SSH into VM with new keypair: %s, %s" %
                                                     (virtual_machine.name, e))
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -477,7 +477,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to SSH into VM with password: %s, %s" %
                                                     (virtual_machine.name, e))
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -580,7 +580,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to SSH into VM with new keypair: %s, %s" %
                                                     (virtual_machine.name, e))
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -691,7 +691,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to SSH into VM with new keypair: %s, %s" %
                                                     (virtual_machine.name, e))
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -766,7 +766,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
                                         domainid=self.account.domainid
                                         )
 
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -844,7 +844,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
                                         domainid=self.account.domainid
                                         )
 
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -920,7 +920,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
                                         )
         self.debug("Reset SSH key pair failed due to invalid parameters")
 
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
 class TestResetSSHKeyUserRights(cloudstackTestCase):
@@ -1030,7 +1030,7 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
             cls.volume.id
         )
         # Delete the VM - No longer needed
-        cls.virtual_machine.delete(cls.api_client)
+        cls.virtual_machine.delete(cls.api_client, expunge=True)
 
         cls._cleanup = [
                         cls.service_offering,
@@ -1184,7 +1184,7 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
             self.fail("Failed to SSH into VM with new keypair: %s, %s" %
                                                     (virtual_machine.name, e))
 
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -1323,7 +1323,7 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
             self.fail("Failed to SSH into VM with new keypair: %s, %s" %
                                                     (virtual_machine.name, e))
 
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -1462,5 +1462,5 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to SSH into VM with new keypair: %s, %s" %
                                                     (virtual_machine.name, e))
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return

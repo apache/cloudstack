@@ -1207,23 +1207,8 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Destroy the VM
-        self.virtual_machine.delete(self.apiclient)
+        self.virtual_machine.delete(self.apiclient, expunge=True)
 
-        config = Configurations.list(
-                                     self.apiclient,
-                                     name='expunge.delay'
-                                     )
-        self.assertEqual(
-                          isinstance(config, list),
-                          True,
-                          "Check list configurations response"
-                    )
-        response = config[0]
-        self.debug("expunge.delay: %s" % response.value)
-        # Wait for some time more than expunge.delay
-        time.sleep(int(response.value) * 2)
-
-        # Deleting Security group should raise exception
         try:
             self.debug("Deleting Security Group: %s" % security_group.id)
             security_group.delete(self.apiclient)

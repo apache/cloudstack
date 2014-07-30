@@ -797,36 +797,8 @@ class TestEIP(cloudstackTestCase):
                                             ))
 
         self.debug("Destroying an instance: %s" % self.virtual_machine.name)
-        self.virtual_machine.delete(self.apiclient)
+        self.virtual_machine.delete(self.apiclient, expunge=True)
         self.debug("Destroy instance complete!")
-
-        config = list_configurations(
-                                     self.apiclient,
-                                     name='expunge.delay'
-                                     )
-        self.assertEqual(
-                          isinstance(config, list),
-                          True,
-                          "Check list configurations response"
-                    )
-        exp_delay = config[0]
-        self.debug("expunge.delay: %s" % exp_delay.value)
-
-        config = list_configurations(
-                                     self.apiclient,
-                                     name='expunge.interval'
-                                     )
-        self.assertEqual(
-                          isinstance(config, list),
-                          True,
-                          "Check list configurations response"
-                    )
-        exp_interval = config[0]
-        self.debug("expunge.interval: %s" % exp_interval.value)
-
-        # wait for exp_delay+exp_interval - cleans up VM
-        total_wait = int(exp_interval.value) + int(exp_delay.value)
-        time.sleep(total_wait)
 
         vms = VirtualMachine.list(
                                   self.apiclient,

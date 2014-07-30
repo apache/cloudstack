@@ -301,10 +301,10 @@ class TestNuageVsp(cloudstackTestCase):
                             "VM state should be running after deployment"
                         )
 
-        VirtualMachine.delete(virtual_machine_1, self.apiclient)
+        VirtualMachine.delete(virtual_machine_1, self.apiclient, expunge=True)
 
         # Deleting a single VM
-        VirtualMachine.delete(virtual_machine_2, self.apiclient)
+        VirtualMachine.delete(virtual_machine_2, self.apiclient, expunge=True)
 
         # Delete Network
         Network.delete(self.network, self.apiclient)

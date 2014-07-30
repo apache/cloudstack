@@ -965,10 +965,7 @@ class TestVmNetworkOperations(cloudstackTestCase):
                     network.id, vmguestip=ipaddress_2.ipaddress)
 
         # Delete VM
-        virtual_machine.delete(self.apiclient)
-
-        # Wait for VMs to expunge
-        wait_for_cleanup(self.api_client, ["expunge.delay", "expunge.interval"])
+        virtual_machine.delete(self.apiclient, expunge=True)
 
         # Make sure the VM is expunged
         retriesCount = 20
