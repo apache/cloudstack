@@ -8,6 +8,43 @@ import cs_guestnetwork
 
 from pprint import pprint
 
+class dataBag:
+
+    bdata  = { }
+    DPATH = "/var/chef/data_bags/vr"
+
+    def load(self):
+        data = self.bdata
+        if not os.path.exists(self.DPATH):
+           os.makedirs(self.DPATH)
+        self.fpath = self.DPATH + '/' + self.key + '.json'
+        try:
+            handle = open(self.fpath)
+        except IOError:
+            logging.debug("Creating data bag type %s", self.key)
+            data.update( { "id": self.key } )
+        else:
+            logging.debug("Loading data bag type %s",  self.key)
+            data = json.load(handle)
+            handle.close()
+        self.dbag = data
+
+    def save(self, dbag):
+        try:
+            handle = open(self.fpath, 'w')
+        except IOError:
+            logging.error("Could not write data bag %s", self.key)
+        else:
+            logging.debug("Writing data bag type %s", self.key)
+        jsono = json.dumps(dbag, indent=4, sort_keys=True)
+        handle.write(jsono)
+
+    def getDataBag(self):
+        return self.dbag
+
+    def setKey(self, key):
+        self.key = key
+
 class updateDataBag:
 
     qFile = {}
@@ -19,43 +56,20 @@ class updateDataBag:
         self.qFile = qFile
         self.process()
 
-    def save(self, dbag):
-        try:
-            handle = open(self.fpath, 'w')
-        except IOError:
-            logging.error("Could not write data bag %s", self.qFile.type)
-        else:
-            logging.debug("Writing data bag type %s", self.qFile.type)
-        jsono = json.dumps(dbag, indent=4, sort_keys=True)
-        handle.write(jsono)
-
-    def load(self, key):
-        data = self.bdata
-        if not os.path.exists(self.DPATH):
-           os.makedirs(self.DPATH)
-        self.fpath = self.DPATH + '/' + key + '.json'
-        try:
-            handle = open(self.fpath)
-        except IOError:
-            logging.debug("Creating data bag type %s for key %s", self.qFile.type, key)
-            data.update( { "id": key } )
-        else:
-            logging.debug("Loading data bag type %s for key %s", self.qFile.type, key)
-            data = json.load(handle)
-            handle.close()
-        return data
-
     def process(self):
         if self.qFile.type == 'cl':
            self.transformCL()
            self.qFile.data = self.newData
-        dbag = self.load( self.qFile.type )
+        self.db = dataBag()
+        self.db.setKey( self.qFile.type )
+        dbag = self.db.load( )
         logging.info("Command of type %s received", self.qFile.type)
+
         if self.qFile.type == 'ips':
-           dbag = self.processIP(dbag)
+           dbag = self.processIP(self.db.getDataBag())
         if self.qFile.type == 'guestnetwork':
-           dbag = self.processGuestNetwork(dbag)
-        self.save(dbag)
+           dbag = self.processGuestNetwork(self.db.getDataBag())
+        self.db.save(dbag)
   
     def processGuestNetwork(self, dbag):
         d = self.qFile.data
