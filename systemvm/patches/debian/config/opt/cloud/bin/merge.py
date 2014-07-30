@@ -4,6 +4,7 @@ import json
 import os
 import logging
 import cs_ip
+import cs_guestnetwork
 
 from pprint import pprint
 
@@ -52,8 +53,13 @@ class updateDataBag:
         logging.info("Command of type %s received", self.qFile.type)
         if self.qFile.type == 'ips':
            dbag = self.processIP(dbag)
+        if self.qFile.type == 'guestnetwork':
+           dbag = self.processGuestNetwork(dbag)
         self.save(dbag)
   
+    def processGuestNetwork(self, dbag):
+        dbag = cs_guestnetwork.merge(dbag, self.qFile.data)
+
     def processIP(self, dbag):
         for ip in self.qFile.data["ip_address"]:
             dbag = cs_ip.merge(dbag, ip)
