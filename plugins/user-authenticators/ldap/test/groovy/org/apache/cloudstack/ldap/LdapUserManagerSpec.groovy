@@ -48,7 +48,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
     @Shared
     private def principal
 
-    private def createGroupSearchContext() {
+    private def createGroupSearchContextOneUser() {
 
         def umSearchResult = Mock(SearchResult)
         umSearchResult.getName() >> principal;
@@ -75,7 +75,34 @@ class LdapUserManagerSpec extends spock.lang.Specification {
         searchUsersResults.add(userSearchResult);
 
         def context = Mock(LdapContext)
-        context.search(_, _, _) >>> [searchGroupResults, searchUsersResults];
+        context.search(_, _, _) >>> [searchGroupResults, searchUsersResults, searchGroupResults, new BasicNamingEnumerationImpl()];
+
+        return context
+    }
+
+    private def createGroupSearchContextNoUser() {
+
+        def umSearchResult = Mock(SearchResult)
+        umSearchResult.getName() >> principal;
+        umSearchResult.getAttributes() >> principal
+
+        def uniqueMembers = new BasicNamingEnumerationImpl()
+        uniqueMembers.add(umSearchResult);
+        def attributes = Mock(Attributes)
+        def uniqueMemberAttribute = Mock(Attribute)
+        uniqueMemberAttribute.getId() >> "uniquemember"
+        uniqueMemberAttribute.getAll() >> uniqueMembers
+        attributes.get("uniquemember") >> uniqueMemberAttribute
+
+        def groupSearchResult = Mock(SearchResult)
+        groupSearchResult.getName() >> principal;
+        groupSearchResult.getAttributes() >> attributes
+
+        def searchGroupResults = new BasicNamingEnumerationImpl()
+        searchGroupResults.add(groupSearchResult);
+
+        def context = Mock(LdapContext)
+        context.search(_, _, _) >>> [searchGroupResults, new BasicNamingEnumerationImpl()];
 
         return context
     }
@@ -254,14 +281,24 @@ class LdapUserManagerSpec extends spock.lang.Specification {
         varGroupName << ["", null, "Murphy"]
     }
 
-    def "test successful getUsersInGroup"() {
+    def "test successful getUsersInGroup one user"() {
         given: "ldap user manager and ldap config"
         def ldapUserManager = new LdapUserManager(ldapConfiguration)
 
         when: "A request for users is made"
-        def result = ldapUserManager.getUsersInGroup("engineering", createGroupSearchContext())
+        def result = ldapUserManager.getUsersInGroup("engineering", createGroupSearchContextOneUser())
         then: "one user is returned"
         result.size() == 1
+    }
+
+    def "test successful getUsersInGroup no user"() {
+        given: "ldap user manager and ldap config"
+        def ldapUserManager = new LdapUserManager(ldapConfiguration)
+
+        when: "A request for users is made"
+        def result = ldapUserManager.getUsersInGroup("engineering", createGroupSearchContextNoUser())
+        then: "no user is returned"
+        result.size() == 0
     }
 
     def "test successful getUserForDn"() {

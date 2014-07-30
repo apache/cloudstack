@@ -30,8 +30,10 @@ import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
 public class LdapUserManager {
+    private static final Logger s_logger = Logger.getLogger(LdapUserManager.class.getName());
 
     @Inject
     private LdapConfiguration _ldapConfiguration;
@@ -155,7 +157,11 @@ public class LdapUserManager {
 
             while (values.hasMoreElements()) {
                 String userdn = String.valueOf(values.nextElement());
-                users.add(getUserForDn(userdn, context));
+                try{
+                    users.add(getUserForDn(userdn, context));
+                } catch (NamingException e){
+                    s_logger.info("Userdn: " + userdn + " Not Found:: Exception message: " + e.getMessage());
+                }
             }
         }
 

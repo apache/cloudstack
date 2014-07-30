@@ -39,6 +39,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -989,15 +990,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             domainId = Domain.ROOT_DOMAIN;
         }
 
-        if (userName.isEmpty()) {
+        if (StringUtils.isEmpty(userName)) {
             throw new InvalidParameterValueException("Username is empty");
         }
 
-        if (firstName.isEmpty()) {
+        if (StringUtils.isEmpty(firstName)) {
             throw new InvalidParameterValueException("Firstname is empty");
         }
 
-        if (lastName.isEmpty()) {
+        if (StringUtils.isEmpty(lastName)) {
             throw new InvalidParameterValueException("Lastname is empty");
         }
 
