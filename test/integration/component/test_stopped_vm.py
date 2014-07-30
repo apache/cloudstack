@@ -528,7 +528,7 @@ class TestDeployVM(cloudstackTestCase):
                                     startvm=False,
                                 )
 
-        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.STOPPED)
+        response = self.virtual_machine_1.getState(self.apiclient, VirtualMachine.STOPPED)
         self.assertEqual(response[0], PASS, response[1])
 
         self.debug("Deploying instance in the account: %s" %
@@ -974,7 +974,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
                                     startvm=False
                                 )
 
-        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.STOPPED)
+        response = self.virtual_machine_1.getState(self.apiclient, VirtualMachine.STOPPED)
         self.assertEqual(response[0], PASS, response[1])
         self.debug("Checking the router state after VM deployment")
         routers = Router.list(
@@ -1001,7 +1001,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
                                     startvm=True
                                 )
 
-        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.RUNNING)
+        response = self.virtual_machine_2.getState(self.apiclient, VirtualMachine.RUNNING)
         self.assertEqual(response[0], PASS, response[1])
         self.debug("Checking the router state after VM deployment")
         routers = Router.list(
