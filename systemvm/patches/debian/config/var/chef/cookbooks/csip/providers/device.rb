@@ -28,7 +28,7 @@ def load_current_resource
   @current_resource.object(@new_resource.object)
   @current_resource.exists = false
   if new_resource.cidrs.nil?
-     @current_resource.cidrs(new_resource.object['public_ip'] + '/' + IPAddr.new( new_resource.object['vlan_netmask']).to_i.to_s(2).count("1").to_s)
+     @current_resource.cidrs(new_resource.object['public_ip'] + '/' + IPAddr.new( new_resource.object['netmask']).to_i.to_s(2).count("1").to_s)
   else
      @current_resource.cidrs(@new_resource.cidrs)
   end

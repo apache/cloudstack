@@ -56,10 +56,13 @@ import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
+import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.resource.virtualnetwork.model.GuestNetwork;
+import com.cloud.agent.resource.virtualnetwork.model.IpAddress;
+import com.cloud.agent.resource.virtualnetwork.model.IpAssociation;
 import com.cloud.agent.resource.virtualnetwork.model.NetworkACL;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
@@ -624,8 +627,17 @@ public class ConfigHelper {
 
     private static List<ConfigItem> generateConfig(IpAssocCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
-        // Reuse the IpAddressTO model
-        ConfigItem ipAssociationsFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, VRScripts.IP_ASSOCIATION_CONFIG, gson.toJson(cmd.getIpAddresses()));
+        List<IpAddress> ips = new LinkedList<IpAddress>();
+
+        for (IpAddressTO ip : cmd.getIpAddresses()) {
+            IpAddress ipAddress = new IpAddress(ip.getPublicIp(), ip.isSourceNat(), ip.isAdd(), ip.isOneToOneNat(), ip.isFirstIP(), ip.getVlanGateway(), ip.getVlanNetmask(),
+                    ip.getVifMacAddress(), ip.getNicDevId(), ip.isNewNic());
+            ips.add(ipAddress);
+        }
+
+        IpAssociation ipAssociation = new IpAssociation(ips.toArray(new IpAddress[ips.size()]));
+
+        ConfigItem ipAssociationsFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, VRScripts.IP_ASSOCIATION_CONFIG, gson.toJson(ipAssociation));
         cfg.add(ipAssociationsFile);
 
         ConfigItem updateIpAssociations = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, VRScripts.IP_ASSOCIATION_CONFIG);

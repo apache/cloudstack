@@ -3,6 +3,8 @@
 import sys
 from merge import loadQueueFile
 import logging
+import subprocess
+from subprocess import PIPE
 
 logging.basicConfig(filename='/var/log/cloud.log',level=logging.DEBUG, format='%(asctime)s %(message)s')
 
@@ -11,9 +13,20 @@ if ( len(sys.argv) != 2 ):
     print "Invalid usage"
     sys.exit(1)
 
-# ip files 
-if(sys.argv[1].startswith('ip')):
-    qf = loadQueueFile()
-    qf.setType("ips")
-    qf.setFile(sys.argv[1])
-    qf.load()
+qf = loadQueueFile()
+qf.setFile(sys.argv[1])
+qf.load()
+
+# Converge
+chefrun = subprocess.Popen(["/usr/bin/chef-solo",
+                            "-j", "/etc/chef/node.json",
+                            "-l","fatal"],
+                           stdout=PIPE, stderr=PIPE)
+result = chefrun.wait()
+
+if (result != 0):
+    print result.stderr
+else:
+    print "chef update completed"
+
+sys.exit(result)

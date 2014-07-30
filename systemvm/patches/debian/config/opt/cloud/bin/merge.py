@@ -55,7 +55,7 @@ class updateDataBag:
         self.save(dbag)
   
     def processIP(self, dbag):
-        for ip in self.qFile.data:
+        for ip in self.qFile.data["ip_address"]:
             dbag = cs_ip.merge(dbag, ip)
         return dbag
 
@@ -89,7 +89,6 @@ class loadQueueFile:
     fileName = ''
     dpath = "/etc/cloudstack"
     data = {}
-    type = 'ips'
 
     def load(self):
         fn = self.dpath + '/' + self.fileName
@@ -99,15 +98,16 @@ class loadQueueFile:
             logging.error("Could not open %s", fn)
         else:
             self.data = json.load(handle)
+            self.type = self.data["type"]
             handle.close()
             proc = updateDataBag(self)
 
     def setFile(self, name):
         self.fileName = name
 
-    def setType(self, name):
-        self.type = name
-
+    def getType(self):
+        return self.type
+    
     def getData(self):
         return self.data 
 
