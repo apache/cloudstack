@@ -77,7 +77,6 @@ def plumbDevice
 end
 
 def unPlumbDevice
-    pp "ip addr del dev #{current_resource.device} #{current_resource.cidrs}"
     if ! execute("ip addr del dev #{current_resource.device} #{current_resource.cidrs}")
          Chef::Log.error "#{ @new_resource.device } failed to delete ip on interface"
          return false

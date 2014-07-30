@@ -40,8 +40,10 @@ def load_current_resource
   @current_resource.type(@new_resource.type)
   @current_resource.mask(@new_resource.mask)
   @current_resource.ip(@new_resource.ip)
-  @current_resource.network(calculateNetwork(@new_resource.ip,@new_resource.mask))
-  @current_resource.cidrm(calculateCIDRMask(@new_resource.mask))
+  if @new_resource.type == "lookup"
+      @current_resource.network(calculateNetwork(@new_resource.ip,@new_resource.mask))
+      @current_resource.cidrm(calculateCIDRMask(@new_resource.mask))
+  end
   if rule_exists?
      @current_resource.exists = true
   end
@@ -54,9 +56,9 @@ def rule_exists?
     if @current_resource.type == "lookup"
        str = "from #{@current_resource.network}/#{@current_resource.cidrm} lookup"
     end
-    tableNo = @currentResource.dev[3,1].hex
+    tableNo = @current_resource.dev[3,1]
     if @current_resource.type == "fwmark"
-       str = "from all fwmark #{tableNo} lookup Table_#{current_resource}.dev"
+       str = "from all fwmark 0x#{tableNo} lookup Table_#{current_resource.dev}"
     end
     executeReturn("ip rule show").each do |line|
        next if ! line.include? str
@@ -66,6 +68,10 @@ def rule_exists?
 end
 
 def createRule
-    #execute(" echo #{@current_resource.dev[3,1]} #{@current_resource.table} >> /etc/iproute2/rt_tables")
+    if @current_resource.type == "fwmark"
+        tableNo = @current_resource.dev[3,1].hex.to_s
+        table = "Table_#{current_resource.dev}"
+        execute("ip rule add fwmark #{tableNo} table #{table}")
+    end
     return true
 end

@@ -58,6 +58,11 @@ vr_ips.each do |name,data|
   next unless data.length > 0
   # ip route add $subnet/$mask dev $ethDev table $tableName proto static
   data.each do |ipo|
+      csip_rule "#{name}-dev" do
+         # ip rule add fwmark $tableNo table $tableName
+         dev name
+         type "fwmark"
+      end
       csip_route "#{name}-dev" do
          type "dev"
          table "Table_#{name}"
