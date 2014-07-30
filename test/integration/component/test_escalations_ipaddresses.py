@@ -165,6 +165,7 @@ class TestIpAddresses(cloudstackTestCase):
                                             forvpc="false",
                                             domainid=self.domain.id,
                                             account=self.account.name,
+                                            type="Isolated"
                                             )
         self.assertIsNone(
                           networks_list_before,
@@ -205,6 +206,7 @@ class TestIpAddresses(cloudstackTestCase):
                                            forvpc="false",
                                            domainid=self.domain.id,
                                            account=self.account.name,
+                                           type="Isolated"
                                            )
         status = validateList(networks_list_after)
         self.assertEquals(
@@ -331,6 +333,7 @@ class TestIpAddresses(cloudstackTestCase):
                                             forvpc="false",
                                             domainid=self.domain.id,
                                             account=self.account.name,
+                                            type="Isolated"
                                             )
         self.assertIsNone(
                           networks_list_before,
@@ -371,6 +374,7 @@ class TestIpAddresses(cloudstackTestCase):
                                            forvpc="false",
                                            domainid=self.domain.id,
                                            account=self.account.name,
+                                           type="Isolated"
                                            )
         status = validateList(networks_list_after)
         self.assertEquals(
@@ -656,7 +660,8 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing all the Networks's for a user
         list_networks_before = Network.list(
                                             self.userapiclient,
-                                            listall=self.services["listall"]
+                                            listall=self.services["listall"],
+                                            type="Isolated"
                                             )
         # Verifying No Networks are listed
         self.assertIsNone(
@@ -1032,7 +1037,8 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing all the Networks's for a user
         list_networks_before = Network.list(
                                             self.userapiclient,
-                                            listall=self.services["listall"]
+                                            listall=self.services["listall"],
+                                            type="Isolated"
                                             )
         # Verifying No Networks are listed
         self.assertIsNone(
@@ -1071,7 +1077,8 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing Networks again
         list_networks_after = Network.list(
                                            self.userapiclient,
-                                           listall=self.services["listall"]
+                                           listall=self.services["listall"],
+                                           type="Isolated"
                                            )
         status = validateList(list_networks_after)
         self.assertEquals(
@@ -1238,7 +1245,8 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing all the Networks's for a user
         list_networks_before = Network.list(
                                             self.userapiclient,
-                                            listall=self.services["listall"]
+                                            listall=self.services["listall"],
+                                            type="Isolated"
                                             )
         # Verifying No Networks are listed
         self.assertIsNone(
@@ -1547,7 +1555,8 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing all the Networks's for a user
         list_networks_before = Network.list(
                                             self.userapiclient,
-                                            listall=self.services["listall"]
+                                            listall=self.services["listall"],
+                                            type="Isolated"
                                             )
         # Verifying No Networks are listed
         self.assertIsNone(
@@ -1586,7 +1595,8 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing Networks again
         list_networks_after = Network.list(
                                            self.userapiclient,
-                                           listall=self.services["listall"]
+                                           listall=self.services["listall"],
+                                           type="Isolated"
                                            )
         status = validateList(list_networks_after)
         self.assertEquals(
@@ -1784,7 +1794,8 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing all the Networks's for a user
         list_networks_before = Network.list(
                                             self.userapiclient,
-                                            listall=self.services["listall"]
+                                            listall=self.services["listall"],
+                                            type="Isolated"
                                             )
         # Verifying No Networks are listed
         self.assertIsNone(
@@ -2231,7 +2242,8 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing all the Networks's for a user
         list_networks_before = Network.list(
                                             self.userapiclient,
-                                            listall=self.services["listall"]
+                                            listall=self.services["listall"],
+                                            type="Isolated"
                                             )
         # Verifying No Networks are listed
         self.assertIsNone(
@@ -2406,7 +2418,8 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing all the Networks's for a user
         list_networks_before = Network.list(
                                             self.userapiclient,
-                                            listall=self.services["listall"]
+                                            listall=self.services["listall"],
+                                            type="Isolated"
                                             )
         # Verifying No Networks are listed
         self.assertIsNone(
@@ -2580,7 +2593,8 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing all the Networks's for a user
         list_networks_before = Network.list(
                                             self.userapiclient,
-                                            listall=self.services["listall"]
+                                            listall=self.services["listall"],
+                                            type="Isolated"
                                             )
         # Verifying No Networks are listed
         self.assertIsNone(
@@ -2787,7 +2801,8 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing all the Networks's for a user
         list_networks_before = Network.list(
                                             self.userapiclient,
-                                            listall=self.services["listall"]
+                                            listall=self.services["listall"],
+                                            type="Isolated"
                                             )
         # Verifying No Networks are listed
         self.assertIsNone(
@@ -3169,7 +3184,8 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing all the Networks's for a user
         list_networks_before = Network.list(
                                             self.userapiclient,
-                                            listall=self.services["listall"]
+                                            listall=self.services["listall"],
+                                            type="Isolated"
                                             )
         # Verifying No Networks are listed
         self.assertIsNone(

@@ -164,7 +164,8 @@ class TestNetworks_1(cloudstackTestCase):
         # Listing the networks for a user
         list_networks_before = Network.list(
                                             self.userapiclient,
-                                            listall=self.test_data["listall"]
+                                            listall=self.test_data["listall"],
+                                            type="Isolated"
                                             )
         # Verifying listed networks for account created at class level
         if list_networks_before is None:
@@ -210,7 +211,7 @@ class TestNetworks_1(cloudstackTestCase):
                              "more than 1 network created at class level"
                              )
         # Listing the networks
-        list_networks_after = Network.list(self.userapiclient, listall=self.test_data["listall"])
+        list_networks_after = Network.list(self.userapiclient, listall=self.test_data["listall"], type="Isolated")
         status = validateList(list_networks_after)
         self.assertEquals(PASS, status[0], "No networks found using list call")
         # Asserting for the length of the networks
@@ -224,7 +225,8 @@ class TestNetworks_1(cloudstackTestCase):
                                              self.userapiclient,
                                              listall=self.test_data["listall"],
                                              page=1,
-                                             pagesize=self.test_data["pagesize"]
+                                             pagesize=self.test_data["pagesize"],
+                                             type="Isolated"
                                              )
         status = validateList(list_networks_page1)
         self.assertEquals(PASS, status[0], "No networks found at page 1")
@@ -238,7 +240,8 @@ class TestNetworks_1(cloudstackTestCase):
                                              self.userapiclient,
                                              listall=self.test_data["listall"],
                                              page=2,
-                                             pagesize=self.test_data["pagesize"]
+                                             pagesize=self.test_data["pagesize"],
+                                             type="Isolated"
                                              )
         status = validateList(list_networks_page2)
         self.assertEquals(PASS, status[0], "No networks found at page 2")
@@ -598,7 +601,7 @@ class TestNetworks_1(cloudstackTestCase):
                           "VPC is not created"
                           )
         # Listing the networks for a user
-        list_networks_before = Network.list(self.userapiclient, listall=self.test_data["listall"])
+        list_networks_before = Network.list(self.userapiclient, listall=self.test_data["listall"], type="Isolated")
         # Verifying listed networks for account created at class level
         self.assertIsNotNone(list_networks_before, "Network create failed at class level")
         # List network offering for vpc = true
@@ -615,7 +618,8 @@ class TestNetworks_1(cloudstackTestCase):
         self.assertEquals(PASS, status[0], "Default network offering not present for vpc = true")
         # Listing networks in VPC
         list_networks_in_vpc = Network.list(self.userapiclient,
-                                            vpcid=vpc_1.id
+                                            vpcid=vpc_1.id,
+                                            type="Isolated"
                                             )
         self.assertIsNone(list_networks_in_vpc, "Networks found for newly created VPC")
         # If number of networks is 1, then creating network
@@ -661,7 +665,7 @@ class TestNetworks_1(cloudstackTestCase):
                              "more than 1 network created at class level"
                              )
         # Listing the networks
-        list_networks_after = Network.list(self.userapiclient, listall=self.test_data["listall"])
+        list_networks_after = Network.list(self.userapiclient, listall=self.test_data["listall"], type="Isolated")
         status = validateList(list_networks_after)
         self.assertEquals(PASS, status[0], "No networks found using list call")
         # Asserting for the length of the networks
@@ -672,7 +676,8 @@ class TestNetworks_1(cloudstackTestCase):
                          )
         # Listing networks in VPC after creation of network
         list_networks_in_vpc = Network.list(self.userapiclient,
-                                            vpcid=vpc_1.id
+                                            vpcid=vpc_1.id,
+                                            type="Isolated"
                                             )
         status = validateList(list_networks_in_vpc)
         self.assertEquals(PASS, status[0], "No networks found in vpc")
@@ -709,7 +714,7 @@ class TestNetworks_1(cloudstackTestCase):
         Step4    : Verify network is deleted
         """
         # Listing the networks for a user
-        list_networks_before = Network.list(self.userapiclient, listall=self.test_data["listall"])
+        list_networks_before = Network.list(self.userapiclient, listall=self.test_data["listall"], type="Isolated")
         # Verifying listed networks for account created at class level
         self.assertIsNotNone(list_networks_before, "Network create failed at class level")
         # List network offering for vpc = false
@@ -762,7 +767,8 @@ class TestNetworks_1(cloudstackTestCase):
         # Listing the networks
         list_networks_after = Network.list(
                                            self.userapiclient,
-                                           listall=self.test_data["listall"]
+                                           listall=self.test_data["listall"],
+                                           type="Isolated"
                                            )
         status = validateList(list_networks_after)
         self.assertEquals(PASS, status[0], "No networks found using list call")
@@ -777,7 +783,8 @@ class TestNetworks_1(cloudstackTestCase):
         # List Networks
         list_networks_after_delete = Network.list(
                                                   self.userapiclient,
-                                                  listall=self.test_data["listall"]
+                                                  listall=self.test_data["listall"],
+                                                  type="Isolated"
                                                   )
         status = validateList(list_networks_after_delete)
         self.assertEquals(PASS, status[0], "No networks found using list call")
@@ -805,7 +812,7 @@ class TestNetworks_1(cloudstackTestCase):
         Step4    : Verify network is updated
         """
         # Listing the networks for a user
-        list_networks_before = Network.list(self.userapiclient, listall=self.test_data["listall"])
+        list_networks_before = Network.list(self.userapiclient, listall=self.test_data["listall"], type="Isolated")
         # Verifying listed networks for account created at class level
         self.assertIsNotNone(list_networks_before, "Network create failed at class level")
         self.assertEquals(
@@ -855,7 +862,7 @@ class TestNetworks_1(cloudstackTestCase):
                          "Listed network details are not as expected"
                          )
         # Listing the networks
-        list_networks_after = Network.list(self.userapiclient, listall=self.test_data["listall"])
+        list_networks_after = Network.list(self.userapiclient, listall=self.test_data["listall"], type="Isolated")
         status = validateList(list_networks_after)
         self.assertEquals(PASS, status[0], "No networks found using list call")
         # Asserting for the length of the networks
@@ -872,7 +879,7 @@ class TestNetworks_1(cloudstackTestCase):
                                          networkdomain="cs13cloud.internal.new"
                                          )
         # List Networks
-        list_networks_after_update = Network.list(self.userapiclient, listall=self.test_data["listall"])
+        list_networks_after_update = Network.list(self.userapiclient, listall=self.test_data["listall"], type="Isolated")
         status = validateList(list_networks_after_update)
         self.assertEquals(PASS, status[0], "No networks found using list call")
         self.assertEqual(
@@ -913,7 +920,7 @@ class TestNetworks_1(cloudstackTestCase):
         Step4    : Verify list Virtual machines and pagination
         """
         # Listing the networks for a user
-        list_networks_before = Network.list(self.userapiclient, listall=self.test_data["listall"])
+        list_networks_before = Network.list(self.userapiclient, listall=self.test_data["listall"], type="Isolated")
         # Verifying listed networks for account created at class level
         self.assertIsNotNone(list_networks_before, "Network create failed at class level")
         # Create Virtual Machine
@@ -1071,7 +1078,7 @@ class TestNetworks_1(cloudstackTestCase):
                           "VPC is not created"
                           )
         # Listing the networks for a user
-        list_networks_before = Network.list(self.userapiclient, listall=self.test_data["listall"])
+        list_networks_before = Network.list(self.userapiclient, listall=self.test_data["listall"], type="Isolated")
         # Verifying listed networks for account created at class level
         self.assertIsNotNone(list_networks_before, "Network create failed at class level")
         # List network offering for vpc = true
@@ -1127,7 +1134,7 @@ class TestNetworks_1(cloudstackTestCase):
                              "more than 1 network created at class level"
                              )
         # Listing the networks
-        list_networks_after = Network.list(self.userapiclient, listall=self.test_data["listall"])
+        list_networks_after = Network.list(self.userapiclient, listall=self.test_data["listall"], type="Isolated")
         status = validateList(list_networks_after)
         self.assertEquals(PASS, status[0], "No networks found using list call")
         # Asserting for the length of the networks
@@ -1140,7 +1147,8 @@ class TestNetworks_1(cloudstackTestCase):
         list_networks_in_vpc = Network.list(
                                             self.userapiclient,
                                             listall=self.test_data["listall"],
-                                            vpcid=vpc_1.id
+                                            vpcid=vpc_1.id,
+                                            type="Isolated"
                                             )
         status = validateList(list_networks_in_vpc)
         self.assertEquals(PASS, status[0], "No networks found using list call")
@@ -1304,7 +1312,8 @@ class TestNetworks_1(cloudstackTestCase):
         # Listing the networks for a user
         list_networks_before = Network.list(
                                             self.userapiclient,
-                                            listall=self.test_data["listall"]
+                                            listall=self.test_data["listall"],
+                                            type="Isolated"
                                             )
         # Verifying listed networks for account created at class level
         self.assertIsNotNone(list_networks_before, "Network create failed at class level")
@@ -1322,7 +1331,8 @@ class TestNetworks_1(cloudstackTestCase):
         self.assertEquals(PASS, status[0], "Default network offering not present for vpc = true")
         # Listing networks in VPC
         list_networks_in_vpc = Network.list(self.userapiclient,
-                                            vpcid=vpc_1.id
+                                            vpcid=vpc_1.id,
+                                            type="Isolated"
                                             )
         self.assertIsNone(list_networks_in_vpc, "Networks found for newly created VPC")
         # If number of networks is 1, then creating network
@@ -1368,7 +1378,7 @@ class TestNetworks_1(cloudstackTestCase):
                              "more than 1 network created at class level"
                              )
         # Listing the networks
-        list_networks_after = Network.list(self.userapiclient, listall=self.test_data["listall"])
+        list_networks_after = Network.list(self.userapiclient, listall=self.test_data["listall"], type="Isolated")
         status = validateList(list_networks_after)
         self.assertEquals(PASS, status[0], "No networks found using list call")
         # Asserting for the length of the networks
@@ -1379,7 +1389,8 @@ class TestNetworks_1(cloudstackTestCase):
                          )
         # Listing networks in VPC after creation of network
         list_networks_in_vpc = Network.list(self.userapiclient,
-                                            vpcid=vpc_1.id
+                                            vpcid=vpc_1.id,
+                                            type="Isolated"
                                             )
         status = validateList(list_networks_in_vpc)
         self.assertEquals(PASS, status[0], "No networks found in vpc")
@@ -1888,7 +1899,8 @@ class TestNetworks_2(cloudstackTestCase):
         # Listing all the Networks's for a user
         list_networks_before = Network.list(
                                             self.userapiclient,
-                                            listall=self.test_data["listall"]
+                                            listall=self.test_data["listall"],
+                                            type="Isolated"
                                             )
         # Verifying No Networks are listed
         self.assertIsNone(
@@ -1925,7 +1937,8 @@ class TestNetworks_2(cloudstackTestCase):
          # Listing Networks after
         list_networks_after = Network.list(
                                            self.userapiclient,
-                                           listall=self.test_data["listall"]
+                                           listall=self.test_data["listall"],
+                                           type="Isolated"
                                            )
         status = validateList(list_networks_after)
         self.assertEquals(
