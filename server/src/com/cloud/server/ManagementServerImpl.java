@@ -1152,7 +1152,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         // Check if the vm is using any disks on local storage.
-        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm, null, _offeringDao.findById(vm.getId(), vm.getServiceOfferingId()), null, null);
         List<VolumeVO> volumes = _volumeDao.findCreatedByInstance(vmProfile.getId());
         boolean usesLocal = false;
         for (VolumeVO volume : volumes) {
