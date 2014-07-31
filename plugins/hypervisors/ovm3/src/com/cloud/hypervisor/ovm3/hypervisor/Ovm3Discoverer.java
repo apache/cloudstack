@@ -91,12 +91,12 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
+        super.configure(name, params);
+        /* these are in Config.java */
         publicNetworkDevice = _params.get(Config.Ovm3PublicNetwork.key());
         pricateNetworkDevice = _params.get(Config.Ovm3PrivateNetwork.key());
         guestNetworkDevice = _params.get(Config.Ovm3GuestNetwork.key());
         storageNetworkDevice = _params.get(Config.Ovm3StorageNetwork.key());
-        super.configure(name, params);
-        /* these are in Config.java */
         resourceMgr.registerResourceStateAdapter(this.getClass()
                 .getSimpleName(), this);
         return true;
@@ -249,7 +249,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
                 details.put("guest.network.device", guestNetworkDevice);
             }
             if (storageNetworkDevice != null) {
-                details.put("storage.network.device1", storageNetworkDevice);
+                details.put("storage.network.device", storageNetworkDevice);
             }
             LOGGER.warn("network devices: " + guestNetworkDevice + " "
                     + pricateNetworkDevice + " " + publicNetworkDevice + " "
