@@ -52,6 +52,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.ovm3.object.Linux;
 import com.cloud.hypervisor.ovm3.object.Connection;
+import com.cloud.hypervisor.ovm3.object.Ovm3ResourceException;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceManager;
@@ -285,7 +286,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
                     "Configure resource failed, Unable to discover Ovm3 host: " + url.getHost(),
                     e);
             return null;
-        } catch (IOException e) {
+        } catch (IOException | Ovm3ResourceException e) {
             LOGGER.error("Unable to discover Ovm3 host: " + url.getHost(), e);
             return null;
         }

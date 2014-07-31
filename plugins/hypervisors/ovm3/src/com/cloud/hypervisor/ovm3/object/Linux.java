@@ -96,101 +96,101 @@ public class Linux extends OvmObject {
         return true;
     }
 
-    public String getAgentVersion() {
+    public String getAgentVersion() throws Ovm3ResourceException {
         return this.get("Agent_Version");
     }
 
-    public String getHostKernelRelease() {
+    public String getHostKernelRelease() throws Ovm3ResourceException {
         return this.get("Host_Kernel_Release");
     }
 
-    public String getHostOs() {
+    public String getHostOs() throws Ovm3ResourceException {
         return this.get("OS_Name");
     }
 
-    public String getHostOsVersion() {
+    public String getHostOsVersion() throws Ovm3ResourceException {
         return this.get("OS_Major_Version") + "."
                 + this.get("OS_Minor_Version");
     }
 
-    public String getHypervisorName() {
+    public String getHypervisorName() throws Ovm3ResourceException {
         return this.get("Hypervisor_Name");
     }
 
-    public String getHypervisorVersion() {
+    public String getHypervisorVersion() throws Ovm3ResourceException {
         return this.getHypervisorMajor() + "."
                 + this.getHypervisorMinor() + "." + this.getHypervisorExtra();
     }
 
-    public String getCapabilities() {
+    public String getCapabilities() throws Ovm3ResourceException {
         return this.get("Capabilities");
     }
 
-    public String getHypervisorMajor() {
+    public String getHypervisorMajor() throws Ovm3ResourceException {
         return this.get("Major");
     }
 
-    public String getHypervisorMinor() {
+    public String getHypervisorMinor() throws Ovm3ResourceException{
         return this.get("Minor");
     }
 
-    public String getHypervisorExtra() {
+    public String getHypervisorExtra() throws Ovm3ResourceException {
         return this.get("Extra").replace(".", "");
     }
 
-    public String getManagerUuid() {
+    public String getManagerUuid() throws Ovm3ResourceException {
         return this.get("Manager_Unique_Id");
     }
 
-    public String getMembershipState() {
+    public String getMembershipState() throws Ovm3ResourceException {
         return this.get("Membership_State");
     }
 
-    public String getServerRoles() {
+    public String getServerRoles() throws Ovm3ResourceException{
         return this.get("Server_Roles");
     }
 
-    public boolean getIsMaster() {
+    public boolean getIsMaster() throws Ovm3ResourceException {
         return Boolean.parseBoolean(this.get("Is_Current_Master"));
     }
 
-    public String getOvmVersion() {
+    public String getOvmVersion() throws Ovm3ResourceException {
         return this.get("OVM_Version");
     }
 
-    public String getHostName() {
+    public String getHostName() throws Ovm3ResourceException {
         return this.get("Hostname");
     }
 
-    public Integer getCpuKhz() {
+    public Integer getCpuKhz() throws Ovm3ResourceException {
         return Integer.valueOf(this.get("CPUKHz"));
     }
 
-    public Integer getCpuSockets() {
+    public Integer getCpuSockets() throws Ovm3ResourceException {
         return Integer.valueOf(this.get("SocketsPerNode"));
     }
 
-    public Integer getCpuThreads() {
+    public Integer getCpuThreads() throws Ovm3ResourceException {
         return Integer.valueOf(this.get("ThreadsPerCore"));
     }
 
-    public Integer getCpuCores() {
+    public Integer getCpuCores() throws Ovm3ResourceException {
         return Integer.valueOf(this.get("CoresPerSocket"));
     }
 
-    public Integer getTotalThreads() {
+    public Integer getTotalThreads() throws Ovm3ResourceException {
         return this.getCpuSockets() * this.getCpuCores() * this.getCpuThreads();
     }
 
-    public Double getMemory() {
+    public Double getMemory() throws Ovm3ResourceException {
         return Double.valueOf(this.get("TotalPages")) * 4096;
     }
 
-    public Double getFreeMemory() {
+    public Double getFreeMemory() throws Ovm3ResourceException {
         return Double.valueOf(this.get("FreePages")) * 4096;
     }
 
-    public String getUuid() {
+    public String getUuid() throws Ovm3ResourceException {
         return this.get("Unique_Id");
     }
 
@@ -202,12 +202,13 @@ public class Linux extends OvmObject {
          }
     }
 
-    public String get(String element) {
+    public String get(String element) throws Ovm3ResourceException {
         /* TODO: Figure out if this is smart */
         try {
             initMaps();
         } catch (Ovm3ResourceException e) {
             LOGGER.info("Unable to discover host: " + e.getMessage(), e);
+            throw e;
         }
         if (ovmGeneric.containsKey(element)) {
             return ovmGeneric.get(element);

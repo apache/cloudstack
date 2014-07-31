@@ -645,7 +645,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                 LOGGER.debug("No master, not clustered " + agentHostname);
                 return new ReadyAnswer(cmd);
             }
-        } catch (CloudRuntimeException e) {
+        } catch (CloudRuntimeException | Ovm3ResourceException e) {
             LOGGER.debug("XML RPC Exception" + e.getMessage(), e);
             throw new CloudRuntimeException("XML RPC Exception"
                     + e.getMessage(), e);
@@ -2331,7 +2331,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                     throw new ConfigurationException(msg);
                 }
             }
-        } catch (ConfigurationException es) {
+        } catch (ConfigurationException | Ovm3ResourceException es) {
             String msg = "Failed to prepare " + agentHostname + " for pool";
             LOGGER.debug(msg, es);
             throw new ConfigurationException(msg + ": " + es.getMessage());
@@ -2454,16 +2454,21 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         }
 
         /* should get the details of that host hmmz */
-        m = new Connection(ovm3PoolVip, agentOvsAgentPort,
-                agentOvsAgentUser, agentOvsAgentPassword);
-        Linux master = new Linux(m);
-        if (master.getHostName().equals(agentHostname)) {
-            LOGGER.debug("Host " + agentHostname + " is master");
-            this.agentIsMaster = true;
-        } else {
-            LOGGER.debug("Host " + agentHostname + " has master "
-                    + master.getHostName());
-            agentHasMaster = true;
+        try {
+            m = new Connection(ovm3PoolVip, agentOvsAgentPort,
+                    agentOvsAgentUser, agentOvsAgentPassword);
+            Linux master = new Linux(m);
+            if (master.getHostName().equals(agentHostname)) {
+                LOGGER.debug("Host " + agentHostname + " is master");
+                this.agentIsMaster = true;
+            } else {
+                LOGGER.debug("Host " + agentHostname + " has master "
+                        + master.getHostName());
+                agentHasMaster = true;
+            }
+        } catch (Ovm3ResourceException e) {
+            LOGGER.debug("Host " + agentHostname + " can't reach master: ", e);
+            agentHasMaster = false;
         }
         if (!this.agentIsMaster) {
             if (this.agentHasMaster) {
