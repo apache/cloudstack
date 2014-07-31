@@ -497,7 +497,8 @@ function hyperv_export() {
   # HyperV doesn't support import a zipped image from S3,
   # but we create a zipped version to save space on the jenkins box
   zip "${appliance_build_name}-hyperv.vhd.zip" "${appliance_build_name}-hyperv.vhd"
-  mv "${appliance_build_name}-hyperv.vhd.zip" "${appliance_build_name}-hyperv.vhd" dist/
+  add_on_exit rm "${appliance_build_name}-hyperv.vhd"
+  mv "${appliance_build_name}-hyperv.vhd.zip" dist/
   log INFO "${appliance} exported for HyperV: dist/${appliance_build_name}-hyperv.vhd.zip"
 }
 
