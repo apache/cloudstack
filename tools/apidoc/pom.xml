@@ -26,6 +26,14 @@
         <client.config.conf>${client.config.base}/classes</client.config.conf>
     </properties>
 
+    <dependencies>
+      <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-server</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+    </dependencies>
+
     <build>
         <defaultGoal>install</defaultGoal>
         <plugins>
