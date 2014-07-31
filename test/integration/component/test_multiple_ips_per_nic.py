@@ -1042,7 +1042,7 @@ class TestVmNetworkOperations(cloudstackTestCase):
         StaticNATRule.enable(self.apiclient, public_ip_2.ipaddress.id, virtual_machine.id,
                     network.id, vmguestip=ipaddress_2.ipaddress)
 
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=False)
         virtual_machine.recover(self.apiclient)
 
         retriesCount = 10

@@ -670,7 +670,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
 
-                vm_1.delete(self.apiclient)
+                vm_1.delete(self.apiclient, expunge=False)
 
                 result = isDomainResourceCountEqualToExpectedCount(
                             self.apiclient, self.account.domainid,

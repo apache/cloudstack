@@ -634,8 +634,8 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         self.debug("Destroying the virtual machines in account: %s" %
                                                 self.account.name)
         try:
-            self.vm_1.delete(self.apiclient)
-            self.vm_2.delete(self.apiclient)
+            self.vm_1.delete(self.apiclient, expunge=False)
+            self.vm_2.delete(self.apiclient, expunge=False)
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
 
@@ -678,8 +678,8 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
 
         self.debug("Deleted instacnes ..")
         try:
-            self.vm_1.delete(self.apiclient)
-            self.vm_2.delete(self.apiclient)
+            self.vm_1.delete(self.apiclient, expunge=False)
+            self.vm_2.delete(self.apiclient, expunge=False)
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
 
@@ -1399,7 +1399,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         self.cleanup.append(self.vm_2)
 
         try:
-            self.vm_2.delete(self.apiclient)
+            self.vm_2.delete(self.apiclient, expunge=False)
         except Exception as e:
             self.fail("Failed to destroy the virtual instances, %s" % e)
 
@@ -2426,8 +2426,8 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         self.debug("Destroying the virtual machines in account: %s" %
                                                 self.account.name)
         try:
-            self.vm_1.delete(self.apiclient)
-            self.vm_2.delete(self.apiclient)
+            self.vm_1.delete(self.apiclient, expunge=False)
+            self.vm_2.delete(self.apiclient, expunge=False)
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
 
@@ -3208,7 +3208,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         self.debug("Destroying the virtual machines in account: %s" %
                                                 self.account.name)
         try:
-            self.vm_1.delete(self.apiclient)
+            self.vm_1.delete(self.apiclient, expunge=False)
 
             list_vm_response = list_virtual_machines(
                                                  self.apiclient,
@@ -3223,7 +3223,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                     "VM state should be destroyed"
                     )
 
-            self.vm_2.delete(self.apiclient)
+            self.vm_2.delete(self.apiclient, expunge=False)
 
             list_vm_response = list_virtual_machines(
                                                  self.apiclient,

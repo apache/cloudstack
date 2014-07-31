@@ -1911,7 +1911,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
             self.debug("SSH into VM: %s" % vm.nic[0].ipaddress)
             vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress)
             self.debug("SSH to VM successful, proceeding for %s operation" % value)
-            vm.delete(self.api_client)
+            vm.delete(self.api_client, expunge=False)
             if value == "recover":
                 vm.recover(self.api_client)
                 vm.start(self.api_client)

@@ -199,7 +199,7 @@ class TestVolumeLimits(cloudstackTestCase):
         expectedCount = self.initialResourceCount
         # Stopping instance
         try:
-            self.virtualMachine.delete(self.apiclient)
+            self.virtualMachine.delete(self.apiclient, expunge=False)
         except Exception as e:
             self.fail("Failed to destroy instance: %s" % e)
         response = matchResourceCount(
