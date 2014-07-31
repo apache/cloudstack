@@ -70,8 +70,7 @@ public class DatabaseAccessObjectTest {
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(1)).executeUpdate();
         verify(preparedStatementMock, times(1)).close();
-        verify(loggerMock, times(1)).debug(anyString());
-        verify(loggerMock, times(0)).warn(anyString(), any(Throwable.class));
+        verify(loggerMock, times(1)).debug(contains("successfully"));
     }
 
     @Test(expected = NullPointerException.class)
@@ -100,8 +99,7 @@ public class DatabaseAccessObjectTest {
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(1)).executeUpdate();
         verify(preparedStatementMock, times(1)).close();
-        verify(loggerMock, times(0)).debug(anyString());
-        verify(loggerMock, times(1)).warn(anyString(), eq(sqlException));
+        verify(loggerMock, times(1)).debug(contains("Exception"));
     }
 
     @Test
@@ -120,8 +118,7 @@ public class DatabaseAccessObjectTest {
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(1)).executeUpdate();
         verify(preparedStatementMock, times(1)).close();
-        verify(loggerMock, times(0)).debug(anyString());
-        verify(loggerMock, times(1)).warn(anyString(), eq(sqlException));
+        verify(loggerMock, times(1)).debug(contains("Exception"));
     }
 
     @Test
@@ -138,8 +135,7 @@ public class DatabaseAccessObjectTest {
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(1)).executeUpdate();
         verify(preparedStatementMock, times(1)).close();
-        verify(loggerMock, times(1)).debug(anyString());
-        verify(loggerMock, times(0)).warn(anyString(), any(Throwable.class));
+        verify(loggerMock, times(1)).debug(contains("successfully"));
     }
 
     @Test
@@ -157,8 +153,7 @@ public class DatabaseAccessObjectTest {
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(0)).executeUpdate();
         verify(preparedStatementMock, times(0)).close();
-        verify(loggerMock, times(0)).debug(anyString());
-        verify(loggerMock, times(1)).warn(anyString(), eq(sqlException));
+        verify(loggerMock, times(1)).debug(contains("Exception"));
     }
 
     @Test
@@ -177,8 +172,7 @@ public class DatabaseAccessObjectTest {
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(1)).executeUpdate();
         verify(preparedStatementMock, times(1)).close();
-        verify(loggerMock, times(0)).debug(anyString());
-        verify(loggerMock, times(1)).warn(anyString(), eq(sqlException));
+        verify(loggerMock, times(1)).debug(contains("Exception"));
     }
 
     @SuppressWarnings("static-access")
@@ -231,8 +225,7 @@ public class DatabaseAccessObjectTest {
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(1)).executeUpdate();
         verify(preparedStatementMock, times(1)).close();
-        verify(loggerMock, times(1)).debug(anyString());
-        verify(loggerMock, times(0)).warn(anyString(), any(Throwable.class));
+        verify(loggerMock, times(1)).debug(contains("successfully"));
     }
 
     @Test(expected = NullPointerException.class)
@@ -257,8 +250,7 @@ public class DatabaseAccessObjectTest {
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(1)).executeUpdate();
         verify(preparedStatementMock, times(1)).close();
-        verify(loggerMock, times(0)).debug(anyString());
-        verify(loggerMock, times(1)).warn(anyString(), eq(sqlException));
+        verify(loggerMock, times(1)).debug(contains("Exception"));
     }
 
     @Test
@@ -274,8 +266,7 @@ public class DatabaseAccessObjectTest {
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(0)).executeUpdate();
         verify(preparedStatementMock, times(0)).close();
-        verify(loggerMock, times(0)).debug(anyString());
-        verify(loggerMock, times(1)).warn(anyString(), eq(sqlException));
+        verify(loggerMock, times(1)).debug(contains("Exception"));
     }
 
     @Test
@@ -292,8 +283,7 @@ public class DatabaseAccessObjectTest {
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(1)).executeUpdate();
         verify(preparedStatementMock, times(1)).close();
-        verify(loggerMock, times(0)).debug(anyString());
-        verify(loggerMock, times(1)).warn(anyString(), eq(sqlException));
+        verify(loggerMock, times(1)).debug(contains("Exception"));
     }
 
     @Test
@@ -309,7 +299,7 @@ public class DatabaseAccessObjectTest {
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(1)).executeQuery();
         verify(preparedStatementMock, times(1)).close();
-        verify(loggerMock, times(0)).warn(anyString(), any(Throwable.class));
+        verify(loggerMock, times(0)).debug(anyString(), any(Throwable.class));
     }
 
     @Test(expected = NullPointerException.class)
@@ -336,7 +326,7 @@ public class DatabaseAccessObjectTest {
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(1)).executeQuery();
         verify(preparedStatementMock, times(1)).close();
-        verify(loggerMock, times(1)).warn(anyString(), eq(sqlException));
+        verify(loggerMock, times(1)).debug(anyString());
     }
 
     @Test
@@ -354,7 +344,7 @@ public class DatabaseAccessObjectTest {
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(1)).executeQuery();
         verify(preparedStatementMock, times(1)).close();
-        verify(loggerMock, times(1)).warn(anyString(), eq(sqlException));
+        verify(loggerMock, times(1)).debug(anyString());
     }
 
     @Test
