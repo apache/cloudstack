@@ -1,0 +1,15 @@
+---
+driver:
+  name: vagrant
+  vagrantfile_erb: Vagrantfile.kitchen
+
+provisioner:
+  name: shell
+
+platforms:
+  - name: systemvm
+
+suites:
+  - name: default
+    run_list:
+    attributes:

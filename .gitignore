@@ -56,7 +56,10 @@ tools/cli/build/
 *.iso
 *.tar.gz
 *.tgz
-.*
+
+# this ignores _all files starting with '.'. Don't do that!
+#.*
+
 target-eclipse
 awsapi/modules/*
 !.gitignore
