@@ -48,6 +48,7 @@ kitchen_args=
 if [[ "${DEBUG}" == "1" ]]; then
   kitchen_args="-l debug"
 fi
+kitchen="bundle exec kitchen"
 
 # optional (jenkins) build number tag to put into the image filename
 VPC_IP="${VPC_IP:-192.168.56.30}"
@@ -167,18 +168,18 @@ function box_update() {
 
 function converge_kitchen() {
   log INFO "invoking test-kitchen converge"
-  kitchen create ${kitchen_args}
-  kitchen converge ${kitchen_args}
+  ${kitchen} create ${kitchen_args}
+  ${kitchen} converge ${kitchen_args}
   log INFO "test-kitchen complete"
 }
 
 function verify_kitchen() {
   log INFO "invoking test-kitchen verify"
 
-  kitchen verify ${kitchen_args}
+  ${kitchen} verify ${kitchen_args}
 
   # re-run busser test with patched serverspec gem to get a rspec.xml
-  kitchen exec ${kitchen_args} -c '
+  ${kitchen} exec ${kitchen_args} -c '
 BUSSER_ROOT="/tmp/busser" GEM_HOME="/tmp/busser/gems" GEM_PATH="/tmp/busser/gems" GEM_CACHE="/tmp/busser/gems/cache"
 export BUSSER_ROOT GEM_HOME GEM_PATH GEM_CACHE
 /tmp/kitchen/bootstrap.sh
@@ -196,7 +197,7 @@ sudo -E /tmp/busser/bin/busser test
 
 function destroy_kitchen() {
   log INFO "invoking test-kitchen destroy"
-  kitchen destroy ${kitchen_args}
+  ${kitchen} destroy ${kitchen_args}
   log INFO "test-kitchen destroy complete"
 }
 ###
