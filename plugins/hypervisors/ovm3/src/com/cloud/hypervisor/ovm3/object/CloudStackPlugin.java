@@ -133,8 +133,8 @@ public class CloudStackPlugin extends OvmObject {
         return (Boolean) x;
     }
 
-    public boolean ovsControlInterface(String dev, String ip, String mask) throws Ovm3ResourceException {
-        Object x = callWrapper("ovs_control_interface", dev, ip, mask);
+    public boolean ovsControlInterface(String dev, String cidr) throws Ovm3ResourceException {
+        Object x = callWrapper("ovs_control_interface", dev, cidr);
         return (Boolean) x;
     }
 

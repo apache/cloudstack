@@ -394,8 +394,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             net.ovsIpConfig(agentControlNetworkName, "static",
                     NetUtils.getLinkLocalGateway(), NetUtils.getLinkLocalNetMask());
             CloudStackPlugin cSp = new CloudStackPlugin(c);
-            cSp.ovsControlInterface(agentControlNetworkName, NetUtils.getLinkLocalCIDR(),
-                    NetUtils.getLinkLocalNetMask());
+            cSp.ovsControlInterface(agentControlNetworkName, NetUtils.getLinkLocalCIDR());
 
             LOGGER.debug(net.getInterfaceList());
             /* build ovs_if_meta in Net based on the following */
