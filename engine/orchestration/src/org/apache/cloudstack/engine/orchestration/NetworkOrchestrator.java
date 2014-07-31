@@ -2424,7 +2424,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // implement the network
         s_logger.debug("Starting network " + network + "...");
         Pair<NetworkGuru, NetworkVO> implementedNetwork = implementNetwork(networkId, dest, context);
-        if (implementedNetwork.first() == null) {
+        if (implementedNetwork== null || implementedNetwork.first() == null) {
             s_logger.warn("Failed to start the network " + network);
             return false;
         } else {
@@ -3083,6 +3083,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         //2) prepare nic
         if (prepare) {
             Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
+            if (implemented == null) {
+                throw new CloudRuntimeException("Failed to prepare the nic as a part of creating nic " + nic + " for vm "+ vm + " due to network " + network + " implement failure");
+            }
             nic = prepareNic(vmProfile, dest, context, nic.getId(), implemented.second());
             s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
         }
