@@ -3835,6 +3835,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String encodedPassword = null;
 
         UserVO adminUser = _userDao.getUser(2);
+        if (adminUser  == null) {
+            String msg = "CANNOT find admin user";
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
         if (adminUser.getState() == Account.State.disabled) {
             // This means its a new account, set the password using the
             // authenticator
