@@ -286,8 +286,10 @@ public class AgentRoutingResource extends AgentStorageResource {
 
     protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport() {
         HashMap<String, HostVmStateReportEntry> report = new HashMap<String, HostVmStateReportEntry>();
-
         Map<String, PowerState> states = _simMgr.getVmStates(this.hostGuid);
+        for (String vmName : states.keySet()) {
+            report.put(vmName, new HostVmStateReportEntry(states.get(vmName), agentHost.getName()));
+        }
         return report;
     }
 
