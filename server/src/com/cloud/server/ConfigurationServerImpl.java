@@ -441,13 +441,15 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             if (propsFile == null) {
                 return null;
             } else {
-                final FileInputStream finputstream = new FileInputStream(propsFile);
                 final Properties props = new Properties();
-                props.load(finputstream);
-                finputstream.close();
+                try(final FileInputStream finputstream = new FileInputStream(propsFile);) {
+                    props.load(finputstream);
+                }catch (IOException e) {
+                    s_logger.error("getEnvironmentProperty:Exception:" + e.getMessage());
+                }
                 return props.getProperty("mount.parent");
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             return null;
         }
     }
@@ -846,10 +848,10 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
 
         if (keyfile.exists()) {
-            try {
-                FileOutputStream kStream = new FileOutputStream(keyfile);
-                kStream.write(key.getBytes());
-                kStream.close();
+            try (FileOutputStream kStream = new FileOutputStream(keyfile);){
+                if (kStream != null) {
+                    kStream.write(key.getBytes());
+                }
             } catch (FileNotFoundException e) {
                 s_logger.warn("Failed to write  key to " + keyfile.getAbsolutePath());
                 throw new CloudRuntimeException("Failed to update keypairs on disk: cannot find  key file " + keyPath);

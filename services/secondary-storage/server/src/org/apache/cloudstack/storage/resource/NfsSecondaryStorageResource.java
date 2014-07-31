@@ -1361,28 +1361,31 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     if (tmpFile == null) {
                         continue;
                     }
-                    FileReader fr = new FileReader(tmpFile);
-                    BufferedReader brf = new BufferedReader(fr);
-                    String line = null;
-                    String uniqName = null;
-                    Long size = null;
-                    String name = null;
-                    while ((line = brf.readLine()) != null) {
-                        if (line.startsWith("uniquename=")) {
-                            uniqName = line.split("=")[1];
-                        } else if (line.startsWith("size=")) {
-                            size = Long.parseLong(line.split("=")[1]);
-                        } else if (line.startsWith("filename=")) {
-                            name = line.split("=")[1];
+                    try (FileReader fr = new FileReader(tmpFile);
+                         BufferedReader brf = new BufferedReader(fr);) {
+                        String line = null;
+                        String uniqName = null;
+                        Long size = null;
+                        String name = null;
+                        while ((line = brf.readLine()) != null) {
+                            if (line.startsWith("uniquename=")) {
+                                uniqName = line.split("=")[1];
+                            } else if (line.startsWith("size=")) {
+                                size = Long.parseLong(line.split("=")[1]);
+                            } else if (line.startsWith("filename=")) {
+                                name = line.split("=")[1];
+                            }
                         }
+                        tempFile.delete();
+                        if (uniqName != null) {
+                            TemplateProp prop = new TemplateProp(uniqName, container + File.separator + name, size, size, true, false);
+                            tmpltInfos.put(uniqName, prop);
+                        }
+                    } catch (IOException ex)
+                    {
+                        s_logger.debug("swiftListTemplate:Exception:" + ex.getMessage());
+                        continue;
                     }
-                    brf.close();
-                    tempFile.delete();
-                    if (uniqName != null) {
-                        TemplateProp prop = new TemplateProp(uniqName, container + File.separator + name, size, size, true, false);
-                        tmpltInfos.put(uniqName, prop);
-                    }
-
                 } catch (IOException e) {
                     s_logger.debug("Failed to create templ file:" + e.toString());
                     continue;
