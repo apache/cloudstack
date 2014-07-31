@@ -47,3 +47,6 @@ boxes/*
 # Systemvm ISO
 systemvm.iso
 iso/*
+
+rspec.xml
+vagrant_ssh_config
