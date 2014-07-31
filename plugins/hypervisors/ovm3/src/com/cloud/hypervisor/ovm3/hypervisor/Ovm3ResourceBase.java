@@ -396,7 +396,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             cSp.ovsControlInterface(agentControlNetworkName, NetUtils.getLinkLocalCIDR());
 
-            LOGGER.debug(net.getInterfaceList());
             /* build ovs_if_meta in Net based on the following */
             if (net.getBridgeByName(agentPrivateNetworkName) == null) {
                 throw new ConfigurationException(
@@ -463,6 +462,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         return Type.Routing;
     }
 
+    /* TODO: might need to steal the network setup from here with the default bridge */
     protected void fillHostInfo(StartupRoutingCommand cmd) {
         try {
             /* get data we need from parts */
@@ -2305,7 +2305,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                     LOGGER.debug("Failed to set server role for host "
                             + agentHostname, e);
                     throw new ConfigurationException(
-                            "Unable to set server role for host");
+                            "Unable to set server role for host " + e.getMessage());
                 }
             }
             if (host.getMembershipState().contentEquals("Unowned")) {
@@ -2315,7 +2315,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                 } catch (Ovm3ResourceException e) {
                     String msg = "Failed to take ownership of host "
                             + agentHostname;
-                    LOGGER.debug(msg, e);
                     throw new ConfigurationException(msg);
                 }
             } else {
@@ -2333,7 +2332,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             }
         } catch (ConfigurationException | Ovm3ResourceException es) {
             String msg = "Failed to prepare " + agentHostname + " for pool";
-            LOGGER.debug(msg, es);
             throw new ConfigurationException(msg + ": " + es.getMessage());
         }
         return true;
@@ -2447,7 +2445,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     }
 
     /* TODO: move the connection elsewhere.... */
-    protected boolean masterCheck() throws Ovm3ResourceException {
+    protected boolean masterCheck() {
         if ("".equals(ovm3PoolVip)) {
             LOGGER.debug("No cluster vip, not checking for master");
             return false;
