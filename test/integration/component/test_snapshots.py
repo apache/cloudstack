@@ -961,7 +961,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.hypervisor = str(self.testClient.getHypervisorInfo()).lower()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         return
