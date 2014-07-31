@@ -55,11 +55,11 @@ public class VmWorkResizeVolume extends VmWork {
         return newSize;
     }
 
-    public long getNewMinIops() {
+    public Long getNewMinIops() {
         return newMinIops;
     }
 
-    public long getNewMaxIops() {
+    public Long getNewMaxIops() {
         return newMaxIops;
     }
 
