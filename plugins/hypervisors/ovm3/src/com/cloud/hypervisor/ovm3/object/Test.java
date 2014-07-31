@@ -25,7 +25,6 @@ import java.util.UUID;
 import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.hypervisor.ovm3.object.Linux.FileSystem;
 
@@ -55,11 +54,30 @@ class Test {
         }
         return client;
     }
-    private static Connection agentConnect(String host, Integer port, String user, String pass) throws XmlRpcException {
+    private static Connection agentConnect(String[] hosts, Integer port, String user, String pass) throws Ovm3ResourceException {
         Connection c;
-        c = new Connection(host, port, user, pass);
-        LOGGER.debug("Agent connection to " + host + " succeeded");
-        return c;
+        String hostname = "localhost";
+        try {
+            Socket client = new Socket();
+            for (String host: hosts) {
+                client = getSocket(host, port);
+                if (client != null) {
+                    hostname = host;
+                    break;
+                }
+            }
+            if (client == null || !client.isConnected()) {
+                LOGGER.debug("Fatal no connection to " + hostname);
+                return null;
+            }
+            client.close();
+            c = new Connection(hostname, port, user, pass);
+            LOGGER.debug("Agent connection to " + hostname + " succeeded");
+            return c;
+        } catch (IOException e) {
+            LOGGER.error("IOException: ", e);
+            throw new Ovm3ResourceException("IOException occured: ", e);
+        }
     }
 
 
@@ -88,22 +106,7 @@ class Test {
         String agentuser = "oracle";
         String agentpass = "test123";
         try {
-            Connection c;
-            Socket client = new Socket();
-            String hostname = "localhost";
-            for (String host: hostnames) {
-                client = getSocket(host, port);
-                if (client != null) {
-                    hostname = host;
-                    break;
-                }
-            }
-            if (client == null || !client.isConnected()) {
-                LOGGER.debug("Fatal no connection to " + hostname);
-                return;
-            }
-            c = agentConnect(hostname, port, agentuser, agentpass);
-
+            Connection c = agentConnect(hostnames, port, agentuser, agentpass);
             /*
              * needs to be finished and implement ovs + bridge, or do we count
              * on chef ?
@@ -472,7 +475,6 @@ class Test {
                     net.startOvsBrConfig(brName, physVlanInt);
                 }
             }
-            client.close();
         } catch (Exception e) {
             LOGGER.error("Something went wrong, I know for sure!", e);
         }

@@ -372,10 +372,19 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                     && !agentInterfaces.containsKey(agentControlNetworkName)) {
                 net.startOvsLocalConfig(agentControlNetworkName);
                 /* ovs replies too "fast" so the bridge can be "busy" */
-                while (!agentInterfaces.containsKey(agentControlNetworkName)) {
+                int contCount = 0;
+                while (!agentInterfaces.containsKey(agentControlNetworkName) && contCount < 10) {
                     LOGGER.debug("waiting for " + agentControlNetworkName);
                     agentInterfaces = net.getInterfaceList();
                     Thread.sleep(1 * 1000);
+                    contCount++;
+                }
+                if (!agentInterfaces.containsKey(agentControlNetworkName)) {
+                    throw new ConfigurationException(
+                            "Unable to configure "
+                                    + agentControlNetworkName
+                                    + " on host "
+                                    + agentHostname);
                 }
             }
             /*
@@ -2380,21 +2389,22 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             Pool poolMaster = new Pool(m);
             // poolSize = poolMaster.getPoolMemberIpList().size() + 1;
             members.addAll(poolMaster.getPoolMemberIpList());
+
+            if (!members.contains(agentIp)) {
+                members.add(agentIp);
+            }
+            for (String member : members) {
+                Connection x = new Connection(member, agentOvsAgentPort,
+                       agentOvsAgentUser, agentOvsAgentPassword);
+                Pool xpool = new Pool(x);
+                xpool.setPoolIps(members);
+                xpool.setPoolMemberIpList();
+                msg = "Added " + member + " to pool " + primUuid;
+                LOGGER.debug(msg);
+            }
         } else {
             LOGGER.debug("Pool " + primUuid + " already configured on "
                     + agentHostname);
-        }
-        if (!members.contains(agentIp)) {
-            members.add(agentIp);
-        }
-        for (String member : members) {
-            Connection x = new Connection(member, agentOvsAgentPort,
-                   agentOvsAgentUser, agentOvsAgentPassword);
-            Pool xpool = new Pool(x);
-            xpool.setPoolIps(members);
-            xpool.setPoolMemberIpList();
-            msg = "Added " + member + " to pool " + primUuid;
-            LOGGER.debug(msg);
         }
         return true;
     }
