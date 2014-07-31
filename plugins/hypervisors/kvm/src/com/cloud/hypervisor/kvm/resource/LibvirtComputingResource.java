@@ -2465,36 +2465,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
                     Rbd rbd = new Rbd(io);
                     RbdImage image = rbd.open(snapshotDisk.getName(), snapshotName);
-
                     File fh = new File(snapshotDestPath);
-                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fh));
-                    int chunkSize = 4194304;
-                    long offset = 0;
-                    s_logger.debug("Backuping up RBD snapshot " + snapshotName + " to  " + snapshotDestPath);
-                    while (true) {
-                        byte[] buf = new byte[chunkSize];
-
-                        int bytes = image.read(offset, buf, chunkSize);
-                        if (bytes <= 0) {
-                            break;
+                    try(BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fh));) {
+                        int chunkSize = 4194304;
+                        long offset = 0;
+                        s_logger.debug("Backuping up RBD snapshot " + snapshotName + " to  " + snapshotDestPath);
+                        while (true) {
+                            byte[] buf = new byte[chunkSize];
+                            int bytes = image.read(offset, buf, chunkSize);
+                            if (bytes <= 0) {
+                                break;
+                            }
+                            bos.write(buf, 0, bytes);
+                            offset += bytes;
                         }
-                        bos.write(buf, 0, bytes);
-                        offset += bytes;
+                        s_logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapshotDestPath + ". Bytes written: " + offset);
+                    }catch(IOException ex)
+                    {
+                        s_logger.error("BackupSnapshotAnswer:Exception:"+ ex.getMessage());
                     }
-                    s_logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapshotDestPath + ". Bytes written: " + offset);
-                    bos.close();
                     r.ioCtxDestroy(io);
                 } catch (RadosException e) {
                     s_logger.error("A RADOS operation failed. The error was: " + e.getMessage());
                     return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
                 } catch (RbdException e) {
                     s_logger.error("A RBD operation on " + snapshotDisk.getName() + " failed. The error was: " + e.getMessage());
-                    return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
-                } catch (FileNotFoundException e) {
-                    s_logger.error("Failed to open " + snapshotDestPath + ". The error was: " + e.getMessage());
-                    return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
-                } catch (IOException e) {
-                    s_logger.debug("An I/O error occured during a snapshot operation on " + snapshotDestPath);
                     return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
                 }
             } else {
@@ -2721,10 +2716,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 Date date = new Date();
                 templateContent += "snapshot.name=" + dateFormat.format(date) + System.getProperty("line.separator");
 
-                FileOutputStream templFo = new FileOutputStream(templateProp);
-                templFo.write(templateContent.getBytes());
-                templFo.flush();
-                templFo.close();
+                try(FileOutputStream templFo = new FileOutputStream(templateProp);) {
+                    templFo.write(templateContent.getBytes());
+                    templFo.flush();
+                }catch(IOException ex)
+                {
+                    s_logger.error("CreatePrivateTemplateAnswer:Exception:"+ex.getMessage());
+                }
+
             }
 
             Map<String, Object> params = new HashMap<String, Object>();
@@ -3546,10 +3545,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         if (prvKeyFile.exists()) {
             String prvKey = cmd.getPrvKey();
-            try {
-                FileOutputStream prvKStream = new FileOutputStream(prvKeyFile);
-                prvKStream.write(prvKey.getBytes());
-                prvKStream.close();
+            try (FileOutputStream prvKStream = new FileOutputStream(prvKeyFile);){
+                if ( prvKStream != null) {
+                    prvKStream.write(prvKey.getBytes());
+                }
             } catch (FileNotFoundException e) {
                 result = "File" + SSHPRVKEYPATH + "is not found:" + e.toString();
                 s_logger.debug(result);
@@ -3557,7 +3556,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 result = "Write file " + SSHPRVKEYPATH + ":" + e.toString();
                 s_logger.debug(result);
             }
-
             Script script = new Script("chmod", _timeout, s_logger);
             script.add("600", SSHPRVKEYPATH);
             script.execute();
