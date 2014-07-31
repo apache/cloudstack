@@ -431,6 +431,7 @@
                     $form.hide();
 
                     field.dynamic({
+                        context: args.context,
                         response: {
                             success: function(args) {
                                 var form = cloudStack.dialog.createForm({
