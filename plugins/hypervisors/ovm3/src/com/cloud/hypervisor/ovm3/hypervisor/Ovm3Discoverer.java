@@ -70,7 +70,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     private static final Logger LOGGER = Logger
             .getLogger(Ovm3Discoverer.class);
     protected String publicNetworkDevice;
-    protected String pricateNetworkDevice;
+    protected String privateNetworkDevice;
     protected String guestNetworkDevice;
     protected String storageNetworkDevice;
 
@@ -91,10 +91,14 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
-        super.configure(name, params);
+        boolean success = super.configure(name, params);
+        if (!success) {
+            return false;
+        }
+
         /* these are in Config.java */
         publicNetworkDevice = _params.get(Config.Ovm3PublicNetwork.key());
-        pricateNetworkDevice = _params.get(Config.Ovm3PrivateNetwork.key());
+        privateNetworkDevice = _params.get(Config.Ovm3PrivateNetwork.key());
         guestNetworkDevice = _params.get(Config.Ovm3GuestNetwork.key());
         storageNetworkDevice = _params.get(Config.Ovm3StorageNetwork.key());
         resourceMgr.registerResourceStateAdapter(this.getClass()
@@ -242,8 +246,8 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
             if (publicNetworkDevice != null) {
                 details.put("public.network.device", publicNetworkDevice);
             }
-            if (pricateNetworkDevice != null) {
-                details.put("private.network.device", pricateNetworkDevice);
+            if (privateNetworkDevice != null) {
+                details.put("private.network.device", privateNetworkDevice);
             }
             if (guestNetworkDevice != null) {
                 details.put("guest.network.device", guestNetworkDevice);
@@ -251,9 +255,6 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
             if (storageNetworkDevice != null) {
                 details.put("storage.network.device", storageNetworkDevice);
             }
-            LOGGER.warn("network devices: " + guestNetworkDevice + " "
-                    + pricateNetworkDevice + " " + publicNetworkDevice + " "
-                    + storageNetworkDevice);
 
             Map<String, Object> params = new HashMap<String, Object>();
             params.putAll(details);

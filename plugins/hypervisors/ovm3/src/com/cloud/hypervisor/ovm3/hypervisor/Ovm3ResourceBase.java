@@ -344,9 +344,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                     agentOvsAgentUser, agentOvsAgentPassword);
             masterCheck();
         } catch (Exception e) {
-            String msg = "Base checks failed for " + agentHostname;
-            LOGGER.debug(msg, e);
-            throw new ConfigurationException(msg);
+            throw new CloudRuntimeException("Base checks failed for " + agentHostname, e);
         }
         /* setup ovm3 agent plugin for cloudstack, our minion */
         try {
@@ -355,9 +353,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             cSp.ovsUploadSshKey(this.agentSshKey,
                     FileUtils.readFileToString(getSystemVMKeyFile()));
         } catch (Ovm3ResourceException  | IOException e) {
-            String msg = "Failed to setup server: " + agentHostname + " " +
-                    e.getMessage();
-            throw new CloudRuntimeException(msg, e);
+            throw new CloudRuntimeException("Failed to setup server: " + agentHostname + " " +
+                    e.getMessage(), e);
         }
 
         try {
@@ -397,6 +394,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             cSp.ovsControlInterface(agentControlNetworkName, NetUtils.getLinkLocalCIDR());
 
             /* build ovs_if_meta in Net based on the following */
+            /*
             if (net.getBridgeByName(agentPrivateNetworkName) == null) {
                 throw new ConfigurationException(
                         "Cannot find private bridge "
@@ -425,6 +423,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                                 + " on host "
                                 + agentHostname);
             }
+            */
         } catch (InterruptedException e) {
             LOGGER.error("interrupted?", e);
         } catch (Ovm3ResourceException  e) {
@@ -508,6 +507,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                         "Unable to obtain valid bridge with " + agentIp);
             }
 
+            /* do some stuff here, validity but also other things */
             if (agentPublicNetworkName == null) {
                 agentPublicNetworkName = defaultBridge;
             }
@@ -2465,7 +2465,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                 agentHasMaster = true;
             }
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug("Host " + agentHostname + " can't reach master: ", e);
+            LOGGER.debug("Host " + agentHostname + " can't reach master: " + e.getMessage());
             agentHasMaster = false;
         }
         if (!this.agentIsMaster) {
