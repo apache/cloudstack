@@ -101,7 +101,7 @@ the systemvmtemplate:
     cp -r definitions/systemvmtemplate definitions/systemvm64template
     veewee vbox build 'systemvm64template'
 
-Trobuleshooting
+Troubleshooting
 ===============
 If you see following line in the screen, then veewee is failing 
 extracting vboxmanage version.
@@ -115,3 +115,9 @@ You would be able to check it manually by typing:
 If you're using Fedora for example, you'll need to install `kernel-devel`
 package and run `/etc/init.d/vboxdrv setup` to get veewee working.
 
+Testing
+=======
+The ./test.sh script tries out a few different default ways to invoke build.sh.
+
+See ../vagrant/systemvm for a test setup that uses vagrant+serverspec to
+provide actual integration tests that verify the built systemvm is up to spec.
