@@ -82,7 +82,7 @@ public class LdapContextFactory {
 
         environment.put(Context.INITIAL_CONTEXT_FACTORY, factory);
         environment.put(Context.PROVIDER_URL, url);
-        environment.put("com.sun.jndi.ldap.read.timeout", _ldapConfiguration.getReadTimeout().toString());
+        environment.put("com.sun.jndi.ldap.read.timeout", "500");
         environment.put("com.sun.jndi.ldap.connect.pool", "true");
 
         enableSSL(environment);
