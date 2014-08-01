@@ -46,6 +46,18 @@ INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
             'integration.api.port', '8096');
 
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'secstorage.allowed.internal.sites', '0.0.0.0/0');
+
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'account.cleanup.interval', '60');
+
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'system.vm.use.local.storage', 'true');
+
 -- Add developer configuration entry; allows management server to be run as a user other than "cloud"
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
