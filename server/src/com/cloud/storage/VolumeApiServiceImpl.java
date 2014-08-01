@@ -925,6 +925,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     if (jobResult instanceof ConcurrentOperationException) {
                         throw (ConcurrentOperationException)jobResult;
                     }
+                    else if (jobResult instanceof RuntimeException) {
+                        throw (RuntimeException)jobResult;
+                    }
                     else if (jobResult instanceof Throwable) {
                         throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
                     }
@@ -1000,7 +1003,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
                 s_logger.warn("Failed to resize the volume " + volume);
-                return null;
+                String details = "";
+                if (result.getResult() != null && !result.getResult().isEmpty()) {
+                    details = result.getResult();
+                }
+                throw new CloudRuntimeException(details);
             }
 
             volume = _volsDao.findById(volume.getId());
@@ -1029,16 +1036,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             } else {
                 _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(), new Long(currentSize - newSize));
             }
-            return volume;
         } catch (InterruptedException e) {
             s_logger.warn("failed get resize volume result", e);
         } catch (ExecutionException e) {
             s_logger.warn("failed get resize volume result", e);
-        } catch (Exception e) {
-            s_logger.warn("failed get resize volume result", e);
         }
-
-        return null;
+        return volume;
     }
 
     @Override

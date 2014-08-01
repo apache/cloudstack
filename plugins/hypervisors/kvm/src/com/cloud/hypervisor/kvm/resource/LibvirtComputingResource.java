@@ -1899,7 +1899,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.debug("after resize, size reports as " + finalSize + ", requested " + newSize);
             return new ResizeVolumeAnswer(cmd, true, "success", finalSize);
         } catch (CloudRuntimeException e) {
-            String error = "failed to resize volume: " + e;
+            String error = "Failed to resize volume: " + e.getMessage();
             s_logger.debug(error);
             return new ResizeVolumeAnswer(cmd, false, error);
         }

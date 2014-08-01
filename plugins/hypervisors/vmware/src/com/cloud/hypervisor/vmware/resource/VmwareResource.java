@@ -564,7 +564,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VirtualDisk disk = vdisk.first();
             long oldSize = disk.getCapacityInKB();
             if (newSize < oldSize) {
-                throw new Exception("VMware doesn't support shrinking volume from larger size: " + oldSize + " MB to a smaller size: " + newSize + " MB");
+                throw new Exception("VMware doesn't support shrinking volume from larger size: " + oldSize/(1024*1024) + " GB to a smaller size: "
+                        + newSize/(1024*1024) + " GB");
             } else if (newSize == oldSize) {
                 return new ResizeVolumeAnswer(cmd, true, "success", newSize * 1024);
             }
@@ -582,7 +583,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return new ResizeVolumeAnswer(cmd, true, "success", newSize * 1024);
         } catch (Exception e) {
             s_logger.error("Unable to resize volume", e);
-            String error = "failed to resize volume:" + e;
+            String error = "Failed to resize volume: " + e.getMessage();
             return new ResizeVolumeAnswer(cmd, false, error);
         }
     }
