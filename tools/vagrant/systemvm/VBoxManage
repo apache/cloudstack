@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# In some cases, while booting a virtual machine, an IDE controller
+# will be created for it. It seems that the VirtualBox GUI likes doing
+# this: when a particular machine has booted at least once with its
+# GUI turned on, this will happen pretty consistently.
+#
+# Having an IDE controller and a SATA controller breaks the assumptions
+# in the systemvm scripts about what disks are attached, causing it to
+# not find the systemvm.iso.
+#
+# So, we delete the IDE controller using Vagrant.
+#
+# Unfortunately, when the IDE controller does not exist, that deletion
+# fails, causing vagrant to fail. To work around this, we inject this
+# script into the path, causing vagrant to try to continue booting.
+
+/usr/bin/VBoxManage "$@"
+exitcode=$?
+
+if [[ "$1" == "storagectl" ]]; then
+  exit 0
+else
+  exit ${exitcode}
+fi

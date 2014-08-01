@@ -62,7 +62,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.provider 'virtualbox' do |vb|
     # enable or disable headless mode
-    vb.gui = true
+    vb.gui = false
     vb.customize ['modifyvm', :id, '--memory', '256']
     vb.customize ['storagectl', :id, '--name', 'IDE Controller', '--remove']
     vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', '1', '--type', 'dvddrive',
