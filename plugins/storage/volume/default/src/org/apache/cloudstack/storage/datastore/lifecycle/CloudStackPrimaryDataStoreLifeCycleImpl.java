@@ -80,7 +80,6 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
     private static final Logger s_logger = Logger.getLogger(CloudStackPrimaryDataStoreLifeCycleImpl.class);
     @Inject
     protected ResourceManager _resourceMgr;
-    protected List<StoragePoolDiscoverer> _discoverers;
     @Inject
     PrimaryDataStoreDao primaryDataStoreDao;
     @Inject
@@ -260,19 +259,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                 parameters.setPort(port);
                 parameters.setPath(hostPath);
             } else {
-                for (StoragePoolDiscoverer discoverer : _discoverers) {
-                    Map<? extends StoragePool, Map<String, String>> pools;
-                    try {
-                        pools = discoverer.find(zoneId, podId, uri, details);
-                    } catch (DiscoveryException e) {
-                        throw new IllegalArgumentException("Not enough information for discovery " + uri, e);
-                    }
-                    if (pools != null) {
-                        Map.Entry<? extends StoragePool, Map<String, String>> entry = pools.entrySet().iterator().next();
-                        details = entry.getValue();
-                        break;
-                    }
-                }
+                throw new IllegalArgumentException("iSCSI needs to have LUN number");
             }
         } else if (scheme.equalsIgnoreCase("iso")) {
             if (port == -1) {
