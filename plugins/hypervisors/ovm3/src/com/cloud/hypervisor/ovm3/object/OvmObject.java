@@ -204,6 +204,9 @@ public class OvmObject {
             NodeList nodeList = (NodeList) xPathExpression.evaluate(xmlDocument,
                     XPathConstants.NODESET);
             return nodeList.item(0).getTextContent();
+        } catch (NullPointerException e) {
+            LOGGER.info("Got no items back from parsing, returning: " + e.getMessage());
+            return null;
         } catch (XPathExpressionException e) {
             throw new Ovm3ResourceException("Problem parsing XML to String: ", e);
         }

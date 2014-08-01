@@ -27,17 +27,17 @@ import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 public class Connection extends XmlRpcClient {
     private static final Logger LOGGER = Logger.getLogger(Connection.class);
     private final XmlRpcClientConfigImpl xmlClientConfig = new XmlRpcClientConfigImpl();
-    private XmlRpcClient xmlClient;
-    private String hostUser;
-    private String hostPass;
-    private String hostIp;
+    private final XmlRpcClient xmlClient;
+    private final String hostUser;
+    private final String hostPass;
+    private final String hostIp;
     private Integer hostPort = 8898;
     private Boolean hostUseSsl = false;
     private String cert = "";
     private String key = "";
     /* default to 20 mins ? */
-    private Integer timeoutMs = 1200;
-    private Integer timeoutS = timeoutMs * 1000;
+    private final Integer timeoutMs = 1200;
+    private final Integer timeoutS = timeoutMs * 1000;
 
     public Connection(String ip, Integer port, String username, String password) {
         hostIp = ip;
@@ -60,7 +60,11 @@ public class Connection extends XmlRpcClient {
         URL url;
         try {
             /* TODO: should add SSL checking here! */
-            url = new URL("http://" + hostIp + ":" + hostPort.toString());
+            String prot = "http";
+            if (hostUseSsl) {
+                prot = "https";
+            }
+            url = new URL(prot + "://" + hostIp + ":" + hostPort.toString());
             xmlClientConfig.setTimeZone(TimeZone.getTimeZone("UTC"));
             xmlClientConfig.setServerURL(url);
             /* disable, we use asyncexecute to control timeout */

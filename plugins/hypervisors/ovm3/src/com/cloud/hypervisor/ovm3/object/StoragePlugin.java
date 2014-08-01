@@ -18,8 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.w3c.dom.Document;
-
 /*
  * should become an interface implementation
  */
@@ -412,9 +410,7 @@ public class StoragePlugin extends OvmObject {
      */
     public Boolean discoverStoragePlugins() throws Ovm3ResourceException{
         Object result = callWrapper("discover_storage_plugins");
-        /* TODO: Actually parse this */
-        Document xmlDocument = prepParse((String) result);
-        String path = "//Discover_Storage_Plugins_Result/storage_plugin_info_list";
+        /* TODO: Actually parse */
         if (result != null) {
             return true;
         }

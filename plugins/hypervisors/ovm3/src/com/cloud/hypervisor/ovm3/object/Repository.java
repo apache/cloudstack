@@ -33,9 +33,8 @@ public class Repository extends OvmObject {
         Object res = callWrapper("delete_repository", id, erase);
         if (res == null) {
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
     /*

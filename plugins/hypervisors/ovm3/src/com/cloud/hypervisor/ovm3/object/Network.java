@@ -37,9 +37,7 @@ public class Network extends OvmObject {
     }
 
     public Map<String, Interface> getInterfaceList() throws Ovm3ResourceException {
-        if (postDiscovery == null) {
-            this.discoverNetwork();
-        }
+        discoverNetwork();
         return interfaceList;
     }
 
@@ -147,7 +145,7 @@ public class Network extends OvmObject {
     }
 
     public Network.Interface getBridgeByName(String name) throws Ovm3ResourceException  {
-        if (getNetIface("Name", name).getIfType().contentEquals("Bridge")) {
+        if (getNetIface("Name", name) != null && getNetIface("Name", name).getIfType().contentEquals("Bridge")) {
             return getNetIface("Name", name);
         }
         LOGGER.debug("Unable to find bridge by name: " + name);
@@ -155,7 +153,7 @@ public class Network extends OvmObject {
     }
 
     public Network.Interface getBridgeByIp(String ip) throws Ovm3ResourceException {
-        if (getNetIface("Address", ip).getIfType().contentEquals("Bridge")) {
+        if (getNetIface("Address", ip) != null && getNetIface("Address", ip).getIfType().contentEquals("Bridge")) {
             return getNetIface("Address", ip);
         }
         LOGGER.debug("Unable to find bridge by ip: " + ip);

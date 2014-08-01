@@ -364,24 +364,23 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
              */
             Network net = new Network(c);
             agentInterfaces = net.getInterfaceList();
-            LOGGER.debug("all interfaces: " + agentInterfaces);
             if (agentControlNetworkName != null
                     && !agentInterfaces.containsKey(agentControlNetworkName)) {
                 net.startOvsLocalConfig(agentControlNetworkName);
                 /* ovs replies too "fast" so the bridge can be "busy" */
                 int contCount = 0;
-                while (!agentInterfaces.containsKey(agentControlNetworkName) && contCount < 10) {
+                while (!agentInterfaces.containsKey(agentControlNetworkName)) {
                     LOGGER.debug("waiting for " + agentControlNetworkName);
                     agentInterfaces = net.getInterfaceList();
                     Thread.sleep(1 * 1000);
+                    if (contCount > 9) {
+                        throw new ConfigurationException(
+                                "Unable to configure "
+                                        + agentControlNetworkName
+                                        + " on host "
+                                        + agentHostname);
+                    }
                     contCount++;
-                }
-                if (!agentInterfaces.containsKey(agentControlNetworkName)) {
-                    throw new ConfigurationException(
-                            "Unable to configure "
-                                    + agentControlNetworkName
-                                    + " on host "
-                                    + agentHostname);
                 }
             }
             /*
@@ -393,41 +392,10 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             cSp.ovsControlInterface(agentControlNetworkName, NetUtils.getLinkLocalCIDR());
 
-            /* build ovs_if_meta in Net based on the following */
-            /*
-            if (net.getBridgeByName(agentPrivateNetworkName) == null) {
-                throw new ConfigurationException(
-                        "Cannot find private bridge "
-                                + agentPrivateNetworkName
-                                + " on host "
-                                + agentHostname);
-            }
-            if (net.getBridgeByName(agentPublicNetworkName) == null) {
-                throw new ConfigurationException(
-                        "Cannot find private bridge "
-                                + agentPublicNetworkName
-                                + " on host "
-                                + agentHostname);
-            }
-            if (net.getBridgeByName(agentGuestNetworkName) == null) {
-                throw new ConfigurationException(
-                        "Cannot find private bridge "
-                                + agentGuestNetworkName
-                                + " on host "
-                                + agentHostname);
-            }
-            if (net.getBridgeByName(agentStorageNetworkName) == null) {
-                throw new ConfigurationException(
-                        "Cannot find private bridge "
-                                + agentStorageNetworkName
-                                + " on host "
-                                + agentHostname);
-            }
-            */
         } catch (InterruptedException e) {
             LOGGER.error("interrupted?", e);
         } catch (Ovm3ResourceException  e) {
-            String msg = "Bridge/Network configuration failed on " + agentHostname;
+            String msg = "Basic configuration failed on " + agentHostname;
             LOGGER.error(msg, e);
             throw new ConfigurationException(msg + ", " + e.getMessage());
         }
@@ -675,14 +643,14 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                 repo.mountRepoFs(mountPoint, ovsRepo);
             } catch (Ovm3ResourceException e) {
                 LOGGER.debug("Unable to mount NFS repository " + mountPoint + " on " + ovsRepo
-                        + " requested for " + agentHostname, e);
+                        + " requested for " + agentHostname + ": " + e.getMessage());
             }
             try {
                 repo.addRepo(mountPoint, ovsRepo);
                 repoExists = true;
             } catch (Ovm3ResourceException  e) {
                 LOGGER.debug("NFS repository " + mountPoint + " on "
-                        + ovsRepo + " not found creating!", e);
+                        + ovsRepo + " not found creating repo: " + e.getMessage());
             }
             if (!repoExists) {
                 try {
@@ -1523,7 +1491,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
     protected Answer execute(NetworkUsageCommand cmd) {
         if (cmd.isForVpc()) {
-            return VPCNetworkUsage(cmd);
+            return vpcNetworkUsage(cmd);
         }
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Executing resource NetworkUsageCommand " + cmd);
@@ -1588,7 +1556,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     }
 
     /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
-    protected NetworkUsageAnswer VPCNetworkUsage(NetworkUsageCommand cmd) {
+    protected NetworkUsageAnswer vpcNetworkUsage(NetworkUsageCommand cmd) {
         String privateIp = cmd.getPrivateIP();
         String option = cmd.getOption();
         String publicIp = cmd.getGatewayIP();
@@ -2352,18 +2320,17 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         String mountPoint = String.format("%1$s:%2$s", cmd.getHost(),
                 cmd.getPath())
                 + "/VirtualMachines";
-        List<String> members = new ArrayList<String>();
+        /* TODO: fix pool size retrieval */
         Integer poolSize = 0;
-        String msg = "";
 
         Pool poolHost = new Pool(c);
         PoolOCFS2 poolFs = new PoolOCFS2(c);
-        agentIsMaster = masterCheck();
-        if (agentIsMaster && !agentHasMaster) {
+        masterCheck();
+        if (agentIsMaster) {
             try {
-               msg = "Create poolfs on " + agentHostname
-                       + " for repo " + primUuid;
-               LOGGER.debug(msg);
+               LOGGER.debug("Create poolfs on " + agentHostname
+                       + " for repo " + primUuid);
+               /* double check if we're not overwritting anything here!@ */
                poolFs.createPoolFs(fsType, mountPoint, clusterUuid,
                        primUuid, ssUuid, managerId, primUuid);
             } catch (Ovm3ResourceException e) {
@@ -2376,32 +2343,42 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
              } catch (Ovm3ResourceException e) {
                 throw e;
              }
-        } else if (!agentIsMaster || agentHasMaster) {
+        } else if (agentHasMaster) {
             try {
                 poolHost.joinServerPool(poolAlias, primUuid,
-                          ovm3PoolVip, poolSize, agentHostname, agentIp);
+                          ovm3PoolVip, poolSize + 1, agentHostname, agentIp);
             } catch (Ovm3ResourceException e) {
                 throw e;
             }
-            Pool poolMaster = new Pool(m);
+            try {
+                addMembers();
+            } catch (Ovm3ResourceException e) {
+                throw e;
+            }
+        }
+        return true;
+    }
+
+    /* TODO: Fix member addition */
+    private Boolean addMembers() throws Ovm3ResourceException {
+        List<String> members = new ArrayList<String>();
+        try {
+            final Pool poolMaster = new Pool(m);
             // poolSize = poolMaster.getPoolMemberIpList().size() + 1;
             members.addAll(poolMaster.getPoolMemberIpList());
-
             if (!members.contains(agentIp)) {
                 members.add(agentIp);
             }
             for (String member : members) {
                 Connection x = new Connection(member, agentOvsAgentPort,
                        agentOvsAgentUser, agentOvsAgentPassword);
-                Pool xpool = new Pool(x);
+                final Pool xpool = new Pool(x);
                 xpool.setPoolIps(members);
                 xpool.setPoolMemberIpList();
-                msg = "Added " + member + " to pool " + primUuid;
-                LOGGER.debug(msg);
+                LOGGER.debug("Added " + member + " to pool " + xpool.getPoolId());
             }
-        } else {
-            LOGGER.debug("Pool " + primUuid + " already configured on "
-                    + agentHostname);
+        } catch (Exception e) {
+            throw new Ovm3ResourceException("Unable to add members: ", e);
         }
         return true;
     }
@@ -2451,34 +2428,19 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             return false;
         }
 
-        /* should get the details of that host hmmz */
         try {
-            m = new Connection(ovm3PoolVip, agentOvsAgentPort,
-                    agentOvsAgentUser, agentOvsAgentPassword);
-            Linux master = new Linux(m);
-            if (master.getHostName().equals(agentHostname)) {
-                LOGGER.debug("Host " + agentHostname + " is master");
-                this.agentIsMaster = true;
-            } else {
-                LOGGER.debug("Host " + agentHostname + " has master "
-                        + master.getHostName());
+            CloudStackPlugin cSp = new CloudStackPlugin(c);
+            if (cSp.ping(ovm3PoolVip)) {
+                LOGGER.debug("Host " + agentHostname + " has master");
                 agentHasMaster = true;
+            } else {
+                LOGGER.debug("Host " + agentHostname + " is master "
+                        + ovm3PoolVip);
+                agentIsMaster = true;
             }
         } catch (Ovm3ResourceException e) {
             LOGGER.debug("Host " + agentHostname + " can't reach master: " + e.getMessage());
             agentHasMaster = false;
-        }
-        if (!this.agentIsMaster) {
-            if (this.agentHasMaster) {
-                LOGGER.debug("Host " + agentHostname
-                        + " will become a slave " + ovm3PoolVip);
-                return this.agentIsMaster;
-            } else {
-                this.agentIsMaster = true;
-                LOGGER.debug("Host " + agentHostname
-                        + " will become a master " + ovm3PoolVip);
-                return this.agentIsMaster;
-            }
         }
         return this.agentIsMaster;
     }
@@ -2626,15 +2588,12 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     }
 
     private boolean isNetworkSetupByName(String nameTag) {
-        LOGGER.debug("known networks: " + this.agentGuestNetworkName + " "
-                + this.agentPublicNetworkName + " " + this.agentPrivateNetworkName + " "
-                + this.agentStorageNetworkName);
         if (nameTag != null) {
             LOGGER.debug("Looking for network setup by name " + nameTag);
 
             try {
                 Network net = new Network(c);
-                net.setBridgeList(agentInterfaces);
+                net.getInterfaceList();
                 if (net.getBridgeByName(nameTag) != null) {
                     LOGGER.debug("Found bridge with name: " + nameTag);
                     return true;

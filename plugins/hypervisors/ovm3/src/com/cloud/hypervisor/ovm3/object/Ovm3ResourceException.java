@@ -9,7 +9,7 @@ package com.cloud.hypervisor.ovm3.object;
  */
 public class Ovm3ResourceException extends Exception {
     private static final long serialVersionUID = 1L;
-    private Throwable cause = null;
+    private final Throwable cause = null;
     public Ovm3ResourceException() {
         super();
    }
@@ -25,23 +25,4 @@ public class Ovm3ResourceException extends Exception {
    public Throwable getCause() {
       return cause;
    }
-   public void printStackTrace() {
-      super.printStackTrace();
-      if (cause != null) {
-          cause.printStackTrace();
-      }
-   }
-   public void printStackTrace(java.io.PrintStream ps) {
-       super.printStackTrace(ps);
-       if (cause != null) {
-            cause.printStackTrace(ps);
-       }
-   }
-   public void printStackTrace(java.io.PrintWriter pw) {
-       super.printStackTrace(pw);
-       if (cause != null) {
-           cause.printStackTrace(pw);
-       }
-   }
-
 }

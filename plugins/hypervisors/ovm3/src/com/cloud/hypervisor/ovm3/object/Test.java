@@ -67,12 +67,12 @@ class Test {
                 }
             }
             if (client == null || !client.isConnected()) {
-                LOGGER.debug("Fatal no connection to " + hostname);
+                System.out.println("Fatal no connection to " + hostname);
                 return null;
             }
             client.close();
             c = new Connection(hostname, port, user, pass);
-            LOGGER.debug("Agent connection to " + hostname + " succeeded");
+            System.out.println("Agent connection to " + hostname + " succeeded");
             return c;
         } catch (IOException e) {
             LOGGER.error("IOException: ", e);
@@ -88,14 +88,14 @@ class Test {
         boolean checkCommon = false;
         boolean checkCluster = false;
         boolean checkRepo = false;
-        boolean checkPool = false;
-        boolean checkOcfs2 = false;
+        boolean checkPool = true;
+        boolean checkOcfs2 = true;
         boolean checkNFSPlugin = false;
         boolean checkXen = false;
         boolean checkVnc = false;
 
         boolean checkCombine = false;
-        boolean checkVmInfo = true;
+        boolean checkVmInfo = false;
         boolean checkUuid = false;
         boolean checkBridge = false;
         boolean checkFs = false;
@@ -114,12 +114,12 @@ class Test {
             if (checkPlugin) {
                 CloudStackPlugin csp = new CloudStackPlugin(c);
                 try {
-                    LOGGER.debug(csp.ovsUploadSshKey("test",
+                    System.out.println(csp.ovsUploadSshKey("test",
                             "testing 123"));
                     String ip = "169.254.1.202";
                     String domain = "i-2-29-VM";
                     String pubnic = "bond0";
-                    LOGGER.debug("vnc Port: " + csp.getVncPort(domain));
+                    System.out.println("vnc Port: " + csp.getVncPort(domain));
                     Map<String, String> stats = csp.ovsDomUStats(domain);
                     Thread.sleep(1000);
                     Map<String, String> stats2 = csp.ovsDomUStats(domain);
@@ -127,7 +127,7 @@ class Test {
                         String key = stat.getKey();
                         Double delta = Double.parseDouble(stat.getValue())
                                 - Double.parseDouble(stats.get(key));
-                        LOGGER.debug(stat.getKey() + ": " + delta);
+                        System.out.println(stat.getKey() + ": " + delta);
                     }
                     Integer cpus = Integer.parseInt(stats.get("vcpus"));
                     Double d_cpu = Double.parseDouble(stats.get("cputime"))
@@ -135,7 +135,7 @@ class Test {
                     Double d_time = Double.parseDouble(stats.get("uptime"))
                             - Double.parseDouble(stats2.get("uptime"));
                     Double cpupct = d_cpu / d_time * 100 * cpus;
-                    LOGGER.debug(cpupct);
+                    System.out.println(cpupct);
                 } catch (Exception e) {
                     LOGGER.error("nooooo!!!", e);
                     throw new Exception(e);
@@ -147,41 +147,41 @@ class Test {
                 Map<String, Linux.FileSystem> fsList = host
                         .getFileSystemList("nfs");
                 Linux.FileSystem fs = fsList.get("nfs");
-                LOGGER.debug(fs + " " + fsList);
+                System.out.println(fs + " " + fsList);
             }
             if (checkUuid) {
-                LOGGER.debug(UUID.nameUUIDFromBytes(("test@test-test")
+                System.out.println(UUID.nameUUIDFromBytes(("test@test-test")
                         .getBytes()));
             }
             if (checkNet) {
                 Network net = new Network(c);
-                LOGGER.debug(net.getInterfaceByName("c0a80100"));
-                LOGGER.debug(net.getInterfaceByName("c0a80100")
+                System.out.println(net.getInterfaceByName("c0a80100"));
+                System.out.println(net.getInterfaceByName("c0a80100")
                         .getAddress());
-                LOGGER.debug(net.getInterfaceByIp("192.168.1.65")
+                System.out.println(net.getInterfaceByIp("192.168.1.65")
                         .getName());
             }
             if (checkCommon) {
                 Common Com = new Common(c);
                 String x = Com.getApiVersion();
-                LOGGER.debug("Api Version: " + x);
+                System.out.println("Api Version: " + x);
                 String y = Com.sleep(1);
-                LOGGER.debug("Sleep: " + y);
+                System.out.println("Sleep: " + y);
                 String msg = Com.echo("testing 1 2 3");
-                LOGGER.debug("Echo: " + msg);
+                System.out.println("Echo: " + msg);
             }
             /* check stuff */
             if (checkLinux) {
                 Linux Host = new Linux(c);
                 Host.discoverHardware();
                 Host.discoverServer();
-                LOGGER.debug("cpus: " + Host.getCpuCores());
-                LOGGER.debug("time; " + Host.getDateTime());
+                System.out.println("cpus: " + Host.getCpuCores());
+                System.out.println("time; " + Host.getDateTime());
                 // needs to be within bounds of 1970... *grin*
-                LOGGER.debug("update time to 1999: "
+                System.out.println("update time to 1999: "
                         + Host.setDateTime(1999, 12, 31, 12, 0, 0));
-                LOGGER.debug("lastboot: " + Host.getLastBootTime());
-                LOGGER.debug("time: " + Host.getTimeUTC());
+                System.out.println("lastboot: " + Host.getLastBootTime());
+                System.out.println("time: " + Host.getTimeUTC());
                 Calendar now = Calendar.getInstance();
                 int year = now.get(Calendar.YEAR);
                 // Note: zero based!
@@ -190,21 +190,21 @@ class Test {
                 int hour = now.get(Calendar.HOUR_OF_DAY);
                 int minute = now.get(Calendar.MINUTE);
                 int second = now.get(Calendar.SECOND);
-                LOGGER.debug("set time to now: "
+                System.out.println("set time to now: "
                         + Host.setDateTime(year, month, day, hour, minute,
                                 second));
-                LOGGER.debug("lastboot: " + Host.getLastBootTime());
-                LOGGER.debug("UTC time: " + Host.getTimeUTC());
-                LOGGER.debug("TZ time: " + Host.getTimeZ());
-                LOGGER.debug("update password: "
+                System.out.println("lastboot: " + Host.getLastBootTime());
+                System.out.println("UTC time: " + Host.getTimeUTC());
+                System.out.println("TZ time: " + Host.getTimeZ());
+                System.out.println("update password: "
                         + Host.updateAgentPassword("oracle", "test123"));
-                LOGGER.debug("set time zone: "
+                System.out.println("set time zone: "
                         + Host.setTimeZone("Europe/London", false));
-                LOGGER.debug("time zone: " + Host.getTimeZone() + ", "
+                System.out.println("time zone: " + Host.getTimeZone() + ", "
                         + Host.getTimeZ() + ", " + Host.getTimeUTC());
-                LOGGER.debug("set time zone: "
+                System.out.println("set time zone: "
                         + Host.setTimeZone("Europe/Amsterdam", true));
-                LOGGER.debug("time zone: " + Host.getTimeZone() + ", "
+                System.out.println("time zone: " + Host.getTimeZone() + ", "
                         + Host.getTimeZ() + ", " + Host.getTimeUTC());
             }
 
@@ -212,35 +212,35 @@ class Test {
             if (checkNtp) {
                 Ntp ntp = new Ntp(c);
                 ntp.getDetails();
-                LOGGER.debug("ntp isServer: " + ntp.isServer());
-                LOGGER.debug("ntp isRunning: " + ntp.isRunning());
-                LOGGER.debug("ntp Servers: " + ntp.getServers());
+                System.out.println("ntp isServer: " + ntp.isServer());
+                System.out.println("ntp isRunning: " + ntp.isRunning());
+                System.out.println("ntp Servers: " + ntp.getServers());
                 ntp.addServer("192.168.1.1");
                 ntp.addServer("192.168.1.61");
-                LOGGER.debug("ntp set: " + ntp.setNtp(true));
-                LOGGER.debug("ntp enable: " + ntp.enableNtp());
+                System.out.println("ntp set: " + ntp.setNtp(true));
+                System.out.println("ntp enable: " + ntp.enableNtp());
                 ntp.getDetails();
-                LOGGER.debug("ntp isServer: " + ntp.isServer());
-                LOGGER.debug("ntp isRunning: " + ntp.isRunning());
-                LOGGER.debug("ntp Servers: " + ntp.getServers());
-                LOGGER.debug("ntp disable: " + ntp.disableNtp());
-                LOGGER.debug("ntp reset: " + ntp.setNtp("", false));
+                System.out.println("ntp isServer: " + ntp.isServer());
+                System.out.println("ntp isRunning: " + ntp.isRunning());
+                System.out.println("ntp Servers: " + ntp.getServers());
+                System.out.println("ntp disable: " + ntp.disableNtp());
+                System.out.println("ntp reset: " + ntp.setNtp("", false));
             }
 
             if (checkNFSPlugin) {
                 Linux lin = new Linux(c);
                 lin.discoverServer();
-                LOGGER.debug(lin.getCapabilities());
+                System.out.println(lin.getCapabilities());
                 Map<String, FileSystem> fsList = lin.getFileSystemList("nfs");
-                LOGGER.debug(fsList);
-                LOGGER.debug(BigInteger.valueOf(lin.getMemory()
+                System.out.println(fsList);
+                System.out.println(BigInteger.valueOf(lin.getMemory()
                         .longValue()));
-                LOGGER.debug(lin.getFreeMemory());
+                System.out.println(lin.getFreeMemory());
                 BigInteger totalmem = BigInteger.valueOf(lin.getMemory()
                         .longValue());
                 BigInteger freemem = BigInteger.valueOf(lin.getFreeMemory()
                         .longValue());
-                LOGGER.debug(totalmem.subtract(freemem));
+                System.out.println(totalmem.subtract(freemem));
             }
 
             /* still needs to be finished! */
@@ -267,26 +267,27 @@ class Test {
             }
 
             if (checkPool) {
-                LOGGER.debug("checking pool");
+                System.out.println("checking pool");
                 Pool pool = new Pool(c);
                 pool.discoverServerPool();
-                LOGGER.debug(pool.getPoolAlias());
-                LOGGER.debug(pool.getPoolId());
+                System.out.println("pool alias: " + pool.getPoolAlias());
+                System.out.println("pool id: " + pool.getPoolId());
                 if (pool.getPoolId().contentEquals("TEST")) {
-                    LOGGER.debug("pool equals test");
-                } else {
-                    LOGGER.debug("pool" + pool.getPoolId());
+                    System.out.println("pool equals test");
                 }
                 List<String> ips = new ArrayList<String>();
-                ips.add("192.168.1.64");
-                ips.add("192.168.1.65");
-                LOGGER.debug("pool members: "
+                // ips.add("192.168.1.64");
+                // ps.add("192.168.1.65");
+                System.out.println("pool members: "
                         + pool.getPoolMemberIpList());
+                System.out.println("is in a pool: " + pool.isInAPool().toString());
             }
 
             if (checkOcfs2) {
                 PoolOCFS2 poolocfs = new PoolOCFS2(c);
                 poolocfs.discoverPoolFs();
+                System.out.println("poolfsid: " + poolocfs.getPoolFsId());
+                System.out.println("is in a pool: " + poolocfs.hasAPoolFs().toString());
                 // ocfs2GetMetaData
             }
 
@@ -295,10 +296,10 @@ class Test {
                 pool.discoverServerPool();
                 Cluster clos = new Cluster(c);
                 if (pool.getPoolId() != null) {
-                    LOGGER.debug("Pool found: " + pool.getPoolId());
+                    System.out.println("Pool found: " + pool.getPoolId());
                 }
-                LOGGER.debug("Cluster online: " + clos.isClusterOnline());
-                LOGGER.debug("Cluster discover: "
+                System.out.println("Cluster online: " + clos.isClusterOnline());
+                System.out.println("Cluster discover: "
                         + clos.discoverCluster());
 
             }
@@ -308,7 +309,7 @@ class Test {
                     Xen xen = new Xen(c);
                     Xen.Vm vm = xen.getVmConfig("s-1-VM");
                     Xen.Vm vm1 = xen.getRunningVmConfig("v-2-VM");
-                    LOGGER.debug(vm.getVmUuid() + " " + vm1.getVmUuid());
+                    System.out.println(vm.getVmUuid() + " " + vm1.getVmUuid());
                 } catch (Exception e) {
                     throw e;
                 }
@@ -409,11 +410,11 @@ class Test {
                     vm.setVnc("0.0.0.0");
                     xen.createVm(repouuid, vm.getVmName());
                     xen.startVm(repouuid, vm.getVmName());
-                    LOGGER.debug("Created VM with: " + vmName);
-                    LOGGER.debug("repo: " + repouuid);
-                    LOGGER.debug("image: " + imgname);
-                    LOGGER.debug("disk: " + dstvmimg);
-                    LOGGER.debug("master: " + masterUuid);
+                    System.out.println("Created VM with: " + vmName);
+                    System.out.println("repo: " + repouuid);
+                    System.out.println("image: " + imgname);
+                    System.out.println("disk: " + dstvmimg);
+                    System.out.println("master: " + masterUuid);
                 }
             }
             if (checkVmInfo) {
@@ -424,19 +425,19 @@ class Test {
                 try {
                     /* backwards for now: */
                     ovm = host.getRunningVmConfig(vmName);
-                    LOGGER.debug(ovm.getVmRootDiskPoolId());
+                    System.out.println(ovm.getVmRootDiskPoolId());
 
                     /* new style */
                     vm = host.getVmConfig(vmName);
                     vm.addIso("test.iso");
                     if ("".equals(vm.getVmUuid())) {
-                        LOGGER.debug("no vm found");
+                        System.out.println("no vm found");
                     } else {
-                        LOGGER.debug(vm.getVmParams());
-                        LOGGER.debug(vm.getVmUuid());
-                        LOGGER.debug(vm.getPrimaryPoolUuid());
+                        System.out.println(vm.getVmParams());
+                        System.out.println(vm.getVmUuid());
+                        System.out.println(vm.getPrimaryPoolUuid());
                         vm.removeDisk("test.iso");
-                        LOGGER.debug(vm.getVmParams().get("disk"));
+                        System.out.println(vm.getVmParams().get("disk"));
                     }
 
                 } catch (Exception e) {
@@ -450,14 +451,14 @@ class Test {
                 vm.setVncAddress("0.0.0.0");
                 vm.setVncPassword("testikkel");
                 vm.setVnc();
-                LOGGER.debug(vm.getVmVncs());
+                System.out.println(vm.getVmVncs());
             }
             if (checkBridge) {
                 Network net = new Network(c);
                 for (final Map.Entry<String, Network.Interface> entry : net
                         .getInterfaceList().entrySet()) {
                     Network.Interface iface = entry.getValue();
-                    LOGGER.debug("interface: " + iface.getName()
+                    System.out.println("interface: " + iface.getName()
                             + ", phys: " + iface.getPhysical() + ", type: "
                             + iface.getIfType());
                 }
@@ -465,7 +466,7 @@ class Test {
                 Integer vlanId = 2;
                 String physVlanInt = physInterface + "." + vlanId.toString();
                 String brName = "c0a80100" + "." + vlanId.toString();
-                LOGGER.debug(net.getInterfaceByName(physVlanInt) + " "
+                System.out.println(net.getInterfaceByName(physVlanInt) + " "
                         + net.getInterfaceByName(brName));
 
                 if (net.getInterfaceByName(physVlanInt) == null) {
@@ -476,7 +477,8 @@ class Test {
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("Something went wrong, I know for sure!", e);
+            System.out.println("Something went wrong, I know for sure!");
+            e.printStackTrace();
         }
     }
 }

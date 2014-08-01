@@ -22,12 +22,12 @@ import org.w3c.dom.Document;
 /* should ingest this into Pool */
 public class PoolOCFS2 extends OvmObject {
     private static final Logger LOGGER = Logger
-            .getLogger(Pool.class);
+            .getLogger(PoolOCFS2.class);
     private Map<String, String> poolFileSystem = new HashMap<String, String>();
     private String poolFsTarget;
     private String poolFsType;
     private String poolFsNFSBaseId;
-    private String poolFsId = "";
+    private String poolFsId;
 
     public PoolOCFS2(Connection c) {
         setClient(c);
@@ -50,19 +50,19 @@ public class PoolOCFS2 extends OvmObject {
     }
 
     public Boolean hasPoolFs(String id) throws Ovm3ResourceException {
-        if (poolFsId.isEmpty()) {
-            this.discoverPoolFs();
+        if (poolFsId == null) {
+            discoverPoolFs();
         }
-        if (poolFsId.equals(id)) {
+        if (hasAPoolFs() && poolFsId.equals(id)) {
             return true;
         }
         return false;
     }
     public Boolean hasAPoolFs() throws Ovm3ResourceException {
-        if (poolFsId.isEmpty()) {
+        if (poolFsId == null) {
             discoverPoolFs();
         }
-        if ("".equals(poolFsId)) {
+        if (poolFsId == null) {
             return false;
         }
         return true;
@@ -108,6 +108,7 @@ public class PoolOCFS2 extends OvmObject {
             return nullIsTrueCallWrapper("create_pool_filesystem", type, target,
                     clustername, fsid, nfsbaseid, managerid, id);
         } else if (this.hasPoolFs(fsid)) {
+            LOGGER.debug("PoolFs already exists on this host: " + fsid);
             return true;
         } else {
             throw new Ovm3ResourceException("Unable to add pool filesystem to host, "+
@@ -127,6 +128,7 @@ public class PoolOCFS2 extends OvmObject {
             }
             return false;
         } else if (this.hasPoolFs(fsid)) {
+            LOGGER.debug("PoolFs already exists: " + fsid);
             return true;
         } else {
             throw new Ovm3ResourceException("Unable to add pool filesystem to host, "+
