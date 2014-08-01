@@ -49,3 +49,4 @@ systemvm.iso
 iso/*
 
 rspec.xml
+vendor/
