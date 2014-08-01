@@ -21,6 +21,7 @@ class dataBag:
         try:
             handle = open(self.fpath)
         except IOError:
+            print("FILE DOES NOT EXIST")
             logging.debug("Creating data bag type %s", self.key)
             data.update( { "id": self.key } )
         else:

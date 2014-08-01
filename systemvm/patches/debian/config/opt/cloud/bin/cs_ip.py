@@ -1,13 +1,18 @@
 from pprint import pprint
+from netaddr import *
 
 def merge(dbag, ip):
     added = False
-    for mac in dbag:
-        if mac == "id":
+    for dev in dbag:
+        if dev == "id":
            continue
-        for address in dbag[mac]:
+        for address in dbag[dev]:
             if address['public_ip'] == ip['public_ip']:
-               dbag[mac].remove(address)
+               dbag[dev].remove(address)
     if ip['add']:
+       ipo = IPNetwork(ip['public_ip'] + '/' + ip['netmask'])
+       ip['device'] = 'eth' + str(ip['nic_dev_id'])
+       ip['cidr'] = str(ipo.ip) + '/' + str(ipo.prefixlen)
+       ip['network'] = str(ipo.network) + '/' + str(ipo.prefixlen)
        dbag.setdefault('eth' + str(ip['nic_dev_id']), []).append( ip )
     return dbag

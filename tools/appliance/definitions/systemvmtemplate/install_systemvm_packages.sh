@@ -57,7 +57,7 @@ function install_packages() {
     python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps \
     inetutils-ping iputils-arping httping  curl \
     dnsutils zip unzip ethtool uuid file iproute acpid virt-what sudo \
-    sysstat \
+    sysstat python-netaddr \
     apache2 ssl-cert \
     dnsmasq dnsmasq-utils \
     nfs-common irqbalance \
