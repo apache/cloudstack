@@ -58,6 +58,7 @@ public class NetUtils {
     public final static int VPN_PORT = 500;
     public final static int VPN_NATT_PORT = 4500;
     public final static int VPN_L2TP_PORT = 1701;
+    public final static int HAPROXY_STATS_PORT = 8081;
 
     public final static String UDP_PROTO = "udp";
     public final static String TCP_PROTO = "tcp";

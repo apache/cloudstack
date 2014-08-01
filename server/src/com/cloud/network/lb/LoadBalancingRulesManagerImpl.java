@@ -1637,6 +1637,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 if (ex instanceof NetworkRuleConflictException) {
                     throw (NetworkRuleConflictException)ex;
                 }
+
+                if (ex instanceof InvalidParameterValueException) {
+                    throw (InvalidParameterValueException)ex;
+                }
+
             } finally {
                 if (result == null && systemIp != null) {
                     s_logger.debug("Releasing system IP address " + systemIp + " as corresponding lb rule failed to create");

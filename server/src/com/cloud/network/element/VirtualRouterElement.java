@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.utils.net.NetUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -302,6 +303,11 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
     public static boolean validateHAProxyLBRule(LoadBalancingRule rule) {
         String timeEndChar = "dhms";
+
+        if (rule.getSourcePortStart() == NetUtils.HAPROXY_STATS_PORT) {
+            s_logger.debug("Can't create LB on port 8081, haproxy is listening for  LB stats on this port");
+            return false;
+        }
 
         for (LbStickinessPolicy stickinessPolicy : rule.getStickinessPolicies()) {
             List<Pair<String, String>> paramsList = stickinessPolicy.getParams();
