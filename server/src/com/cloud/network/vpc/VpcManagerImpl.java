@@ -2194,10 +2194,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 try {
                     // Cleanup inactive VPCs
                     List<VpcVO> inactiveVpcs = _vpcDao.listInactiveVpcs();
-                    s_logger.info("Found " + inactiveVpcs.size() + " removed VPCs to cleanup");
-                    for (VpcVO vpc : inactiveVpcs) {
-                        s_logger.debug("Cleaning up " + vpc);
-                        destroyVpc(vpc, _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
+                    if (inactiveVpcs != null) {
+                        s_logger.info("Found " + inactiveVpcs.size() + " removed VPCs to cleanup");
+                        for (VpcVO vpc : inactiveVpcs) {
+                            s_logger.debug("Cleaning up " + vpc);
+                            destroyVpc(vpc, _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
+                        }
                     }
                 } catch (Exception e) {
                     s_logger.error("Exception ", e);

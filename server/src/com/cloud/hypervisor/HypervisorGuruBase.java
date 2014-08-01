@@ -105,6 +105,11 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             if (nicVO.getVmType() != VirtualMachine.Type.User) {
                 to.setPxeDisable(true);
             }
+            List<String> secIps = null;
+            if (nicVO.getSecondaryIp()) {
+                secIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nicVO.getId());
+            }
+            to.setNicSecIps(secIps);
         } else {
             s_logger.warn("Unabled to load NicVO for NicProfile " + profile.getId());
         }
@@ -112,11 +117,6 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         //check whether the this nic has secondary ip addresses set
         //set nic secondary ip address in NicTO which are used for security group
         // configuration. Use full when vm stop/start
-        List<String> secIps = null;
-        if (nicVO.getSecondaryIp()) {
-            secIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nicVO.getId());
-        }
-        to.setNicSecIps(secIps);
         return to;
     }
 

@@ -1385,7 +1385,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                                 aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan);
         }
 
-        if (_accountMgr.isRootAdmin(caller.getId()) && createVlan) {
+        if (_accountMgr.isRootAdmin(caller.getId()) && createVlan && network != null) {
             // Create vlan ip range
                         _configMgr.createVlanAndPublicIpRange(pNtwk.getDataCenterId(), network.getId(), physicalNetworkId, false, null, startIP, endIP, gateway, netmask, vlanId,
                                 null, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
@@ -3996,22 +3996,20 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                                     + " in zone " + _entityMgr.findById(DataCenter.class, pNtwk.getDataCenterId()).getName());
                         }
                     }
-
-                    //add entry to private_ip_address table
-                    PrivateIpVO privateIp = _privateIpDao.findByIpAndSourceNetworkIdAndVpcId(privateNetwork.getId(), startIp, vpcId);
-                    if (privateIp != null) {
-                        throw new InvalidParameterValueException("Private ip address " + startIp + " already used for private gateway" + " in zone "
-                                + _entityMgr.findById(DataCenter.class, pNtwk.getDataCenterId()).getName());
+                    if (vpcId != null) {
+                        //add entry to private_ip_address table
+                        PrivateIpVO privateIp = _privateIpDao.findByIpAndSourceNetworkIdAndVpcId(privateNetwork.getId(), startIp, vpcId);
+                        if (privateIp != null) {
+                            throw new InvalidParameterValueException("Private ip address " + startIp + " already used for private gateway" + " in zone "
+                                    + _entityMgr.findById(DataCenter.class, pNtwk.getDataCenterId()).getName());
+                        }
+                        Long mac = dc.getMacAddress();
+                        Long nextMac = mac + 1;
+                        dc.setMacAddress(nextMac);
+                        privateIp = new PrivateIpVO(startIp, privateNetwork.getId(), nextMac, vpcId, sourceNat);
+                        _privateIpDao.persist(privateIp);
+                        _dcDao.update(dc.getId(), dc);
                     }
-
-                    Long mac = dc.getMacAddress();
-                    Long nextMac = mac + 1;
-                    dc.setMacAddress(nextMac);
-
-                    privateIp = new PrivateIpVO(startIp, privateNetwork.getId(), nextMac, vpcId, sourceNat);
-                    _privateIpDao.persist(privateIp);
-
-                    _dcDao.update(dc.getId(), dc);
 
                     s_logger.debug("Private network " + privateNetwork + " is created");
 
