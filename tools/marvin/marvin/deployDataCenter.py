@@ -1118,8 +1118,11 @@ if __name__ == "__main__":
                                    cfg,
                                    tc_run_logger,
                                    log_folder_path=log_folder_path)
-        deploy.deploy()
-        exit(1)
+        if deploy.deploy() == FAILED
+            print "\n===Deploy Failed==="
+            tc_run_logger.debug("\n===Deploy Failed===");
+            exit(1)
+            
 
     if options.remove and os.path.isfile(options.remove) and options.input:
         '''
@@ -1133,7 +1136,10 @@ if __name__ == "__main__":
             if remove_dc_obj.removeDataCenter() == FAILED:
                 print "\n===Removing DataCenter Failed==="
                 tc_run_logger.debug("\n===Removing DataCenter Failed===")
+                exit(1)
             else:
                 print "\n===Removing DataCenter Successful==="
                 tc_run_logger.debug("\n===Removing DataCenter Successful===")
-        exit(1)
+
+     # All OK exit with 0 exitcode
+     exit(0)
