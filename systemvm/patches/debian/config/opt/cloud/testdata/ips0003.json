@@ -1,0 +1,12 @@
+{"ip_address":
+[{"public_ip":"10.0.3.10",
+"source_nat":true,
+"add":true,
+"one_to_one_nat":false,
+"first_i_p":false,
+"gateway":"10.0.3.1",
+"netmask":"255.255.255.0",
+"vif_mac_address":"06:cb:aa:00:00:03",
+"nic_dev_id":2,
+"new_nic":false}],
+"type":"ips"}
