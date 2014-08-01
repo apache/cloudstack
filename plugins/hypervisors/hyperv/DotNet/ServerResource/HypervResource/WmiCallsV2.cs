@@ -1,4 +1,4 @@
-// Licensed to the Apache Software Foundation (ASF) under one
+﻿// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -333,7 +333,6 @@ namespace HypervResource
                 else if (templateInfo != null && templateInfo.nfsDataStoreTO != null)
                 {
                     NFSTO share = templateInfo.nfsDataStoreTO;
-                    Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
                     // The share is mapped, now attach the iso
                     isoPath = Utils.NormalizePath(Path.Combine(share.UncPath, templateInfo.path));
                 }
@@ -2445,8 +2444,6 @@ namespace HypervResource
                 {
                     return wmiObj;
                 }
-                logger.InfoFormat("In progress... {0}% completed.", jobObj.PercentComplete);
-                System.Threading.Thread.Sleep(1000);
             }
 
             var errMsg = string.Format(
