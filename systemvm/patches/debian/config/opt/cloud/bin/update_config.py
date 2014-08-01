@@ -18,15 +18,13 @@ qf.setFile(sys.argv[1])
 qf.load(None)
 
 # Converge
-chefrun = subprocess.Popen(["/usr/bin/chef-solo",
-                            "-j", "/etc/chef/node.json",
-                            "-l","fatal"],
+run = subprocess.Popen(["/opt/cloud/bin/configure.py"],
                            stdout=PIPE, stderr=PIPE)
-result = chefrun.wait()
+result = run.wait()
 
 if (result != 0):
-    print result.stderr
+    print run.stderr
 else:
-    print "chef update completed"
+    print "Convergence is achieved - you have been assimilated!"
 
 sys.exit(result)
