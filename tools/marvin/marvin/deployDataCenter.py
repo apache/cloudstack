@@ -1141,5 +1141,5 @@ if __name__ == "__main__":
                 print "\n===Removing DataCenter Successful==="
                 tc_run_logger.debug("\n===Removing DataCenter Successful===")
 
-     # All OK exit with 0 exitcode
-     exit(0)
+    # All OK exit with 0 exitcode
+    exit(0)
