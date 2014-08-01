@@ -1118,7 +1118,7 @@ if __name__ == "__main__":
                                    cfg,
                                    tc_run_logger,
                                    log_folder_path=log_folder_path)
-        if deploy.deploy() == FAILED
+        if deploy.deploy() == FAILED:
             print "\n===Deploy Failed==="
             tc_run_logger.debug("\n===Deploy Failed===");
             exit(1)
