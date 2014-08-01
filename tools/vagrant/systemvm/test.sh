@@ -44,15 +44,11 @@ if [[ ! -z "${JENKINS_HOME}" ]]; then
   DEBUG=1
 fi
 
-kitchen_args=
-if [[ "${DEBUG}" == "1" ]]; then
-  kitchen_args="-l debug"
-fi
-kitchen="bundle exec kitchen"
-
-# optional (jenkins) build number tag to put into the image filename
-VPC_IP="${VPC_IP:-192.168.56.30}"
+VPC_IP="${VPC_IP:-192.168.56.254}"
 export VPC_IP
+
+# inject our custom VBoxManage wrapper script
+export PATH=$PWD:$PATH
 
 ###
 ### Generic helper functions
@@ -166,39 +162,28 @@ function box_update() {
   log INFO "vagrant box update complete"
 }
 
-function converge_kitchen() {
-  log INFO "invoking test-kitchen converge"
-  ${kitchen} create ${kitchen_args}
-  ${kitchen} converge ${kitchen_args}
-  log INFO "test-kitchen complete"
+function vagrant_up() {
+  log INFO "invoking vagrant up"
+  vagrant up --no-provision
+  log INFO "vagrant up complete"
 }
 
-function verify_kitchen() {
-  log INFO "invoking test-kitchen verify"
-
-  ${kitchen} verify ${kitchen_args}
-
-  # re-run busser test with patched serverspec gem to get a rspec.xml
-  ${kitchen} exec ${kitchen_args} -c '
-BUSSER_ROOT="/tmp/busser" GEM_HOME="/tmp/busser/gems" GEM_PATH="/tmp/busser/gems" GEM_CACHE="/tmp/busser/gems/cache"
-export BUSSER_ROOT GEM_HOME GEM_PATH GEM_CACHE
-/tmp/kitchen/bootstrap.sh
-sudo -E /tmp/busser/bin/busser test
-'
-
-  # ssh to machine ourselves to avoid kitchen output
-  (cd .kitchen/kitchen-vagrant/default-systemvm; vagrant ssh-config) > vagrant_ssh_config
-  add_on_exit rm -f vagrant_ssh_config
-  scp -F vagrant_ssh_config default:/tmp/rspec.xml rspec.xml
-  log INFO "test results in rspec.xml"
-
-  log INFO "test-kitchen complete"
+function vagrant_provision() {
+  log INFO "invoking vagrant provision"
+  vagrant provision
+  log INFO "vagrant up complete"
 }
 
-function destroy_kitchen() {
-  log INFO "invoking test-kitchen destroy"
-  ${kitchen} destroy ${kitchen_args}
-  log INFO "test-kitchen destroy complete"
+function serverspec() {
+  log INFO "invoking serverspec"
+  bundle exec rake spec
+  log INFO "serverspec complete"
+}
+
+function vagrant_destroy() {
+  log INFO "invoking vagrant destroy"
+  vagrant destroy -f
+  log INFO "vagrant destroy complete"
 }
 ###
 ### Main invocation
@@ -207,9 +192,11 @@ function destroy_kitchen() {
 function main() {
   prepare
   box_update
-  add_on_exit destroy_kitchen
-  converge_kitchen
-  verify_kitchen
+  vagrant_destroy
+  add_on_exit vagrant_destroy
+  vagrant_up
+  vagrant_provision
+  serverspec
   add_on_exit log INFO "BUILD SUCCESSFUL"
 }
 
