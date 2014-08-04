@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -951,44 +951,54 @@ namespace HypervResource
                 string details = null;
                 string localPath;
                 StoragePoolType poolType;
-                object ansContent;
-
-                bool result = ValidateStoragePoolCommand(cmd, out localPath, out poolType, ref details);
-                if (!result)
-                {
-                    ansContent = new
-                    {
-                        result = result,
-                        details = details,
-                        contextMap = contextMap
-                    };
-                    return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
-                }
-
-                var tInfo = new Dictionary<string, string>();
                 long capacityBytes = 0;
                 long availableBytes = 0;
                 string hostPath = null;
-                if (poolType == StoragePoolType.Filesystem)
-                {
-                    GetCapacityForLocalPath(localPath, out capacityBytes, out availableBytes);
-                    hostPath = localPath;
-                }
-                else if (poolType == StoragePoolType.NetworkFilesystem ||
-                    poolType == StoragePoolType.SMB)
-                {
-                    NFSTO share = new NFSTO();
-                    String uriStr = "cifs://" + (string)cmd.pool.host + (string)cmd.pool.path;
-                    share.uri = new Uri(uriStr);
-                    hostPath = Utils.NormalizePath(share.UncPath);
+                bool result = false;
+                var tInfo = new Dictionary<string, string>();
+                object ansContent;
 
-                    // Check access to share.
-                    Utils.GetShareDetails(share.UncPath, out capacityBytes, out availableBytes);
-                    config.setPrimaryStorage((string)cmd.pool.uuid, hostPath);
+                try
+                {
+                    result = ValidateStoragePoolCommand(cmd, out localPath, out poolType, ref details);
+                    if (!result)
+                    {
+                        ansContent = new
+                        {
+                            result = result,
+                            details = details,
+                            contextMap = contextMap
+                        };
+                        return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
+                    }
+
+                    if (poolType == StoragePoolType.Filesystem)
+                    {
+                        GetCapacityForLocalPath(localPath, out capacityBytes, out availableBytes);
+                        hostPath = localPath;
+                    }
+                    else if (poolType == StoragePoolType.NetworkFilesystem ||
+                        poolType == StoragePoolType.SMB)
+                    {
+                        NFSTO share = new NFSTO();
+                        String uriStr = "cifs://" + (string)cmd.pool.host + (string)cmd.pool.path;
+                        share.uri = new Uri(uriStr);
+                        hostPath = Utils.NormalizePath(share.UncPath);
+
+                        // Check access to share.
+                        Utils.GetShareDetails(hostPath, out capacityBytes, out availableBytes);
+                        config.setPrimaryStorage((string)cmd.pool.uuid, hostPath);
+                    }
+                    else
+                    {
+                        result = false;
+                    }
                 }
-                else
+                catch
                 {
                     result = false;
+                    details = String.Format("Failed to add storage pool {0}, please verify your pool details", (string)cmd.pool.uuid);
+                    logger.Error(details);
                 }
 
                 String uuid = null;
@@ -1002,6 +1012,7 @@ namespace HypervResource
                     capacityBytes = capacityBytes,
                     availableBytes = availableBytes
                 };
+
 
                 ansContent = new
                 {
