@@ -29,7 +29,7 @@ from marvin.lib.base import Account, VirtualMachine, ServiceOffering , Template
 from marvin.lib.utils import cleanup_resources
 
 #common - commonly used methods for all tests are listed here
-from marvin.lib.common import get_zone, get_domain, get_template, list_hosts ,list_service_offering
+from marvin.lib.common import get_zone, get_domain, get_template, list_hosts ,list_service_offering, get_windows_template
 
 from marvin.sshClient import SshClient
 
@@ -129,17 +129,20 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                domainid=cls.domain.id
                )
 
-        cls.template = Template.register(
-                cls.apiclient,
-                cls.testdata["vgpu"] ["templateregister1"],
-                hypervisor = "XenServer",
-                zoneid=cls.zone.id,
-                domainid=cls.account.domainid,
-                 account=cls.account.name
-                )
-        timeout = cls.testdata["vgpu"]["timeout"]
+        cls.template = get_windows_template(cls.apiclient, cls.zone.id ,ostype_desc="Windows 8 (64-bit)")
 
-        while True:
+        if  cls.template == FAILED:
+            cls.template = Template.register(
+                   cls.apiclient,
+                   cls.testdata["vgpu"] ["templateregister1"],
+                   hypervisor = "XenServer",
+                   zoneid=cls.zone.id,
+                   domainid=cls.account.domainid,
+                   account=cls.account.name
+                   )
+            timeout = cls.testdata["vgpu"]["timeout"]
+
+            while True:
                   time.sleep(cls.testdata["vgpu"]["sleep"])
                   list_template_response = Template.list(
                        cls.apiclient,
@@ -219,7 +222,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             serviceofferingid=vgpuofferingid,
             templateid=self.template.id
             )
-        time.sleep(300)
+        time.sleep(600)
         list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
 
         self.debug(
@@ -452,6 +455,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
+
 
 
 

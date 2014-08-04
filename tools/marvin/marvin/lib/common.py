@@ -300,6 +300,59 @@ def get_template(
     return list_templatesout[0]
 
 
+
+def get_windows_template(
+        apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='USER',
+        template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
+        hypervisor=None):
+    '''
+    @Name : get_template
+    @Desc : Retrieves the template Information based upon inputs provided
+            Template is retrieved based upon either of the inputs matched
+            condition
+    @Input : returns a template"
+    @Output : FAILED in case of any failure
+              template Information matching the inputs
+    '''
+    cmd = listTemplates.listTemplatesCmd()
+    cmd.templatefilter = template_filter
+    if domain_id is not None:
+        cmd.domainid = domain_id
+    if zone_id is not None:
+        cmd.zoneid = zone_id
+    if template_id is not None:
+        cmd.id = template_id
+    if template_name is not None:
+        cmd.name = template_name
+    if hypervisor is not None:
+        cmd.hypervisor = hypervisor
+    if project_id is not None:
+        cmd.projectid = project_id
+    if account is not None:
+        cmd.account = account
+
+
+    '''
+    Get the Templates pertaining to the inputs provided
+    '''
+    list_templatesout = apiclient.listTemplates(cmd)
+    #print("template result is %s"%(list_templatesout))
+    if list_templatesout is None:
+        return FAILED
+    if validateList(list_templatesout[0]) == FAIL :
+            return FAILED
+
+    for template in list_templatesout:
+        if template.isready and template.templatetype == "USER" and template.ostypename == ostype_desc:
+            return template
+    '''
+    Return default first template, if no template matched
+    '''
+
+    return FAILED
+
+
+
 def download_systemplates_sec_storage(server, services):
     """Download System templates on sec storage"""
 
