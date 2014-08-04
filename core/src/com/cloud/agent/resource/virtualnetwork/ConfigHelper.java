@@ -516,7 +516,7 @@ public class ConfigHelper {
         String routerGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
         String gateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
         String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
-        String netmask = NetUtils.getSubNet(routerGIP, nic.getNetmask());
+        String netmask = nic.getNetmask();
         String domainName = cmd.getNetworkDomain();
         String dns = cmd.getDefaultDns1();
 
