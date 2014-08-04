@@ -32,6 +32,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -353,19 +354,21 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Host host = Host.getByUuid(conn, _host.uuid);
         Map<VM, VM.Record> vms = VM.getAllRecords(conn);
         boolean success = true;
-        for (Map.Entry<VM, VM.Record> entry : vms.entrySet()) {
-            VM vm = entry.getKey();
-            VM.Record vmRec = entry.getValue();
-            if (vmRec.isATemplate || vmRec.isControlDomain) {
-                continue;
-            }
+        if(vms != null && !vms.isEmpty()) {
+            for (Map.Entry<VM, VM.Record> entry : vms.entrySet()) {
+                VM vm = entry.getKey();
+                VM.Record vmRec = entry.getValue();
+                if (vmRec.isATemplate || vmRec.isControlDomain) {
+                    continue;
+                }
 
-            if (VmPowerState.HALTED.equals(vmRec.powerState) && vmRec.affinity.equals(host) && !isAlienVm(vm, conn)) {
-                try {
-                    vm.destroy(conn);
-                } catch (Exception e) {
-                    s_logger.warn("Catch Exception " + e.getClass().getName() + ": unable to destroy VM " + vmRec.nameLabel + " due to ", e);
-                    success = false;
+                if (VmPowerState.HALTED.equals(vmRec.powerState) && vmRec.affinity.equals(host) && !isAlienVm(vm, conn)) {
+                    try {
+                        vm.destroy(conn);
+                    } catch (Exception e) {
+                        s_logger.warn("Catch Exception " + e.getClass().getName() + ": unable to destroy VM " + vmRec.nameLabel + " due to ", e);
+                        success = false;
+                    }
                 }
             }
         }
@@ -1652,6 +1655,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String nwNameLabel = null;
         try {
             nw = getNativeNetworkForTraffic(conn, TrafficType.Guest, networkTag);
+            if (nw == null) {
+              s_logger.error("Network is not configured on the backend for pvlan " + primaryPvlan);
+              throw new CloudRuntimeException("Network for the backend is not configured correctly for pvlan primary: " + primaryPvlan);
+            }
             nwNameLabel = nw.getNetwork().getNameLabel(conn);
         } catch (XenAPIException e) {
             s_logger.warn("Fail to get network", e);
@@ -2920,11 +2927,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             Set<Host> hosts = Host.getAll(conn);
             Host dsthost = null;
-            for (Host host : hosts) {
+            if(hosts != null) {
+              for (Host host : hosts) {
                 if (host.getAddress(conn).equals(ipaddr)) {
-                    dsthost = host;
-                    break;
+                  dsthost = host;
+                  break;
                 }
+              }
             }
             if (dsthost == null) {
                 String msg = "Migration failed due to unable to find host " + ipaddr + " in XenServer pool " + _host.pool;
@@ -3998,6 +4007,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             nwr.tags.add(generateTimeStamp());
             vlanNetwork = Network.create(conn, nwr);
             vlanNic = getNetworkByName(conn, newName);
+            if(vlanNic == null) { //Still vlanNic is null means we could not create it for some reason and no exception capture happened.
+              throw new CloudRuntimeException("Could not find/create vlan network with name: " + newName);
+            }
         }
 
         PIF nPif = network.getPif(conn);
@@ -4026,25 +4038,27 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected SR getLocalLVMSR(Connection conn) {
         try {
             Map<SR, SR.Record> map = SR.getAllRecords(conn);
-            for (Map.Entry<SR, SR.Record> entry : map.entrySet()) {
+            if(map != null && !map.isEmpty()) {
+              for (Map.Entry<SR, SR.Record> entry : map.entrySet()) {
                 SR.Record srRec = entry.getValue();
                 if (SRType.LVM.equals(srRec.type)) {
-                    Set<PBD> pbds = srRec.PBDs;
-                    if (pbds == null) {
-                        continue;
+                  Set<PBD> pbds = srRec.PBDs;
+                  if (pbds == null) {
+                    continue;
+                  }
+                  for (PBD pbd : pbds) {
+                    Host host = pbd.getHost(conn);
+                    if (!isRefNull(host) && host.getUuid(conn).equals(_host.uuid)) {
+                      if (!pbd.getCurrentlyAttached(conn)) {
+                        pbd.plug(conn);
+                      }
+                      SR sr = entry.getKey();
+                      sr.scan(conn);
+                      return sr;
                     }
-                    for (PBD pbd : pbds) {
-                        Host host = pbd.getHost(conn);
-                        if (!isRefNull(host) && host.getUuid(conn).equals(_host.uuid)) {
-                            if (!pbd.getCurrentlyAttached(conn)) {
-                                pbd.plug(conn);
-                            }
-                            SR sr = entry.getKey();
-                            sr.scan(conn);
-                            return sr;
-                        }
-                    }
+                  }
                 }
+              }
             }
         } catch (XenAPIException e) {
             String msg = "Unable to get local LVMSR in host:" + _host.uuid + e.toString();
@@ -4059,25 +4073,27 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected SR getLocalEXTSR(Connection conn) {
         try {
             Map<SR, SR.Record> map = SR.getAllRecords(conn);
-            for (Map.Entry<SR, SR.Record> entry : map.entrySet()) {
+            if(map != null && !map.isEmpty()) {
+              for (Map.Entry<SR, SR.Record> entry : map.entrySet()) {
                 SR.Record srRec = entry.getValue();
                 if (SRType.FILE.equals(srRec.type) || SRType.EXT.equals(srRec.type)) {
-                    Set<PBD> pbds = srRec.PBDs;
-                    if (pbds == null) {
-                        continue;
+                  Set<PBD> pbds = srRec.PBDs;
+                  if (pbds == null) {
+                    continue;
+                  }
+                  for (PBD pbd : pbds) {
+                    Host host = pbd.getHost(conn);
+                    if (!isRefNull(host) && host.getUuid(conn).equals(_host.uuid)) {
+                      if (!pbd.getCurrentlyAttached(conn)) {
+                        pbd.plug(conn);
+                      }
+                      SR sr = entry.getKey();
+                      sr.scan(conn);
+                      return sr;
                     }
-                    for (PBD pbd : pbds) {
-                        Host host = pbd.getHost(conn);
-                        if (!isRefNull(host) && host.getUuid(conn).equals(_host.uuid)) {
-                            if (!pbd.getCurrentlyAttached(conn)) {
-                                pbd.plug(conn);
-                            }
-                            SR sr = entry.getKey();
-                            sr.scan(conn);
-                            return sr;
-                        }
-                    }
+                  }
                 }
+              }
             }
         } catch (XenAPIException e) {
             String msg = "Unable to get local EXTSR in host:" + _host.uuid + e.toString();
@@ -4211,9 +4227,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Set<HostCpu> hcs = null;
             for (int i = 0; i < 10; i++) {
                 hcs = myself.getHostCPUs(conn);
-                _host.cpus = hcs.size();
-                if (_host.cpus > 0) {
+                if(hcs != null) {
+                  _host.cpus = hcs.size();
+                  if (_host.cpus > 0) {
                     break;
+                  }
                 }
                 Thread.sleep(5000);
             }
@@ -4285,8 +4303,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             XsLocalNetwork storageNic2 = null;
             if (_storageNetworkName2 != null) {
                 storageNic2 = getNetworkByName(conn, _storageNetworkName2);
-                _host.storageNetwork2 = storageNic2.getNetworkRecord(conn).uuid;
-                _host.storagePif2 = storageNic2.getPifRecord(conn).uuid;
+                if(storageNic2 != null) {
+                    _host.storagePif2 = storageNic2.getPifRecord(conn).uuid;
+                }
             }
 
             s_logger.info("Private Network is " + _privateNetworkName + " for host " + _host.ip);
@@ -4578,6 +4597,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
 
                 Map<Network, Network.Record> networks = Network.getAllRecords(conn);
+                if(networks == null) {
+                  String msg = "Unable to setup as there are no networks in the host: " +  _host.uuid;
+                  s_logger.warn(msg);
+                  return new SetupAnswer(cmd, msg);
+                }
                 for (Network.Record network : networks.values()) {
                     if (network.nameLabel.equals("cloud-private")) {
                         for (PIF pif : network.PIFs) {
@@ -5305,6 +5329,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         try {
             XsLocalNetwork nw = getNetworkByName(conn, label);
+            if(nw == null) {
+              throw new CloudRuntimeException("Unable to locate the network with name-label: " + label + " on host: " + _host.ip);
+            }
             s_logger.debug("Network object:" + nw.getNetwork().getUuid(conn));
             PIF pif = nw.getPif(conn);
             PIF.Record pifRec = pif.getRecord(conn);
@@ -5578,7 +5605,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             throw new ConfigurationException("Unable to get the username");
         }
 
-        if (_password == null) {
+        if (_password.peek() == null) {
             throw new ConfigurationException("Unable to get the password");
         }
 
@@ -5932,7 +5959,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     }
 
                     Set<Host> setHosts = Host.getAll(conn);
-
+                    if(setHosts == null) {
+                      String msg = "Unable to create Iscsi SR  " + deviceConfig + " due to hosts not available.";
+                      s_logger.warn(msg);
+                      throw new CloudRuntimeException(msg);
+                    }
                     for (Host currentHost : setHosts) {
                         PBD.Record rec = new PBD.Record();
 
@@ -6230,7 +6261,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (volumeTo.getVolumeType() == Volume.Type.ROOT) {
             Map<VM, VM.Record> allVMs = VM.getAllRecords(conn);
             // add size of memory snapshot vdi
-            if (allVMs.size() > 0) {
+            if (allVMs != null && allVMs.size() > 0) {
                 for (VM vmr : allVMs.keySet()) {
                     try {
                         String vName = vmr.getNameLabel(conn);
@@ -6275,7 +6306,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             // check if there is already a task for this VM snapshot
             Task task = null;
             Set<Task> tasks = Task.getByNameLabel(conn, "Async.VM.snapshot");
-            tasks.addAll(Task.getByNameLabel(conn, "Async.VM.checkpoint"));
+            if(tasks == null) {
+              tasks = new LinkedHashSet<>();
+            }
+            Set<Task> tasksByName = Task.getByNameLabel(conn, "Async.VM.checkpoint");
+            if(tasksByName != null) {
+              tasks.addAll(tasksByName);
+            }
             for (Task taskItem : tasks) {
                 if (taskItem.getOtherConfig(conn).containsKey("CS_VM_SNAPSHOT_KEY")) {
                     String vmSnapshotTaskName = taskItem.getOtherConfig(conn).get("CS_VM_SNAPSHOT_KEY");
@@ -6948,7 +6985,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         public String linkLocalNetwork;
         public Network vswitchNetwork;
         public String storageNetwork1;
-        public String storageNetwork2;
         public String guestNetwork;
         public String guestPif;
         public String publicPif;
@@ -7023,11 +7059,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         final HashMap<String, String> vmMetaDatum = new HashMap<String, String>();
         try {
             Map<VM, VM.Record>  vm_map = VM.getAllRecords(conn);  //USE THIS TO GET ALL VMS FROM  A CLUSTER
-            for (VM.Record record: vm_map.values()) {
+            if(vm_map != null) {
+              for (VM.Record record : vm_map.values()) {
                 if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
-                    continue; // Skip DOM0
+                  continue; // Skip DOM0
                 }
                 vmMetaDatum.put(record.nameLabel, StringUtils.mapToString(record.platform));
+              }
             }
         } catch (final Throwable e) {
             String msg = "Unable to get vms through host " + _host.uuid + " due to to " + e.toString();
@@ -7200,9 +7238,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             VM router = getVM(conn, routerName);
 
             NicTO nic = cmd.getNic();
-            VIF vif = getVifByMac(conn, router, nic.getMac());
-
-            nic.setDeviceId(Integer.valueOf(vif.getDevice(conn)));
+            if(nic != null) {
+              VIF vif = getVifByMac(conn, router, nic.getMac());
+              if(vif == null) {
+                String msg = "Prepare SetNetworkACL failed due to VIF is null for : " + nic.getMac() +" with routername: " + routerName;
+                s_logger.error(msg);
+                return new ExecutionResult(false, msg);
+              }
+              nic.setDeviceId(Integer.valueOf(vif.getDevice(conn)));
+            } else {
+              String msg = "Prepare SetNetworkACL failed due to nic is null for : " + routerName;
+              s_logger.error(msg);
+              return new ExecutionResult(false, msg);
+            }
         } catch (Exception e) {
             String msg = "Prepare SetNetworkACL failed due to " + e.toString();
             s_logger.error(msg, e);
