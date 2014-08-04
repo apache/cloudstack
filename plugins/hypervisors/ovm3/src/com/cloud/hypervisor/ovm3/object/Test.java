@@ -19,6 +19,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -54,25 +55,74 @@ class Test {
         }
         return client;
     }
-    private static Connection agentConnect(String[] hosts, Integer port, String user, String pass) throws Ovm3ResourceException {
-        Connection c;
-        String hostname = "localhost";
+    public static class Host {
+        private final Map<String, String> hostDetail = new HashMap<String, String>() {
+            {
+                put("Hostname", null);
+                put("Port", null);
+                put("IP", null);
+                put("Username", null);
+                put("Password", null);
+                put("Root", null);
+                put("Pass", null);
+            }
+        };
+        public Host() {
+        }
+        public Host(String name, String port, String uname, String pass) {
+            setHostname(name);
+            setPort(port);
+            setUsername(uname);
+            setPassword(pass);
+        }
+
+        public void setHostDetails(Map<String, String> details) {
+            hostDetail.putAll(details);
+        }
+        public String getHostname() {
+            return hostDetail.get("Hostname");
+        }
+        public String getPort() {
+            return hostDetail.get("Port");
+        }
+        public String getUsername() {
+            return hostDetail.get("Uaername");
+        }
+        public String getPassword() {
+            return hostDetail.get("Password");
+        }
+        public String setHostname(String host) {
+            return hostDetail.put("Hostname", host);
+        }
+        public String setPort(String port) {
+            return hostDetail.put("Port", port);
+        }
+        public String setUsername(String user) {
+            return hostDetail.put("Username", user);
+        }
+        public String setPassword(String pass) {
+            return hostDetail.put("Password", pass);
+        }
+    };
+
+    private static List<Connection> agentConnect(Map<String, Host> hosts) throws Ovm3ResourceException {
+        List<Connection> c = new ArrayList();
         try {
-            Socket client = new Socket();
-            for (String host: hosts) {
-                client = getSocket(host, port);
-                if (client != null) {
-                    hostname = host;
-                    break;
+            for (final Entry<String, Host> host : hosts.entrySet()) {
+                Host hostDetail = host.getValue();
+                Socket client = getSocket(hostDetail.getHostname(), Integer.valueOf(hostDetail.getPort()));
+                if (client == null || !client.isConnected()) {
+                    System.out.println("Unable to connect to " + hostDetail.getHostname() + ", " + hostDetail.getPort());
+                } else {
+                    client.close();
+                    Connection con = new Connection(hostDetail.getHostname(),
+                            Integer.valueOf(hostDetail.getPort()),
+                            hostDetail.getUsername(),
+                            hostDetail.getPassword());
+                    System.out.println("Agent connected to " + hostDetail.getHostname() + ", " + hostDetail.getPort());
+                    c.add(con);
                 }
             }
-            if (client == null || !client.isConnected()) {
-                System.out.println("Fatal no connection to " + hostname);
-                return null;
-            }
-            client.close();
-            c = new Connection(hostname, port, user, pass);
-            System.out.println("Agent connection to " + hostname + " succeeded");
             return c;
         } catch (IOException e) {
             LOGGER.error("IOException: ", e);
@@ -80,12 +130,11 @@ class Test {
         }
     }
 
-
     public static void main(final String[] args) {
         boolean checkNet = false;
         boolean checkNtp = false;
         boolean checkLinux = false;
-        boolean checkCommon = false;
+        boolean checkCommon = true;
         boolean checkCluster = false;
         boolean checkRepo = false;
         boolean checkPool = true;
@@ -101,12 +150,26 @@ class Test {
         boolean checkFs = false;
         boolean checkPlugin = false;
 
-        String[] hostnames = {"ovm-2", "ovm-1", "localhost"};
-        Integer port = 8899;
+        Integer hostCount = 0;
         String agentuser = "oracle";
         String agentpass = "test123";
+        Map<String, Host> hosts = new HashMap<String, Host>();
+        hosts.put("ovm-1-local", new Host("localhost", "8898", agentuser, agentpass));
+        hosts.put("ovm-2-local", new Host("localhost", "8899", agentuser, agentpass));
+        hosts.put("ovm-1", new Host("ovm-1", "8899", agentuser, agentpass));
+        hosts.put("ovm-2", new Host("ovm-2", "8899", agentuser, agentpass));
         try {
-            Connection c = agentConnect(hostnames, port, agentuser, agentpass);
+            List<Connection> connections = agentConnect(hosts);
+            hostCount = connections.size();
+            if (hostCount == 1) {
+                System.out.println("Single host: " + hostCount);
+            } else if (hostCount > 1) {
+                System.out.println("Multiple hosts: " + hostCount);
+            } else {
+                throw new Ovm3ResourceException("No hosts found that were up!!!!");
+            }
+            Connection c = connections.get(0);
+
             /*
              * needs to be finished and implement ovs + bridge, or do we count
              * on chef ?
@@ -162,12 +225,15 @@ class Test {
                         .getName());
             }
             if (checkCommon) {
-                Common Com = new Common(c);
-                String x = Com.getApiVersion();
+                Common com = new Common(c);
+                Common com1 = new Common(connections.get(1));
+                System.out.println(com.getClient().getPort() + " " + connections.get(0).getPort());
+                System.out.println(com1.getClient().getPort() + " " + connections.get(1).getPort());
+                String x = com.getApiVersion();
                 System.out.println("Api Version: " + x);
-                String y = Com.sleep(1);
+                String y = com.sleep(1);
                 System.out.println("Sleep: " + y);
-                String msg = Com.echo("testing 1 2 3");
+                String msg = com.echo("testing 1 2 3");
                 System.out.println("Echo: " + msg);
             }
             /* check stuff */
@@ -269,12 +335,17 @@ class Test {
             if (checkPool) {
                 System.out.println("checking pool");
                 Pool pool = new Pool(c);
+                Pool pool1 = new Pool(connections.get(1));
                 pool.discoverServerPool();
+                pool1.discoverServerPool();
+                System.out.println(pool.getClient().getIp());
+                System.out.println(pool1.getClient().getIp());
                 System.out.println("pool alias: " + pool.getPoolAlias());
                 System.out.println("pool id: " + pool.getPoolId());
                 if (pool.getPoolId().contentEquals("TEST")) {
                     System.out.println("pool equals test");
                 }
+                /* test add members here */
                 List<String> ips = new ArrayList<String>();
                 // ips.add("192.168.1.64");
                 // ps.add("192.168.1.65");

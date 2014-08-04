@@ -39,7 +39,7 @@ import org.xml.sax.SAXException;
 
 public class OvmObject {
     /* figure  this one out! */
-    private static volatile Connection client = null;
+    private volatile Connection client;
     private static List<?> emptyParams = new ArrayList<Object>();
     private static final Logger LOGGER = Logger
             .getLogger(OvmObject.class);
@@ -48,22 +48,21 @@ public class OvmObject {
     }
 
     public OvmObject(Connection c) {
-        OvmObject.setClient(c);
+        setClient(c);
     }
 
     public Connection getClient() {
       return client;
     }
 
-    public static synchronized void setClient(Connection c) {
-      client = c;
+    public synchronized void setClient(Connection c) {
+        client = c;
     }
 
     /* remove dashes from uuids */
     public String deDash(String str) {
         return str.replaceAll("-", "");
     }
-
     /* generate a uuid */
     public String newUuid() {
         return UUID.randomUUID().toString();
@@ -75,18 +74,18 @@ public class OvmObject {
     }
 
     /* capture most of the calls here */
-    public static Object callWrapper(String call) throws Ovm3ResourceException {
+    public  Object callWrapper(String call) throws Ovm3ResourceException {
         try {
             return client.call(call, emptyParams);
         } catch (XmlRpcException e) {
-            String msg = "Client call " + call + " went wrong: ";
+            String msg = "Client call " + call  + " to " +  client.getIp() + " went wrong: " + e.getMessage();
             throw new Ovm3ResourceException(msg, e);
         }
     }
 
     /* nice try but doesn't work like that .. */
     @SafeVarargs
-    public static <T> Object callWrapper(String call, T... args)
+    public final <T> Object callWrapper(String call, T... args)
             throws Ovm3ResourceException {
         List<T> params = new ArrayList<T>();
         for (T param : args) {
@@ -95,12 +94,12 @@ public class OvmObject {
         try {
             return client.call(call, params);
         } catch (XmlRpcException e) {
-            String msg = "Client call " + call + " with " + params + " went wrong: ";
+            String msg = "Client call " + call  + " to " +  client.getIp() + " with " + params + " went wrong: " + e.getMessage();
             throw new Ovm3ResourceException(msg, e);
         }
     }
 
-    public static <T> Boolean nullCallWrapper(String call, Boolean nullReturn, T... args) throws Ovm3ResourceException {
+    public  <T> Boolean nullCallWrapper(String call, Boolean nullReturn, T... args) throws Ovm3ResourceException {
         Object x = callWrapper(call, args);
         if (x == null) {
             return nullReturn;
@@ -110,10 +109,10 @@ public class OvmObject {
         }
         return true;
     }
-    public static <T> Boolean nullIsFalseCallWrapper(String call, T... args) throws Ovm3ResourceException {
+    public  <T> Boolean nullIsFalseCallWrapper(String call, T... args) throws Ovm3ResourceException {
         return nullCallWrapper(call, false, args);
     }
-    public static <T> Boolean nullIsTrueCallWrapper(String call, T... args) throws Ovm3ResourceException {
+    public  <T> Boolean nullIsTrueCallWrapper(String call, T... args) throws Ovm3ResourceException {
         return nullCallWrapper(call, true, args);
     }
 

@@ -26,7 +26,6 @@ import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 
 public class Connection extends XmlRpcClient {
     private static final Logger LOGGER = Logger.getLogger(Connection.class);
-    private final XmlRpcClientConfigImpl xmlClientConfig = new XmlRpcClientConfigImpl();
     private final XmlRpcClient xmlClient;
     private final String hostUser;
     private final String hostPass;
@@ -65,6 +64,7 @@ public class Connection extends XmlRpcClient {
                 prot = "https";
             }
             url = new URL(prot + "://" + hostIp + ":" + hostPort.toString());
+            final XmlRpcClientConfigImpl xmlClientConfig = new XmlRpcClientConfigImpl();
             xmlClientConfig.setTimeZone(TimeZone.getTimeZone("UTC"));
             xmlClientConfig.setServerURL(url);
             /* disable, we use asyncexecute to control timeout */
