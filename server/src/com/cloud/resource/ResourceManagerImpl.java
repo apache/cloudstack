@@ -1438,11 +1438,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public void registerResourceStateAdapter(String name, ResourceStateAdapter adapter) {
-        if (_resourceStateAdapters.get(name) != null) {
-            throw new CloudRuntimeException(name + " has registered");
-        }
-
         synchronized (_resourceStateAdapters) {
+            if (_resourceStateAdapters.get(name) != null) {
+                throw new CloudRuntimeException(name + " has registered");
+            }
             _resourceStateAdapters.put(name, adapter);
         }
     }

@@ -272,15 +272,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public int registerForInitialConnects(final StartupCommandProcessor creator, boolean priority) {
         synchronized (_hostMonitors) {
             _monitorId++;
-
             if (priority) {
                 _creationMonitors.add(0, new Pair<Integer, StartupCommandProcessor>(_monitorId, creator));
             } else {
                 _creationMonitors.add(new Pair<Integer, StartupCommandProcessor>(_monitorId, creator));
             }
+            return _monitorId;
         }
-
-        return _monitorId;
     }
 
     @Override
