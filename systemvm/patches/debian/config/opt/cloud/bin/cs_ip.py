@@ -14,5 +14,7 @@ def merge(dbag, ip):
        ip['device'] = 'eth' + str(ip['nic_dev_id'])
        ip['cidr'] = str(ipo.ip) + '/' + str(ipo.prefixlen)
        ip['network'] = str(ipo.network) + '/' + str(ipo.prefixlen)
+       if 'nw_type' not in ip.keys():
+           ip['nw_type'] = 'public'
        dbag.setdefault('eth' + str(ip['nic_dev_id']), []).append( ip )
     return dbag
