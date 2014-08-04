@@ -1339,13 +1339,17 @@ VM_PASSWORD=""
 CHEF_TMP_FILE=/tmp/cmdline.json
 COMMA="\t"
 echo -e "{\n\"id\": \"cmdline\"," > ${CHEF_TMP_FILE}
-echo -e "{\n\"cmdline\": {" > ${CHEF_TMP_FILE}
+echo -e "\n\"cmd_line\": {" >> ${CHEF_TMP_FILE}
 
 for i in $CMDLINE
   do
     # search for foo=bar pattern and cut out foo
     KEY=$(echo $i | cut -d= -f1)
     VALUE=$(echo $i | cut -d= -f2)
+    echo -en ${COMMA} >> ${CHEF_TMP_FILE}
+    # Two lines so values do not accidently interpretted as escapes!!
+    echo -n \"${KEY}\"': '\"${VALUE}\" >> ${CHEF_TMP_FILE}
+    COMMA=",\n\t"
     case $KEY in 
       disable_rp_filter)
           DISABLE_RP_FILTER=$VALUE
@@ -1484,11 +1488,10 @@ for i in $CMDLINE
         ;;
     esac
 done
-
 echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}
 if [ "$TYPE" != "unknown" ]
 then
-	mv ${CHEF_TMP_FILE} /var/chef/data_bags/vr/cmdline.json
+	mv ${CHEF_TMP_FILE} /var/chef/data_bags/vr/cmd_line.json
 fi
 
 [ $ETH0_IP ] && LOCAL_ADDRS=$ETH0_IP
