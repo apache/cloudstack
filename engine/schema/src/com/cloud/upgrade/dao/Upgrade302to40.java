@@ -582,6 +582,7 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
                 pstmt.setLong(1, pNtwkId);
                 pstmt.executeUpdate();
 
+                pstmt.close();
                 //get provider id
                 pstmt =
                     conn.prepareStatement("SELECT id FROM `cloud`.`physical_network_service_providers` "
