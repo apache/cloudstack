@@ -1165,6 +1165,42 @@ def createNetworkRulesForVM(apiclient, virtualmachine, ruletype,
         [FAIL, e]
     return [PASS, public_ip]
 
+def getPortableIpRangeServices(config):
+    """ Reads config values related to portable ip and fills up
+    services accordingly"""
+
+    services = {}
+    attributeError = False
+
+    if config["portableIpRange"]["startip"]:
+        services["startip"] = config["portableIpRange"]["startip"]
+    else:
+        attributeError = True
+
+    if config["portableIpRange"]["endip"]:
+        services["endip"] = config["portableIpRange"]["endip"]
+    else:
+        attributeError = True
+
+    if config["portableIpRange"]["netmask"]:
+        services["netmask"] = config["portableIpRange"]["netmask"]
+    else:
+        attributeError = True
+
+    if config["portableIpRange"]["gateway"]:
+        services["gateway"] = config["portableIpRange"]["gateway"]
+    else:
+        attributeError = True
+
+    if config["portableIpRange"]["vlan"]:
+        services["vlan"] = config["portableIpRange"]["vlan"]
+
+    if attributeError:
+        services = FAILED
+
+    return services
+
+
 def uploadVolume(apiclient, zoneid, account, services):
     try:
         # Upload the volume

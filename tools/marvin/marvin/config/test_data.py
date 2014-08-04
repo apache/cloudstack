@@ -886,8 +886,7 @@ test_data = {
         "netmask": "255.255.255.192",
         "startip": "10.223.252.196",
         "endip": "10.223.252.197",
-        "vlan": "1001",
-        "regionid": ""
+        "vlan": "1001"
     },
     "sparse": {
         "name": "Sparse Type Disk offering",
