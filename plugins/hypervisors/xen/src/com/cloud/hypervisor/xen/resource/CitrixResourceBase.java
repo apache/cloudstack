@@ -16,77 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Queue;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeoutException;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-import com.trilead.ssh2.SCPClient;
-import com.xensource.xenapi.Bond;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Console;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.HostCpu;
-import com.xensource.xenapi.HostMetrics;
-import com.xensource.xenapi.Network;
-import com.xensource.xenapi.PBD;
-import com.xensource.xenapi.PIF;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.Task;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.VmPowerState;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VBDMetrics;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VGPU;
-import com.xensource.xenapi.VIF;
-import com.xensource.xenapi.VLAN;
-import com.xensource.xenapi.VM;
-import com.xensource.xenapi.VMGuestMetrics;
-import com.xensource.xenapi.XenAPIObject;
-
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -248,6 +177,72 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.snapshot.VMSnapshot;
+import com.trilead.ssh2.SCPClient;
+import com.xensource.xenapi.Bond;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Console;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.HostCpu;
+import com.xensource.xenapi.HostMetrics;
+import com.xensource.xenapi.Network;
+import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.PIF;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Task;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.VmPowerState;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VGPU;
+import com.xensource.xenapi.VIF;
+import com.xensource.xenapi.VLAN;
+import com.xensource.xenapi.VM;
+import com.xensource.xenapi.VMGuestMetrics;
+import com.xensource.xenapi.XenAPIObject;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process
@@ -2236,23 +2231,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             if (type.equalsIgnoreCase("host")) {
 
-                if (param.contains("pif_eth0_rx")) {
-                    hostStats.setNetworkReadKBs(getDataAverage(dataNode, col, numRows));
-                }
-
-                if (param.contains("pif_eth0_tx")) {
-                    hostStats.setNetworkWriteKBs(getDataAverage(dataNode, col, numRows));
-                }
-
-                if (param.contains("memory_total_kib")) {
+                if (param.matches("pif_eth0_rx")) {
+                    hostStats.setNetworkReadKBs(getDataAverage(dataNode, col, numRows)/1000);
+                } else if (param.matches("pif_eth0_tx")) {
+                    hostStats.setNetworkWriteKBs(getDataAverage(dataNode, col, numRows)/1000);
+                } else if (param.contains("memory_total_kib")) {
                     hostStats.setTotalMemoryKBs(getDataAverage(dataNode, col, numRows));
-                }
-
-                if (param.contains("memory_free_kib")) {
+                } else if (param.contains("memory_free_kib")) {
                     hostStats.setFreeMemoryKBs(getDataAverage(dataNode, col, numRows));
-                }
-
-                if (param.contains("cpu")) {
+                } else if (param.matches("cpu_avg")) {
                     // hostStats.setNumCpus(hostStats.getNumCpus() + 1);
                     hostStats.setCpuUtilization(hostStats.getCpuUtilization() + getDataAverage(dataNode, col, numRows));
                 }
@@ -2363,13 +2350,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 if (param.contains("cpu")) {
                     vmStatsAnswer.setNumCPUs(vmStatsAnswer.getNumCPUs() + 1);
                     vmStatsAnswer.setCPUUtilization(((vmStatsAnswer.getCPUUtilization() + getDataAverage(dataNode, col, numRows))));
-                } else if (param.matches("vif_\\d_rx")) {
-                    vmStatsAnswer.setNetworkReadKBs(vmStatsAnswer.getNetworkReadKBs() + (getDataAverage(dataNode, col, numRows) / (8 * 2)));
-                } else if (param.matches("vif_\\d_tx")) {
-                    vmStatsAnswer.setNetworkWriteKBs(vmStatsAnswer.getNetworkWriteKBs() + (getDataAverage(dataNode, col, numRows) / (8 * 2)));
+                } else if (param.matches("vif_\\d*_rx")) {
+                    vmStatsAnswer.setNetworkReadKBs(vmStatsAnswer.getNetworkReadKBs() + (getDataAverage(dataNode, col, numRows)/1000));
+                } else if (param.matches("vif_\\d*_tx")) {
+                    vmStatsAnswer.setNetworkWriteKBs(vmStatsAnswer.getNetworkWriteKBs() + (getDataAverage(dataNode, col, numRows)/1000));
+                } else if (param.matches("vbd_.*_read")) {
+                    vmStatsAnswer.setDiskReadKBs(vmStatsAnswer.getDiskReadKBs() + (getDataAverage(dataNode, col, numRows)/1000));
+                } else if (param.matches("vbd_.*_write")) {
+                    vmStatsAnswer.setDiskWriteKBs(vmStatsAnswer.getDiskWriteKBs() + (getDataAverage(dataNode, col, numRows)/1000));
                 }
             }
-
         }
 
         for (String vmUUID : vmResponseMap.keySet()) {
@@ -2384,36 +2374,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.debug("Vm cpu utilization " + vmStatsAnswer.getCPUUtilization());
             }
         }
-
-        try {
-            for (String vmUUID : vmUUIDs) {
-                VM vm = VM.getByUuid(conn, vmUUID);
-                VmStatsEntry stats = vmResponseMap.get(vmUUID);
-                double diskReadKBs = 0;
-                double diskWriteKBs = 0;
-                for (VBD vbd : vm.getVBDs(conn)) {
-                    VBDMetrics vbdmetrics = vbd.getMetrics(conn);
-                    if (!isRefNull(vbdmetrics)) {
-                        try {
-                            diskReadKBs += vbdmetrics.getIoReadKbs(conn);
-                            diskWriteKBs += vbdmetrics.getIoWriteKbs(conn);
-                        }  catch (Types.HandleInvalid e) {
-                            s_logger.debug("vbdmetrics doesn't exist ");
-                        }
-                    }
-                }
-                if (stats == null) {
-                    stats = new VmStatsEntry();
-                }
-                stats.setDiskReadKBs(diskReadKBs);
-                stats.setDiskWriteKBs(diskWriteKBs);
-                vmResponseMap.put(vmUUID, stats);
-            }
-        } catch (Exception e) {
-            s_logger.warn("Error while collecting disk stats from : ", e);
-            return null;
-        }
-
         return vmResponseMap;
     }
 
