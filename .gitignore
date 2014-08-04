@@ -48,6 +48,7 @@ tools/devcloud/devcloudbox/.vagrant
 tools/cli/cloudmonkey/marvin/
 tools/cli/cloudmonkey/precache.py
 tools/marvin/marvin/cloudstackAPI/
+tools/marvin/build/
 tools/cli/build/
 *.jar
 *.war
