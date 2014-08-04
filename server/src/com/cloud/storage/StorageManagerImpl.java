@@ -683,9 +683,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         } catch (Exception e) {
             s_logger.debug("Failed to add data store: "+e.getMessage(), e);
-            // clean up the db
-            if (store != null) {
-                lifeCycle.deleteDataStore(store);
+            try {
+                // clean up the db, just absorb the exception thrown in deletion with error logged, so that user can get error for adding data store
+                // not deleting data store.
+                if (store != null) {
+                    lifeCycle.deleteDataStore(store);
+                }
+            } catch (Exception ex) {
+                s_logger.debug("Failed to clean up storage pool: " + ex.getMessage());
             }
             throw new CloudRuntimeException("Failed to add data store: "+e.getMessage(), e);
         }
