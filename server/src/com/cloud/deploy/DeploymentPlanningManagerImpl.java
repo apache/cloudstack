@@ -318,6 +318,15 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                             host.getClusterId());
                 }
 
+                Pod pod = _podDao.findById(host.getPodId());
+                Cluster cluster = _clusterDao.findById(host.getClusterId());
+
+                if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+                    DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<Volume, StoragePool>());
+                    s_logger.debug("Returning Deployment Destination: " + dest);
+                    return dest;
+                }
+
                 // search for storage under the zone, pod, cluster of the host.
                 DataCenterDeployment lastPlan =
                         new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), hostIdSpecified, plan.getPoolId(), null,
@@ -335,8 +344,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                             suitableHosts, suitableVolumeStoragePools, avoids,
                             getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes);
                     if (potentialResources != null) {
-                        Pod pod = _podDao.findById(host.getPodId());
-                        Cluster cluster = _clusterDao.findById(host.getClusterId());
+                        pod = _podDao.findById(host.getPodId());
+                        cluster = _clusterDao.findById(host.getClusterId());
                         Map<Volume, StoragePool> storageVolMap = potentialResources.second();
                         // remove the reused vol<->pool from destination, since
                         // we don't have to prepare this volume.

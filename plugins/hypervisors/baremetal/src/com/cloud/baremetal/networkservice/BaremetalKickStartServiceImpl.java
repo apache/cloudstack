@@ -24,7 +24,6 @@ import com.cloud.agent.api.baremetal.IpmISetBootDevCommand.BootDev;
 import com.cloud.baremetal.database.BaremetalPxeDao;
 import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.baremetal.networkservice.BaremetalPxeManager.BaremetalPxeType;
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
@@ -238,7 +237,8 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
             throw new CloudRuntimeException(String.format("failed preparing PXE in virtual router[id:%s], because %s", vr.getId(), ret.second()));
         }
 
-        String internalServerIp = _configDao.getValue(Config.BaremetalInternalStorageServer.key());
+        //String internalServerIp = _configDao.getValue(Config.BaremetalInternalStorageServer.key());
+        String internalServerIp = "10.223.110.231";
         ret = SshHelper.sshExecute(mgmtNic.getIp4Address(), 3922, "root", getSystemVMKeyFile(), null,
                 String.format("/usr/bin/baremetal_snat.sh %s %s", mgmtNic.getIp4Address(), internalServerIp)
         );
