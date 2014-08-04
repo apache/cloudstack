@@ -5,13 +5,14 @@ import os
 import logging
 import cs_ip
 import cs_guestnetwork
+import cs_cmdline
 
 from pprint import pprint
 
 class dataBag:
 
     bdata  = { }
-    DPATH = "/var/chef/data_bags/vr"
+    DPATH = "/etc/cloudstack"
 
     def load(self):
         data = self.bdata
@@ -21,7 +22,6 @@ class dataBag:
         try:
             handle = open(self.fpath)
         except IOError:
-            print("FILE DOES NOT EXIST")
             logging.debug("Creating data bag type %s", self.key)
             data.update( { "id": self.key } )
         else:
@@ -51,16 +51,13 @@ class updateDataBag:
     qFile = {}
     fpath = ''
     bdata  = { }
-    DPATH = "/var/chef/data_bags/vr"
+    DPATH = "/etc/cloudstack"
 
     def __init__(self,qFile):
         self.qFile = qFile
         self.process()
 
     def process(self):
-        if self.qFile.type == 'cl':
-           self.transformCL()
-           self.qFile.data = self.newData
         self.db = dataBag()
         self.db.setKey( self.qFile.type )
         dbag = self.db.load( )
@@ -70,6 +67,8 @@ class updateDataBag:
            dbag = self.processIP(self.db.getDataBag())
         if self.qFile.type == 'guestnetwork':
            dbag = self.processGuestNetwork(self.db.getDataBag())
+        if self.qFile.type == 'cmdline':
+           dbag = self.processCL(self.db.getDataBag())
         self.db.save(dbag)
   
     def processGuestNetwork(self, dbag):
@@ -82,6 +81,7 @@ class updateDataBag:
         dp['one_to_one_nat'] = False
         dp['gateway']        = d['router_guest_gateway']
         dp['nic_dev_id']     = d['device'][3]
+        dp['nw_type']        = 'guest'
         qf = loadQueueFile()
         qf.load({ 'ip_address' : [ dp ], 'type' : 'ips'})
         return cs_guestnetwork.merge(dbag, self.qFile.data)
@@ -91,31 +91,33 @@ class updateDataBag:
             dbag = cs_ip.merge(dbag, ip)
         return dbag
 
-    def transformCL(self):
+    def processCL(self, dbag):
         # Convert the ip stuff to an ip object and pass that into cs_ip_merge
         # "eth0ip": "192.168.56.32",
         # "eth0mask": "255.255.255.0",
         self.newData = []
-        self.qFile.setType("ips")
         self.processCLItem('0')
         self.processCLItem('1')
         self.processCLItem('2')
+        return cs_cmdline.merge(dbag, self.qFile.data)
 
     def processCLItem(self, num):
         key = 'eth' + num + 'ip'
         dp  = {}
-        if(key in self.qFile.data['cmdline']):
-           dp['public_ip']    = self.qFile.data['cmdline'][key]
-           dp['netmask'] = self.qFile.data['cmdline']['eth' + num + 'mask']
+        if(key in self.qFile.data['cmd_line']):
+           dp['public_ip']    = self.qFile.data['cmd_line'][key]
+           dp['netmask'] = self.qFile.data['cmd_line']['eth' + num + 'mask']
            dp['source_nat'] = False
            dp['add'] = True
            dp['one_to_one_nat'] = False
-           if('localgw' in self.qFile.data['cmdline']):
-               dp['gateway'] = self.qFile.data['cmdline']['localgw']
+           if('localgw' in self.qFile.data['cmd_line']):
+               dp['gateway'] = self.qFile.data['cmd_line']['localgw']
            else:
                dp['gateway'] = 'None'
            dp['nic_dev_id'] = num
-           self.newData = { 'ip_address' : [ dp ], 'type' : 'ips'}
+           dp['nw_type']    = 'control'
+           qf = loadQueueFile()
+           qf.load({ 'ip_address' : [ dp ], 'type' : 'ips'})
             
 class loadQueueFile:
 
