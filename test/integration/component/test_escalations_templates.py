@@ -27,7 +27,6 @@ from marvin.lib.utils import checkVolumeSize
 from marvin.codes import SUCCESS
 from nose.plugins.attrib import attr
 from time import sleep
-from ctypes.wintypes import BOOLEAN
 
 class TestTemplates(cloudstackTestCase):
 
