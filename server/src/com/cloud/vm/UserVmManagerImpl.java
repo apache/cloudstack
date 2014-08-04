@@ -4732,9 +4732,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             newVol = volumeMgr.allocateDuplicateVolume(root, null);
         }
-        // 1. Save usage event and update resource count for user vm volumes
-        _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
-        //2. Create Usage event for the newly created volume
+
+        // Create Usage event for the newly created volume
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, newVol.getAccountId(), newVol.getDataCenterId(), newVol.getId(), newVol.getName(), newVol.getDiskOfferingId(), templateId, newVol.getSize());
         _usageEventDao.persist(usageEvent);
 
@@ -4742,11 +4741,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _volsDao.attachVolume(newVol.getId(), vmId, newVol.getDeviceId());
 
-        /* Detach and destory the old root volume */
-
+        // Detach, destroy and create the usage event for the old root volume.
         _volsDao.detachVolume(root.getId());
-
         volumeMgr.destroyVolume(root);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, root.getAccountId(), root.getDataCenterId(), root.getId(), root.getName(),
+                Volume.class.getName(), root.getUuid(), root.isDisplayVolume());
 
         // For VMware hypervisor since the old root volume is replaced by the new root volume, force expunge old root volume if it has been created in storage
         if (vm.getHypervisorType() == HypervisorType.VMware) {
