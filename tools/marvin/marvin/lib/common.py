@@ -1172,28 +1172,28 @@ def getPortableIpRangeServices(config):
     services = {}
     attributeError = False
 
-    if config["portableIpRange"]["startip"]:
-        services["startip"] = config["portableIpRange"]["startip"]
+    if config.portableIpRange.startip:
+        services["startip"] = config.portableIpRange.startip
     else:
         attributeError = True
 
-    if config["portableIpRange"]["endip"]:
-        services["endip"] = config["portableIpRange"]["endip"]
+    if config.portableIpRange.endip:
+        services["endip"] = config.portableIpRange.endip
     else:
         attributeError = True
 
-    if config["portableIpRange"]["netmask"]:
-        services["netmask"] = config["portableIpRange"]["netmask"]
+    if config.portableIpRange.netmask:
+        services["netmask"] = config.portableIpRange.netmask
     else:
         attributeError = True
 
-    if config["portableIpRange"]["gateway"]:
-        services["gateway"] = config["portableIpRange"]["gateway"]
+    if config.portableIpRange.gateway:
+        services["gateway"] = config.portableIpRange.gateway
     else:
         attributeError = True
 
-    if config["portableIpRange"]["vlan"]:
-        services["vlan"] = config["portableIpRange"]["vlan"]
+    if config.portableIpRange.vlan:
+        services["vlan"] = config.portableIpRange.vlan
 
     if attributeError:
         services = FAILED
