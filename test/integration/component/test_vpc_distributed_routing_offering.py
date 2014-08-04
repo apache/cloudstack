@@ -156,7 +156,7 @@ class TestVPCDistributedRouterOffering(cloudstackTestCase):
     def setUpClass(cls):
         testClient = super(TestVPCDistributedRouterOffering, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
-        cls.services = testClient.getParsedTestDataConfig()
+        cls.services = Services().services
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
