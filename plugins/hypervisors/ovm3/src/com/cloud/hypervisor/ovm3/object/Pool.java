@@ -307,7 +307,7 @@ public class Pool extends OvmObject {
     }
 
     public List getPoolMemberIpList() throws Ovm3ResourceException {
-        if (poolId.isEmpty()) {
+        if (poolId == null) {
             discoverServerPool();
         }
         return poolIps;

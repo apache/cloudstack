@@ -86,7 +86,7 @@ class Test {
             return hostDetail.get("Port");
         }
         public String getUsername() {
-            return hostDetail.get("Uaername");
+            return hostDetail.get("Username");
         }
         public String getPassword() {
             return hostDetail.get("Password");
@@ -134,7 +134,7 @@ class Test {
         boolean checkNet = false;
         boolean checkNtp = false;
         boolean checkLinux = false;
-        boolean checkCommon = true;
+        boolean checkCommon = false;
         boolean checkCluster = false;
         boolean checkRepo = false;
         boolean checkPool = true;
@@ -338,20 +338,26 @@ class Test {
                 Pool pool1 = new Pool(connections.get(1));
                 pool.discoverServerPool();
                 pool1.discoverServerPool();
-                System.out.println(pool.getClient().getIp());
-                System.out.println(pool1.getClient().getIp());
-                System.out.println("pool alias: " + pool.getPoolAlias());
-                System.out.println("pool id: " + pool.getPoolId());
-                if (pool.getPoolId().contentEquals("TEST")) {
-                    System.out.println("pool equals test");
+                System.out.println("p0: " + pool.getClient().getIp());
+                System.out.println("p1: " + pool1.getClient().getIp());
+                if (pool.isInAPool()) {
+                    System.out.println("Is in a pool");
+                    System.out.println("pool alias: " + pool.getPoolAlias());
+                    System.out.println("pool id: " + pool.getPoolId());
+                    System.out.println("pool members: "
+                            + pool.getPoolMemberIpList());
+                } else {
+                    List<String> ips = new ArrayList<String>();
+                    for (Connection member : connections) {
+                        ips.add(member.getIp());
+                    }
+                    for (Connection member : connections) {
+                        final Pool xpool = new Pool(member);
+                        xpool.setPoolIps(ips);
+                        xpool.setPoolMemberIpList();
+                        LOGGER.debug("Added " + ips + " to pool " + xpool.getPoolId() + " on " + member.getIp());
+                    }
                 }
-                /* test add members here */
-                List<String> ips = new ArrayList<String>();
-                // ips.add("192.168.1.64");
-                // ps.add("192.168.1.65");
-                System.out.println("pool members: "
-                        + pool.getPoolMemberIpList());
-                System.out.println("is in a pool: " + pool.isInAPool().toString());
             }
 
             if (checkOcfs2) {
@@ -410,7 +416,6 @@ class Test {
                     pool.takeOwnership(masterUuid, "");
                 }
                 /* get primary storage mounted and registered */
-
                 StoragePlugin sp = new StoragePlugin(c);
                 String propUuid = sp.deDash(sp.newUuid());
                 String mntUuid = sp.newUuid();
@@ -548,7 +553,7 @@ class Test {
                 }
             }
         } catch (Exception e) {
-            System.out.println("Something went wrong, I know for sure!");
+            System.out.println("Something went wrong, I know for sure! " + e.getMessage());
             e.printStackTrace();
         }
     }

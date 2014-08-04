@@ -1466,7 +1466,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             LOGGER.error("executeInVR FAILED via " + agentName + " on "
                     + routerIp + ":" + cmd + ", " + e.getMessage(), e);
         }
-        return null;
+        return new ExecutionResult(false, "");
     }
 
     @Override
@@ -1527,7 +1527,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         ExecutionResult result = executeInVR(privateIpAddress, "netusage.sh",
                 args);
 
-        if (!result.isSuccess()) {
+        if (result == null || !result.isSuccess()) {
             return null;
         }
 
@@ -2364,7 +2364,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         List<String> members = new ArrayList<String>();
         try {
             final Pool poolMaster = new Pool(m);
-            // poolSize = poolMaster.getPoolMemberIpList().size() + 1;
+            Integer poolSize = poolMaster.getPoolMemberIpList().size();
             members.addAll(poolMaster.getPoolMemberIpList());
             if (!members.contains(agentIp)) {
                 members.add(agentIp);
@@ -2378,7 +2378,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                 LOGGER.debug("Added " + member + " to pool " + xpool.getPoolId());
             }
         } catch (Exception e) {
-            throw new Ovm3ResourceException("Unable to add members: ", e);
+            throw new Ovm3ResourceException("Unable to add members: " + e.getMessage());
         }
         return true;
     }
