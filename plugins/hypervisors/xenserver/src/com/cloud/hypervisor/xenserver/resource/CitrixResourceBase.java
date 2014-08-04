@@ -75,7 +75,6 @@ import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.VmPowerState;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VBDMetrics;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VGPU;
 import com.xensource.xenapi.VIF;
@@ -2251,23 +2250,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             if (type.equalsIgnoreCase("host")) {
 
-                if (param.contains("pif_eth0_rx")) {
-                    hostStats.setNetworkReadKBs(getDataAverage(dataNode, col, numRows));
-                }
-
-                if (param.contains("pif_eth0_tx")) {
-                    hostStats.setNetworkWriteKBs(getDataAverage(dataNode, col, numRows));
-                }
-
-                if (param.contains("memory_total_kib")) {
+                if (param.matches("pif_eth0_rx")) {
+                    hostStats.setNetworkReadKBs(getDataAverage(dataNode, col, numRows)/1000);
+                } else if (param.matches("pif_eth0_tx")) {
+                    hostStats.setNetworkWriteKBs(getDataAverage(dataNode, col, numRows)/1000);
+                } else if (param.contains("memory_total_kib")) {
                     hostStats.setTotalMemoryKBs(getDataAverage(dataNode, col, numRows));
-                }
-
-                if (param.contains("memory_free_kib")) {
+                } else if (param.contains("memory_free_kib")) {
                     hostStats.setFreeMemoryKBs(getDataAverage(dataNode, col, numRows));
-                }
-
-                if (param.contains("cpu")) {
+                } else if (param.matches("cpu_avg")) {
                     // hostStats.setNumCpus(hostStats.getNumCpus() + 1);
                     hostStats.setCpuUtilization(hostStats.getCpuUtilization() + getDataAverage(dataNode, col, numRows));
                 }
@@ -2378,13 +2369,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 if (param.contains("cpu")) {
                     vmStatsAnswer.setNumCPUs(vmStatsAnswer.getNumCPUs() + 1);
                     vmStatsAnswer.setCPUUtilization(((vmStatsAnswer.getCPUUtilization() + getDataAverage(dataNode, col, numRows))));
-                } else if (param.matches("vif_\\d_rx")) {
-                    vmStatsAnswer.setNetworkReadKBs(vmStatsAnswer.getNetworkReadKBs() + (getDataAverage(dataNode, col, numRows) / (8 * 2)));
-                } else if (param.matches("vif_\\d_tx")) {
-                    vmStatsAnswer.setNetworkWriteKBs(vmStatsAnswer.getNetworkWriteKBs() + (getDataAverage(dataNode, col, numRows) / (8 * 2)));
+                } else if (param.matches("vif_\\d*_rx")) {
+                    vmStatsAnswer.setNetworkReadKBs(vmStatsAnswer.getNetworkReadKBs() + (getDataAverage(dataNode, col, numRows)/1000));
+                } else if (param.matches("vif_\\d*_tx")) {
+                    vmStatsAnswer.setNetworkWriteKBs(vmStatsAnswer.getNetworkWriteKBs() + (getDataAverage(dataNode, col, numRows)/1000));
+                } else if (param.matches("vbd_.*_read")) {
+                    vmStatsAnswer.setDiskReadKBs(vmStatsAnswer.getDiskReadKBs() + (getDataAverage(dataNode, col, numRows)/1000));
+                } else if (param.matches("vbd_.*_write")) {
+                    vmStatsAnswer.setDiskWriteKBs(vmStatsAnswer.getDiskWriteKBs() + (getDataAverage(dataNode, col, numRows)/1000));
                 }
             }
-
         }
 
         for (Map.Entry<String, VmStatsEntry> entry: vmResponseMap.entrySet()) {
@@ -2399,36 +2393,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.debug("Vm cpu utilization " + vmStatsAnswer.getCPUUtilization());
             }
         }
-
-        try {
-            for (String vmUUID : vmUUIDs) {
-                VM vm = VM.getByUuid(conn, vmUUID);
-                VmStatsEntry stats = vmResponseMap.get(vmUUID);
-                double diskReadKBs = 0;
-                double diskWriteKBs = 0;
-                for (VBD vbd : vm.getVBDs(conn)) {
-                    VBDMetrics vbdmetrics = vbd.getMetrics(conn);
-                    if (!isRefNull(vbdmetrics)) {
-                        try {
-                            diskReadKBs += vbdmetrics.getIoReadKbs(conn);
-                            diskWriteKBs += vbdmetrics.getIoWriteKbs(conn);
-                        }  catch (Types.HandleInvalid e) {
-                            s_logger.debug("vbdmetrics doesn't exist ");
-                        }
-                    }
-                }
-                if (stats == null) {
-                    stats = new VmStatsEntry();
-                }
-                stats.setDiskReadKBs(diskReadKBs);
-                stats.setDiskWriteKBs(diskWriteKBs);
-                vmResponseMap.put(vmUUID, stats);
-            }
-        } catch (Exception e) {
-            s_logger.warn("Error while collecting disk stats from : ", e);
-            return null;
-        }
-
         return vmResponseMap;
     }
 
