@@ -205,7 +205,7 @@
                   <globmapper from="*.in" to="*" />
                   <filterchain>
                     <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${cs.replace.properties}" />
+                      <param type="propertiesfile" value="${project.basedir}/../${cs.replace.properties}" />
                     </filterreader>
                   </filterchain>
                 </copy>
