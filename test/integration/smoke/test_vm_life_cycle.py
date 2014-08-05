@@ -405,7 +405,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         #    of this VM should be "Destroyed".
 
         self.debug("Destroy VM - ID: %s" % self.small_virtual_machine.id)
-        self.small_virtual_machine.delete(self.apiclient)
+        self.small_virtual_machine.delete(self.apiclient, expunge=False)
 
         list_vm_response = VirtualMachine.list(
                                             self.apiclient,
