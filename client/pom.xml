@@ -82,6 +82,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-user-authenticator-saml2</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-user-authenticator-sha256salted</artifactId>
       <version>${project.version}</version>
     </dependency>
