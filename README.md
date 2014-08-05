@@ -46,7 +46,7 @@ CloudStack survey page: http://cloudstack.apache.org/survey.html
 
 ## License
 
-Please see the LICENSE file included in the root directory of the source tree.
+Please see the [LICENSE](LICENSE) file included in the root directory of the source tree.
 
 ## Downloading
 
@@ -54,11 +54,11 @@ You can download released versions from: http://cloudstack.apache.org/downloads.
 
 ## Building
 
-Please see the INSTALL.md file included in the root directory of the source tree.
+Please see the [INSTALL.md](INSTALL.md) file included in the root directory of the source tree.
 
-### Tooling
+## Tooling
 
-Please see the README.tools.md file included in the root directory of the source tree.
+Please see the [README.tools.md](README.tools.md) file included in the root directory of the source tree.
 
 ## Documentation
 
@@ -77,7 +77,7 @@ http://docs.cloudstack.apache.org/projects/cloudstack-administration
 Latest release notes:
 http://docs.cloudstack.apache.org/projects/cloudstack-release-notes
 
-Design documents::
+Design documents:
 https://cwiki.apache.org/confluence/display/CLOUDSTACK/Design
 
 API documentation:
@@ -113,7 +113,7 @@ http://cloudstack.apache.org/developers.html
 For more details please see our contributing page:
 http://cloudstack.apache.org/contribute.html
 
-### News and Events
+## News and Events
 
 Blog:
 https://blogs.apache.org/cloudstack
@@ -127,7 +127,7 @@ http://planet.apache.org/cloudstack
 Events and meetup:
 http://lanyrd.com/topics/apache-cloudstack
 
-### Reporting Security Vulnerabilities
+## Reporting Security Vulnerabilities
 
 If you've found an issue that you believe is a security vulnerability in a
 released version of CloudStack, please report it to
