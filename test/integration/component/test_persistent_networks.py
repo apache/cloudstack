@@ -163,11 +163,6 @@ class TestPersistentNetworks(cloudstackTestCase):
     def verifyVmExpungement(self, virtual_machine):
         """verify if vm is expunged"""
         isVmExpunged = False
-        try:
-            virtual_machine.delete(self.apiclient, expunge=True)
-        except Exception as e:
-            self.fail("Failed to delete VM: %s with error %s" % (virtual_machine.id, e))
-
         # Verify if it is expunged
         retriesCount = 20
         while True:
@@ -232,7 +227,7 @@ class TestPersistentNetworks(cloudstackTestCase):
             virtual_machine = VirtualMachine.create(self.apiclient,self.services["virtual_machine"],
                                                     networkids=[network.id],serviceofferingid=self.service_offering.id,
                                                     accountid=self.account.name,domainid=self.domain.id)
-            virtual_machine.delete(self.apiclient, expunge=True)
+            virtual_machine.delete(self.apiclient)
         except Exception as e:
             self.fail("vm creation failed: %s" % e)
 
@@ -378,7 +373,7 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.fail("Exception while SSHing to VM %s with IP %s" % (virtual_machine.id, ipaddress.ipaddress.ipaddress))
 
         # Delete VM
-        virtual_machine.delete(self.api_client, expunge=True)
+        virtual_machine.delete(self.api_client)
 
         # Verify VM is expunged
         self.verifyVmExpungement(virtual_machine)
@@ -457,7 +452,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         except Exception as e:
             self.fail("Exception while SSHing to VM %s with IP %s" % (virtual_machine.id, ipaddress.ipaddress.ipaddress))
 
-        virtual_machine.delete(self.api_client, expunge=True)
+        virtual_machine.delete(self.api_client)
 
         # Verify VM is expunged
         self.verifyVmExpungement(virtual_machine)
@@ -540,7 +535,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         except Exception as e:
             self.fail("Exception while SSHing to VM %s with IP %s" % (virtual_machine.id, ipaddress.ipaddress.ipaddress))
 
-        virtual_machine.delete(self.api_client, expunge=True)
+        virtual_machine.delete(self.api_client)
 
         # Verify VM is expunged
         self.verifyVmExpungement(virtual_machine)
@@ -919,7 +914,7 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.fail("Exception while SSHing to VM %s with IP %s" % (virtual_machine.id, ipaddress.ipaddress.ipaddress))
 
         # Delete VM
-        virtual_machine.delete(self.api_client, expunge=True)
+        virtual_machine.delete(self.api_client)
 
         # Verify VM is expunged
         self.verifyVmExpungement(virtual_machine)
