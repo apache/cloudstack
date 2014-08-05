@@ -354,7 +354,7 @@ class VirtualMachine:
                projectid=None, startvm=None, diskofferingid=None,
                affinitygroupnames=None, affinitygroupids=None, group=None,
                hostid=None, keypair=None, ipaddress=None, mode='default',
-               method='GET', hypervisor="XenServer", customcpunumber=None,
+               method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None):
         """Create the instance"""
 
@@ -369,7 +369,10 @@ class VirtualMachine:
             cmd.zoneid = zoneid
         elif "zoneid" in services:
             cmd.zoneid = services["zoneid"]
-        cmd.hypervisor = hypervisor
+        if hypervisor:
+            cmd.hypervisor = hypervisor
+        elif "hypervisor" in services:
+            cmd.hypervisor = services["hypervisor"]
 
         if "displayname" in services:
             cmd.displayname = services["displayname"]
