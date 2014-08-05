@@ -1530,8 +1530,7 @@ class TestIpAddresses(cloudstackTestCase):
                           "Failed to list Instance available to asign a Load Balancer Rule"
                           )
         # Destroying the VM Launched
-        vm_created.delete(self.userapiclient)
-        vm_created.expung(self.apiClient)
+        vm_created.delete(self.apiClient)
         self.cleanup.append(self.account)
         return
 
@@ -1994,8 +1993,7 @@ class TestIpAddresses(cloudstackTestCase):
                           "Port Forwarding Rules listed after deletion"
                           )
         # Destroying the VM Launched
-        vm_created.delete(self.userapiclient)
-        vm_created.expung(self.apiClient)
+        vm_created.delete(self.apiClient)
         self.cleanup.append(self.account)
         return
 
@@ -2218,8 +2216,7 @@ class TestIpAddresses(cloudstackTestCase):
                           "Port Forwarding Rules listed after deletion"
                           )
         # Destroying the VM Launched
-        vm_created.delete(self.userapiclient)
-        vm_created.expung(self.apiClient)
+        vm_created.delete(self.apiClient)
         self.cleanup.append(self.account)
         return
 
@@ -2779,8 +2776,7 @@ class TestIpAddresses(cloudstackTestCase):
                           "VPN User listed after deletion"
                           )
         # Destroying the VM
-        vm_created.delete(self.userapiclient)
-        vm_created.expung(self.apiClient)
+        vm_created.delete(self.apiClient)
         self.cleanup.append(self.account)
         return
 
@@ -2956,8 +2952,7 @@ class TestIpAddresses(cloudstackTestCase):
                           "Failed to Disable Static Nat"
                           )
         # Destroying the VM
-        vm_created.delete(self.userapiclient)
-        vm_created.expung(self.apiClient)
+        vm_created.delete(self.apiClient)
         self.cleanup.append(self.account)
         return
 
@@ -3157,8 +3152,7 @@ class TestIpAddresses(cloudstackTestCase):
                           "Failed to Disable Static Nat"
                           )
         # Destroying the VM
-        vm_created.delete(self.userapiclient)
-        vm_created.expung(self.apiClient)
+        vm_created.delete(self.apiClient)
         self.cleanup.append(self.account)
         return
 
@@ -3366,8 +3360,7 @@ class TestIpAddresses(cloudstackTestCase):
                           "IP Forwardign Rule listed after deletion"
                           )
         # Destroying the VM
-        vm_created.delete(self.userapiclient)
-        vm_created.expung(self.apiClient)
+        vm_created.delete(self.apiClient)
         self.cleanup.append(self.account)
         return
 
@@ -3645,8 +3638,7 @@ class TestIpAddresses(cloudstackTestCase):
                               "Autoscale Policy not updated to given condition"
                               )
             # Destroying the VM
-            vm_created.delete(self.userapiclient)
-            vm_created.expung(self.apiClient)
+            vm_created.delete(self.apiClient)
         self.cleanup.append(self.account)
         return
 
@@ -3966,8 +3958,7 @@ class TestIpAddresses(cloudstackTestCase):
                               "Failed to update destroy vm grace period"
                               )
             # Destroying the VM
-            vm_created.delete(self.userapiclient)
-            vm_created.expung(self.apiClient)
+            vm_created.delete(self.apiClient)
         self.cleanup.append(self.account)
         return
 
@@ -4312,7 +4303,6 @@ class TestIpAddresses(cloudstackTestCase):
                               "Enabled VM Group state is not matching"
                               )
             # Destroying the VM
-            vm_created.delete(self.userapiclient)
-            vm_created.expung(self.apiClient)
+            vm_created.delete(self.apiClient)
         self.cleanup.append(self.account)
         return
