@@ -35,8 +35,8 @@ class TestScaleVm(cloudstackTestCase):
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
-        if cls.hypervisor.lower() == 'kvm':
-            raise unittest.SkipTest("ScaleVM is not supported on KVM. Hence, skipping the test")
+        if cls.hypervisor.lower() in ('kvm', 'hyperv'):
+            raise unittest.SkipTest("ScaleVM is not supported on KVM or Hyper-V. Hence, skipping the test")
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.apiclient)

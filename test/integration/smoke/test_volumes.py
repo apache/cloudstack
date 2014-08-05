@@ -585,8 +585,8 @@ class TestVolumes(cloudstackTestCase):
 
         if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.stop(self.apiClient)
-        elif hosts[0].hypervisor.lower() == "vmware":
-            self.skipTest("Resize Volume is unsupported on VmWare")
+        elif hosts[0].hypervisor.lower() in ("vmware", "hyperv"):
+            self.skipTest("Resize Volume is unsupported on VmWare and Hyper-V")
 
         self.apiClient.resizeVolume(cmd)
         count = 0
@@ -636,8 +636,8 @@ class TestVolumes(cloudstackTestCase):
 
         if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.stop(self.apiClient)
-        elif hosts[0].hypervisor.lower() == "vmware":
-            self.skipTest("Resize Volume is unsupported on VmWare")
+        elif hosts[0].hypervisor.lower() in ("vmware", "hyperv"):
+            self.skipTest("Resize Volume is unsupported on VmWare and Hyper-V")
 
         # resize the data disk
         self.debug("Resize Volume ID: %s" % self.volume.id)

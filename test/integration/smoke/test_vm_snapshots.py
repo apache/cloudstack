@@ -38,8 +38,8 @@ class TestVmSnapshot(cloudstackTestCase):
         testClient = super(TestVmSnapshot, cls).getClsTestClient()
 
         hypervisor = testClient.getHypervisorInfo()
-        if hypervisor.lower() == KVM.lower():
-            raise unittest.SkipTest("VM snapshot feature is not supported on KVM")
+        if hypervisor.lower() in (KVM.lower(), "hyperv"):
+            raise unittest.SkipTest("VM snapshot feature is not supported on KVM or Hyper-V")
 
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()

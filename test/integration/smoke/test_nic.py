@@ -40,6 +40,10 @@ class TestNic(cloudstackTestCase):
         # assign the signal handler immediately
         signal.signal(signal.SIGINT, signal_handler)
 
+        hypervisor = self.testClient.getHypervisorInfo()
+        if hypervisor.lower() == "hyperv":
+            raise unittest.SkipTest("Not supported on Hyper-V")
+
         try:
             self.apiclient = self.testClient.getApiClient()
             self.dbclient  = self.testClient.getDbConnection()

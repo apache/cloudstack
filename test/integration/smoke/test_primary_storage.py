@@ -56,6 +56,10 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         """Test primary storage pools - XEN, KVM, VMWare
         """
 
+        if self.testClient.getHypervisorInfo().lower() == "hyperv":
+            raise self.skipTest("NFS primary storage not supported on Hyper-V")
+
+
         # Validate the following:
         # 1. List Clusters
         # 2. verify that the cluster is in 'Enabled' allocation state
@@ -148,6 +152,9 @@ class TestPrimaryStorageServices(cloudstackTestCase):
     def test_01_primary_storage_iscsi(self):
         """Test primary storage pools - XEN, KVM, VMWare
         """
+
+        if self.testClient.getHypervisorInfo().lower() == "hyperv":
+            raise self.skipTest("iSCSI primary storage Not supported on Hyper-V")
 
         # Validate the following:
         # 1. List Clusters
