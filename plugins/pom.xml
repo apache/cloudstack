@@ -72,6 +72,7 @@
     <module>user-authenticators/ldap</module>
     <module>user-authenticators/md5</module>
     <module>user-authenticators/plain-text</module>
+    <module>user-authenticators/saml2</module>
     <module>user-authenticators/sha256salted</module>
     <module>network-elements/dns-notifier</module>
     <module>storage/image/s3</module>
