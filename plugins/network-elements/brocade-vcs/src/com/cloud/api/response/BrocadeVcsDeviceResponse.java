@@ -51,6 +51,26 @@ public class BrocadeVcsDeviceResponse extends BaseResponse {
     @Param(description = "the principal switch Ip address")
     private String hostName;
 
+    public String getId() {
+        return id;
+    }
+
+    public String getPhysicalNetworkId() {
+        return physicalNetworkId;
+    }
+
+    public String getProviderName() {
+        return providerName;
+    }
+
+    public String getDeviceName() {
+        return deviceName;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
     public void setId(String vcsDeviceId) {
         this.id = vcsDeviceId;
     }
