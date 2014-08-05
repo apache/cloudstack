@@ -278,6 +278,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         isoResponse.setPublic(iso.isPublicTemplate());
         isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
         isoResponse.setCreated(iso.getCreatedOnStore());
+        isoResponse.setDynamicallyScalable(iso.isDynamicallyScalable());
         if (iso.getTemplateType() == TemplateType.PERHOST) {
             // for xs-tools.iso and vmware-tools.iso, we didn't download, but is ready to use.
             isoResponse.setReady(true);
