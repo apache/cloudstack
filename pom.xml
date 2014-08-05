@@ -702,6 +702,7 @@
             <excludeSubProjects>false</excludeSubProjects>
             <excludes>
               <exclude>CHANGES</exclude>
+              <exclude>README.md</exclude>
               <exclude>INSTALL.md</exclude>
               <exclude>.idea/</exclude>
               <exclude>**/*.log</exclude>
