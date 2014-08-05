@@ -577,21 +577,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return attache;
     }
 
-    protected boolean notifyCreatorsOfConnection(StartupCommand[] cmd) throws ConnectionException {
-        boolean handled = false;
-        for (Pair<Integer, StartupCommandProcessor> monitor : _creationMonitors) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Sending Connect to creator: " + monitor.second().getClass().getSimpleName());
-            }
-            handled = monitor.second().processInitialConnect(cmd);
-            if (handled) {
-                break;
-            }
-        }
-
-        return handled;
-    }
-
     @Override
     public boolean start() {
         startDirectlyConnectedHosts();

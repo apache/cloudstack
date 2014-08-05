@@ -236,7 +236,7 @@ public abstract class ServerResourceBase implements ServerResource {
     }
 
     protected List<String> getWarnings() {
-        synchronized (this) {
+        synchronized (_warnings) {
             final ArrayList<String> results = _warnings;
             _warnings = new ArrayList<String>();
             return results;
@@ -244,7 +244,7 @@ public abstract class ServerResourceBase implements ServerResource {
     }
 
     protected List<String> getErrors() {
-        synchronized (this) {
+        synchronized (_errors) {
             final ArrayList<String> result = _errors;
             _errors = new ArrayList<String>();
             return result;
