@@ -32,8 +32,8 @@ public class VRScripts {
     protected static final String FIREWALL_EGRESS = "firewall_egress.sh";
     protected static final String FIREWALL_INGRESS = "firewall_ingress.sh";
     protected static final String FIREWALL_NAT = "firewall_nat.sh";
-    protected static final String IPALIAS_CREATE = "createipAlias.sh";
-    protected static final String IPALIAS_DELETE = "deleteipAlias.sh";
+    protected static final String IPALIAS_CREATE = "createIpAlias.sh";
+    protected static final String IPALIAS_DELETE = "deleteIpAlias.sh";
     protected static final String IPASSOC = "ipassoc.sh";
     protected static final String LB = "loadbalancer.sh";
     protected static final String MONITOR_SERVICE = "monitor_service.sh";
