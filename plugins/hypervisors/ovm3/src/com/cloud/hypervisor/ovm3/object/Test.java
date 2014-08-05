@@ -334,29 +334,25 @@ class Test {
 
             if (checkPool) {
                 System.out.println("checking pool");
-                Pool pool = new Pool(c);
-                Pool pool1 = new Pool(connections.get(1));
-                pool.discoverServerPool();
-                pool1.discoverServerPool();
-                System.out.println("p0: " + pool.getClient().getIp());
-                System.out.println("p1: " + pool1.getClient().getIp());
-                if (pool.isInAPool()) {
-                    System.out.println("Is in a pool");
-                    System.out.println("pool alias: " + pool.getPoolAlias());
-                    System.out.println("pool id: " + pool.getPoolId());
-                    System.out.println("pool members: "
-                            + pool.getPoolMemberIpList());
-                } else {
-                    List<String> ips = new ArrayList<String>();
-                    for (Connection member : connections) {
-                        ips.add(member.getIp());
+                List<String> memberList = new ArrayList<String>();
+                for (final Connection member : connections) {
+                    Linux lin = new Linux(member);
+                    memberList.add(lin.getHostName());
+                    Pool pool = new Pool(member);
+                    System.out.println(pool.getPoolMemberList());
+                    if (pool.isInAPool()) {
+                        System.out.println("Is in a pool");
+                        System.out.println("pool alias: " + pool.getPoolAlias());
+                        System.out.println("pool id: " + pool.getPoolId());
+                        System.out.println("pool members: "
+                                + pool.getPoolMemberList());
                     }
-                    for (Connection member : connections) {
-                        final Pool xpool = new Pool(member);
-                        xpool.setPoolIps(ips);
-                        xpool.setPoolMemberIpList();
-                        LOGGER.debug("Added " + ips + " to pool " + xpool.getPoolId() + " on " + member.getIp());
-                    }
+                }
+                for (final Connection member : connections) {
+                    final Pool xpool = new Pool(member);
+                    xpool.setPoolIps(memberList);
+                    xpool.setPoolMemberList();
+                    LOGGER.debug("Added " + memberList + " to pool " + xpool.getPoolId() + " on " + member.getIp());
                 }
             }
 

@@ -177,7 +177,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     private static final Logger LOGGER = Logger
             .getLogger(Ovm3ResourceBase.class);
     private Connection c;
-    private Connection m;
     private String agentName;
     private String agentIp;
     Long agentZoneId;
@@ -2363,9 +2362,10 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     private Boolean addMembers() throws Ovm3ResourceException {
         List<String> members = new ArrayList<String>();
         try {
-            final Pool poolMaster = new Pool(m);
-            Integer poolSize = poolMaster.getPoolMemberIpList().size();
-            members.addAll(poolMaster.getPoolMemberIpList());
+            Connection m = new Connection(ovm3PoolVip, agentOvsAgentPort,
+                    agentOvsAgentUser, agentOvsAgentPassword);
+            Pool poolMaster = new Pool(m);
+            members.addAll(poolMaster.getPoolMemberList());
             if (!members.contains(agentIp)) {
                 members.add(agentIp);
             }
@@ -2373,12 +2373,11 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                 Connection x = new Connection(member, agentOvsAgentPort,
                        agentOvsAgentUser, agentOvsAgentPassword);
                 final Pool xpool = new Pool(x);
-                xpool.setPoolIps(members);
-                xpool.setPoolMemberIpList();
-                LOGGER.debug("Added " + member + " to pool " + xpool.getPoolId());
+                xpool.setPoolMemberList(members);
+                LOGGER.debug("Added " + members + " to pool " + xpool.getPoolId() + " on member " + member);
             }
         } catch (Exception e) {
-            throw new Ovm3ResourceException("Unable to add members: " + e.getMessage());
+            throw new Ovm3ResourceException("Unable to add members: ", e);
         }
         return true;
     }

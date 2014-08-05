@@ -78,7 +78,6 @@ public class Connection extends XmlRpcClient {
             xmlClientConfig.setXmlRpcServer(null);
             client.setConfig(xmlClientConfig);
             client.setTypeFactory(new RpcTypeFactory(client));
-            System.out.println(hostUser + " "+ hostPass + " " + hostIp);
         } catch (MalformedURLException e) {
             LOGGER.info("Incorrect URL: ", e);
         }

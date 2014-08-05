@@ -33,8 +33,7 @@ public class Pool extends OvmObject {
             add("xen");
         }
     };
-    private Boolean discoverPool = false;
-    private List<String> poolIps = new ArrayList<String>();
+    private List<String> poolHosts = new ArrayList<String>();
     private List<String> poolRoles = new ArrayList<String>();
     private List<String> poolMembers = new ArrayList<String>();
     private String poolMasterVip;
@@ -63,8 +62,8 @@ public class Pool extends OvmObject {
     }
 
     public void setPoolIps(List<String> ips) {
-        this.poolIps = new ArrayList<String>();
-        this.poolIps.addAll(ips);
+        this.poolHosts = new ArrayList<String>();
+        this.poolHosts.addAll(ips);
     }
 
     public Boolean isInPool(String id) throws Ovm3ResourceException {
@@ -96,12 +95,12 @@ public class Pool extends OvmObject {
      * default: None
      */
     public Boolean createServerPool(String alias, String id, String vip,
-            int num, String name, String ip, List<String> roles) throws Ovm3ResourceException{
+            int num, String name, String host, List<String> roles) throws Ovm3ResourceException{
         String role = roles.toString();
         role = "xen,utility";
         if (!this.isInAPool()) {
             Object x = callWrapper("create_server_pool", alias, id, vip, num, name,
-                    ip, role);
+                    host, role);
             if (x == null) {
                 return true;
             }
@@ -203,9 +202,8 @@ public class Pool extends OvmObject {
         this.poolAlias = xmlToString(path + "/Pool_Alias", xmlDocument);
         this.poolMasterVip = xmlToString(path + "/Master_Virtual_Ip",
                 xmlDocument);
-        this.poolMembers = xmlToList(path + "/Member_List", xmlDocument);
-        this.poolIps.addAll(xmlToList(path + "//Registered_IP", xmlDocument));
-        this.discoverPool = true;
+        this.setPoolMembers(xmlToList(path + "/Member_List", xmlDocument));
+        this.poolHosts.addAll(xmlToList(path + "//Registered_IP", xmlDocument));
 
         return true;
     }
@@ -271,11 +269,11 @@ public class Pool extends OvmObject {
      */
     /* allow these to be set before ? */
     public Boolean joinServerPool(String alias, String id, String vip, int num,
-            String name, String ip, List<String> roles) throws Ovm3ResourceException{
+            String name, String host, List<String> roles) throws Ovm3ResourceException{
         String role = StringUtils.join(roles.toArray(), ",");
         if (!this.isInAPool()) {
             Object x = callWrapper("join_server_pool", alias, id, vip, num, name,
-                    ip, role);
+                    host, role);
             if (x == null) {
                 return true;
             }
@@ -288,12 +286,12 @@ public class Pool extends OvmObject {
     }
 
     public Boolean joinServerPool(String alias, String id, String vip, int num,
-            String name, String ip) throws Ovm3ResourceException {
-        return joinServerPool(alias, id, vip, num, name, ip, getValidRoles());
+            String name, String host) throws Ovm3ResourceException {
+        return joinServerPool(alias, id, vip, num, name, host, getValidRoles());
     }
 
-    public Boolean joinServerPool(int num, String name, String ip) throws Ovm3ResourceException{
-        return joinServerPool(poolAlias, poolId, poolMasterVip, num, name, ip,
+    public Boolean joinServerPool(int num, String name, String host) throws Ovm3ResourceException{
+        return joinServerPool(poolAlias, poolId, poolMasterVip, num, name, host,
                 poolRoles);
     }
 
@@ -301,35 +299,49 @@ public class Pool extends OvmObject {
      * set_pool_member_ip_list, <class 'agent.api.serverpool.ServerPool'>
      * argument: self - default: None argument: ip_list - default: None
      */
-    public Boolean setPoolMemberIpList() throws Ovm3ResourceException {
-        // should throw exception if no poolIps set
-        return nullIsTrueCallWrapper("set_pool_member_ip_list", this.poolIps);
+    public Boolean setPoolMemberList() throws Ovm3ResourceException {
+        // should throw exception if no poolHosts set
+        return nullIsTrueCallWrapper("set_pool_member_ip_list", this.poolHosts);
     }
 
-    public List getPoolMemberIpList() throws Ovm3ResourceException {
+    public List<String> getPoolMemberList() throws Ovm3ResourceException {
         if (poolId == null) {
             discoverServerPool();
         }
-        return poolIps;
+        return poolHosts;
     }
 
     /* TODO: need to change the logic here */
-    public Boolean setPoolMemberIpList(String ip) throws Ovm3ResourceException {
-        this.poolIps = new ArrayList<String>();
-        this.poolIps.add(ip);
-        return setPoolMemberIpList();
+    public Boolean setPoolMemberList(String host) throws Ovm3ResourceException {
+        this.poolHosts = new ArrayList<String>();
+        this.poolHosts.add(host);
+        return setPoolMemberList();
     }
 
-    public Boolean addPoolMemberIp(String ip) throws Ovm3ResourceException{
-        this.getPoolMemberIpList();
-        this.poolIps.add(ip);
-        return setPoolMemberIpList();
+    public Boolean setPoolMemberList(List<String> hosts) throws Ovm3ResourceException {
+        this.poolHosts = new ArrayList<String>();
+        this.poolHosts.addAll(hosts);
+        return setPoolMemberList();
+    }
+
+    public Boolean addPoolMemberIp(String host) throws Ovm3ResourceException{
+        this.getPoolMemberList();
+        this.poolHosts.add(host);
+        return setPoolMemberList();
     }
 
     /* meh */
-    public Boolean removePoolMemberIp(String ip) throws Ovm3ResourceException {
-        this.getPoolMemberIpList();
-        this.poolIps.remove(ip);
-        return setPoolMemberIpList();
+    public Boolean removePoolMember(String host) throws Ovm3ResourceException {
+        this.getPoolMemberList();
+        this.poolHosts.remove(host);
+        return setPoolMemberList();
+    }
+
+    public List<String> getPoolMembers() {
+        return poolMembers;
+    }
+
+    public void setPoolMembers(List<String> poolMembers) {
+        this.poolMembers = poolMembers;
     }
 }
