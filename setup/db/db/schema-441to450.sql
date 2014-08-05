@@ -430,5 +430,5 @@ CREATE VIEW `cloud`.`template_view` AS
             and (resource_tags.resource_type = 'Template' or resource_tags.resource_type='ISO');
 
 
-
+UPDATE configuration SET value='KVM,XenServer,VMware,BareMetal,Ovm,LXC,Hyperv' WHERE name='hypervisor.list';
 UPDATE `cloud`.`configuration` SET description="If set to true, will set guest VM's name as it appears on the hypervisor, to its hostname. The flag is supported for VMware hypervisor only" WHERE name='vm.instancename.flag';
