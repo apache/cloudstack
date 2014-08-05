@@ -96,72 +96,165 @@
                     form: {
                         title: 'label.update.ssl',
                         desc: 'message.update.ssl',
+                        preFilter: function (args) {
+                            var $form = args.$form;
+
+                            // insert the "Add intermediate certificate" button
+                            var $addButton = $('<div>')
+                                .addClass('add ui-button')
+                                .append(
+                                    $('<span>').html(_l('label.add.intermediate.certificate'))
+                                );
+                            var $servercertificate = $form.find('.form-item[rel=certificate]');
+                            $addButton.insertBefore($servercertificate);
+                            var count = 0;
+                            var $intermediatecertificate = $form.find('.form-item[rel=intermediatecertificate]');
+
+                            $addButton.click(function() {
+                                // clone the template intermediate certificate and make it visible
+                                var $newcertificate = $intermediatecertificate.clone().attr('id','intermediate'+count);
+                                $newcertificate.insertBefore($addButton);
+                                $newcertificate.css('display', 'inline-block');
+                                $newcertificate.addClass('sslcertificate');
+                                count++;
+                                // change label
+                                var $label = $newcertificate.find('label');
+                                $label.html($label.html().replace('{0}', count)); // 'Intermediate certificate ' + count + ':'
+                            });
+                        },
                         fields: {
+                            rootcertificate: {
+                                label: 'label.root.certificate',
+                                isTextarea: true,
+                                validation: { required: true }
+                            },
+                            intermediatecertificate: { // this is the template 'intermediate certificate', always hidden
+                                label: 'label.intermediate.certificate',
+                                isTextarea: true,
+                                isHidden: true
+                            },
                             certificate: {
                                 label: 'label.certificate',
-                                isTextarea: true
+                                isTextarea: true,
+                                validation: { required: true }
                             },
                             privatekey: {
                                 label: 'label.privatekey',
-                                isTextarea: true
+                                isTextarea: true,
+                                validation: { required: true }
                             },
                             domainsuffix: {
-                                label: 'label.domain.suffix'
+                                label: 'label.domain.suffix',
+                                validation: { required: true }
                             }
                         }
                     },
                     after: function(args) {
                         var $loading = $('<div>').addClass('loading-overlay');
                         $('.system-dashboard-view:visible').prepend($loading);
-                        $.ajax({
-                            type: "POST",
-                            url: createURL('uploadCustomCertificate'),
-                            data: {
-                                certificate: args.data.certificate,
-                                privatekey: args.data.privatekey,
+
+                        // build a list with all certificates that need to be uploaded
+                        var certificates = [];
+                        certificates.push(args.data.rootcertificate);
+                        if ($.isArray(args.data.intermediatecertificate))
+                        {
+                            $.merge(certificates, args.data.intermediatecertificate);
+                        }
+                        else
+                        {
+                            certificates.push(args.data.intermediatecertificate);
+                        }
+                        certificates.push(args.data.certificate);
+
+                        // Recursively uploads certificates.
+                        // When the upload succeeds, proceeds to uploading the next certificate.
+                        // When the upload fails, stops and reports failure.
+                        var uploadCertificate = function(index) {
+                            if (index >=  certificates.length)
+                            {
+                                return;
+                            }
+                            if ( !$.trim(certificates[index])) // skip empty certificate
+                            {
+                                uploadCertificate(index + 1);
+                                return;
+                            }
+
+                            // build certificate data
+                            var certificateData = {
+                                id: index + 1, // id start from 1
+                                certificate: certificates[index],
                                 domainsuffix: args.data.domainsuffix
-                            },
-                            dataType: 'json',
-                            success: function(json) {
-                                var jid = json.uploadcustomcertificateresponse.jobid;
-                                var uploadCustomCertificateIntervalID = setInterval(function() {
-                                    $.ajax({
-                                        url: createURL("queryAsyncJobResult&jobId=" + jid),
-                                        dataType: "json",
-                                        success: function(json) {
-                                            var result = json.queryasyncjobresultresponse;
-                                            if (result.jobstatus == 0) {
-                                                return; //Job has not completed
-                                            } else {
-                                                clearInterval(uploadCustomCertificateIntervalID);
-                                                if (result.jobstatus == 1) {
-                                                    cloudStack.dialog.notice({
-                                                        message: 'Update SSL Certificate succeeded'
-                                                    });
-                                                } else if (result.jobstatus == 2) {
-                                                    cloudStack.dialog.notice({
-                                                        message: 'Failed to update SSL Certificate. ' + _s(result.jobresult.errortext)
-                                                    });
+                            };
+                            switch (index) {
+                                case (0): //first certificate is the root certificate
+                                    certificateData['name'] = 'root';
+                                    break;
+                                case (certificates.length - 1): // last certificate is the server certificate
+                                    certificateData['privatekey'] = args.data.privatekey;
+                                    break;
+                                default: // intermediate certificates
+                                    certificateData['name'] = 'intermediate' + index;
+                            }
+
+                            $.ajax({
+                                type: "POST",
+                                url: createURL('uploadCustomCertificate'),
+                                data:  certificateData,
+                                dataType: 'json',
+                                success: function(json) {
+                                    var jid = json.uploadcustomcertificateresponse.jobid;
+                                    var uploadCustomCertificateIntervalID = setInterval(function() {
+                                        $.ajax({
+                                            url: createURL("queryAsyncJobResult&jobId=" + jid),
+                                            dataType: "json",
+                                            success: function(json) {
+                                                var result = json.queryasyncjobresultresponse;
+                                                if (result.jobstatus == 0) {
+                                                    return; //Job has not completed
+                                                } else {
+                                                    clearInterval(uploadCustomCertificateIntervalID);
+                                                    if (result.jobstatus == 1) {
+                                                        if (index ==  certificates.length - 1) // last one, report success
+                                                        {
+                                                            cloudStack.dialog.notice({
+                                                                message: 'Update SSL Certificates succeeded'
+                                                            });
+                                                            $loading.remove();
+                                                        }
+                                                        else // upload next certificate
+                                                        {
+                                                            uploadCertificate(index + 1);
+                                                        }
+                                                    } else if (result.jobstatus == 2) {
+                                                        cloudStack.dialog.notice({
+                                                            message: 'Failed to update SSL Certificate. ' + _s(result.jobresult.errortext)
+                                                        });
+                                                        $loading.remove();
+                                                    }
                                                 }
+                                            },
+                                            error: function(XMLHttpResponse) {
+                                                cloudStack.dialog.notice({
+                                                    message: 'Failed to update SSL Certificate. ' + parseXMLHttpResponse(XMLHttpResponse)
+                                                });
                                                 $loading.remove();
                                             }
-                                        },
-                                        error: function(XMLHttpResponse) {
-                                            cloudStack.dialog.notice({
-                                                message: 'Failed to update SSL Certificate. ' + parseXMLHttpResponse(XMLHttpResponse)
-                                            });
-                                            $loading.remove();
-                                        }
+                                        });
+                                    }, g_queryAsyncJobResultInterval);
+                                },
+                                error: function(XMLHttpResponse) {
+                                    cloudStack.dialog.notice({
+                                        message: 'Failed to update SSL Certificate. ' + parseXMLHttpResponse(XMLHttpResponse)
                                     });
-                                }, g_queryAsyncJobResultInterval);
-                            },
-                            error: function(XMLHttpResponse) {
-                                cloudStack.dialog.notice({
-                                    message: 'Failed to update SSL Certificate. ' + parseXMLHttpResponse(XMLHttpResponse)
-                                });
-                                $loading.remove();
-                            }
-                        });
+                                    $loading.remove();
+                                }
+                            });
+                            return;
+                        };
+
+                        // start uploading the certificates
+                        uploadCertificate(0);
                     },
                     context: {}
                 });

@@ -1898,7 +1898,10 @@ dictionary = {
 'message.confirm.enable.vpc.offering': '<fmt:message key="message.confirm.enable.vpc.offering" />',
 'message.enabling.vpc.offering': '<fmt:message key="message.enabling.vpc.offering" />',
 'message.confirm.remove.vpc.offering': '<fmt:message key="message.confirm.remove.vpc.offering" />',
-'message.confirm.disable.vpc.offering': '<fmt:message key="message.confirm.disable.vpc.offering" />'
+'message.confirm.disable.vpc.offering': '<fmt:message key="message.confirm.disable.vpc.offering" />',
+'label.root.certificate': '<fmt:message key="label.root.certificate" />',
+'label.intermediate.certificate': '<fmt:message key="label.intermediate.certificate" />',
+'label.add.intermediate.certificate': '<fmt:message key="label.add.intermediate.certificate" />'
 
 };
 </script>
