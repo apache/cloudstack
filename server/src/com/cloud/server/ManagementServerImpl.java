@@ -1730,9 +1730,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Boolean forDisplay = cmd.getDisplay();
         Map<String, String> tags = cmd.getTags();
 
+        String state = cmd.getState();
         Boolean isAllocated = cmd.isAllocatedOnly();
         if (isAllocated == null) {
             isAllocated = Boolean.TRUE;
+
+            if (state != null) {
+                isAllocated = Boolean.FALSE;
+            }
         }
 
         Filter searchFilter = new Filter(IPAddressVO.class, "address", false, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1763,6 +1768,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("isSourceNat", sb.entity().isSourceNat(), SearchCriteria.Op.EQ);
         sb.and("isStaticNat", sb.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
 
         if (forLoadBalancing != null && forLoadBalancing) {
@@ -1863,6 +1869,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (forDisplay != null) {
             sc.setParameters("display", forDisplay);
+        }
+
+        if (state != null) {
+            sc.setParameters("state", state);
         }
 
         Pair<List<IPAddressVO>, Integer> result = _publicIpAddressDao.searchAndCount(sc, searchFilter);
