@@ -504,7 +504,9 @@ public class ConsoleProxy {
     }
 
     public static ConsoleProxyClientStatsCollector getStatsCollector() {
-        return new ConsoleProxyClientStatsCollector(connectionMap);
+        synchronized (connectionMap) {
+            return new ConsoleProxyClientStatsCollector(connectionMap);
+        }
     }
 
     public static void authenticationExternally(ConsoleProxyClientParam param) throws AuthenticationException {
