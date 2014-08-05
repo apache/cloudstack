@@ -2355,8 +2355,8 @@ public class VirtualMachineMO extends BaseMO {
             attachedNetworkSummary = ((VirtualEthernetCard) nic).getDeviceInfo().getSummary();
             if (attachedNetworkSummary.startsWith(networkNamePrefix)) {
                 return new Pair<Integer, VirtualDevice>(new Integer(index), nic);
-            } else if (attachedNetworkSummary.endsWith("DistributedVirtualPortBackingInfo.summary")) {
-                dvPortGroupName = getDvPortGroupName((VirtualEthernetCard) nic);
+            } else if (attachedNetworkSummary.endsWith("DistributedVirtualPortBackingInfo.summary") || attachedNetworkSummary.startsWith("DVSwitch")) {
+                dvPortGroupName = getDvPortGroupName((VirtualEthernetCard)nic);
                 if (dvPortGroupName != null && dvPortGroupName.startsWith(networkNamePrefix)) {
                     s_logger.debug("Found a dvPortGroup already associated with public NIC.");
                     return new Pair<Integer, VirtualDevice>(new Integer(index), nic);
