@@ -50,7 +50,7 @@ class TestDeployVM(cloudstackTestCase):
         cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        domain = get_domain(cls.apiclient)
+        cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
@@ -80,7 +80,7 @@ class TestDeployVM(cloudstackTestCase):
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
-            domainid=domain.id
+            domainid=cls.domain.id
         )
         cls.debug(cls.account.id)
 
@@ -108,11 +108,12 @@ class TestDeployVM(cloudstackTestCase):
         try:
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception as e:
-            cls.debug("Warning! Exception in tearDown: %s" % e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
 
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
@@ -200,8 +201,57 @@ class TestDeployVM(cloudstackTestCase):
         self.assertEqual(router.state, 'Running', msg="Router is not in running state")
         self.assertEqual(router.account, self.account.name, msg="Router does not belong to the account")
 
+    @attr(tags = ['advanced','basic','sg'], required_hardware="false")
+    def test_deploy_vm_multiple(self):
+        """Test Multiple Deploy Virtual Machine
+
+        # Validate the following:
+        # 1. deploy 2 virtual machines
+        # 2. listVirtualMachines using 'ids' parameter returns accurate information
+        """
+        account = Account.create(
+            self.apiclient,
+            self.services["account"],
+            domainid=self.domain.id
+        )
+        self.cleanup.append(account)
+        virtual_machine1 = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            accountid=account.name,
+            domainid=account.domainid,
+            serviceofferingid=self.service_offering.id
+        )
+
+        virtual_machine2 = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            accountid=account.name,
+            domainid=account.domainid,
+            serviceofferingid=self.service_offering.id
+        )
+
+        list_vms = VirtualMachine.list(self.apiclient, ids=[virtual_machine1.id, virtual_machine2.id], listAll=True)
+        self.debug(
+            "Verify listVirtualMachines response for virtual machines: %s, %s" % (self.virtual_machine.id, self.virtual_machine2.id)
+        )
+        self.assertEqual(
+            isinstance(list_vms, list),
+            True,
+            "List VM response was not a valid list"
+        )
+        self.assertEqual(
+            len(list_vms),
+            2,
+            "List VM response was empty, expected 2 VMs"
+        )
+
     def tearDown(self):
-        pass
+        try:
+            # Clean up, terminate the created instance, volumes and snapshots
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
 
 class TestVMLifeCycle(cloudstackTestCase):
@@ -290,7 +340,10 @@ class TestVMLifeCycle(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         cls.apiclient = super(TestVMLifeCycle, cls).getClsTestClient().getApiClient()
-        cleanup_resources(cls.apiclient, cls._cleanup)
+        try:
+            cleanup_resources(cls.apiclient, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def setUp(self):
@@ -299,8 +352,11 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        #Clean up, terminate the created ISOs
-        cleanup_resources(self.apiclient, self.cleanup)
+        try:
+            #Clean up, terminate the created ISOs
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
 

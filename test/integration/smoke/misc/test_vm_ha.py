@@ -148,7 +148,7 @@ class TestDeployVMHA(cloudstackTestCase):
         ]
         self.cleanup = self.cleanup + self.mock_checkonhost_list
 
-    @attr(tags = ['advanced'], required_hardware="false")
+    @attr(tags = ['advanced'], required_hardware="simulator only")
     def test_vm_ha(self):
         """Test VM HA
 
@@ -198,5 +198,4 @@ class TestDeployVMHA(cloudstackTestCase):
 
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
-            self.debug("Warning! Exception in tearDown: %s" % e)
-
+            raise Exception("Warning: Exception during cleanup : %s" % e)
