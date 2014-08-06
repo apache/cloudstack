@@ -121,6 +121,7 @@ import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.RawImageProcessor;
+import com.cloud.storage.template.TARProcessor;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.VhdProcessor;
@@ -813,6 +814,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 processor = new RawImageProcessor();
             } else if (format == ImageFormat.VMDK) {
                 processor = new VmdkProcessor();
+            } if (format == ImageFormat.TAR) {
+                processor = new TARProcessor();
             }
 
             if (processor == null) {
