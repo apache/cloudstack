@@ -17,8 +17,4 @@
 
 source 'https://rubygems.org'
 
-gem 'rake'
-gem 'rspec', '~> 2.99'
-gem 'serverspec', '~> 1.11.0'
-gem 'rspec_junit_formatter'
 gem 'vagrant-wrapper'

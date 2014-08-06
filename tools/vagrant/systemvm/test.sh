@@ -18,7 +18,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# build script which wraps around test-kitchen to test the systemvm
+# build script which wraps around nose to test the systemvm
 
 function usage() {
   cat <<END
@@ -150,9 +150,15 @@ function setup_ruby() {
   bundle check || bundle install ${bundle_args}
 }
 
+function setup_python() {
+  which pip || sudo easy_install pip
+  pip install nose paramiko python-vagrant envassert cuisine fabric
+}
+
 function prepare() {
   log INFO "preparing for build"
   setup_ruby
+  setup_python
   rm -f systemvm.iso
 }
 
@@ -174,10 +180,11 @@ function vagrant_provision() {
   log INFO "vagrant up complete"
 }
 
-function serverspec() {
-  log INFO "invoking serverspec"
-  bundle exec rake spec
-  log INFO "serverspec complete"
+function nose() {
+  log INFO "invoking nose"
+  cd ../../../test/systemvm
+  mkdir -p target/test-reports
+  nosetests --with-xunit --xunit-file=target/test-reports/xunit.xml
 }
 
 function vagrant_destroy() {
@@ -185,6 +192,7 @@ function vagrant_destroy() {
   vagrant destroy -f
   log INFO "vagrant destroy complete"
 }
+
 ###
 ### Main invocation
 ###
@@ -196,7 +204,7 @@ function main() {
   add_on_exit vagrant_destroy
   vagrant_up
   vagrant_provision
-  serverspec
+  nose
   add_on_exit log INFO "BUILD SUCCESSFUL"
 }
 
