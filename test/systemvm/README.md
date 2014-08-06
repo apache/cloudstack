@@ -5,7 +5,7 @@ see ../../tools/vagrant/systemvm.
 
 Then, install dependencies
 
-    pip install nose paramiko python-vagrant envassert cuisine
+    pip install nose paramiko python-vagrant envassert cuisine fabric
 
 Running tests
 =============

@@ -21,9 +21,9 @@ from nose.plugins.attrib import attr
 from envassert import file, package, user
 from cuisine import file_write
 try:
-    from . import SystemVMTestCase
+    from . import SystemVMTestCase, has_line
 except (ImportError, ValueError):
-    from systemvm import SystemVMTestCase
+    from systemvm import SystemVMTestCase, has_line
 
 
 class HelloSystemVMTestCase(SystemVMTestCase):
@@ -47,5 +47,5 @@ class HelloSystemVMTestCase(SystemVMTestCase):
     @attr(tags=["systemvm"], required_hardware="true")
     def test_hello_systemvm_cuisine(self):
         """Test we can run cuisine on the systemvm"""
-        file_write('/tmp/run_cuisine', 'success!\n')
-        assert file.has_line('/tmp/run_cuisine', 'success!')
+        file_write('/tmp/run_cuisine', '\n\nsuccess!\n')
+        assert has_line('/tmp/run_cuisine', 'success!')

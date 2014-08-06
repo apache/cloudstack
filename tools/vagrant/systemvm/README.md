@@ -18,13 +18,13 @@ under the License.
 ===========================================================
 
 Allows spinning up the systemvm appliance from ../../appliance inside
-vagrant, and then running tests against it with serverspec.
+vagrant, and then running tests against it with nose.
 
-To use, install vagrant, rvm, ruby, and bundler. Then run ./test.sh.
+To use, install vagrant, rvm, ruby, bundler, python and pip.
+Then run ./test.sh.
 
-To write tests, create files underneath spec/ whose names end in
-_spec.rb. These tests are [RSpec](http://rspec.info/) tests that use
-[Serverspec](http://serverspec.org/) matchers. Basically, they log
-in using SSH and then inspect files and processes. See the list of
-[Serverspec matchers](http://serverspec.org/resource_types.html)
-for inspiration.
+To write tests, create files underneath ../../../test/systemvm
+named test_xxx.py. These tests are standard python unit tests with
+some logic to SSH into the SystemVM. See
+../../../test/systemvm/README.md for more info.
+

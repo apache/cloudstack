@@ -15,11 +15,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from __future__ import with_statement
 from vagrant import Vagrant
 from unittest import TestCase
 from paramiko.config import SSHConfig
 from paramiko.client import SSHClient, AutoAddPolicy
 from fabric.api import env
+from fabric.api import run, hide
 from envassert import file, detect
 
 from StringIO import StringIO
@@ -147,3 +149,9 @@ class SystemVMTestCase(TestCase):
         # this could break down when executing multiple test cases in parallel in the same python process
         # def tearDown(self):
         #     env.host_string = self._env_host_string_orig
+
+
+def has_line(location, line):
+    with hide("everything"):
+        text = run('cat "%s"' % location)
+        return text.find(line) >= 0
