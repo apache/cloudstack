@@ -84,6 +84,8 @@ class updateDataBag:
         dp['nw_type']        = 'guest'
         qf = loadQueueFile()
         qf.load({ 'ip_address' : [ dp ], 'type' : 'ips'})
+        if 'domain_name' not in d.keys() or d['domain_name'] == '':
+            d['domain_name'] = "cloudnine.internal"
         return cs_guestnetwork.merge(dbag, self.qFile.data)
 
     def processIP(self, dbag):
