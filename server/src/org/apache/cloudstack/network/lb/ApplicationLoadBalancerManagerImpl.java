@@ -185,7 +185,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
                         throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                     }
                     s_logger.debug("Load balancer " + newRule.getId() + " for Ip address " + newRule.getSourceIp().addr() + ", source port " +
-                        newRule.getSourcePortStart() + ", instance port " + newRule.getDefaultPortStart() + " is added successfully.");
+                        newRule.getSourcePortStart().intValue() + ", instance port " + newRule.getDefaultPortStart() + " is added successfully.");
                     CallContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
                     Network ntwk = _networkModel.getNetwork(newRule.getNetworkId());
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, newRule.getAccountId(), ntwk.getDataCenterId(), newRule.getId(), null,
@@ -527,8 +527,8 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
                 (newLbRule.getSourcePortStart().intValue() <= lbRule.getSourcePortEnd().intValue() && newLbRule.getSourcePortEnd().intValue() >= lbRule.getSourcePortEnd()
                     .intValue())) {
 
-                throw new NetworkRuleConflictException("The range specified, " + newLbRule.getSourcePortStart() + "-" + newLbRule.getSourcePortEnd() +
-                    ", conflicts with rule " + lbRule.getId() + " which has " + lbRule.getSourcePortStart() + "-" + lbRule.getSourcePortEnd());
+                throw new NetworkRuleConflictException("The range specified, " + newLbRule.getSourcePortStart().intValue() + "-" + newLbRule.getSourcePortEnd().intValue() +
+                    ", conflicts with rule " + lbRule.getId() + " which has " + lbRule.getSourcePortStart().intValue() + "-" + lbRule.getSourcePortEnd().intValue());
             }
         }
 
