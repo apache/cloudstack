@@ -369,10 +369,9 @@ class VirtualMachine:
             cmd.zoneid = zoneid
         elif "zoneid" in services:
             cmd.zoneid = services["zoneid"]
+
         if hypervisor:
             cmd.hypervisor = hypervisor
-        elif "hypervisor" in services:
-            cmd.hypervisor = services["hypervisor"]
 
         if "displayname" in services:
             cmd.displayname = services["displayname"]
