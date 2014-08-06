@@ -1160,6 +1160,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (host != null) {
                     vmResponse.setHostId(host.getUuid());
                     vmResponse.setHostName(host.getName());
+                    vmResponse.setHypervisor(host.getHypervisorType().toString());
                 }
             }
 
