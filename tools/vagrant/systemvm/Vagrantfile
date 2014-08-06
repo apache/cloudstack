@@ -22,7 +22,7 @@ include RbConfig
 
 VAGRANTFILE_API_VERSION = '2'
 
-if ENV['VPC_IP']
+unless ENV['VPC_IP']
   puts 'You did not specify the VPC IP by settings the VPC_IP environment variable'
   puts 'Using the default VPC_IP=192.168.56.30'
 end
