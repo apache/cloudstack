@@ -35,6 +35,8 @@ from marvin.codes import FAILED
 
 from nose.plugins.attrib import attr
 
+import re
+
 class TestData(object):
     """Test data object that is required to create resources
     """
@@ -195,7 +197,7 @@ class TestDeployVM(cloudstackTestCase):
                     rootdisksize=newrootsize
                 )
             except Exception as ex:
-                if "Hypervisor XenServer does not support rootdisksize override" in str(ex):
+                if re.search("Hypervisor \S+ does not support rootdisksize override", str(ex)):
                     success = True
                 else:
                     self.debug("virtual machine create did not fail appropriately. Error was actually : " + str(ex));
