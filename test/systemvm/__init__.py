@@ -41,7 +41,7 @@ except (NameError, ImportError):
             error.output = output
             raise error
         return output
-    subprocess.check_output
+    subprocess.check_output = check_output
 
 
 from vagrant import Vagrant
