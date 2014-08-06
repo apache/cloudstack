@@ -262,7 +262,7 @@ class TestListInstances(cloudstackTestCase):
                                  )
 
         # Deleting a single VM
-        VirtualMachine.delete(vm_created, self.userapiclient)
+        VirtualMachine.delete(vm_created, self.userapiclient, expunge=False)
 
         # Listing the VM's in page 2
         list_instance_response = VirtualMachine.list(
@@ -505,7 +505,7 @@ class TestListInstances(cloudstackTestCase):
                              "VM creation failed"
                              )
         # Destroying the VM
-        VirtualMachine.delete(vm_created, self.userapiclient)
+        VirtualMachine.delete(vm_created, self.userapiclient, expunge=False)
         # Listing all the Destroyed VM's for a User
         list_destroyed_vms_after = VirtualMachine.list(
                                                       self.userapiclient,
