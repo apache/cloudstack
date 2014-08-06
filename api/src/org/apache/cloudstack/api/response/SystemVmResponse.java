@@ -85,6 +85,10 @@ public class SystemVmResponse extends BaseResponse {
     @Param(description = "the hostname for the system VM")
     private String hostName;
 
+    @SerializedName("hypervisor")
+    @Param(description = "the hypervisor on which the template runs")
+    private String hypervisor;
+
     @SerializedName(ApiConstants.PRIVATE_IP)
     @Param(description = "the private IP address for the system VM")
     private String privateIp;
@@ -238,6 +242,14 @@ public class SystemVmResponse extends BaseResponse {
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
     }
 
     public String getPrivateIp() {
