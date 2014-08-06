@@ -101,9 +101,8 @@ declare -a on_exit_items
 
 function on_exit() {
   for (( i=${#on_exit_items[@]}-1 ; i>=0 ; i-- )) ; do
-    sleep 2
-    log DEBUG "on_exit: ${on_exit_items[i]}"
-    eval ${on_exit_items[i]}
+    log DEBUG "on_exit: ${on_exit_items[${i}]}"
+    eval ${on_exit_items[${i}]}
   done
 }
 
@@ -182,9 +181,10 @@ function vagrant_provision() {
 
 function nose() {
   log INFO "invoking nose"
-  cd ../../../test/systemvm
-  mkdir -p target/test-reports
-  nosetests --with-xunit --xunit-file=target/test-reports/xunit.xml
+	PWD=`pwd`
+  (cd ../../../test/systemvm;
+  mkdir -p target/test-reports;
+  nosetests --with-xunit --xunit-file=target/test-reports/xunit.xml;)
 }
 
 function vagrant_destroy() {
@@ -206,6 +206,7 @@ function main() {
   vagrant_provision
   nose
   add_on_exit log INFO "BUILD SUCCESSFUL"
+	exit
 }
 
 # we only run main() if not source-d
