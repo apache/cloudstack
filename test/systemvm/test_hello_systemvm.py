@@ -17,35 +17,38 @@
 
 """Example of using paramiko and envassert for systemvm tests."""
 
-from nose.plugins.attrib import attr
+# from nose.plugins.attrib import attr
 from envassert import file, package, user
 from cuisine import file_write
 try:
-    from . import SystemVMTestCase, has_line
+    from . import SystemVMTestCase, has_line, print_doc
 except (ImportError, ValueError):
-    from systemvm import SystemVMTestCase, has_line
+    from systemvm import SystemVMTestCase, has_line, print_doc
 
 
 class HelloSystemVMTestCase(SystemVMTestCase):
-    @attr(tags=["systemvm"], required_hardware="true")
-    def test_hello_systemvm_paramiko(self):
+    # @attr(tags=["systemvm"], required_hardware="true")
+    def disabled_hello_systemvm_paramiko(self):
         """Test we can connect to the systemvm over ssh, low-level with paramiko"""
         stdin, stdout, stderr = self.sshClient.exec_command('echo hello')
         result = stdout.read().strip()
         self.assertEqual('hello', result)
 
-    @attr(tags=["systemvm"], required_hardware="true")
-    def test_hello_systemvm_envassert(self):
+    # @attr(tags=["systemvm"], required_hardware="true")
+    def disabled_test_hello_systemvm_envassert(self):
         """Test we can run envassert assertions on the systemvm"""
         assert file.exists('/etc/hosts')
 
         for packageName in ['dnsmasq', 'haproxy', 'keepalived', 'curl']:
-            assert package.installed(packageName)
+            assert package.installed(packageName), 'package %s should be installed' % packageName
 
-        assert user.exists('cloud')
+        assert user.exists('cloud'), 'user cloud should exist'
 
-    @attr(tags=["systemvm"], required_hardware="true")
-    def test_hello_systemvm_cuisine(self):
+    # @attr(tags=["systemvm"], required_hardware="true")
+    def disabled_hello_systemvm_cuisine(self):
         """Test we can run cuisine on the systemvm"""
         file_write('/tmp/run_cuisine', '\n\nsuccess!\n')
-        assert has_line('/tmp/run_cuisine', 'success!')
+        found, context = has_line('/tmp/run_cuisine', 'success!')
+        if not found:
+            print_doc('/tmp/cuisine', context)
+        assert found, '/tmp/run_cuisine should contain "success!"'

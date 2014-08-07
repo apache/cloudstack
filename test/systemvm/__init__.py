@@ -43,6 +43,8 @@ except (NameError, ImportError):
         return output
     subprocess.check_output = check_output
 
+import logging
+logging.getLogger('paramiko.transport').setLevel(logging.WARNING)
 
 from vagrant import Vagrant
 from unittest import TestCase
@@ -57,6 +59,7 @@ from StringIO import StringIO
 from nose.plugins.attrib import attr
 
 import os.path
+import sys
 
 
 _defaultVagrantDir = os.path.abspath(os.path.join(
@@ -180,7 +183,36 @@ class SystemVMTestCase(TestCase):
         #     env.host_string = self._env_host_string_orig
 
 
-def has_line(location, line):
+def has_line(location, line, ctx=3):
     with hide("everything"):
         text = run('cat "%s"' % location)
-        return text.find(line) >= 0
+        text_len = len(text)
+        pos = text.find(line)
+        if pos < 0:
+            return False, ''
+        start = end = pos
+        newlines = 0
+        while start > 0:
+            if text[start] == '\n':
+                newlines += 1
+            if newlines > ctx:
+                break
+            start -= 1
+        newlines = 0
+        while end < text_len:
+            if text[end] == '\n':
+                newlines += 1
+            if newlines > ctx:
+                break
+            end += 1
+        context = '...\n' + text[start:end].strip() + '\n...'
+        return True, context
+
+
+def print_doc(name, data, target=None):
+    if target is None:
+        target = sys.stdout
+    print >>target, " ", "-" * 4, name, "-" * max(68-4-2-len(name), 0)
+    for line in data.split('\n'):
+        print >>target, " ", line
+    print >>target, " ", "-" * 68
