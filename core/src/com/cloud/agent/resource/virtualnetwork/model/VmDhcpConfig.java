@@ -31,12 +31,12 @@ public class VmDhcpConfig extends ConfigBase {
     private boolean defaultEntry;
 
     public VmDhcpConfig() {
-        setType(DHCP_ENTRY);
+        setType(VM_DHCP);
     }
 
     public VmDhcpConfig(String hostName, String macAddress, String ipv4Adress, String ipv6Address, String ipv6Duid, String dnsAdresses, String defaultGateway,
             String staticRoutes, boolean defaultEntry) {
-        setType(DHCP_ENTRY);
+        setType(VM_DHCP);
         this.hostName = hostName;
         this.macAddress = macAddress;
         this.ipv4Adress = ipv4Adress;
