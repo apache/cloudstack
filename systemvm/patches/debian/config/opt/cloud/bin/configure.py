@@ -340,7 +340,7 @@ class CsDevice:
             time.sleep(1)
             count += 1
             self.buildlist();
-        logging.error("Address %s on device %s cannot be configured - device was not found", ip.ip(), self.dev)
+        logging.error("Device %s cannot be configured - device was not found", self.dev)
         return False
 
     def list(self):
