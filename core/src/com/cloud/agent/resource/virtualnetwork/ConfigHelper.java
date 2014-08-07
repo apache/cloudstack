@@ -69,6 +69,7 @@ import com.cloud.agent.resource.virtualnetwork.model.TcpAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.UdpAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.VmData;
 import com.cloud.agent.resource.virtualnetwork.model.VmDhcpConfig;
+import com.cloud.agent.resource.virtualnetwork.model.VmPassword;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.rules.FirewallRule;
@@ -95,7 +96,7 @@ public class ConfigHelper {
         } else if (cmd instanceof LoadBalancerConfigCommand) {
             cfg = generateConfig((LoadBalancerConfigCommand)cmd);
         } else if (cmd instanceof SavePasswordCommand) {
-            cfg = generateConfig((SavePasswordCommand)cmd);
+            cfg = generateConfig((SavePasswordCommand)cmd);  // Migrated
         } else if (cmd instanceof DhcpEntryCommand) {
             cfg = generateConfig((DhcpEntryCommand)cmd);  // Migrated
         } else if (cmd instanceof CreateIpAliasCommand) {
@@ -327,16 +328,9 @@ public class ConfigHelper {
     }
 
     private static List<ConfigItem> generateConfig(SavePasswordCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
+        VmPassword vmPassword = new VmPassword(cmd.getVmIpAddress(), cmd.getPassword());
 
-        final String password = cmd.getPassword();
-        final String vmIpAddress = cmd.getVmIpAddress();
-
-        String args = "-v " + vmIpAddress;
-        args += " -p " + password;
-
-        cfg.add(new ScriptConfigItem(VRScripts.PASSWORD, args));
-        return cfg;
+        return generateConfigItems(vmPassword);
     }
 
     private static List<ConfigItem> generateConfig(DhcpEntryCommand cmd) {
@@ -618,20 +612,23 @@ public class ConfigHelper {
         String destinationFile;
 
         switch (configuration.getType()) {
-        case ConfigBase.DHCP_ENTRY:
-            destinationFile = VRScripts.DHCP_ENTRY_CONFIG;
+        case ConfigBase.GUEST_NETWORK:
+            destinationFile = VRScripts.GUEST_NETWORK_CONFIG;
             break;
         case ConfigBase.IP_ASSOCIATION:
             destinationFile = VRScripts.IP_ASSOCIATION_CONFIG;
             break;
-        case ConfigBase.GUEST_NETWORK:
-            destinationFile = VRScripts.GUEST_NETWORK_CONFIG;
-            break;
         case ConfigBase.NETWORK_ACL:
             destinationFile = VRScripts.NETWORK_ACL_CONFIG;
             break;
+        case ConfigBase.VM_DHCP:
+            destinationFile = VRScripts.VM_DHCP_CONFIG;
+            break;
         case ConfigBase.VM_METADATA:
             destinationFile = VRScripts.VM_METADATA_CONFIG;
+            break;
+        case ConfigBase.VM_PASSWORD:
+            destinationFile = VRScripts.VM_PASSWORD_CONFIG;
             break;
         default:
             throw new CloudRuntimeException("Unable to process the configuration for " + configuration.getType());
