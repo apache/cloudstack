@@ -19,23 +19,34 @@
 
 package com.cloud.agent.resource.virtualnetwork.model;
 
-public abstract class ConfigBase {
-    public final static String UNKNOWN = "unknown";
-    public final static String VM_DHCP = "dhcpentry";
-    public final static String IP_ASSOCIATION = "ips";
-    public final static String GUEST_NETWORK = "guestnetwork";
-    public static final String NETWORK_ACL = "networkacl";
-    public static final String VM_METADATA = "vmdata";
-    public static final String VM_PASSWORD = "vmpassword";
+public class VmPassword extends ConfigBase {
+    private String ipAddress;
+    private String password;
 
-    private String type = UNKNOWN;
-
-    public String getType() {
-        return type;
+    public VmPassword() {
+        setType(ConfigBase.VM_PASSWORD);
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public VmPassword(String ipAddress, String password) {
+        setType(ConfigBase.VM_PASSWORD);
+        this.ipAddress = ipAddress;
+        this.password = password;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
 }
