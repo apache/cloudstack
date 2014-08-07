@@ -233,7 +233,7 @@ class TestDeployVM(cloudstackTestCase):
 
         list_vms = VirtualMachine.list(self.apiclient, ids=[virtual_machine1.id, virtual_machine2.id], listAll=True)
         self.debug(
-            "Verify listVirtualMachines response for virtual machines: %s, %s" % (self.virtual_machine.id, self.virtual_machine2.id)
+            "Verify listVirtualMachines response for virtual machines: %s, %s" % (virtual_machine1.id, virtual_machine2.id)
         )
         self.assertEqual(
             isinstance(list_vms, list),
