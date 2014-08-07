@@ -54,3 +54,22 @@ class HelloSystemVMTestCase(SystemVMTestCase):
     def test_something(self):
         assert something_to_do('foo')
 ```
+
+Edit, test, edit, test
+======================
+The SystemVM Vagrantfile sets up rsync from systemvm/patches. These rsyncs run
+once, when you type 'vagrant up'. To do these rsyncs every time you change a
+patch file, run 'vagrant rsync-auto'. With that, your development process can
+be,
+
+* once, start up vagrant with 'vagrant up'
+* once, start up the rsync watcher with 'vagrant rsync-auto'
+* iterate:
+  * write a test, save the file
+  * run 'nostests' to check that the test fails
+  * change a systemvm script to help the test pass, save the file
+  * vagrant rsyncs the changed file
+  * run 'nosetests' to check that the test now passes
+
+If you use PyDev or PyCharm you can set it up to watch your test files for
+changes and auto-run any changed tests.
