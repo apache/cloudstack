@@ -22,6 +22,17 @@
 -- Disable foreign key checking
 -- SET foreign_key_checks = 0;
 
+DROP VIEW IF EXISTS `cloud`.`storage_tag_view`;
+CREATE VIEW `cloud`.`storage_tag_view` AS
+    select
+        storage_pool_details.id,
+        storage_pool_details.pool_id,
+        storage_pool_details.name
+    from
+        `cloud`.`storage_pool_details`
+    where
+        value='true';
+
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `provisioning_type` VARCHAR(32) NOT NULL DEFAULT 'thin' COMMENT 'pre allocation setting of the volume';
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `provisioning_type` VARCHAR(32) NOT NULL DEFAULT 'thin' COMMENT 'pre allocation setting of the volume';
 

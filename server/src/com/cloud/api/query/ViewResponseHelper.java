@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -69,6 +70,7 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
+import com.cloud.api.query.vo.StorageTagVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -287,6 +289,16 @@ public class ViewResponseHelper {
             vrDataList.put(vr.getId(), vrData);
         }
         return new ArrayList<StoragePoolResponse>(vrDataList.values());
+    }
+
+    public static List<StorageTagResponse> createStorageTagResponse(StorageTagVO... storageTags) {
+        ArrayList<StorageTagResponse> list = new ArrayList<StorageTagResponse>();
+
+        for (StorageTagVO vr : storageTags) {
+            list.add(ApiDBUtils.newStorageTagResponse(vr));
+        }
+
+        return list;
     }
 
     public static List<ImageStoreResponse> createImageStoreResponse(ImageStoreJoinVO... stores) {

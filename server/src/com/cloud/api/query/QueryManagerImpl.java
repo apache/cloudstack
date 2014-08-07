@@ -46,6 +46,7 @@ import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
@@ -85,6 +86,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -115,6 +117,7 @@ import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.api.query.dao.StorageTagDao;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
@@ -136,6 +139,7 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
+import com.cloud.api.query.vo.StorageTagVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -283,6 +287,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     private StoragePoolJoinDao _poolJoinDao;
+
+    @Inject
+    private StorageTagDao _storageTagDao;
 
     @Inject
     private ImageStoreJoinDao _imageStoreJoinDao;
@@ -2127,6 +2134,47 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         List<StoragePoolJoinVO> vrs = _poolJoinDao.searchByIds(vrIds);
         return new Pair<List<StoragePoolJoinVO>, Integer>(vrs, count);
 
+    }
+
+    @Override
+    public ListResponse<StorageTagResponse> searchForStorageTags(ListStorageTagsCmd cmd) {
+        Pair<List<StorageTagVO>, Integer> result = searchForStorageTagsInternal(cmd);
+        ListResponse<StorageTagResponse> response = new ListResponse<StorageTagResponse>();
+        List<StorageTagResponse> tagResponses = ViewResponseHelper.createStorageTagResponse(result.first().toArray(new StorageTagVO[result.first().size()]));
+
+        response.setResponses(tagResponses, result.second());
+
+        return response;
+    }
+
+    private Pair<List<StorageTagVO>, Integer> searchForStorageTagsInternal(ListStorageTagsCmd cmd) {
+        Filter searchFilter = new Filter(StorageTagVO.class, "id", Boolean.TRUE, null, null);
+
+        SearchBuilder<StorageTagVO> sb = _storageTagDao.createSearchBuilder();
+
+        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
+
+        SearchCriteria<StorageTagVO> sc = sb.create();
+
+        // search storage tag details by ids
+        Pair<List<StorageTagVO>, Integer> uniqueTagPair = _storageTagDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueTagPair.second();
+
+        if (count.intValue() == 0) {
+            return uniqueTagPair;
+        }
+
+        List<StorageTagVO> uniqueTags = uniqueTagPair.first();
+        Long[] vrIds = new Long[uniqueTags.size()];
+        int i = 0;
+
+        for (StorageTagVO v : uniqueTags) {
+            vrIds[i++] = v.getId();
+        }
+
+        List<StorageTagVO> vrs = _storageTagDao.searchByIds(vrIds);
+
+        return new Pair<List<StorageTagVO>, Integer>(vrs, count);
     }
 
     @Override

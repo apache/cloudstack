@@ -329,6 +329,7 @@ listAsyncJobs=15
 #### storage pools commands
 listStoragePools=3
 listStorageProviders=3
+listStorageTags=7
 createStoragePool=1
 updateStoragePool=1
 deleteStoragePool=1
