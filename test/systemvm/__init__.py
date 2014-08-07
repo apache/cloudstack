@@ -172,6 +172,7 @@ class SystemVMTestCase(TestCase):
         env.abort_on_prompts = True
         env.command_timeout = 10
         env.timeout = 5
+        env.disable_known_hosts = True
         env.platform_family = detect.detect()
 
         # this could break down when executing multiple test cases in parallel in the same python process
