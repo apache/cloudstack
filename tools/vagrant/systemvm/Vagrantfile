@@ -19,6 +19,7 @@
 # under the License.
 
 include RbConfig
+basedir = File.dirname(__FILE__)
 
 VAGRANTFILE_API_VERSION = '2'
 
@@ -36,31 +37,31 @@ if ARGV[0] == 'up'
       puts 'Windows is not supported'
       exit 1
     when /linux|arch/i
-      iso_util='mkisofs -J -o systemvm.iso ./iso'
+      iso_util = "mkisofs -J -o #{basedir}/systemvm.iso #{basedir}/iso"
     when /sunos|solaris/i
       puts 'Solaris is not supported'
       exit 1
     when /darwin/i
-      iso_util='hdiutil makehybrid -iso -joliet -o systemvm.iso ./iso/'
+      iso_util = "hdiutil makehybrid -iso -joliet -o #{basedir}/systemvm.iso #{basedir}/iso/"
     else
       puts 'This OS is not supported'
       exit 1
   end
 
-  system 'rm -rf ./systemvm.iso'
-  system 'mkdir -p iso/'
-  unless File.exist? '../../../systemvm/dist/cloud-scripts.tgz'
+  system "rm -rf #{basedir}/systemvm.iso"
+  system "mkdir -p #{basedir}/iso/"
+  unless File.exist? "#{basedir}/../../../systemvm/dist/cloud-scripts.tgz"
     puts 'No cloud-scripts.tgz found. Did you run the maven build?'
     exit 1
   end
-  system 'cp ../../../systemvm/dist/cloud-scripts.tgz iso/'
-  unless File.exist? '../../../systemvm/dist/systemvm.zip'
+  system "cp #{basedir}/../../../systemvm/dist/cloud-scripts.tgz #{basedir}/iso/"
+  unless File.exist? "#{basedir}/../../../systemvm/dist/systemvm.zip"
     puts 'No systemvm.zip found. Did you run the maven build?'
     exit 1
   end
-  system 'cp ../../../systemvm/dist/systemvm.zip iso/'
+  system "cp #{basedir}/../../../systemvm/dist/systemvm.zip #{basedir}/iso/"
 
-  system 'cp vagrant.pub iso/authorized_keys'
+  system "cp #{basedir}/vagrant.pub #{basedir}/iso/authorized_keys"
   system 'chmod 600 iso/authorized_keys'
 
   system iso_util
@@ -70,6 +71,27 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = 'cloudstack/systemvm'
   config.vm.network 'private_network', ip: VPC_IP, auto_config: false
   config.vm.synced_folder 'vagrant', '/vagrant', disabled: true
+
+  #noinspection RubyStringKeysInHashInspection
+  patches = {
+    'config/etc'  => '/etc',
+    'config/opt'  => '/opt',
+    'config/root' => '/root',
+    'config/var'  => '/var',
+    'vpn/etc'     => '/etc',
+    'vpn/opt'     => '/opt',
+    'xe'          => '/usr/sbin'
+  }
+
+  patches.each_pair do |patch, dest|
+    config.vm.synced_folder(
+        "#{basedir}/../../../systemvm/patches/debian/#{patch}",
+        dest,
+        type: 'rsync',
+        rsync__chown: false,
+        rsync__args: %w(--verbose --archive --exclude=authorized_keys) # no --delete!
+    )
+  end
 
   config.ssh.forward_agent = true
   config.ssh.username = 'root'
