@@ -20,7 +20,14 @@
 package com.cloud.agent.resource.virtualnetwork.model;
 
 public abstract class ConfigBase {
-    private String type = "unknown";
+    public final static String UNKNOWN = "unknown";
+    public final static String DHCP_ENTRY = "dhcpentry";
+    public final static String IP_ASSOCIATION = "ips";
+    public final static String GUEST_NETWORK = "guestnetwork";
+    public static final String NETWORK_ACL = "networkacl";
+    public static final String VM_METADATA = "vmdata";
+
+    private String type = UNKNOWN;
 
     public String getType() {
         return type;
