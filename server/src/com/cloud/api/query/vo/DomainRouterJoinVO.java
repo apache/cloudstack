@@ -119,7 +119,7 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     private String ip6Dns2 = null;
 
     @Column(name = "host_id", updatable = true, nullable = true)
-    private long hostId;
+    private Long hostId;
 
     @Column(name = "host_uuid")
     private String hostUuid;
