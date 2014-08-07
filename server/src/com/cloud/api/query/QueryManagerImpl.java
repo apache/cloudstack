@@ -375,23 +375,20 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     private Pair<List<UserAccountJoinVO>, Integer> searchForUsersInternal(ListUsersCmd cmd) throws PermissionDeniedException {
         Account caller = CallContext.current().getCallingAccount();
 
-        // TODO: Integrate with ACL checkAccess refactoring
-        Long domainId = cmd.getDomainId();
-        if (domainId != null) {
-            Domain domain = _domainDao.findById(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Unable to find domain by id=" + domainId);
-            }
+        List<Long> permittedAccounts = new ArrayList<Long>();
 
-            _accountMgr.checkAccess(caller, domain);
-        } else {
-            // default domainId to the caller's domain
-            domainId = caller.getDomainId();
-        }
+        boolean listAll = cmd.listAll();
+        Long id = cmd.getId();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
+                cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), null, permittedAccounts,
+                domainIdRecursiveListProject, listAll, false);
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(UserAccountJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
-        Long id = cmd.getId();
         Object username = cmd.getUsername();
         Object type = cmd.getAccountType();
         Object accountName = cmd.getAccountName();
@@ -399,6 +396,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object keyword = cmd.getKeyword();
 
         SearchBuilder<UserAccountJoinVO> sb = _userAccountJoinDao.createSearchBuilder();
+        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
+                listProjectResourcesCriteria);
         sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.LIKE);
         if (id != null && id == 1) {
             // system user should NOT be searchable
@@ -422,6 +421,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         SearchCriteria<UserAccountJoinVO> sc = sb.create();
+
+        // building ACL condition
+        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
+                listProjectResourcesCriteria);
+
         if (keyword != null) {
             SearchCriteria<UserAccountJoinVO> ssc = _userAccountJoinDao.createSearchCriteria();
             ssc.addOr("username", SearchCriteria.Op.LIKE, "%" + keyword + "%");
