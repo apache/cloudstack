@@ -24,7 +24,7 @@ from marvin.cloudstackAPI import *
 from marvin.codes import (FAILED, FAIL, PASS, RUNNING, STOPPED,
                           STARTING, DESTROYED, EXPUNGING,
                           STOPPING, BACKED_UP, BACKING_UP)
-from marvin.cloudstackException import GetDetailExceptionInfo
+from marvin.cloudstackException import GetDetailExceptionInfo, CloudstackAPIException
 from marvin.lib.utils import validateList, is_server_ssh_ready, random_gen
 # Import System modules
 import time
@@ -340,12 +340,17 @@ class VirtualMachine:
             ipaddressid=public_ip.ipaddress.id
         )
         if allow_egress:
-            EgressFireWallRule.create(
-                apiclient=apiclient,
-                networkid=virtual_machine.nic[0].networkid,
-                protocol='All',
-                cidrlist='0.0.0.0/0'
-            )
+            try:
+                EgressFireWallRule.create(
+                    apiclient=apiclient,
+                    networkid=virtual_machine.nic[0].networkid,
+                    protocol='All',
+                    cidrlist='0.0.0.0/0'
+                )
+            except CloudstackAPIException, e:
+                # This could fail because we've already set up the same rule
+                if not "There is already a firewall rule specified".lower() in e.errorMsg.lower():
+                    raise
         virtual_machine.ssh_ip = nat_rule.ipaddress
         virtual_machine.public_ip = nat_rule.ipaddress
 
