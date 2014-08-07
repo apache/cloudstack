@@ -23,13 +23,12 @@ import java.util.Random;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
@@ -151,16 +150,19 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             return false;
         }
 
-        List<String> methods = physicalNetwork.getIsolationMethods();
+        List<String> methods = new ArrayList<String>();
+        for (String method : physicalNetwork.getIsolationMethods()) {
+            methods.add(method.toLowerCase());
+        }
         if (methods.isEmpty()) {
             // The empty isolation method is assumed to be VLAN
             s_logger.debug("Empty physical isolation type for physical network " + physicalNetwork.getUuid());
             methods = new ArrayList<String>(1);
-            methods.add("VLAN");
+            methods.add("VLAN".toLowerCase());
         }
 
         for (IsolationMethod m : _isolationMethods) {
-            if (methods.contains(m.toString())) {
+            if (methods.contains(m.toString().toLowerCase())) {
                 return true;
             }
         }
