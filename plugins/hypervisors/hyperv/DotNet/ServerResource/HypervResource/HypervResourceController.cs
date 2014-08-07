@@ -2434,7 +2434,10 @@ namespace HypervResource
                     logger.Error(details, sysEx);
                 }
 
-                return JArray.FromObject(hostVmStateReport);
+                var answer = JArray.FromObject(hostVmStateReport);
+                logger.Info(String.Format("{0}: {1}",CloudStackTypes.HostVmStateReportCommand, answer.ToString()));
+
+                return answer;
             }
         }
 

@@ -2315,7 +2315,7 @@ namespace HypervResource
 
         public ComputerSystem.ComputerSystemCollection GetComputerSystemCollection()
         {
-            var wmiQuery = String.Format("Caption=\"Virtual Machine\"");
+            var wmiQuery = String.Format("ProcessId >= 0");
             return ComputerSystem.GetInstances(wmiQuery);
         }
 
