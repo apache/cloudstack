@@ -85,10 +85,6 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @Param(description = "the hostname for the router")
     private String hostName;
 
-    @SerializedName("hypervisor")
-    @Param(description = "the hypervisor on which the template runs")
-    private String hypervisor;
-
     @SerializedName(ApiConstants.LINK_LOCAL_IP)
     @Param(description = "the link local IP address for the router")
     private String linkLocalIp;
@@ -264,14 +260,6 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
-    }
-
-    public String getHypervisor() {
-        return hypervisor;
-    }
-
-    public void setHypervisor(String hypervisor) {
-        this.hypervisor = hypervisor;
     }
 
     public void setPublicIp(String publicIp) {
