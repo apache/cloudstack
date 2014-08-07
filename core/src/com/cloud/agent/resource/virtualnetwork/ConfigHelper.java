@@ -58,6 +58,7 @@ import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.resource.virtualnetwork.model.AclRule;
 import com.cloud.agent.resource.virtualnetwork.model.AllAclRule;
+import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
 import com.cloud.agent.resource.virtualnetwork.model.GuestNetwork;
 import com.cloud.agent.resource.virtualnetwork.model.IcmpAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.IpAddress;
@@ -67,9 +68,11 @@ import com.cloud.agent.resource.virtualnetwork.model.ProtocolAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.TcpAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.UdpAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.VmData;
+import com.cloud.agent.resource.virtualnetwork.model.VmDhcpConfig;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 public class ConfigHelper {
@@ -94,7 +97,7 @@ public class ConfigHelper {
         } else if (cmd instanceof SavePasswordCommand) {
             cfg = generateConfig((SavePasswordCommand)cmd);
         } else if (cmd instanceof DhcpEntryCommand) {
-            cfg = generateConfig((DhcpEntryCommand)cmd);
+            cfg = generateConfig((DhcpEntryCommand)cmd);  // Migrated
         } else if (cmd instanceof CreateIpAliasCommand) {
             cfg = generateConfig((CreateIpAliasCommand)cmd);
         } else if (cmd instanceof DnsMasqConfigCommand) {
@@ -320,14 +323,7 @@ public class ConfigHelper {
     private static List<ConfigItem> generateConfig(VmDataCommand cmd) {
         VmData vmData = new VmData(cmd.getVmIpAddress(), cmd.getVmData());
 
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
-        ConfigItem networkAclFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, VRScripts.VM_METADATA_CONFIG, gson.toJson(vmData));
-        cfg.add(networkAclFile);
-
-        ConfigItem updateNetworkACL = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, VRScripts.VM_METADATA_CONFIG);
-        cfg.add(updateNetworkACL);
-
-        return cfg;
+        return generateConfigItems(vmData);
     }
 
     private static List<ConfigItem> generateConfig(SavePasswordCommand cmd) {
@@ -344,37 +340,10 @@ public class ConfigHelper {
     }
 
     private static List<ConfigItem> generateConfig(DhcpEntryCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
+        VmDhcpConfig vmDhcpConfig = new VmDhcpConfig(cmd.getVmName(), cmd.getVmMac(), cmd.getVmIpAddress(), cmd.getVmIp6Address(), cmd.getDuid(), cmd.getDefaultDns(),
+                cmd.getDefaultRouter(), cmd.getStaticRoutes(), cmd.isDefault());
 
-        String args = " -m " + cmd.getVmMac();
-        if (cmd.getVmIpAddress() != null) {
-            args += " -4 " + cmd.getVmIpAddress();
-        }
-        args += " -h " + cmd.getVmName();
-
-        if (cmd.getDefaultRouter() != null) {
-            args += " -d " + cmd.getDefaultRouter();
-        }
-
-        if (cmd.getDefaultDns() != null) {
-            args += " -n " + cmd.getDefaultDns();
-        }
-
-        if (cmd.getStaticRoutes() != null) {
-            args += " -s " + cmd.getStaticRoutes();
-        }
-
-        if (cmd.getVmIp6Address() != null) {
-            args += " -6 " + cmd.getVmIp6Address();
-            args += " -u " + cmd.getDuid();
-        }
-
-        if (!cmd.isDefault()) {
-            args += " -N";
-        }
-        cfg.add(new ScriptConfigItem(VRScripts.DHCP, args));
-
-        return cfg;
+        return generateConfigItems(vmDhcpConfig);
     }
 
     private static List<ConfigItem> generateConfig(CreateIpAliasCommand cmd) {
@@ -532,20 +501,10 @@ public class ConfigHelper {
         GuestNetwork guestNetwork = new GuestNetwork(cmd.isAdd(), nic.getMac(), "eth" + nic.getDeviceId(), routerGIP, netmask, gateway,
                 cidr, dns, domainName);
 
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
-
-        ConfigItem guestNetworkConfig = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, VRScripts.GUEST_NETWORK_CONFIG, gson.toJson(guestNetwork));
-        cfg.add(guestNetworkConfig);
-
-        ConfigItem updateGuestNetwork = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, VRScripts.GUEST_NETWORK_CONFIG);
-        cfg.add(updateGuestNetwork);
-
-        return cfg;
+        return generateConfigItems(guestNetwork);
     }
 
     private static List<ConfigItem> generateConfig(SetNetworkACLCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
-
         String privateGw = cmd.getAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY);
 
         String[][] rules = cmd.generateFwRules();
@@ -553,7 +512,6 @@ public class ConfigHelper {
         NicTO nic = cmd.getNic();
         String dev = "eth" + nic.getDeviceId();
         String netmask = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
-        StringBuilder sb = new StringBuilder();
 
         List<AclRule> ingressRules = new ArrayList<AclRule>();
         List<AclRule> egressRules = new ArrayList<AclRule>();
@@ -584,17 +542,10 @@ public class ConfigHelper {
             }
         }
 
-        sb.toString();
-
         NetworkACL networkACL = new NetworkACL(dev, nic.getMac(), privateGw != null, nic.getIp(), netmask, ingressRules.toArray(new AclRule[ingressRules.size()]),
                 egressRules.toArray(new AclRule[egressRules.size()]));
-        ConfigItem networkAclFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, VRScripts.NETWORK_ACL_CONFIG, gson.toJson(networkACL));
-        cfg.add(networkAclFile);
 
-        ConfigItem updateNetworkACL = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, VRScripts.NETWORK_ACL_CONFIG);
-        cfg.add(updateNetworkACL);
-
-        return cfg;
+        return generateConfigItems(networkACL);
     }
 
     private static List<ConfigItem> generateConfig(SetSourceNatCommand cmd) {
@@ -648,7 +599,7 @@ public class ConfigHelper {
     }
 
     private static List<ConfigItem> generateConfig(IpAssocCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
+        new LinkedList<>();
         List<IpAddress> ips = new LinkedList<IpAddress>();
 
         for (IpAddressTO ip : cmd.getIpAddresses()) {
@@ -659,13 +610,40 @@ public class ConfigHelper {
 
         IpAssociation ipAssociation = new IpAssociation(ips.toArray(new IpAddress[ips.size()]));
 
-        ConfigItem ipAssociationsFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, VRScripts.IP_ASSOCIATION_CONFIG, gson.toJson(ipAssociation));
-        cfg.add(ipAssociationsFile);
-
-        ConfigItem updateIpAssociations = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, VRScripts.IP_ASSOCIATION_CONFIG);
-        cfg.add(updateIpAssociations);
-
-        return cfg;
+        return generateConfigItems(ipAssociation);
     }
 
+    private static List<ConfigItem> generateConfigItems(ConfigBase configuration) {
+        List<ConfigItem> cfg = new LinkedList<>();
+        String destinationFile;
+
+        switch (configuration.getType()) {
+        case ConfigBase.DHCP_ENTRY:
+            destinationFile = VRScripts.DHCP_ENTRY_CONFIG;
+            break;
+        case ConfigBase.IP_ASSOCIATION:
+            destinationFile = VRScripts.IP_ASSOCIATION_CONFIG;
+            break;
+        case ConfigBase.GUEST_NETWORK:
+            destinationFile = VRScripts.GUEST_NETWORK_CONFIG;
+            break;
+        case ConfigBase.NETWORK_ACL:
+            destinationFile = VRScripts.NETWORK_ACL_CONFIG;
+            break;
+        case ConfigBase.VM_METADATA:
+            destinationFile = VRScripts.VM_METADATA_CONFIG;
+            break;
+        default:
+            throw new CloudRuntimeException("Unable to process the configuration for " + configuration.getType());
+        }
+
+        ConfigItem configFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, destinationFile, gson.toJson(configuration));
+        cfg.add(configFile);
+
+        ConfigItem updateCommand = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, destinationFile);
+        cfg.add(updateCommand);
+
+        return cfg;
+
+    }
 }

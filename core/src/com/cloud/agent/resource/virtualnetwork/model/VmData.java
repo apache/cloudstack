@@ -26,11 +26,11 @@ public class VmData extends ConfigBase {
     private List<String[]> vmMetadata;
 
     public VmData() {
-        setType("vmdata");
+        setType(ConfigBase.VM_METADATA);
     }
 
     public VmData(String vmIpAddress, List<String[]> vmMetadata) {
-        setType("vmdata");
+        setType(ConfigBase.VM_METADATA);
         this.vmIpAddress = vmIpAddress;
         this.vmMetadata = vmMetadata;
     }
