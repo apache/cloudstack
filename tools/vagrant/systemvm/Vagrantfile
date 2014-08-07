@@ -78,8 +78,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     'config/opt'  => '/opt',
     'config/root' => '/root',
     'config/var'  => '/var',
-    'vpn/etc'     => '/etc',
-    'vpn/opt'     => '/opt',
+    # cannot have two rsyncs pointing to the same dir
+    # 'vpn/etc'     => '/etc',
+    # 'vpn/opt'     => '/opt',
     'xe'          => '/usr/sbin'
   }
 
