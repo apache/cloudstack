@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import sys
+import os
 from merge import dataBag
 from pprint import pprint
 import subprocess
@@ -91,7 +92,7 @@ class CsFile:
             self.new_config.append(line)
         logging.debug("Reading file %s" % self.filename)
 
-    def isChanged(self):
+    def is_changed(self):
         return self.changed
 
     def commit(self):
@@ -107,6 +108,8 @@ class CsFile:
         found   = False
         logging.debug("Searching for %s and replacing with %s" % (search, replace))
         for index, line in enumerate(self.new_config):
+            if line.lstrip().startswith("#"):
+                continue
             if re.search(search, line):
                 found = True
                 if not replace in line:
@@ -217,6 +220,28 @@ class CsRpsrfs:
         return count
 
 
+class CsProcess(object):
+    """ Manipulate processes """
+
+    def __init__(self, search):
+        self.search = search
+
+    def start(self, thru, background = ''):
+        #if(background):
+            #cmd = cmd + " &"
+        logging.info("Started %s", " ".join(self.search))
+        os.system("%s %s %s" % (thru, " ".join(self.search), background))
+
+    def find(self):
+        self.pid = []
+        for i in CsHelper().execute("ps aux"):
+            items = len(self.search)
+            proc = re.split("\s+", i)[items*-1:]
+            matches = len([m for m in proc if m in self.search])
+            if matches == items:
+                self.pid.append(re.split("\s+", i)[1])
+        return len(self.pid) > 0
+
 class CsApp:
     def __init__(self, ip):
         self.dev     = ip.getDevice()
@@ -225,13 +250,30 @@ class CsApp:
         self.type    = ip.get_type()
         if self.type == "guest":
             gn = CsGuestNetwork(self.dev)
-            self.domain = gn.getDomain()
+            self.domain = gn.get_domain()
+
+class CsPasswdSvc(CsApp):
+    """
+      nohup bash /opt/cloud/bin/vpc_passwd_server $ip >/dev/null 2>&1 &
+    """
+
+    def setup(self):
+        cmds = "-A INPUT -i %s -d %s -p %s -m %s --state %s --dport %s -j %s"
+        slist = [ self.dev, self.ip, "tcp", "state", "NEW", "8080", "ACCEPT" ]
+
+        firewall = CsIpTables(self.dev)
+        firewall.change_rule("", slist, cmds)
+
+        proc = CsProcess(['/opt/cloud/bin/vpc_passwd_server', self.ip])
+        if not proc.find():
+            proc.start("/usr/bin/nohup", "2>&1 &")
 
 class CsApache(CsApp):
     """ Set up Apache """
 
     def setup(self):
-        CsHelper().copy_if_needed("/etc/apache2/vhostexample.conf", "/etc/apache2/conf.d/vhost%s.conf" % self.dev)
+        CsHelper().copy_if_needed("/etc/apache2/vhostexample.conf",
+                                  "/etc/apache2/conf.d/vhost%s.conf" % self.dev)
 
         file = CsFile("/etc/apache2/conf.d/vhost%s.conf" % (self.dev))
         file.search("<VirtualHost.*:80>", "\t<VirtualHost %s:80>" % (self.ip))
@@ -241,6 +283,15 @@ class CsApache(CsApp):
         file.search("Listen .*:443", "Listen %s:443" % (self.ip))
         file.search("ServerName.*", "\tServerName vhost%s.cloudinternal.com" % (self.dev))
         file.commit()
+        if file.is_changed():
+            CsHelper().service("apache2", "restart")
+
+        cmds = "-A INPUT -i %s -d %s -p %s -m %s --state %s --dport %s -j %s"
+        slist = [ self.dev, self.ip, "tcp", "state", "NEW", "80", "ACCEPT" ]
+
+        firewall = CsIpTables(self.dev)
+        firewall.change_rule("", slist, cmds)
+
 
 class CsDnsmasq(CsApp):
     """ Set up dnsmasq """
@@ -254,8 +305,8 @@ class CsDnsmasq(CsApp):
         """
         firewall = CsIpTables(self.dev)
 
-        cmds = "-A INPUT -i %s -p udp -m udp --dport 67 -j %s"
-        slist = [ self.dev, "ACCEPT" ]
+        cmds = "-A INPUT -i %s -p %s -m %s --dport %s -j %s"
+        slist = [ self.dev, "udp", "udp", "67", "ACCEPT" ]
         firewall.change_rule("", slist, cmds)
 
         cmds = "-A INPUT -i %s -d %s -p %s -m %s --dport %s -j %s"
@@ -274,7 +325,7 @@ class CsDnsmasq(CsApp):
                     "dhcp-option=tag:interface-%s,15,%s" % (self.dev, self.domain))
         file.commit()
 
-        if file.isChanged():
+        if file.is_changed():
             CsHelper().service("dnsmasq", "restart")
 
 
@@ -291,7 +342,7 @@ class CsGuestNetwork:
             if dev == device:
                 self.data = dbag[dev][0]
 
-    def getDomain(self):
+    def get_domain(self):
         if 'domain_name' in self.data:
             return self.data['domain_name']
         else:
@@ -307,13 +358,13 @@ class CsDevice:
         self.tableNo = ''
         if dev != '':
             self.tableNo = dev[3]
-            self.table = "Table_%s" % (dev)
+            self.table = "Table_%s" % dev
 
     def configure_rp(self):
         """
         Configure Reverse Path Filtering
         """
-        filename = "/proc/sys/net/ipv4/conf/%s/rp_filter" % (self.dev)
+        filename = "/proc/sys/net/ipv4/conf/%s/rp_filter" % self.dev
         CsHelper().updatefile(filename, "1\n", "w")
 
     def buildlist(self):
@@ -326,12 +377,12 @@ class CsDevice:
             if (not vals[0].startswith("eth")):
                  continue
             # Ignore control interface for now
-            if (vals[0] == 'eth0'):
+            if vals[0] == 'eth0':
                 continue
             self.devlist.append(vals[0])
 
 
-    def waitForDevice(self):
+    def waitfordevice(self):
         """ Wait up to 15 seconds for a device to become available """
         count = 0
         while count < 15:
@@ -348,10 +399,10 @@ class CsDevice:
 
     def setUp(self):
         """ Ensure device is up """
-        cmd = "ip link show %s | grep 'state DOWN'" % (self.dev)
+        cmd = "ip link show %s | grep 'state DOWN'" % self.dev
         for i in CsHelper().execute(cmd):
             if " DOWN " in i:
-                cmd2 = "ip link set %s up" % (self.dev)
+                cmd2 = "ip link set %s up" % self.dev
                 CsHelper().execute(cmd2)
         CsIpTables(self.dev).set_connmark()
 
@@ -395,8 +446,8 @@ class CsIpTables:
         if method == "add":
             cmds = "-A %s -o %s -d %s -j %s"
         else:    
-            cmds = "-A %s -o %s -d %s -j %s"
-        self.change_rule('mangle', slist, cmds)
+            cmds = "-D %s -o %s -d %s -j %s"
+        self.change_rule('', slist, cmds)
 
     def set_drop(self, method = "add"):
         """ Ensure the last rule is drop """
@@ -448,10 +499,10 @@ class CsIpTables:
         """ Check if a particular rule exists """
         cmd = "iptables-save "
         if table != "":
-           cmd += "-t %s" % (table)
+           cmd += "-t %s" % table
         for line in CsHelper().execute(cmd):
             matches = len([i for i in list if i in line])
-            if(matches == len(list)):
+            if matches == len(list):
                 return True
         return False
 
@@ -514,6 +565,7 @@ class CsIP:
             dns.configure_server()
             app = CsApache(self)
             app.setup()
+            pwdsvc = CsPasswdSvc(self).setup()
 
         route.flush()
 
@@ -526,8 +578,7 @@ class CsIP:
                 self.iplist[vals[1]] = self.dev
 
     def configured(self):
-        dev = self.address['device']
-        if (self.address['cidr'] in self.iplist.keys()):
+        if self.address['cidr'] in self.iplist.keys():
             return True
         return False
 
@@ -546,7 +597,7 @@ class CsIP:
 
     # Delete any ips that are configured but not in the bag
     def compare(self, bag):
-        if (len(self.iplist) > 0 and not self.dev in bag.keys()):
+        if len(self.iplist) > 0 and not self.dev in bag.keys():
             # Remove all IPs on this device
             logging.info("Will remove all configured addresses on device %s", self.dev)
             self.delete("all")
@@ -555,14 +606,14 @@ class CsIP:
             found = False
             for address in bag[self.dev]:
                 self.setAddress(address)
-                if (self.hasIP(ip)):
+                if self.hasIP(ip):
                     found = True
-            if (not found):
+            if not found:
                 self.delete(ip)
 
     def delete(self, ip):
         remove = []
-        if (ip == "all"):
+        if ip == "all":
             logging.info("Removing addresses from device %s", self.dev)
             remove = self.iplist.keys()
         else:
@@ -575,8 +626,9 @@ class CsIP:
 
 def main(argv):
 
-    logging.basicConfig(filename='/var/log/cloud.log', 
-            level=logging.DEBUG, format='%(asctime)s %(message)s')
+    logging.basicConfig(filename='/var/log/cloud.log',
+                        level=logging.DEBUG,
+                        format='%(asctime)s %(message)s')
 
     db = dataBag()
     db.setKey("ips")
@@ -600,7 +652,7 @@ def main(argv):
                 ip.post_configure()
             else:
                 logging.info("Address %s on device %s not configured", ip.ip(), dev)
-                if CsDevice(dev).waitForDevice():
+                if CsDevice(dev).waitfordevice():
                     ip.configure()
 
 
