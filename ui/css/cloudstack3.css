@@ -4052,7 +4052,7 @@ Dialogs*/
   display: inline-block;
 }
 
-.ui-dialog div.form-container div.value input {
+.ui-dialog div.form-container div.value input, textarea {
   width: 98%;
   font-size: 14px;
   padding: 4px;
@@ -12983,3 +12983,21 @@ div.gpugroups div.list-view {
   padding: 12px 12px 5px;
 }
 
+.ui-dialog .ui-button.add {
+    background: linear-gradient(to bottom, #f7f7f7 1%, #eaeaea 100%) repeat scroll 0px 0px transparent;
+    font-size: 12px;
+    height: 12px;
+    width: auto;
+    margin: 0px 0px 12px;
+    padding: 5px 7px 5px 6px;
+}
+
+.ui-dialog .ui-button.add:hover {
+    background: none repeat scroll 0px 0px #e5e5e5;
+    box-shadow: 0px 0px 5px #c3c3c3 inset;
+}
+
+.ui-dialog .ui-button.add span {
+    background: url("../images/icons.png") no-repeat scroll -626px -209px transparent;
+    padding: 0 0 3px 18px;
+}
