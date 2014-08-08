@@ -31,13 +31,12 @@ public class GuestNetwork extends ConfigBase {
     private String domainName;
 
     public GuestNetwork() {
-        // Empty constructor for (de)serialization
-        setType(ConfigBase.GUEST_NETWORK);
+        super(ConfigBase.GUEST_NETWORK);
     }
 
     public GuestNetwork(boolean add, String macAddress, String device, String routerGuestIp, String routerGuestNetmask, String routerGuestGateway, String cidr, String dns,
             String domainName) {
-        setType(ConfigBase.GUEST_NETWORK);
+        super(ConfigBase.GUEST_NETWORK);
         this.add = add;
         this.macAddress = macAddress;
         this.device = device;

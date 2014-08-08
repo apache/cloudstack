@@ -27,8 +27,17 @@ public abstract class ConfigBase {
     public static final String NETWORK_ACL = "networkacl";
     public static final String VM_METADATA = "vmdata";
     public static final String VM_PASSWORD = "vmpassword";
+    public static final String FORWARDING_RULES = "forwardrules";
 
     private String type = UNKNOWN;
+
+    private ConfigBase() {
+        // Empty constructor for (de)serialization
+    }
+
+    protected ConfigBase(String type) {
+        this.type = type;
+    }
 
     public String getType() {
         return type;

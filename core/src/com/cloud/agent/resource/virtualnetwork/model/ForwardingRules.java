@@ -19,34 +19,24 @@
 
 package com.cloud.agent.resource.virtualnetwork.model;
 
-public class VmPassword extends ConfigBase {
-    private String ipAddress;
-    private String password;
+public class ForwardingRules extends ConfigBase {
+    ForwardingRule[] rules;
 
-    public VmPassword() {
-        super(ConfigBase.VM_PASSWORD);
+    public ForwardingRules() {
+        super(ConfigBase.FORWARDING_RULES);
     }
 
-    public VmPassword(String ipAddress, String password) {
-        super(ConfigBase.VM_PASSWORD);
-        this.ipAddress = ipAddress;
-        this.password = password;
+    public ForwardingRules(ForwardingRule[] rules) {
+        super(ConfigBase.FORWARDING_RULES);
+        this.rules = rules;
     }
 
-    public String getIpAddress() {
-        return ipAddress;
+    public ForwardingRule[] getRules() {
+        return rules;
     }
 
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
+    public void setRules(ForwardingRule[] rules) {
+        this.rules = rules;
     }
 
 }
