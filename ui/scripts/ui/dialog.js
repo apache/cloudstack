@@ -464,6 +464,60 @@
                     if (field.defaultValue) {
                         $input.val(strOrFunc(field.defaultValue));
                     }
+                } else if (field.isTokenInput) { // jquery.tokeninput.js
+                    isAsync = true;
+                    selectArgs = {
+                        context: args.context,
+                        response: {
+                            success: function(args) {
+                                function equals(tag1, tag2) {
+                                    return (tag1.name == tag2.name) && (tag1.id == tag2.id);
+                                }
+
+                                function contains(tag, tags)
+                                {
+		                            for (var i = 0; i < tags.length; i++)
+                                    {
+                                        if (equals(tags[i], tag)) return true;
+                                    }
+
+	  	                            return false;
+                                }
+
+                                function unique_tags(tags)
+                                {
+                                    var unique = [];
+
+                                    if (tags != null)
+                                    {
+                                        for (var i = 0; i < tags.length; i++)
+                                        {
+                                            if (!contains(tags[i], unique))
+                                            {
+                                                unique.push(tags[i]);
+                                            }
+                                        }
+                                    }
+
+                                    return unique;
+                                }
+
+                                $input.tokenInput(unique_tags(args.data), { theme: "facebook", preventDuplicates: true });
+                            }
+                        }
+                    };
+
+                    $input = $('<input>').attr({
+                        name: key,
+                        type: 'text'
+                    }).appendTo($value);
+
+                    $.extend(selectArgs, {
+                        $form: $form,
+                        type: 'createForm'
+                    });
+
+                    field.dataProvider(selectArgs);
                 } else if (field.isDatepicker) { //jQuery datepicker
                     $input = $('<input>').attr({
                         name: key,

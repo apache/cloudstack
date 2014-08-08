@@ -32,6 +32,7 @@
         <title></title>
         <link type="text/css" rel="stylesheet" href="lib/reset.css"/>
         <link type="text/css" rel="stylesheet" href="css/cloudstack3.css" />
+        <link type="text/css" rel="stylesheet" href="css/token-input-facebook.css" />
         <c:if test="${!empty cookie.lang && cookie.lang.value != 'en'}">
             <link type="text/css" rel="stylesheet" href="css/cloudstack3.${cookie.lang.value}.css" />
         </c:if>
@@ -1688,6 +1689,8 @@
         <script src="lib/flot/jquery.flot.stack.js" type="text/javascript"></script>
         <script src="lib/flot/jquery.flot.symbol.js" type="text/javascript"></script>
         <script src="lib/flot/jquery.flot.threshold.js" type="text/javascript"></script>
+        <!-- jquery.tokeninput.js -->
+        <script src="lib/jquery.tokeninput.js" type="text/javascript"></script>
         <!-- CloudStack -->
         <script type="text/javascript" src="scripts/ui/core.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/ui/utils.js?t=<%=now%>"></script>

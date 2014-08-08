@@ -16887,8 +16887,31 @@
                                     storageTags: {
                                         label: 'label.storage.tags',
                                         docID: 'helpPrimaryStorageTags',
+                                        isTokenInput: true,
                                         validation: {
                                             required: false
+                                        },
+                                        dataProvider: function(args) {
+                                            $.ajax({
+                                                url: createURL("listStorageTags"),
+                                                dataType: "json",
+                                                success: function (json) {
+                                                    var item = json.liststoragetagsresponse.storagetag;
+                                                    var tags = $.map(item, function (tag) {
+                                                        return {
+                                                                   id: tag.name,
+                                                                   name: tag.name
+                                                               };
+                                                    });
+                                                    args.response.success({
+                                                        data: tags
+                                                    });
+                                                },
+                                                error: function (XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
                                         }
                                     }
                                     //always appear (end)
