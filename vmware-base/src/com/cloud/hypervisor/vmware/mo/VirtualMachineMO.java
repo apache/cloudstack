@@ -108,13 +108,11 @@ import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.script.Script;
 
 public class VirtualMachineMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineMO.class);
     private static final ExecutorService MonitorServiceExecutor = Executors.newCachedThreadPool(new NamedThreadFactory("VM-Question-Monitor"));
-    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_DISK_ATTACH = 5 * 60; // Wait for a maximum of 5 minutes to prepare a disk while VM is being re-configured with another disk
     private ManagedObjectReference _vmEnvironmentBrowser = null;
 
     public VirtualMachineMO(VmwareContext context, ManagedObjectReference morVm) {
@@ -1053,90 +1051,62 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs) throws Exception {
-        // Add lock to ensure that only one disk is being prepared and attached to the VM at a time
-        GlobalLock lock = GlobalLock.getInternLock("disk.attach");
-        try {
-            s_logger.trace("Grabbing lock to ensure that only one disk is being prepared and attached to the VM at a time.");
-            if (lock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_DISK_ATTACH)) {
-                try {
-                    if (s_logger.isTraceEnabled())
-                        s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + new Gson().toJson(vmdkDatastorePathChain) +
-                                ", datastore: " + morDs.getValue());
 
-                    VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, getScsiDeviceControllerKey(), vmdkDatastorePathChain, morDs, -1, 1);
-                    VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-                    VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+        if (s_logger.isTraceEnabled())
+            s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + new Gson().toJson(vmdkDatastorePathChain) +
+                    ", datastore: " + morDs.getValue());
 
-                    deviceConfigSpec.setDevice(newDisk);
-                    deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+        VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, getScsiDeviceControllerKey(), vmdkDatastorePathChain, morDs, -1, 1);
+        VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
+        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
-                    reConfigSpec.getDeviceChange().add(deviceConfigSpec);
+        deviceConfigSpec.setDevice(newDisk);
+        deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
-                    ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-                    boolean result = _context.getVimClient().waitForTask(morTask);
+        reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
-                    if (!result) {
-                        if (s_logger.isTraceEnabled())
-                            s_logger.trace("vCenter API trace - attachDisk() done(failed)");
-                        throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-                    }
+        ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
+        boolean result = _context.getVimClient().waitForTask(morTask);
 
-                    _context.waitForTaskProgressDone(morTask);
-
-                    if (s_logger.isTraceEnabled())
-                        s_logger.trace("vCenter API trace - attachDisk() done(successfully)");
-                } finally {
-                    lock.unlock();
-                }
-            } else {
-                s_logger.warn("Couldn't get lock on VM: " + _mor.getValue() + " to attach disk: " + vmdkDatastorePathChain + " ,maybe another disk is being attached to the VM.");
-            }
-        } finally {
-            lock.releaseRef();
+        if (!result) {
+            if (s_logger.isTraceEnabled())
+                s_logger.trace("vCenter API trace - attachDisk() done(failed)");
+            throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
+
+        _context.waitForTaskProgressDone(morTask);
+
+        if (s_logger.isTraceEnabled())
+            s_logger.trace("vCenter API trace - attachDisk() done(successfully)");
     }
 
     public void attachDisk(Pair<String, ManagedObjectReference>[] vmdkDatastorePathChain, int controllerKey) throws Exception {
-        // Add lock to ensure that only one disk is being prepared and attached to the VM at a time
-        GlobalLock lock = GlobalLock.getInternLock("disk.attach");
-        try {
-            s_logger.trace("Grabbing lock to ensure that only one disk is being prepared and attached to the VM at a time.");
-            if (lock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_DISK_ATTACH)) {
-                try {
-                     if (s_logger.isTraceEnabled())
-                         s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + new Gson().toJson(vmdkDatastorePathChain));
 
-                     VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, controllerKey, vmdkDatastorePathChain, -1, 1);
-                     VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-                     VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+        if (s_logger.isTraceEnabled())
+            s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + new Gson().toJson(vmdkDatastorePathChain));
 
-                     deviceConfigSpec.setDevice(newDisk);
-                     deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+        VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, controllerKey, vmdkDatastorePathChain, -1, 1);
+        VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
+        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
-                     reConfigSpec.getDeviceChange().add(deviceConfigSpec);
+        deviceConfigSpec.setDevice(newDisk);
+        deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
-                     ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-                     boolean result = _context.getVimClient().waitForTask(morTask);
+        reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
-                     if (!result) {
-                         if (s_logger.isTraceEnabled())
-                             s_logger.trace("vCenter API trace - attachDisk() done(failed)");
-                         throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-                     }
+        ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
+        boolean result = _context.getVimClient().waitForTask(morTask);
 
-                     _context.waitForTaskProgressDone(morTask);
-
-                     if (s_logger.isTraceEnabled())
-                         s_logger.trace("vCenter API trace - attachDisk() done(successfully)");
-                } finally {
-                    lock.unlock();
-                }
-            } else {
-                s_logger.warn("Couldn't get lock on VM: " + _mor.getValue() + " to attach disk: " + vmdkDatastorePathChain + " ,maybe another disk is being attached to the VM.");
-            }
-        } finally {
-            lock.releaseRef();
+        if (!result) {
+            if (s_logger.isTraceEnabled())
+                s_logger.trace("vCenter API trace - attachDisk() done(failed)");
+            throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
+
+        _context.waitForTaskProgressDone(morTask);
+
+        if (s_logger.isTraceEnabled())
+            s_logger.trace("vCenter API trace - attachDisk() done(successfully)");
     }
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath
