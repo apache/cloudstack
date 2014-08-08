@@ -23,11 +23,11 @@ public class IpAssociation extends ConfigBase {
     private IpAddress[] ipAddress;
 
     public IpAssociation() {
-        setType(IP_ASSOCIATION);
+        super(IP_ASSOCIATION);
     }
 
     public IpAssociation(IpAddress[] ipAddress) {
-        setType(IP_ASSOCIATION);
+        super(IP_ASSOCIATION);
         this.ipAddress = ipAddress;
     }
 

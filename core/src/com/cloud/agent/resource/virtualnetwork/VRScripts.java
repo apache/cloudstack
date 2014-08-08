@@ -27,6 +27,7 @@ public class VRScripts {
     protected final static String VM_METADATA_CONFIG = "vm_metadata.json";
     protected final static String VM_DHCP_CONFIG = "vm_dhcp_entry.json";
     protected final static String VM_PASSWORD_CONFIG = "vm_password.json";
+    protected static final String FORWARDING_RULES_CONFIG = "forwarding_rules.json";
 
     protected final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
     protected final static int DEFAULT_EXECUTEINVR_TIMEOUT = 120; //Seconds

@@ -59,6 +59,8 @@ import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.resource.virtualnetwork.model.AclRule;
 import com.cloud.agent.resource.virtualnetwork.model.AllAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
+import com.cloud.agent.resource.virtualnetwork.model.ForwardingRule;
+import com.cloud.agent.resource.virtualnetwork.model.ForwardingRules;
 import com.cloud.agent.resource.virtualnetwork.model.GuestNetwork;
 import com.cloud.agent.resource.virtualnetwork.model.IcmpAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.IpAddress;
@@ -214,20 +216,17 @@ public class ConfigHelper {
     }
 
     private static List<ConfigItem> generateConfig(SetPortForwardingRulesCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
+        List<ForwardingRule> rules = new ArrayList<ForwardingRule>();
 
         for (PortForwardingRuleTO rule : cmd.getRules()) {
-            StringBuilder args = new StringBuilder();
-            args.append(rule.revoked() ? "-D" : "-A");
-            args.append(" -P ").append(rule.getProtocol().toLowerCase());
-            args.append(" -l ").append(rule.getSrcIp());
-            args.append(" -p ").append(rule.getStringSrcPortRange());
-            args.append(" -r ").append(rule.getDstIp());
-            args.append(" -d ").append(rule.getStringDstPortRange());
-            cfg.add(new ScriptConfigItem(VRScripts.FIREWALL_NAT, args.toString()));
+            ForwardingRule fwdRule = new ForwardingRule(rule.revoked(), rule.getProtocol().toLowerCase(), rule.getSrcIp(), rule.getStringSrcPortRange(), rule.getDstIp(),
+                    rule.getStringDstPortRange());
+            rules.add(fwdRule);
         }
 
-        return cfg;
+        ForwardingRules ruleSet = new ForwardingRules(rules.toArray(new ForwardingRule[rules.size()]));
+
+        return generateConfigItems(ruleSet);
     }
 
     private static List<ConfigItem> generateConfig(SetStaticNatRulesCommand cmd) {
@@ -559,23 +558,6 @@ public class ConfigHelper {
         return cfg;
     }
 
-    private static List<ConfigItem> generateConfig(SetPortForwardingRulesVpcCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
-
-        for (PortForwardingRuleTO rule : cmd.getRules()) {
-            String args = rule.revoked() ? "-D" : "-A";
-            args += " -P " + rule.getProtocol().toLowerCase();
-            args += " -l " + rule.getSrcIp();
-            args += " -p " + rule.getStringSrcPortRange();
-            args += " -r " + rule.getDstIp();
-            args += " -d " + rule.getStringDstPortRange().replace(":", "-");
-
-            cfg.add(new ScriptConfigItem(VRScripts.VPC_PORTFORWARDING, args));
-        }
-
-        return cfg;
-    }
-
     private static List<ConfigItem> generateConfig(SetStaticRouteCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
@@ -612,6 +594,9 @@ public class ConfigHelper {
         String destinationFile;
 
         switch (configuration.getType()) {
+        case ConfigBase.FORWARDING_RULES:
+            destinationFile = VRScripts.FORWARDING_RULES_CONFIG;
+            break;
         case ConfigBase.GUEST_NETWORK:
             destinationFile = VRScripts.GUEST_NETWORK_CONFIG;
             break;
