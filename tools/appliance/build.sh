@@ -31,7 +31,7 @@ build_date=`date +%Y-%m-%d`
 branch=
 
 if [ -z "$branch" ] ; then
-  branch=`git status | grep '# On branch' | awk '{print $4}'`
+  branch=`git status | grep 'On branch' | awk '{print $3}'`
 fi
 
 if [ -z "$branch" ] ; then
