@@ -31,7 +31,7 @@ Description: CloudStack agent
 
 Package: cloudstack-usage
 Architecture: all
-Depends: openjdk-7-jre, cloudstack-common (= ${source:Version}), jsvc
+Depends: openjdk-7-jre, cloudstack-common (= ${source:Version}), jsvc, libmysql-java
 Description: CloudStack usage monitor
  The CloudStack usage monitor provides usage accounting across the entire cloud for
  cloud operators to charge based on usage parameters.

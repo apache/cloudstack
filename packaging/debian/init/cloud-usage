@@ -43,7 +43,7 @@ unset OPTIONS
 [ -r /etc/default/"$SHORTNAME" ] && source /etc/default/"$SHORTNAME"
 
 # The first existing directory is used for JAVA_HOME (if JAVA_HOME is not defined in $DEFAULT)
-JDK_DIRS="/usr/lib/jvm/java-7-openjdk-amd64 /usr/lib/jvm/java-7-openjdk-i386 /usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-openjdk-i386 /usr/lib/jvm/java-6-openjdk-amd64 /usr/lib/jvm/java-6-sun"
+JDK_DIRS="/usr/lib/jvm/java-7-openjdk-amd64 /usr/lib/jvm/java-7-openjdk-i386 /usr/lib/jvm/java-7-oracle /usr/lib/jvm/java-7-openjdk /usr/lib/jvm/java-7-sun"
 
 for jdir in $JDK_DIRS; do
     if [ -r "$jdir/bin/java" -a -z "${JAVA_HOME}" ]; then
@@ -57,7 +57,7 @@ PCP=`ls /usr/share/cloudstack-usage/plugins/*.jar 2>/dev/null | tr '\n' ':' | se
 
 # We need to append the JSVC daemon JAR to the classpath
 # AgentShell implements the JSVC daemon methods
-export CLASSPATH="/usr/share/java/commons-daemon.jar:$UCP:$PCP:/etc/cloudstack/usage"
+export CLASSPATH="/usr/share/java/commons-daemon.jar:/usr/share/java/mysql-connector-java.jar:$UCP:$PCP:/etc/cloudstack/usage"
 
 start() {
     if [ -s "$PIDFILE" ] && kill -0 $(cat "$PIDFILE") >/dev/null 2>&1; then
