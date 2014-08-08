@@ -474,8 +474,6 @@
             loginArgs.hideLoginScreen = true;
         }
 
-        cloudStack.uiCustom.login(loginArgs);
-
         // Localization
         if (!$.isFunction(cloudStack.localizationFn)) { // i.e., localize is overridden by a plugin/module
             cloudStack.localizationFn = function(str) {
@@ -483,6 +481,11 @@
             };
         }
 
-        document.title = _l('label.app.name');
+        // Localize validation messages
+        cloudStack.localizeValidatorMessages();
+
+        cloudStack.uiCustom.login(loginArgs);
+
+        document.title = _l('label.app.name');            
     });
 })(cloudStack, jQuery);
