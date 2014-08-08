@@ -114,8 +114,8 @@ class TestDeployVM(cloudstackTestCase):
         # 2. root disk has new size per listVolumes
         # 3. Rejects non-supported hypervisor types
         """
-        if(self.hypervisor == 'kvm'):
-            newrootsize = (self.template.size >> 30) + 2 
+        if(self.hypervisor.lower() == 'kvm'):
+            newrootsize = (self.template.size >> 30) + 2
             self.virtual_machine = VirtualMachine.create(
                 self.apiclient,
                 self.testdata["virtual_machine"],
@@ -206,9 +206,9 @@ class TestDeployVM(cloudstackTestCase):
 
     @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true")
     def test_01_deploy_vm_root_resize(self):
-        """Test proper failure to deploy virtual machine with rootdisksize of 0 
+        """Test proper failure to deploy virtual machine with rootdisksize of 0
         """
-        if (self.hypervisor == 'kvm'):
+        if (self.hypervisor.lower() == 'kvm'):
             newrootsize = 0
             success = False
             try:
@@ -236,9 +236,9 @@ class TestDeployVM(cloudstackTestCase):
     def test_02_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize less than template size
         """
-        if (self.hypervisor == 'kvm'):
+        if (self.hypervisor.lower() == 'kvm'):
             newrootsize = (self.template.size >> 30) - 1
-            
+
             self.assertEqual(newrootsize > 0, True, "Provided template is less than 1G in size, cannot run test")
 
             success = False
