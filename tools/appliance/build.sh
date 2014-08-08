@@ -31,7 +31,7 @@ build_date=`date +%Y-%m-%d`
 branch=
 
 if [ -z "$branch" ] ; then
-  branch=`git name-rev --no-undefined --name-only HEAD 2>/dev/null || echo unknown | sed -e 's/remotes\/.*\///g'`
+  branch=`(git name-rev --no-undefined --name-only HEAD 2>/dev/null || echo unknown) | sed -e 's/remotes\/.*\///g'`
 fi
 
 rootdir=$PWD
