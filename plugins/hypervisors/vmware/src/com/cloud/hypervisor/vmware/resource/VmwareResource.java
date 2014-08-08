@@ -1999,12 +1999,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private VirtualMachineDiskInfo getMatchingExistingDisk(VirtualMachineDiskInfoBuilder diskInfoBuilder, DiskTO vol) {
         if (diskInfoBuilder != null) {
             VolumeObjectTO volume = (VolumeObjectTO)vol.getData();
+            String dsName = volume.getDataStore().getUuid().replace("-", "");
 
             Map<String, String> details = vol.getDetails();
             boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
 
             VirtualMachineDiskInfo diskInfo =
-                    diskInfoBuilder.getDiskInfoByBackingFileBaseName(isManaged ? new DatastoreFile(volume.getPath()).getFileBaseName() : volume.getPath());
+                    diskInfoBuilder.getDiskInfoByBackingFileBaseName(isManaged ? new DatastoreFile(volume.getPath()).getFileBaseName() : volume.getPath(), dsName);
             if (diskInfo != null) {
                 s_logger.info("Found existing disk info from volume path: " + volume.getPath());
                 return diskInfo;
@@ -2017,7 +2018,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         if (disks.length > 0) {
                             for (String diskPath : disks) {
                                 DatastoreFile file = new DatastoreFile(diskPath);
-                                diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(file.getFileBaseName());
+                                diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(file.getFileBaseName(), dsName);
                                 if (diskInfo != null) {
                                     s_logger.info("Found existing disk from chain info: " + diskPath);
                                     return diskInfo;
