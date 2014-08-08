@@ -29,11 +29,11 @@ public class NetworkACL extends ConfigBase {
     private AclRule[] egressRules;
 
     public NetworkACL() {
-        setType(ConfigBase.NETWORK_ACL);
+        super(ConfigBase.NETWORK_ACL);
     }
 
     public NetworkACL(String device, String macAddress, boolean privateGatewayAcl, String nicIp, String nicNetmask, AclRule[] ingressRules, AclRule[] egressRules) {
-        setType(ConfigBase.NETWORK_ACL);
+        super(ConfigBase.NETWORK_ACL);
         this.device = device;
         this.macAddress = macAddress;
         this.privateGatewayAcl = privateGatewayAcl;
