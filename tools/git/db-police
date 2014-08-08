@@ -42,7 +42,7 @@ check_changes() {
         alert_command="command -v festival && $(echo '$1' | festival --tts)"
     fi
 
-    echo "$changed_files" | grep --quiet "setup/db" && eval $alert_command
+    echo "$changed_files" | (grep --quiet "setup/db" && eval $alert_command) || true
 }
 
 check_changes "Alert, somebody changed CloudStack schemas"
