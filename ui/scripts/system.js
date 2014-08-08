@@ -17015,6 +17015,11 @@
                                     array1.push("&tags=" + todb(args.data.storageTags));
                                 }
 
+                                if ("custom" in args.response) {                                
+                                    args.response.custom(array1);  
+                                    return;                                              
+                                }                                
+                                
                                 $.ajax({
                                     url: createURL("createStoragePool" + array1.join("")),
                                     dataType: "json",
