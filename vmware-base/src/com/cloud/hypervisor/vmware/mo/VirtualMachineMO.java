@@ -1056,25 +1056,27 @@ public class VirtualMachineMO extends BaseMO {
             s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + new Gson().toJson(vmdkDatastorePathChain) +
                     ", datastore: " + morDs.getValue());
 
-        VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, getScsiDeviceControllerKey(), vmdkDatastorePathChain, morDs, -1, 1);
-        VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+        synchronized (_mor.getValue().intern()) {
+            VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, getScsiDeviceControllerKey(), vmdkDatastorePathChain, morDs, -1, 1);
+            VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
+            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
-        deviceConfigSpec.setDevice(newDisk);
-        deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+            deviceConfigSpec.setDevice(newDisk);
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
-        reConfigSpec.getDeviceChange().add(deviceConfigSpec);
+            reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
-        ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-        boolean result = _context.getVimClient().waitForTask(morTask);
+            ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
+            boolean result = _context.getVimClient().waitForTask(morTask);
 
-        if (!result) {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("vCenter API trace - attachDisk() done(failed)");
-            throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            if (!result) {
+                if (s_logger.isTraceEnabled())
+                    s_logger.trace("vCenter API trace - attachDisk() done(failed)");
+                throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            }
+
+            _context.waitForTaskProgressDone(morTask);
         }
-
-        _context.waitForTaskProgressDone(morTask);
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - attachDisk() done(successfully)");
@@ -1085,25 +1087,27 @@ public class VirtualMachineMO extends BaseMO {
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + new Gson().toJson(vmdkDatastorePathChain));
 
-        VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, controllerKey, vmdkDatastorePathChain, -1, 1);
-        VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+        synchronized (_mor.getValue().intern()) {
+            VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, controllerKey, vmdkDatastorePathChain, -1, 1);
+            VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
+            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
-        deviceConfigSpec.setDevice(newDisk);
-        deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+            deviceConfigSpec.setDevice(newDisk);
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
-        reConfigSpec.getDeviceChange().add(deviceConfigSpec);
+            reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
-        ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-        boolean result = _context.getVimClient().waitForTask(morTask);
+            ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
+            boolean result = _context.getVimClient().waitForTask(morTask);
 
-        if (!result) {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("vCenter API trace - attachDisk() done(failed)");
-            throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            if (!result) {
+                if (s_logger.isTraceEnabled())
+                    s_logger.trace("vCenter API trace - attachDisk() done(failed)");
+                throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            }
+
+            _context.waitForTaskProgressDone(morTask);
         }
-
-        _context.waitForTaskProgressDone(morTask);
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - attachDisk() done(successfully)");
