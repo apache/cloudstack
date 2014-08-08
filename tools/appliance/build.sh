@@ -31,12 +31,9 @@ build_date=`date +%Y-%m-%d`
 branch=
 
 if [ -z "$branch" ] ; then
-  branch=$(git rev-parse --abbrev-ref HEAD)
+  branch=`git symbolic-ref --short -q HEAD 2>/dev/null || echo unknown`
 fi
 
-if [ -z "$branch" ] ; then
-    branch=unknown
-fi
 rootdir=$PWD
 
 # Initialize veewee and dependencies
