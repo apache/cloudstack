@@ -31,6 +31,7 @@ public abstract class ConfigBase {
     public static final String VPN_USER_LIST = "vpnuserlist";
     public static final String STATICNAT_RULES = "staticnatrules";
     public static final String IP_ALIAS_CONFIG = "ipaliases";
+    public static final String SITE2SITEVPN = "site2sitevpn";
 
     private String type = UNKNOWN;
 

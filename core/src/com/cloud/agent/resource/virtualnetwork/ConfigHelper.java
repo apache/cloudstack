@@ -69,6 +69,7 @@ import com.cloud.agent.resource.virtualnetwork.model.IpAliases;
 import com.cloud.agent.resource.virtualnetwork.model.IpAssociation;
 import com.cloud.agent.resource.virtualnetwork.model.NetworkACL;
 import com.cloud.agent.resource.virtualnetwork.model.ProtocolAclRule;
+import com.cloud.agent.resource.virtualnetwork.model.Site2SiteVpn;
 import com.cloud.agent.resource.virtualnetwork.model.StaticNatRule;
 import com.cloud.agent.resource.virtualnetwork.model.StaticNatRules;
 import com.cloud.agent.resource.virtualnetwork.model.TcpAclRule;
@@ -122,9 +123,9 @@ public class ConfigHelper {
         } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
             cfg = generateConfig((RemoteAccessVpnCfgCommand)cmd);
         } else if (cmd instanceof VpnUsersCfgCommand) {
-            cfg = generateConfig((VpnUsersCfgCommand)cmd); // Migrated
+            cfg = generateConfig((VpnUsersCfgCommand)cmd); // Migrated (SB)
         } else if (cmd instanceof Site2SiteVpnCfgCommand) {
-            cfg = generateConfig((Site2SiteVpnCfgCommand)cmd);
+            cfg = generateConfig((Site2SiteVpnCfgCommand)cmd);  // Migrated (SB)
         } else if (cmd instanceof SetMonitorServiceCommand) {
             cfg = generateConfig((SetMonitorServiceCommand)cmd);
         } else if (cmd instanceof SetupGuestNetworkCommand) {
@@ -303,12 +304,6 @@ public class ConfigHelper {
         return cfg;
     }
 
-    private static List<ConfigItem> generateConfig(VmDataCommand cmd) {
-        VmData vmData = new VmData(cmd.getVmIpAddress(), cmd.getVmData());
-
-        return generateConfigItems(vmData);
-    }
-
     private static List<ConfigItem> generateConfig(SavePasswordCommand cmd) {
         VmPassword vmPassword = new VmPassword(cmd.getVmIpAddress(), cmd.getPassword());
 
@@ -378,54 +373,20 @@ public class ConfigHelper {
         return cfg;
     }
 
-    private static List<ConfigItem> generateConfig(Site2SiteVpnCfgCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
 
-        String args = "";
-        if (cmd.isCreate()) {
-            args += "-A";
-            args += " -l ";
-            args += cmd.getLocalPublicIp();
-            args += " -n ";
-            args += cmd.getLocalGuestCidr();
-            args += " -g ";
-            args += cmd.getLocalPublicGateway();
-            args += " -r ";
-            args += cmd.getPeerGatewayIp();
-            args += " -N ";
-            args += cmd.getPeerGuestCidrList();
-            args += " -e ";
-            args += "\"" + cmd.getEspPolicy() + "\"";
-            args += " -i ";
-            args += "\"" + cmd.getIkePolicy() + "\"";
-            args += " -t ";
-            args += Long.toString(cmd.getIkeLifetime());
-            args += " -T ";
-            args += Long.toString(cmd.getEspLifetime());
-            args += " -s ";
-            args += "\"" + cmd.getIpsecPsk() + "\"";
-            args += " -d ";
-            if (cmd.getDpd()) {
-                args += "1";
-            } else {
-                args += "0";
-            }
-            if (cmd.isPassive()) {
-                args += " -p ";
-            }
-        } else {
-            args += "-D";
-            args += " -r ";
-            args += cmd.getPeerGatewayIp();
-            args += " -n ";
-            args += cmd.getLocalGuestCidr();
-            args += " -N ";
-            args += cmd.getPeerGuestCidrList();
-        }
+    private static List<ConfigItem> generateConfig(VmDataCommand cmd) {
+        VmData vmData = new VmData(cmd.getVmIpAddress(), cmd.getVmData());
 
-        cfg.add(new ScriptConfigItem(VRScripts.S2SVPN_IPSEC, args));
-        return cfg;
+        return generateConfigItems(vmData);
     }
+
+    private static List<ConfigItem> generateConfig(Site2SiteVpnCfgCommand cmd) {
+        Site2SiteVpn site2siteVpn = new Site2SiteVpn(cmd.getLocalPublicIp(), cmd.getLocalGuestCidr(), cmd.getLocalPublicGateway(), cmd.getPeerGatewayIp(),
+                cmd.getPeerGuestCidrList(), cmd.getEspPolicy(), cmd.getIkePolicy(), cmd.getIpsecPsk(), cmd.getIkeLifetime(), cmd.getEspLifetime(), cmd.isCreate(), cmd.getDpd(),
+                cmd.isPassive());
+        return generateConfigItems(site2siteVpn);
+    }
+
 
     private static List<ConfigItem> generateConfig(SetMonitorServiceCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
@@ -589,6 +550,9 @@ public class ConfigHelper {
             break;
         case ConfigBase.VPN_USER_LIST:
             destinationFile = VRScripts.VPN_USER_LIST_CONFIG;
+            break;
+        case ConfigBase.SITE2SITEVPN:
+            destinationFile = VRScripts.SITE_2_SITE_VPN_CONFIG;
             break;
         default:
             throw new CloudRuntimeException("Unable to process the configuration for " + configuration.getType());
