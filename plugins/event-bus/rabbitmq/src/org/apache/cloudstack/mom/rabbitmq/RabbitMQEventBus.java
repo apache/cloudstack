@@ -60,7 +60,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     private static String username;
     private static String password;
 
-    public static void setVirtualHost(String virtualHost) {
+    public synchronized static void setVirtualHost(String virtualHost) {
         RabbitMQEventBus.virtualHost = virtualHost;
     }
 
@@ -481,8 +481,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     }
 
     @Override
-    public boolean stop() {
-
+    public synchronized boolean stop() {
         if (s_connection.isOpen()) {
             for (String subscriberId : s_subscribers.keySet()) {
                 Ternary<String, Channel, EventSubscriber> subscriberDetails = s_subscribers.get(subscriberId);

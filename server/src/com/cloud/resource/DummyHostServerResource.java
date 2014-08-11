@@ -107,7 +107,7 @@ public class DummyHostServerResource extends ServerResourceBase {
         return true;
     }
 
-    public static int getNextSequenceId() {
+    public synchronized static int getNextSequenceId() {
         return s_nextSequence++;
     }
 
