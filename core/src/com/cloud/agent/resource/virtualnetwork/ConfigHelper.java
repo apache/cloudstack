@@ -23,10 +23,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
@@ -72,11 +68,16 @@ import com.cloud.agent.resource.virtualnetwork.model.UdpAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.VmData;
 import com.cloud.agent.resource.virtualnetwork.model.VmDhcpConfig;
 import com.cloud.agent.resource.virtualnetwork.model.VmPassword;
+import com.cloud.agent.resource.virtualnetwork.model.VpnUser;
+import com.cloud.agent.resource.virtualnetwork.model.VpnUserList;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class ConfigHelper {
     private final static Gson gson;
@@ -116,7 +117,7 @@ public class ConfigHelper {
         } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
             cfg = generateConfig((RemoteAccessVpnCfgCommand)cmd);
         } else if (cmd instanceof VpnUsersCfgCommand) {
-            cfg = generateConfig((VpnUsersCfgCommand)cmd);
+            cfg = generateConfig((VpnUsersCfgCommand)cmd); // Migrated
         } else if (cmd instanceof Site2SiteVpnCfgCommand) {
             cfg = generateConfig((Site2SiteVpnCfgCommand)cmd);
         } else if (cmd instanceof SetMonitorServiceCommand) {
@@ -135,20 +136,16 @@ public class ConfigHelper {
         return cfg;
     }
 
+
     private static List<ConfigItem> generateConfig(VpnUsersCfgCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
+        List<VpnUser> vpnUsers = new LinkedList<VpnUser>();
         for (VpnUsersCfgCommand.UsernamePassword userpwd : cmd.getUserpwds()) {
-            String args = "";
-            if (!userpwd.isAdd()) {
-                args += "-U ";
-                args += userpwd.getUsername();
-            } else {
-                args += "-u ";
-                args += userpwd.getUsernamePassword();
-            }
-            cfg.add(new ScriptConfigItem(VRScripts.VPN_L2TP, args));
+            vpnUsers.add(new VpnUser(userpwd.getUsername(), userpwd.getPassword(), userpwd.isAdd()));
         }
-        return cfg;
+
+        VpnUserList vpnUserList = new VpnUserList(vpnUsers);
+        return generateConfigItems(vpnUserList);
     }
 
     private static List<ConfigItem> generateConfig(RemoteAccessVpnCfgCommand cmd) {
@@ -614,6 +611,9 @@ public class ConfigHelper {
             break;
         case ConfigBase.VM_PASSWORD:
             destinationFile = VRScripts.VM_PASSWORD_CONFIG;
+            break;
+        case ConfigBase.VPN_USER_LIST:
+            destinationFile = VRScripts.VPN_USER_LIST_CONFIG;
             break;
         default:
             throw new CloudRuntimeException("Unable to process the configuration for " + configuration.getType());

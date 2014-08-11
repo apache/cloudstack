@@ -19,33 +19,26 @@
 
 package com.cloud.agent.resource.virtualnetwork.model;
 
-public abstract class ConfigBase {
-    public final static String UNKNOWN = "unknown";
-    public final static String VM_DHCP = "dhcpentry";
-    public final static String IP_ASSOCIATION = "ips";
-    public final static String GUEST_NETWORK = "guestnetwork";
-    public static final String NETWORK_ACL = "networkacl";
-    public static final String VM_METADATA = "vmdata";
-    public static final String VM_PASSWORD = "vmpassword";
-    public static final String FORWARDING_RULES = "forwardrules";
-    public static final String VPN_USER_LIST = "vpnuserlist";
+import java.util.List;
 
-    private String type = UNKNOWN;
+public class VpnUserList extends ConfigBase {
+    private List<VpnUser> vpnUsers;
 
-    private ConfigBase() {
-        // Empty constructor for (de)serialization
+    public VpnUserList() {
+        super(ConfigBase.VPN_USER_LIST);
     }
 
-    protected ConfigBase(String type) {
-        this.type = type;
+    public VpnUserList(List<VpnUser> vpnUsers) {
+        super(ConfigBase.VPN_USER_LIST);
+        this.vpnUsers = vpnUsers;
     }
 
-    public String getType() {
-        return type;
+    public List<VpnUser> getVpnUsers() {
+        return vpnUsers;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setVpnUsers(List<VpnUser> vpnUsers) {
+        this.vpnUsers = vpnUsers;
     }
 
 }
