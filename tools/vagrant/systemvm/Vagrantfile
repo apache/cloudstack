@@ -70,6 +70,10 @@ end
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = 'cloudstack/systemvm'
   config.vm.network 'private_network', ip: VPC_IP, auto_config: false
+  config.vm.network 'private_network', ip: '192.168.56.50' #, auto_config: false
+  config.vm.network 'private_network', ip: '192.168.56.51' #, auto_config: false
+  config.vm.network 'private_network', ip: '192.168.56.52' #, auto_config: false
+
   config.vm.synced_folder 'vagrant', '/vagrant', disabled: true
 
   #noinspection RubyStringKeysInHashInspection
@@ -112,5 +116,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         " template=domP name=#{VPC_NAME} eth0ip=#{VPC_IP}" +
         ' eth0mask=255.255.255.0 type=vpcrouter disable_rp_filter=true'
     vb.customize('pre-boot', ['setextradata', :id, 'VBoxInternal/Devices/pcbios/0/Config/DmiOEMVBoxRev', extra_data])
+    vb.customize ['modifyvm', :id, '--nic1', 'hostonly', '--hostonlyadapter1', 'vboxnet0']
+    vb.customize ['modifyvm', :id, '--nic2', 'hostonly', '--hostonlyadapter2', 'vboxnet0']
+    vb.customize ['modifyvm', :id, '--nic3', 'hostonly', '--hostonlyadapter3', 'vboxnet0']
   end
 end
