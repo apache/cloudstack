@@ -938,7 +938,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 for (final Site2SiteVpnConnectionVO conn : conns) {
                     final Site2SiteVpnConnectionVO lock = _s2sVpnConnectionDao.acquireInLockTable(conn.getId());
                     if (lock == null) {
-                        throw new CloudRuntimeException("Unable to acquire lock on " + lock);
+                        throw new CloudRuntimeException("Unable to acquire lock for site to site vpn connection id " + conn.getId());
                     }
                     try {
                         if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected) {
