@@ -120,11 +120,10 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     }
 
     private void disableRpFilter() {
-        try {
-            FileWriter fstream = new FileWriter("/proc/sys/net/ipv4/conf/eth2/rp_filter");
-            BufferedWriter out = new BufferedWriter(fstream);
+        try (FileWriter fstream = new FileWriter("/proc/sys/net/ipv4/conf/eth2/rp_filter");
+             BufferedWriter out = new BufferedWriter(fstream);)
+        {
             out.write("0");
-            out.close();
         } catch (IOException e) {
             s_logger.warn("Unable to disable rp_filter");
         }
@@ -242,18 +241,18 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 
         if (_localgw != null) {
             String mgmtHost = (String)params.get("host");
-            addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
-
-            String internalDns1 = (String)params.get("internaldns1");
-            if (internalDns1 == null) {
-                s_logger.warn("No DNS entry found during configuration of NfsSecondaryStorage");
-            } else {
-                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns1);
-            }
-
-            String internalDns2 = (String)params.get("internaldns2");
-            if (internalDns2 != null) {
-                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns2);
+            if (_eth1ip != null) {
+                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+                String internalDns1 = (String) params.get("internaldns1");
+                if (internalDns1 == null) {
+                    s_logger.warn("No DNS entry found during configuration of NfsSecondaryStorage");
+                } else {
+                    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns1);
+                }
+                String internalDns2 = (String) params.get("internaldns2");
+                if (internalDns2 != null) {
+                    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns2);
+                }
             }
         }
 
