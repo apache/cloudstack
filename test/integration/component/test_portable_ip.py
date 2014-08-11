@@ -1218,8 +1218,7 @@ class TestDeleteAccount(cloudstackTestCase):
         # 2. Delete account
         # 3. Account should get deleted successfully
 
-        try:
-            portableip = PublicIPAddress.create(
+        portableip = PublicIPAddress.create(
                                     self.apiclient,
                                     accountid=self.account.name,
                                     zoneid=self.zone.id,
@@ -1227,12 +1226,10 @@ class TestDeleteAccount(cloudstackTestCase):
                                     networkid=self.network.id,
                                     isportable=True
                                     )
-            self.account.delete(self.apiclient)
-            with self.assertRaises(Exception):
-                PublicIPAddress.list(self.apiclient,
-                                 id=portableip.ipaddress.id)
-        except Exception as e:
-            self.fail(e)
+        self.account.delete(self.apiclient)
+        list_publicips = PublicIPAddress.list(self.apiclient,
+                                       id=portableip.ipaddress.id)
+        self.assertEqual(list_publicips, None, "List of ip addresses should be empty")
         return
 
     @attr(tags=["advanced", "selfservice"])
@@ -1313,10 +1310,9 @@ class TestDeleteAccount(cloudstackTestCase):
         self.debug("Trying to list the ip address associated with deleted account, \
                 should throw exception")
 
-        with self.assertRaises(Exception):
-            PublicIPAddress.list(self.apiclient,
-                                 id=portableip.ipaddress.id)
-
+        list_publicips = PublicIPAddress.list(self.apiclient,
+                                              id=portableip.ipaddress.id)
+        self.assertEqual(list_publicips, None, "List of ip addresses should be empty")
         return
 
 class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
