@@ -100,7 +100,7 @@ public class PropertiesStorage implements StorageComponent {
     }
 
     @Override
-    public String getName() {
+    public synchronized String getName() {
         return _name;
     }
 

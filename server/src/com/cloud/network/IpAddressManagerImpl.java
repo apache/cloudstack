@@ -1600,7 +1600,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 if (implementedNetwork == null || implementedNetwork.first() == null) {
                     s_logger.warn("Failed to implement the network " + guestNetwork);
                 }
-                guestNetwork = implementedNetwork.second();
+                if (implementedNetwork != null) {
+                    guestNetwork = implementedNetwork.second();
+                }
             } catch (Exception ex) {
                 s_logger.warn("Failed to implement network " + guestNetwork + " elements and resources as a part of" + " network provision due to ", ex);
                 CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id)"

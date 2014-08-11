@@ -278,10 +278,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             // Calculate CPU and RAM capacities
             //     get all hosts...even if they are not in 'UP' state
             List<HostVO> hosts = _resourceMgr.listAllNotInMaintenanceHostsInOneZone(Host.Type.Routing, null);
-            for (HostVO host : hosts) {
-                _capacityMgr.updateCapacityForHost(host);
+            if (hosts != null) {
+                for (HostVO host : hosts) {
+                    _capacityMgr.updateCapacityForHost(host);
+                }
             }
-
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Done executing cpu/ram capacity update");
                 s_logger.debug("Executing storage capacity update");

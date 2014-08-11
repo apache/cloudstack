@@ -3988,11 +3988,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.debug("Creating VLAN " + tag + " on host " + _host.ip + " on device " + nPifr.device);
         }
         VLAN vlan = VLAN.create(conn, nPif, tag, vlanNetwork);
-        VLAN.Record vlanr = vlan.getRecord(conn);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("VLAN is created for " + tag + ".  The uuid is " + vlanr.uuid);
+        if (vlan != null) {
+            VLAN.Record vlanr = vlan.getRecord(conn);
+            if (vlanr != null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("VLAN is created for " + tag + ".  The uuid is " + vlanr.uuid);
+                }
+            }
         }
-
         return vlanNetwork;
     }
 
