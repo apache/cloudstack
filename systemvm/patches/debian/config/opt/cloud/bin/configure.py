@@ -528,13 +528,14 @@ class CsIP:
 
     def post_configure(self):
         """ The steps that must be done after a device is configured """
-        route = CsRoute(self.dev)
-        route.routeTable()
-        CsRule(self.dev).addMark()
-        CsDevice(self.dev).setUp()
-        self.arpPing()
-        CsRpsrfs(self.dev).enable()
-        self.post_config_change("add")
+        if not self.get_type() in [ "control" ]:
+            route = CsRoute(self.dev)
+            route.routeTable()
+            CsRule(self.dev).addMark()
+            CsDevice(self.dev).setUp()
+            self.arpPing()
+            CsRpsrfs(self.dev).enable()
+            self.post_config_change("add")
 
     def get_type(self):
         """ Return the type of the IP
@@ -601,7 +602,6 @@ class CsIP:
             # Remove all IPs on this device
             logging.info("Will remove all configured addresses on device %s", self.dev)
             self.delete("all")
-            return False
         for ip in self.iplist:
             found = False
             for address in bag[self.dev]:
@@ -641,8 +641,6 @@ def main(argv):
     for dev in dbag:
         if dev == "id":
             continue
-        if dev == "eth0":
-            continue
         ip = CsIP(dev)
         for address in dbag[dev]:
             CsRoute(dev).add(address)
@@ -654,7 +652,6 @@ def main(argv):
                 logging.info("Address %s on device %s not configured", ip.ip(), dev)
                 if CsDevice(dev).waitfordevice():
                     ip.configure()
-
 
 if __name__ == "__main__":
     main(sys.argv)
