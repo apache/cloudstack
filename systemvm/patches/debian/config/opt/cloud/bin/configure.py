@@ -376,9 +376,6 @@ class CsDevice:
             vals = line.lstrip().split(':')
             if (not vals[0].startswith("eth")):
                  continue
-            # Ignore control interface for now
-            if vals[0] == 'eth0':
-                continue
             self.devlist.append(vals[0])
 
 
