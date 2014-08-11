@@ -24,8 +24,8 @@ basedir = File.dirname(__FILE__)
 VAGRANTFILE_API_VERSION = '2'
 
 unless ENV['VPC_IP']
-  puts 'You did not specify the VPC IP by settings the VPC_IP environment variable'
-  puts 'Using the default VPC_IP=192.168.56.30'
+  STDERR.puts 'You did not specify the VPC IP by settings the VPC_IP environment variable'
+  STDERR.puts 'Using the default VPC_IP=192.168.56.30'
 end
 VPC_IP = ENV['VPC_IP'] || '192.168.56.30'
 VPC_NAME='r-' + VPC_IP.split('.').last + '-VM'
@@ -34,29 +34,29 @@ if ARGV[0] == 'up'
   iso_util=''
   case CONFIG['host_os']
     when /mswin|windows/i
-      puts 'Windows is not supported'
+      STDERR.puts 'Windows is not supported'
       exit 1
     when /linux|arch/i
       iso_util = "mkisofs -J -o #{basedir}/systemvm.iso #{basedir}/iso"
     when /sunos|solaris/i
-      puts 'Solaris is not supported'
+      STDERR.puts 'Solaris is not supported'
       exit 1
     when /darwin/i
       iso_util = "hdiutil makehybrid -iso -joliet -o #{basedir}/systemvm.iso #{basedir}/iso/"
     else
-      puts 'This OS is not supported'
+      STDERR.puts 'This OS is not supported'
       exit 1
   end
 
   system "rm -rf #{basedir}/systemvm.iso"
   system "mkdir -p #{basedir}/iso/"
   unless File.exist? "#{basedir}/../../../systemvm/dist/cloud-scripts.tgz"
-    puts 'No cloud-scripts.tgz found. Did you run the maven build?'
+    STDERR.puts 'No cloud-scripts.tgz found. Did you run the maven build?'
     exit 1
   end
   system "cp #{basedir}/../../../systemvm/dist/cloud-scripts.tgz #{basedir}/iso/"
   unless File.exist? "#{basedir}/../../../systemvm/dist/systemvm.zip"
-    puts 'No systemvm.zip found. Did you run the maven build?'
+    STDERR.puts 'No systemvm.zip found. Did you run the maven build?'
     exit 1
   end
   system "cp #{basedir}/../../../systemvm/dist/systemvm.zip #{basedir}/iso/"
