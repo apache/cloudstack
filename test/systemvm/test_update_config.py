@@ -23,6 +23,8 @@ from fabric.api import hide
 import json
 import random
 import datetime
+from envassert import file, process, package, user, group, port, cron, detect, ip
+import copy
 
 try:
     from . import SystemVMTestCase, has_line, print_doc
@@ -47,7 +49,8 @@ class UpdateConfigTestCase(SystemVMTestCase):
                 "netmask": "255.255.255.0",
                 "vif_mac_address": "06:cb:aa:00:00:03",
                 "nic_dev_id": 1,
-                "new_nic": False
+                "new_nic": False,
+                "nw_type": "public"
             }
         ],
         "type": "ips"
@@ -60,7 +63,6 @@ class UpdateConfigTestCase(SystemVMTestCase):
         with hide("everything"):
             result = run("python /opt/cloud/bin/update_config.py update_config_test.json",
                          timeout=600, warn_only=True)
-            print result
             assert result.succeeded, 'update_config.py ran without errors'
             assert result.find("Convergence is achieved") >= 0, 'update_config.py should report convergence'
 
@@ -90,30 +92,58 @@ class UpdateConfigTestCase(SystemVMTestCase):
 
     @attr(tags=["systemvm"], required_hardware="true")
     def test_various_random_ip_addresses(self):
+        buffer = []
         r = random.Random()
         r.seed()
         for i in range(0, 10):
+            ip_address = {}
             # todo need to know what kind of configurations are valid!
             config = deep_copy(self.basic_config)
             ip_address = deep_copy(self.basic_config["ip_address"][0])
-            ip_address["public_ip"] = "10.0.2.%d" % (i + 103,)
+            ip_address["public_ip"] = "10.0.2.%d" % (i + 103)
             ip_address["source_nat"] = r.choice((True, False))
-            ip_address["add"] = r.choice((True, False))
+            ip_address["add"] = True
             ip_address["one_to_one_nat"] = r.choice((True, False))
             ip_address["first_i_p"] = r.choice((True, False))
-            ip_address["nic_dev_id"] = r.choice((2, 3))
-            if ip_address["nic_dev_id"] > 0:
-                ip_address["new_nic"] = True
-            else:
-                ip_address["new_nic"] = False
+            ip_address["nic_dev_id"] = 3
             config["ip_address"].append(ip_address)
             # runs a bunch of times adding an IP address each time
             self.update_config(config)
+            ip_address["add"] = False
+            buffer.append(copy.deepcopy(ip_address))
             self.check_no_errors()
             self.clear_log()
-        # run again with just the basic config; this should remove the IP addresses?
-        self.update_config(self.basic_config)
+            assert ip.has_ip("%s/24" % ip_address["public_ip"], "eth%s" % ip_address["nic_dev_id"])
+        # Now delete all the IPs we just made
+        for ips in buffer:
+            config = copy.deepcopy(self.basic_config)
+            config["ip_address"].append(ips)
+            self.update_config(config)
+            assert ip.has_ip("%s/24" % ips["public_ip"], "eth%s" % ips["nic_dev_id"]) is False
 
+    def test_create_guest_network(self):
+        config = { "add":True,
+                   "mac_address":"02:00:56:36:00:02",
+                   "device":"eth4",
+                   "router_guest_ip":"172.16.1.1",
+                   "router_guest_gateway":"172.16.1.0",
+                   "router_guest_netmask":"255.255.255.0",
+                   "cidr":"24",
+                   "dns":"8.8.8.8,8.8.8.4",
+                   "domain_name":"devcloud.local",
+                   "type":"guestnetwork"
+                   }
+        self.update_config(config)
+        assert ip.has_ip("172.16.1.1/24", "eth4")
+        assert process.is_up("apache2") is True
+        assert process.is_up("dnsmasq") is True
+        assert port.is_listening(80)
+        assert port.is_listening(53)
+        assert port.is_listening(53)
+        assert port.is_listening(67)
+        config['add'] = False
+        self.update_config(config)
+        assert ip.has_ip("172.16.1.1/24", "eth4") is False
 
 if __name__ == '__main__':
     import unittest

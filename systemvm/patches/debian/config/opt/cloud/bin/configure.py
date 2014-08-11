@@ -339,6 +339,8 @@ class CsGuestNetwork:
         for dev in dbag:
             if dev == "id":
                 continue
+            if len(dbag[dev]) == 0:
+                continue
             if dev == device:
                 self.data = dbag[dev][0]
 
