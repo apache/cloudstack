@@ -23,6 +23,10 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
@@ -60,6 +64,8 @@ import com.cloud.agent.resource.virtualnetwork.model.ForwardingRules;
 import com.cloud.agent.resource.virtualnetwork.model.GuestNetwork;
 import com.cloud.agent.resource.virtualnetwork.model.IcmpAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.IpAddress;
+import com.cloud.agent.resource.virtualnetwork.model.IpAddressAlias;
+import com.cloud.agent.resource.virtualnetwork.model.IpAliases;
 import com.cloud.agent.resource.virtualnetwork.model.IpAssociation;
 import com.cloud.agent.resource.virtualnetwork.model.NetworkACL;
 import com.cloud.agent.resource.virtualnetwork.model.ProtocolAclRule;
@@ -77,9 +83,6 @@ import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 public class ConfigHelper {
     private final static Gson gson;
@@ -91,7 +94,7 @@ public class ConfigHelper {
     public static List<ConfigItem> generateCommandCfg(NetworkElementCommand cmd) {
         List<ConfigItem> cfg;
         if (cmd instanceof SetPortForwardingRulesVpcCommand) {
-            cfg = generateConfig((SetPortForwardingRulesVpcCommand)cmd);
+            cfg = generateConfig((SetPortForwardingRulesVpcCommand)cmd); // Migrated
         } else if (cmd instanceof SetPortForwardingRulesCommand) {
             cfg = generateConfig((SetPortForwardingRulesCommand)cmd); // Migrated
         } else if (cmd instanceof SetStaticRouteCommand) {
@@ -105,11 +108,11 @@ public class ConfigHelper {
         } else if (cmd instanceof DhcpEntryCommand) {
             cfg = generateConfig((DhcpEntryCommand)cmd);  // Migrated
         } else if (cmd instanceof CreateIpAliasCommand) {
-            cfg = generateConfig((CreateIpAliasCommand)cmd);
+            cfg = generateConfig((CreateIpAliasCommand)cmd);  // Migrated
         } else if (cmd instanceof DnsMasqConfigCommand) {
             cfg = generateConfig((DnsMasqConfigCommand)cmd);
         } else if (cmd instanceof DeleteIpAliasCommand) {
-            cfg = generateConfig((DeleteIpAliasCommand)cmd);
+            cfg = generateConfig((DeleteIpAliasCommand)cmd);  // Migrated
         } else if (cmd instanceof VmDataCommand) {
             cfg = generateConfig((VmDataCommand)cmd); // Migrated
         } else if (cmd instanceof SetFirewallRulesCommand) {
@@ -320,48 +323,34 @@ public class ConfigHelper {
     }
 
     private static List<ConfigItem> generateConfig(CreateIpAliasCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
-
+        List<IpAddressAlias> ipAliases = new LinkedList<IpAddressAlias>();
         List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
-        StringBuilder args = new StringBuilder();
         for (IpAliasTO ipaliasto : ipAliasTOs) {
-            args.append(ipaliasto.getAlias_count());
-            args.append(':');
-            args.append(ipaliasto.getRouterip());
-            args.append(':');
-            args.append(ipaliasto.getNetmask());
-            args.append('-');
+            IpAddressAlias alias = new IpAddressAlias(false, ipaliasto.getRouterip(), ipaliasto.getNetmask(), Long.parseLong(ipaliasto.getAlias_count()));
+            ipAliases.add(alias);
         }
-        cfg.add(new ScriptConfigItem(VRScripts.IPALIAS_CREATE, args.toString()));
-        return cfg;
+
+        IpAliases ipAliasList = new IpAliases(ipAliases);
+        return generateConfigItems(ipAliasList);
     }
 
     private static List<ConfigItem> generateConfig(DeleteIpAliasCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
+        List<IpAddressAlias> ipAliases = new LinkedList<IpAddressAlias>();
 
-        StringBuffer buff = new StringBuffer();
         List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
         for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
-            buff.append(ipAliasTO.getAlias_count());
-            buff.append(":");
-            buff.append(ipAliasTO.getRouterip());
-            buff.append(":");
-            buff.append(ipAliasTO.getNetmask());
-            buff.append("-");
+            IpAddressAlias alias = new IpAddressAlias(true, ipAliasTO.getRouterip(), ipAliasTO.getNetmask(), Long.parseLong(ipAliasTO.getAlias_count()));
+            ipAliases.add(alias);
         }
-        //this is to ensure that thre is some argument passed to the deleteipAlias script  when there are no revoked rules.
-        buff.append("- ");
+
         List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
         for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
-            buff.append(ipAliasTO.getAlias_count());
-            buff.append(":");
-            buff.append(ipAliasTO.getRouterip());
-            buff.append(":");
-            buff.append(ipAliasTO.getNetmask());
-            buff.append("-");
+            IpAddressAlias alias = new IpAddressAlias(false, ipAliasTO.getRouterip(), ipAliasTO.getNetmask(), Long.parseLong(ipAliasTO.getAlias_count()));
+            ipAliases.add(alias);
         }
-        cfg.add(new ScriptConfigItem(VRScripts.IPALIAS_DELETE, buff.toString()));
-        return cfg;
+
+        IpAliases ipAliasList = new IpAliases(ipAliases);
+        return generateConfigItems(ipAliasList);
     }
 
     private static List<ConfigItem> generateConfig(DnsMasqConfigCommand cmd) {
