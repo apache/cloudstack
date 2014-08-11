@@ -29,6 +29,7 @@ public class VRScripts {
     protected final static String VM_PASSWORD_CONFIG = "vm_password.json";
     protected static final String FORWARDING_RULES_CONFIG = "forwarding_rules.json";
     protected static final String VPN_USER_LIST_CONFIG = "vpn_user_list.json";
+    protected static final String STATICNAT_RULES_CONFIG = "staticnat_rules.json";
 
     protected final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
     protected final static int DEFAULT_EXECUTEINVR_TIMEOUT = 120; //Seconds

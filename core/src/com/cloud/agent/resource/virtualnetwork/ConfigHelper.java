@@ -63,6 +63,8 @@ import com.cloud.agent.resource.virtualnetwork.model.IpAddress;
 import com.cloud.agent.resource.virtualnetwork.model.IpAssociation;
 import com.cloud.agent.resource.virtualnetwork.model.NetworkACL;
 import com.cloud.agent.resource.virtualnetwork.model.ProtocolAclRule;
+import com.cloud.agent.resource.virtualnetwork.model.StaticNatRule;
+import com.cloud.agent.resource.virtualnetwork.model.StaticNatRules;
 import com.cloud.agent.resource.virtualnetwork.model.TcpAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.UdpAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.VmData;
@@ -91,11 +93,11 @@ public class ConfigHelper {
         if (cmd instanceof SetPortForwardingRulesVpcCommand) {
             cfg = generateConfig((SetPortForwardingRulesVpcCommand)cmd);
         } else if (cmd instanceof SetPortForwardingRulesCommand) {
-            cfg = generateConfig((SetPortForwardingRulesCommand)cmd);
+            cfg = generateConfig((SetPortForwardingRulesCommand)cmd); // Migrated
         } else if (cmd instanceof SetStaticRouteCommand) {
             cfg = generateConfig((SetStaticRouteCommand)cmd);
         } else if (cmd instanceof SetStaticNatRulesCommand) {
-            cfg = generateConfig((SetStaticNatRulesCommand)cmd);
+            cfg = generateConfig((SetStaticNatRulesCommand)cmd);  // Migrated
         } else if (cmd instanceof LoadBalancerConfigCommand) {
             cfg = generateConfig((LoadBalancerConfigCommand)cmd);
         } else if (cmd instanceof SavePasswordCommand) {
@@ -227,34 +229,15 @@ public class ConfigHelper {
     }
 
     private static List<ConfigItem> generateConfig(SetStaticNatRulesCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
-        if (cmd.getVpcId() != null) {
-            for (StaticNatRuleTO rule : cmd.getRules()) {
-                String args = rule.revoked() ? " -D" : " -A";
-                args += " -l " + rule.getSrcIp();
-                args += " -r " + rule.getDstIp();
 
-                cfg.add(new ScriptConfigItem(VRScripts.VPC_STATIC_NAT, args));
-            }
-        } else {
-            for (StaticNatRuleTO rule : cmd.getRules()) {
-                //1:1 NAT needs instanceip;publicip;domrip;op
-                StringBuilder args = new StringBuilder();
-                args.append(rule.revoked() ? " -D " : " -A ");
-                args.append(" -l ").append(rule.getSrcIp());
-                args.append(" -r ").append(rule.getDstIp());
-
-                if (rule.getProtocol() != null) {
-                    args.append(" -P ").append(rule.getProtocol().toLowerCase());
-                }
-
-                args.append(" -d ").append(rule.getStringSrcPortRange());
-                args.append(" -G ");
-
-                cfg.add(new ScriptConfigItem(VRScripts.FIREWALL_NAT, args.toString()));
-            }
+        LinkedList<StaticNatRule> rules = new LinkedList<>();
+        for (StaticNatRuleTO rule : cmd.getRules()) {
+            StaticNatRule staticNatRule = new StaticNatRule(rule.revoked(), rule.getProtocol(), rule.getSrcIp(), rule.getStringSrcPortRange(), rule.getDstIp());
+            rules.add(staticNatRule);
         }
-        return cfg;
+        StaticNatRules staticNatRules = new StaticNatRules(rules);
+
+        return generateConfigItems(staticNatRules);
     }
 
     private static List<ConfigItem> generateConfig(LoadBalancerConfigCommand cmd) {
@@ -602,6 +585,9 @@ public class ConfigHelper {
             break;
         case ConfigBase.NETWORK_ACL:
             destinationFile = VRScripts.NETWORK_ACL_CONFIG;
+            break;
+        case ConfigBase.STATICNAT_RULES:
+            destinationFile = VRScripts.STATICNAT_RULES_CONFIG;
             break;
         case ConfigBase.VM_DHCP:
             destinationFile = VRScripts.VM_DHCP_CONFIG;
