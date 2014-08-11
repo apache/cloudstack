@@ -101,7 +101,7 @@ class UpdateConfigTestCase(SystemVMTestCase):
             ip_address["add"] = r.choice((True, False))
             ip_address["one_to_one_nat"] = r.choice((True, False))
             ip_address["first_i_p"] = r.choice((True, False))
-            ip_address["nic_dev_id"] = r.choice((0, 1, 2))
+            ip_address["nic_dev_id"] = r.choice((2, 3))
             if ip_address["nic_dev_id"] > 0:
                 ip_address["new_nic"] = True
             else:
