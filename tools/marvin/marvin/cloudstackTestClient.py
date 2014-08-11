@@ -344,6 +344,8 @@ class CSTestClient(object):
 
             listuser = listUsers.listUsersCmd()
             listuser.username = UserName
+            listuser.domainid = domId
+            listuser.listall = True
 
             listuserRes = self.__apiClient.listUsers(listuser)
             userId = listuserRes[0].id
