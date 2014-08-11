@@ -28,6 +28,7 @@ public class VRScripts {
     protected final static String VM_DHCP_CONFIG = "vm_dhcp_entry.json";
     protected final static String VM_PASSWORD_CONFIG = "vm_password.json";
     protected static final String FORWARDING_RULES_CONFIG = "forwarding_rules.json";
+    protected static final String VPN_USER_LIST_CONFIG = "vpn_user_list.json";
 
     protected final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
     protected final static int DEFAULT_EXECUTEINVR_TIMEOUT = 120; //Seconds
@@ -66,4 +67,5 @@ public class VRScripts {
     protected static final String VPN_L2TP = "vpn_l2tp.sh";
 
     protected static final String VR_CFG = "vr_cfg.sh";
+
 }
