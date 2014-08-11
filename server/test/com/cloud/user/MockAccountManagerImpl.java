@@ -138,6 +138,19 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
+    public UserAccount getActiveUserAccount(String username, Long domainId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey,
+                                  String timeZone) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public Account getActiveAccountById(long accountId) {
         // TODO Auto-generated method stub
         return null;

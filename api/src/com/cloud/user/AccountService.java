@@ -79,6 +79,10 @@ public interface AccountService {
 
     Account getActiveAccountByName(String accountName, Long domainId);
 
+    UserAccount getActiveUserAccount(String username, Long domainId);
+
+    UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey, String timeZone);
+
     Account getActiveAccountById(long accountId);
 
     Account getAccount(long accountId);

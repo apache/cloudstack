@@ -1105,19 +1105,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_UPDATE, eventDescription = "updating User")
-    public UserAccount updateUser(UpdateUserCmd cmd) {
-        Long id = cmd.getId();
-        String apiKey = cmd.getApiKey();
-        String firstName = cmd.getFirstname();
-        String email = cmd.getEmail();
-        String lastName = cmd.getLastname();
-        String password = cmd.getPassword();
-        String secretKey = cmd.getSecretKey();
-        String timeZone = cmd.getTimezone();
-        String userName = cmd.getUsername();
-
+    public UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey, String timeZone) {
         // Input validation
-        UserVO user = _userDao.getUser(id);
+        UserVO user = _userDao.getUser(userId);
 
         if (user == null) {
             throw new InvalidParameterValueException("unable to find user by id");
@@ -1140,7 +1130,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // don't allow updating system account
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new PermissionDeniedException("user id : " + id + " is system account, update is not allowed");
+            throw new PermissionDeniedException("user id : " + userId + " is system account, update is not allowed");
         }
 
         checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
@@ -1206,7 +1196,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("updating user with id: " + id);
+            s_logger.debug("updating user with id: " + userId);
         }
         try {
             // check if the apiKey and secretKey are globally unique
@@ -1215,23 +1205,38 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
                 if (apiKeyOwner != null) {
                     User usr = apiKeyOwner.first();
-                    if (usr.getId() != id) {
-                        throw new InvalidParameterValueException("The api key:" + apiKey + " exists in the system for user id:" + id + " ,please provide a unique key");
+                    if (usr.getId() != userId) {
+                        throw new InvalidParameterValueException("The api key:" + apiKey + " exists in the system for user id:" + userId + " ,please provide a unique key");
                     } else {
                         // allow the updation to take place
                     }
                 }
             }
 
-            _userDao.update(id, user);
+            _userDao.update(userId, user);
         } catch (Throwable th) {
             s_logger.error("error updating user", th);
-            throw new CloudRuntimeException("Unable to update user " + id);
+            throw new CloudRuntimeException("Unable to update user " + userId);
         }
 
         CallContext.current().putContextParameter(User.class, user.getUuid());
 
-        return _userAccountDao.findById(id);
+        return _userAccountDao.findById(userId);
+    }
+
+    @Override
+    public UserAccount updateUser(UpdateUserCmd cmd) {
+        Long id = cmd.getId();
+        String apiKey = cmd.getApiKey();
+        String firstName = cmd.getFirstname();
+        String email = cmd.getEmail();
+        String lastName = cmd.getLastname();
+        String password = cmd.getPassword();
+        String secretKey = cmd.getSecretKey();
+        String timeZone = cmd.getTimezone();
+        String userName = cmd.getUsername();
+
+       return updateUser(id, firstName, lastName, email, userName, password, apiKey, secretKey, timeZone);
     }
 
     @Override
@@ -1803,6 +1808,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         } else {
             return _accountDao.findActiveAccount(accountName, domainId);
         }
+    }
+
+    @Override
+    public UserAccount getActiveUserAccount(String username, Long domainId) {
+        return _userAccountDao.getUserAccount(username, domainId);
     }
 
     @Override
