@@ -26,9 +26,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -100,6 +97,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
@@ -386,6 +385,13 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         boolean listAll = cmd.listAll();
         Long id = cmd.getId();
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            long currentId = CallContext.current().getCallingUser().getId();
+            if (id != null && currentId != id.longValue()) {
+                throw new PermissionDeniedException("Calling user is not authorized to see the user requested by id");
+            }
+            id = currentId;
+        }
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), null, permittedAccounts,
