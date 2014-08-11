@@ -111,12 +111,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
-
-        if ((!url.toLowerCase().endsWith("iso")) && (!url.toLowerCase().endsWith("iso.zip")) && (!url.toLowerCase().endsWith("iso.bz2")) &&
-            (!url.toLowerCase().endsWith("iso.gz"))) {
-            throw new InvalidParameterValueException("Please specify a valid iso");
-        }
-
         UriUtils.validateUrl(url);
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
