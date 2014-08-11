@@ -1,0 +1,10 @@
+{"add":true,
+"mac_address":"02:00:56:36:00:02",
+"device":"eth3",
+"router_guest_ip":"172.16.1.1",
+"router_guest_gateway":"172.16.1.0",
+"router_guest_netmask":"255.255.255.0",
+"cidr":"24",
+"dns":"8.8.8.8,8.8.8.4",
+"domain_name":"devcloud.local",
+"type":"guestnetwork"}
