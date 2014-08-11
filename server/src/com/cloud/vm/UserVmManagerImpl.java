@@ -2718,6 +2718,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         HypervisorType hypervisorType = null;
         if (template.getHypervisorType() == null || template.getHypervisorType() == HypervisorType.None) {
+            if (hypervisor == null || hypervisor == HypervisorType.None) {
+                throw new InvalidParameterValueException("hypervisor parameter is needed to deploy VM or the hypervisor parameter value passed is invalid");
+            }
             hypervisorType = hypervisor;
         } else {
             if (hypervisor != null && hypervisor != HypervisorType.None && hypervisor != template.getHypervisorType()) {
