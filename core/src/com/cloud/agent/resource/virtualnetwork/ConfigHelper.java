@@ -23,6 +23,10 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
@@ -55,6 +59,8 @@ import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.resource.virtualnetwork.model.AclRule;
 import com.cloud.agent.resource.virtualnetwork.model.AllAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
+import com.cloud.agent.resource.virtualnetwork.model.DhcpConfig;
+import com.cloud.agent.resource.virtualnetwork.model.DhcpConfigEntry;
 import com.cloud.agent.resource.virtualnetwork.model.ForwardingRule;
 import com.cloud.agent.resource.virtualnetwork.model.ForwardingRules;
 import com.cloud.agent.resource.virtualnetwork.model.GuestNetwork;
@@ -85,9 +91,6 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 public class ConfigHelper {
     private final static Gson gson;
@@ -115,7 +118,7 @@ public class ConfigHelper {
         } else if (cmd instanceof CreateIpAliasCommand) {
             cfg = generateConfig((CreateIpAliasCommand)cmd);  // Migrated
         } else if (cmd instanceof DnsMasqConfigCommand) {
-            cfg = generateConfig((DnsMasqConfigCommand)cmd);
+            cfg = generateConfig((DnsMasqConfigCommand)cmd);  // Migrated
         } else if (cmd instanceof DeleteIpAliasCommand) {
             cfg = generateConfig((DeleteIpAliasCommand)cmd);  // Migrated
         } else if (cmd instanceof VmDataCommand) {
@@ -336,22 +339,14 @@ public class ConfigHelper {
     }
 
     private static List<ConfigItem> generateConfig(DnsMasqConfigCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
+        LinkedList<DhcpConfigEntry> entries = new LinkedList<DhcpConfigEntry>();
 
-        List<DhcpTO> dhcpTos = cmd.getIps();
-        StringBuffer buff = new StringBuffer();
-        for (DhcpTO dhcpTo : dhcpTos) {
-            buff.append(dhcpTo.getRouterIp());
-            buff.append(":");
-            buff.append(dhcpTo.getGateway());
-            buff.append(":");
-            buff.append(dhcpTo.getNetmask());
-            buff.append(":");
-            buff.append(dhcpTo.getStartIpOfSubnet());
-            buff.append("-");
+        for (DhcpTO dhcpTo : cmd.getIps()) {
+            DhcpConfigEntry entry = new DhcpConfigEntry(dhcpTo.getRouterIp(), dhcpTo.getGateway(), dhcpTo.getNetmask(), dhcpTo.getStartIpOfSubnet());
+            entries.add(entry);
         }
-        cfg.add(new ScriptConfigItem(VRScripts.DNSMASQ_CONFIG, buff.toString()));
-        return cfg;
+
+        return generateConfigItems(new DhcpConfig(entries));
     }
 
     private static List<ConfigItem> generateConfig(BumpUpPriorityCommand cmd) {
@@ -535,6 +530,14 @@ public class ConfigHelper {
             break;
         case ConfigBase.MONITORSERVICE:
             destinationFile = VRScripts.MONITOR_SERVICE_CONFIG;
+        case ConfigBase.STATIC_ROUTES:
+            destinationFile = VRScripts.STATIC_ROUTES_CONFIG;
+            break;
+        case ConfigBase.DHCP_CONFIG:
+            destinationFile = VRScripts.DHCP_CONFIG;
+            break;
+        case ConfigBase.IP_ALIAS_CONFIG:
+            destinationFile = VRScripts.IP_ALIAS_CONFIG;
             break;
         default:
             throw new CloudRuntimeException("Unable to process the configuration for " + configuration.getType());
