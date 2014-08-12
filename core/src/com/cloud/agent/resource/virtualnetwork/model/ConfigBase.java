@@ -34,6 +34,7 @@ public abstract class ConfigBase {
     public static final String SITE2SITEVPN = "site2sitevpn";
     public static final String STATIC_ROUTES = "staticroutes";
     public static final String REMOTEACCESSVPN = "remoteaccessvpn";
+    public static final String MONITORSERVICE = "monitorservice";
 
     private String type = UNKNOWN;
 
