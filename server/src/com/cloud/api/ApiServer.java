@@ -53,6 +53,7 @@ import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.cloud.utils.HttpUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -174,7 +175,6 @@ import com.cloud.utils.exception.ExceptionProxyObject;
 
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService {
-    private static final String UTF_8 = "UTF-8";
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
@@ -392,7 +392,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         try {
             List<NameValuePair> paramList = null;
             try {
-                paramList = URLEncodedUtils.parse(new URI(request.getRequestLine().getUri()), UTF_8);
+                paramList = URLEncodedUtils.parse(new URI(request.getRequestLine().getUri()), HttpUtils.UTF_8);
             } catch (final URISyntaxException e) {
                 s_logger.error("Error parsing url request", e);
             }
@@ -403,7 +403,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // (Immutable)Multimap<String, String> paramMultiMap = HashMultimap.create();
             // Map<String, Collection<String>> parameterMap = paramMultiMap.asMap();
             final Map parameterMap = new HashMap<String, String[]>();
-            String responseType = BaseCmd.RESPONSE_TYPE_XML;
+            String responseType = HttpUtils.RESPONSE_TYPE_XML;
             for (final NameValuePair param : paramList) {
                 if (param.getName().equalsIgnoreCase("response")) {
                     responseType = param.getValue();
@@ -416,8 +416,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             parameterMap.put("httpmethod", new String[] {request.getRequestLine().getMethod()});
 
             // Check responseType, if not among valid types, fallback to JSON
-            if (!(responseType.equals(BaseCmd.RESPONSE_TYPE_JSON) || responseType.equals(BaseCmd.RESPONSE_TYPE_XML))) {
-                responseType = BaseCmd.RESPONSE_TYPE_XML;
+            if (!(responseType.equals(HttpUtils.RESPONSE_TYPE_JSON) || responseType.equals(HttpUtils.RESPONSE_TYPE_XML))) {
+                responseType = HttpUtils.RESPONSE_TYPE_XML;
             }
 
             try {
@@ -827,9 +827,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     }
 
                     if (unsignedRequest == null) {
-                        unsignedRequest = paramName + "=" + URLEncoder.encode(paramValue, UTF_8).replaceAll("\\+", "%20");
+                        unsignedRequest = paramName + "=" + URLEncoder.encode(paramValue, HttpUtils.UTF_8).replaceAll("\\+", "%20");
                     } else {
-                        unsignedRequest = unsignedRequest + "&" + paramName + "=" + URLEncoder.encode(paramValue, UTF_8).replaceAll("\\+", "%20");
+                        unsignedRequest = unsignedRequest + "&" + paramName + "=" + URLEncoder.encode(paramValue, HttpUtils.UTF_8).replaceAll("\\+", "%20");
                     }
                 }
             }
@@ -1077,21 +1077,21 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             resp.setReasonPhrase(reasonPhrase);
 
             final BasicHttpEntity body = new BasicHttpEntity();
-            if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
+            if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
                 // JSON response
                 body.setContentType(jsonContentType);
                 if (responseText == null) {
-                    body.setContent(new ByteArrayInputStream("{ \"error\" : { \"description\" : \"Internal Server Error\" } }".getBytes(UTF_8)));
+                    body.setContent(new ByteArrayInputStream("{ \"error\" : { \"description\" : \"Internal Server Error\" } }".getBytes(HttpUtils.UTF_8)));
                 }
             } else {
                 body.setContentType("text/xml");
                 if (responseText == null) {
-                    body.setContent(new ByteArrayInputStream("<error>Internal Server Error</error>".getBytes(UTF_8)));
+                    body.setContent(new ByteArrayInputStream("<error>Internal Server Error</error>".getBytes(HttpUtils.UTF_8)));
                 }
             }
 
             if (responseText != null) {
-                body.setContent(new ByteArrayInputStream(responseText.getBytes(UTF_8)));
+                body.setContent(new ByteArrayInputStream(responseText.getBytes(HttpUtils.UTF_8)));
             }
             resp.setEntity(body);
         } catch (final Exception ex) {
