@@ -89,9 +89,14 @@ class CsFile:
 
     def load(self):
         self.new_config = []
-        for line in open(self.filename):
-            self.new_config.append(line)
-        logging.debug("Reading file %s" % self.filename)
+        try:
+            for line in open(self.filename):
+                self.new_config.append(line)
+        except IOError:
+            logging.debug("File %s does not exist" % self.filename)
+            return
+        else:
+            logging.debug("Reading file %s" % self.filename)
 
     def is_changed(self):
         return self.changed
@@ -242,6 +247,30 @@ class CsProcess(object):
             if matches == items:
                 self.pid.append(re.split("\s+", i)[1])
         return len(self.pid) > 0
+
+class CsPassword(object):
+    """
+      Update the password cache
+
+      A stupid step really as we should just rewrite the password server to
+      use the databag
+    """
+    cache = "/var/cache/cloud/passwords"
+
+    def __init__(self):
+        db = dataBag()
+        db.setKey("vmpassword")
+        db.load()
+        dbag = db.getDataBag()
+        file = CsFile(self.cache)
+        for item in dbag:
+            if item == "id":
+                continue
+            self.update(file, item, dbag[item])
+        file.commit()
+
+    def update(self, file, ip, password):
+        file.search("%s=" % ip, "%s=%s" % (ip, password))
 
 class CsApp:
     def __init__(self, ip):
@@ -615,7 +644,6 @@ class CsIP:
     # Delete any ips that are configured but not in the bag
     def compare(self, bag):
         if len(self.iplist) > 0 and (not self.dev in bag.keys() or len(bag[self.dev]) == 0):
-            print "Gets here"
             # Remove all IPs on this device
             logging.info("Will remove all configured addresses on device %s", self.dev)
             self.delete("all")
@@ -625,7 +653,6 @@ class CsIP:
         # This condition should not really happen but did :)
         # It means an apache file got orphaned after a guest network address was deleted
         if len(self.iplist) == 0 and (not self.dev in bag.keys() or len(bag[self.dev]) == 0):
-            print self.dev 
             app = CsApache(self)
             app.remove()
 
@@ -660,6 +687,8 @@ def main(argv):
                         format='%(asctime)s %(message)s')
                         
     # we need to parse the cmd_line often, cloudstack might change it between reboots
+
+# TODO - Take this out --------------------------------------------------------------------- #
     cmdLine = dataBag()
     cmdLine.setKey("cmd_line")
     cmdLine.load()
@@ -683,6 +712,7 @@ def main(argv):
         controlIp["nic_dev_id"] = 0
         controlIp["nw_type"] = "control"
         merge(dbag, controlIp)
+# ----------------------------------------------------------------------------------------- #
 
 
     for dev in CsDevice('').list():
@@ -704,6 +734,7 @@ def main(argv):
                 logging.info("Address %s on device %s not configured", ip.ip(), dev)
                 if CsDevice(dev).waitfordevice():
                     ip.configure()
+    CsPassword()
 
 if __name__ == "__main__":
     main(sys.argv)
