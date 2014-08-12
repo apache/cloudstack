@@ -241,24 +241,14 @@ public class ApiXmlDocWriter {
             while (it.hasNext()) {
                 String key = (String)it.next();
 
-                if (key.equals("login")) {
-                    writeLoginCommand(rootAdminSorted);
-                    writeLoginCommand(outDomainAdminSorted);
-                    writeLoginCommand(regularUserSorted);
-                } else if (key.equals("logout")) {
-                    writeLogoutCommand(rootAdminSorted);
-                    writeLogoutCommand(outDomainAdminSorted);
-                    writeLogoutCommand(regularUserSorted);
-                } else {
-                    writeCommand(rootAdminSorted, key);
+                writeCommand(rootAdminSorted, key);
 
-                    if (s_domainAdminApiCommands.containsKey(key)) {
-                        writeCommand(outDomainAdminSorted, key);
-                    }
+                if (s_domainAdminApiCommands.containsKey(key)) {
+                    writeCommand(outDomainAdminSorted, key);
+                }
 
-                    if (s_regularUserApiCommands.containsKey(key)) {
-                        writeCommand(regularUserSorted, key);
-                    }
+                if (s_regularUserApiCommands.containsKey(key)) {
+                    writeCommand(regularUserSorted, key);
                 }
             }
 
