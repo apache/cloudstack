@@ -16,23 +16,14 @@
 // under the License.
 package com.cloud.api;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Field;
-import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
+import com.cloud.api.auth.APIAuthenticationManager;
+import com.cloud.api.auth.APIAuthenticationType;
+import com.cloud.api.auth.APIAuthenticator;
+import com.cloud.server.ManagementServer;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+import com.cloud.user.User;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.commons.collections.iterators.IteratorEnumeration;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,17 +32,17 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.XMLReaderFactory;
 
-import com.cloud.server.ManagementServer;
-import com.cloud.user.Account;
-import com.cloud.user.AccountService;
-import com.cloud.user.User;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
+import java.net.URLEncoder;
+import java.util.HashMap;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiServletTest {
@@ -67,6 +58,12 @@ public class ApiServletTest {
 
     @Mock
     AccountService accountService;
+
+    @Mock
+    APIAuthenticationManager authManager;
+
+    @Mock
+    APIAuthenticator authenticator;
 
     @Mock
     User user;
@@ -94,10 +91,19 @@ public class ApiServletTest {
         Mockito.when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         Mockito.when(accountService.getSystemUser()).thenReturn(user);
         Mockito.when(accountService.getSystemAccount()).thenReturn(account);
+
         Field accountMgrField = ApiServlet.class
                 .getDeclaredField("_accountMgr");
         accountMgrField.setAccessible(true);
         accountMgrField.set(servlet, accountService);
+
+        Mockito.when(authManager.getAPIAuthenticator(Mockito.anyString())).thenReturn(authenticator);
+        Mockito.when(authenticator.authenticate(Mockito.anyString(), Mockito.anyMap(), Mockito.isA(HttpSession.class),
+                Mockito.anyString(), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletResponse.class))).thenReturn("{\"loginresponse\":{}");
+
+        Field authManagerField = ApiServlet.class.getDeclaredField("_authManager");
+        authManagerField.setAccessible(true);
+        authManagerField.set(servlet, authManager);
 
         Field apiServerField = ApiServlet.class.getDeclaredField("_apiServer");
         apiServerField.setAccessible(true);
@@ -197,9 +203,14 @@ public class ApiServletTest {
         params.put(ApiConstants.COMMAND, new String[] { "logout" });
         Mockito.when(request.getParameterMap()).thenReturn(params);
 
+        Mockito.when(authenticator.getAPIType()).thenReturn(APIAuthenticationType.LOGOUT_API);
+
         servlet.processRequestInContext(request, response);
 
-        Mockito.verify(apiServer).logoutUser(1l);
+
+        Mockito.verify(authManager).getAPIAuthenticator("logout");
+        Mockito.verify(authenticator).authenticate(Mockito.anyString(), Mockito.anyMap(), Mockito.isA(HttpSession.class),
+                Mockito.anyString(), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletResponse.class));
         Mockito.verify(session).invalidate();
     }
 
@@ -216,50 +227,11 @@ public class ApiServletTest {
         params.put(ApiConstants.DOMAIN_ID, new String[] { "42" });
         params.put(ApiConstants.DOMAIN, new String[] { "TEST-DOMAIN" });
         Mockito.when(request.getParameterMap()).thenReturn(params);
-        Mockito.when(apiServer.fetchDomainId("42")).thenReturn(null);
-        Mockito.when(session.getAttribute("userid")).thenReturn(1l);
-        Mockito.when(session.getAttribute("accountobj")).thenReturn(account);
 
         servlet.processRequestInContext(request, response);
 
-        Mockito.verify(request).getSession(true);
-        Mockito.verify(apiServer).loginUser(Mockito.any(HttpSession.class),
-                Mockito.eq("TEST"), Mockito.eq("TEST-PWD"), Mockito.eq(42l),
-                Mockito.eq("/TEST-DOMAIN/"), Mockito.eq("127.0.0.1"),
-                Mockito.any(Map.class));
-        Mockito.verify(response).setStatus(HttpServletResponse.SC_OK);
+        Mockito.verify(authManager).getAPIAuthenticator("login");
+        Mockito.verify(authenticator).authenticate(Mockito.anyString(), Mockito.anyMap(), Mockito.isA(HttpSession.class),
+                Mockito.anyString(), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletResponse.class));
     }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void getLoginSuccessResponseJson() throws JsonParseException,
-            IOException {
-        Mockito.when(session.getAttributeNames()).thenReturn(
-                new IteratorEnumeration(Arrays.asList("foo", "bar", "userid",
-                        "domainid").iterator()));
-        Mockito.when(session.getAttribute(Mockito.anyString())).thenReturn(
-                "TEST");
-
-        String loginResponse = servlet.getLoginSuccessResponse(session, "json");
-
-        ObjectNode node = (ObjectNode) new ObjectMapper()
-                .readTree(loginResponse);
-        Assert.assertNotNull(node.get("loginresponse"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void getLoginSuccessResponseXml() throws JsonParseException,
-            IOException, SAXException {
-        Mockito.when(session.getAttributeNames()).thenReturn(
-                new IteratorEnumeration(Arrays.asList("foo", "bar", "userid",
-                        "domainid").iterator()));
-        Mockito.when(session.getAttribute(Mockito.anyString())).thenReturn(
-                "TEST");
-        String loginResponse = servlet.getLoginSuccessResponse(session, "xml");
-        XMLReaderFactory.createXMLReader().parse(
-                new InputSource(new StringReader(loginResponse)));
-        ;
-    }
-
 }
