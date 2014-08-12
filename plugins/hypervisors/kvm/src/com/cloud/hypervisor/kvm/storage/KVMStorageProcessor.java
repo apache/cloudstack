@@ -1118,9 +1118,12 @@ public class KVMStorageProcessor implements StorageProcessor {
                 String vmUuid = vm.getUUIDString();
                 Object[] args = new Object[] {snapshotName, vmUuid};
                 String snapshot = SnapshotXML.format(args);
-                s_logger.debug(snapshot);
 
+                long start = System.currentTimeMillis();
                 vm.snapshotCreateXML(snapshot);
+                long total = (System.currentTimeMillis() - start)/1000;
+                s_logger.debug("snapshot takes " + total + " seconds to finish");
+
                 /*
                  * libvirt on RHEL6 doesn't handle resume event emitted from
                  * qemu
