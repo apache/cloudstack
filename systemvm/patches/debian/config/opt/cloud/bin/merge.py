@@ -95,7 +95,7 @@ class updateDataBag:
         return cs_guestnetwork.merge(dbag, self.qFile.data)
 
     def processVMpassword(self, dbag):
-        dbag = cs_vmp.merge(dbag, self.qFile.data)
+        return cs_vmp.merge(dbag, self.qFile.data)
 
     def processIP(self, dbag):
         for ip in self.qFile.data["ip_address"]:
