@@ -1241,7 +1241,7 @@
 
                             if (tabData.viewAll) {
                                 $fieldContent.find('tr')
-                                    .filter('.' + tabData.viewAll.attachTo).find('td.value')
+                                    .filter('.' + tabData.viewAll.attachTo + '-row').find('td.value')
                                     .append(
                                         $('<div>').addClass('view-all').append(
                                             $('<span>').html(
