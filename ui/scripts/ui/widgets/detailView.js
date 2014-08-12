@@ -269,6 +269,12 @@
                                         message: args
                                     });
                                 }
+
+                                // Quickview: Remove loading state on list row
+                                if (viewArgs && viewArgs.$listViewRow) {
+                                    viewArgs.$listViewRow.removeClass('loading')
+                                        .find('.loading').removeClass('loading');
+                                }
                                 $loading.remove();
                             }
                         }
