@@ -34,6 +34,8 @@ public class VRScripts {
     protected static final String STATIC_ROUTES_CONFIG = "static_routes.json";
     protected static final String REMOTE_ACCESS_VPN_CONFIG = "remote_access_vpn.json";
     protected static final String MONITOR_SERVICE_CONFIG = "monitor_service.json";
+    protected static final String DHCP_CONFIG = "dhcp.json";
+    protected static final String IP_ALIAS_CONFIG = "ip_aliases.json";
 
     protected final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
     protected final static int DEFAULT_EXECUTEINVR_TIMEOUT = 120; //Seconds
