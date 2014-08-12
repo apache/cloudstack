@@ -20,7 +20,7 @@
 package com.cloud.agent.resource.virtualnetwork;
 
 public class VRScripts {
-    protected final static String CONFIG_PERSIST_LOCATION = "/etc/cloudstack/";
+    protected final static String CONFIG_PERSIST_LOCATION = "/var/cache/cloud/";
     protected final static String IP_ASSOCIATION_CONFIG = "ip_associations.json";
     protected final static String GUEST_NETWORK_CONFIG = "guest_network.json";
     protected final static String NETWORK_ACL_CONFIG = "network_acl.json";
@@ -31,6 +31,7 @@ public class VRScripts {
     protected static final String VPN_USER_LIST_CONFIG = "vpn_user_list.json";
     protected static final String STATICNAT_RULES_CONFIG = "staticnat_rules.json";
     protected static final String SITE_2_SITE_VPN_CONFIG = "site_2_site_vpn.json";
+    protected static final String STATIC_ROUTES_CONFIG = "static_routes.json";
 
     protected final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
     protected final static int DEFAULT_EXECUTEINVR_TIMEOUT = 120; //Seconds
