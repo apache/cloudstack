@@ -23,10 +23,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
@@ -69,6 +65,7 @@ import com.cloud.agent.resource.virtualnetwork.model.IpAliases;
 import com.cloud.agent.resource.virtualnetwork.model.IpAssociation;
 import com.cloud.agent.resource.virtualnetwork.model.NetworkACL;
 import com.cloud.agent.resource.virtualnetwork.model.ProtocolAclRule;
+import com.cloud.agent.resource.virtualnetwork.model.RemoteAccessVpn;
 import com.cloud.agent.resource.virtualnetwork.model.Site2SiteVpn;
 import com.cloud.agent.resource.virtualnetwork.model.StaticNatRule;
 import com.cloud.agent.resource.virtualnetwork.model.StaticNatRules;
@@ -87,6 +84,9 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class ConfigHelper {
     private final static Gson gson;
@@ -124,7 +124,7 @@ public class ConfigHelper {
         } else if (cmd instanceof BumpUpPriorityCommand) {
             cfg = generateConfig((BumpUpPriorityCommand)cmd);
         } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
-            cfg = generateConfig((RemoteAccessVpnCfgCommand)cmd);
+            cfg = generateConfig((RemoteAccessVpnCfgCommand)cmd); //WIP (SB)
         } else if (cmd instanceof VpnUsersCfgCommand) {
             cfg = generateConfig((VpnUsersCfgCommand)cmd); // Migrated (SB)
         } else if (cmd instanceof Site2SiteVpnCfgCommand) {
@@ -157,29 +157,21 @@ public class ConfigHelper {
         return generateConfigItems(vpnUserList);
     }
 
-    private static List<ConfigItem> generateConfig(RemoteAccessVpnCfgCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
-        String args = "";
-        if (cmd.isCreate()) {
-            args += "-r ";
-            args += cmd.getIpRange();
-            args += " -p ";
-            args += cmd.getPresharedKey();
-            args += " -s ";
-            args += cmd.getVpnServerIp();
-            args += " -l ";
-            args += cmd.getLocalIp();
-            args += " -c ";
-        } else {
-            args += "-d ";
-            args += " -s ";
-            args += cmd.getVpnServerIp();
-        }
-        args += " -C " + cmd.getLocalCidr();
-        args += " -i " + cmd.getPublicInterface();
-        cfg.add(new ScriptConfigItem(VRScripts.VPN_L2TP, args));
-        return cfg;
+    /*
+    private static List<ConfigItem> generateConfig(DhcpEntryCommand cmd) {
+        VmDhcpConfig vmDhcpConfig = new VmDhcpConfig(cmd.getVmName(), cmd.getVmMac(), cmd.getVmIpAddress(), cmd.getVmIp6Address(), cmd.getDuid(), cmd.getDefaultDns(),
+                cmd.getDefaultRouter(), cmd.getStaticRoutes(), cmd.isDefault());
+
+        return generateConfigItems(vmDhcpConfig);
     }
+    */
+
+    private static List<ConfigItem> generateConfig(RemoteAccessVpnCfgCommand cmd) {
+        RemoteAccessVpn remoteAccessVpn = new RemoteAccessVpn(cmd.isCreate(), cmd.getIpRange(), cmd.getPresharedKey(), cmd.getVpnServerIp(), cmd.getLocalIp(), cmd.getLocalCidr(),
+                cmd.getPublicInterface());
+        return generateConfigItems(remoteAccessVpn);
+    }
+
 
     private static List<ConfigItem> generateConfig(SetFirewallRulesCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
@@ -555,6 +547,9 @@ public class ConfigHelper {
             break;
         case ConfigBase.SITE2SITEVPN:
             destinationFile = VRScripts.SITE_2_SITE_VPN_CONFIG;
+            break;
+        case ConfigBase.REMOTEACCESSVPN:
+            destinationFile = VRScripts.REMOTE_ACCESS_VPN_CONFIG;
             break;
         default:
             throw new CloudRuntimeException("Unable to process the configuration for " + configuration.getType());

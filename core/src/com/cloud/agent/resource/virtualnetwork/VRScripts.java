@@ -32,6 +32,7 @@ public class VRScripts {
     protected static final String STATICNAT_RULES_CONFIG = "staticnat_rules.json";
     protected static final String SITE_2_SITE_VPN_CONFIG = "site_2_site_vpn.json";
     protected static final String STATIC_ROUTES_CONFIG = "static_routes.json";
+    protected static final String REMOTE_ACCESS_VPN_CONFIG = "remote_access_vpn.json";
 
     protected final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
     protected final static int DEFAULT_EXECUTEINVR_TIMEOUT = 120; //Seconds
