@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.template;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -122,6 +124,20 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
+        String path = null;
+        try {
+            URL str = new URL(url);
+            path = str.getPath();
+        } catch (MalformedURLException ex) {
+            throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is invalid");
+        }
+
+        try {
+            checkFormat(cmd.getFormat(), url);
+        } catch (InvalidParameterValueException ex) {
+            checkFormat(cmd.getFormat(), path);
+        }
+
         UriUtils.validateUrl(url);
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
