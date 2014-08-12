@@ -33,6 +33,7 @@ public abstract class ConfigBase {
     public static final String IP_ALIAS_CONFIG = "ipaliases";
     public static final String SITE2SITEVPN = "site2sitevpn";
     public static final String STATIC_ROUTES = "staticroutes";
+    public static final String REMOTEACCESSVPN = "remoteaccessvpn";
 
     private String type = UNKNOWN;
 
