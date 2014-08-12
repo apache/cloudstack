@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.LogoutCmdResponse;
 import org.apache.log4j.Logger;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.Map;
 
@@ -55,7 +56,7 @@ public class DefaultLogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuth
     }
 
     @Override
-    public String authenticate(String command, Map<String, Object[]> params, HttpSession session, String remoteAddress, String responseType, StringBuilder auditTrailSb) throws ServerApiException {
+    public String authenticate(String command, Map<String, Object[]> params, HttpSession session, String remoteAddress, String responseType, StringBuilder auditTrailSb, final HttpServletResponse resp) throws ServerApiException {
         auditTrailSb.append("=== Logging out ===");
         LogoutCmdResponse response = new LogoutCmdResponse();
         response.setDescription("success");

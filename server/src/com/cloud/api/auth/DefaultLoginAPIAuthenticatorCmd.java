@@ -152,7 +152,7 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
     }
 
     @Override
-    public String authenticate(String command, Map<String, Object[]> params, HttpSession session, String remoteAddress, String responseType, StringBuilder auditTrailSb) throws ServerApiException {
+    public String authenticate(String command, Map<String, Object[]> params, HttpSession session, String remoteAddress, String responseType, StringBuilder auditTrailSb, final HttpServletResponse resp) throws ServerApiException {
 
         // FIXME: ported from ApiServlet, refactor and cleanup
         final String[] username = (String[])params.get(ApiConstants.USERNAME);

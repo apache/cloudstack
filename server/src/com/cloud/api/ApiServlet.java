@@ -178,7 +178,7 @@ public class ApiServlet extends HttpServlet {
                     }
 
                     try {
-                        responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb);
+                        responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, resp);
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();
                         responseString = e.getMessage();
