@@ -799,12 +799,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
                 VolumeVO newVolume = allocateDuplicateVolumeVO(existingVolume, templateIdToUseFinal);
-                // In case of Vmware if vm reference is not removed then during root
-                // disk cleanup
-                // the vm also gets deleted, so remove the reference
-                if (vm.getHypervisorType() == HypervisorType.VMware) {
-                    _volsDao.detachVolume(existingVolume.getId());
-                }
                 try {
                     stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
                 } catch (NoTransitionException e) {

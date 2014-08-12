@@ -1594,7 +1594,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 String vmName = vol.getVmName();
                 if (vmName != null) {
-                    VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vmName);
+                    // Find VM under the datacenter and not just the cluster.
+                    DatacenterMO dcMo = new DatacenterMO(context, morDc);
+                    VirtualMachineMO vmMo = dcMo.findVm(vmName);
                     if (vmMo != null) {
                         if (s_logger.isInfoEnabled()) {
                             s_logger.info("Destroy root volume and VM itself. vmName " + vmName);
