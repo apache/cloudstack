@@ -7,6 +7,7 @@ import logging
 import cs_ip
 import cs_guestnetwork
 import cs_cmdline
+import cs_vmp
 
 from pprint import pprint
 
@@ -70,6 +71,10 @@ class updateDataBag:
            dbag = self.processGuestNetwork(self.db.getDataBag())
         if self.qFile.type == 'cmdline':
            dbag = self.processCL(self.db.getDataBag())
+        if self.qFile.type == 'cmdline':
+           dbag = self.processCL(self.db.getDataBag())
+        if self.qFile.type == 'vmpassword':
+           dbag = self.processVMpassword(self.db.getDataBag())
         self.db.save(dbag)
   
     def processGuestNetwork(self, dbag):
@@ -88,6 +93,9 @@ class updateDataBag:
         if 'domain_name' not in d.keys() or d['domain_name'] == '':
             d['domain_name'] = "cloudnine.internal"
         return cs_guestnetwork.merge(dbag, self.qFile.data)
+
+    def processVMpassword(self, dbag):
+        dbag = cs_vmp.merge(dbag, self.qFile.data)
 
     def processIP(self, dbag):
         for ip in self.qFile.data["ip_address"]:
@@ -125,7 +133,6 @@ class updateDataBag:
 class loadQueueFile:
 
     fileName = ''
-    dpath = "/etc/cloudstack"
     configCache = "/var/cache/cloud"
     keep = True
     data = {}
@@ -161,7 +168,7 @@ class loadQueueFile:
         return self.data 
 
     def setPath(self, path):
-        self.dpath = path
+        self.configCache = path
 
     def __moveFile(self, origPath, path):
         if not os.path.exists(path):
