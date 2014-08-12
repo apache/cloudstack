@@ -659,8 +659,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return volume;
         } catch (Exception e) {
             created = false;
-            s_logger.debug("Failed to create volume: " + volume.getId(), e);
-            return null;
+            VolumeInfo vol = volFactory.getVolume(cmd.getEntityId());
+            vol.stateTransit(Volume.Event.DestroyRequested);
+            throw new CloudRuntimeException("Failed to create volume: " + volume.getId(), e);
         } finally {
             if (!created) {
                 s_logger.trace("Decrementing volume resource count for account id=" + volume.getAccountId() + " as volume failed to create on the backend");
