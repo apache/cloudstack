@@ -166,6 +166,6 @@ class loadQueueFile:
     def __moveFile(self, origPath, path):
         if not os.path.exists(path):
             os.makedirs(path)
-        timestamp = str(round(time.time()))
+        timestamp = str(int(round(time.time())))
         os.rename(origPath, path + "/" + self.fileName + "." + timestamp)
 
