@@ -609,10 +609,9 @@ class TestRebootRouter(cloudstackTestCase):
                                      self.services["natrule"],
                                      ipaddressid=self.public_ip.ipaddress.id
                                      )
-        self.cleanup = [
-                        self.vm_1,
+        self.cleanup = [self.nat_rule,
                         lb_rule,
-                        self.nat_rule,
+                        self.vm_1,
                         self.service_offering,
                         self.account,
                         ]
