@@ -72,6 +72,8 @@ import com.cloud.agent.resource.virtualnetwork.model.ProtocolAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.Site2SiteVpn;
 import com.cloud.agent.resource.virtualnetwork.model.StaticNatRule;
 import com.cloud.agent.resource.virtualnetwork.model.StaticNatRules;
+import com.cloud.agent.resource.virtualnetwork.model.StaticRoute;
+import com.cloud.agent.resource.virtualnetwork.model.StaticRoutes;
 import com.cloud.agent.resource.virtualnetwork.model.TcpAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.UdpAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.VmData;
@@ -82,6 +84,7 @@ import com.cloud.agent.resource.virtualnetwork.model.VpnUserList;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
@@ -99,7 +102,7 @@ public class ConfigHelper {
         } else if (cmd instanceof SetPortForwardingRulesCommand) {
             cfg = generateConfig((SetPortForwardingRulesCommand)cmd); // Migrated
         } else if (cmd instanceof SetStaticRouteCommand) {
-            cfg = generateConfig((SetStaticRouteCommand)cmd);
+            cfg = generateConfig((SetStaticRouteCommand)cmd);  // Migrated
         } else if (cmd instanceof SetStaticNatRulesCommand) {
             cfg = generateConfig((SetStaticNatRulesCommand)cmd);  // Migrated
         } else if (cmd instanceof LoadBalancerConfigCommand) {
@@ -489,19 +492,18 @@ public class ConfigHelper {
     }
 
     private static List<ConfigItem> generateConfig(SetStaticRouteCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
+        LinkedList<StaticRoute> routes = new LinkedList<>();
 
-        String[] rules = cmd.generateSRouteRules();
-        StringBuilder sb = new StringBuilder();
+        for (StaticRouteProfile profile : cmd.getStaticRoutes()) {
+            String cidr = profile.getCidr();
+            String subnet = NetUtils.getCidrSubNet(cidr);
+            String cidrSize = cidr.split("\\/")[1];
+            boolean keep = profile.getState() == com.cloud.network.vpc.StaticRoute.State.Active || profile.getState() == com.cloud.network.vpc.StaticRoute.State.Add;
 
-        for (int i = 0; i < rules.length; i++) {
-            sb.append(rules[i]).append(',');
+            routes.add(new StaticRoute(!keep, profile.getIp4Address(), profile.getGateway(), subnet + "/" + cidrSize));
         }
 
-        String args = " -a " + sb.toString();
-
-        cfg.add(new ScriptConfigItem(VRScripts.VPC_STATIC_ROUTE, args));
-        return cfg;
+        return generateConfigItems(new StaticRoutes(routes));
     }
 
     private static List<ConfigItem> generateConfig(IpAssocCommand cmd) {
