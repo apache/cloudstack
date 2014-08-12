@@ -91,7 +91,6 @@ class TestSnapshots(cloudstackTestCase):
                                         domainid=cls.account.domainid,
                                         serviceofferingid=cls.service_offering.id,
                                     )
-            cls._cleanup.append(cls.virtual_machine)
         except Exception as e:
             cls.tearDownClass()
             raise Exception("Warning: Exception in setup : %s" % e)
