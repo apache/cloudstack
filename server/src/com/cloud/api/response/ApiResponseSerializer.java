@@ -21,6 +21,7 @@ import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
 import com.cloud.serializer.Param;
 import com.cloud.user.Account;
+import com.cloud.utils.HttpUtils;
 import com.cloud.utils.encoding.URLEncoder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
@@ -54,7 +55,7 @@ public class ApiResponseSerializer {
 
     public static String toSerializedString(ResponseObject result, String responseType) {
         s_logger.trace("===Serializing Response===");
-        if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
+        if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             return toJSONSerializedString(result);
         } else {
             return toXMLSerializedString(result);
