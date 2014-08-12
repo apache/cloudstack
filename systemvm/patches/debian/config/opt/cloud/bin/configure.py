@@ -246,7 +246,7 @@ class CsProcess(object):
 class CsApp:
     def __init__(self, ip):
         self.dev     = ip.getDevice()
-        self.ip      = ip.getAddress()['public_ip']
+        self.ip      = ip.get_ip_address()
         self.domain  = "domain.local"
         self.type    = ip.get_type()
         if self.type == "guest":
@@ -271,6 +271,13 @@ class CsPasswdSvc(CsApp):
 
 class CsApache(CsApp):
     """ Set up Apache """
+
+    def remove(self):
+        file = "/etc/apache2/conf.d/vhost%s.conf" % self.dev
+        if os.path.isfile(file):
+            os.remove(file)
+            CsHelper().service("apache2", "restart")
+
 
     def setup(self):
         CsHelper().copy_if_needed("/etc/apache2/vhostexample.conf",
@@ -547,6 +554,15 @@ class CsIP:
             return self.address['nw_type']
         return "unknown"
 
+    def get_ip_address(self):
+        """ 
+        Return ip address if known
+        """
+        if "public_ip" in self.address:
+            return self.address['public_ip']
+        return "unknown"
+  
+
     def post_config_change(self, method):
         route = CsRoute(self.dev)
         route.routeTable()
@@ -598,10 +614,21 @@ class CsIP:
 
     # Delete any ips that are configured but not in the bag
     def compare(self, bag):
-        if len(self.iplist) > 0 and not self.dev in bag.keys():
+        if len(self.iplist) > 0 and (not self.dev in bag.keys() or len(bag[self.dev]) == 0):
+            print "Gets here"
             # Remove all IPs on this device
             logging.info("Will remove all configured addresses on device %s", self.dev)
             self.delete("all")
+            app = CsApache(self)
+            app.remove()
+
+        # This condition should not really happen but did :)
+        # It means an apache file got orphaned after a guest network address was deleted
+        if len(self.iplist) == 0 and (not self.dev in bag.keys() or len(bag[self.dev]) == 0):
+            print self.dev 
+            app = CsApache(self)
+            app.remove()
+
         for ip in self.iplist:
             found = False
             if self.dev in bag.keys():
