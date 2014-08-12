@@ -143,6 +143,12 @@ public class ApiServlet extends HttpServlet {
         }
 
         try {
+            if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
+                resp.setContentType(ApiServer.getJsonContentType() + "; charset=UTF-8");
+            } else {
+                resp.setContentType("text/xml; charset=UTF-8");
+            }
+
             HttpSession session = req.getSession(false);
             final Object[] responseTypeParam = params.get(ApiConstants.RESPONSE);
             if (responseTypeParam != null) {
@@ -301,12 +307,6 @@ public class ApiServlet extends HttpServlet {
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
     private void writeResponse(final HttpServletResponse resp, final String response, final int responseCode, final String responseType) {
         try {
-            if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-                resp.setContentType(ApiServer.getJsonContentType() + "; charset=UTF-8");
-            } else {
-                resp.setContentType("text/xml; charset=UTF-8");
-            }
-
             resp.setStatus(responseCode);
             resp.getWriter().print(response);
         } catch (final IOException ioex) {
