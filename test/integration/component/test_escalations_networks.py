@@ -1013,7 +1013,7 @@ class TestNetworks_1(cloudstackTestCase):
                          )
         instance_page2 = list_instances_page2[0]
         # Deleting a single VM
-        VirtualMachine.delete(vm_created, self.userapiclient, expunge=True)
+        VirtualMachine.delete(vm_created, self.apiClient)
         # Listing the VM's in page 2
         list_instance_response = VirtualMachine.list(
                                                      self.userapiclient,
