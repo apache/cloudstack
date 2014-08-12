@@ -59,7 +59,7 @@ class CsHelper:
 
     def execute(self, command):
         """ Execute command """
-        p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         result = p.communicate()[0]
         return result.splitlines()
 
@@ -604,10 +604,11 @@ class CsIP:
             self.delete("all")
         for ip in self.iplist:
             found = False
-            for address in bag[self.dev]:
-                self.setAddress(address)
-                if self.hasIP(ip):
-                    found = True
+            if self.dev in bag.keys():
+                for address in bag[self.dev]:
+                    self.setAddress(address)
+                    if self.hasIP(ip):
+                        found = True
             if not found:
                 self.delete(ip)
 

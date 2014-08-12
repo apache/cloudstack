@@ -59,7 +59,7 @@ class UpdateConfigTestCase(SystemVMTestCase):
     def update_config(self, config):
         config_json = json.dumps(config, indent=2)
         print_doc('config.json', config_json)
-        file_write('/etc/cloudstack/update_config_test.json', config_json)
+        file_write('/var/cache/cloud/update_config_test.json', config_json)
         with hide("everything"):
             result = run("python /opt/cloud/bin/update_config.py update_config_test.json",
                          timeout=600, warn_only=True)
@@ -112,14 +112,16 @@ class UpdateConfigTestCase(SystemVMTestCase):
             ip_address["add"] = False
             buffer.append(copy.deepcopy(ip_address))
             self.check_no_errors()
-            self.clear_log()
-            assert ip.has_ip("%s/24" % ip_address["public_ip"], "eth%s" % ip_address["nic_dev_id"])
+            #self.clear_log()
+            assert ip.has_ip("%s/24" % ip_address["public_ip"], "eth%s" % ip_address["nic_dev_id"]), \
+                    "Configure %s on eth%s failed" % (ip_address["public_ip"], ip_address["nic_dev_id"])
         # Now delete all the IPs we just made
         for ips in buffer:
             config = copy.deepcopy(self.basic_config)
             config["ip_address"].append(ips)
             self.update_config(config)
-            assert ip.has_ip("%s/24" % ips["public_ip"], "eth%s" % ips["nic_dev_id"]) is False
+            assert not ip.has_ip("%s/24" % ips["public_ip"], "eth%s" % ips["nic_dev_id"]), \
+                    "Delete %s on eth%s failed" % (ips["public_ip"], ips["nic_dev_id"])
 
     def test_create_guest_network(self):
         config = { "add":True,
