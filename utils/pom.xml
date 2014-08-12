@@ -99,6 +99,11 @@
       <groupId>commons-configuration</groupId>
       <artifactId>commons-configuration</artifactId>
     </dependency>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>servlet-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
     <!-- Test dependency in mysql for db tests -->
     <dependency>
       <groupId>mysql</groupId>
