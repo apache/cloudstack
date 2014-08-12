@@ -2,6 +2,7 @@
 
 import json
 import os
+import time
 import logging
 import cs_ip
 import cs_guestnetwork
@@ -125,6 +126,8 @@ class loadQueueFile:
 
     fileName = ''
     dpath = "/etc/cloudstack"
+    configCache = "/var/cache/cloud"
+    keep = True
     data = {}
 
     def load(self, data):
@@ -133,7 +136,7 @@ class loadQueueFile:
             self.type = self.data["type"]
             proc = updateDataBag(self)
             return
-        fn = self.dpath + '/' + self.fileName
+        fn = self.configCache + '/' + self.fileName
         try:
             handle = open(fn)
         except IOError:
@@ -142,6 +145,10 @@ class loadQueueFile:
             self.data = json.load(handle)
             self.type = self.data["type"]
             handle.close()
+            if self.keep:
+                self.__moveFile(fn, self.configCache + "/processed")
+            else:
+                os.remove(fn)
             proc = updateDataBag(self)
 
     def setFile(self, name):
@@ -155,4 +162,10 @@ class loadQueueFile:
 
     def setPath(self, path):
         self.dpath = path
+
+    def __moveFile(self, origPath, path):
+        if not os.path.exists(path):
+            os.makedirs(path)
+        timestamp = str(round(time.time()))
+        os.rename(origPath, path + "/" + self.fileName + "." + timestamp)
 
