@@ -45,9 +45,9 @@ import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -233,10 +233,14 @@ public class UriUtils {
     }
 
     public static Pair<String, Integer> validateUrl(String url) throws IllegalArgumentException {
+        return validateUrl(null, url);
+    }
+
+    public static Pair<String, Integer> validateUrl(String format, String url) throws IllegalArgumentException {
         try {
             URI uri = new URI(url);
             if ((uri.getScheme() == null) ||
-                (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
+                    (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
                 throw new IllegalArgumentException("Unsupported scheme for url: " + url);
             }
             int port = uri.getPort();
@@ -259,13 +263,86 @@ public class UriUtils {
                 if (hostAddr instanceof Inet6Address) {
                     throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
                 }
-                return new Pair<String, Integer>(host, port);
             } catch (UnknownHostException uhe) {
                 throw new IllegalArgumentException("Unable to resolve " + host);
             }
+
+            // verify format
+            if (format != null) {
+                String uripath = uri.getPath();
+                checkFormat(format, uripath);
+            }
+            return new Pair<String, Integer>(host, port);
+
         } catch (URISyntaxException use) {
             throw new IllegalArgumentException("Invalid URL: " + url);
         }
+    }
+
+    // verify if a URI path is compliance with the file format given
+    private static void checkFormat(String format, String uripath) {
+        if ((!uripath.toLowerCase().endsWith("vhd")) && (!uripath.toLowerCase().endsWith("vhd.zip")) && (!uripath.toLowerCase().endsWith("vhd.bz2")) &&
+                (!uripath.toLowerCase().endsWith("vhdx")) && (!uripath.toLowerCase().endsWith("vhdx.gz")) &&
+                (!uripath.toLowerCase().endsWith("vhdx.bz2")) && (!uripath.toLowerCase().endsWith("vhdx.zip")) &&
+                (!uripath.toLowerCase().endsWith("vhd.gz")) && (!uripath.toLowerCase().endsWith("qcow2")) && (!uripath.toLowerCase().endsWith("qcow2.zip")) &&
+                (!uripath.toLowerCase().endsWith("qcow2.bz2")) && (!uripath.toLowerCase().endsWith("qcow2.gz")) && (!uripath.toLowerCase().endsWith("ova")) &&
+                (!uripath.toLowerCase().endsWith("ova.zip")) && (!uripath.toLowerCase().endsWith("ova.bz2")) && (!uripath.toLowerCase().endsWith("ova.gz")) &&
+                (!uripath.toLowerCase().endsWith("tar")) && (!uripath.toLowerCase().endsWith("tar.zip")) && (!uripath.toLowerCase().endsWith("tar.bz2")) &&
+                (!uripath.toLowerCase().endsWith("tar.gz")) && (!uripath.toLowerCase().endsWith("vmdk")) && (!uripath.toLowerCase().endsWith("vmdk.gz")) &&
+                (!uripath.toLowerCase().endsWith("vmdk.zip")) && (!uripath.toLowerCase().endsWith("vmdk.bz2")) && (!uripath.toLowerCase().endsWith("img")) &&
+                (!uripath.toLowerCase().endsWith("img.gz")) && (!uripath.toLowerCase().endsWith("img.zip")) && (!uripath.toLowerCase().endsWith("img.bz2")) &&
+                (!uripath.toLowerCase().endsWith("raw")) && (!uripath.toLowerCase().endsWith("raw.gz")) && (!uripath.toLowerCase().endsWith("raw.bz2")) &&
+                (!uripath.toLowerCase().endsWith("raw.zip")) && (!uripath.toLowerCase().endsWith("iso")) && (!uripath.toLowerCase().endsWith("iso.zip"))
+                && (!uripath.toLowerCase().endsWith("iso.bz2")) && (!uripath.toLowerCase().endsWith("iso.gz"))) {
+            throw new IllegalArgumentException("Please specify a valid " + format.toLowerCase());
+        }
+
+        if ((format.equalsIgnoreCase("vhd")
+                && (!uripath.toLowerCase().endsWith("vhd")
+                && !uripath.toLowerCase().endsWith("vhd.zip")
+                && !uripath.toLowerCase().endsWith("vhd.bz2")
+                && !uripath.toLowerCase().endsWith("vhd.gz")))
+                || (format.equalsIgnoreCase("vhdx")
+                && (!uripath.toLowerCase().endsWith("vhdx")
+                        && !uripath.toLowerCase().endsWith("vhdx.zip")
+                        && !uripath.toLowerCase().endsWith("vhdx.bz2")
+                        && !uripath.toLowerCase().endsWith("vhdx.gz")))
+                || (format.equalsIgnoreCase("qcow2")
+                && (!uripath.toLowerCase().endsWith("qcow2")
+                        && !uripath.toLowerCase().endsWith("qcow2.zip")
+                        && !uripath.toLowerCase().endsWith("qcow2.bz2")
+                        && !uripath.toLowerCase().endsWith("qcow2.gz")))
+                || (format.equalsIgnoreCase("ova")
+                && (!uripath.toLowerCase().endsWith("ova")
+                        && !uripath.toLowerCase().endsWith("ova.zip")
+                        && !uripath.toLowerCase().endsWith("ova.bz2")
+                        && !uripath.toLowerCase().endsWith("ova.gz")))
+                || (format.equalsIgnoreCase("tar")
+                && (!uripath.toLowerCase().endsWith("tar")
+                        && !uripath.toLowerCase().endsWith("tar.zip")
+                        && !uripath.toLowerCase().endsWith("tar.bz2")
+                        && !uripath.toLowerCase().endsWith("tar.gz")))
+                || (format.equalsIgnoreCase("raw")
+                && (!uripath.toLowerCase().endsWith("img")
+                        && !uripath.toLowerCase().endsWith("img.zip")
+                        && !uripath.toLowerCase().endsWith("img.bz2")
+                        && !uripath.toLowerCase().endsWith("img.gz")
+                        && !uripath.toLowerCase().endsWith("raw")
+                        && !uripath.toLowerCase().endsWith("raw.bz2")
+                        && !uripath.toLowerCase().endsWith("raw.zip")
+                        && !uripath.toLowerCase().endsWith("raw.gz")))
+                || (format.equalsIgnoreCase("vmdk")
+                && (!uripath.toLowerCase().endsWith("vmdk")
+                        && !uripath.toLowerCase().endsWith("vmdk.zip")
+                        && !uripath.toLowerCase().endsWith("vmdk.bz2")
+                        && !uripath.toLowerCase().endsWith("vmdk.gz")))
+                || (format.equalsIgnoreCase("iso")
+                && (!uripath.toLowerCase().endsWith("iso.zip")
+                        && !uripath.toLowerCase().endsWith("iso.bz2")
+                        && !uripath.toLowerCase().endsWith("iso.gz")))) {
+            throw new IllegalArgumentException("Please specify a valid URL. URL:" + uripath + " is an invalid for the format " + format.toLowerCase());
+        }
+
     }
 
     public static InputStream getInputStreamFromUrl(String url, String user, String password) {

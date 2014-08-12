@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
 
@@ -251,7 +252,14 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                     out.seek(offset);
                     totalBytes += bytes;
                         if (!verifiedFormat && (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
-                            String unsupportedFormat = TemplateUtils.checkTemplateFormat(file.getAbsolutePath(), getDownloadUrl());
+                        String uripath = null;
+                        try {
+                            URI str = new URI(getDownloadUrl());
+                            uripath = str.getPath();
+                        } catch (URISyntaxException e) {
+                            s_logger.warn("Invalid download url: " + getDownloadUrl() + ", This should not happen since we have validated the url before!!");
+                        }
+                        String unsupportedFormat = TemplateUtils.checkTemplateFormat(file.getAbsolutePath(), uripath);
                             if (unsupportedFormat == null || !unsupportedFormat.isEmpty()) {
                                  try {
                                      request.abort();

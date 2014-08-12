@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.template;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -113,13 +111,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
-
-        if ((!url.toLowerCase().endsWith("iso")) && (!url.toLowerCase().endsWith("iso.zip")) && (!url.toLowerCase().endsWith("iso.bz2")) &&
-            (!url.toLowerCase().endsWith("iso.gz"))) {
-            throw new InvalidParameterValueException("Please specify a valid iso");
-        }
-
-        UriUtils.validateUrl(url);
+        UriUtils.validateUrl(ImageFormat.ISO.getFileExtension(), url);
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
@@ -130,86 +122,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
-        String path = null;
-        try {
-            URL str = new URL(url);
-            path = str.getPath();
-        } catch (MalformedURLException ex) {
-            throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is invalid");
-        }
-
-        try {
-            checkFormat(cmd.getFormat(), url);
-        } catch (InvalidParameterValueException ex) {
-            checkFormat(cmd.getFormat(), path);
-        }
-
-        UriUtils.validateUrl(url);
+        UriUtils.validateUrl(cmd.getFormat(), url);
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
         return profile;
-    }
-
-    private void checkFormat(String format, String url) {
-        if ((!url.toLowerCase().endsWith("vhd")) && (!url.toLowerCase().endsWith("vhd.zip")) && (!url.toLowerCase().endsWith("vhd.bz2")) &&
-            (!url.toLowerCase().endsWith("vhdx")) && (!url.toLowerCase().endsWith("vhdx.gz")) &&
-            (!url.toLowerCase().endsWith("vhdx.bz2")) && (!url.toLowerCase().endsWith("vhdx.zip")) &&
-            (!url.toLowerCase().endsWith("vhd.gz")) && (!url.toLowerCase().endsWith("qcow2")) && (!url.toLowerCase().endsWith("qcow2.zip")) &&
-            (!url.toLowerCase().endsWith("qcow2.bz2")) && (!url.toLowerCase().endsWith("qcow2.gz")) && (!url.toLowerCase().endsWith("ova")) &&
-            (!url.toLowerCase().endsWith("ova.zip")) && (!url.toLowerCase().endsWith("ova.bz2")) && (!url.toLowerCase().endsWith("ova.gz")) &&
-            (!url.toLowerCase().endsWith("tar")) && (!url.toLowerCase().endsWith("tar.zip")) && (!url.toLowerCase().endsWith("tar.bz2")) &&
-            (!url.toLowerCase().endsWith("tar.gz")) && (!url.toLowerCase().endsWith("vmdk")) && (!url.toLowerCase().endsWith("vmdk.gz")) &&
-            (!url.toLowerCase().endsWith("vmdk.zip")) && (!url.toLowerCase().endsWith("vmdk.bz2")) && (!url.toLowerCase().endsWith("img")) &&
-            (!url.toLowerCase().endsWith("img.gz")) && (!url.toLowerCase().endsWith("img.zip")) && (!url.toLowerCase().endsWith("img.bz2")) &&
-            (!url.toLowerCase().endsWith("raw")) && (!url.toLowerCase().endsWith("raw.gz")) && (!url.toLowerCase().endsWith("raw.bz2")) &&
-            (!url.toLowerCase().endsWith("raw.zip"))) {
-            throw new InvalidParameterValueException("Please specify a valid " + format.toLowerCase());
-        }
-
-        if ((format.equalsIgnoreCase("vhd")
-                 && (!url.toLowerCase().endsWith("vhd")
-                         && !url.toLowerCase().endsWith("vhd.zip")
-                         && !url.toLowerCase().endsWith("vhd.bz2")
-                         && !url.toLowerCase().endsWith("vhd.gz")))
-            || (format.equalsIgnoreCase("vhdx")
-                 && (!url.toLowerCase().endsWith("vhdx")
-                         && !url.toLowerCase().endsWith("vhdx.zip")
-                         && !url.toLowerCase().endsWith("vhdx.bz2")
-                         && !url.toLowerCase().endsWith("vhdx.gz")))
-            || (format.equalsIgnoreCase("qcow2")
-                 && (!url.toLowerCase().endsWith("qcow2")
-                         && !url.toLowerCase().endsWith("qcow2.zip")
-                         && !url.toLowerCase().endsWith("qcow2.bz2")
-                         && !url.toLowerCase().endsWith("qcow2.gz")))
-            || (format.equalsIgnoreCase("ova")
-                 && (!url.toLowerCase().endsWith("ova")
-                         && !url.toLowerCase().endsWith("ova.zip")
-                         && !url.toLowerCase().endsWith("ova.bz2")
-                         && !url.toLowerCase().endsWith("ova.gz")))
-            || (format.equalsIgnoreCase("tar")
-                 && (!url.toLowerCase().endsWith("tar")
-                         && !url.toLowerCase().endsWith("tar.zip")
-                         && !url.toLowerCase().endsWith("tar.bz2")
-                         && !url.toLowerCase().endsWith("tar.gz")))
-            || (format.equalsIgnoreCase("raw")
-                 && (!url.toLowerCase().endsWith("img")
-                         && !url.toLowerCase().endsWith("img.zip")
-                         && !url.toLowerCase().endsWith("img.bz2")
-                         && !url.toLowerCase().endsWith("img.gz")
-                         && !url.toLowerCase().endsWith("raw")
-                         && !url.toLowerCase().endsWith("raw.bz2")
-                         && !url.toLowerCase().endsWith("raw.zip")
-                         && !url.toLowerCase().endsWith("raw.gz")))
-            || (format.equalsIgnoreCase("vmdk")
-                 && (!url.toLowerCase().endsWith("vmdk")
-                         && !url.toLowerCase().endsWith("vmdk.zip")
-                         && !url.toLowerCase().endsWith("vmdk.bz2")
-                         && !url.toLowerCase().endsWith("vmdk.gz")))
-           ) {
-            throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is an invalid for the format " + format.toLowerCase());
-        }
-
     }
 
     @Override
