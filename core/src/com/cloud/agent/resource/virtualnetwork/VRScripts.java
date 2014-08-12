@@ -28,6 +28,7 @@ public class VRScripts {
     protected final static String VM_DHCP_CONFIG = "vm_dhcp_entry.json";
     protected final static String VM_PASSWORD_CONFIG = "vm_password.json";
     protected static final String FORWARDING_RULES_CONFIG = "forwarding_rules.json";
+    protected static final String FIREWALL_RULES_CONFIG = "firewall_rules.json";
     protected static final String VPN_USER_LIST_CONFIG = "vpn_user_list.json";
     protected static final String STATICNAT_RULES_CONFIG = "staticnat_rules.json";
     protected static final String SITE_2_SITE_VPN_CONFIG = "site_2_site_vpn.json";
