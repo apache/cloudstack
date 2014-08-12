@@ -23,10 +23,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
@@ -92,6 +88,10 @@ import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 
 public class ConfigHelper {
     private final static Gson gson;
@@ -174,7 +174,7 @@ public class ConfigHelper {
         for (FirewallRuleTO rule : cmd.getRules()) {
             FirewallRule fwRule = new FirewallRule(rule.getId(), rule.getSrcVlanTag(), rule.getSrcIp(), rule.getProtocol(), rule.getSrcPortRange(), rule.revoked(),
                     rule.isAlreadyAdded(), rule.getSourceCidrList(), rule.getPurpose().toString(), rule.getIcmpType(), rule.getIcmpCode(), rule.getTrafficType().toString(),
-                    rule.getGuestCidr(), rule.isDefaultEgressPolicy(), rule.getType().toString());
+                    rule.getGuestCidr(), rule.isDefaultEgressPolicy());
             rules.add(fwRule);
         }
 
