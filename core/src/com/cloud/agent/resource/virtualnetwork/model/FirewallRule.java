@@ -43,7 +43,7 @@ public class FirewallRule {
     }
 
     public FirewallRule(long id, String srcVlanTag, String srcIp, String protocol, int[] srcPortRange, boolean revoked, boolean alreadyAdded, List<String> sourceCidrList,
-            String purpose, Integer icmpType, Integer icmpCode, String trafficType, String guestCidr, boolean defaultEgressPolicy, String type) {
+            String purpose, Integer icmpType, Integer icmpCode, String trafficType, String guestCidr, boolean defaultEgressPolicy) {
         this.id = id;
         this.srcVlanTag = srcVlanTag;
         this.srcIp = srcIp;
@@ -58,7 +58,6 @@ public class FirewallRule {
         this.trafficType = trafficType;
         this.guestCidr = guestCidr;
         this.defaultEgressPolicy = defaultEgressPolicy;
-        this.type = type;
     }
 
     public long getId() {
@@ -171,14 +170,6 @@ public class FirewallRule {
 
     public void setDefaultEgressPolicy(boolean defaultEgressPolicy) {
         this.defaultEgressPolicy = defaultEgressPolicy;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
 }
