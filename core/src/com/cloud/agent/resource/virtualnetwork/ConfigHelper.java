@@ -61,6 +61,8 @@ import com.cloud.agent.resource.virtualnetwork.model.AllAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
 import com.cloud.agent.resource.virtualnetwork.model.DhcpConfig;
 import com.cloud.agent.resource.virtualnetwork.model.DhcpConfigEntry;
+import com.cloud.agent.resource.virtualnetwork.model.FirewallRule;
+import com.cloud.agent.resource.virtualnetwork.model.FirewallRules;
 import com.cloud.agent.resource.virtualnetwork.model.ForwardingRule;
 import com.cloud.agent.resource.virtualnetwork.model.ForwardingRules;
 import com.cloud.agent.resource.virtualnetwork.model.GuestNetwork;
@@ -87,7 +89,6 @@ import com.cloud.agent.resource.virtualnetwork.model.VpnUser;
 import com.cloud.agent.resource.virtualnetwork.model.VpnUserList;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -126,7 +127,7 @@ public class ConfigHelper {
         } else if (cmd instanceof SetFirewallRulesCommand) {
             cfg = generateConfig((SetFirewallRulesCommand)cmd);
         } else if (cmd instanceof BumpUpPriorityCommand) {
-            cfg = generateConfig((BumpUpPriorityCommand)cmd);
+            cfg = generateConfig((BumpUpPriorityCommand)cmd);   // Migrated (SB, TBT)
         } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
             cfg = generateConfig((RemoteAccessVpnCfgCommand)cmd); // Migrated (SB, TBT)
         } else if (cmd instanceof VpnUsersCfgCommand) {
@@ -169,43 +170,17 @@ public class ConfigHelper {
 
 
     private static List<ConfigItem> generateConfig(SetFirewallRulesCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
-
-        String egressDefault = cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT);
-
-        FirewallRuleTO[] allrules = cmd.getRules();
-        FirewallRule.TrafficType trafficType = allrules[0].getTrafficType();
-
-        String[][] rules = cmd.generateFwRules();
-        String args = " -F";
-
-        if (trafficType == FirewallRule.TrafficType.Egress) {
-            args += " -E";
-            if (egressDefault.equals("true")) {
-                args += " -P 1";
-            } else if (egressDefault.equals("System")) {
-                args += " -P 2";
-            } else {
-                args += " -P 0";
-            }
+        List<FirewallRule> rules = new ArrayList<FirewallRule>();
+        for (FirewallRuleTO rule : cmd.getRules()) {
+            FirewallRule fwRule = new FirewallRule(rule.getId(), rule.getSrcVlanTag(), rule.getSrcIp(), rule.getProtocol(), rule.getSrcPortRange(), rule.revoked(),
+                    rule.isAlreadyAdded(), rule.getSourceCidrList(), rule.getPurpose().toString(), rule.getIcmpType(), rule.getIcmpCode(), rule.getTrafficType().toString(),
+                    rule.getGuestCidr(), rule.isDefaultEgressPolicy(), rule.getType().toString());
+            rules.add(fwRule);
         }
 
-        StringBuilder sb = new StringBuilder();
-        String[] fwRules = rules[0];
-        if (fwRules.length > 0) {
-            for (int i = 0; i < fwRules.length; i++) {
-                sb.append(fwRules[i]).append(',');
-            }
-            args += " -a " + sb.toString();
-        }
+        FirewallRules ruleSet = new FirewallRules(rules.toArray(new FirewallRule[rules.size()]));
+        return generateConfigItems(ruleSet);
 
-        if (trafficType == FirewallRule.TrafficType.Egress) {
-            cfg.add(new ScriptConfigItem(VRScripts.FIREWALL_EGRESS, args));
-        } else {
-            cfg.add(new ScriptConfigItem(VRScripts.FIREWALL_INGRESS, args));
-        }
-
-        return cfg;
     }
 
     private static List<ConfigItem> generateConfig(SetPortForwardingRulesCommand cmd) {
@@ -497,6 +472,9 @@ public class ConfigHelper {
         switch (configuration.getType()) {
         case ConfigBase.FORWARDING_RULES:
             destinationFile = VRScripts.FORWARDING_RULES_CONFIG;
+            break;
+        case ConfigBase.FIREWALL_RULES:
+            destinationFile = VRScripts.FIREWALL_RULES_CONFIG;
             break;
         case ConfigBase.GUEST_NETWORK:
             destinationFile = VRScripts.GUEST_NETWORK_CONFIG;
