@@ -35,6 +35,7 @@ public abstract class ConfigBase {
     public static final String STATIC_ROUTES = "staticroutes";
     public static final String REMOTEACCESSVPN = "remoteaccessvpn";
     public static final String MONITORSERVICE = "monitorservice";
+    public static final String DHCP_CONFIG = "dhcpconfig";
 
     private String type = UNKNOWN;
 
