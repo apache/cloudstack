@@ -112,6 +112,19 @@ class Services:
                                             "SourceNat": 'VirtualRouter',
                                         },
                                     },
+                         "network_offering_withoutDNS" : {
+                                    "name": 'NW offering without DNS',
+                                    "displaytext": 'NW offering without DNS',
+                                    "guestiptype": 'Isolated',
+                                    "supportedservices": 'SourceNat,StaticNat,Dhcp',
+                                    "traffictype": 'GUEST',
+                                    "availability": 'Optional',
+                                    "serviceProviderList": {
+                                            "Dhcp": 'VirtualRouter',
+                                            "SourceNat": 'VirtualRouter',
+                                            "StaticNat": 'VirtualRouter',
+                                        },
+                                    },
                          "network": {
                                   "name": "Test Network",
                                   "displaytext": "Test Network",
@@ -849,6 +862,57 @@ class TestNOVirtualRouter(cloudstackTestCase):
                              "VM creation failed with network %s" % self.network.id
                              )
         self.debug("Deployed VM in network: %s" % self.network.id)
+        return
+
+    @attr(tags=["advanced", "selfservice"])
+    def test_04_network_without_domain_CS19303(self):
+        """
+        @Desc: Errors editing a network without a network domain specified
+        @Steps:
+        Step1: Create a network offering with SourceNAT,staticNAT and dhcp services
+        Step2: Verify the network offering creation
+        Step3: Create an isolated network with the offering created in step1 and without a network domain specified
+        Step4: Verify the network creation
+        Step5: Edit the network and verify that updating network should not error out
+        """
+        self.debug(
+            "Creating n/w offering with SourceNat,StaticNat and DHCP services in VR & conserve mode:off"
+        )
+        self.network_offering = NetworkOffering.create(
+            self.api_client,
+            self.services["network_offering_withoutDNS"],
+            conservemode=False
+        )
+        self.assertIsNotNone(
+            self.network_offering,
+            "Failed to create NO with Sourcenat,staticnat and dhcp only services"
+        )
+        self.cleanup.append(self.network_offering)
+        self.debug("Created n/w offering with ID: %s" % self.network_offering.id)
+        # Enable Network offering
+        self.network_offering.update(self.apiclient, state='Enabled')
+        self.debug("Creating nw without dns service using no id: %s" % self.network_offering.id)
+        self.network = Network.create(
+            self.apiclient,
+            self.services["network"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkofferingid=self.network_offering.id,
+            zoneid=self.zone.id
+        )
+        self.assertIsNotNone(
+            self.network,
+            "Failed to create network without DNS service and network domain"
+        )
+        self.debug("Created network with NO: %s" % self.network_offering.id)
+        try:
+            self.network_update = self.network.update(
+                self.apiclient,
+                name="NW without nw domain"
+            )
+            self.debug("Success:Network update has been successful without network domain")
+        except Exception as e:
+            self.fail("Error editing a network without network domain specified: %s" % e)
         return
 
 class TestNetworkUpgrade(cloudstackTestCase):
