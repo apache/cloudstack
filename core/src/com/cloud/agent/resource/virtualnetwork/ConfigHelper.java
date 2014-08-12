@@ -63,6 +63,7 @@ import com.cloud.agent.resource.virtualnetwork.model.IpAddress;
 import com.cloud.agent.resource.virtualnetwork.model.IpAddressAlias;
 import com.cloud.agent.resource.virtualnetwork.model.IpAliases;
 import com.cloud.agent.resource.virtualnetwork.model.IpAssociation;
+import com.cloud.agent.resource.virtualnetwork.model.MonitorService;
 import com.cloud.agent.resource.virtualnetwork.model.NetworkACL;
 import com.cloud.agent.resource.virtualnetwork.model.ProtocolAclRule;
 import com.cloud.agent.resource.virtualnetwork.model.RemoteAccessVpn;
@@ -124,13 +125,13 @@ public class ConfigHelper {
         } else if (cmd instanceof BumpUpPriorityCommand) {
             cfg = generateConfig((BumpUpPriorityCommand)cmd);
         } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
-            cfg = generateConfig((RemoteAccessVpnCfgCommand)cmd); //WIP (SB)
+            cfg = generateConfig((RemoteAccessVpnCfgCommand)cmd); // Migrated (SB, TBT)
         } else if (cmd instanceof VpnUsersCfgCommand) {
-            cfg = generateConfig((VpnUsersCfgCommand)cmd); // Migrated (SB)
+            cfg = generateConfig((VpnUsersCfgCommand)cmd); // Migrated (SB, TBT)
         } else if (cmd instanceof Site2SiteVpnCfgCommand) {
             cfg = generateConfig((Site2SiteVpnCfgCommand)cmd);  // Migrated (SB)
         } else if (cmd instanceof SetMonitorServiceCommand) {
-            cfg = generateConfig((SetMonitorServiceCommand)cmd);
+            cfg = generateConfig((SetMonitorServiceCommand)cmd);  // Migrated (SB, TBT)
         } else if (cmd instanceof SetupGuestNetworkCommand) {
             cfg = generateConfig((SetupGuestNetworkCommand)cmd); // Migrated
         } else if (cmd instanceof SetNetworkACLCommand) {
@@ -156,15 +157,6 @@ public class ConfigHelper {
         VpnUserList vpnUserList = new VpnUserList(vpnUsers);
         return generateConfigItems(vpnUserList);
     }
-
-    /*
-    private static List<ConfigItem> generateConfig(DhcpEntryCommand cmd) {
-        VmDhcpConfig vmDhcpConfig = new VmDhcpConfig(cmd.getVmName(), cmd.getVmMac(), cmd.getVmIpAddress(), cmd.getVmIp6Address(), cmd.getDuid(), cmd.getDefaultDns(),
-                cmd.getDefaultRouter(), cmd.getStaticRoutes(), cmd.isDefault());
-
-        return generateConfigItems(vmDhcpConfig);
-    }
-    */
 
     private static List<ConfigItem> generateConfig(RemoteAccessVpnCfgCommand cmd) {
         RemoteAccessVpn remoteAccessVpn = new RemoteAccessVpn(cmd.isCreate(), cmd.getIpRange(), cmd.getPresharedKey(), cmd.getVpnServerIp(), cmd.getLocalIp(), cmd.getLocalCidr(),
@@ -384,18 +376,8 @@ public class ConfigHelper {
 
 
     private static List<ConfigItem> generateConfig(SetMonitorServiceCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
-
-        String config = cmd.getConfiguration();
-        String disableMonitoring = cmd.getAccessDetail(NetworkElementCommand.ROUTER_MONITORING_ENABLE);
-
-        String args = " -c " + config;
-        if (disableMonitoring != null) {
-            args = args + " -d";
-        }
-
-        cfg.add(new ScriptConfigItem(VRScripts.MONITOR_SERVICE, args));
-        return cfg;
+        MonitorService monitorService = new MonitorService(cmd.getConfiguration(), cmd.getAccessDetail(NetworkElementCommand.ROUTER_MONITORING_ENABLE));
+        return generateConfigItems(monitorService);
     }
 
     private static List<ConfigItem> generateConfig(SetupGuestNetworkCommand cmd) {
@@ -550,6 +532,9 @@ public class ConfigHelper {
             break;
         case ConfigBase.REMOTEACCESSVPN:
             destinationFile = VRScripts.REMOTE_ACCESS_VPN_CONFIG;
+            break;
+        case ConfigBase.MONITORSERVICE:
+            destinationFile = VRScripts.MONITOR_SERVICE_CONFIG;
             break;
         default:
             throw new CloudRuntimeException("Unable to process the configuration for " + configuration.getType());
