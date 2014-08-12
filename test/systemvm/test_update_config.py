@@ -135,17 +135,33 @@ class UpdateConfigTestCase(SystemVMTestCase):
                    "domain_name":"devcloud.local",
                    "type":"guestnetwork"
                    }
+        self.guest_network(config)
+        config = { "add":True,
+                   "mac_address":"02:00:56:36:00:02",
+                   "device":"eth4",
+                   "router_guest_ip":"172.16.2.1",
+                   "router_guest_gateway":"172.16.2.0",
+                   "router_guest_netmask":"255.255.255.0",
+                   "cidr":"24",
+                   "dns":"8.8.8.8,8.8.8.4",
+                   "domain_name":"devcloud2.local",
+                   "type":"guestnetwork"
+                   }
+        self.guest_network(config)
+
+    def guest_network(self,config):
         self.update_config(config)
-        assert ip.has_ip("172.16.1.1/24", "eth4")
-        assert process.is_up("apache2") is True
-        assert process.is_up("dnsmasq") is True
+        assert ip.has_ip("%s/%s" % (config['router_guest_ip'], config['cidr']), config['device'])
+        assert process.is_up("apache2"), "Apache2 should be running after adding a guest network"
+        assert process.is_up("dnsmasq"), "Dnsmasq should be running after adding a guest network"
         assert port.is_listening(80)
         assert port.is_listening(53)
         assert port.is_listening(53)
         assert port.is_listening(67)
         config['add'] = False
         self.update_config(config)
-        assert ip.has_ip("172.16.1.1/24", "eth4") is False
+        assert not ip.has_ip("%s/%s" % (config['router_guest_ip'], config['cidr']), config['device'])
+
 
 if __name__ == '__main__':
     import unittest
