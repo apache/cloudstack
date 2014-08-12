@@ -57,6 +57,8 @@ public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuth
             s_commandList = new ArrayList<Class<?>>();
             s_commandList.add(DefaultLoginAPIAuthenticatorCmd.class);
             s_commandList.add(DefaultLogoutAPIAuthenticatorCmd.class);
+            s_commandList.add(SAML2LoginAPIAuthenticatorCmd.class);
+            s_commandList.add(SAML2LogoutAPIAuthenticatorCmd.class);
         }
         return s_commandList;
     }
