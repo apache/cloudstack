@@ -118,9 +118,6 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
             while (attrNames.hasMoreElements()) {
                 final String attrName = (String) attrNames.nextElement();
                 final Object attrObj = session.getAttribute(attrName);
-                if (ApiConstants.USER_ID.equalsIgnoreCase(attrName)) {
-                    response.setUserId(attrObj.toString());
-                }
                 if (ApiConstants.USERNAME.equalsIgnoreCase(attrName)) {
                     response.setUsername(attrObj.toString());
                 }
