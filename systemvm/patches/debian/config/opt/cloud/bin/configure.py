@@ -25,6 +25,7 @@ import re
 import time
 import shutil
 import os.path
+from cs_ip import merge
 
 class CsHelper:
     """ General helper functions 
@@ -623,16 +624,39 @@ class CsIP:
             logging.info("Removed address %s from device %s", ip, self.dev)
             self.post_config_change("delete")
 
+
 def main(argv):
 
     logging.basicConfig(filename='/var/log/cloud.log',
                         level=logging.DEBUG,
                         format='%(asctime)s %(message)s')
-
+                        
+    # we need to parse the cmd_line often, cloudstack might change it between reboots
+    cmdLine = dataBag()
+    cmdLine.setKey("cmd_line")
+    cmdLine.load()
+    cmdLineData = cmdLine.getDataBag()
+    
     db = dataBag()
     db.setKey("ips")
     db.load()
     dbag = db.getDataBag()
+
+    if not cmdLineData["cmd_line"]["type"] in { "vpcrouter", "router"}:
+        logging.info("Not equipped to handle %s yet" % cmdLineData["cmd_line"]["type"])
+        return
+    
+    if cmdLineData["cmd_line"]["type"] == "vpcrouter":
+        # Create "fake" dev for eth0
+        controlIp = dict()
+        controlIp["add"] = True
+        controlIp["public_ip"] = cmdLineData["cmd_line"]["eth0ip"]
+        controlIp["netmask"] = cmdLineData["cmd_line"]["eth0mask"]
+        controlIp["nic_dev_id"] = 0
+        controlIp["nw_type"] = "control"
+        merge(dbag, controlIp)
+
+
     for dev in CsDevice('').list():
         ip = CsIP(dev)
         ip.compare(dbag)
