@@ -337,7 +337,8 @@ public class UriUtils {
                         && !uripath.toLowerCase().endsWith("vmdk.bz2")
                         && !uripath.toLowerCase().endsWith("vmdk.gz")))
                 || (format.equalsIgnoreCase("iso")
-                && (!uripath.toLowerCase().endsWith("iso.zip")
+                && (!uripath.toLowerCase().endsWith("iso")
+                        && !uripath.toLowerCase().endsWith("iso.zip")
                         && !uripath.toLowerCase().endsWith("iso.bz2")
                         && !uripath.toLowerCase().endsWith("iso.gz")))) {
             throw new IllegalArgumentException("Please specify a valid URL. URL:" + uripath + " is an invalid for the format " + format.toLowerCase());
