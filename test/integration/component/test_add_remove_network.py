@@ -1770,28 +1770,17 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
                     % (defaultNicIdBeforeUpdate, nonDefaultNicIdBeforeUpdate))
         self.debug("Destroying VM %s" % virtual_machine.id)
         virtual_machine.delete(self.apiclient)
-        vm_list = list_virtual_machines(self.apiclient, id=virtual_machine.id)
-        vm_list_validation_result = validateList(vm_list)
-
-        self.assertEqual(vm_list_validation_result[0], PASS, "vm list validation failed due to %s" %
-			 vm_list_validation_result[2])
-        vm = vm_list_validation_result[1]
-        vm_state = vm.state.lower()
-        self.debug("VM state is: %s" % vm_state)
-        if vm_state in ["running", "stopped"]:
-            self.fail("failed to destroy the instance: %s" % vm.id)
 
         self.debug("Making non default nic as default nic")
 
         cmd = updateDefaultNicForVirtualMachine.updateDefaultNicForVirtualMachineCmd()
-        cmd.virtualmachineid  = vm.id
+        cmd.virtualmachineid  = virtual_machine.id
         cmd.nicid = nonDefaultNicIdBeforeUpdate
 
         with self.assertRaises(Exception) as e:
             self.apiclient.updateDefaultNicForVirtualMachine(cmd)
             self.debug("updateDefaultNicForVirtualMachine API failed with exception: %s" %
                     e.exception)
-
         return
 
     @attr(tags = ["advanced"])
