@@ -666,7 +666,8 @@ def main(argv):
             continue
         ip = CsIP(dev)
         for address in dbag[dev]:
-            CsRoute(dev).add(address)
+            if not address["nw_type"] == "control":
+                CsRoute(dev).add(address)
             ip.setAddress(address)
             if ip.configured():
                 logging.info("Address %s on device %s already configured", ip.ip(), dev)
