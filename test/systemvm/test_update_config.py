@@ -136,6 +136,18 @@ class UpdateConfigTestCase(SystemVMTestCase):
                    "type":"guestnetwork"
                    }
         self.guest_network(config)
+        passw = { "172.16.1.20" : "20",
+                  "172.16.1.21" : "21",
+                  "172.16.1.22" : "22"
+                  }
+        self.check_password(passw)
+
+        passw = { "172.16.1.20" : "120",
+                  "172.16.1.21" : "121",
+                  "172.16.1.22" : "122"
+                  }
+        self.check_password(passw)
+
         config = { "add":True,
                    "mac_address":"02:00:56:36:00:02",
                    "device":"eth4",
@@ -148,6 +160,20 @@ class UpdateConfigTestCase(SystemVMTestCase):
                    "type":"guestnetwork"
                    }
         self.guest_network(config)
+
+    def check_password(self,passw):
+        for val in passw:
+            self.add_password(val, passw[val])
+        for val in passw:
+            assert file.has_line("/var/cache/cloud/passwords", "%s=%s" % (val, passw[val]))
+
+    def add_password(self, ip, password):
+        config = { "ip_address": ip,
+                   "password":password,
+                   "type":"vmpassword"
+                 }
+        self.update_config(config)
+        assert file.has_line("/var/cache/cloud/passwords", "%s=%s" % (ip, password))
 
     def guest_network(self,config):
         self.update_config(config)
