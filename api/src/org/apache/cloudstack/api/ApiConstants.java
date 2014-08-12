@@ -210,6 +210,7 @@ public class ApiConstants {
     public static final String RESOURCE_TYPE = "resourcetype";
     public static final String RESPONSE = "response";
     public static final String REVERTABLE = "revertable";
+    public static final String REGISTERED = "registered";
     public static final String QUERY_FILTER = "queryfilter";
     public static final String SCHEDULE = "schedule";
     public static final String SCOPE = "scope";
