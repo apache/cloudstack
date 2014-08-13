@@ -78,7 +78,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   #noinspection RubyStringKeysInHashInspection
   patches = {
-    'config/etc'  => '/etc',
     'config/opt'  => '/opt',
     'config/root' => '/root',
     'config/var'  => '/var',
