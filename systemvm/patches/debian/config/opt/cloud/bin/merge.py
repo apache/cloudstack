@@ -8,6 +8,7 @@ import cs_ip
 import cs_guestnetwork
 import cs_cmdline
 import cs_vmp
+import cs_network_acl
 
 from pprint import pprint
 
@@ -75,6 +76,8 @@ class updateDataBag:
           dbag = self.processCL(self.db.getDataBag())
        elif self.qFile.type == 'vmpassword':
           dbag = self.processVMpassword(self.db.getDataBag())
+       elif self.qFile.type == 'networkacl':
+          dbag = self.process_network_acl(self.db.getDataBag())
        else:
           logging.error("Error I do not know what to do with file of type %s", self.qFile.type)
           return
@@ -96,6 +99,9 @@ class updateDataBag:
         if 'domain_name' not in d.keys() or d['domain_name'] == '':
             d['domain_name'] = "cloudnine.internal"
         return cs_guestnetwork.merge(dbag, self.qFile.data)
+
+    def process_network_acl(self, dbag):
+        return cs_network_acl.merge(dbag, self.qFile.data)
 
     def processVMpassword(self, dbag):
         return cs_vmp.merge(dbag, self.qFile.data)
