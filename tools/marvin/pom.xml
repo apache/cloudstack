@@ -72,7 +72,8 @@
               <workingDirectory>${exec.workingdir}</workingDirectory>
               <executable>python</executable>
               <arguments>
-                <argument>setup.py</argument>
+                <argument>mvn-setup.py</argument>
+                <argument>${project.version}</argument>
                 <argument>sdist</argument>
               </arguments>
             </configuration>
@@ -125,7 +126,8 @@
                   <workingDirectory>${exec.workingdir}</workingDirectory>
                   <executable>python</executable>
                   <arguments>
-                    <argument>setup.py</argument>
+                    <argument>mvn-setup.py</argument>
+                    <argument>${project.version}</argument>
                     <argument>sdist</argument>
                   </arguments>
                 </configuration>
@@ -141,8 +143,9 @@
                   <executable>pip</executable>
                   <arguments>
                     <argument>install</argument>
+                    <argument>--allow-external</argument>
                     <argument>--upgrade</argument>
-                    <argument>Marvin-0.1.0.tar.gz</argument>
+                    <argument>Marvin-${project.version}.tar.gz</argument>
                   </arguments>
                 </configuration>
               </execution>

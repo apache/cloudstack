@@ -27,13 +27,7 @@ except ImportError:
         raise RuntimeError("python setuptools is required to build Marvin")
 
 
-VERSION = '4.5.0'
-
-import os
-
-
-def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read().strip()
+VERSION = "4.5.0-SNAPSHOT"
 
 setup(name="Marvin",
       version=VERSION,
