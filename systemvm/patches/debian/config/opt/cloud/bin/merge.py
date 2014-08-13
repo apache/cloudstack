@@ -60,22 +60,25 @@ class updateDataBag:
         self.process()
 
     def process(self):
-        self.db = dataBag()
-        self.db.setKey( self.qFile.type )
-        dbag = self.db.load( )
-        logging.info("Command of type %s received", self.qFile.type)
+       self.db = dataBag()
+       self.db.setKey( self.qFile.type )
+       dbag = self.db.load( )
+       logging.info("Command of type %s received", self.qFile.type)
 
-        if self.qFile.type == 'ips':
-           dbag = self.processIP(self.db.getDataBag())
-        if self.qFile.type == 'guestnetwork':
-           dbag = self.processGuestNetwork(self.db.getDataBag())
-        if self.qFile.type == 'cmdline':
-           dbag = self.processCL(self.db.getDataBag())
-        if self.qFile.type == 'cmdline':
-           dbag = self.processCL(self.db.getDataBag())
-        if self.qFile.type == 'vmpassword':
-           dbag = self.processVMpassword(self.db.getDataBag())
-        self.db.save(dbag)
+       if self.qFile.type == 'ips':
+          dbag = self.processIP(self.db.getDataBag())
+       elif self.qFile.type == 'guestnetwork':
+          dbag = self.processGuestNetwork(self.db.getDataBag())
+       elif self.qFile.type == 'cmdline':
+          dbag = self.processCL(self.db.getDataBag())
+       elif self.qFile.type == 'cmdline':
+          dbag = self.processCL(self.db.getDataBag())
+       elif self.qFile.type == 'vmpassword':
+          dbag = self.processVMpassword(self.db.getDataBag())
+       else:
+          logging.error("Error I do not know what to do with file of type %s", self.qFile.type)
+          return
+       self.db.save(dbag)
   
     def processGuestNetwork(self, dbag):
         d = self.qFile.data
