@@ -26,58 +26,7 @@ import time
 import shutil
 import os.path
 from cs_ip import merge
-
-class CsHelper:
-    """ General helper functions 
-    for use in the configuation process
-
-    TODO - Convert it to a module
-    """
-    def updatefile(self, filename, val, mode):
-        """ add val to file """
-        for line in open(filename):
-            if line.strip().lstrip("0") == val:
-                return
-        # set the value
-        handle = open(filename, mode)
-        handle.write(val)
-        handle.close()
-
-    def definedinfile(self, filename, val):
-        """ Check if val is defined in the file """
-        for line in open(filename):
-            if re.search(val, line):
-                return True
-        return False
-
-    def addifmissing(self, filename, val):
-        """ Add something to a file
-        if it is not already there """
-        if not CsHelper().definedinfile(filename, val):
-             CsHelper().updatefile(filename, val + "\n", "a")
-             logging.debug("Added %s to file %s" % (val, filename))
-
-    def execute(self, command):
-        """ Execute command """
-        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        result = p.communicate()[0]
-        return result.splitlines()
-
-    def service(self, name, op):
-        self.execute("service %s %s" % (name, op))
-        logging.info("Service %s %s" % (name, op))
-
-    def copy_if_needed(self, src, dest):
-        """ Copy a file if the destination does not already exist
-        """
-        if os.path.isfile(dest):
-            return
-        try:
-            shutil.copy2(src, dest)
-        except IOError:
-            logging.Error("Could not copy %s to %s" % (src, dest))
-        else:
-            logging.info("Copied %s to %s" % (src, dest))
+import CsHelper
 
 class CsFile:
     """ File editors """
@@ -139,12 +88,12 @@ class CsRule:
     def addMark(self):
         if not self.findMark():
             cmd = "ip rule add fwmark %s table %s" % (self.tableNo, self.table)
-            CsHelper().execute(cmd)
+            CsHelper.execute(cmd)
             logging.info("Added fwmark rule for %s" % (self.table))
 
     def findMark(self):
         srch = "from all fwmark 0x%s lookup %s" % (self.tableNo, self.table)
-        for i in CsHelper().execute("ip rule show"):
+        for i in CsHelper.execute("ip rule show"):
             if srch in i.strip():
                 return True
         return False
@@ -161,11 +110,11 @@ class CsRoute:
     def routeTable(self):
         str = "%s %s" % (self.tableNo, self.table)
         filename = "/etc/iproute2/rt_tables"
-        CsHelper().addifmissing(filename, str)
+        CsHelper.addifmissing(filename, str)
 
     def flush(self):
-        CsHelper().execute("ip route flush table %s" % (self.table))
-        CsHelper().execute("ip route flush cache")
+        CsHelper.execute("ip route flush table %s" % (self.table))
+        CsHelper.execute("ip route flush cache")
 
     def add(self, address, method = "add"):
         # ip route show dev eth1 table Table_eth1 10.0.2.0/24
@@ -176,7 +125,7 @@ class CsRoute:
     def set_route(self, cmd, method = "add"):
         """ Add a route is it is not already defined """
         found = False
-        for i in CsHelper().execute("ip route show " + cmd):
+        for i in CsHelper.execute("ip route show " + cmd):
             found = True
         if not found and method == "add":
             logging.info("Add " + cmd)
@@ -186,7 +135,7 @@ class CsRoute:
             cmd = "ip route delete " + cmd
         else:
             return
-        CsHelper().execute(cmd)
+        CsHelper.execute(cmd)
 
 
 class CsRpsrfs:
@@ -201,10 +150,10 @@ class CsRpsrfs:
         if cpus < 2: return
         val = format((1 << cpus) - 1, "x")
         filename = "/sys/class/net/%s/queues/rx-0/rps_cpus" % (self.dev)
-        CsHelper().updatefile(filename, val, "w+")
-        CsHelper().updatefile("/proc/sys/net/core/rps_sock_flow_entries", "256", "w+")
+        CsHelper.updatefile(filename, val, "w+")
+        CsHelper.updatefile("/proc/sys/net/core/rps_sock_flow_entries", "256", "w+")
         filename = "/sys/class/net/%s/queues/rx-0/rps_flow_cnt" % (self.dev)
-        CsHelper().updatefile(filename, "256", "w+")
+        CsHelper.updatefile(filename, "256", "w+")
         logging.debug("rpsfr is configured for %s cpus" % (cpus))
 
     def inKernel(self):
@@ -240,7 +189,7 @@ class CsProcess(object):
 
     def find(self):
         self.pid = []
-        for i in CsHelper().execute("ps aux"):
+        for i in CsHelper.execute("ps aux"):
             items = len(self.search)
             proc = re.split("\s+", i)[items*-1:]
             matches = len([m for m in proc if m in self.search])
@@ -282,6 +231,11 @@ class CsApp:
             gn = CsGuestNetwork(self.dev)
             self.domain = gn.get_domain()
 
+class CsAcl(CsApp):
+    """
+    Manage network acls
+    """
+
 class CsPasswdSvc(CsApp):
     """
       nohup bash /opt/cloud/bin/vpc_passwd_server $ip >/dev/null 2>&1 &
@@ -305,11 +259,11 @@ class CsApache(CsApp):
         file = "/etc/apache2/conf.d/vhost%s.conf" % self.dev
         if os.path.isfile(file):
             os.remove(file)
-            CsHelper().service("apache2", "restart")
+            CsHelper.service("apache2", "restart")
 
 
     def setup(self):
-        CsHelper().copy_if_needed("/etc/apache2/vhostexample.conf",
+        CsHelper.copy_if_needed("/etc/apache2/vhostexample.conf",
                                   "/etc/apache2/conf.d/vhost%s.conf" % self.dev)
 
         file = CsFile("/etc/apache2/conf.d/vhost%s.conf" % (self.dev))
@@ -321,7 +275,7 @@ class CsApache(CsApp):
         file.search("ServerName.*", "\tServerName vhost%s.cloudinternal.com" % (self.dev))
         file.commit()
         if file.is_changed():
-            CsHelper().service("apache2", "restart")
+            CsHelper.service("apache2", "restart")
 
         cmds = "-A INPUT -i %s -d %s -p %s -m %s --state %s --dport %s -j %s"
         slist = [ self.dev, self.ip, "tcp", "state", "NEW", "80", "ACCEPT" ]
@@ -363,7 +317,7 @@ class CsDnsmasq(CsApp):
         file.commit()
 
         if file.is_changed():
-            CsHelper().service("dnsmasq", "restart")
+            CsHelper.service("dnsmasq", "restart")
 
 
 class CsGuestNetwork:
@@ -404,7 +358,7 @@ class CsDevice:
         Configure Reverse Path Filtering
         """
         filename = "/proc/sys/net/ipv4/conf/%s/rp_filter" % self.dev
-        CsHelper().updatefile(filename, "1\n", "w")
+        CsHelper.updatefile(filename, "1\n", "w")
 
     def buildlist(self):
         """
@@ -436,10 +390,10 @@ class CsDevice:
     def setUp(self):
         """ Ensure device is up """
         cmd = "ip link show %s | grep 'state DOWN'" % self.dev
-        for i in CsHelper().execute(cmd):
+        for i in CsHelper.execute(cmd):
             if " DOWN " in i:
                 cmd2 = "ip link set %s up" % self.dev
-                CsHelper().execute(cmd2)
+                CsHelper.execute(cmd2)
         CsIpTables(self.dev).set_connmark()
 
 
@@ -517,7 +471,7 @@ class CsIpTables:
             if table != '':
                 cmd = "-t %s " % table
             cmd += cmds % tuple(slist)
-            CsHelper().execute("iptables %s" % (cmd))
+            CsHelper.execute("iptables %s" % (cmd))
             logging.info("iptables %s", cmd)
 
     def set_chain(self, table, method):
@@ -528,7 +482,7 @@ class CsIpTables:
             if table != '':
                 cmd = "-t %s " % table
             cmd += "-N %s" % tuple(slist)
-            CsHelper().execute("iptables %s" % (cmd))
+            CsHelper.execute("iptables %s" % (cmd))
             logging.info("iptables %s", cmd)
 
     def has_rule(self, table, list):
@@ -536,7 +490,7 @@ class CsIpTables:
         cmd = "iptables-save "
         if table != "":
            cmd += "-t %s" % table
-        for line in CsHelper().execute(cmd):
+        for line in CsHelper.execute(cmd):
             matches = len([i for i in list if i in line])
             if matches == len(list):
                 return True
@@ -618,7 +572,7 @@ class CsIP:
     def list(self):
         self.iplist = {}
         cmd = ("ip addr show dev " + self.dev)
-        for i in CsHelper().execute(cmd):
+        for i in CsHelper.execute(cmd):
             vals = i.lstrip().split()
             if (vals[0] == 'inet'):
                 self.iplist[vals[1]] = self.dev
@@ -639,7 +593,7 @@ class CsIP:
 
     def arpPing(self):
         cmd = "arping -c 1 -I %s -A -U -s %s %s" % (self.dev, self.address['public_ip'], self.address['public_ip'])
-        CsHelper().execute(cmd)
+        CsHelper.execute(cmd)
 
     # Delete any ips that are configured but not in the bag
     def compare(self, bag):
