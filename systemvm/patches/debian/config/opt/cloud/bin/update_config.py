@@ -21,6 +21,13 @@ if not (os.path.isfile(filePath) and os.access(filePath, os.R_OK)):
     print "You are telling me to process %s, but i can't access it" % filePath
     sys.exit(1)
 
+# If the command line json file is unprocessed process it
+# This is important or, the control interfaces will get deleted!
+if os.path.isfile("filePath/%s" % "cmd_line.json"):
+    qf = loadQueueFile()
+    qf.setFile("cmd_line.json")
+    qf.load(None)
+
 qf = loadQueueFile()
 qf.setFile(sys.argv[1])
 qf.load(None)
