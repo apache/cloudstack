@@ -1491,6 +1491,7 @@ done
 echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}
 if [ "$TYPE" != "unknown" ]
 then
+	cp ${CHEF_TMP_FILE} /var/cache/cloud/cmd_line.json
 	mv ${CHEF_TMP_FILE} /etc/cloudstack/cmd_line.json
 fi
 
