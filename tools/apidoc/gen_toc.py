@@ -110,6 +110,7 @@ known_categories = {
     'Event': 'Event',
     'login': 'Login',
     'logout': 'Logout',
+    'saml': 'SAML',
     'Capacity': 'System Capacity',
     'NetworkDevice': 'Network Device',
     'ExternalLoadBalancer': 'Ext Load Balancer',
