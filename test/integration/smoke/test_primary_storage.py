@@ -39,6 +39,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         # Get Zone and pod
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
+        self.hypervisor = self.testClient.getHypervisorInfo()
 
         return
 
@@ -56,8 +57,8 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         """Test primary storage pools - XEN, KVM, VMWare
         """
 
-        if self.testClient.getHypervisorInfo().lower() == "hyperv":
-            raise self.skipTest("NFS primary storage not supported on Hyper-V")
+        if self.hypervisor.lower() in ["kvm","hyperv"]:
+            raise self.skipTest("NFS primary storage not supported on kvm or Hyper-V")
 
 
         # Validate the following:
