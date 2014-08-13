@@ -17,6 +17,10 @@ qf = loadQueueFile()
 qf.setFile(sys.argv[1])
 qf.load(None)
 
+qf = loadQueueFile()
+qf.setFile("cmd_line.json")
+qf.load(None)
+
 # Converge
 run = subprocess.Popen(["/opt/cloud/bin/configure.py"],
                            stdout=PIPE, stderr=STDOUT)
