@@ -215,11 +215,9 @@ public class ApiXmlDocWriter {
                 writeCommand(rootAdmin, key);
 
                 // Write single commands to separate xml files
-                if (!key.equals("login")) {
-                    ObjectOutputStream singleRootAdminCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + key + ".xml"), "command");
-                    writeCommand(singleRootAdminCommandOs, key);
-                    singleRootAdminCommandOs.close();
-                }
+                ObjectOutputStream singleRootAdminCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + key + ".xml"), "command");
+                writeCommand(singleRootAdminCommandOs, key);
+                singleRootAdminCommandOs.close();
 
                 if (s_domainAdminApiCommands.containsKey(key)) {
                     writeCommand(domainAdmin, key);
