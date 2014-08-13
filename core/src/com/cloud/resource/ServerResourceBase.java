@@ -26,6 +26,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -100,9 +101,9 @@ public abstract class ServerResourceBase implements ServerResource {
                 final String nicName = nic.getName();
                 //  try {
                 if (//!nic.isLoopback() &&
-                    //nic.isUp() &&
-                !nic.isVirtual() && !nicName.startsWith("vnif") && !nicName.startsWith("vnbr") && !nicName.startsWith("peth") && !nicName.startsWith("vif") &&
-                    !nicName.startsWith("virbr") && !nicName.contains(":")) {
+                        //nic.isUp() &&
+                        !nic.isVirtual() && !nicName.startsWith("vnif") && !nicName.startsWith("vnbr") && !nicName.startsWith("peth") && !nicName.startsWith("vif") &&
+                        !nicName.startsWith("virbr") && !nicName.contains(":")) {
                     final String[] info = NetUtils.getNicParams(nicName);
                     if (info != null && info[0] != null) {
                         _privateNic = nic;
@@ -237,16 +238,16 @@ public abstract class ServerResourceBase implements ServerResource {
 
     protected List<String> getWarnings() {
         synchronized (_warnings) {
-            final ArrayList<String> results = _warnings;
-            _warnings = new ArrayList<String>();
+            final List<String> results = new LinkedList<String>(_warnings);
+            _warnings.clear();
             return results;
         }
     }
 
     protected List<String> getErrors() {
         synchronized (_errors) {
-            final ArrayList<String> result = _errors;
-            _errors = new ArrayList<String>();
+            final List<String> result = new LinkedList<String>(_errors);
+            _errors.clear();
             return result;
         }
     }
