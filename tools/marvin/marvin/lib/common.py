@@ -1167,6 +1167,9 @@ def verifyNetworkState(apiclient, networkid, state, listall=True):
                 break
             retriesCount -= 1
             time.sleep(60)
+        if not isNetworkInDesiredState:
+            exceptionMessage = "Network state should be %s, it is %s" %\
+                                (state, networks[0].state)
     except Exception as e:
         exceptionOccured = True
         exceptionMessage = e
