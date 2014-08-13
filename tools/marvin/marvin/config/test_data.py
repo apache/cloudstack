@@ -940,7 +940,7 @@ test_data = {
         "name": "hostantiaffinity",
         "type": "host anti-affinity",
     },
-   "vgpu":{
+    "vgpu":{
         "disk_offering":{
                     "displaytext": "Small",
                     "name": "Small",
@@ -1180,8 +1180,6 @@ test_data = {
                     "username": "testD12B",
                     "password": "password",
                 },
-
-
                 "domain2": {
                    "name": "D2",
                  },
@@ -1200,7 +1198,6 @@ test_data = {
                     "username": "testD2A",
                     "password": "password",
                 },
-
                 "accountROOTA": {
                     "email": "testROOTA@test.com",
                     "firstname": "testROOTA",
@@ -1346,8 +1343,7 @@ test_data = {
             "username": "rmurphy",
             "password": "internalcloudstackpassword",
             },
-        "ldapConfiguration_1":
-            {
+        "ldapConfiguration_1": {
             "basedn": "dc=cloudstack,dc=org",
             "emailAttribute": "mail",
             "userObject": "inetOrgPerson",
@@ -1356,5 +1352,36 @@ test_data = {
             "port": "10389",
             "ldapUsername": "rmurphy",
             "ldapPassword": "password"
-            }
+            },
+
+      "test_34_DeployVM_in_SecondSGNetwork": {
+          "zone": "advsg",
+          "config": "D:\ACS-Repo\setup\dev\\advancedsg.cfg",#Absolute path to cfg file
+          #For sample configuration please refer to <ACS repo>/setup/dev/advancedsg.cfg
+          "template": "CentOS 5.3(64-bit) no GUI (Simulator)",
+          "dbSvr": {
+              "dbSvr": "10.146.0.133",
+              "passwd": "cloud",
+              "db": "cloud",
+              "port": 3306,
+              "user": "cloud"
+          },
+          "mgtSvr": [
+              {
+                  "mgtSvrIp": "10.146.0.133",
+                  "passwd": "password",
+                  "user": "root",
+                  "port": 8096
+              }
+          ],
+          "ipranges": [
+              {
+                  "startip": "10.147.32.150",
+                  "endip": "10.147.32.153",
+                  "netmask": "255.255.255.0",
+                  "vlan": "32",
+                  "gateway": "10.147.32.1"
+              }
+          ]
+      },
 }
