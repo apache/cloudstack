@@ -544,7 +544,7 @@ class CsIP:
         if "public_ip" in self.address:
             return self.address['public_ip']
         return "unknown"
-  
+
 
     def post_config_change(self, method):
         route = CsRoute(self.dev)
@@ -634,6 +634,169 @@ class CsIP:
             self.post_config_change("delete")
 
 
+class CsVmMetadata():
+    def __init__(self):
+        self.data = {}
+        db = dataBag()
+        db.setKey("vmdata")
+        db.load()
+        self.dbag = db.getDataBag()
+
+    def process(self):
+        for ip in self.dbag:
+            if ("id" == ip):
+                continue
+            logging.info("Processing metadata for %s" % ip)
+            for item in self.dbag[ip]:
+                folder = item[0]
+                file   = item[1]
+                data   = item[2]
+
+                # process only valid data
+                if folder != "userdata" and folder != "metadata":
+                    continue
+
+                if file == "":
+                    continue
+
+                self.__htaccess(ip, folder, file)
+
+                if data == "":
+                    self.__deletefile(ip, folder, file)
+                else:
+                    self.__createfile(ip, folder, file, data)
+
+    def __deletefile(self, ip, folder, file):
+        datafile = "/var/www/html/" + folder + "/" + ip + "/" + file
+
+        if os.path.exists(datafile):
+            os.remove(datafile)
+
+    def __createfile(self, ip, folder, file, data):
+        dest = "/var/www/html/" + folder + "/" + ip + "/" + file
+        metamanifestdir = "/var/www/html/" + folder + "/" + ip
+        metamanifest =  metamanifestdir + "/meta-data"
+
+        # base64 decode userdata
+        if folder == "userdata" or folder == "user-data":
+            if data is not None:
+                data = base64.b64decode(data)
+
+        fh = open(dest, "w")
+        self.__exflock(fh)
+        if data is not None:
+            fh.write(data)
+        else:
+            fh.write("")
+        self.__unflock(fh)
+        fh.close()
+        os.chmod(dest, 0644)
+
+        if folder == "metadata" or folder == "meta-data":
+            try:
+                os.makedirs(metamanifestdir, 0755)
+            except OSError as e:
+                # error 17 is already exists, we do it this way for concurrency
+                if e.errno != 17:
+                    print "failed to make directories " + metamanifestdir + " due to :" +e.strerror
+                    sys.exit(1)
+            if os.path.exists(metamanifest):
+                fh = open(metamanifest, "r+a")
+                self.__exflock(fh)
+                if not file in fh.read():
+                    fh.write(file + '\n')
+                self.__unflock(fh)
+                fh.close()
+            else:
+                fh = open(metamanifest, "w")
+                self.__exflock(fh)
+                fh.write(file + '\n')
+                self.__unflock(fh)
+                fh.close()
+
+        if os.path.exists(metamanifest):
+            os.chmod(metamanifest, 0644)
+
+    def __htaccess(self, ip, folder, file):
+        entry = "RewriteRule ^" + file + "$  ../" + folder + "/%{REMOTE_ADDR}/" + file + " [L,NC,QSA]"
+        htaccessFolder = "/var/www/html/latest"
+        htaccessFile = htaccessFolder + "/.htaccess"
+
+        try:
+            os.mkdir(htaccessFolder,0755)
+        except OSError as e:
+            # error 17 is already exists, we do it this way for concurrency
+            if e.errno != 17:
+                print "failed to make directories " + htaccessFolder + " due to :" +e.strerror
+                sys.exit(1)
+
+        if os.path.exists(htaccessFile):
+            fh = open(htaccessFile, "r+a")
+            self.__exflock(fh)
+            if not entry in fh.read():
+                fh.write(entry + '\n')
+            self.__unflock(fh)
+            fh.close()
+        else:
+            fh = open(htaccessFile, "w")
+            self.__exflock(fh)
+            fh.write("Options +FollowSymLinks\nRewriteEngine On\n\n")
+            fh.write(entry + '\n')
+            self.__unflock(fh)
+            fh.close()
+
+        entry="Options -Indexes\nOrder Deny,Allow\nDeny from all\nAllow from " + ip
+        htaccessFolder = "/var/www/html/" + folder + "/" + ip
+        htaccessFile = htaccessFolder+"/.htaccess"
+
+        try:
+            os.makedirs(htaccessFolder,0755)
+        except OSError as e:
+            # error 17 is already exists, we do it this way for sake of concurrency
+            if e.errno != 17:
+                print "failed to make directories " + htaccessFolder + " due to :" +e.strerror
+                sys.exit(1)
+
+        fh = open(htaccessFile, "w")
+        self.__exflock(fh)
+        fh.write(entry + '\n')
+        self.__unflock(fh)
+        fh.close()
+
+        if folder == "metadata" or folder == "meta-data":
+            entry = "RewriteRule ^meta-data/(.+)$  ../" + folder + "/%{REMOTE_ADDR}/$1 [L,NC,QSA]"
+            htaccessFolder = "/var/www/html/latest"
+            htaccessFile = htaccessFolder + "/.htaccess"
+
+            fh = open(htaccessFile, "r+a")
+            self.__exflock(fh)
+            if not entry in fh.read():
+                fh.write(entry + '\n')
+
+            entry = "RewriteRule ^meta-data/$  ../" + folder + "/%{REMOTE_ADDR}/meta-data [L,NC,QSA]"
+
+            fh.seek(0)
+            if not entry in fh.read():
+                fh.write(entry + '\n')
+            self.__unflock(fh)
+            fh.close()
+
+    def __exflock(self, file):
+        try:
+            flock(file, LOCK_EX)
+        except IOError as e:
+            print "failed to lock file" + file.name + " due to : " + e.strerror
+            sys.exit(1) #FIXME
+        return True
+
+    def __unflock(self, file):
+        try:
+            flock(file, LOCK_UN)
+        except IOError:
+            print "failed to unlock file" + file.name + " due to : " + e.strerror
+            sys.exit(1) #FIXME
+        return True
+
 def main(argv):
 
     logging.basicConfig(filename='/var/log/cloud.log',
@@ -665,6 +828,9 @@ def main(argv):
                 if CsDevice(dev).waitfordevice():
                     ip.configure()
     CsPassword()
+
+    metadata = CsVmMetadata()
+    metadata.process()
 
 if __name__ == "__main__":
     main(sys.argv)
