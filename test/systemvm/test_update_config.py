@@ -56,6 +56,27 @@ class UpdateConfigTestCase(SystemVMTestCase):
         "type": "ips"
     }
 
+    basic_acl = {
+        "device":"eth2",
+        "mac_address":"02:00:5d:8d:00:03",
+        "private_gateway_acl":False,
+        "nic_ip":"172.16.1.1",
+        "nic_netmask":"24",
+        "ingress_rules":
+        [
+            {"type":"all",
+            "cidr":"0.0.0.0/0",
+            "allowed":False}
+        ],
+        "egress_rules":
+        [   
+            {"type":"all",
+            "cidr":"0.0.0.0/0",
+            "allowed":False}
+        ],
+        "type":"networkacl"
+    }
+
     def update_config(self, config):
         config_json = json.dumps(config, indent=2)
         print_doc('config.json', config_json)
@@ -141,6 +162,7 @@ class UpdateConfigTestCase(SystemVMTestCase):
                   "172.16.1.22" : "22"
                   }
         self.check_password(passw)
+        self.check_acl(self.basic_acl)
 
         passw = { "172.16.1.20" : "120",
                   "172.16.1.21" : "121",
@@ -160,6 +182,9 @@ class UpdateConfigTestCase(SystemVMTestCase):
                    "type":"guestnetwork"
                    }
         self.guest_network(config)
+
+    def check_acl(self, config):
+        self.update_config(config)
 
     def check_password(self,passw):
         for val in passw:
