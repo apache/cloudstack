@@ -2635,9 +2635,11 @@ class TestInstances(cloudstackTestCase):
         # stopping VM before detaching volumes
         vm_created.stop(self.userapiclient)
 
-        # Detaching all the volumes attached from VM
-        for i in range(0, len(list_volumes_page1)):
-            vm_created.detach_volume(
+        # Detaching root volume is allowed on XenServer only
+        if self.hypervisor.lower() == 'xenserver':
+            # Detaching all the volumes attached from VM
+            for i in range(0, len(list_volumes_page1)):
+                vm_created.detach_volume(
                                      self.userapiclient,
                                      list_volumes_page1[i]
                                      )
