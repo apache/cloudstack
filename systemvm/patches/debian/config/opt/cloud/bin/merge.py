@@ -9,6 +9,7 @@ import cs_guestnetwork
 import cs_cmdline
 import cs_vmp
 import cs_network_acl
+import cs_vmdata
 
 from pprint import pprint
 
@@ -78,6 +79,8 @@ class updateDataBag:
           dbag = self.processVMpassword(self.db.getDataBag())
        elif self.qFile.type == 'networkacl':
           dbag = self.process_network_acl(self.db.getDataBag())
+       elif self.qFile.type == 'vmdata':
+          dbag = self.processVmData(self.db.getDataBag())
        else:
           logging.error("Error I do not know what to do with file of type %s", self.qFile.type)
           return
@@ -138,6 +141,10 @@ class updateDataBag:
            dp['nw_type']    = 'control'
            qf = loadQueueFile()
            qf.load({ 'ip_address' : [ dp ], 'type' : 'ips'})
+
+    def processVmData(self, dbag):
+        cs_vmdata.merge(dbag, self.qFile.data)
+        return dbag
             
 class loadQueueFile:
 
