@@ -1151,7 +1151,7 @@ def shouldTestBeSkipped(networkType, zoneType):
         skipIt = True
     return skipIt
 
-def verifyNetworkState(apiclient, networkid, state):
+def verifyNetworkState(apiclient, networkid, state, listall=True):
     """List networks and check if the network state matches the given state"""
     retriesCount = 10
     isNetworkInDesiredState = False
@@ -1159,7 +1159,7 @@ def verifyNetworkState(apiclient, networkid, state):
     exceptionMessage = ""
     try:
         while retriesCount >= 0:
-            networks = Network.list(apiclient, id=networkid)
+            networks = Network.list(apiclient, id=networkid, listall=listall)
             assert validateList(
                 networks)[0] == PASS, "Networks list validation failed"
             if str(networks[0].state).lower() == state:

@@ -1721,13 +1721,6 @@ class TestVPCNetworkOperations(cloudstackTestCase):
         self.assertEqual(validateList(networks)[0], FAIL, "networks list should be empty, it is %s" % networks)
         return
 
-    def VerifyDomainCleanup(self, domainid):
-        """Verify that domain is cleaned up"""
-
-        domains=Domain.list(self.apiclient,id=domainid)
-        self.assertEqual(validateList(domains)[0], FAIL, "domains list should be empty, it is %s" % domains)
-        return
-
     def VerifyVpcCleanup(self, vpcid):
         """Verify that VPC is cleaned up"""
         vpcs = VPC.list(self.apiclient,id=vpcid)
@@ -1931,7 +1924,9 @@ class TestVPCNetworkOperations(cloudstackTestCase):
                 " to cleanup any remaining resouces")
         # Sleep 3*account.gc to ensure that all resources are deleted
         wait_for_cleanup(self.apiclient, ["account.cleanup.interval"]*3)
-        self.VerifyDomainCleanup(child_domain.id)
+
+        with self.assertRaises(Exception):
+            Domain.list(self.apiclient,id=child_domain.id)
 
         with self.assertRaises(Exception):
             Account.list(
@@ -1947,7 +1942,7 @@ class TestVPCNetworkOperations(cloudstackTestCase):
 
         self.VerifyVpcCleanup(vpc_1.id)
         self.VerifyVpcCleanup(vpc_2.id)
-        self.VerifyNetworkClenaup(persistent_network_1.id)
+        self.VerifyNetworkCleanup(persistent_network_1.id)
         self.VerifyNetworkCleanup(persistent_network_2.id)
         return
 
