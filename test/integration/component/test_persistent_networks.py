@@ -1816,6 +1816,8 @@ class TestVPCNetworkOperations(cloudstackTestCase):
                 self.fail(exceptionMessage)
 
         elif value == "delete":
+            persistent_network_1.delete(self.apiclient)
+            persistent_network_2.delete(self.apiclient)
             vpc.delete(self.apiclient)
             vpcs = VPC.list(self.apiclient, id=vpc.id)
             self.assertEqual(validateList(vpcs)[0], FAIL, "vpc list should be empty, list is %s" % vpcs)
