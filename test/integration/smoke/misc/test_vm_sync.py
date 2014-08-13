@@ -122,7 +122,7 @@ class TestDeployVMSync(cloudstackTestCase):
             self.mock_ping
         ]
 
-    @attr(tags = ['advanced'], required_hardware="false", BugId="CLOUDSTACK-6873")
+    @attr(tags = ['advanced'], required_hardware="simulator only")
     def test_vm_sync(self):
         """Test VM Sync
 
