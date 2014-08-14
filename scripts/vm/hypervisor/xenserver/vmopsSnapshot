@@ -200,8 +200,13 @@ def isfile(path, isISCSI):
 def copyfile(fromFile, toFile, isISCSI):
     logging.debug("Starting to copy " + fromFile + " to " + toFile)
     errMsg = ''
+    if isISCSI:
+        bs = "4M"
+    else:
+        bs = "128k"
+
     try:
-        cmd = ['dd', 'if=' + fromFile, 'iflag=direct', 'of=' + toFile, 'oflag=direct', 'bs=4M']
+        cmd = ['dd', 'if=' + fromFile, 'iflag=direct', 'of=' + toFile, 'oflag=direct', 'bs=' + bs]
         txt = util.pread2(cmd)
     except:
         try:
