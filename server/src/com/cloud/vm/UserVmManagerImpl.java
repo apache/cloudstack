@@ -35,6 +35,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -84,8 +87,6 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -4747,8 +4748,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Detach, destroy and create the usage event for the old root volume.
         _volsDao.detachVolume(root.getId());
         volumeMgr.destroyVolume(root);
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, root.getAccountId(), root.getDataCenterId(), root.getId(), root.getName(),
-                Volume.class.getName(), root.getUuid(), root.isDisplayVolume());
 
         // For VMware hypervisor since the old root volume is replaced by the new root volume, force expunge old root volume if it has been created in storage
         if (vm.getHypervisorType() == HypervisorType.VMware) {
