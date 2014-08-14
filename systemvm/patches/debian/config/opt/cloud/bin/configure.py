@@ -200,29 +200,6 @@ class CsProcess(object):
                 self.pid.append(re.split("\s+", i)[1])
         return len(self.pid) > 0
 
-class CsPassword(object):
-    """
-      Update the password cache
-
-      A stupid step really as we should just rewrite the password server to
-      use the databag
-    """
-    cache = "/var/cache/cloud/passwords"
-
-    def __init__(self):
-        db = dataBag()
-        db.setKey("vmpassword")
-        db.load()
-        dbag = db.getDataBag()
-        file = CsFile(self.cache)
-        for item in dbag:
-            if item == "id":
-                continue
-            self.update(file, item, dbag[item])
-        file.commit()
-
-    def update(self, file, ip, password):
-        file.search("%s=" % ip, "%s=%s" % (ip, password))
 
 class CsApp:
     def __init__(self, ip):
@@ -537,13 +514,45 @@ class CsIP:
             self.post_config_change("delete")
 
 
-class CsVmMetadata():
-    def __init__(self):
+class CsDataBag(object):
+
+    def __init__(self, key):
         self.data = {}
         db = dataBag()
-        db.setKey("vmdata")
+        db.setKey(key)
         db.load()
         self.dbag = db.getDataBag()
+        global fw
+
+    def process(self):
+        pass
+
+class CsAcl(CsDataBag):
+
+    def process(self):
+        pass
+
+class CsPassword(CsDataBag):
+    """
+      Update the password cache
+
+      A stupid step really as we should just rewrite the password server to
+      use the databag
+    """
+    cache = "/var/cache/cloud/passwords"
+
+    def process(self):
+        file = CsFile(self.cache)
+        for item in self.dbag:
+            if item == "id":
+                continue
+            self.__update(file, item, self.dbag[item])
+        file.commit()
+
+    def __update(self, file, ip, password):
+        file.search("%s=" % ip, "%s=%s" % (ip, password))
+
+class CsVmMetadata(CsDataBag):
 
     def process(self):
         for ip in self.dbag:
@@ -700,41 +709,50 @@ class CsVmMetadata():
             sys.exit(1) #FIXME
         return True
 
+class CsAddress(CsDataBag):
+
+    def compare(self):
+        for dev in CsDevice('').list():
+            ip = CsIP(dev)
+            ip.compare(self.dbag)
+
+    def process(self):
+        for dev in self.dbag:
+            if dev == "id":
+                continue
+            ip = CsIP(dev)
+            for address in self.dbag[dev]:
+                if not address["nw_type"] == "control":
+                    CsRoute(dev).add(address)
+                ip.setAddress(address)
+                if ip.configured():
+                    logging.info("Address %s on device %s already configured", ip.ip(), dev)
+                    ip.post_configure()
+                else:
+                    logging.info("Address %s on device %s not configured", ip.ip(), dev)
+                    if CsDevice(dev).waitfordevice():
+                        ip.configure()
+
 def main(argv):
 
     logging.basicConfig(filename='/var/log/cloud.log',
                         level=logging.DEBUG,
                         format='%(asctime)s %(message)s')
-   
-    db = dataBag()
-    db.setKey("ips")
-    db.load()
-    dbag = db.getDataBag()
+  
+    address = CsAddress("ips")
+    address.compare()
+    address.process()
 
-    for dev in CsDevice('').list():
-        ip = CsIP(dev)
-        ip.compare(dbag)
+    password = CsPassword("vmpassword")
+    password.process()
 
-    for dev in dbag:
-        if dev == "id":
-            continue
-        ip = CsIP(dev)
-        for address in dbag[dev]:
-            if not address["nw_type"] == "control":
-                CsRoute(dev).add(address)
-            ip.setAddress(address)
-            if ip.configured():
-                logging.info("Address %s on device %s already configured", ip.ip(), dev)
-                ip.post_configure()
-            else:
-                logging.info("Address %s on device %s not configured", ip.ip(), dev)
-                if CsDevice(dev).waitfordevice():
-                    ip.configure()
-    CsPassword()
-    pprint(fw)
-
-    metadata = CsVmMetadata()
+    metadata = CsVmMetadata('vmdata')
     metadata.process()
+
+    acls = CsAcl('networkacl')
+    acls.process()
+
+    pprint(fw)
 
 if __name__ == "__main__":
     main(sys.argv)
