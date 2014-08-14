@@ -329,7 +329,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     s_logger.error(errMsg);
                     return new CopyCmdAnswer(errMsg);
                 }
-            }            
+            }
 
             File destFile = SwiftUtil.getObject(swiftTO, downloadDirectory, srcData.getPath());
             return postProcessing(destFile, downloadPath, destPath, srcData, destData);
