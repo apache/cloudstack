@@ -165,7 +165,7 @@ public class RegisterIsoCmd extends BaseCmd {
     }
 
     public Boolean isDynamicallyScalable() {
-        return isDynamicallyScalable ==  null ? false : isDynamicallyScalable;
+        return isDynamicallyScalable ==  null ? Boolean.FALSE : isDynamicallyScalable;
     }
 
     /////////////////////////////////////////////////////

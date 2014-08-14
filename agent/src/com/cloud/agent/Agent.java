@@ -294,6 +294,11 @@ public class Agent implements HandlerFactory, IAgentControl {
             _watchList.clear();
         }
     }
+    public synchronized void lockStartupTask(Link link)
+    {
+        _startup = new StartupTask(link);
+        _timer.schedule(_startup, _startupWait);
+    }
 
     public void sendStartup(Link link) {
         final StartupCommand[] startup = _resource.initialize();
@@ -309,10 +314,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Sending Startup: " + request.toString());
             }
-            synchronized (this) {
-                _startup = new StartupTask(link);
-                _timer.schedule(_startup, _startupWait);
-            }
+            lockStartupTask(link);
             try {
                 link.send(request.toBytes());
             } catch (final ClosedChannelException e) {
@@ -411,7 +413,6 @@ public class Agent implements HandlerFactory, IAgentControl {
                 cancelled = true;
             }
         }
-
         final StartupAnswer startup = (StartupAnswer)answer;
         if (!startup.getResult()) {
             s_logger.error("Not allowed to connect to the server: " + answer.getDetails());

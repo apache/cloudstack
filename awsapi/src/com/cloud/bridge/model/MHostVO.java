@@ -127,7 +127,7 @@ public class MHostVO implements Serializable {
         if (!(other instanceof MHostVO))
             return false;
 
-        return hostKey == ((MHostVO)other).getHostKey();
+        return hostKey.equals(((MHostVO)other).getHostKey());
     }
 
     @Override
