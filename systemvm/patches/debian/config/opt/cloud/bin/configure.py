@@ -27,6 +27,9 @@ import shutil
 import os.path
 from cs_ip import merge
 import CsHelper
+import CsNetfilter
+
+fw = []
 
 class CsFile:
     """ File editors """
@@ -230,11 +233,7 @@ class CsApp:
         if self.type == "guest":
             gn = CsGuestNetwork(self.dev)
             self.domain = gn.get_domain()
-
-class CsAcl(CsApp):
-    """
-    Manage network acls
-    """
+        global fw
 
 class CsPasswdSvc(CsApp):
     """
@@ -242,11 +241,9 @@ class CsPasswdSvc(CsApp):
     """
 
     def setup(self):
-        cmds = "-A INPUT -i %s -d %s -p %s -m %s --state %s --dport %s -j %s"
-        slist = [ self.dev, self.ip, "tcp", "state", "NEW", "8080", "ACCEPT" ]
-
-        firewall = CsIpTables(self.dev)
-        firewall.change_rule("", slist, cmds)
+        fw.append(["", "front",
+            "-A INPUT -i %s -d %s -p tcp -m tcp --state NEW --dport 8080 -j ACCEPT" % (self.dev, self.ip)
+        ])
 
         proc = CsProcess(['/opt/cloud/bin/vpc_passwd_server', self.ip])
         if not proc.find():
@@ -277,36 +274,27 @@ class CsApache(CsApp):
         if file.is_changed():
             CsHelper.service("apache2", "restart")
 
-        cmds = "-A INPUT -i %s -d %s -p %s -m %s --state %s --dport %s -j %s"
-        slist = [ self.dev, self.ip, "tcp", "state", "NEW", "80", "ACCEPT" ]
-
-        firewall = CsIpTables(self.dev)
-        firewall.change_rule("", slist, cmds)
-
+        fw.append(["", "front",
+            "-A INPUT -i %s -d %s -p tcp -m state --state NEW --dport 80 -j ACCEPT" % (self.dev, self.ip)
+        ])
 
 class CsDnsmasq(CsApp):
     """ Set up dnsmasq """
 
-    def add_firewall_rules(self, method):
+    def add_firewall_rules(self):
         """ Add the necessary firewall rules 
-        This is problamatic because the current logic cannot delete them
-        (In a convergence model)
-
-        We will need to store some state about what "used" to be there
         """
-        firewall = CsIpTables(self.dev)
+        fw.append(["", "front"
+            "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev
+        ])
 
-        cmds = "-A INPUT -i %s -p %s -m %s --dport %s -j %s"
-        slist = [ self.dev, "udp", "udp", "67", "ACCEPT" ]
-        firewall.change_rule("", slist, cmds)
+        fw.append(["", "front"
+            "-A INPUT -i %s -d %s -p udp -m udp --dport 53 -j ACCEPT" % (self.dev, self.ip)
+        ])
 
-        cmds = "-A INPUT -i %s -d %s -p %s -m %s --dport %s -j %s"
-        slist = [ self.dev, self.ip, "udp", "udp", "53", "ACCEPT" ]
-        firewall.change_rule("", slist, cmds)
-
-        cmds = "-A INPUT -i %s -d %s -p %s -m %s --dport %s -j %s"
-        slist = [ self.dev, self.ip, "tcp", "tcp", "53", "ACCEPT" ]
-        firewall.change_rule("", slist, cmds)
+        fw.append(["", "front"
+            "-A INPUT -i %s -d %s -p tcp -m tcp --dport 53 -j ACCEPT" % ( self.dev, self.ip )
+        ])
 
     def configure_server(self, method = "add"):
         file = CsFile("/etc/dnsmasq.d/cloud.conf")
@@ -352,6 +340,7 @@ class CsDevice:
         if dev != '':
             self.tableNo = dev[3]
             self.table = "Table_%s" % dev
+        global fw
 
     def configure_rp(self):
         """
@@ -394,107 +383,10 @@ class CsDevice:
             if " DOWN " in i:
                 cmd2 = "ip link set %s up" % self.dev
                 CsHelper.execute(cmd2)
-        CsIpTables(self.dev).set_connmark()
+        cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-mark 0x%s" % \
+        (self.dev, "Table_%s" % self.tableNo)
+        fw.append(["mangle", "", cmd])
 
-
-class CsIpTables:
-
-    """ Utility class
-    All the bits and pieces needed for iptables operations
-    """
-    def __init__(self, dev):
-        self.dev = dev
-        self.tableNo = dev[3]
-        self.table = "Table_%s" % (dev)
-        self.devChain = "ACL_INBOUND_%s" % (dev)
-
-    def set_connmark(self, method = "add"):
-        """ Set connmark for device """
-        slist = ["PREROUTING", self.dev, "state", "NEW", "CONNMARK", self.tableNo]
-        if method == "add":
-            cmds="-A %s -i %s -m %s --state %s -j %s --set-mark 0x%s"
-        else:
-            cmds="-D %s -i %s -m %s --state %s -j %s --set-mark 0x%s"
-        self.change_rule("mangle", slist, cmds)
-
-    def set_accept(self, table, method = "add"):
-        """ Add an accept rule
-        First version - very simple - once I find out what the patterns
-        are this will be refactored
-        """
-        slist = [ self.devChain, "ACCEPT" ]
-        if method == "add":
-            cmds  = "-A %s -j %s"
-        else:    
-            cmds  = "-D %s -j %s"
-        self.change_rule( table, slist, cmds)
-
-    def set_forward(self, ip, method = "add"):
-        """ set a forward to the device chain
-        takes a CsIP object """
-        slist = [ "FORWARD", self.dev, ip['network'], self.devChain ]
-        if method == "add":
-            cmds = "-A %s -o %s -d %s -j %s"
-        else:    
-            cmds = "-D %s -o %s -d %s -j %s"
-        self.change_rule('', slist, cmds)
-
-    def set_drop(self, method = "add"):
-        """ Ensure the last rule is drop """
-        slist = [ self.devChain, "DROP" ]
-        if method == "add":
-            cmds="-A %s -j %s"
-        else:
-            cmds="-D %s -j %s"
-        self.change_rule('', slist, cmds)
-
-    def set_static_nat(self, ip, method = "add"):
-        """ Add static nat to a device/ip combination
-        Takes a CsIp object as its parameter
-        """
-        slist = ["POSTROUTING", ip['network'], self.dev, "SNAT", ip['public_ip']]
-        if method == "add":
-            cmds   ="-A %s -s %s -o %s -j %s --to-source %s"
-        else:
-            cmds   ="-D %s -s %s -o %s -j %s --to-source %s"
-        self.change_rule('nat', slist, cmds)
-
-    def set_preroute(self, ip, method):
-        slist = [ "PREROUTING", "NEW", self.dev, ip['network'], ip['public_ip'], self.devChain ]
-        cmds = "-A %s -m state --state %s -i %s -s %s ! -d %s -j %s"
-        if method == "add":
-            self.change_rule('mangle', slist, cmds)
-
-    def change_rule(self, table, slist, cmds):
-        cmd = ''
-        if not self.has_rule(table, slist):
-            if table != '':
-                cmd = "-t %s " % table
-            cmd += cmds % tuple(slist)
-            CsHelper.execute("iptables %s" % (cmd))
-            logging.info("iptables %s", cmd)
-
-    def set_chain(self, table, method):
-        """ Create a chain if it does not already exist """
-        slist = [ self.devChain ]
-        cmd = ''
-        if not self.has_rule(table, slist):
-            if table != '':
-                cmd = "-t %s " % table
-            cmd += "-N %s" % tuple(slist)
-            CsHelper.execute("iptables %s" % (cmd))
-            logging.info("iptables %s", cmd)
-
-    def has_rule(self, table, list):
-        """ Check if a particular rule exists """
-        cmd = "iptables-save "
-        if table != "":
-           cmd += "-t %s" % table
-        for line in CsHelper.execute(cmd):
-            matches = len([i for i in list if i in line])
-            if matches == len(list):
-                return True
-        return False
 
 class CsIP:
 
@@ -552,16 +444,27 @@ class CsIP:
         route.add(self.address, method)
         # On deletion nw_type will no longer be known
         if self.get_type() in [ "guest" ]:
+            devChain = "ACL_INBOUND_%s" % (self.dev)
             CsDevice(self.dev).configure_rp()
-            CsIpTables(self.dev).set_static_nat(self.address, method)
-            CsIpTables(self.dev).set_chain('', method)
-            CsIpTables(self.dev).set_chain('mangle', method)
-            CsIpTables(self.dev).set_accept('mangle', method)
-            CsIpTables(self.dev).set_forward(self.address, method)
-            CsIpTables(self.dev).set_drop(method)
-            CsIpTables(self.dev).set_preroute(self.address, method)
+
+            fw.append(["nat", "", 
+            "-A POSTROUTING -s %s -o %s -j SNAT --to-source %s" % \
+            (self.address['network'], self.dev, self.address['public_ip'])
+            ])
+            fw.append(["", "", "-N %s" % devChain ])
+            fw.append(["mangle", "", "-N %s" % devChain ])
+            fw.append(["mangle", "", "-A %s -j ACCEPT" % devChain])
+
+            fw.append(["", "", 
+            "-A FORWARD -o %s -d %s -j %s" % (self.dev, self.address['network'], devChain)
+            ])
+            fw.append(["", "", "-A DROP -j %s" % devChain])
+            fw.append(["mangle", "", 
+               "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s -j %s" % \
+               (self.dev, self.address['network'], self.address['public_ip'], devChain)
+            ])
             dns = CsDnsmasq(self)
-            dns.add_firewall_rules("add")
+            dns.add_firewall_rules()
             dns.configure_server()
             app = CsApache(self)
             app.setup()
@@ -802,7 +705,7 @@ def main(argv):
     logging.basicConfig(filename='/var/log/cloud.log',
                         level=logging.DEBUG,
                         format='%(asctime)s %(message)s')
-    
+   
     db = dataBag()
     db.setKey("ips")
     db.load()
@@ -828,6 +731,7 @@ def main(argv):
                 if CsDevice(dev).waitfordevice():
                     ip.configure()
     CsPassword()
+    pprint(fw)
 
     metadata = CsVmMetadata()
     metadata.process()
