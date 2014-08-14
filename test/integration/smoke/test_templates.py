@@ -246,7 +246,6 @@ class TestTemplates(cloudstackTestCase):
         cls.services["template"]["ostypeid"] = template.ostypeid
         cls.services["template_2"]["ostypeid"] = template.ostypeid
         cls.services["ostypeid"] = template.ostypeid
-        print "Before:",cls.services
         cls.account = Account.create(
                             cls.apiclient,
                             cls.services["account"],
