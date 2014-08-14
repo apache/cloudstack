@@ -470,38 +470,6 @@
                         context: args.context,
                         response: {
                             success: function(args) {
-                                function equals(tag1, tag2) {
-                                    return (tag1.name == tag2.name) && (tag1.id == tag2.id);
-                                }
-
-                                function contains(tag, tags)
-                                {
-		                            for (var i = 0; i < tags.length; i++)
-                                    {
-                                        if (equals(tags[i], tag)) return true;
-                                    }
-
-	  	                            return false;
-                                }
-
-                                function unique_tags(tags)
-                                {
-                                    var unique = [];
-
-                                    if (tags != null)
-                                    {
-                                        for (var i = 0; i < tags.length; i++)
-                                        {
-                                            if (!contains(tags[i], unique))
-                                            {
-                                                unique.push(tags[i]);
-                                            }
-                                        }
-                                    }
-
-                                    return unique;
-                                }
-
                                 $input.tokenInput(unique_tags(args.data), { theme: "facebook", preventDuplicates: true });
                             }
                         }

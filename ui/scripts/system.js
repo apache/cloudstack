@@ -16901,7 +16901,7 @@
 
                                                     if (item != null)
                                                     {
-                                                        tags = $.map(item, function (tag) {
+                                                        tags = $.map(item, function(tag) {
                                                             return {
                                                                        id: tag.name,
                                                                        name: tag.name
@@ -17248,7 +17248,37 @@
                                     },
                                     tags: {
                                         label: 'label.storage.tags',
-                                        isEditable: true
+                                        isTokenInput : true,
+                                        isEditable: true,
+                                        dataProvider: function(args) {
+                                            $.ajax({
+                                                url: createURL("listStorageTags"),
+                                                dataType: "json",
+                                                success: function(json) {
+                                                    var item = json.liststoragetagsresponse.storagetag;
+                                                    var tags = [];
+
+                                                    if (item != null)
+                                                    {
+                                                        tags = $.map(item, function(tag) {
+                                                            return {
+                                                                       id: tag.name,
+                                                                       name: tag.name
+                                                                   };
+                                                        });
+                                                    }
+
+                                                    args.response.success({
+                                                        data: tags
+                                                    });
+                                                },
+                                                error: function (XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
+                                        }
                                     },
                                     zonename: {
                                         label: 'label.zone'

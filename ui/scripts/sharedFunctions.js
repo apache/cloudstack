@@ -49,6 +49,56 @@ var md5HashedLogin = false;
 var pageSize = 20;
 //var pageSize = 1; //for testing only
 
+function to_json_array(str) {
+    var simple_array = str.split(",");
+    var json_array = [];
+
+    $.each(simple_array, function(index, value) {
+        if ($.trim(value).length > 0) {
+            var obj = {
+                          id: value,
+                          name: value
+                      };
+
+            json_array.push(obj);
+        }
+    });
+
+    return json_array;
+}
+
+function _tag_equals(tag1, tag2) {
+    return (tag1.name == tag2.name) && (tag1.id == tag2.id);
+}
+
+function _tag_array_contains(tag, tags)
+{
+    for (var i = 0; i < tags.length; i++)
+    {
+        if (_tag_equals(tags[i], tag)) return true;
+    }
+
+    return false;
+}
+
+function unique_tags(tags)
+{
+    var unique = [];
+
+    if (tags != null)
+    {
+        for (var i = 0; i < tags.length; i++)
+        {
+            if (!_tag_array_contains(tags[i], unique))
+            {
+                unique.push(tags[i]);
+            }
+        }
+    }
+
+    return unique;
+}
+
 //async action
 var pollAsyncJobResult = function(args) {
     $.ajax({

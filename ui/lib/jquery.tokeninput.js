@@ -206,6 +206,7 @@ $.TokenList = function (input, url_or_data, settings) {
             outline: "none"
         })
         .attr("id", settings.idPrefix + input.id)
+        .attr("name", settings.idPrefix + input.id)
         .focus(function () {
             if (settings.tokenLimit === null || settings.tokenLimit !== token_count) {
                 show_dropdown_hint();
@@ -218,7 +219,7 @@ $.TokenList = function (input, url_or_data, settings) {
 
             if ((lastChar === ',' || lastChar === ' ') && ($.trim($(this).val()).length >= 1))
             {
-                var custom_token = { id : $.trim($(this).val().substring(0, longueur - 1)), name : $(this).val().substring(0, longueur - 1) };
+                var custom_token = { id : $.trim($(this).val().substring(0, longueur - 1)), name : $.trim($(this).val().substring(0, longueur - 1)) };
 
                 add_token(custom_token);
                 $(this).val("");
