@@ -151,11 +151,11 @@ class TestPrimaryStorageServices(cloudstackTestCase):
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_01_primary_storage_iscsi(self):
-        """Test primary storage pools - XEN, VMWare. Not Supported for kvm,hyperv
+        """Test primary storage pools - XEN. Not Supported for kvm,hyperv,vmware
         """
 
-        if self.hypervisor.lower() in ["kvm","hyperv"]:
-            raise self.skipTest("iscsi primary storage not supported on kvm or Hyper-V")
+        if self.hypervisor.lower() in ["kvm","hyperv", "vmware"]:
+            raise self.skipTest("iscsi primary storage not supported on kvm, VMWare or Hyper-V")
 
         # Validate the following:
         # 1. List Clusters
