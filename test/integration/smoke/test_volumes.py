@@ -30,7 +30,8 @@ from marvin.lib.base import (ServiceOffering,
                              Account,
                              Volume,
                              Host,
-                             DiskOffering)
+                             DiskOffering,
+                             StoragePool)
 from marvin.lib.common import (get_domain,
                                 get_zone,
                                 get_template)
@@ -660,41 +661,55 @@ class TestVolumes(cloudstackTestCase):
                          "Check if the data volume resized appropriately"
                          )
 
-        self.services["disk_offering"]["disksize"] = 10
-        disk_offering_10_GB = DiskOffering.create(
-                                    self.apiclient,
-                                    self.services["disk_offering"]
-                                    )
-        self.cleanup.append(disk_offering_10_GB)
+        can_shrink = False
 
-        cmd                = resizeVolume.resizeVolumeCmd()
-        cmd.id             = self.volume.id
-        cmd.diskofferingid = disk_offering_10_GB.id
-        cmd.shrinkok       = "true"
+        list_volume_response = Volume.list(
+                                            self.apiClient,
+                                            id=self.volume.id,
+                                            type='DATADISK'
+                                            )
+        storage_pool_id = [x.storageid for x in list_volume_response if x.id == self.volume.id][0]
+        storage = StoragePool.list(self.apiclient, id=storage_pool_id)[0]
+        # At present only CLVM supports shrinking volumes
+        if storage.type.lower() == "clvm":
+            can_shrink = True
 
-        self.apiClient.resizeVolume(cmd)
+        if can_shrink:
+            self.services["disk_offering"]["disksize"] = 10
+            disk_offering_10_GB = DiskOffering.create(
+                                        self.apiclient,
+                                        self.services["disk_offering"]
+                                        )
+            self.cleanup.append(disk_offering_10_GB)
 
-        count = 0
-        success = False
-        while count < 3:
-            list_volume_response = Volume.list(
-                                                self.apiClient,
-                                                id=self.volume.id
-                                                )
-            for vol in list_volume_response:
-                if vol.id == self.volume.id and int(vol.size) == (int(disk_offering_10_GB.disksize) * (1024 ** 3)) and vol.state == 'Ready':
-                    success = True
-            if success:
-                break
-            else:
-                time.sleep(10)
-                count += 1
+            cmd                = resizeVolume.resizeVolumeCmd()
+            cmd.id             = self.volume.id
+            cmd.diskofferingid = disk_offering_10_GB.id
+            cmd.shrinkok       = "true"
 
-        self.assertEqual(
-                         success,
-                         True,
-                         "Check if the root volume resized appropriately"
-                         )
+            self.apiClient.resizeVolume(cmd)
+
+            count = 0
+            success = False
+            while count < 3:
+                list_volume_response = Volume.list(
+                                                    self.apiClient,
+                                                    id=self.volume.id
+                                                    )
+                for vol in list_volume_response:
+                    if vol.id == self.volume.id and int(vol.size) == (int(disk_offering_10_GB.disksize) * (1024 ** 3)) and vol.state == 'Ready':
+                        success = True
+                if success:
+                    break
+                else:
+                    time.sleep(10)
+                    count += 1
+
+            self.assertEqual(
+                             success,
+                             True,
+                             "Check if the root volume resized appropriately"
+                             )
 
         #start the vm if it is on xenserver
 
