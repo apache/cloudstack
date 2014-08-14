@@ -759,6 +759,7 @@
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
               <exclude>tools/marvin/Marvin.egg-info/*</exclude>
+              <exclude>ui/css/token-input-facebook.css</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>
@@ -779,6 +780,7 @@
               <exclude>ui/lib/jquery.js</exclude>
               <exclude>ui/lib/jquery.md5.js</exclude>
               <exclude>ui/lib/jquery.validate.js</exclude>
+              <exclude>ui/lib/jquery.tokeninput.js</exclude>
               <exclude>ui/lib/qunit/qunit.css</exclude>
               <exclude>ui/lib/qunit/qunit.js</exclude>
               <exclude>ui/lib/reset.css</exclude>
