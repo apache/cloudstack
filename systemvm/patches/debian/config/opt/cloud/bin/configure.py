@@ -27,7 +27,7 @@ import shutil
 import os.path
 from cs_ip import merge
 import CsHelper
-import CsNetfilter
+from CsNetfilter import CsNetfilters
 
 fw = []
 
@@ -219,7 +219,7 @@ class CsPasswdSvc(CsApp):
 
     def setup(self):
         fw.append(["", "front",
-            "-A INPUT -i %s -d %s -p tcp -m tcp --state NEW --dport 8080 -j ACCEPT" % (self.dev, self.ip)
+            "-A INPUT -i %s -d %s/32 -p tcp -m tcp -m state --state NEW --dport 8080 -j ACCEPT" % (self.dev, self.ip)
         ])
 
         proc = CsProcess(['/opt/cloud/bin/vpc_passwd_server', self.ip])
@@ -252,7 +252,7 @@ class CsApache(CsApp):
             CsHelper.service("apache2", "restart")
 
         fw.append(["", "front",
-            "-A INPUT -i %s -d %s -p tcp -m state --state NEW --dport 80 -j ACCEPT" % (self.dev, self.ip)
+            "-A INPUT -i %s -d %s/32 -p tcp -m state -m tcp --state NEW --dport 80 -j ACCEPT" % (self.dev, self.ip)
         ])
 
 class CsDnsmasq(CsApp):
@@ -261,16 +261,16 @@ class CsDnsmasq(CsApp):
     def add_firewall_rules(self):
         """ Add the necessary firewall rules 
         """
-        fw.append(["", "front"
+        fw.append(["", "front",
             "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev
         ])
 
-        fw.append(["", "front"
-            "-A INPUT -i %s -d %s -p udp -m udp --dport 53 -j ACCEPT" % (self.dev, self.ip)
+        fw.append(["", "front",
+            "-A INPUT -i %s -d %s/32 -p udp -m udp --dport 53 -j ACCEPT" % (self.dev, self.ip)
         ])
 
-        fw.append(["", "front"
-            "-A INPUT -i %s -d %s -p tcp -m tcp --dport 53 -j ACCEPT" % ( self.dev, self.ip )
+        fw.append(["", "front",
+            "-A INPUT -i %s -d %s/32 -p tcp -m tcp --dport 53 -j ACCEPT" % ( self.dev, self.ip )
         ])
 
     def configure_server(self, method = "add"):
@@ -360,8 +360,8 @@ class CsDevice:
             if " DOWN " in i:
                 cmd2 = "ip link set %s up" % self.dev
                 CsHelper.execute(cmd2)
-        cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-mark 0x%s" % \
-        (self.dev, "Table_%s" % self.tableNo)
+        cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-xmark 0x%s/0xffffffff" % \
+        (self.dev, self.dev[3])
         fw.append(["mangle", "", cmd])
 
 
@@ -428,16 +428,14 @@ class CsIP:
             "-A POSTROUTING -s %s -o %s -j SNAT --to-source %s" % \
             (self.address['network'], self.dev, self.address['public_ip'])
             ])
-            fw.append(["", "", "-N %s" % devChain ])
-            fw.append(["mangle", "", "-N %s" % devChain ])
             fw.append(["mangle", "", "-A %s -j ACCEPT" % devChain])
 
             fw.append(["", "", 
             "-A FORWARD -o %s -d %s -j %s" % (self.dev, self.address['network'], devChain)
             ])
-            fw.append(["", "", "-A DROP -j %s" % devChain])
+            fw.append(["", "", "-A %s -j DROP" % devChain])
             fw.append(["mangle", "", 
-               "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s -j %s" % \
+               "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j %s" % \
                (self.dev, self.address['network'], self.address['public_ip'], devChain)
             ])
             dns = CsDnsmasq(self)
@@ -752,7 +750,8 @@ def main(argv):
     acls = CsAcl('networkacl')
     acls.process()
 
-    pprint(fw)
+    nf = CsNetfilters()
+    nf.compare(fw)
 
 if __name__ == "__main__":
     main(sys.argv)
