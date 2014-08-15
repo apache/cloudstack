@@ -17,11 +17,15 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.server.ResourceTag;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -47,6 +51,9 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
 
     @Inject
     private ConfigurationDao _configDao;
+
+    @Inject
+    private ResourceTagJoinDao _resourceTagJoinDao;
 
     private final SearchBuilder<SecurityGroupJoinVO> sgSearch;
 
@@ -98,6 +105,16 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
             } else {
                 ruleData.setCidr(vsg.getRuleAllowedSourceIpCidr());
             }
+
+            // list the tags by rule uuid
+            List<ResourceTagJoinVO> tags = _resourceTagJoinDao.listBy(vsg.getRuleUuid(), ResourceTag.ResourceObjectType.SecurityGroupRule);
+            Set<ResourceTagResponse> tagResponse = new HashSet<ResourceTagResponse>();
+            for (ResourceTagJoinVO tag: tags) {
+                tagResponse.add(ApiDBUtils.newResourceTagResponse(tag, false));
+            }
+
+            // add the tags to the rule data
+            ruleData.setTags(tagResponse);
 
             if (vsg.getRuleType() == SecurityRuleType.IngressRule) {
                 ruleData.setObjectName("ingressrule");
