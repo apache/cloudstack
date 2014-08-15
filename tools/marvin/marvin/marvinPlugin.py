@@ -288,6 +288,7 @@ class MarvinPlugin(Plugin):
     def finalize(self, result):
         try:
             src = self.__logFolderPath
+            tmp = ''
             if not self.__userLogPath:
                 log_cfg = self.__parsedConfig.logger
                 tmp = log_cfg.__dict__.get('LogFolderPath') + "/MarvinLogs"
@@ -299,7 +300,7 @@ class MarvinPlugin(Plugin):
                 mod_name = self.__testModName.split(".")
                 if len(mod_name) > 2:
                     mod_name = mod_name[-2]
-            if mod_name:
+            if mod_name and type(mod_name) is str:
                 dst = tmp + "/" + mod_name + "_" + random_gen()
             cmd = "mv " + src + " " + dst
             os.system(cmd)
