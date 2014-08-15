@@ -202,7 +202,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             accountId = Account.ACCOUNT_ID_SYSTEM;
         }
 
-        if ( ((accountId != null) && (domainId == -1)) || (domainId == null) )
+        if ((domainId == null) || ((accountId != null) && (domainId.longValue() == -1)))
         {
             domainId = _accountDao.getDomainIdForGivenAccountId(accountId);
         }
