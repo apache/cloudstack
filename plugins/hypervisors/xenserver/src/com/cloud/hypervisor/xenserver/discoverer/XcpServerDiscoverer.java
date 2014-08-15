@@ -397,6 +397,46 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         }
     }
 
+    protected CitrixResourceBase createServerResource(String prodBrand, String prodVersion, String prodVersionTextShort, String hotfix) {
+        // Xen Cloud Platform group of hypervisors
+        if (prodBrand.equals("XCP") && (prodVersion.equals("1.0.0") || prodVersion.equals("1.1.0") || prodVersion.equals("5.6.100") || prodVersion.startsWith("1.4"))) {
+            return new XcpServerResource();
+        } else if (prodBrand.equals("XCP") && prodVersion.startsWith("1.6")) {
+            return new XcpServer16Resource();
+        } // Citrix Xenserver group of hypervisors
+        else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.0"))
+            return new XenServer56Resource();
+        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.0"))
+            return new XenServer600Resource();
+        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.2"))
+            return new XenServer602Resource();
+        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0"))
+            return new XenServer610Resource();
+        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.4.94"))
+            return new Xenserver625Resource();
+        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.2.0")) {
+            if (hotfix != null && hotfix.equals(XenserverConfigs.XSHotFix62ESP1004)) {
+                return new Xenserver625Resource();
+            } else if (hotfix != null && hotfix.equals(XenserverConfigs.XSHotFix62ESP1)) {
+                return new XenServer620SP1Resource();
+            } else {
+                return new XenServer620Resource();
+            }
+        } else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.100")) {
+            if ("5.6 SP2".equals(prodVersionTextShort.trim())) {
+                return new XenServer56SP2Resource();
+            } else if ("5.6 FP1".equals(prodVersionTextShort.trim())) {
+                return new XenServer56FP1Resource();
+            }
+        } else if (prodBrand.equals("XCP_Kronos")) {
+            return new XcpOssResource();
+        }
+        String msg =
+                "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0, 6.2.0 but this one is " +
+                        prodBrand + " " + prodVersion;
+        s_logger.warn(msg);
+        throw new RuntimeException(msg);
+    }
 
     protected CitrixResourceBase createServerResource(long dcId, Long podId, Host.Record record, String hotfix) {
         String prodBrand = record.softwareVersion.get("product_brand");
@@ -412,46 +452,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         } else {
             prodVersion = prodVersion.trim();
         }
-
-        // Xen Cloud Platform group of hypervisors
-        if (prodBrand.equals("XCP") && (prodVersion.equals("1.0.0") || prodVersion.equals("1.1.0") || prodVersion.equals("5.6.100") || prodVersion.startsWith("1.4"))) {
-            return new XcpServerResource();
-        } else if (prodBrand.equals("XCP") && prodVersion.startsWith("1.6")) {
-            return new XcpServer16Resource();
-        } // Citrix Xenserver group of hypervisors
-        else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.0"))
-            return new XenServer56Resource();
-        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.0"))
-            return new XenServer600Resource();
-        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.2"))
-            return new XenServer602Resource();
-        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0"))
-            return new XenServer610Resource();
-        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.2.0")) {
-            if (hotfix.equals(XenserverConfigs.XSHotFix62ESP1004)) {
-                return new Xenserver625Resource();
-            } else if (hotfix.equals(XenserverConfigs.XSHotFix62ESP1)) {
-                return new XenServer620SP1Resource();
-            } else {
-                return new XenServer620Resource();
-            }
-        } else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.100")) {
-            String prodVersionTextShort = record.softwareVersion.get("product_version_text_short").trim();
-            if ("5.6 SP2".equals(prodVersionTextShort)) {
-                return new XenServer56SP2Resource();
-            } else if ("5.6 FP1".equals(prodVersionTextShort)) {
-                return new XenServer56FP1Resource();
-            }
-        } else if (prodBrand.equals("XCP_Kronos")) {
-            return new XcpOssResource();
-        }
-
-        String msg =
-                "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0, 6.2.0 but this one is " +
-                        prodBrand + " " + prodVersion;
-        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, msg, msg);
-        s_logger.debug(msg);
-        throw new RuntimeException(msg);
+        String prodVersionTextShort = record.softwareVersion.get("product_version_text_short");
+        return createServerResource(prodBrand, prodVersion, prodVersionTextShort, hotfix);
     }
 
     protected void serverConfig() {
@@ -570,50 +572,15 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             s_logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
-        String resource = null;
+
         Map<String, String> details = startup.getHostDetails();
         String prodBrand = details.get("product_brand").trim();
         String prodVersion = details.get("product_version").trim();
+        String hotfix = details.get(XenserverConfigs.XS620HotFix);
+        String prodVersionTextShort = details.get("product_version_text_short");
 
-        if (prodBrand.equals("XCP") && (prodVersion.equals("1.0.0") || prodVersion.equals("1.1.0") || prodVersion.equals("5.6.100") || prodVersion.startsWith("1.4"))) {
-            resource = XcpServerResource.class.getName();
-        } else if (prodBrand.equals("XCP") && prodVersion.startsWith("1.6")) {
-            resource = XcpServer16Resource.class.getName();
-        } else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) {
-            resource = XenServer56Resource.class.getName();
-        } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.0")) {
-            resource = XenServer600Resource.class.getName();
-        } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.2")) {
-            resource = XenServer602Resource.class.getName();
-        } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0")) {
-            resource = XenServer610Resource.class.getName();
-        } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.2.0")) {
-            String hotfix = details.get(XenserverConfigs.XS620HotFix);
-            if (hotfix != null && hotfix.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1004)) {
-                resource = Xenserver625Resource.class.getName();
-            } else if (hotfix != null && hotfix.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1)){
-                resource = XenServer620SP1Resource.class.getName();
-            } else {
-                resource = XenServer620Resource.class.getName();
-            }
-        } else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.100")) {
-            String prodVersionTextShort = details.get("product_version_text_short").trim();
-            if ("5.6 SP2".equals(prodVersionTextShort)) {
-                resource = XenServer56SP2Resource.class.getName();
-            } else if ("5.6 FP1".equals(prodVersionTextShort)) {
-                resource = XenServer56FP1Resource.class.getName();
-            }
-        } else if (prodBrand.equals("XCP_Kronos")) {
-            resource = XcpOssResource.class.getName();
-        }
+        String resource = createServerResource(prodBrand, prodVersion, prodVersionTextShort, hotfix).getClass().getName();
 
-        if (resource == null) {
-            String msg =
-                    "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6, 5.6 FP1, 5.6 SP2 and Xenserver 6.0 , 6.0.2, 6.1.0, 6.2.0 but this one is " +
-                            prodBrand + " " + prodVersion;
-            s_logger.debug(msg);
-            throw new RuntimeException(msg);
-        }
         if (!resource.equals(host.getResource())) {
             String msg = "host " + host.getPrivateIpAddress() + " changed from " + host.getResource() + " to " + resource;
             s_logger.debug(msg);
