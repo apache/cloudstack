@@ -299,6 +299,7 @@ deleteHost=3
 prepareHostForMaintenance=1
 cancelHostMaintenance=1
 listHosts=3
+listHostTags=7
 findHostsForMigration=1
 addSecondaryStorage=1
 updateHostPassword=1

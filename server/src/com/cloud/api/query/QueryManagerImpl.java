@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.host.ListHostTagsCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
@@ -72,6 +73,7 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -107,6 +109,7 @@ import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
+import com.cloud.api.query.dao.HostTagDao;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
@@ -129,6 +132,7 @@ import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.api.query.vo.HostTagVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
@@ -289,6 +293,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     private StorageTagDao _storageTagDao;
+
+    @Inject
+    private HostTagDao _hostTagDao;
 
     @Inject
     private ImageStoreJoinDao _imageStoreJoinDao;
@@ -2181,6 +2188,47 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         List<StorageTagVO> vrs = _storageTagDao.searchByIds(vrIds);
 
         return new Pair<List<StorageTagVO>, Integer>(vrs, count);
+    }
+
+    @Override
+    public ListResponse<HostTagResponse> searchForHostTags(ListHostTagsCmd cmd) {
+        Pair<List<HostTagVO>, Integer> result = searchForHostTagsInternal(cmd);
+        ListResponse<HostTagResponse> response = new ListResponse<HostTagResponse>();
+        List<HostTagResponse> tagResponses = ViewResponseHelper.createHostTagResponse(result.first().toArray(new HostTagVO[result.first().size()]));
+
+        response.setResponses(tagResponses, result.second());
+
+        return response;
+    }
+
+    private Pair<List<HostTagVO>, Integer> searchForHostTagsInternal(ListHostTagsCmd cmd) {
+        Filter searchFilter = new Filter(HostTagVO.class, "id", Boolean.TRUE, null, null);
+
+        SearchBuilder<HostTagVO> sb = _hostTagDao.createSearchBuilder();
+
+        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
+
+        SearchCriteria<HostTagVO> sc = sb.create();
+
+        // search host tag details by ids
+        Pair<List<HostTagVO>, Integer> uniqueTagPair = _hostTagDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueTagPair.second();
+
+        if (count.intValue() == 0) {
+            return uniqueTagPair;
+        }
+
+        List<HostTagVO> uniqueTags = uniqueTagPair.first();
+        Long[] vrIds = new Long[uniqueTags.size()];
+        int i = 0;
+
+        for (HostTagVO v : uniqueTags) {
+            vrIds[i++] = v.getId();
+        }
+
+        List<HostTagVO> vrs = _hostTagDao.searchByIds(vrIds);
+
+        return new Pair<List<HostTagVO>, Integer>(vrs, count);
     }
 
     @Override

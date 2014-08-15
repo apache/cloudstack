@@ -41,6 +41,7 @@ import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
@@ -74,6 +75,7 @@ import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
+import com.cloud.api.query.dao.HostTagDao;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
@@ -96,6 +98,7 @@ import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.api.query.vo.HostTagVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
@@ -390,6 +393,7 @@ public class ApiDBUtils {
     static VolumeJoinDao s_volJoinDao;
     static StoragePoolJoinDao s_poolJoinDao;
     static StorageTagDao s_tagDao;
+    static HostTagDao s_hostTagDao;
     static ImageStoreJoinDao s_imageStoreJoinDao;
     static AccountJoinDao s_accountJoinDao;
     static AsyncJobJoinDao s_jobJoinDao;
@@ -587,6 +591,8 @@ public class ApiDBUtils {
     @Inject
     private StorageTagDao tagDao;
     @Inject
+    private HostTagDao hosttagDao;
+    @Inject
     private ImageStoreJoinDao imageStoreJoinDao;
     @Inject
     private AccountJoinDao accountJoinDao;
@@ -725,6 +731,7 @@ public class ApiDBUtils {
         s_volJoinDao = volJoinDao;
         s_poolJoinDao = poolJoinDao;
         s_tagDao = tagDao;
+        s_hostTagDao = hosttagDao;
         s_imageStoreJoinDao = imageStoreJoinDao;
         s_accountJoinDao = accountJoinDao;
         s_jobJoinDao = jobJoinDao;
@@ -1742,6 +1749,10 @@ public class ApiDBUtils {
 
     public static StorageTagResponse newStorageTagResponse(StorageTagVO vr) {
         return s_tagDao.newStorageTagResponse(vr);
+    }
+
+    public static HostTagResponse newHostTagResponse(HostTagVO vr) {
+        return s_hostTagDao.newHostTagResponse(vr);
     }
 
     public static StoragePoolResponse fillStoragePoolDetails(StoragePoolResponse vrData, StoragePoolJoinVO vr) {
