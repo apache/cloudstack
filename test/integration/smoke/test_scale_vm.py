@@ -110,6 +110,12 @@ class TestScaleVm(cloudstackTestCase):
         # Validate the following
         # Scale up the vm and see if it scales to the new svc offering and is finally in running state
 
+        #        VirtualMachine should be updated to tell cloudstack it has PV tools
+        #        available and successfully scaled. We will only mock that behaviour
+        #        here but it is not expected in production since the VM scaling is not
+        #        guaranteed until tools are installed, vm rebooted
+        self.virtual_machine.update(self.apiclient, isdynamicallyscalable='true')
+
         self.debug("Scaling VM-ID: %s to service offering: %s and state %s" % (
             self.virtual_machine.id,
             self.big_offering.id,
@@ -143,12 +149,6 @@ class TestScaleVm(cloudstackTestCase):
             self.virtual_machine.id,
             "Check virtual machine ID of scaled VM"
         )
-
-        #        VirtualMachine should be updated to tell cloudstack it has PV tools
-        #        available and successfully scaled. We will only mock that behaviour
-        #        here but it is not expected in production since the VM scaling is not
-        #        guaranteed until tools are installed, vm rebooted
-        self.virtual_machine.update(self.apiclient, isdynamicallyscalable='true')
 
         self.debug("Scaling VM-ID: %s from service offering: %s to new service offering %s and the response says %s" % (
             self.virtual_machine.id,
