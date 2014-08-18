@@ -19,43 +19,45 @@ package com.cloud.network.rules;
 
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 
-import com.cloud.deploy.DeployDestination;
+import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.VirtualMachineProfile;
 
 public class DhcpPvlanRules extends RuleApplier {
 
-    private final NicProfile nic;
-    private final VirtualMachineProfile profile;
-    private final DeployDestination destination;
+    private final boolean _isAddPvlan;
+    private final NicProfile _nic;
 
-    public DhcpPvlanRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination destination) {
-        super(network);
+    private PvlanSetupCommand _setupCommand;
 
-        this.nic = nic;
-        this.profile = profile;
-        this.destination = destination;
+    public DhcpPvlanRules(final boolean isAddPvlan, final NicProfile nic) {
+        super(null);
+
+        _isAddPvlan = isAddPvlan;
+        _nic = nic;
     }
 
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
-        this._router = router;
+        _router = router;
+
+        String op = "add";
+        if (!_isAddPvlan) {
+            op = "delete";
+        }
+
+        final Network network = _networkDao.findById(_nic.getNetworkId());
+        final String networkTag = _networkModel.getNetworkTag(router.getHypervisorType(), network);
+
+        _setupCommand = PvlanSetupCommand.createDhcpSetup(op, _nic.getBroadCastUri(), networkTag,
+                router.getInstanceName(), _nic.getMacAddress(), _nic.getIp4Address());
 
         return visitor.visit(this);
     }
 
-    public NicProfile getNic() {
-        return nic;
-    }
-
-    public VirtualMachineProfile getProfile() {
-        return profile;
-    }
-
-    public DeployDestination getDestination() {
-        return destination;
+    public PvlanSetupCommand getSetupCommand() {
+        return _setupCommand;
     }
 }
