@@ -240,6 +240,7 @@ class TestVpnCustomerGateways(cloudstackTestCase):
                                   vpncustomergateway_created,
                                   self.userapiclient
                                   )
+        self.cleanup.remove(vpncustomergateway_created)
         # Listing all the VPN Customer Gateways in page 2 again
         list_vpncustomergateways_page2 = VpnCustomerGateway.list(
                                                                  self.userapiclient,
