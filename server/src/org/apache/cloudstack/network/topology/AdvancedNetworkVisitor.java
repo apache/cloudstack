@@ -17,12 +17,16 @@
 
 package org.apache.cloudstack.network.topology;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.PvlanSetupCommand;
+import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
@@ -40,9 +44,12 @@ import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.NicIpAliasVO;
 
 @Component
 public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
+
+    private static final Logger s_logger = Logger.getLogger(AdvancedNetworkVisitor.class);
 
     @Override
     public boolean visit(final UserdataPwdRules userdata) throws ResourceUnavailableException {
@@ -120,11 +127,38 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
     @Override
     public boolean visit(final DhcpPvlanRules dhcp) throws ResourceUnavailableException {
-        return false;
+        final VirtualRouter router = dhcp.getRouter();
+        final PvlanSetupCommand setupCommand = dhcp.getSetupCommand();
+
+        // In fact we send command to the host of router, we're not programming router but the host
+        Commands cmds = new Commands(Command.OnError.Stop);
+        cmds.addCommand(setupCommand);
+
+        try {
+            return _applianceManager.sendCommandsToRouter(router, cmds);
+        } catch (final ResourceUnavailableException e) {
+            s_logger.warn("Timed Out", e);
+            return false;
+        }
     }
 
     @Override
     public boolean visit(final DhcpSubNetRules subnet) throws ResourceUnavailableException {
-        return false;
+        final VirtualRouter router = subnet.getRouter();
+        final Network network = subnet.getNetwork();
+        final NicIpAliasVO nicAlias = subnet.getNicAlias();
+        final String routerAliasIp = subnet.getRouterAliasIp();
+
+        final Commands cmds = new Commands(Command.OnError.Stop);
+
+        final List<IpAliasTO> ipaliasTo = new ArrayList<IpAliasTO>();
+        ipaliasTo.add(new IpAliasTO(routerAliasIp, nicAlias.getNetmask(), nicAlias.getAliasCount().toString()));
+
+        subnet.createIpAlias(router, ipaliasTo, nicAlias.getNetworkId(), cmds);
+
+        //also add the required configuration to the dnsmasq for supporting dhcp and dns on the new ip.
+        subnet.configDnsMasq(router, network, cmds);
+
+        return _applianceManager.sendCommandsToRouter(router, cmds);
     }
 }

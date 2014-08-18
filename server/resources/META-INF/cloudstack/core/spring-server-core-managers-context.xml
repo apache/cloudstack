@@ -186,9 +186,6 @@
     <bean id="vpcVirtualNetworkApplianceManagerImpl"
         class="com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl" />
     
-    <bean id="newVirtualNetworkApplianceManagerImpl"
-        class="com.cloud.network.router.NEWVirtualNetworkApplianceManagerImpl" />
-        
     <bean id="virtualNetworkApplianceFactory"
         class="com.cloud.network.rules.VirtualNetworkApplianceFactory" />
     

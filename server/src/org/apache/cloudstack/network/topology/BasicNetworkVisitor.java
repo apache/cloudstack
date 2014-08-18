@@ -32,7 +32,7 @@ import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.router.NEWVirtualNetworkApplianceManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.DhcpPvlanRules;
@@ -67,7 +67,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     private static final Logger s_logger = Logger.getLogger(BasicNetworkVisitor.class);
 
     @Inject
-    protected NEWVirtualNetworkApplianceManager _applianceManager;
+    protected VirtualNetworkApplianceManager _applianceManager;
 
     @Override
     public boolean visit(final StaticNatRules nat) throws ResourceUnavailableException {
@@ -241,12 +241,12 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
     @Override
     public boolean visit(final DhcpPvlanRules vpn) throws ResourceUnavailableException {
-        return false;
+        throw new CloudRuntimeException("DhcpPvlanRules not implemented in Basic Network Topology.");
     }
 
     @Override
     public boolean visit(final DhcpSubNetRules vpn) throws ResourceUnavailableException {
-        return false;
+        throw new CloudRuntimeException("DhcpSubNetRules not implemented in Basic Network Topology.");
     }
 
     @Override

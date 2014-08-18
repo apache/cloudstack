@@ -56,6 +56,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.topology.NetworkTopology;
+import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
@@ -74,10 +76,8 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetRouterAlertsAnswer;
-import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
-import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.AggregationControlCommand;
@@ -92,7 +92,6 @@ import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
-import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetMonitorServiceCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
@@ -120,9 +119,6 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Pod;
-import com.cloud.dc.Vlan;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -133,7 +129,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -227,7 +222,6 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.UserStatsLogDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -389,6 +383,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     OpRouterMonitorServiceDao _opRouterMonitorServiceDao;
 
     @Inject
+    NetworkTopologyContext networkTopologyContext;
+
+    @Inject
     protected NetworkGeneralHelper nwHelper;
     @Inject
     protected RouterDeploymentDefinitionBuilder routerDeploymentManagerBuilder;
@@ -423,18 +420,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     ExecutorService _rvrStatusUpdateExecutor;
 
     BlockingQueue<Long> _vrUpdateQueue = null;
-
-    @Override
-    public boolean sendSshKeysToHost(final Long hostId, final String pubKey, final String prvKey) {
-        final ModifySshKeysCommand cmd = new ModifySshKeysCommand(pubKey, prvKey);
-        final Answer answer = _agentMgr.easySend(hostId, cmd);
-
-        if (answer != null) {
-            return true;
-        } else {
-            return false;
-        }
-    }
 
     @Override
     public VirtualRouter destroyRouter(final long routerId, final Account caller, final Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
@@ -1710,31 +1695,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     @Override
-    public boolean setupDhcpForPvlan(final boolean add, final DomainRouterVO router, final Long hostId, final NicProfile nic) {
-        if (!nic.getBroadCastUri().getScheme().equals("pvlan")) {
-            return false;
-        }
-        String op = "add";
-        if (!add) {
-            op = "delete";
-        }
-        final Network network = _networkDao.findById(nic.getNetworkId());
-        final String networkTag = _networkModel.getNetworkTag(router.getHypervisorType(), network);
-        final PvlanSetupCommand cmd = PvlanSetupCommand.createDhcpSetup(op, nic.getBroadCastUri(), networkTag, router.getInstanceName(), nic.getMacAddress(), nic.getIp4Address());
-        // In fact we send command to the host of router, we're not programming
-        // router but the host
-        final Commands cmds = new Commands(Command.OnError.Stop);
-        cmds.addCommand(cmd);
-
-        try {
-            return sendCommandsToRouter(router, cmds);
-        } catch (final ResourceUnavailableException e) {
-            s_logger.warn("Timed Out", e);
-            return false;
-        }
-    }
-
-    @Override
     public boolean finalizeDeployment(final Commands cmds, final VirtualMachineProfile profile, final DeployDestination dest, final ReservationContext context)
             throws ResourceUnavailableException {
         final DomainRouterVO router = _routerDao.findById(profile.getId());
@@ -2150,11 +2110,20 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         final List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
         for (final Nic nic : routerNics) {
             final Network network = _networkModel.getNetwork(nic.getNetworkId());
+
+            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+
             if (network.getTrafficType() == TrafficType.Guest) {
                 guestNetworks.add(network);
                 if (nic.getBroadcastUri().getScheme().equals("pvlan")) {
                     final NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
-                    result = setupDhcpForPvlan(true, router, router.getHostId(), nicProfile);
+
+                    final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+                    try {
+                        result = networkTopology.setupDhcpForPvlan(true, router, router.getHostId(), nicProfile);
+                    } catch (final ResourceUnavailableException e) {
+                        s_logger.debug("ERROR in finalizeStart: ", e);
+                    }
                 }
             }
         }
@@ -2177,9 +2146,18 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             final List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
             for (final Nic nic : routerNics) {
                 final Network network = _networkModel.getNetwork(nic.getNetworkId());
+
+                final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+
                 if ((network.getTrafficType() == TrafficType.Guest) && (nic.getBroadcastUri() != null) && nic.getBroadcastUri().getScheme().equals("pvlan")) {
                     final NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
-                    setupDhcpForPvlan(false, domR, domR.getHostId(), nicProfile);
+
+                    final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+                    try {
+                        networkTopology.setupDhcpForPvlan(false, domR, domR.getHostId(), nicProfile);
+                    } catch (final ResourceUnavailableException e) {
+                        s_logger.debug("ERROR in finalizeStop: ", e);
+                    }
                 }
             }
 
@@ -2266,96 +2244,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         } catch (final OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to stop " + router, e);
         }
-    }
-
-    @Override
-    public boolean configDhcpForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
-            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
-        final UserVmVO vm = _userVmDao.findById(profile.getId());
-        _userVmDao.loadDetails(vm);
-
-        // Asuming we have only one router per network For Now.
-        final DomainRouterVO router = routers.get(0);
-        if (router.getState() != State.Running) {
-            s_logger.warn("Failed to configure dhcp: router not in running state");
-            throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
-        }
-        // check if this is not the primary subnet.
-        final NicVO domr_guest_nic = _nicDao.findByInstanceIdAndIpAddressAndVmtype(router.getId(), _nicDao.getIpAddress(nic.getNetworkId(), router.getId()),
-                VirtualMachine.Type.DomainRouter);
-        // check if the router ip address and the vm ip address belong to same
-        // subnet.
-        // if they do not belong to same netwoek check for the alias ips. if not
-        // create one.
-        // This should happen only in case of Basic and Advanced SG enabled
-        // networks.
-        if (!NetUtils.sameSubnet(domr_guest_nic.getIp4Address(), nic.getIp4Address(), nic.getNetmask())) {
-            final List<NicIpAliasVO> aliasIps = _nicIpAliasDao.listByNetworkIdAndState(domr_guest_nic.getNetworkId(), NicIpAlias.state.active);
-            boolean ipInVmsubnet = false;
-            for (final NicIpAliasVO alias : aliasIps) {
-                // check if any of the alias ips belongs to the Vm's subnet.
-                if (NetUtils.sameSubnet(alias.getIp4Address(), nic.getIp4Address(), nic.getNetmask())) {
-                    ipInVmsubnet = true;
-                    break;
-                }
-            }
-            PublicIp routerPublicIP = null;
-            String routerAliasIp = null;
-            final DataCenter dc = _dcDao.findById(router.getDataCenterId());
-            if (ipInVmsubnet == false) {
-                try {
-                    if ((network.getTrafficType() == TrafficType.Guest) && (network.getGuestType() == GuestType.Shared)) {
-                        _podDao.findById(vm.getPodIdToDeployIn());
-                        final Account caller = CallContext.current().getCallingAccount();
-                        final List<VlanVO> vlanList = _vlanDao.listVlansByNetworkIdAndGateway(network.getId(), nic.getGateway());
-                        final List<Long> vlanDbIdList = new ArrayList<Long>();
-                        for (final VlanVO vlan : vlanList) {
-                            vlanDbIdList.add(vlan.getId());
-                        }
-                        if (dc.getNetworkType() == NetworkType.Basic) {
-                            routerPublicIP = _ipAddrMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), vm.getPodIdToDeployIn(), caller, Vlan.VlanType.DirectAttached,
-                                    vlanDbIdList, nic.getNetworkId(), null, false);
-                        } else {
-                            routerPublicIP = _ipAddrMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), null, caller, Vlan.VlanType.DirectAttached, vlanDbIdList,
-                                    nic.getNetworkId(), null, false);
-                        }
-
-                        routerAliasIp = routerPublicIP.getAddress().addr();
-                    }
-                } catch (final InsufficientAddressCapacityException e) {
-                    s_logger.info(e.getMessage());
-                    s_logger.info("unable to configure dhcp for this VM.");
-                    return false;
-                }
-                // this means we did not create a ip alis on the router.
-                final NicIpAliasVO alias = new NicIpAliasVO(domr_guest_nic.getId(), routerAliasIp, router.getId(), CallContext.current().getCallingAccountId(),
-                        network.getDomainId(), nic.getNetworkId(), nic.getGateway(), nic.getNetmask());
-                alias.setAliasCount(routerPublicIP.getIpMacAddress());
-                _nicIpAliasDao.persist(alias);
-                final List<IpAliasTO> ipaliasTo = new ArrayList<IpAliasTO>();
-                ipaliasTo.add(new IpAliasTO(routerAliasIp, alias.getNetmask(), alias.getAliasCount().toString()));
-                final Commands cmds = new Commands(Command.OnError.Stop);
-                createIpAlias(router, ipaliasTo, alias.getNetworkId(), cmds);
-                // also add the required configuration to the dnsmasq for
-                // supporting dhcp and dns on the new ip.
-                configDnsMasq(router, network, cmds);
-                final boolean result = sendCommandsToRouter(router, cmds);
-                if (result == false) {
-                    final NicIpAliasVO ipAliasVO = _nicIpAliasDao.findByInstanceIdAndNetworkId(network.getId(), router.getId());
-                    final PublicIp routerPublicIPFinal = routerPublicIP;
-                    Transaction.execute(new TransactionCallbackNoReturn() {
-                        @Override
-                        public void doInTransactionWithoutResult(final TransactionStatus status) {
-                            _nicIpAliasDao.expunge(ipAliasVO.getId());
-                            _ipAddressDao.unassignIpAddress(routerPublicIPFinal.getId());
-                        }
-                    });
-                    throw new CloudRuntimeException("failed to configure ip alias on the router as a part of dhcp config");
-                }
-            }
-            return true;
-        }
-        return true;
     }
 
     @Override
@@ -2466,45 +2354,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
         cmds.addCommand("users", cmd);
-    }
-
-    @Override
-    // FIXME add partial success and STOP state support
-    public String[] applyVpnUsers(final Network network, final List<? extends VpnUser> users, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
-        if ((routers == null) || routers.isEmpty()) {
-            s_logger.warn("Failed to add/remove VPN users: no router found for account and zone");
-            throw new ResourceUnavailableException("Unable to assign ip addresses, domR doesn't exist for network " + network.getId(), DataCenter.class, network.getDataCenterId());
-        }
-
-        boolean agentResults = true;
-
-        for (final DomainRouterVO router : routers) {
-            if (router.getState() != State.Running) {
-                s_logger.warn("Failed to add/remove VPN users: router not in running state");
-                throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class,
-                        network.getDataCenterId());
-            }
-
-            final Commands cmds = new Commands(Command.OnError.Continue);
-            createApplyVpnUsersCommand(users, router, cmds);
-
-            // Currently we receive just one answer from the agent. In the
-            // future we have to parse individual answers and set
-            // results accordingly
-            final boolean agentResult = sendCommandsToRouter(router, cmds);
-            agentResults = agentResults && agentResult;
-        }
-
-        final String[] result = new String[users.size()];
-        for (int i = 0; i < result.length; i++) {
-            if (agentResults) {
-                result[i] = null;
-            } else {
-                result[i] = String.valueOf(agentResults);
-            }
-        }
-
-        return result;
     }
 
     @Override
@@ -2804,25 +2653,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         cmds.addCommand("startVpn", startVpnCmd);
     }
 
-    private void createPasswordCommand(final VirtualRouter router, final VirtualMachineProfile profile, final NicVO nic, final Commands cmds) {
-        final String password = (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword);
-        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-
-        // password should be set only on default network element
-        if ((password != null) && nic.isDefaultNic()) {
-            final String encodedPassword = PasswordGenerator.rot13(password);
-            final SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getHostName(),
-                    _networkModel.getExecuteInSeqNtwkElmtCmd());
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(nic.getNetworkId(), router.getId()));
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-
-            cmds.addCommand("password", cmd);
-        }
-
-    }
-
     private void createVmDataCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final String publicKey, final Commands cmds) {
         final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
         final String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
@@ -2942,7 +2772,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
     }
 
-    protected boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException {
+    @Override
+    public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException {
         if (!nwHelper.checkRouterVersion(router)) {
             s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId() + ", router template version : " + router.getTemplateVersion()
                     + ", minimal required version : " + MinVRVersion);
@@ -3027,24 +2858,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
     }
 
-    protected boolean sendLBRules(final VirtualRouter router, final List<LoadBalancingRule> rules, final long guestNetworkId) throws ResourceUnavailableException {
-        final Commands cmds = new Commands(Command.OnError.Continue);
-        createApplyLoadBalancingRulesCommands(rules, router, cmds, guestNetworkId);
-        return sendCommandsToRouter(router, cmds);
-    }
-
-    protected boolean sendPortForwardingRules(final VirtualRouter router, final List<PortForwardingRule> rules, final long guestNetworkId) throws ResourceUnavailableException {
-        final Commands cmds = new Commands(Command.OnError.Continue);
-        createApplyPortForwardingRulesCommands(rules, router, cmds, guestNetworkId);
-        return sendCommandsToRouter(router, cmds);
-    }
-
-    protected boolean sendStaticNatRules(final VirtualRouter router, final List<StaticNatRule> rules, final long guestNetworkId) throws ResourceUnavailableException {
-        final Commands cmds = new Commands(Command.OnError.Continue);
-        createApplyStaticNatRulesCommands(rules, router, cmds, guestNetworkId);
-        return sendCommandsToRouter(router, cmds);
-    }
-
     @Override
     public List<VirtualRouter> getRoutersForNetwork(final long networkId) {
         final List<DomainRouterVO> routers = _routerDao.findByNetwork(networkId);
@@ -3098,108 +2911,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         cmds.addCommand(cmd);
     }
 
-    protected boolean sendFirewallRules(final VirtualRouter router, final List<FirewallRule> rules, final long guestNetworkId) throws ResourceUnavailableException {
-        final Commands cmds = new Commands(Command.OnError.Continue);
-        createFirewallRulesCommands(rules, router, cmds, guestNetworkId);
-        return sendCommandsToRouter(router, cmds);
-    }
-
     @Override
     public String getDnsBasicZoneUpdate() {
         return _dnsBasicZoneUpdates;
-    }
-
-    protected interface RuleApplier {
-        boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException;
-    }
-
-    protected boolean applyRules(final Network network, final List<? extends VirtualRouter> routers, final String typeString, final boolean isPodLevelException, final Long podId,
-            final boolean failWhenDisconnect, final RuleApplier applier) throws ResourceUnavailableException {
-        if ((routers == null) || routers.isEmpty()) {
-            s_logger.warn("Unable to apply " + typeString + ", virtual router doesn't exist in the network " + network.getId());
-            throw new ResourceUnavailableException("Unable to apply " + typeString, DataCenter.class, network.getDataCenterId());
-        }
-
-        final DataCenter dc = _dcDao.findById(network.getDataCenterId());
-        final boolean isZoneBasic = dc.getNetworkType() == NetworkType.Basic;
-
-        // isPodLevelException and podId is only used for basic zone
-        assert !((!isZoneBasic && isPodLevelException) || (isZoneBasic && isPodLevelException && (podId == null)));
-
-        final List<VirtualRouter> connectedRouters = new ArrayList<VirtualRouter>();
-        final List<VirtualRouter> disconnectedRouters = new ArrayList<VirtualRouter>();
-        boolean result = true;
-        final String msg = "Unable to apply " + typeString + " on disconnected router ";
-        for (final VirtualRouter router : routers) {
-            if (router.getState() == State.Running) {
-                s_logger.debug("Applying " + typeString + " in network " + network);
-
-                if (router.isStopPending()) {
-                    if (_hostDao.findById(router.getHostId()).getState() == Status.Up) {
-                        throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName()
-                                + " haven't been stopped after it's host coming back!", DataCenter.class, router.getDataCenterId());
-                    }
-                    s_logger.debug("Router " + router.getInstanceName() + " is stop pending, so not sending apply " + typeString + " commands to the backend");
-                    continue;
-                }
-
-                try {
-                    result = applier.execute(network, router);
-                    connectedRouters.add(router);
-                } catch (final AgentUnavailableException e) {
-                    s_logger.warn(msg + router.getInstanceName(), e);
-                    disconnectedRouters.add(router);
-                }
-
-                // If rules fail to apply on one domR and not due to
-                // disconnection, no need to proceed with the rest
-                if (!result) {
-                    if (isZoneBasic && isPodLevelException) {
-                        throw new ResourceUnavailableException("Unable to apply " + typeString + " on router ", Pod.class, podId);
-                    }
-                    throw new ResourceUnavailableException("Unable to apply " + typeString + " on router ", DataCenter.class, router.getDataCenterId());
-                }
-
-            } else if ((router.getState() == State.Stopped) || (router.getState() == State.Stopping)) {
-                s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending apply " + typeString + " commands to the backend");
-            } else {
-                s_logger.warn("Unable to apply " + typeString + ", virtual router is not in the right state " + router.getState());
-                if (isZoneBasic && isPodLevelException) {
-                    throw new ResourceUnavailableException("Unable to apply " + typeString + ", virtual router is not in the right state", Pod.class, podId);
-                }
-                throw new ResourceUnavailableException("Unable to apply " + typeString + ", virtual router is not in the right state", DataCenter.class, router.getDataCenterId());
-            }
-        }
-
-        if (!connectedRouters.isEmpty()) {
-            if (!isZoneBasic && !disconnectedRouters.isEmpty() && disconnectedRouters.get(0).getIsRedundantRouter()) {
-                // These disconnected redundant virtual routers are out of sync
-                // now, stop them for synchronization
-                handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
-            }
-        } else if (!disconnectedRouters.isEmpty()) {
-            for (final VirtualRouter router : disconnectedRouters) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(msg + router.getInstanceName() + "(" + router.getId() + ")");
-                }
-            }
-            if (isZoneBasic && isPodLevelException) {
-                throw new ResourceUnavailableException(msg, Pod.class, podId);
-            }
-            throw new ResourceUnavailableException(msg, DataCenter.class, disconnectedRouters.get(0).getDataCenterId());
-        }
-
-        result = true;
-        if (failWhenDisconnect) {
-            result = !connectedRouters.isEmpty();
-        }
-        return result;
-    }
-
-    protected boolean applyStaticNat(final VirtualRouter router, final List<? extends StaticNat> rules, final long guestNetworkId) throws ResourceUnavailableException {
-        final Commands cmds = new Commands(Command.OnError.Continue);
-        createApplyStaticNatCommands(rules, router, cmds, guestNetworkId);
-        return sendCommandsToRouter(router, cmds);
     }
 
     private void createApplyStaticNatCommands(final List<? extends StaticNat> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {

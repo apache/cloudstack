@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
 import org.springframework.stereotype.Component;
 
-import com.cloud.deploy.DeployDestination;
+import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -45,21 +45,11 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 @Local(value = {VpcVirtualNetworkApplianceManager.class, VpcVirtualNetworkApplianceService.class})
 public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implements VpcVirtualNetworkApplianceManager, VpcVirtualNetworkApplianceService {
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.VirtualNetworkApplianceManager#sendSshKeysToHost(java.lang.Long, java.lang.String, java.lang.String)
-     */
-    @Override
-    public boolean sendSshKeysToHost(final Long hostId, final String pubKey, final String prvKey) {
-        // TODO Auto-generated method stub
-        return false;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#startRemoteAccessVpn(com.cloud.network.Network, com.cloud.network.RemoteAccessVpn, java.util.List)
@@ -89,15 +79,6 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.router.VirtualNetworkApplianceManager#applyVpnUsers(com.cloud.network.Network, java.util.List, java.util.List)
-     */
-    @Override
-    public String[] applyVpnUsers(final Network network, final List<? extends VpnUser> users, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#stop(com.cloud.network.router.VirtualRouter, boolean, com.cloud.user.User, com.cloud.user.Account)
      */
     @Override
@@ -113,12 +94,6 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     public String getDnsBasicZoneUpdate() {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    @Override
-    public boolean configDhcpForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile uservm, final DeployDestination dest, final List<DomainRouterVO> routers)
-            throws ResourceUnavailableException {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
@@ -297,12 +272,6 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     }
 
     @Override
-    public boolean setupDhcpForPvlan(final boolean add, final DomainRouterVO router, final Long hostId, final NicProfile nic) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public boolean prepareAggregatedExecution(final Network network, final List<DomainRouterVO> routers) throws AgentUnavailableException {
         return true;  //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -328,5 +297,12 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     public String[] applyVpnUsers(final RemoteAccessVpn vpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds)
+            throws AgentUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
     }
 }
