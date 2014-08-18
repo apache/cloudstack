@@ -17,45 +17,196 @@
 
 package com.cloud.network.rules;
 
-import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
+import java.util.ArrayList;
+import java.util.List;
 
-import com.cloud.deploy.DeployDestination;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
+import org.apache.log4j.Logger;
+
+import com.cloud.agent.api.routing.CreateIpAliasCommand;
+import com.cloud.agent.api.routing.DnsMasqConfigCommand;
+import com.cloud.agent.api.routing.IpAliasTO;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.to.DhcpTO;
+import com.cloud.agent.manager.Commands;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanVO;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.user.Account;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.NicIpAlias;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.NicIpAliasVO;
 
 public class DhcpSubNetRules extends RuleApplier {
 
-    private final NicProfile nic;
-    private final VirtualMachineProfile profile;
-    private final DeployDestination destination;
+    private static final Logger s_logger = Logger.getLogger(DhcpSubNetRules.class);
 
-    public DhcpSubNetRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination destination) {
+    private final NicProfile _nic;
+    private final VirtualMachineProfile _profile;
+
+    private NicIpAliasVO _nicAlias;
+    private String _routerAliasIp;
+
+    public DhcpSubNetRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile) {
         super(network);
 
-        this.nic = nic;
-        this.profile = profile;
-        this.destination = destination;
+        _nic = nic;
+        _profile = profile;
     }
 
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
-        this._router = router;
+        _router = router;
+
+        final UserVmVO vm = _userVmDao.findById(_profile.getId());
+        _userVmDao.loadDetails(vm);
+
+        //check if this is not the primary subnet.
+        final NicVO domr_guest_nic =
+                _nicDao.findByInstanceIdAndIpAddressAndVmtype(router.getId(), _nicDao.getIpAddress(_nic.getNetworkId(), router.getId()), VirtualMachine.Type.DomainRouter);
+        //check if the router ip address and the vm ip address belong to same subnet.
+        //if they do not belong to same netwoek check for the alias ips. if not create one.
+        // This should happen only in case of Basic and Advanced SG enabled networks.
+        if (!NetUtils.sameSubnet(domr_guest_nic.getIp4Address(), _nic.getIp4Address(), _nic.getNetmask())) {
+            final List<NicIpAliasVO> aliasIps = _nicIpAliasDao.listByNetworkIdAndState(domr_guest_nic.getNetworkId(), NicIpAlias.state.active);
+            boolean ipInVmsubnet = false;
+            for (final NicIpAliasVO alias : aliasIps) {
+                //check if any of the alias ips belongs to the Vm's subnet.
+                if (NetUtils.sameSubnet(alias.getIp4Address(), _nic.getIp4Address(), _nic.getNetmask())) {
+                    ipInVmsubnet = true;
+                    break;
+                }
+            }
+
+            PublicIp routerPublicIP = null;
+            final DataCenter dc = _dcDao.findById(router.getDataCenterId());
+            if (ipInVmsubnet == false) {
+                try {
+                    if (_network.getTrafficType() == TrafficType.Guest && _network.getGuestType() == GuestType.Shared) {
+                        _podDao.findById(vm.getPodIdToDeployIn());
+                        final Account caller = CallContext.current().getCallingAccount();
+                        final List<VlanVO> vlanList = _vlanDao.listVlansByNetworkIdAndGateway(_network.getId(), _nic.getGateway());
+                        final List<Long> vlanDbIdList = new ArrayList<Long>();
+                        for (final VlanVO vlan : vlanList) {
+                            vlanDbIdList.add(vlan.getId());
+                        }
+                        if (dc.getNetworkType() == NetworkType.Basic) {
+                            routerPublicIP =
+                                    _ipAddrMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), vm.getPodIdToDeployIn(), caller, Vlan.VlanType.DirectAttached,
+                                            vlanDbIdList, _nic.getNetworkId(), null, false);
+                        } else {
+                            routerPublicIP =
+                                    _ipAddrMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), null, caller, Vlan.VlanType.DirectAttached, vlanDbIdList,
+                                            _nic.getNetworkId(), null, false);
+                        }
+
+                        _routerAliasIp = routerPublicIP.getAddress().addr();
+                    }
+                } catch (final InsufficientAddressCapacityException e) {
+                    s_logger.info(e.getMessage());
+                    s_logger.info("unable to configure dhcp for this VM.");
+                    return false;
+                }
+                //this means we did not create an IP alias on the router.
+                _nicAlias = new NicIpAliasVO(domr_guest_nic.getId(), _routerAliasIp, router.getId(), CallContext.current().getCallingAccountId(), _network.getDomainId(),
+                        _nic.getNetworkId(), _nic.getGateway(), _nic.getNetmask());
+                _nicAlias.setAliasCount((routerPublicIP.getIpMacAddress()));
+                _nicIpAliasDao.persist(_nicAlias);
+
+                final boolean result = visitor.visit(this);
+
+                // Clean the routerAliasIp just to make sure it will keep an older value.
+                // The rules classes area created every time a command is issued, but I want to make 100% sure
+                // that the routerAliasIp won't float around.
+                _routerAliasIp = null;
+
+                if (result == false) {
+                    final NicIpAliasVO ipAliasVO = _nicIpAliasDao.findByInstanceIdAndNetworkId(_network.getId(), router.getId());
+                    final PublicIp routerPublicIPFinal = routerPublicIP;
+                    Transaction.execute(new TransactionCallbackNoReturn() {
+                        @Override
+                        public void doInTransactionWithoutResult(final TransactionStatus status) {
+                            _nicIpAliasDao.expunge(ipAliasVO.getId());
+                            _ipAddressDao.unassignIpAddress(routerPublicIPFinal.getId());
+                        }
+                    });
+                    throw new CloudRuntimeException("failed to configure ip alias on the router as a part of dhcp config");
+                }
+            }
+            return true;
+        }
 
         return visitor.visit(this);
     }
 
-    public NicProfile getNic() {
-        return nic;
+    public NicIpAliasVO getNicAlias() {
+        return _nicAlias;
     }
 
-    public VirtualMachineProfile getProfile() {
-        return profile;
+    public String getRouterAliasIp() {
+        return _routerAliasIp;
     }
 
-    public DeployDestination getDestination() {
-        return destination;
+    public void createIpAlias(final VirtualRouter router, final List<IpAliasTO> ipAliasTOs, final Long networkid, final Commands cmds) {
+
+        final String routerip = _routerControlHelper.getRouterIpInNetwork(networkid, router.getId());
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
+        final CreateIpAliasCommand ipaliasCmd = new CreateIpAliasCommand(routerip, ipAliasTOs);
+        ipaliasCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        ipaliasCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        ipaliasCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, routerip);
+        ipaliasCmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+
+        cmds.addCommand("ipalias", ipaliasCmd);
+    }
+
+    public void configDnsMasq(final VirtualRouter router, final Network network, final Commands cmds) {
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
+        final List<NicIpAliasVO> ipAliasVOList = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.state.active);
+        final List<DhcpTO> ipList = new ArrayList<DhcpTO>();
+
+        final NicVO router_guest_nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
+        final String cidr = NetUtils.getCidrFromGatewayAndNetmask(router_guest_nic.getGateway(), router_guest_nic.getNetmask());
+        final String[] cidrPair = cidr.split("\\/");
+        final String cidrAddress = cidrPair[0];
+        final long cidrSize = Long.parseLong(cidrPair[1]);
+        final String startIpOfSubnet = NetUtils.getIpRangeStartIpFromCidr(cidrAddress, cidrSize);
+
+        ipList.add(new DhcpTO(router_guest_nic.getIp4Address(), router_guest_nic.getGateway(), router_guest_nic.getNetmask(), startIpOfSubnet));
+        for (final NicIpAliasVO ipAliasVO : ipAliasVOList) {
+            final DhcpTO DhcpTO = new DhcpTO(ipAliasVO.getIp4Address(), ipAliasVO.getGateway(), ipAliasVO.getNetmask(), ipAliasVO.getStartIpOfSubnet());
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("configDnsMasq : adding ip {" + DhcpTO.getGateway() + ", " + DhcpTO.getNetmask() + ", " + DhcpTO.getRouterIp() + ", " +
+                        DhcpTO.getStartIpOfSubnet() + "}");
+            }
+            ipList.add(DhcpTO);
+            ipAliasVO.setVmId(router.getId());
+        }
+        _dcDao.findById(router.getDataCenterId());
+        final DnsMasqConfigCommand dnsMasqConfigCmd = new DnsMasqConfigCommand(ipList);
+        dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(network.getId(), router.getId()));
+        dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+        cmds.addCommand("dnsMasqConfig", dnsMasqConfigCmd);
     }
 }
