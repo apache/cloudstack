@@ -441,7 +441,7 @@ public class LibvirtVMDef {
             @Override
             public String toString() {
                 if (_diskCacheMode == null) {
-                    return "none";
+                    return "NONE";
                 }
                 return _diskCacheMode;
             }
