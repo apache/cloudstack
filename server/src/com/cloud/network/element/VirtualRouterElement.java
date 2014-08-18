@@ -42,6 +42,7 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -154,6 +155,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     OvsProviderDao _ovsProviderDao;
     @Inject
     IPAddressDao _ipAddressDao;
+    @Inject
+    DataCenterDao _dcDao;
 
     @Inject
     NetworkTopologyContext networkTopologyContext;
@@ -291,7 +294,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         if (endChar != null) {
             boolean matchedEndChar = false;
             if (str.length() < 2) {
-                return false; // atleast one numeric and one char. example:
+                return false; // at least one numeric and one char. example:
             }
             // 3h
             char strEnd = str.toCharArray()[str.length() - 1];
@@ -712,7 +715,6 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             return true;
         }
 
-        @SuppressWarnings("unchecked")
         VirtualMachineProfile uservm = vm;
 
         // If any router is running then send save password command otherwise
@@ -750,7 +752,6 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             return true;
         }
 
-        @SuppressWarnings("unchecked")
         VirtualMachineProfile uservm = vm;
 
         DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
@@ -770,7 +771,6 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             return true;
         }
 
-        @SuppressWarnings("unchecked")
         VirtualMachineProfile uservm = vm;
 
         DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
@@ -913,7 +913,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
-            @SuppressWarnings("unchecked")
+
             VirtualMachineProfile uservm = vm;
 
             List<DomainRouterVO> routers = getRouters(network, dest);
@@ -922,7 +922,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
 
-            return _routerMgr.configDhcpForSubnet(network, nic, uservm, dest, routers);
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            return networkTopology.configDhcpForSubnet(network, nic, uservm, dest, routers);
         }
         return false;
     }
@@ -951,7 +954,6 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 return false;
             }
 
-            @SuppressWarnings("unchecked")
             VirtualMachineProfile uservm = vm;
 
             List<DomainRouterVO> routers = getRouters(network, dest);
@@ -963,7 +965,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-            return _routerMgr.applyDhcpEntry(network, nic, uservm, dest, routers);
+            return networkTopology.applyDhcpEntry(network, nic, uservm, dest, routers);
         }
         return false;
     }
@@ -981,7 +983,6 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 return true;
             }
 
-            @SuppressWarnings("unchecked")
             VirtualMachineProfile uservm = vm;
 
             List<DomainRouterVO> routers = getRouters(network, dest);
@@ -1122,7 +1123,15 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
             assert vm instanceof DomainRouterVO;
             DomainRouterVO router = (DomainRouterVO) vm.getVirtualMachine();
-            _routerMgr.setupDhcpForPvlan(false, router, router.getHostId(), nic);
+
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            try {
+                networkTopology.setupDhcpForPvlan(false, router, router.getHostId(), nic);
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Timed Out", e);
+            }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
             UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();
@@ -1139,7 +1148,15 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
             assert vm instanceof DomainRouterVO;
             DomainRouterVO router = (DomainRouterVO) vm.getVirtualMachine();
-            _routerMgr.setupDhcpForPvlan(true, router, router.getHostId(), nic);
+
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            try {
+                networkTopology.setupDhcpForPvlan(true, router, router.getHostId(), nic);
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Timed Out", e);
+            }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
             UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();
@@ -1155,7 +1172,15 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
             assert vm instanceof DomainRouterVO;
             DomainRouterVO router = (DomainRouterVO) vm.getVirtualMachine();
-            _routerMgr.setupDhcpForPvlan(true, router, router.getHostId(), nic);
+
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            try {
+                networkTopology.setupDhcpForPvlan(true, router, router.getHostId(), nic);
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Timed Out", e);
+            }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
             UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();

@@ -36,6 +36,7 @@ import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.DhcpEntryRules;
+import com.cloud.network.rules.DhcpSubNetRules;
 import com.cloud.network.rules.NetworkAclsRules;
 import com.cloud.network.rules.NicPlugInOutRules;
 import com.cloud.network.rules.RuleApplier;
@@ -56,6 +57,36 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Autowired
     @Qualifier("advancedNetworkVisitor")
     protected AdvancedNetworkVisitor _advancedVisitor;
+
+    @Override
+    public boolean setupDhcpForPvlan(final boolean isAddPvlan, final DomainRouterVO router, final Long hostId, final NicProfile nic) throws ResourceUnavailableException {
+
+        if (!nic.getBroadCastUri().getScheme().equals("pvlan")) {
+            return false;
+        }
+
+        DhcpPvlanRules pvlanRules = _virtualNetworkApplianceFactory.createDhcpPvlanRules(isAddPvlan, nic);
+
+        return pvlanRules.accept(_advancedVisitor, router);
+    }
+
+    @Override
+    public boolean configDhcpForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
+            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+
+        s_logger.debug("CONFIG DHCP FOR SUBNETS RULES");
+
+        // Asuming we have only one router per network For Now.
+        final DomainRouterVO router = routers.get(0);
+        if (router.getState() != State.Running) {
+            s_logger.warn("Failed to configure dhcp: router not in running state");
+            throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
+        }
+
+        DhcpSubNetRules subNetRules = _virtualNetworkApplianceFactory.createDhcpSubNetRules(network, nic, profile);
+
+        return subNetRules.accept(_advancedVisitor, router);
+    }
 
     @Override
     public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
@@ -92,12 +123,13 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Override
     public boolean associatePublicIP(final Network network, final List<? extends PublicIpAddress> ipAddresses, final List<? extends VirtualRouter> routers)
             throws ResourceUnavailableException {
+
         if (ipAddresses == null || ipAddresses.isEmpty()) {
             s_logger.debug("No ip association rules to be applied for network " + network.getId());
             return true;
         }
 
-        //only one router is supported in VPC now
+        // only one router is supported in VPC now
         VirtualRouter router = routers.get(0);
 
         if (router.getVpcId() == null) {
@@ -127,6 +159,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Override
     public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final List<? extends VirtualRouter> routers, final boolean isPrivateGateway)
             throws ResourceUnavailableException {
+
         if (rules == null || rules.isEmpty()) {
             s_logger.debug("No network ACLs to be applied for network " + network.getId());
             return true;
@@ -145,22 +178,21 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     }
 
     @Override
-    public boolean applyRules(final Network network, final List<? extends VirtualRouter> routers, final String typeString, final boolean isPodLevelException, final Long podId, final boolean failWhenDisconnect,
-            final RuleApplierWrapper<RuleApplier> ruleApplierWrapper)
-                    throws ResourceUnavailableException {
+    public boolean applyRules(final Network network, final List<? extends VirtualRouter> routers, final String typeString, final boolean isPodLevelException, final Long podId,
+            final boolean failWhenDisconnect, final RuleApplierWrapper<RuleApplier> ruleApplierWrapper) throws ResourceUnavailableException {
 
         if (routers == null || routers.isEmpty()) {
             s_logger.warn("Unable to apply " + typeString + ", virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to apply " + typeString, DataCenter.class, network.getDataCenterId());
         }
 
-        RuleApplier ruleApplier =  ruleApplierWrapper.getRuleType();
+        RuleApplier ruleApplier = ruleApplierWrapper.getRuleType();
 
         final DataCenter dc = _dcDao.findById(network.getDataCenterId());
-        final boolean isZoneBasic = (dc.getNetworkType() == NetworkType.Basic);
+        final boolean isZoneBasic = dc.getNetworkType() == NetworkType.Basic;
 
         // isPodLevelException and podId is only used for basic zone
-        assert !((!isZoneBasic && isPodLevelException) || (isZoneBasic && isPodLevelException && podId == null));
+        assert !(!isZoneBasic && isPodLevelException || isZoneBasic && isPodLevelException && podId == null);
 
         final List<VirtualRouter> connectedRouters = new ArrayList<VirtualRouter>();
         final List<VirtualRouter> disconnectedRouters = new ArrayList<VirtualRouter>();
@@ -172,8 +204,8 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
                 if (router.isStopPending()) {
                     if (_hostDao.findById(router.getHostId()).getState() == Status.Up) {
-                        throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName() +
-                                " haven't been stopped after it's host coming back!", DataCenter.class, router.getDataCenterId());
+                        throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName()
+                                + " haven't been stopped after it's host coming back!", DataCenter.class, router.getDataCenterId());
                     }
                     s_logger.debug("Router " + router.getInstanceName() + " is stop pending, so not sending apply " + typeString + " commands to the backend");
                     continue;
@@ -188,7 +220,8 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
                     disconnectedRouters.add(router);
                 }
 
-                //If rules fail to apply on one domR and not due to disconnection, no need to proceed with the rest
+                // If rules fail to apply on one domR and not due to
+                // disconnection, no need to proceed with the rest
                 if (!result) {
                     if (isZoneBasic && isPodLevelException) {
                         throw new ResourceUnavailableException("Unable to apply " + typeString + " on router ", Pod.class, podId);
@@ -203,15 +236,16 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
                 if (isZoneBasic && isPodLevelException) {
                     throw new ResourceUnavailableException("Unable to apply " + typeString + ", virtual router is not in the right state", Pod.class, podId);
                 }
-                throw new ResourceUnavailableException("Unable to apply " + typeString + ", virtual router is not in the right state", DataCenter.class,
-                        router.getDataCenterId());
+                throw new ResourceUnavailableException("Unable to apply " + typeString + ", virtual router is not in the right state", DataCenter.class, router.getDataCenterId());
             }
         }
 
         if (!connectedRouters.isEmpty()) {
             if (!isZoneBasic && !disconnectedRouters.isEmpty() && disconnectedRouters.get(0).getIsRedundantRouter()) {
-                // These disconnected redundant virtual routers are out of sync now, stop them for synchronization
-                //[FIXME] handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
+                // These disconnected redundant virtual routers are out of sync
+                // now, stop them for synchronization
+                // [FIXME] handleSingleWorkingRedundantRouter(connectedRouters,
+                // disconnectedRouters, msg);
             }
         } else if (!disconnectedRouters.isEmpty()) {
             for (final VirtualRouter router : disconnectedRouters) {

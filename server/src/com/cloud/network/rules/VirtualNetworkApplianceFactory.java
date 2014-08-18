@@ -23,18 +23,23 @@ import javax.inject.Inject;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.VpnUser;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.NetworkGeneralHelper;
 import com.cloud.network.router.RouterControlHelper;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -47,6 +52,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.UserVmDao;
 
 public class VirtualNetworkApplianceFactory {
@@ -103,7 +109,25 @@ public class VirtualNetworkApplianceFactory {
     protected FirewallRulesDao _rulesDao;
 
     @Inject
+    protected NicIpAliasDao _nicIpAliasDao;
+
+    @Inject
+    protected HostPodDao _podDao;
+
+    @Inject
+    protected VlanDao _vlanDao;
+
+    @Inject
+    protected IPAddressDao _ipAddressDao;
+
+    @Inject
     protected RouterControlHelper _routerControlHelper;
+
+    @Inject
+    protected VirtualNetworkApplianceManager _applianceManager;
+
+    @Inject
+    protected IpAddressManager _ipAddrMgr;
 
     @Inject
     protected NetworkGeneralHelper _networkHelper;
@@ -253,5 +277,31 @@ public class VirtualNetworkApplianceFactory {
         networkAclsRules._networkHelper = _networkHelper;
 
         return networkAclsRules;
+    }
+
+    public DhcpSubNetRules createDhcpSubNetRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile) {
+        DhcpSubNetRules subNetRules = new DhcpSubNetRules(network, nic, profile);
+
+        initBeans(subNetRules);
+
+        subNetRules._vpcDao = _vpcDao;
+        subNetRules._userVmDao = _userVmDao;
+        subNetRules._podDao = _podDao;
+        subNetRules._vlanDao = _vlanDao;
+        subNetRules._nicIpAliasDao = _nicIpAliasDao;
+        subNetRules._ipAddrMgr = _ipAddrMgr;
+        subNetRules._ipAddressDao = _ipAddressDao;
+
+        return subNetRules;
+    }
+
+    public DhcpPvlanRules createDhcpPvlanRules(final boolean isAddPvlan, final NicProfile nic) {
+        DhcpPvlanRules pvlanRules = new DhcpPvlanRules(isAddPvlan, nic);
+
+        initBeans(pvlanRules);
+
+        pvlanRules._networkDao = _networkDao;
+
+        return pvlanRules;
     }
 }
