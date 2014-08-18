@@ -21,8 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
@@ -90,11 +88,7 @@ public class RouterDeploymentDefinition {
     protected UserIpv6AddressDao ipv6Dao;
     protected IPAddressDao ipAddressDao;
     protected VirtualRouterProvider vrProvider;
-
-
-    @Inject
     protected NetworkGeneralHelper nwHelper;
-
 
     protected Network guestNetwork;
     protected DeployDestination dest;

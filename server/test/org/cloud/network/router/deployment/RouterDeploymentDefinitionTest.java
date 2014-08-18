@@ -676,12 +676,12 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         when(this.mockNetworkModel.getPhysicalNetworkId(this.deployment.guestNetwork)).thenReturn(PHYSICAL_NW_ID);
         Type type = Type.VirtualRouter;
         PhysicalNetworkServiceProviderVO physicalNwSrvProvider = mock(PhysicalNetworkServiceProviderVO.class);
-        when(this.physicalProviderDao.findByServiceProvider(PHYSICAL_NW_ID, type.toString()))
+        when(this.mockPhysicalProviderDao.findByServiceProvider(PHYSICAL_NW_ID, type.toString()))
             .thenReturn(physicalNwSrvProvider);
-        when(physicalNwSrvProvider.getId()).thenReturn(PROVIDER_ID);
+        when(physicalNwSrvProvider.getId()).thenReturn(PROVIDER_ID_1);
 
         VirtualRouterProviderVO vrProvider = mock(VirtualRouterProviderVO.class);
-        when(this.mockVrProviderDao.findByNspIdAndType(PROVIDER_ID, type))
+        when(this.mockVrProviderDao.findByNspIdAndType(PROVIDER_ID_1, type))
             .thenReturn(vrProvider);
 
         // Execute
@@ -697,7 +697,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         // Prepare
         when(this.mockNetworkModel.getPhysicalNetworkId(this.deployment.guestNetwork)).thenReturn(PHYSICAL_NW_ID);
         Type type = Type.VirtualRouter;
-        when(this.physicalProviderDao.findByServiceProvider(PHYSICAL_NW_ID, type.toString()))
+        when(this.mockPhysicalProviderDao.findByServiceProvider(PHYSICAL_NW_ID, type.toString()))
             .thenReturn(null);
 
         // Execute
@@ -710,11 +710,11 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         when(this.mockNetworkModel.getPhysicalNetworkId(this.deployment.guestNetwork)).thenReturn(PHYSICAL_NW_ID);
         Type type = Type.VirtualRouter;
         PhysicalNetworkServiceProviderVO physicalNwSrvProvider = mock(PhysicalNetworkServiceProviderVO.class);
-        when(this.physicalProviderDao.findByServiceProvider(PHYSICAL_NW_ID, type.toString()))
+        when(this.mockPhysicalProviderDao.findByServiceProvider(PHYSICAL_NW_ID, type.toString()))
             .thenReturn(physicalNwSrvProvider);
-        when(physicalNwSrvProvider.getId()).thenReturn(PROVIDER_ID);
+        when(physicalNwSrvProvider.getId()).thenReturn(PROVIDER_ID_1);
 
-        when(this.mockVrProviderDao.findByNspIdAndType(PROVIDER_ID, type))
+        when(this.mockVrProviderDao.findByNspIdAndType(PROVIDER_ID_1, type))
             .thenReturn(null);
 
         // Execute

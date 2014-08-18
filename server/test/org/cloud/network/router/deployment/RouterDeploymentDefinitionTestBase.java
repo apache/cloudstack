@@ -64,7 +64,8 @@ public class RouterDeploymentDefinitionTestBase {
     protected static final Long POD_ID3 = 113l;
     protected static final Long ROUTER1_ID = 121l;
     protected static final Long ROUTER2_ID = 122l;
-    protected static final long PROVIDER_ID = 131L;
+    protected static final long PROVIDER_ID_1 = 131L;
+    protected static final long PROVIDER_ID_2 = 132L;
     protected static final long PHYSICAL_NW_ID = 141L;
 
     // General delegates (Daos, Mgrs...)
@@ -81,7 +82,7 @@ public class RouterDeploymentDefinitionTestBase {
     @Mock
     protected VirtualRouterProviderDao mockVrProviderDao;
     @Mock
-    protected PhysicalNetworkServiceProviderDao physicalProviderDao;
+    protected PhysicalNetworkServiceProviderDao mockPhysicalProviderDao;
     @Mock
     protected NetworkModel mockNetworkModel;
     @Mock
