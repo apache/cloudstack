@@ -32,6 +32,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -54,6 +55,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.cloud.utils.HttpUtils;
+import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -932,8 +934,55 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             return null;
     }
 
+    private ResponseObject createLoginResponse(HttpSession session) {
+        LoginCmdResponse response = new LoginCmdResponse();
+        response.setTimeout(session.getMaxInactiveInterval());
+
+        final String user_UUID = (String)session.getAttribute("user_UUID");
+        session.removeAttribute("user_UUID");
+        response.setUserId(user_UUID);
+
+        final String domain_UUID = (String)session.getAttribute("domain_UUID");
+        session.removeAttribute("domain_UUID");
+        response.setDomainId(domain_UUID);
+
+        final Enumeration attrNames = session.getAttributeNames();
+        if (attrNames != null) {
+            while (attrNames.hasMoreElements()) {
+                final String attrName = (String) attrNames.nextElement();
+                final Object attrObj = session.getAttribute(attrName);
+                if (ApiConstants.USERNAME.equalsIgnoreCase(attrName)) {
+                    response.setUsername(attrObj.toString());
+                }
+                if (ApiConstants.ACCOUNT.equalsIgnoreCase(attrName)) {
+                    response.setAccount(attrObj.toString());
+                }
+                if (ApiConstants.FIRSTNAME.equalsIgnoreCase(attrName)) {
+                    response.setFirstName(attrObj.toString());
+                }
+                if (ApiConstants.LASTNAME.equalsIgnoreCase(attrName)) {
+                    response.setLastName(attrObj.toString());
+                }
+                if (ApiConstants.TYPE.equalsIgnoreCase(attrName)) {
+                    response.setType((attrObj.toString()));
+                }
+                if (ApiConstants.TIMEZONE.equalsIgnoreCase(attrName)) {
+                    response.setTimeZone(attrObj.toString());
+                }
+                if (ApiConstants.REGISTERED.equalsIgnoreCase(attrName)) {
+                    response.setRegistered(attrObj.toString());
+                }
+                if (ApiConstants.SESSIONKEY.equalsIgnoreCase(attrName)) {
+                    response.setSessionKey(attrObj.toString());
+                }
+            }
+        }
+        response.setResponseName("loginresponse");
+        return response;
+    }
+
     @Override
-    public void loginUser(final HttpSession session, final String username, final String password, Long domainId, final String domainPath, final String loginIpAddress,
+    public ResponseObject loginUser(final HttpSession session, final String username, final String password, Long domainId, final String domainPath, final String loginIpAddress,
             final Map<String, Object[]> requestParameters) throws CloudAuthenticationException {
         // We will always use domainId first. If that does not exist, we will use domain name. If THAT doesn't exist
         // we will default to ROOT
@@ -1003,7 +1052,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final String sessionKey = Base64.encodeBase64String(sessionKeyBytes);
             session.setAttribute("sessionkey", sessionKey);
 
-            return;
+            return createLoginResponse(session);
         }
         throw new CloudAuthenticationException("Failed to authenticate user " + username + " in domain " + domainId + "; please provide valid credentials");
     }

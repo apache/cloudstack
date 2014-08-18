@@ -201,6 +201,9 @@ public class ApiServlet extends HttpServlet {
                             } catch (final IllegalStateException ignored) {
                             }
                         }
+                    } else {
+                        auditTrailSb.insert(0, "(userId=" + session.getAttribute("userid") + " accountId=" + ((Account) session.getAttribute("accountobj")).getId() +
+                                " sessionId=" + session.getId() + ")");
                     }
                     HttpUtils.writeHttpResponse(resp, responseString, httpResponseCode, responseType);
                     return;
