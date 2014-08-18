@@ -16,21 +16,20 @@
 // under the License.
 package com.cloud.api;
 
-import java.util.Map;
-
-import javax.servlet.http.HttpSession;
-
+import com.cloud.exception.CloudAuthenticationException;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 
-import com.cloud.exception.CloudAuthenticationException;
+import javax.servlet.http.HttpSession;
+import java.util.Map;
 
 public interface ApiServerService {
     public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) throws ServerApiException;
 
     public Long fetchDomainId(String domainUUID);
 
-    public void loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, String loginIpAddress,
-        Map<String, Object[]> requestParameters) throws CloudAuthenticationException;
+    public ResponseObject loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, String loginIpAddress,
+                                    Map<String, Object[]> requestParameters) throws CloudAuthenticationException;
 
     public void logoutUser(long userId);
 
