@@ -1218,4 +1218,19 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // Returning list of VmwareDatacenterVO objects, in-line with future requirements, if any, like participation of multiple VMware DCs in a zone.
         return vmwareDcList;
     }
+
+    @Override
+    public boolean hasNexusVSM(Long clusterId) {
+        ClusterVSMMapVO vsmMapVo = null;
+
+        vsmMapVo = _vsmMapDao.findByClusterId(clusterId);
+        if (vsmMapVo == null) {
+            s_logger.info("There is no instance of Nexus 1000v VSM associated with this cluster [Id:" + clusterId + "] yet.");
+            return false;
+        }
+        else {
+            s_logger.info("An instance of Nexus 1000v VSM [Id:" + vsmMapVo.getVsmId() + "] associated with this cluster [Id:" + clusterId + "]");
+            return true;
+        }
+    }
 }

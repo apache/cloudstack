@@ -299,15 +299,19 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             if (guestTrafficLabel != null) {
                 s_logger.info("Detected guest network label : " + guestTrafficLabel);
             }
-            vsmIp = _urlParams.get("vsmipaddress");
-            String vsmUser = _urlParams.get("vsmusername");
-            String vsmPassword = _urlParams.get("vsmpassword");
-            String clusterName = cluster.getName();
-            try {
-                vsmInfo = _nexusElement.validateAndAddVsm(vsmIp, vsmUser, vsmPassword, clusterId, clusterName);
-            } catch (ResourceInUseException ex) {
-                DiscoveryException discEx = new DiscoveryException(ex.getLocalizedMessage() + ". The resource is " + ex.getResourceName());
-                throw discEx;
+            // Before proceeding with validation of Nexus 1000v VSM check if an instance of Nexus 1000v VSM is already associated with this cluster.
+            boolean clusterHasVsm = _vmwareMgr.hasNexusVSM(clusterId);
+            if (!clusterHasVsm) {
+                vsmIp = _urlParams.get("vsmipaddress");
+                String vsmUser = _urlParams.get("vsmusername");
+                String vsmPassword = _urlParams.get("vsmpassword");
+                String clusterName = cluster.getName();
+                try {
+                    vsmInfo = _nexusElement.validateAndAddVsm(vsmIp, vsmUser, vsmPassword, clusterId, clusterName);
+                } catch (ResourceInUseException ex) {
+                    DiscoveryException discEx = new DiscoveryException(ex.getLocalizedMessage() + ". The resource is " + ex.getResourceName());
+                    throw discEx;
+                }
             }
             vsmCredentials = _vmwareMgr.getNexusVSMCredentialsByClusterId(clusterId);
         }
