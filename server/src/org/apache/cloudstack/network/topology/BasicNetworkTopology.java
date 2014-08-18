@@ -110,9 +110,15 @@ public class BasicNetworkTopology implements NetworkTopology {
     }
 
     @Override
+    public boolean setupDhcpForPvlan(final boolean add, final DomainRouterVO router, final Long hostId, final NicProfile nic) throws ResourceUnavailableException {
+        throw new CloudRuntimeException("setupDhcpForPvlan not implemented in Basic Network Topology.");
+    }
+
+    @Override
     public boolean configDhcpForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
             final List<DomainRouterVO> routers) throws ResourceUnavailableException {
-        return false;
+
+        throw new CloudRuntimeException("configDhcpForSubnet not implemented in Basic Network Topology.");
     }
 
     @Override

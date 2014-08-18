@@ -19,6 +19,7 @@ package org.apache.cloudstack.network.topology;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.DhcpRules;
+import com.cloud.network.rules.DhcpSubNetRules;
 import com.cloud.network.rules.FirewallRules;
 import com.cloud.network.rules.IpAssociationRules;
 import com.cloud.network.rules.LoadBalancingRules;
@@ -69,6 +70,7 @@ public abstract class NetworkTopologyVisitor {
 
     public abstract boolean visit(DhcpPvlanRules vpn) throws ResourceUnavailableException;
 
-    public abstract boolean visit(DhcpSubNetRules vpn) throws ResourceUnavailableException;
+    public abstract boolean visit(DhcpSubNetRules subnet) throws ResourceUnavailableException;
+
     public abstract boolean visit(NicPlugInOutRules nicPlugInOutRules) throws ResourceUnavailableException;
 }
