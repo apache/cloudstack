@@ -15173,9 +15173,39 @@
                                     //always appear (begin)
                                     hosttags: {
                                         label: 'label.host.tags',
+                                        isTokenInput: true,
                                         docID: 'helpHostTags',
                                         validation: {
                                             required: false
+                                        },
+                                        dataProvider: function(args) {
+                                            $.ajax({
+                                                url: createURL("listHostTags"),
+                                                dataType: "json",
+                                                success: function(json) {
+                                                    var item = json.listhosttagsresponse.hosttag;
+                                                    var tags = [];
+
+                                                    if (item != null)
+                                                    {
+                                                        tags = $.map(item, function(tag) {
+                                                            return {
+                                                                       id: tag.name,
+                                                                       name: tag.name
+                                                                   };
+                                                        });
+                                                    }
+
+                                                    args.response.success({
+                                                        data: tags
+                                                    });
+                                                },
+                                                error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
                                         }
                                     }
                                     //always appear (end)
@@ -15739,7 +15769,37 @@
                                     },
                                     hosttags: {
                                         label: 'label.host.tags',
-                                        isEditable: true
+                                        isEditable: true,
+                                        isTokenInput: true,
+                                        dataProvider: function(args) {
+                                            $.ajax({
+                                                url: createURL("listHostTags"),
+                                                dataType: "json",
+                                                success: function(json) {
+                                                    var item = json.listhosttagsresponse.hosttag;
+                                                    var tags = [];
+
+                                                    if (item != null)
+                                                    {
+                                                        tags = $.map(item, function(tag) {
+                                                            return {
+                                                                       id: tag.name,
+                                                                       name: tag.name
+                                                                   };
+                                                        });
+                                                    }
+
+                                                    args.response.success({
+                                                        data: tags
+                                                    });
+                                                },
+                                                error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
+                                        }
                                     },
                                     hahost: {
                                         label: 'label.ha.enabled',
@@ -16895,7 +16955,7 @@
                                             $.ajax({
                                                 url: createURL("listStorageTags"),
                                                 dataType: "json",
-                                                success: function (json) {
+                                                success: function(json) {
                                                     var item = json.liststoragetagsresponse.storagetag;
                                                     var tags = [];
 
@@ -16913,7 +16973,7 @@
                                                         data: tags
                                                     });
                                                 },
-                                                error: function (XMLHttpResponse) {
+                                                error: function(XMLHttpResponse) {
                                                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
 
                                                     args.response.error(errorMsg);
@@ -17272,7 +17332,7 @@
                                                         data: tags
                                                     });
                                                 },
-                                                error: function (XMLHttpResponse) {
+                                                error: function(XMLHttpResponse) {
                                                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
 
                                                     args.response.error(errorMsg);

@@ -487,7 +487,7 @@
                         {
                             $token = $value;
                         }
-                        else if ($input.attr('name') === "tags")
+                        else if (($input.attr('name') === "tags") || ($input.attr('name') === "hosttags"))
                         {
                             tags_value = $input.attr('value');
                         }
@@ -570,7 +570,6 @@
                         }
                     });
 
-                    data['token-input-'] = data['tags'];
                     $editButton.fadeOut('fast', function() {
                         $editButton.remove();
                     });
