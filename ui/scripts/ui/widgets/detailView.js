@@ -672,7 +672,7 @@
                 // Turn into form field
                 var selectData = $value.data('detail-view-editable-select');
                 var isBoolean = $value.data('detail-view-editable-boolean');
-                var isTokenInput = $value.data('detail-view-is-TokenInput');
+                var isTokenInput = $value.data('detail-view-is-token-input');
                 var data = !isBoolean ? cloudStack.sanitizeReverse($value.html()) : $value.data('detail-view-boolean-value');
                 var rules = $value.data('validation-rules') ? $value.data('validation-rules') : {};
                 var isPassword = $value.data('detail-view-is-password');
@@ -734,20 +734,6 @@
 
                     isAsync = true;
 
-                    var hint = "Type in a search term";
-                    var noResults = "No results";
-
-                    if ($value.data('value_token').label === 'label.storage.tags')
-                    {
-                        hint = "Type in part of a storage tag";
-                        noResults= "No storage tags found";
-                    }
-                    else if ($value.data('value_token').label === 'label.host.tags')
-                    {
-                        hint = "Type in part of a host tag";
-                        noResults = "No host tags found";
-                    }
-
                     selectArgs = {
                         context: $detailView.data('view-args').context,
                         response: {
@@ -758,8 +744,8 @@
                                     preventDuplicates: true,
                                     prePopulate: existing_tags,
                                     processPrePopulate: true,
-                                    hintText: hint,
-                                    noResultsText: noResults
+                                    hintText: args.hintText,
+                                    noResultsText: args.noResultsText
                                 });
                             }
                         }
@@ -773,7 +759,7 @@
 
                     $value.append($input);
                     token_value = data;
-                    $value.data('value_token').dataProvider(selectArgs);
+                    $value.data('value-token').dataProvider(selectArgs);
                 } else {
                     // Text input
                     $value.append(
@@ -1129,8 +1115,8 @@
 
                     if (value.isTokenInput)
                     {
-                         $value.data('detail-view-is-TokenInput', true);
-                         $value.data('value_token', value);
+                         $value.data('detail-view-is-token-input', true);
+                         $value.data('value-token', value);
                     }
                 }
 

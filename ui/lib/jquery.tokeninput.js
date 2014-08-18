@@ -21,8 +21,8 @@ var DEFAULT_SETTINGS = {
     jsonContainer: null,
 
 	// Display settings
-    hintText: "Type in part of a storage tag",
-    noResultsText: "No storage tags found",
+    hintText: "Type in a search term",
+    noResultsText: "No results",
     searchingText: "Searching...",
     deleteText: "&times;",
     animateDropdown: true,
