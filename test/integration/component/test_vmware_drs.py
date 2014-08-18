@@ -112,6 +112,8 @@ class TestVMPlacement(cloudstackTestCase):
     def setUpClass(cls):
 
         cls.testClient = super(TestVMPlacement, cls).getClsTestClient()
+        if cls.testClient.getHypervisorInfo().lower() != "vmware":
+            raise unittest.SkipTest("VMWare tests only valid on VMWare hypervisor")
         cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
@@ -272,6 +274,8 @@ class TestAntiAffinityRules(cloudstackTestCase):
     def setUpClass(cls):
 
         cls.testClient = super(TestAntiAffinityRules, cls).getClsTestClient()
+        if cls.testClient.getHypervisorInfo().lower() != "vmware":
+            raise unittest.SkipTest("VMWare tests only valid on VMWare hypervisor")
         cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
@@ -500,6 +504,8 @@ class TestAffinityRules(cloudstackTestCase):
     def setUpClass(cls):
 
         cls.testClient = super(TestAffinityRules, cls).getClsTestClient()
+        if cls.testClient.getHypervisorInfo().lower() != "vmware":
+            raise unittest.SkipTest("VMWare tests only valid on VMWare hypervisor")
         cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
