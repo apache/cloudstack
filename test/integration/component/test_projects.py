@@ -1610,7 +1610,7 @@ class TestProjectSuspendActivate(cloudstackTestCase):
         self.debug("VM start failed!")
 
         # Destroy Stopped VM
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=False)
         self.debug("Destroying VM: %s" % virtual_machine.id)
 
         # Check status of all VMs associated with project
