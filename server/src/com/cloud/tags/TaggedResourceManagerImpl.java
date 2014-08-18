@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.query.dao.ResourceTagJoinDao;
@@ -167,6 +168,9 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         if (entity != null) {
             return ((InternalIdentity)entity).getId();
         }
+        if (!StringUtils.isNumeric(resourceId)) {
+            throw new InvalidParameterValueException("Unable to find resource by uuid " + resourceId + " and type " + resourceType);
+        }
         entity = _entityMgr.findById(clazz, resourceId);
         if (entity != null) {
             return ((InternalIdentity)entity).getId();
@@ -276,6 +280,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
 
     @Override
     public String getUuid(String resourceId, ResourceObjectType resourceType) {
+        if (!StringUtils.isNumeric(resourceId)) {
+            return resourceId;
+        }
+
         Class<?> clazz = s_typeMap.get(resourceType);
 
         Object entity = _entityMgr.findById(clazz, resourceId);
