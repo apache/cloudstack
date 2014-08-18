@@ -44,18 +44,21 @@ public interface NetworkTopology {
 
     NicProfile retrieveControlNic(final VirtualMachineProfile profile);
 
-    boolean configDhcpForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
-            throws ResourceUnavailableException;
-
-    boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
-            throws ResourceUnavailableException;
 
     // ====== USER FOR VPC ONLY ====== //
+
+    boolean setupDhcpForPvlan(final boolean add, final DomainRouterVO router, final Long hostId, final NicProfile nic) throws ResourceUnavailableException;
+
+    boolean configDhcpForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
+            throws ResourceUnavailableException;
 
     boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final List<? extends VirtualRouter> routers, final boolean isPrivateGateway)
             throws ResourceUnavailableException;
 
     // ====== USER FOR GUEST NETWORK AND VCP ====== //
+
+    boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
+            throws ResourceUnavailableException;
 
     boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
             throws ResourceUnavailableException;

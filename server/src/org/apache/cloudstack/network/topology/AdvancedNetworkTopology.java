@@ -36,6 +36,8 @@ import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.DhcpEntryRules;
+import com.cloud.network.rules.DhcpPvlanRules;
+import com.cloud.network.rules.DhcpSubNetRules;
 import com.cloud.network.rules.NetworkAclsRules;
 import com.cloud.network.rules.NicPlugInOutRules;
 import com.cloud.network.rules.RuleApplier;
@@ -57,6 +59,36 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Qualifier("advancedNetworkVisitor")
     protected AdvancedNetworkVisitor _advancedVisitor;
 
+    @Override
+    public boolean setupDhcpForPvlan(final boolean isAddPvlan, final DomainRouterVO router, final Long hostId, final NicProfile nic) throws ResourceUnavailableException {
+
+        if (!nic.getBroadCastUri().getScheme().equals("pvlan")) {
+            return false;
+        }
+
+        DhcpPvlanRules pvlanRules = _virtualNetworkApplianceFactory.createDhcpPvlanRules(isAddPvlan, nic);
+
+        return pvlanRules.accept(_advancedVisitor, router);
+    }
+
+    @Override
+    public boolean configDhcpForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
+            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+
+        s_logger.debug("CONFIG DHCP FOR SUBNETS RULES");
+
+        //Asuming we have only one router per network For Now.
+        final DomainRouterVO router = routers.get(0);
+        if (router.getState() != State.Running) {
+            s_logger.warn("Failed to configure dhcp: router not in running state");
+            throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class,
+                    network.getDataCenterId());
+        }
+
+        DhcpSubNetRules subNetRules = _virtualNetworkApplianceFactory.createDhcpSubNetRules(network, nic, profile);
+
+        return subNetRules.accept(_advancedVisitor, router);
+    }
 
     @Override
     public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
@@ -93,6 +125,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Override
     public boolean associatePublicIP(final Network network, final List<? extends PublicIpAddress> ipAddresses, final List<? extends VirtualRouter> routers)
             throws ResourceUnavailableException {
+
         if (ipAddresses == null || ipAddresses.isEmpty()) {
             s_logger.debug("No ip association rules to be applied for network " + network.getId());
             return true;
@@ -128,6 +161,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Override
     public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final List<? extends VirtualRouter> routers, final boolean isPrivateGateway)
             throws ResourceUnavailableException {
+
         if (rules == null || rules.isEmpty()) {
             s_logger.debug("No network ACLs to be applied for network " + network.getId());
             return true;

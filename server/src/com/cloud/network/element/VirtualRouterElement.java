@@ -314,7 +314,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         if (endChar != null) {
             boolean matchedEndChar = false;
             if (str.length() < 2) {
-                return false; // atleast one numeric and one char. example:
+                return false; // at least one numeric and one char. example:
             }
             // 3h
             char strEnd = str.toCharArray()[str.length() - 1];
@@ -740,7 +740,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             return true;
         }
 
-        @SuppressWarnings("unchecked")
         VirtualMachineProfile uservm = vm;
 
         // If any router is running then send save password command otherwise save the password in DB
@@ -777,7 +776,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             return true;
         }
 
-        @SuppressWarnings("unchecked")
         VirtualMachineProfile uservm = vm;
 
         DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
@@ -797,7 +795,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             return true;
         }
 
-        @SuppressWarnings("unchecked")
         VirtualMachineProfile uservm = vm;
 
         DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
@@ -943,7 +940,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
-            @SuppressWarnings("unchecked")
+
             VirtualMachineProfile uservm = vm;
 
             List<DomainRouterVO> routers = getRouters(network, dest);
@@ -952,7 +949,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
 
-            return _routerMgr.configDhcpForSubnet(network, nic, uservm, dest, routers);
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            return networkTopology.configDhcpForSubnet(network, nic, uservm, dest, routers);
         }
         return false;
     }
@@ -981,7 +981,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 return false;
             }
 
-            @SuppressWarnings("unchecked")
             VirtualMachineProfile uservm = vm;
 
             List<DomainRouterVO> routers = getRouters(network, dest);
@@ -1011,7 +1010,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 return true;
             }
 
-            @SuppressWarnings("unchecked")
             VirtualMachineProfile uservm = vm;
 
             List<DomainRouterVO> routers = getRouters(network, dest);
@@ -1147,7 +1145,15 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
             assert vm instanceof DomainRouterVO;
             DomainRouterVO router = (DomainRouterVO)vm.getVirtualMachine();
-            _routerMgr.setupDhcpForPvlan(false, router, router.getHostId(), nic);
+
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            try {
+                networkTopology.setupDhcpForPvlan(false, router, router.getHostId(), nic);
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Timed Out", e);
+            }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
             UserVmVO userVm = (UserVmVO)vm.getVirtualMachine();
@@ -1164,7 +1170,15 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
             assert vm instanceof DomainRouterVO;
             DomainRouterVO router = (DomainRouterVO)vm.getVirtualMachine();
-            _routerMgr.setupDhcpForPvlan(true, router, router.getHostId(), nic);
+
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            try {
+                networkTopology.setupDhcpForPvlan(true, router, router.getHostId(), nic);
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Timed Out", e);
+            }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
             UserVmVO userVm = (UserVmVO)vm.getVirtualMachine();
@@ -1180,7 +1194,15 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
             assert vm instanceof DomainRouterVO;
             DomainRouterVO router = (DomainRouterVO)vm.getVirtualMachine();
-            _routerMgr.setupDhcpForPvlan(true, router, router.getHostId(), nic);
+
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            try {
+                networkTopology.setupDhcpForPvlan(true, router, router.getHostId(), nic);
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Timed Out", e);
+            }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
             UserVmVO userVm = (UserVmVO)vm.getVirtualMachine();

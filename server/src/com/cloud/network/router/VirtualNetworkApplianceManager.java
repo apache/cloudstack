@@ -20,26 +20,22 @@ import java.util.List;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 
-import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VirtualNetworkApplianceService;
-import com.cloud.network.VpnUser;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.NicProfile;
-import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * NetworkManager manages the network for the different end users.
- *
  */
 public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkApplianceService {
+
     static final String RouterTemplateXenCK = "router.template.xenserver";
     static final String RouterTemplateKvmCK = "router.template.kvm";
     static final String RouterTemplateVmwareCK = "router.template.vmware";
@@ -75,8 +71,11 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
      * @param hostId
      * @param pubKey
      * @param prvKey
+     *
+     * NOT USED IN THE VIRTUAL NET APPLIANCE
+     *
      */
-    boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey);
+    //boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey):
 
     boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
@@ -84,18 +83,11 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 
     List<VirtualRouter> getRoutersForNetwork(long networkId);
 
-    String[] applyVpnUsers(Network network, List<? extends VpnUser> users, List<DomainRouterVO> routers) throws ResourceUnavailableException;
-
     VirtualRouter stop(VirtualRouter router, boolean forced, User callingUser, Account callingAccount) throws ConcurrentOperationException, ResourceUnavailableException;
 
     String getDnsBasicZoneUpdate();
 
-    boolean configDhcpForSubnet(Network network, NicProfile nic, VirtualMachineProfile uservm, DeployDestination dest, List<DomainRouterVO> routers)
-            throws ResourceUnavailableException;
-
     boolean removeDhcpSupportForSubnet(Network network, List<DomainRouterVO> routers) throws ResourceUnavailableException;
-
-    boolean setupDhcpForPvlan(boolean add, DomainRouterVO router, Long hostId, NicProfile nic);
 
     public boolean prepareAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException;
 

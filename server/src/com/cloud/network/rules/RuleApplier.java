@@ -26,16 +26,20 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.router.NEWVirtualNetworkApplianceManager;
 import com.cloud.network.router.NetworkGeneralHelper;
 import com.cloud.network.router.RouterControlHelper;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -49,11 +53,12 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.UserVmDao;
 
 public abstract class RuleApplier {
 
-    protected NEWVirtualNetworkApplianceManager _applianceManager;
+    protected VirtualNetworkApplianceManager _applianceManager;
 
     protected NetworkModel _networkModel;
 
@@ -85,9 +90,19 @@ public abstract class RuleApplier {
 
     protected VpcDao _vpcDao;
 
+    protected NicIpAliasDao _nicIpAliasDao;
+
+    protected HostPodDao _podDao;
+
+    protected VlanDao _vlanDao;
+
+    protected IPAddressDao _ipAddressDao;
+
     protected VpcManager _vpcMgr;
 
     protected VirtualMachineManager _itMgr;
+
+    protected IpAddressManager _ipAddrMgr;
 
     protected Network _network;
 
@@ -111,7 +126,7 @@ public abstract class RuleApplier {
         return _router;
     }
 
-    public NEWVirtualNetworkApplianceManager getApplianceManager() {
+    public VirtualNetworkApplianceManager getApplianceManager() {
         return _applianceManager;
     }
 
