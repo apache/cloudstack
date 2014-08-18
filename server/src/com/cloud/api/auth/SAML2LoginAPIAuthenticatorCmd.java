@@ -324,7 +324,9 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                             resp.addCookie(new Cookie("username", URLEncoder.encode(loginResponse.getUsername(), HttpUtils.UTF_8)));
                             resp.addCookie(new Cookie("sessionKey", URLEncoder.encode(loginResponse.getSessionKey(), HttpUtils.UTF_8)));
                             resp.addCookie(new Cookie("account", URLEncoder.encode(loginResponse.getAccount(), HttpUtils.UTF_8)));
-                            //resp.sendRedirect("http://localhost:8080/client");
+                            resp.addCookie(new Cookie("timezone", URLEncoder.encode(loginResponse.getTimeZone(), HttpUtils.UTF_8)));
+                            resp.addCookie(new Cookie("userfullname", URLEncoder.encode(loginResponse.getFirstName() + " " + loginResponse.getLastName(), HttpUtils.UTF_8)));
+                            resp.sendRedirect("http://localhost:8080/client");
                             return ApiResponseSerializer.toSerializedString(loginResponse, responseType);
 
                         }
