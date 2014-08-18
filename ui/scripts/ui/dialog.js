@@ -466,11 +466,32 @@
                     }
                 } else if (field.isTokenInput) { // jquery.tokeninput.js
                     isAsync = true;
+
+                    var hint= "Type in a search term";
+                    var noResults= "No results";
+
+                    if (field.label === 'label.storage.tags')
+                    {
+                        hint = "Type in part of a storage tag";
+                        noResults = "No storage tags found";
+                    }
+                    else if (field.label === 'label.host.tags')
+                    {
+                        hint = "Type in part of a host tag";
+                        noResults = "No host tags found";
+                    }
+
                     selectArgs = {
                         context: args.context,
                         response: {
                             success: function(args) {
-                                $input.tokenInput(unique_tags(args.data), { theme: "facebook", preventDuplicates: true });
+                                $input.tokenInput(unique_tags(args.data),
+                                {
+                                    theme: "facebook",
+                                    preventDuplicates: true,
+                                    hintText: hint,
+                                    noResultsText: noResults
+                                });
                             }
                         }
                     };
