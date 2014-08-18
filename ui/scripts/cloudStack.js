@@ -132,7 +132,7 @@
                     g_mySession = $.cookie('JSESSIONID');
                     g_sessionKey = $.cookie('sessionKey');
                     // Unbox quotes from sessionKey cookie value
-                    if (g_sessionKey[0] === '"' && g_sessionKey[g_sessionKey.length-1] === '"') {
+                    if (g_sessionKey && g_sessionKey[0] === '"' && g_sessionKey[g_sessionKey.length-1] === '"') {
                         g_sessionKey = g_sessionKey.slice(1, g_sessionKey.length-1);
                         $.cookie('sessionKey', g_sessionKey, {
                             expires: 1
