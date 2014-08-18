@@ -16,25 +16,44 @@ package org.apache.cloudstack;
 
 import com.cloud.server.auth.DefaultUserAuthenticator;
 import com.cloud.server.auth.UserAuthenticator;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.user.dao.UserAccountDao;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import java.util.Map;
 
 @Local(value = {UserAuthenticator.class})
 public class SAML2UserAuthenticator extends DefaultUserAuthenticator {
     public static final Logger s_logger = Logger.getLogger(SAML2UserAuthenticator.class);
 
+    @Inject
+    private UserAccountDao _userAccountDao;
+    @Inject
+    private UserDao _userDao;
+
     @Override
     public Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Trying SAML2 auth for user: " + username);
         }
-
-        // TODO: implement core logic, HTTP GET redirections etc.
-
-        return new Pair<Boolean, ActionOnFailedAuthentication>(true, null);
+        final UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
+        if (userAccount == null) {
+            s_logger.debug("Unable to find user with " + username + " in domain " + domainId);
+            return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+        } else {
+            User user = _userDao.getUser(userAccount.getId());
+            // TODO: check SAMLRequest, signature etc. from requestParameters
+            if (user != null && user.getUuid().startsWith("saml")) {
+                return new Pair<Boolean, ActionOnFailedAuthentication>(true, null);
+            }
+        }
+        // Deny all by default
+        return new Pair<Boolean, ActionOnFailedAuthentication>(false, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
     }
 
     @Override
