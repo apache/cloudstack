@@ -172,6 +172,16 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
                 ruleData.setCidr(vsg.getRuleAllowedSourceIpCidr());
             }
 
+            // add the tags to the rule data
+            List<ResourceTagJoinVO> tags = _resourceTagJoinDao.listBy(vsg.getRuleUuid(), ResourceTag.ResourceObjectType.SecurityGroupRule);
+            Set<ResourceTagResponse> tagResponse = new HashSet<ResourceTagResponse>();
+            for (ResourceTagJoinVO tag: tags) {
+                tagResponse.add(ApiDBUtils.newResourceTagResponse(tag, false));
+            }
+
+            // add the tags to the rule data
+            ruleData.setTags(tagResponse);
+
             if (vsg.getRuleType() == SecurityRuleType.IngressRule) {
                 ruleData.setObjectName("ingressrule");
                 vsgData.addSecurityGroupIngressRule(ruleData);
