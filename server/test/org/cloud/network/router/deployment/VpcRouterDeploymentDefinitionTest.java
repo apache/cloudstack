@@ -26,6 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Before;
@@ -34,15 +35,23 @@ import org.mockito.Mock;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.element.VirtualRouterProviderVO;
+import com.cloud.network.router.VpcVirtualNetworkHelperImpl;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.vm.DomainRouterVO;
 
 public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTestBase {
 
-    private static final String FOR_VPC_ONLY_THE_GIVEN_DESTINATION_SHOULD_BE_USED = "For Vpc only the given destination should be used";
+    private static final String FOR_VPC_ONLY_THE_GIVEN_DESTINATION_SHOULD_BE_USED =
+            "For Vpc only the given destination should be used";
 
     private static final long VPC_ID = 201L;
     private static final long ZONE_ID = 211L;
@@ -51,10 +60,14 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     protected VpcDao mockVpcDao;
     @Mock
     protected PhysicalNetworkDao mockPhNwDao;
-    protected PhysicalNetworkServiceProviderDao mockPhProviderDao;
-
     @Mock
     protected VpcVO mockVpc;
+    @Mock
+    protected VpcOfferingDao mockVpcOffDao;
+    @Mock
+    protected VpcManager vpcMgr;
+    @Mock
+    protected VpcVirtualNetworkHelperImpl vpcHelper;
 
     protected RouterDeploymentDefinition deployment;
 
@@ -62,7 +75,8 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     protected void initMocks() {
         super.initMocks();
         when(this.mockVpc.getId()).thenReturn(VPC_ID);
-        when(this.mockVpc.getZoneId()).thenReturn(VPC_ID);
+        when(this.mockVpc.getZoneId()).thenReturn(ZONE_ID);
+        when(this.mockVpc.getVpcOfferingId()).thenReturn(OFFERING_ID);
     }
 
     @Before
@@ -169,33 +183,94 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     }
 
     @Test
+    public void testFindVirtualProvider() {
+        // Prepare
+        final List<PhysicalNetworkVO> pNtwks = new ArrayList<>();
+        PhysicalNetworkVO pnw1 = mock(PhysicalNetworkVO.class);
+        when(pnw1.getId()).thenReturn(NW_ID_1);
+        pNtwks.add(pnw1);
+        PhysicalNetworkVO pnw2 = mock(PhysicalNetworkVO.class);
+        when(pnw2.getId()).thenReturn(NW_ID_2);
+        pNtwks.add(pnw2);
+
+        when(mockPhNwDao.listByZone(ZONE_ID)).thenReturn(pNtwks);
+
+        PhysicalNetworkServiceProviderVO provider1 = mock(PhysicalNetworkServiceProviderVO.class);
+        when(this.mockPhysicalProviderDao.findByServiceProvider(NW_ID_1, Type.VPCVirtualRouter.toString()))
+            .thenReturn(provider1);
+        when(provider1.getId()).thenReturn(PROVIDER_ID_1);
+        PhysicalNetworkServiceProviderVO provider2 = mock(PhysicalNetworkServiceProviderVO.class);
+        when(this.mockPhysicalProviderDao.findByServiceProvider(NW_ID_2, Type.VPCVirtualRouter.toString()))
+            .thenReturn(provider2);
+        when(provider2.getId()).thenReturn(PROVIDER_ID_2);
+
+        when(this.mockVrProviderDao.findByNspIdAndType(PROVIDER_ID_1, Type.VPCVirtualRouter))
+            .thenReturn(null);
+        VirtualRouterProviderVO vrp = mock(VirtualRouterProviderVO.class);
+        when(this.mockVrProviderDao.findByNspIdAndType(PROVIDER_ID_2, Type.VPCVirtualRouter))
+            .thenReturn(vrp);
+
+
+        // Execute
+        this.deployment.findVirtualProvider();
+
+        // Assert
+        assertEquals(vrp, this.deployment.vrProvider);
+    }
+
+    @Test
+    public void testFindOfferingIdLeavingPrevious() {
+        // Prepare
+        Long initialOfferingId = this.deployment.offeringId;
+        VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
+        when(this.mockVpcOffDao.findById(OFFERING_ID)).thenReturn(vpcOffering);
+        when(vpcOffering.getServiceOfferingId()).thenReturn(null);
+
+        // Execute
+        this.deployment.findOfferingId();
+
+        // Assert
+        assertEquals("Offering Id shouldn't have been updated",
+                initialOfferingId, this.deployment.offeringId);
+    }
+
+    @Test
+    public void testFindOfferingIdSettingNewOne() {
+        // Prepare
+        VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
+        when(this.mockVpcOffDao.findById(OFFERING_ID)).thenReturn(vpcOffering);
+        when(vpcOffering.getServiceOfferingId()).thenReturn(OFFERING_ID);
+
+        // Test
+        this.deployment.findOfferingId();
+
+        // Assert
+        assertEquals("Offering Id should have been updated",
+                OFFERING_ID, this.deployment.offeringId.longValue());
+    }
+
+    @Test
     public void testGenerateDeploymentPlan() {
-        // TODO Implement this test
-    }
+        // Execute
+        this.deployment.generateDeploymentPlan();
 
-    @Test
-    public void testCheckPreconditions() {
-        // TODO Implement this test
-    }
-
-    @Test
-    public void testExecuteDeployment() {
-        // TODO Implement this test
+        // Assert
+        assertEquals("Destination was not created with the correct Data Center Id",
+                DATA_CENTER_ID.longValue(), this.deployment.plan.getDataCenterId());
     }
 
     @Test
     public void testPlanDeploymentRouters() {
-        // TODO Implement this test
-    }
+        // Prepare
+        VpcRouterDeploymentDefinition vpcDeployment = (VpcRouterDeploymentDefinition) this.deployment;
+        List<DomainRouterVO> routers = new ArrayList<>();
+        when(vpcDeployment.vpcHelper.getVpcRouters(VPC_ID)).thenReturn(routers);
 
-    @Test
-    public void testDeployVpcRouter() {
-        // TODO Implement this test
-    }
+        // Execute
+        vpcDeployment.planDeploymentRouters();
 
-    @Test
-    public void testCreateVpcRouterNetworks() {
-        // TODO Implement this test
+        // Assert
+        assertEquals("List of routers for deployment was not correctly prepared",
+                routers, vpcDeployment.routers);
     }
-
 }

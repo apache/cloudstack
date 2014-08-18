@@ -21,8 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.inject.Inject;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.dao.VlanDao;
@@ -51,7 +49,6 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     private static final Logger logger = Logger.getLogger(VpcRouterDeploymentDefinition.class);
 
-    @Inject
     protected VpcVirtualNetworkHelperImpl vpcHelper;
 
     protected VpcDao vpcDao;
@@ -185,7 +182,6 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
     @Override
     protected void generateDeploymentPlan() {
-        final long dcId = this.dest.getDataCenter().getId();
-        this.plan = new DataCenterDeployment(dcId);
+        this.plan = new DataCenterDeployment(this.dest.getDataCenter().getId());
     }
 }
