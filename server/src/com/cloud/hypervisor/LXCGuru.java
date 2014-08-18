@@ -56,8 +56,11 @@ public class LXCGuru extends HypervisorGuruBase implements HypervisorGuru {
         to.setOs(guestOS.getDisplayName());
 
         HostVO host = _hostDao.findById(vm.getVirtualMachine().getHostId());
-        GuestOSHypervisorVO guestOsMapping = _guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), getHypervisorType().toString(), host.getHypervisorVersion());
-        if (guestOsMapping == null) {
+        GuestOSHypervisorVO guestOsMapping = null;
+        if (host != null) {
+            guestOsMapping = _guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), getHypervisorType().toString(), host.getHypervisorVersion());
+        }
+        if (guestOsMapping == null || host == null) {
             to.setPlatformEmulator("Other");
         } else {
             to.setPlatformEmulator(guestOsMapping.getGuestOsName());

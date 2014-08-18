@@ -314,8 +314,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         to.setOs(guestOS.getDisplayName());
         to.setHostName(vm.getHostName());
         HostVO host = _hostDao.findById(vm.getVirtualMachine().getHostId());
-        GuestOSHypervisorVO guestOsMapping = _guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), getHypervisorType().toString(), host.getHypervisorVersion());
-        if (guestOsMapping == null) {
+        GuestOSHypervisorVO guestOsMapping = null;
+        if (host != null) {
+            guestOsMapping = _guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), getHypervisorType().toString(), host.getHypervisorVersion());
+        }
+        if (guestOsMapping == null || host == null) {
             to.setPlatformEmulator(null);
         } else {
             to.setPlatformEmulator(guestOsMapping.getGuestOsName());
