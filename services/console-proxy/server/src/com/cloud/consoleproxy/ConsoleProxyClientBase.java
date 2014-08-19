@@ -323,7 +323,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
                 "<li><a href=\"#\" cmd=\"keyboard_jp\"><span>Japanese keyboard</span></a></li>", "</ul>", "</li>", "</ul>",
                 "<span id=\"light\" class=\"dark\" cmd=\"toggle_logwin\"></span>", "</div>", "<div id=\"main_panel\" tabindex=\"1\"></div>",
                 "<script language=\"javascript\">", "var acceptLanguages = '" + sbLanguages.toString() + "';", "var tileMap = [ " + tileSequence + " ];",
-                "var ajaxViewer = new AjaxViewer('main_panel', '" + imgUrl + "', '" + updateUrl + "', '" + locale + "', tileMap, ",
+                "var ajaxViewer = new AjaxViewer('main_panel', '" + imgUrl + "', '" + updateUrl + "', '" + locale + "', '" + guest + "', tileMap, ",
                 String.valueOf(width) + ", " + String.valueOf(height) + ", " + String.valueOf(tileWidth) + ", " + String.valueOf(tileHeight) + ");",
 
                 "$(function() {", "ajaxViewer.start();", "});",

@@ -161,7 +161,7 @@ KeyboardMapper.prototype = {
 			}
 			
 			var X11Keysym = code;
-			if(this.jsX11KeysymMap[code] != undefined) {
+			if(this.jsX11KeysymMap[code] != undefined && (guestos == 'windows' || modifiers != AjaxViewer.SHIFT_KEY_MASK)) {
 				X11Keysym = this.jsX11KeysymMap[code];
 				if(typeof this.jsX11KeysymMap[code] == "boolean") {
 					return;
@@ -175,15 +175,15 @@ KeyboardMapper.prototype = {
 				} else {
 					this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
 				}
-			} else {
+			} else if(guestos == 'windows' || ((modifiers & (AjaxViewer.CTRL_KEY_MASK | AjaxViewer.ALT_KEY_MASK)) != 0)){
 				this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
 			}
 
 			// special handling for ALT/CTRL key
-			if(eventType == AjaxViewer.KEY_UP && (code == AjaxViewer.JS_KEY_ALT || code == code == AjaxViewer.JS_KEY_CTRL))
+			if(eventType == AjaxViewer.KEY_UP && (code == AjaxViewer.JS_KEY_ALT || code == AjaxViewer.JS_KEY_CTRL))
 				this.mappedInput.push({type : eventType, code: this.jsX11KeysymMap[code], modifiers: modifiers});
 			
-		} else if(eventType == AjaxViewer.KEY_PRESS) {
+		} else if(eventType == AjaxViewer.KEY_PRESS && guestos == 'null') {
 			var X11Keysym = code;
 			X11Keysym = this.jsKeyPressX11KeysymMap[code];
 			if(X11Keysym) {
@@ -196,6 +196,9 @@ KeyboardMapper.prototype = {
 					this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: X11Keysym, modifiers: modifiers});
 					this.mappedInput.push({type : AjaxViewer.KEY_UP, code: X11Keysym, modifiers: modifiers});
 				}
+			} else {
+				this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: code, modifiers: modifiers});
+				this.mappedInput.push({type : AjaxViewer.KEY_UP, code: code, modifiers: modifiers});
 			}
 		}
 	},
@@ -332,7 +335,7 @@ KeyboardMapper.prototype = {
 /////////////////////////////////////////////////////////////////////////////
 // class AjaxViewer
 //
-function AjaxViewer(panelId, imageUrl, updateUrl, locale, tileMap, width, height, tileWidth, tileHeight) {
+function AjaxViewer(panelId, imageUrl, updateUrl, locale, guestos, tileMap, width, height, tileWidth, tileHeight) {
 	// logging is disabled by default so that it won't have negative impact on performance
 	// however, a back door key-sequence can trigger to open the logger window, it is designed to help
 	// trouble-shooting
@@ -352,6 +355,7 @@ function AjaxViewer(panelId, imageUrl, updateUrl, locale, tileMap, width, height
 	
 	this.updateUrl = updateUrl;
 	this.tileMap = tileMap;
+	this.guestos = guestos;
 	this.dirty = true;
 	this.width = width;
 	this.height = height;
@@ -745,7 +749,9 @@ AjaxViewer.prototype = {
 			for (var j = 0; j < x11Maps.length; j++) {
 				var code = x11Maps[j].keycode;
 				var mappedEntry = x11Maps[j].entry;
-				this.keyboardMappers[keyboardType].jsX11KeysymMap[code] = mappedEntry;
+				if(x11Maps[j].guestos == undefined || x11Maps[j].guestos == this.guestos) {
+					this.keyboardMappers[keyboardType].jsX11KeysymMap[code] = mappedEntry;
+				}
 			}
 			var keyPressMaps = mappings.keyPress;
 			for (var j = 0; j < keyPressMaps.length; j++) {
