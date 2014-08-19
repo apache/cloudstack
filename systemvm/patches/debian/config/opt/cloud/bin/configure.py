@@ -25,10 +25,10 @@ import re
 import time
 import shutil
 import os.path
-from cs_ip import merge
 import CsHelper
 from CsNetfilter import CsNetfilters
 from fcntl import flock, LOCK_EX, LOCK_UN
+from CsDhcp import CsDhcp
 
 fw = []
 
@@ -523,13 +523,52 @@ class CsDataBag(object):
         self.dbag = db.getDataBag()
         global fw
 
+    def get_bag(self):
+        return self.dbag
+
     def process(self):
         pass
+
+class CsCmdLine(CsDataBag):
+    """ Get cmdline config parameters """
+    def is_redundant(self):
+        if "redundant" in self.dbag['config']:
+            return self.dbag['config']['redundant'] == "true"
+        return False
 
 class CsAcl(CsDataBag):
+    """
+        Deal with Network acls
+    """
+    class AclDevice():
+        """ A little class for each list of acls per device """
+
+        def __init__(self, obj):
+            self.ingess = []
+            self.egress = []
+            self.device = obj['device']
+            self.ip     = obj['nic_ip']
+            self.netmask= obj['nic_netmask']
+            self.cidr   = "%s/%s" % (self.ip, self.netmask)
+            if "ingress_rules" in obj.keys():
+                self.ingress = obj['ingress_rules']
+            if "egress_rules" in obj.keys():
+                self.egress = obj['egress_rules']
+
+        def create(self):
+            self.process(self.ingress)
+            self.process(self.egress)
+
+        def process(self,rule_list):
+            for i in rule_list:
+                pprint(i)
 
     def process(self):
-        pass
+        for item in self.dbag:
+            if item == "id":
+                continue
+            dev_obj = self.AclDevice(self.dbag[item]).create()
+
 
 class CsPassword(CsDataBag):
     """
@@ -737,7 +776,9 @@ def main(argv):
     logging.basicConfig(filename='/var/log/cloud.log',
                         level=logging.DEBUG,
                         format='%(asctime)s %(message)s')
-  
+ 
+    cl = CsCmdLine("cmdline")
+
     address = CsAddress("ips")
     address.compare()
     address.process()
@@ -753,6 +794,9 @@ def main(argv):
 
     nf = CsNetfilters()
     nf.compare(fw)
+
+    acls = CsDataBag("dhcpentry")
+    dhcp = CsDhcp(acls.get_bag(), cl)
 
 if __name__ == "__main__":
     main(sys.argv)

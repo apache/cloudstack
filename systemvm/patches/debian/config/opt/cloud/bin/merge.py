@@ -10,6 +10,7 @@ import cs_cmdline
 import cs_vmp
 import cs_network_acl
 import cs_vmdata
+import cs_dhcp
 
 from pprint import pprint
 
@@ -81,6 +82,8 @@ class updateDataBag:
           dbag = self.process_network_acl(self.db.getDataBag())
        elif self.qFile.type == 'vmdata':
           dbag = self.processVmData(self.db.getDataBag())
+       elif self.qFile.type == 'dhcpentry':
+          dbag = self.process_dhcp_entry(self.db.getDataBag())
        else:
           logging.error("Error I do not know what to do with file of type %s", self.qFile.type)
           return
@@ -102,6 +105,9 @@ class updateDataBag:
         if 'domain_name' not in d.keys() or d['domain_name'] == '':
             d['domain_name'] = "cloudnine.internal"
         return cs_guestnetwork.merge(dbag, self.qFile.data)
+
+    def process_dhcp_entry(self, dbag):
+        return cs_dhcp.merge(dbag, self.qFile.data)
 
     def process_network_acl(self, dbag):
         return cs_network_acl.merge(dbag, self.qFile.data)
