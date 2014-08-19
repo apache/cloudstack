@@ -41,6 +41,7 @@ import com.cloud.network.rules.StaticRoutesRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
@@ -164,7 +165,12 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
     @Override
     public boolean visit(final StaticRoutesRules staticRoutesRules) throws ResourceUnavailableException {
-
-        return false;
+    	final VirtualRouter router = staticRoutesRules.getRouter();
+    	List<StaticRouteProfile> staticRoutes = staticRoutesRules.getStaticRoutes();
+    	
+    	Commands cmds = new Commands(Command.OnError.Continue);
+    	staticRoutesRules.createStaticRouteCommands(staticRoutes, router, cmds);
+    	
+    	return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
 }
