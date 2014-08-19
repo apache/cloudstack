@@ -32,7 +32,7 @@ import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.router.NetworkGeneralHelper;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.DhcpPvlanRules;
@@ -67,7 +67,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     private static final Logger s_logger = Logger.getLogger(BasicNetworkVisitor.class);
 
     @Inject
-    protected NetworkGeneralHelper _networkGeneralHelper;
+    protected NetworkHelper _networkGeneralHelper;
 
     @Override
     public boolean visit(final StaticNatRules nat) throws ResourceUnavailableException {

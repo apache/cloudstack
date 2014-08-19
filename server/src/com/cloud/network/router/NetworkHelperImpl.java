@@ -22,14 +22,14 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 
+import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
-import org.cloud.network.router.deployment.VpcRouterDeploymentDefinition;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -42,7 +42,6 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -60,7 +59,6 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.maint.Version;
-import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -70,14 +68,11 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
@@ -104,22 +99,25 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
-public class NetworkGeneralHelper {
+@Component
+//This will not be a public service anymore, but a helper for the only public service
+@Local(value = {NetworkHelperImpl.class})
+public class NetworkHelperImpl implements NetworkHelper {
 
-    private static final Logger s_logger = Logger.getLogger(NetworkGeneralHelper.class);
+    private static final Logger s_logger = Logger.getLogger(NetworkHelperImpl.class);
 
     @Inject
-    private NicDao _nicDao;
+    protected NicDao _nicDao;
     @Inject
     private NetworkDao _networkDao;
     @Inject
-    private DomainRouterDao _routerDao;
+    protected DomainRouterDao _routerDao;
     @Inject
     private AgentManager _agentMgr;
     @Inject
     private AlertManager _alertMgr;
     @Inject
-    private NetworkModel _networkModel;
+    protected NetworkModel _networkModel;
     @Inject
     private VirtualMachineManager _itMgr;
     @Inject
@@ -139,21 +137,18 @@ public class NetworkGeneralHelper {
     @Inject
     private ClusterDao _clusterDao;
     @Inject
-    private IPAddressDao _ipAddressDao;
+    protected IPAddressDao _ipAddressDao;
     @Inject
     private IpAddressManager _ipAddrMgr;
     @Inject
     private UserIpv6AddressDao _ipv6Dao;
     @Inject
-    private NetworkOrchestrationService _networkMgr;
-    @Inject
-    protected VpcVirtualNetworkHelperImpl _vpcHelper;
-    @Inject
-    protected VpcManager _vpcMgr;
-    @Inject
-    protected VlanDao _vlanDao;
+    protected NetworkOrchestrationService _networkMgr;
 
-
+    /* (non-Javadoc)
+     * @see com.cloud.network.router.NetworkHelper#getRouterControlIp(long)
+     */
+    @Override
     public String getRouterControlIp(final long routerId) {
         String routerControlIpAddress = null;
         final List<NicVO> nics = _nicDao.listByVmId(routerId);
@@ -175,12 +170,20 @@ public class NetworkGeneralHelper {
         return routerControlIpAddress;
     }
 
+    /* (non-Javadoc)
+     * @see com.cloud.network.router.NetworkHelper#getRouterIpInNetwork(long, long)
+     */
+    @Override
     public String getRouterIpInNetwork(final long networkId, final long instanceId) {
         return _nicDao.getIpAddress(networkId, instanceId);
     }
 
 
     //    @Override
+    /* (non-Javadoc)
+     * @see com.cloud.network.router.NetworkHelper#sendCommandsToRouter(com.cloud.network.router.VirtualRouter, com.cloud.agent.manager.Commands)
+     */
+    @Override
     public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException {
         if(!checkRouterVersion(router)){
             s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId() + ", router template version : " + router.getTemplateVersion()
@@ -216,6 +219,10 @@ public class NetworkGeneralHelper {
         return result;
     }
 
+    /* (non-Javadoc)
+     * @see com.cloud.network.router.NetworkHelper#handleSingleWorkingRedundantRouter(java.util.List, java.util.List, java.lang.String)
+     */
+    @Override
     public void handleSingleWorkingRedundantRouter(final List<? extends VirtualRouter> connectedRouters, final List<? extends VirtualRouter> disconnectedRouters, final String reason)
             throws ResourceUnavailableException {
         if (connectedRouters.isEmpty() || disconnectedRouters.isEmpty()) {
@@ -268,6 +275,10 @@ public class NetworkGeneralHelper {
         }
     }
 
+    /* (non-Javadoc)
+     * @see com.cloud.network.router.NetworkHelper#getRealPriority(com.cloud.vm.DomainRouterVO)
+     */
+    @Override
     public int getRealPriority(final DomainRouterVO router) {
         int priority = router.getPriority();
         if (router.getIsPriorityBumpUp()) {
@@ -277,6 +288,10 @@ public class NetworkGeneralHelper {
     }
 
     //    @Override
+    /* (non-Javadoc)
+     * @see com.cloud.network.router.NetworkHelper#getNicTO(com.cloud.network.router.VirtualRouter, java.lang.Long, java.lang.String)
+     */
+    @Override
     public NicTO getNicTO(final VirtualRouter router, final Long networkId, final String broadcastUri) {
         NicProfile nicProfile = _networkModel.getNicProfile(router, networkId, broadcastUri);
 
@@ -284,6 +299,10 @@ public class NetworkGeneralHelper {
     }
 
     //    @Override
+    /* (non-Javadoc)
+     * @see com.cloud.network.router.NetworkHelper#destroyRouter(long, com.cloud.user.Account, java.lang.Long)
+     */
+    @Override
     public VirtualRouter destroyRouter(final long routerId, final Account caller, final Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
 
         if (s_logger.isDebugEnabled()) {
@@ -302,13 +321,11 @@ public class NetworkGeneralHelper {
         return router;
     }
 
-    /**
-     * Checks if the router is at the required version. Compares MS version and router version.
-     *
-     * @param router
-     * @return
+    /* (non-Javadoc)
+     * @see com.cloud.network.router.NetworkHelper#checkRouterVersion(com.cloud.network.router.VirtualRouter)
      */
     //    @Override
+    @Override
     public boolean checkRouterVersion(final VirtualRouter router) {
         if(!VirtualNetworkApplianceManagerImpl.routerVersionCheckEnabled.value()){
             //Router version check is disabled.
@@ -374,6 +391,10 @@ public class NetworkGeneralHelper {
 
 
     //    @Override
+    /* (non-Javadoc)
+     * @see com.cloud.network.router.NetworkHelper#startRouters(org.cloud.network.router.deployment.RouterDeploymentDefinition)
+     */
+    @Override
     public List<DomainRouterVO> startRouters(final RouterDeploymentDefinition routerDeploymentDefinition)
             throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
@@ -403,6 +424,10 @@ public class NetworkGeneralHelper {
     }
 
     //    @Override
+    /* (non-Javadoc)
+     * @see com.cloud.network.router.NetworkHelper#startVirtualRouter(com.cloud.vm.DomainRouterVO, com.cloud.user.User, com.cloud.user.Account, java.util.Map)
+     */
+    @Override
     public DomainRouterVO startVirtualRouter(final DomainRouterVO router, final User user, final Account caller, final Map<Param, Object> params)
             throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
@@ -484,8 +509,17 @@ public class NetworkGeneralHelper {
         return result;
     }
 
+    //    @Override
+//    public DomainRouterVO deployRouter(final RouterDeploymentDefinition routerDeploymentDefinition) {
+//        routerDeploymentDefinition.createNetwork();
+//        doDeployRouter
+//    }
 
     //    @Override
+    /* (non-Javadoc)
+     * @see com.cloud.network.router.NetworkHelper#deployRouter(org.cloud.network.router.deployment.RouterDeploymentDefinition, java.util.LinkedHashMap, boolean, java.util.List)
+     */
+    @Override
     public DomainRouterVO deployRouter(final RouterDeploymentDefinition routerDeploymentDefinition,
             final LinkedHashMap<Network, List<? extends NicProfile>> networks,
             final boolean startRouter, final List<HypervisorType> supportedHypervisors)
@@ -670,6 +704,10 @@ public class NetworkGeneralHelper {
     }
 
 
+    /* (non-Javadoc)
+     * @see com.cloud.network.router.NetworkHelper#createRouterNetworks(org.cloud.network.router.deployment.RouterDeploymentDefinition)
+     */
+    @Override
     public LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(
             final RouterDeploymentDefinition routerDeploymentDefinition)
                     throws ConcurrentOperationException, InsufficientAddressCapacityException {
@@ -782,6 +820,7 @@ public class NetworkGeneralHelper {
 
         return networks;
     }
+<<<<<<< HEAD:server/src/com/cloud/network/router/NetworkGeneralHelper.java
 
     public LinkedHashMap<Network, List<? extends NicProfile>> createVpcRouterNetworks(
             final VpcRouterDeploymentDefinition vpcRouterDeploymentDefinition)
@@ -859,4 +898,6 @@ public class NetworkGeneralHelper {
         return networks;
     }
 
+=======
+>>>>>>> Refactor to include network creation as actual deployment:server/src/com/cloud/network/router/NetworkHelperImpl.java
 }

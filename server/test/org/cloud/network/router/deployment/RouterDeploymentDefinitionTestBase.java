@@ -39,7 +39,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
-import com.cloud.network.router.NetworkGeneralHelper;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
@@ -74,7 +74,7 @@ public class RouterDeploymentDefinitionTestBase {
     @Mock
     protected DomainRouterDao mockRouterDao;
     @Mock
-    protected NetworkGeneralHelper mockNetworkGeneralHelper;
+    protected NetworkHelper mockNetworkGeneralHelper;
     @Mock
     protected VMInstanceDao mockVmDao;
     @Mock
