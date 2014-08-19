@@ -30,6 +30,7 @@ import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -198,8 +199,8 @@ public class VirtualNetworkApplianceFactory {
         return ipAssociationRules;
     }
 
-    public VpnRules createVpnRules(final Network network, final List<? extends VpnUser> users) {
-        VpnRules vpnRules = new VpnRules(network, users);
+    public BasicVpnRules createBasicVpnRules(final Network network, final List<? extends VpnUser> users) {
+        BasicVpnRules vpnRules = new BasicVpnRules(network, users);
 
         initBeans(vpnRules);
 
@@ -315,5 +316,13 @@ public class VirtualNetworkApplianceFactory {
 		initBeans(routesRules);
 		
 		return routesRules;
+	}
+
+	public AdvancedVpnRules createAdvancedVpnRules(RemoteAccessVpn remoteAccessVpn, List<? extends VpnUser> users) {
+		AdvancedVpnRules vpnRules = new AdvancedVpnRules(remoteAccessVpn, users);
+
+        initBeans(vpnRules);
+
+        return vpnRules;
 	}
 }

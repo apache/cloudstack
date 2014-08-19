@@ -39,6 +39,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.NetworkHelper;
@@ -57,7 +58,7 @@ import com.cloud.network.rules.StaticNatRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VirtualNetworkApplianceFactory;
-import com.cloud.network.rules.VpnRules;
+import com.cloud.network.rules.BasicVpnRules;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -88,22 +89,10 @@ public class BasicNetworkTopology implements NetworkTopology {
     protected NetworkHelper _nwHelper;
 
     @Override
-    public StringBuilder createGuestBootLoadArgs(final NicProfile guestNic,
-            final String defaultDns1, final String defaultDns2, final DomainRouterVO router) {
-        return null;
+    public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users, VirtualRouter router) throws ResourceUnavailableException {
+        throw new CloudRuntimeException("applyVpnUsers not implemented in Basic Network Topology.");
     }
-
-    @Override
-    public String retrieveGuestDhcpRange(final NicProfile guestNic,
-            final Network guestNetwork, final DataCenter dc) {
-        return null;
-    }
-
-    @Override
-    public NicProfile retrieveControlNic(final VirtualMachineProfile profile) {
-        return null;
-    }
-
+    
     @Override
     public boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
         throw new CloudRuntimeException("applyStaticRoutes not implemented in Basic Network Topology.");
@@ -259,8 +248,9 @@ public class BasicNetworkTopology implements NetworkTopology {
                     network.getDataCenterId());
         }
 
-        s_logger.debug("APPLYING VPN RULES");
+        s_logger.debug("APPLYING BASIC VPN RULES");
 
+        BasicVpnRules vpnRules = _virtualNetworkApplianceFactory.createBasicVpnRules(network, users);
         boolean agentResults = true;
 
         for (final DomainRouterVO router : routers) {
@@ -269,8 +259,6 @@ public class BasicNetworkTopology implements NetworkTopology {
                 throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class,
                         network.getDataCenterId());
             }
-
-            VpnRules vpnRules = _virtualNetworkApplianceFactory.createVpnRules(network, users);
 
             // Currently we receive just one answer from the agent. In the future we have to parse individual answers and set
             // results accordingly
