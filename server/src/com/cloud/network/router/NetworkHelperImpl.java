@@ -583,7 +583,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                 Long vpcId = routerDeploymentDefinition.getVpc() != null ? routerDeploymentDefinition.getVpc().getId() : null;
 
                 router = new DomainRouterVO(id, routerOffering.getId(), routerDeploymentDefinition.getVirtualProvider().getId(),
-                        VirtualMachineName.getRouterName(id, VirtualNwStatus.instance), template.getId(), template.getHypervisorType(),
+                        VirtualMachineName.getRouterName(id, VirtualNetworkStatus.instance), template.getId(), template.getHypervisorType(),
                         template.getGuestOSId(), owner.getDomainId(), owner.getId(), routerDeploymentDefinition.isRedundant(), 0,
                         false, RedundantState.UNKNOWN, offerHA, false, vpcId);
 
@@ -777,7 +777,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         s_logger.debug("Adding nic for Virtual Router in Control network ");
         List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         NetworkOffering controlOffering = offerings.get(0);
-        Network controlConfig = _networkMgr.setupNetwork(VirtualNwStatus.account, controlOffering, routerDeploymentDefinition.getPlan(),
+        Network controlConfig = _networkMgr.setupNetwork(VirtualNetworkStatus.account, controlOffering, routerDeploymentDefinition.getPlan(),
                 null, null, false).get(0);
         networks.put(controlConfig, new ArrayList<NicProfile>());
         //3) Public network
@@ -806,7 +806,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                 defaultNic.setDeviceId(2);
             }
             final NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
-            final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(VirtualNwStatus.account, publicOffering,
+            final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(VirtualNetworkStatus.account, publicOffering,
                     routerDeploymentDefinition.getPlan(), null, null, false);
             final String publicIp = defaultNic.getIp4Address();
             // We want to use the identical MAC address for RvR on public interface if possible
