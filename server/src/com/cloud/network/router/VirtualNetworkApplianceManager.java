@@ -21,7 +21,6 @@ import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 
-import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -66,6 +65,8 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     public static final int DEFAULT_ROUTER_VM_RAMSIZE = 128;            // 128M
     public static final int DEFAULT_ROUTER_CPU_MHZ = 500;                // 500 MHz
     public static final boolean USE_POD_VLAN = false;
+    public static final int DEFAULT_PRIORITY = 100;
+    public static final int DEFAULT_DELTA = 2;
 
     /**
     /*
@@ -96,6 +97,4 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     public boolean completeAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException;
 
     public boolean cleanupAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException;
-
-    public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException;
 }
