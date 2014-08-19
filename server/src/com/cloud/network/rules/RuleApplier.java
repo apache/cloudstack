@@ -39,7 +39,6 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.RouterControlHelper;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -57,8 +56,6 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.UserVmDao;
 
 public abstract class RuleApplier {
-
-    protected VirtualNetworkApplianceManager _applianceManager;
 
     protected NetworkModel _networkModel;
 
@@ -124,10 +121,6 @@ public abstract class RuleApplier {
 
     public VirtualRouter getRouter() {
         return _router;
-    }
-
-    public VirtualNetworkApplianceManager getApplianceManager() {
-        return _applianceManager;
     }
 
     public void createVmDataCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final String publicKey, final Commands cmds) {
