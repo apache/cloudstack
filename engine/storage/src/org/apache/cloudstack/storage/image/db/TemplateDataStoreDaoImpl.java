@@ -292,6 +292,16 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     }
 
     @Override
+    public  void removeByTemplateStore(long templateId, long imageStoreId) {
+        SearchCriteria<TemplateDataStoreVO> sc = storeTemplateSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("store_id", imageStoreId);
+        sc.setParameters("destroyed", false);
+        expunge(sc);
+
+    }
+
+    @Override
     public TemplateDataStoreVO findByTemplateZoneDownloadStatus(long templateId, Long zoneId, Status... status) {
         // get all elgible image stores
         List<DataStore> imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));

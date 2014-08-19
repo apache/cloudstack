@@ -648,6 +648,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOADED) {
                 return true; // already downloaded on this image store
             }
+            if (dstTmpltStore != null && dstTmpltStore.getDownloadState() != Status.DOWNLOAD_IN_PROGRESS) {
+                _tmplStoreDao.removeByTemplateStore(tmpltId, dstSecStore.getId());
+            }
 
             AsyncCallFuture<TemplateApiResult> future = _tmpltSvr.copyTemplate(srcTemplate, dstSecStore);
             try {

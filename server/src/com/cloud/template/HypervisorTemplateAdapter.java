@@ -27,6 +27,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
@@ -83,6 +84,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     @Inject
     AgentManager _agentMgr;
 
+    @Inject TemplateDataStoreDao templateDataStoreDao;
     @Inject
     DataStoreManager storeMgr;
     @Inject
@@ -306,6 +308,9 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                             templateZoneDao.remove(templateZone.getId());
                         }
                     }
+                    //mark all the occurrences of this template in the given store as destroyed.
+                    templateDataStoreDao.removeByTemplateStore(template.getId(), imageStore.getId());
+
                 } catch (InterruptedException e) {
                     s_logger.debug("delete template Failed", e);
                     throw new CloudRuntimeException("delete template Failed", e);
