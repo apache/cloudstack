@@ -67,7 +67,6 @@ import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
 import com.cloud.agent.api.CheckS2SVpnConnectionsAnswer;
@@ -268,7 +267,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  */
 @Local(value = { VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class })
 public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, VirtualMachineGuru, Listener,
-        Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
+Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
     @Inject
@@ -383,12 +382,11 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     OpRouterMonitorServiceDao _opRouterMonitorServiceDao;
 
     @Inject
-    NetworkTopologyContext networkTopologyContext;
-
+    protected NetworkTopologyContext _networkTopologyContext;
     @Inject
-    protected NetworkGeneralHelper nwHelper;
+    protected NetworkGeneralHelper _nwHelper;
     @Inject
-    protected RouterDeploymentDefinitionBuilder routerDeploymentManagerBuilder;
+    protected RouterDeploymentDefinitionBuilder _routerDeploymentManagerBuilder;
 
     int _routerRamSize;
     int _routerCpuMHz;
@@ -423,7 +421,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Override
     public VirtualRouter destroyRouter(final long routerId, final Account caller, final Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
-        return nwHelper.destroyRouter(routerId, caller, callerUserId);
+        return _nwHelper.destroyRouter(routerId, caller, callerUserId);
     }
 
     @Override
@@ -545,7 +543,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROUTER_REBOOT, eventDescription = "rebooting router Vm", async = true)
     public VirtualRouter rebootRouter(final long routerId, final boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
+    InsufficientCapacityException {
         final Account caller = CallContext.current().getCallingAccount();
 
         // verify parameters
@@ -646,7 +644,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 useLocalStorage, true, null, true, VirtualMachine.Type.DomainRouter, true);
         offering.setUniqueName(ServiceOffering.routerDefaultOffUniqueName);
         offering = _serviceOfferingDao.persistSystemServiceOffering(offering);
-        routerDeploymentManagerBuilder.setOfferingId(offering.getId());
+        _routerDeploymentManagerBuilder.setOfferingId(offering.getId());
 
         // this can sometimes happen, if DB is manually or programmatically
         // manipulated
@@ -864,7 +862,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
                                                 if ((previousStats != null)
                                                         && ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) || (previousStats.getCurrentBytesSent() != stats
-                                                                .getCurrentBytesSent()))) {
+                                                        .getCurrentBytesSent()))) {
                                                     s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " + "Ignoring current answer. Router: "
                                                             + answerFinal.getRouterName() + " Rcvd: " + answerFinal.getBytesReceived() + "Sent: " + answerFinal.getBytesSent());
                                                     return;
@@ -1126,14 +1124,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
     }
 
-    private int getRealPriority(final DomainRouterVO router) {
-        int priority = router.getPriority();
-        if (router.getIsPriorityBumpUp()) {
-            priority += DEFAULT_DELTA;
-        }
-        return priority;
-    }
-
     protected class RvRStatusUpdateTask extends ManagedContextRunnable {
 
         public RvRStatusUpdateTask() {
@@ -1182,7 +1172,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                         }
                     }
                     if ((masterRouter != null) && (backupRouter != null)) {
-                        if ((((getRealPriority(masterRouter) - DEFAULT_DELTA) + 1) != getRealPriority(backupRouter)) || backupRouter.getIsPriorityBumpUp()) {
+                        if ((((_nwHelper.getRealPriority(masterRouter) - DEFAULT_DELTA) + 1) != _nwHelper.getRealPriority(backupRouter)) || backupRouter.getIsPriorityBumpUp()) {
                             recoverRedundantNetwork(masterRouter, backupRouter);
                         }
                     }
@@ -1390,9 +1380,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
     }
 
-    private final static int DEFAULT_PRIORITY = 100;
-    private final static int DEFAULT_DELTA = 2;
-
     protected int getUpdatedPriority(final Network guestNetwork, final List<DomainRouterVO> routers, final DomainRouterVO exclude)
             throws InsufficientVirtualNetworkCapacityException {
         int priority;
@@ -1406,8 +1393,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 }
                 // FIXME Assume the maxPriority one should be running or just
                 // created.
-                if ((r.getId() != exclude.getId()) && (getRealPriority(r) > maxPriority)) {
-                    maxPriority = getRealPriority(r);
+                if ((r.getId() != exclude.getId()) && (_nwHelper.getRealPriority(r) > maxPriority)) {
+                    maxPriority = _nwHelper.getRealPriority(r);
                 }
             }
             if (maxPriority == 0) {
@@ -2118,7 +2105,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 if (nic.getBroadcastUri().getScheme().equals("pvlan")) {
                     final NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
 
-                    final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+                    final NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
                     try {
                         result = networkTopology.setupDhcpForPvlan(true, router, router.getHostId(), nicProfile);
                     } catch (final ResourceUnavailableException e) {
@@ -2152,7 +2139,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 if ((network.getTrafficType() == TrafficType.Guest) && (nic.getBroadcastUri() != null) && nic.getBroadcastUri().getScheme().equals("pvlan")) {
                     final NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
 
-                    final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+                    final NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
                     try {
                         networkTopology.setupDhcpForPvlan(false, domR, domR.getHostId(), nicProfile);
                     } catch (final ResourceUnavailableException e) {
@@ -2185,7 +2172,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             final Commands cmds = new Commands(Command.OnError.Stop);
             createApplyVpnCommands(true, vpn, router, cmds);
 
-            if (!sendCommandsToRouter(router, cmds)) {
+            if (!_nwHelper.sendCommandsToRouter(router, cmds)) {
                 throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId());
             }
 
@@ -2220,7 +2207,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             if (router.getState() == State.Running) {
                 final Commands cmds = new Commands(Command.OnError.Continue);
                 createApplyVpnCommands(false, vpn, router, cmds);
-                result = result && sendCommandsToRouter(router, cmds);
+                result = result && _nwHelper.sendCommandsToRouter(router, cmds);
             } else if (router.getState() == State.Stopped) {
                 s_logger.debug("Router " + router + " is in Stopped state, not sending deleteRemoteAccessVpn command to it");
                 continue;
@@ -2236,7 +2223,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Override
     public DomainRouterVO stop(final VirtualRouter router, final boolean forced, final User user, final Account caller) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
         s_logger.debug("Stopping router " + router);
         try {
             _itMgr.advanceStop(router.getUuid(), forced);
@@ -2275,7 +2262,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
             createDeleteIpAliasCommand(router, revokedIpAliasTOs, activeIpAliasTOs, network.getId(), cmds);
             configDnsMasq(router, network, cmds);
-            final boolean result = sendCommandsToRouter(router, cmds);
+            final boolean result = _nwHelper.sendCommandsToRouter(router, cmds);
             if (result) {
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
@@ -2364,7 +2351,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Override
     public VirtualRouter startRouter(final long routerId, final boolean reprogramNetwork) throws ResourceUnavailableException, InsufficientCapacityException,
-            ConcurrentOperationException {
+    ConcurrentOperationException {
         final Account caller = CallContext.current().getCallingAccount();
         final User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
 
@@ -2410,7 +2397,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         } else {
             params.put(Param.ReProgramGuestNetworks, false);
         }
-        final VirtualRouter virtualRouter = nwHelper.startVirtualRouter(router, user, caller, params);
+        final VirtualRouter virtualRouter = _nwHelper.startVirtualRouter(router, user, caller, params);
         if (virtualRouter == null) {
             throw new CloudRuntimeException("Failed to start router with id " + routerId);
         }
@@ -2773,92 +2760,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     @Override
-    public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException {
-        if (!nwHelper.checkRouterVersion(router)) {
-            s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId() + ", router template version : " + router.getTemplateVersion()
-                    + ", minimal required version : " + MinVRVersion);
-            throw new CloudRuntimeException("Unable to send command. Upgrade in progress. Please contact administrator.");
-        }
-        Answer[] answers = null;
-        try {
-            answers = _agentMgr.send(router.getHostId(), cmds);
-        } catch (final OperationTimedoutException e) {
-            s_logger.warn("Timed Out", e);
-            throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
-        }
-
-        if (answers == null) {
-            return false;
-        }
-
-        if (answers.length != cmds.size()) {
-            return false;
-        }
-
-        // FIXME: Have to return state for individual command in the future
-        boolean result = true;
-        if (answers.length > 0) {
-            for (final Answer answer : answers) {
-                if (!answer.getResult()) {
-                    result = false;
-                    break;
-                }
-            }
-        }
-        return result;
-    }
-
-    protected void handleSingleWorkingRedundantRouter(final List<? extends VirtualRouter> connectedRouters, final List<? extends VirtualRouter> disconnectedRouters,
-            final String reason) throws ResourceUnavailableException {
-        if (connectedRouters.isEmpty() || disconnectedRouters.isEmpty()) {
-            return;
-        }
-        if ((connectedRouters.size() != 1) || (disconnectedRouters.size() != 1)) {
-            s_logger.warn("How many redundant routers do we have?? ");
-            return;
-        }
-        if (!connectedRouters.get(0).getIsRedundantRouter()) {
-            throw new ResourceUnavailableException("Who is calling this with non-redundant router or non-domain router?", DataCenter.class, connectedRouters.get(0)
-                    .getDataCenterId());
-        }
-        if (!disconnectedRouters.get(0).getIsRedundantRouter()) {
-            throw new ResourceUnavailableException("Who is calling this with non-redundant router or non-domain router?", DataCenter.class, disconnectedRouters.get(0)
-                    .getDataCenterId());
-        }
-
-        final DomainRouterVO connectedRouter = (DomainRouterVO) connectedRouters.get(0);
-        DomainRouterVO disconnectedRouter = (DomainRouterVO) disconnectedRouters.get(0);
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("About to stop the router " + disconnectedRouter.getInstanceName() + " due to: " + reason);
-        }
-        final String title = "Virtual router " + disconnectedRouter.getInstanceName() + " would be stopped after connecting back, due to " + reason;
-        final String context = "Virtual router (name: " + disconnectedRouter.getInstanceName() + ", id: " + disconnectedRouter.getId()
-                + ") would be stopped after connecting back, due to: " + reason;
-        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, disconnectedRouter.getDataCenterId(), disconnectedRouter.getPodIdToDeployIn(), title, context);
-        disconnectedRouter.setStopPending(true);
-        disconnectedRouter = _routerDao.persist(disconnectedRouter);
-
-        final int connRouterPR = getRealPriority(connectedRouter);
-        final int disconnRouterPR = getRealPriority(disconnectedRouter);
-        if (connRouterPR < disconnRouterPR) {
-            // connRouterPR < disconnRouterPR, they won't equal at anytime
-            if (!connectedRouter.getIsPriorityBumpUp()) {
-                final BumpUpPriorityCommand command = new BumpUpPriorityCommand();
-                command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(connectedRouter.getId()));
-                command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, connectedRouter.getInstanceName());
-                final Answer answer = _agentMgr.easySend(connectedRouter.getHostId(), command);
-                if (!answer.getResult()) {
-                    s_logger.error("Failed to bump up " + connectedRouter.getInstanceName() + "'s priority! " + answer.getDetails());
-                }
-            } else {
-                final String t = "Can't bump up virtual router " + connectedRouter.getInstanceName() + "'s priority due to it's already bumped up!";
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, connectedRouter.getDataCenterId(), connectedRouter.getPodIdToDeployIn(), t, t);
-            }
-        }
-    }
-
-    @Override
     public List<VirtualRouter> getRoutersForNetwork(final long networkId) {
         final List<DomainRouterVO> routers = _routerDao.findByNetwork(networkId);
         final List<VirtualRouter> vrs = new ArrayList<VirtualRouter>(routers.size());
@@ -3078,7 +2979,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
                                     if ((previousStats != null)
                                             && ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) || (previousStats.getCurrentBytesSent() != stats
-                                                    .getCurrentBytesSent()))) {
+                                            .getCurrentBytesSent()))) {
                                         s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " + "Ignoring current answer. Router: "
                                                 + answerFinal.getRouterName() + " Rcvd: " + answerFinal.getBytesReceived() + "Sent: " + answerFinal.getBytesSent());
                                         return;
@@ -3187,7 +3088,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     private List<Long> rebootRouters(final List<DomainRouterVO> routers) {
         final List<Long> jobIds = new ArrayList<Long>();
         for (final DomainRouterVO router : routers) {
-            if (!nwHelper.checkRouterVersion(router)) {
+            if (!_nwHelper.checkRouterVersion(router)) {
                 s_logger.debug("Upgrading template for router: " + router.getId());
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put("ctxUserId", "1");
@@ -3262,7 +3163,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             final AggregationControlCommand cmd = new AggregationControlCommand(action, router.getInstanceName(), getRouterControlIp(router.getId()), getRouterIpInNetwork(
                     network.getId(), router.getId()));
             final Commands cmds = new Commands(cmd);
-            if (!sendCommandsToRouter(router, cmds)) {
+            if (!_nwHelper.sendCommandsToRouter(router, cmds)) {
                 return false;
             }
         }
