@@ -96,7 +96,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             Host host = Host.getByUuid(conn, hypervisorResource.getHost().uuid);
             String uuid = UUID.randomUUID().toString();
 
-            sr = SR.introduce(conn,uuid, uuid, uuid, "file", "file", false, smConfig);
+            sr = SR.introduce(conn, uuid, srname, srname, "file", "file", false, smConfig);
             PBD.Record record = new PBD.Record();
             record.host = host;
             record.SR = sr;
