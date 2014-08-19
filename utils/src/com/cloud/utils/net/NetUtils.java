@@ -192,7 +192,10 @@ public class NetUtils {
             }
 
             String[] info = NetUtils.getNetworkParams(nic);
-            return info[0];
+            if (info != null) {
+                return info[0];
+            }
+            return null;
         }
     }
 
@@ -489,7 +492,10 @@ public class NetUtils {
             return false;
         } else {
             InetAddress ip = parseIpAddress(ipAddress);
-            return ip.isSiteLocalAddress();
+            if(ip != null) {
+                return ip.isSiteLocalAddress();
+            }
+            return false;
         }
     }
 
@@ -1252,16 +1258,21 @@ public class NetUtils {
         while (next.compareTo(gap) >= 0) {
             next = new BigInteger(gap.bitLength(), s_rand);
         }
+        InetAddress resultAddr = null;
         BigInteger startInt = convertIPv6AddressToBigInteger(start);
-        BigInteger resultInt = startInt.add(next);
-        InetAddress resultAddr;
-        try {
-            resultAddr = InetAddress.getByAddress(resultInt.toByteArray());
-        } catch (UnknownHostException e) {
-            return null;
+        if (startInt != null) {
+            BigInteger resultInt = startInt.add(next);
+            try {
+                resultAddr = InetAddress.getByAddress(resultInt.toByteArray());
+            } catch (UnknownHostException e) {
+                return null;
+            }
         }
-        IPv6Address ip = IPv6Address.fromInetAddress(resultAddr);
-        return ip.toString();
+        if( resultAddr != null) {
+            IPv6Address ip = IPv6Address.fromInetAddress(resultAddr);
+            return ip.toString();
+        }
+        return null;
     }
 
     //RFC3315, section 9.4
@@ -1300,8 +1311,10 @@ public class NetUtils {
         }
         BigInteger startInt = convertIPv6AddressToBigInteger(start);
         BigInteger endInt = convertIPv6AddressToBigInteger(end);
-        if (startInt.compareTo(endInt) > 0) {
-            return null;
+        if (endInt != null) {
+            if (startInt.compareTo(endInt) > 0) {
+                return null;
+            }
         }
         return endInt.subtract(startInt).add(BigInteger.ONE);
     }
