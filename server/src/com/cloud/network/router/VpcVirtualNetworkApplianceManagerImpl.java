@@ -774,35 +774,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
     }
 
-    @Override
-    public boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
-        if (staticRoutes == null || staticRoutes.isEmpty()) {
-            s_logger.debug("No static routes to apply");
-            return true;
-        }
-
-        boolean result = true;
-        for (VirtualRouter router : routers) {
-            if (router.getState() == State.Running) {
-                result = result && sendStaticRoutes(staticRoutes, routers.get(0));
-            } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
-                s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending StaticRoute command to the backend");
-            } else {
-                s_logger.warn("Unable to apply StaticRoute, virtual router is not in the right state " + router.getState());
-
-                throw new ResourceUnavailableException("Unable to apply StaticRoute on the backend," + " virtual router is not in the right state", DataCenter.class,
-                        router.getDataCenterId());
-            }
-        }
-        return result;
-    }
-
-    protected boolean sendStaticRoutes(final List<StaticRouteProfile> staticRoutes, final DomainRouterVO router) throws ResourceUnavailableException {
-        Commands cmds = new Commands(Command.OnError.Continue);
-        createStaticRouteCommands(staticRoutes, router, cmds);
-        return _nwHelper.sendCommandsToRouter(router, cmds);
-    }
-
     /**
      * @param staticRoutes
      * @param router
