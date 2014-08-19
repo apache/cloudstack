@@ -67,7 +67,6 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
-import com.cloud.network.VpnUser;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.RemoteAccessVpnVO;
@@ -970,36 +969,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     @Override
     public boolean stop() {
         return true;
-    }
-
-    @Override
-    public String[] applyVpnUsers(final RemoteAccessVpn vpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException {
-        Vpc vpc = _vpcDao.findById(vpn.getVpcId());
-
-        if (router.getState() != State.Running) {
-            s_logger.warn("Failed to add/remove Remote Access VPN users: router not in running state");
-            throw new ResourceUnavailableException("Failed to add/remove Remote Access VPN users: router not in running state: " + router.getState(), DataCenter.class,
-                    vpc.getZoneId());
-        }
-
-        Commands cmds = new Commands(Command.OnError.Continue);
-
-        createApplyVpnUsersCommand(users, router, cmds);
-
-        // Currently we receive just one answer from the agent. In the future we have to parse individual answers and set
-        // results accordingly
-        boolean agentResult = _nwHelper.sendCommandsToRouter(router, cmds);
-
-        String[] result = new String[users.size()];
-        for (int i = 0; i < result.length; i++) {
-            if (agentResult) {
-                result[i] = null;
-            } else {
-                result[i] = String.valueOf(agentResult);
-            }
-        }
-
-        return result;
     }
 
     @Override
