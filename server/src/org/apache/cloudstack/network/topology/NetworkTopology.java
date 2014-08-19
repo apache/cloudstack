@@ -32,6 +32,7 @@ import com.cloud.network.rules.RuleApplier;
 import com.cloud.network.rules.RuleApplierWrapper;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
@@ -54,6 +55,8 @@ public interface NetworkTopology {
 
     boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final List<? extends VirtualRouter> routers, final boolean isPrivateGateway)
             throws ResourceUnavailableException;
+
+    boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException;
 
     // ====== USER FOR GUEST NETWORK AND VCP ====== //
 
