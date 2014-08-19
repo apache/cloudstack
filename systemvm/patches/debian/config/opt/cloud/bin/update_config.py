@@ -39,9 +39,9 @@ run.wait()
 
 if run.returncode:
     print "stdout >>"
-    print run.stdout
+    print run.stdout.read()
     print "stderr >>"
-    print run.stderr
+    print run.stderr.read()
 else:
     print "Convergence is achieved - you have been assimilated!"
 

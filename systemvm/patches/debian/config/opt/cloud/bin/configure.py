@@ -28,6 +28,7 @@ import os.path
 from cs_ip import merge
 import CsHelper
 from CsNetfilter import CsNetfilters
+from fcntl import flock, LOCK_EX, LOCK_UN
 
 fw = []
 
