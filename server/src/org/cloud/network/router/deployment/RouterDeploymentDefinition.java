@@ -50,7 +50,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
-import com.cloud.network.router.NetworkGeneralHelper;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -88,7 +88,7 @@ public class RouterDeploymentDefinition {
     protected UserIpv6AddressDao ipv6Dao;
     protected IPAddressDao ipAddressDao;
     protected VirtualRouterProvider vrProvider;
-    protected NetworkGeneralHelper nwHelper;
+    protected NetworkHelper nwHelper;
 
     protected Network guestNetwork;
     protected DeployDestination dest;
@@ -391,7 +391,7 @@ public class RouterDeploymentDefinition {
             LinkedHashMap<Network, List<? extends NicProfile>> networks =
                     this.nwHelper.createRouterNetworks(this);
             //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
-            DomainRouterVO router = nwHelper.deployRouter(this, networks, false, null);
+            DomainRouterVO router = this.nwHelper.deployRouter(this, networks, false, null);
 
             if (router != null) {
                 this.routerDao.addRouterToGuestNetwork(router, this.guestNetwork);

@@ -37,7 +37,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.router.NetworkGeneralHelper;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
@@ -110,7 +110,7 @@ public abstract class RuleApplier {
 
     protected RouterControlHelper _routerControlHelper;
 
-    protected NetworkGeneralHelper _networkHelper;
+    protected NetworkHelper _networkHelper;
 
     public RuleApplier(final Network network) {
         _network = network;

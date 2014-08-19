@@ -36,8 +36,8 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
-import com.cloud.network.router.NetworkGeneralHelper;
-import com.cloud.network.router.VpcVirtualNetworkHelperImpl;
+import com.cloud.network.router.NetworkHelper;
+import com.cloud.network.router.VpcNetworkHelper;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -93,9 +93,9 @@ public class RouterDeploymentDefinitionBuilder {
     private VlanDao vlanDao;
 
     @Inject
-    protected NetworkGeneralHelper nwHelper;
+    protected NetworkHelper nwHelper;
     @Inject
-    protected VpcVirtualNetworkHelperImpl vpcHelper;
+    protected VpcNetworkHelper vpcNwHelper;
 
     protected Long offeringId;
 
@@ -143,7 +143,7 @@ public class RouterDeploymentDefinitionBuilder {
         routerDeploymentDefinition.pNtwkDao = this.pNtwkDao;
         routerDeploymentDefinition.vpcMgr = this.vpcMgr;
         routerDeploymentDefinition.vlanDao = this.vlanDao;
-        routerDeploymentDefinition.vpcHelper = this.vpcHelper;
+        routerDeploymentDefinition.vpcHelper = this.vpcNwHelper;
     }
 
 
