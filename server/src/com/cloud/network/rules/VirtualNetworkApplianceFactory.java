@@ -174,7 +174,7 @@ public class VirtualNetworkApplianceFactory {
         applier._networkOfferingDao = _networkOfferingDao;
         applier._routerDao = _routerDao;
         applier._routerControlHelper = _routerControlHelper;
-        applier._applianceManager = _applianceManager;
+        applier._networkHelper = _networkHelper;
     }
 
     public IpAssociationRules createIpAssociationRules(final Network network, final List<? extends PublicIpAddress> ipAddresses) {
@@ -278,8 +278,6 @@ public class VirtualNetworkApplianceFactory {
         NetworkAclsRules networkAclsRules = new NetworkAclsRules(network, rules, isPrivateGateway);
 
         initBeans(networkAclsRules);
-
-        networkAclsRules._networkHelper = _networkHelper;
 
         return networkAclsRules;
     }
