@@ -28,7 +28,6 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
 
-import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -307,12 +306,5 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     public String[] applyVpnUsers(final RemoteAccessVpn vpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    @Override
-    public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds)
-            throws AgentUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
     }
 }
