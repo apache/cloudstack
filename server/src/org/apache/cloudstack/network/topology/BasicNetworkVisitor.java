@@ -32,7 +32,7 @@ import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.network.router.NetworkGeneralHelper;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.DhcpPvlanRules;
@@ -67,7 +67,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     private static final Logger s_logger = Logger.getLogger(BasicNetworkVisitor.class);
 
     @Inject
-    protected VirtualNetworkApplianceManager _applianceManager;
+    protected NetworkGeneralHelper _networkGeneralHelper;
 
     @Override
     public boolean visit(final StaticNatRules nat) throws ResourceUnavailableException {
@@ -78,7 +78,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final Commands cmds = new Commands(Command.OnError.Continue);
         nat.createApplyStaticNatCommands(rules, router, cmds, network.getId());
 
-        return _applianceManager.sendCommandsToRouter(router, cmds);
+        return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final Commands cmds = new Commands(Command.OnError.Continue);
         loadbalancing.createApplyLoadBalancingRulesCommands(rules, router, cmds, network.getId());
 
-        return _applianceManager.sendCommandsToRouter(router, cmds);
+        return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
 
     @SuppressWarnings("unchecked")
@@ -108,25 +108,25 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
             firewall.createApplyLoadBalancingRulesCommands(loadbalancingRules, router, cmds, network.getId());
 
-            return _applianceManager.sendCommandsToRouter(router, cmds);
+            return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
 
         } else if (purpose == Purpose.PortForwarding) {
 
             firewall.createApplyPortForwardingRulesCommands((List<? extends PortForwardingRule>) rules, router, cmds, network.getId());
 
-            return _applianceManager.sendCommandsToRouter(router, cmds);
+            return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
 
         } else if (purpose == Purpose.StaticNat) {
 
             firewall.createApplyStaticNatRulesCommands((List<StaticNatRule>)rules, router, cmds, network.getId());
 
-            return _applianceManager.sendCommandsToRouter(router, cmds);
+            return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
 
         } else if (purpose == Purpose.Firewall) {
 
             firewall.createApplyFirewallRulesCommands(rules, router, cmds, network.getId());
 
-            return _applianceManager.sendCommandsToRouter(router, cmds);
+            return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
 
         }
         s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
@@ -143,7 +143,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final List<? extends PublicIpAddress> ips = ipRules.getIpAddresses();
 
         ipRules.createAssociateIPCommands(router, ips, commands, network.getId());
-        return _applianceManager.sendCommandsToRouter(router, commands);
+        return _networkGeneralHelper.sendCommandsToRouter(router, commands);
     }
 
     @Override
@@ -160,7 +160,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
             userdata.createPasswordCommand(router, profile, nicVo, commands);
             userdata.createVmDataCommand(router, userVM, nicVo, userVM.getDetail("SSH.PublicKey"), commands);
 
-            return _applianceManager.sendCommandsToRouter(router, commands);
+            return _networkGeneralHelper.sendCommandsToRouter(router, commands);
         }
 
         return true;
@@ -178,7 +178,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         if (router.getPodIdToDeployIn().longValue() == destination.getPod().getId()) {
             dhcp.createDhcpEntryCommand(router, userVM, nicVo, commands);
 
-            return _applianceManager.sendCommandsToRouter(router, commands);
+            return _networkGeneralHelper.sendCommandsToRouter(router, commands);
         }
         return true;
     }
@@ -200,7 +200,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
         sshkey.createVmDataCommand(router, userVM, nicVo, sshKeystr, commands);
 
-        return _applianceManager.sendCommandsToRouter(router, commands);
+        return _networkGeneralHelper.sendCommandsToRouter(router, commands);
     }
 
     @Override
@@ -212,7 +212,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final Commands cmds = new Commands(Command.OnError.Stop);
         passwd.createPasswordCommand(router, profile, nicVo, cmds);
 
-        return _applianceManager.sendCommandsToRouter(router, cmds);
+        return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
 
     @Override
@@ -225,7 +225,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final Commands commands = new Commands(Command.OnError.Stop);
         userdata.createVmDataCommand(router, userVM, nicVo, null, commands);
 
-        return _applianceManager.sendCommandsToRouter(router, commands);
+        return _networkGeneralHelper.sendCommandsToRouter(router, commands);
     }
 
     @Override
@@ -236,7 +236,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final Commands cmds = new Commands(Command.OnError.Continue);
         vpn.createApplyVpnUsersCommand(users, router, cmds);
 
-        return _applianceManager.sendCommandsToRouter(router, cmds);
+        return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
 
     @Override
