@@ -49,14 +49,6 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
     boolean destroyPrivateGateway(PrivateGateway gateway, VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
-     * @param routes
-     * @param routers
-     * @return
-     * @throws ResourceUnavailableException
-     */
-    boolean applyStaticRoutes(List<StaticRouteProfile> routes, List<DomainRouterVO> routers) throws ResourceUnavailableException;
-
-    /**
      * @param conn
      * @param routers
      * @return

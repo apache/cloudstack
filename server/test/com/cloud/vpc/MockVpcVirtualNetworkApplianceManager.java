@@ -227,15 +227,6 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.router.VpcVirtualNetworkApplianceManager#applyStaticRoutes(java.util.List, java.util.List)
-     */
-    @Override
-    public boolean applyStaticRoutes(final List<StaticRouteProfile> routes, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.router.VpcVirtualNetworkApplianceManager#startSite2SiteVpn(com.cloud.network.Site2SiteVpnConnection, com.cloud.network.router.VirtualRouter)
      */
     @Override
