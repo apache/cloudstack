@@ -1,0 +1,9 @@
+{
+	"host_name":"VM-58976c22-0832-451e-9ab2-039e9f27e415",
+	"mac_address":"02:00:26:c3:00:02",
+	"ipv4_adress":"172.16.1.102",
+	"ipv6_duid":"00:03:00:01:02:00:26:c3:00:02",
+	"default_gateway":"172.16.1.1",
+	"default_entry":true,
+	"type":"dhcpentry"
+}

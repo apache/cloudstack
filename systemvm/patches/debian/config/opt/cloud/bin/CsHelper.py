@@ -32,6 +32,10 @@ def addifmissing(filename, val):
          updatefile(filename, val + "\n", "a")
          logging.debug("Added %s to file %s" % (val, filename))
 
+def get_hostname():
+    for line in open("/etc/hostname"):
+        return line.strip()
+
 def execute(command):
     """ Execute command """
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
