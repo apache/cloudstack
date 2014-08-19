@@ -35,11 +35,9 @@ import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
-import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.ManagerBase;
@@ -281,11 +279,5 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     public boolean stopRemoteAccessVpn(final RemoteAccessVpn vpn, final VirtualRouter router) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    @Override
-    public String[] applyVpnUsers(final RemoteAccessVpn vpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return null;
     }
 }
