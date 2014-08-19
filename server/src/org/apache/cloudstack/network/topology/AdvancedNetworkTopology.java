@@ -244,8 +244,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
             if (!isZoneBasic && !disconnectedRouters.isEmpty() && disconnectedRouters.get(0).getIsRedundantRouter()) {
                 // These disconnected redundant virtual routers are out of sync
                 // now, stop them for synchronization
-                // [FIXME] handleSingleWorkingRedundantRouter(connectedRouters,
-                // disconnectedRouters, msg);
+                _nwHelper.handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
             }
         } else if (!disconnectedRouters.isEmpty()) {
             for (final VirtualRouter router : disconnectedRouters) {

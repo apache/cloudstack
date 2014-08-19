@@ -62,7 +62,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         userdata.createPasswordCommand(router, profile, nicVo, commands);
         userdata.createVmDataCommand(router, userVM, nicVo, userVM.getDetail("SSH.PublicKey"), commands);
 
-        return _applianceManager.sendCommandsToRouter(router, commands);
+        return _networkGeneralHelper.sendCommandsToRouter(router, commands);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
         dhcp.createDhcpEntryCommand(router, userVM, nicVo, commands);
 
-        return _applianceManager.sendCommandsToRouter(router, commands);
+        return _networkGeneralHelper.sendCommandsToRouter(router, commands);
     }
 
     @Override
@@ -85,7 +85,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         final Commands commands = nicPlugInOutRules.getNetUsageCommands();
 
         if (commands.size() > 0) {
-            return _applianceManager.sendCommandsToRouter(router, commands);
+            return _networkGeneralHelper.sendCommandsToRouter(router, commands);
         }
         return true;
     }
@@ -99,7 +99,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         List<? extends NetworkACLItem> rules = acls.getRules();
         acls.createNetworkACLsCommands(rules, router, commands, network.getId(), acls.isPrivateGateway());
 
-        return _applianceManager.sendCommandsToRouter(router, commands);
+        return _networkGeneralHelper.sendCommandsToRouter(router, commands);
     }
 
     @Override
@@ -113,7 +113,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
         if (!ipsToSend.isEmpty()) {
             vpcip.createVpcAssociatePublicIPCommands(router, ipsToSend, cmds, vlanMacAddress);
-            return _applianceManager.sendCommandsToRouter(router, cmds);
+            return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
         } else {
             return true;
         }
@@ -134,7 +134,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         cmds.addCommand(setupCommand);
 
         try {
-            return _applianceManager.sendCommandsToRouter(router, cmds);
+            return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
         } catch (final ResourceUnavailableException e) {
             s_logger.warn("Timed Out", e);
             return false;
@@ -158,6 +158,6 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         //also add the required configuration to the dnsmasq for supporting dhcp and dns on the new ip.
         subnet.configDnsMasq(router, network, cmds);
 
-        return _applianceManager.sendCommandsToRouter(router, cmds);
+        return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
 }
