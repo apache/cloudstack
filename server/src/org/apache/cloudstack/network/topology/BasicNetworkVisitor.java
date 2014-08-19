@@ -50,6 +50,7 @@ import com.cloud.network.rules.SshKeyToRouterRules;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StaticNatRules;
+import com.cloud.network.rules.StaticRoutesRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
@@ -270,5 +271,10 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     @Override
     public boolean visit(final PrivateGatewayRules userdata) throws ResourceUnavailableException {
         throw new CloudRuntimeException("PrivateGatewayRules not implemented in Basic Network Topology.");
+    }
+
+    @Override
+    public boolean visit(final StaticRoutesRules staticRoutesRules) throws ResourceUnavailableException {
+        throw new CloudRuntimeException("StaticRoutesRules not implemented in Basic Network Topology.");
     }
 }

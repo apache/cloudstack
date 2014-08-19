@@ -37,6 +37,7 @@ import com.cloud.network.rules.DhcpSubNetRules;
 import com.cloud.network.rules.NetworkAclsRules;
 import com.cloud.network.rules.NicPlugInOutRules;
 import com.cloud.network.rules.PrivateGatewayRules;
+import com.cloud.network.rules.StaticRoutesRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
 import com.cloud.network.vpc.NetworkACLItem;
@@ -159,5 +160,11 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         subnet.configDnsMasq(router, network, cmds);
 
         return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
+    }
+
+    @Override
+    public boolean visit(final StaticRoutesRules staticRoutesRules) throws ResourceUnavailableException {
+
+        return false;
     }
 }
