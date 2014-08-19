@@ -19,11 +19,11 @@ package org.apache.cloudstack.network.topology;
 
 import java.util.List;
 
-import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
@@ -39,13 +39,6 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface NetworkTopology {
 
-    StringBuilder createGuestBootLoadArgs(final NicProfile guestNic, final String defaultDns1, final String defaultDns2, DomainRouterVO router);
-
-    String retrieveGuestDhcpRange(final NicProfile guestNic, final Network guestNetwork, final DataCenter dc);
-
-    NicProfile retrieveControlNic(final VirtualMachineProfile profile);
-
-
     // ====== USER FOR VPC ONLY ====== //
 
     boolean setupDhcpForPvlan(final boolean add, final DomainRouterVO router, final Long hostId, final NicProfile nic) throws ResourceUnavailableException;
@@ -57,6 +50,8 @@ public interface NetworkTopology {
             throws ResourceUnavailableException;
 
     boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException;
+    
+    String[] applyVpnUsers(final RemoteAccessVpn vpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException;
 
     // ====== USER FOR GUEST NETWORK AND VCP ====== //
 
