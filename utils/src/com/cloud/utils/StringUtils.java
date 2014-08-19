@@ -159,7 +159,9 @@ public class StringUtils {
     }
 
     // removes a password request param and it's value, also considering password is in query parameter value which has been url encoded
-    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("(&|%26)?((p|P)assword|accesskey|secretkey)(=|%3D).*?(?=(%26|[&'\"]))");
+    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("(&|%26)?[^(&|%26)]*((p|P)assword|accesskey|secretkey)(=|%3D).*?(?=(%26|[&'\"]))");
+
+    private static final Pattern REGEX_END_PASSWORD_QUERYSTRING = Pattern.compile("(&|%26)[^(&|%26)]*((p|P)assword|accesskey|secretkey)(=|%3D).*");
 
     // removes a password/accesskey/ property from a response json object
     private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"((p|P)assword|accesskey|secretkey)\":\\s?\".*?\",?");
@@ -175,6 +177,7 @@ public class StringUtils {
         String cleanResult = "";
         if (stringToClean != null) {
             cleanResult = REGEX_PASSWORD_QUERYSTRING.matcher(stringToClean).replaceAll("");
+            cleanResult = REGEX_END_PASSWORD_QUERYSTRING.matcher(cleanResult).replaceAll("");
             cleanResult = REGEX_PASSWORD_JSON.matcher(cleanResult).replaceAll("");
             Matcher detailsMatcher = REGEX_PASSWORD_DETAILS.matcher(cleanResult);
             while (detailsMatcher.find()) {
