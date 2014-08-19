@@ -1321,6 +1321,10 @@ start() {
     # eject the systemvm.iso
      eject
   fi
+  if [ -x /opt/cloud/bin/update_config.py ]
+  then
+	  /opt/cloud/bin/update_config.py cmd_line.json
+  fi
   return 0
 }
 
