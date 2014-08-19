@@ -208,7 +208,7 @@ public class ApiServlet extends HttpServlet {
                 }
             }
 
-            auditTrailSb.append(req.getQueryString());
+            auditTrailSb.append(StringUtils.cleanString(req.getQueryString()));
             final boolean isNew = ((session == null) ? true : session.isNew());
 
             // Initialize an empty context and we will update it after we have verified the request below,
