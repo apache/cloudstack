@@ -31,7 +31,9 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.AdvancedVpnRules;
 import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.DhcpPvlanRules;
 import com.cloud.network.rules.DhcpSubNetRules;
@@ -173,5 +175,18 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
     	staticRoutesRules.createStaticRouteCommands(staticRoutes, router, cmds);
     	
     	return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
+    }
+    
+    @Override
+    public boolean visit(AdvancedVpnRules vpnRules) throws ResourceUnavailableException {
+    	final VirtualRouter router = vpnRules.getRouter();
+    	List<? extends VpnUser> users = vpnRules.getUsers();
+
+    	Commands cmds = new Commands(Command.OnError.Continue);
+    	vpnRules.createApplyVpnUsersCommand(users, router, cmds);
+
+        // Currently we receive just one answer from the agent. In the future we have to parse individual answers and set
+        // results accordingly
+        return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
 }

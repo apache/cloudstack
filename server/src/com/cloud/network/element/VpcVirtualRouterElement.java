@@ -591,7 +591,12 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
             return null;
         }
-        return _vpcRouterMgr.applyVpnUsers(vpn, users, routers.get(0));
+        
+        Network network = _networkDao.findById(vpn.getNetworkId());
+        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+        
+        return networkTopology.applyVpnUsers(vpn, users, routers.get(0));
     }
 
     @Override
