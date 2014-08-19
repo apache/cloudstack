@@ -35,7 +35,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.router.VpcVirtualNetworkHelperImpl;
+import com.cloud.network.router.VpcNetworkHelper;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -45,17 +45,18 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
+import com.cloud.vm.dao.DomainRouterDao;
 
 public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     private static final Logger logger = Logger.getLogger(VpcRouterDeploymentDefinition.class);
 
-    protected VpcVirtualNetworkHelperImpl vpcHelper;
-
+    protected DomainRouterDao routerDao;
     protected VpcDao vpcDao;
     protected VpcOfferingDao vpcOffDao;
     protected PhysicalNetworkDao pNtwkDao;
     protected VpcManager vpcMgr;
     protected VlanDao vlanDao;
+    protected VpcNetworkHelper vpcNetworkHelper;
 
     protected Vpc vpc;
 
@@ -165,7 +166,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     protected void deployAllVirtualRouters()
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
-        LinkedHashMap<Network, List<? extends NicProfile>> networks = this.nwHelper.createVpcRouterNetworks(this);
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = this.vpcNetworkHelper.createRouterNetworks(this);
 
         DomainRouterVO router =
                 nwHelper.deployRouter(this, networks, true, vpcMgr.getSupportedVpcHypervisors());
@@ -177,7 +178,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
     @Override
     protected void planDeploymentRouters() {
-        this.routers = this.vpcHelper.getVpcRouters(this.vpc.getId());
+        this.routers = this.routerDao.listByVpcId(this.vpc.getId());
     }
 
     @Override
