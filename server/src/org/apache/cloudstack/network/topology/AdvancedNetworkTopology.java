@@ -34,7 +34,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Status;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.AdvancedVpnRules;
 import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.DhcpPvlanRules;
 import com.cloud.network.rules.DhcpSubNetRules;
@@ -62,8 +65,31 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     protected AdvancedNetworkVisitor _advancedVisitor;
 
     @Override
+    public String[] applyVpnUsers(RemoteAccessVpn remoteAccessVpn, List<? extends VpnUser> users, VirtualRouter router) throws ResourceUnavailableException {
+    	
+    	s_logger.debug("APPLYING ADVANCED VPN USERS RULES");
+    	
+    	AdvancedVpnRules routesRules = _virtualNetworkApplianceFactory.createAdvancedVpnRules(remoteAccessVpn, users);
+    	
+    	boolean agentResult = routesRules.accept(_advancedVisitor, router);
+
+        String[] result = new String[users.size()];
+        for (int i = 0; i < result.length; i++) {
+            if (agentResult) {
+                result[i] = null;
+            } else {
+                result[i] = String.valueOf(agentResult);
+            }
+        }
+
+        return result;
+    }
+    
+    @Override
     public boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
         
+    	s_logger.debug("APPLYING STATIC ROUTES RULES");
+    	
     	if (staticRoutes == null || staticRoutes.isEmpty()) {
             s_logger.debug("No static routes to apply");
             return true;
@@ -92,6 +118,8 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Override
     public boolean setupDhcpForPvlan(final boolean isAddPvlan, final DomainRouterVO router, final Long hostId, final NicProfile nic) throws ResourceUnavailableException {
 
+    	s_logger.debug("SETUP DHCP PVLAN RULES");
+    	
         if (!nic.getBroadCastUri().getScheme().equals("pvlan")) {
             return false;
         }

@@ -31,16 +31,16 @@ import com.cloud.network.Network;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 
-public class VpnRules extends RuleApplier {
+public class BasicVpnRules extends RuleApplier {
 
     private final List<? extends VpnUser> _users;
 
-    public VpnRules(final Network network, final List<? extends VpnUser> users) {
+    public BasicVpnRules(final Network network, final List<? extends VpnUser> users) {
         super(network);
         _users = users;
     }
 
-    @Override
+	@Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
         _router = router;
 
