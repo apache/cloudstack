@@ -37,7 +37,7 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.router.NetworkGeneralHelper;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.vpc.NetworkACLItem;
@@ -130,7 +130,7 @@ public class VirtualNetworkApplianceFactory {
     protected IpAddressManager _ipAddrMgr;
 
     @Inject
-    protected NetworkGeneralHelper _networkHelper;
+    protected NetworkHelper _networkHelper;
 
     public LoadBalancingRules createLoadBalancingRules(final Network network, final List<LoadBalancingRule> rules) {
         LoadBalancingRules lbRules = new LoadBalancingRules(network, rules);

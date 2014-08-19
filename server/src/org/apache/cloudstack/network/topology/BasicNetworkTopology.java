@@ -41,7 +41,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.router.NetworkGeneralHelper;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.FirewallRule;
@@ -87,7 +87,7 @@ public class BasicNetworkTopology implements NetworkTopology {
     protected HostDao _hostDao;
 
     @Inject
-    protected NetworkGeneralHelper _nwHelper;
+    protected NetworkHelper _nwHelper;
 
     @Inject
     protected UserVmDao _userVmDao;

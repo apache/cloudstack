@@ -385,7 +385,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Inject
     protected NetworkTopologyContext _networkTopologyContext;
     @Inject
-    protected NetworkGeneralHelper _nwHelper;
+    protected NetworkHelper _nwHelper;
     @Inject
     protected RouterDeploymentDefinitionBuilder _routerDeploymentManagerBuilder;
 
