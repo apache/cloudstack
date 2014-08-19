@@ -231,7 +231,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
             Commands cmds = new Commands(Command.OnError.Stop);
             cmds.addCommand("setupguestnetwork", setupCmd);
-            sendCommandsToRouter(router, cmds);
+            _nwHelper.sendCommandsToRouter(router, cmds);
 
             Answer setupAnswer = cmds.getAnswer("setupguestnetwork");
             String setup = add ? "set" : "destroy";
@@ -413,7 +413,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
         }
 
-        SetNetworkACLCommand cmd = new SetNetworkACLCommand(rulesTO, nwHelper.getNicTO(router, guestNetworkId, null));
+        SetNetworkACLCommand cmd = new SetNetworkACLCommand(rulesTO, _nwHelper.getNicTO(router, guestNetworkId, null));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, guestVlan);
@@ -488,7 +488,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     }
                 }
                 PlugNicCommand plugNicCmd =
-                        new PlugNicCommand(nwHelper.getNicTO(router, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()), router.getInstanceName(), router.getType());
+                        new PlugNicCommand(_nwHelper.getNicTO(router, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()), router.getInstanceName(), router.getType());
                 cmds.addCommand(plugNicCmd);
                 VpcVO vpc = _vpcDao.findById(router.getVpcId());
                 NetworkUsageCommand netUsageCmd =
@@ -514,7 +514,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             for (Pair<Nic, Network> nicNtwk : guestNics) {
                 Nic guestNic = nicNtwk.first();
                 //plug guest nic
-                PlugNicCommand plugNicCmd = new PlugNicCommand(nwHelper.getNicTO(router, guestNic.getNetworkId(), null), router.getInstanceName(), router.getType());
+                PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(router, guestNic.getNetworkId(), null), router.getInstanceName(), router.getType());
                 cmds.addCommand(plugNicCmd);
                 if (!_networkModel.isPrivateGateway(guestNic.getNetworkId())) {
                     //set guest network
@@ -646,7 +646,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
 
         finalizeNetworkRulesForNetwork(cmds, router, provider, networkId);
-        return sendCommandsToRouter(router, cmds);
+        return _nwHelper.sendCommandsToRouter(router, cmds);
     }
 
     @Override
@@ -656,7 +656,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             Network network = _networkModel.getNetwork(gateway.getNetworkId());
             NicProfile requested = vpcHelper.createPrivateNicProfileForGateway(gateway);
 
-            if (!nwHelper.checkRouterVersion(router)) {
+            if (!_nwHelper.checkRouterVersion(router)) {
                 s_logger.warn("Router requires upgrade. Unable to send command to router: " + router.getId());
                 return false;
             }
@@ -706,7 +706,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             createVpcAssociatePrivateIPCommands(router, privateIps, cmds, add);
 
             try{
-                if (sendCommandsToRouter(router, cmds)) {
+                if (_nwHelper.sendCommandsToRouter(router, cmds)) {
                     s_logger.debug("Successfully applied ip association for ip " + ip + " in vpc network " + network);
                     return true;
                 } else {
@@ -800,7 +800,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     protected boolean sendStaticRoutes(final List<StaticRouteProfile> staticRoutes, final DomainRouterVO router) throws ResourceUnavailableException {
         Commands cmds = new Commands(Command.OnError.Continue);
         createStaticRouteCommands(staticRoutes, router, cmds);
-        return sendCommandsToRouter(router, cmds);
+        return _nwHelper.sendCommandsToRouter(router, cmds);
     }
 
     /**
@@ -842,7 +842,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     protected boolean applySite2SiteVpn(final boolean isCreate, final VirtualRouter router, final Site2SiteVpnConnection conn) throws ResourceUnavailableException {
         Commands cmds = new Commands(Command.OnError.Continue);
         createSite2SiteVpnCfgCommands(conn, isCreate, router, cmds);
-        return sendCommandsToRouter(router, cmds);
+        return _nwHelper.sendCommandsToRouter(router, cmds);
     }
 
     private void createSite2SiteVpnCfgCommands(final Site2SiteVpnConnection conn, final boolean isCreate, final VirtualRouter router, final Commands cmds) {
@@ -1017,7 +1017,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
         // Currently we receive just one answer from the agent. In the future we have to parse individual answers and set
         // results accordingly
-        boolean agentResult = sendCommandsToRouter(router, cmds);
+        boolean agentResult = _nwHelper.sendCommandsToRouter(router, cmds);
 
         String[] result = new String[users.size()];
         for (int i = 0; i < result.length; i++) {
@@ -1082,7 +1082,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (router.getState() == State.Running) {
             Commands cmds = new Commands(Command.OnError.Continue);
             createApplyVpnCommands(false, vpn, router, cmds);
-            result = result && sendCommandsToRouter(router, cmds);
+            result = result && _nwHelper.sendCommandsToRouter(router, cmds);
         } else if (router.getState() == State.Stopped) {
             s_logger.debug("Router " + router + " is in Stopped state, not sending deleteRemoteAccessVpn command to it");
         } else {
