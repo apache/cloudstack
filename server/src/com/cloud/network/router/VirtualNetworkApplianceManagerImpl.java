@@ -645,7 +645,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
             throw new ConfigurationException(msg);
         }
 
-        VirtualNwStatus.account = _accountMgr.getSystemAccount();
+        VirtualNetworkStatus.account = _accountMgr.getSystemAccount();
 
         final String aggregationRange = configs.get("usage.stats.job.aggregation.range");
         _usageAggregationRange = NumbersUtil.parseInt(aggregationRange, 1440);
