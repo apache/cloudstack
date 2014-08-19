@@ -1268,13 +1268,35 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return vbd;
     }
 
-    public long getStaticMax(String os, boolean b, long dynamicMinRam, long dynamicMaxRam) {
-        return dynamicMaxRam;
+
+    private long getStaticMax(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
+        long recommendedValue = CitrixHelper.getXenServerStaticMax(os, b);
+        if(recommendedValue == 0){
+            s_logger.warn("No recommended value found for dynamic max, setting static max and dynamic max equal");
+            return dynamicMaxRam;
+        }
+        long staticMax = Math.min(recommendedValue, 4l * dynamicMinRam);  // XS constraint for stability
+        if (dynamicMaxRam > staticMax){ // XS contraint that dynamic max <= static max
+            s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax + ", can lead to stability issues. Setting static max as much as dynamic max ");
+            return dynamicMaxRam;
+        }
+        return staticMax;
     }
 
-    public long getStaticMin(String os, boolean b, long dynamicMinRam, long dynamicMaxRam) {
+
+    private long getStaticMin(String os, boolean b, long dynamicMinRam, long dynamicMaxRam) {
+        long recommendedValue = CitrixHelper.getXenServerStaticMin(os, b);
+        if (recommendedValue == 0) {
+            s_logger.warn("No recommended value found for dynamic min");
+            return dynamicMinRam;
+        }
+
+        if (dynamicMinRam < recommendedValue) {   // XS contraint that dynamic min > static min
+            s_logger.warn("Vm is set to dynamixMin " + dynamicMinRam + " less than the recommended static min " + recommendedValue + ", could lead to stability issues");
+        }
         return dynamicMinRam;
     }
+
 
     protected HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUGroupDetails(Connection conn) throws XenAPIException, XmlRpcException {
         return null;
@@ -1286,6 +1308,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected VM createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
         String guestOsTypeName = getGuestOsType(vmSpec.getOs(), vmSpec.getPlatformEmulator(), vmSpec.getBootloader() == BootloaderType.CD);
         Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
+        if ( templates == null || templates.isEmpty()) {
+            throw new CloudRuntimeException("Cannot find template " + guestOsTypeName + " on XenServer host");
+        }
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();
 
@@ -6971,9 +6996,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    /*Override by subclass*/
+
     protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
-        return stdType;
+        if (platformEmulator == null) {
+            s_logger.debug("no guest OS type, start it as HVM guest");
+            platformEmulator = "Other install media";
+        }
+        return platformEmulator;
     }
 
     private Answer execute(NetworkRulesSystemVmCommand cmd) {

@@ -45,13 +45,11 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xenserver.resource.XcpOssResource;
-import com.cloud.hypervisor.xenserver.resource.XcpServer16Resource;
 import com.cloud.hypervisor.xenserver.resource.XcpServerResource;
 import com.cloud.hypervisor.xenserver.resource.XenServer56FP1Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServer56Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServer56SP2Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServer600Resource;
-import com.cloud.hypervisor.xenserver.resource.XenServer602Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServer610Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServer620Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServer620SP1Resource;
@@ -399,17 +397,16 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 
     protected CitrixResourceBase createServerResource(String prodBrand, String prodVersion, String prodVersionTextShort, String hotfix) {
         // Xen Cloud Platform group of hypervisors
-        if (prodBrand.equals("XCP") && (prodVersion.equals("1.0.0") || prodVersion.equals("1.1.0") || prodVersion.equals("5.6.100") || prodVersion.startsWith("1.4"))) {
+        if (prodBrand.equals("XCP") && (prodVersion.equals("1.0.0") || prodVersion.equals("1.1.0")
+              || prodVersion.equals("5.6.100") || prodVersion.startsWith("1.4") || prodVersion.startsWith("1.6"))) {
             return new XcpServerResource();
-        } else if (prodBrand.equals("XCP") && prodVersion.startsWith("1.6")) {
-            return new XcpServer16Resource();
         } // Citrix Xenserver group of hypervisors
         else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.0"))
             return new XenServer56Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.0"))
             return new XenServer600Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.2"))
-            return new XenServer602Resource();
+            return new XenServer600Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0"))
             return new XenServer610Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.4.94"))
