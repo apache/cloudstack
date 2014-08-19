@@ -215,7 +215,7 @@ public class NetworkGeneralHelper {
         }
         return result;
     }
-    
+
     public void handleSingleWorkingRedundantRouter(final List<? extends VirtualRouter> connectedRouters, final List<? extends VirtualRouter> disconnectedRouters, final String reason)
             throws ResourceUnavailableException {
         if (connectedRouters.isEmpty() || disconnectedRouters.isEmpty()) {
@@ -275,7 +275,7 @@ public class NetworkGeneralHelper {
         }
         return priority;
     }
-    
+
     //    @Override
     public NicTO getNicTO(final VirtualRouter router, final Long networkId, final String broadcastUri) {
         NicProfile nicProfile = _networkModel.getNicProfile(router, networkId, broadcastUri);
@@ -792,22 +792,22 @@ public class NetworkGeneralHelper {
 
         //1) allocate nic for control and source nat public ip
         final LinkedHashMap<Network, List<? extends NicProfile>> networks =
-                this.createRouterNetworks(vpcRouterDeploymentDefinition);
+                createRouterNetworks(vpcRouterDeploymentDefinition);
 
 
         final Long vpcId = vpcRouterDeploymentDefinition.getVpc().getId();
         //2) allocate nic for private gateways if needed
-        final List<PrivateGateway> privateGateways = this._vpcMgr.getVpcPrivateGateways(vpcId);
+        final List<PrivateGateway> privateGateways = _vpcMgr.getVpcPrivateGateways(vpcId);
         if (privateGateways != null && !privateGateways.isEmpty()) {
             for (PrivateGateway privateGateway : privateGateways) {
-                NicProfile privateNic = this._vpcHelper.createPrivateNicProfileForGateway(privateGateway);
+                NicProfile privateNic = _vpcHelper.createPrivateNicProfileForGateway(privateGateway);
                 Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
                 networks.put(privateNetwork, new ArrayList<NicProfile>(Arrays.asList(privateNic)));
             }
         }
 
         //3) allocate nic for guest gateway if needed
-        List<? extends Network> guestNetworks = this._vpcMgr.getVpcNetworks(vpcId);
+        List<? extends Network> guestNetworks = _vpcMgr.getVpcNetworks(vpcId);
         for (Network guestNetwork : guestNetworks) {
             if (_networkModel.isPrivateGateway(guestNetwork.getId())) {
                 continue;
@@ -823,8 +823,8 @@ public class NetworkGeneralHelper {
         final List<NicProfile> publicNics = new ArrayList<NicProfile>();
         Network publicNetwork = null;
         for (IPAddressVO ip : ips) {
-            PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, this._vlanDao.findById(ip.getVlanId()));
-            if ((ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) && this._vpcMgr.isIpAllocatedToVpc(ip) &&
+            PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
+            if ((ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) && _vpcMgr.isIpAllocatedToVpc(ip) &&
                     !publicVlans.contains(publicIp.getVlanTag())) {
                 s_logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());
                 NicProfile publicNic = new NicProfile();
