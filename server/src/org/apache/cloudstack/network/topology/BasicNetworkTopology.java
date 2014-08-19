@@ -59,6 +59,7 @@ import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VirtualNetworkApplianceFactory;
 import com.cloud.network.rules.VpnRules;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -101,6 +102,11 @@ public class BasicNetworkTopology implements NetworkTopology {
     @Override
     public NicProfile retrieveControlNic(final VirtualMachineProfile profile) {
         return null;
+    }
+
+    @Override
+    public boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+        throw new CloudRuntimeException("applyStaticRoutes not implemented in Basic Network Topology.");
     }
 
     @Override

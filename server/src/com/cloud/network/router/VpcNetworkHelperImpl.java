@@ -187,7 +187,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl implements VpcNetwor
                 publicNic.setIsolationUri(IsolationType.Vlan.toUri(publicIp.getVlanTag()));
                 NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
                 if (publicNetwork == null) {
-                    List<? extends Network> publicNetworks = _networkMgr.setupNetwork(VirtualNwStatus.account,
+                    List<? extends Network> publicNetworks = _networkMgr.setupNetwork(VirtualNetworkStatus.account,
                             publicOffering, vpcRouterDeploymentDefinition.getPlan(), null, null, false);
                     publicNetwork = publicNetworks.get(0);
                 }

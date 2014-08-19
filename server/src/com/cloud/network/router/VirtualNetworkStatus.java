@@ -18,7 +18,7 @@ package com.cloud.network.router;
 
 import com.cloud.user.Account;
 
-public class VirtualNwStatus {
+public class VirtualNetworkStatus {
 
     public static String instance = "";
 

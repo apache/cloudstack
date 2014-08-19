@@ -45,6 +45,7 @@ import com.cloud.network.rules.RuleApplierWrapper;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine.State;
@@ -58,6 +59,13 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Autowired
     @Qualifier("advancedNetworkVisitor")
     protected AdvancedNetworkVisitor _advancedVisitor;
+
+    @Override
+    public boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes,
+            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return super.applyStaticRoutes(staticRoutes, routers);
+    }
 
     @Override
     public boolean setupDhcpForPvlan(final boolean isAddPvlan, final DomainRouterVO router, final Long hostId, final NicProfile nic) throws ResourceUnavailableException {
