@@ -41,6 +41,7 @@ import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -307,4 +308,12 @@ public class VirtualNetworkApplianceFactory {
 
         return pvlanRules;
     }
+
+	public StaticRoutesRules createStaticRoutesRules(List<StaticRouteProfile> staticRoutes) {
+		StaticRoutesRules routesRules = new StaticRoutesRules(staticRoutes);
+		
+		initBeans(routesRules);
+		
+		return routesRules;
+	}
 }
