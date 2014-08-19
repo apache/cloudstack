@@ -41,6 +41,7 @@ import com.cloud.network.rules.NetworkAclsRules;
 import com.cloud.network.rules.NicPlugInOutRules;
 import com.cloud.network.rules.RuleApplier;
 import com.cloud.network.rules.RuleApplierWrapper;
+import com.cloud.network.rules.StaticRoutesRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
 import com.cloud.network.vpc.NetworkACLItem;
@@ -60,10 +61,31 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     protected AdvancedNetworkVisitor _advancedVisitor;
 
     @Override
-    public boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes,
-            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return super.applyStaticRoutes(staticRoutes, routers);
+    public boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+        
+    	if (staticRoutes == null || staticRoutes.isEmpty()) {
+            s_logger.debug("No static routes to apply");
+            return true;
+        }
+
+    	StaticRoutesRules routesRules = _virtualNetworkApplianceFactory.createStaticRoutesRules(staticRoutes);
+        
+        boolean result = true;
+        for (VirtualRouter router : routers) {
+            if (router.getState() == State.Running) {
+            	
+                result = result && routesRules.accept(_advancedVisitor, router);
+                
+            } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+                s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending StaticRoute command to the backend");
+            } else {
+                s_logger.warn("Unable to apply StaticRoute, virtual router is not in the right state " + router.getState());
+
+                throw new ResourceUnavailableException("Unable to apply StaticRoute on the backend," + " virtual router is not in the right state", DataCenter.class,
+                        router.getDataCenterId());
+            }
+        }
+        return result;
     }
 
     @Override
