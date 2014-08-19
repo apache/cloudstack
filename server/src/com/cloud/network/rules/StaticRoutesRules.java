@@ -28,7 +28,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.StaticRouteProfile;
-import com.cloud.vm.DomainRouterVO;
 
 public class StaticRoutesRules extends RuleApplier {
 
@@ -50,7 +49,7 @@ public class StaticRoutesRules extends RuleApplier {
         return visitor.visit(this);
     }
 
-    public void createStaticRouteCommands(final List<StaticRouteProfile> staticRoutes, final DomainRouterVO router, final Commands cmds) {
+    public void createStaticRouteCommands(final List<StaticRouteProfile> staticRoutes, final VirtualRouter router, final Commands cmds) {
         SetStaticRouteCommand cmd = new SetStaticRouteCommand(staticRoutes);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _networkHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());

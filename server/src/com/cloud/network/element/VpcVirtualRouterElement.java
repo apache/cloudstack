@@ -493,7 +493,10 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return true;
         }
 
-        if (!_vpcRouterMgr.applyStaticRoutes(routes, routers)) {
+        DataCenterVO dcVO = _dcDao.findById(vpc.getZoneId());
+        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+        if (!networkTopology.applyStaticRoutes(routes, routers)) {
             throw new CloudRuntimeException("Failed to apply static routes in vpc " + vpc);
         } else {
             s_logger.debug("Applied static routes on vpc " + vpc);
