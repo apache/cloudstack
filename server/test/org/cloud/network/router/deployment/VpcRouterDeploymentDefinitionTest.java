@@ -36,7 +36,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
-import com.cloud.network.router.VpcNetworkHelper;
+import com.cloud.network.router.NicProfileHelper;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -64,7 +64,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     @Mock
     protected VpcManager vpcMgr;
     @Mock
-    protected VpcNetworkHelper vpcHelper;
+    protected NicProfileHelper vpcHelper;
 
     protected RouterDeploymentDefinition deployment;
 

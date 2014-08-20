@@ -17,7 +17,6 @@
 package org.cloud.network.router.deployment;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -64,7 +63,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.NicProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile.Param;
@@ -398,10 +396,8 @@ public class RouterDeploymentDefinition {
 
         int routersToDeploy = this.getNumberOfRoutersToDeploy();
         for(int i = 0; i < routersToDeploy; i++) {
-            LinkedHashMap<Network, List<? extends NicProfile>> networks =
-                    this.nwHelper.createRouterNetworks(this);
-            //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
-            DomainRouterVO router = this.nwHelper.deployRouter(this, networks, false, null);
+            // Don't start the router as we are holding the network lock that needs to be released at the end of router allocation
+            DomainRouterVO router = this.nwHelper.deployRouter(this, false, null);
 
             if (router != null) {
                 this.routerDao.addRouterToGuestNetwork(router, this.guestNetwork);
