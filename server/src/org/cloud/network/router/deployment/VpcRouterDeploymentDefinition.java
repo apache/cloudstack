@@ -41,12 +41,10 @@ import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile.Param;
-import com.cloud.vm.dao.DomainRouterDao;
 
 public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     private static final Logger logger = Logger.getLogger(VpcRouterDeploymentDefinition.class);
 
-    protected DomainRouterDao routerDao;
     protected VpcDao vpcDao;
     protected VpcOfferingDao vpcOffDao;
     protected PhysicalNetworkDao pNtwkDao;

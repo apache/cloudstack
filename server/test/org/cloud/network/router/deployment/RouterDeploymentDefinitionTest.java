@@ -493,7 +493,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         deploymentUT.deployVirtualRouter();
 
         // Assert
-        verify(this.mockNetworkGeneralHelper, times(1)).startRouters(deploymentUT);
+        verify(this.mockNetworkHelper, times(1)).startRouters(deploymentUT);
     }
 
     @Test(expected = ConcurrentOperationException.class)
@@ -801,7 +801,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
 
         final DomainRouterVO routerVO1 = mock(DomainRouterVO.class);
         final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
-        when(this.mockNetworkGeneralHelper.deployRouter(deploymentUT, false, null))
+        when(this.mockNetworkHelper.deployRouter(deploymentUT, false, null))
             .thenReturn(routerVO1).thenReturn(routerVO2);
 
         // Execute
@@ -938,5 +938,4 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         this.driveTestExecuteDeployment(2, true);
     }
-
 }
