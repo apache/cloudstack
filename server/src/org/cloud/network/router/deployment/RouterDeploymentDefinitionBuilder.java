@@ -37,7 +37,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.router.NetworkHelper;
-import com.cloud.network.router.VpcNetworkHelper;
+import com.cloud.network.router.VpcNetworkHelperImpl;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -95,7 +95,7 @@ public class RouterDeploymentDefinitionBuilder {
     @Inject
     protected NetworkHelper nwHelper;
     @Inject
-    protected VpcNetworkHelper vpcNwHelper;
+    protected VpcNetworkHelperImpl vpcNwHelper;
 
     protected Long offeringId;
 

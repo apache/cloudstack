@@ -135,7 +135,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     private EntityManager _entityMgr;
 
     @Inject
-    private VpcNetworkHelper vpcHelper;
+    private NicProfileHelper vpcHelper;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
