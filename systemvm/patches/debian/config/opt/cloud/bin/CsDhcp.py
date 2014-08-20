@@ -15,24 +15,17 @@
 # specific language governing permissions and limitations
 # under the License.
 import CsHelper
-from pprint import pprint
 import logging
+from netaddr import *
+from CsGuestNetwork import CsGuestNetwork
 
 NO_PRELOAD = False
 LEASES     = "/var/lib/misc/dnsmasq.leases"
 DHCP_HOSTS = "/etc/dhcphosts.txt"
+DHCP_OPTS  = "/etc/dhcpopts.txt"
+DNSMASQ_CONF = "/etc/dnsmasq.conf"
+CLOUD_CONF = "/etc/dnsmasq.d/cloud.conf"
 
-"""
-    "172.16.1.102": {
-                "default_entry": true,
-                "default_gateway": "172.16.1.1",
-                "host_name": "VM-58976c22-0832-451e-9ab2-039e9f27e415",
-                "ipv4_adress": "172.16.1.102",
-                "ipv6_duid": "00:03:00:01:02:00:26:c3:00:02",
-                "mac_address": "02:00:26:c3:00:02",
-                "type": "dhcpentry"
-      },
-"""
 class CsDhcp(object):
     """ Manage dhcp entries """
 
@@ -42,15 +35,19 @@ class CsDhcp(object):
             if item == "id":
                 continue
             dnsmasq.add(dbag[item])
-        dnsmasq.collect_leases()
-        dnsmasq.to_str()
         dnsmasqb4 = CsDnsMasq(NO_PRELOAD)
         dnsmasqb4.parse_hosts()
+        dnsmasqb4.parse_dnsmasq()
         if not dnsmasq.compare_hosts(dnsmasqb4):
             dnsmasq.write_hosts()
         else:
             logging.debug("Hosts file is up to date")
-
+        diff = dnsmasq.compare_dnsmasq(dnsmasqb4)
+        if len(diff) > 0:
+            self.updated = True
+            dnsmasq.delete_leases(diff)
+            dnsmasq.write_dnsmasq()
+        dnsmasq.configure_server()
 
 class CsDnsMasq(object):
 
@@ -58,6 +55,9 @@ class CsDnsMasq(object):
         self.list  = []
         self.hosts = []
         self.leases = []
+        self.updated = False
+        self.devinfo = CsHelper.get_device_info()
+        self.devs = []
         if preload:
             self.add_host("127.0.0.1", "localhost")
             self.add_host("::1",     "localhost ip6-localhost ip6-loopback")
@@ -65,18 +65,55 @@ class CsDnsMasq(object):
             self.add_host("ff02::2", "ip6-allrouters")
             self.add_host("127.0.0.1", CsHelper.get_hostname())
 
-    def collect_leases(self):
-        # Format is
-        # 0 02:00:56:aa:00:03 10.1.1.18 pup *
+    def delete_leases(self, clist):
         try:
             for line in open(LEASES):
                 bits = line.strip().split(' ')
                 to = { "device" : bits[0],
                         "mac" : bits[1],
                         "ip" : bits[2],
-                        "host" : bits[3]
+                        "host" : bits[3],
+                        "del" : False
                         }
+                for l in clist:
+                    lbits = l.split(',')
+                    if lbits[0] == to['mac'] or \
+                       lbits[1] == to['ip']:
+                        to['del'] == True
+                        break
                 self.leases.append(to)
+            for o in self.leases:
+                if o['del']:
+                    cmd = "dhcp_release %s %s %s" % (o.device, o.ip, o.mac)
+                    logging.info(cmd)
+                    CsHelper.execute(cmd)
+            # Finally add the new lease
+        except IOError:
+            return
+
+    def configure_server(self):
+        self.updated = self.updated or CsHelper.addifmissing(CLOUD_CONF, "dhcp-hostsfile=/etc/dhcphosts.txt")
+        self.updated = self.updated or CsHelper.addifmissing(DNSMASQ_CONF, "dhcp-optsfile=%s:" % DHCP_OPTS)
+        for i in self.devinfo:
+            if not i['dnsmasq']:
+                continue
+            device = i['dev']
+            ip = i['ip'].split('/')[0]
+            line = "dhcp-range=interface:%s,set:interface-%s,%s,static" \
+                    % (device, device, ip)
+            self.updated = self.updated or CsHelper.addifmissing(CLOUD_CONF, line)
+            # Next add the domain
+            # if this is a guest network get it there otherwise use the value in resolv.conf
+            gn = CsGuestNetwork(device)
+            line = "dhcp-option=tag:interface-%s,15,%s" % (device,gn.get_domain())
+            self.updated = self.updated or CsHelper.addifmissing(CLOUD_CONF, line)
+        if self.updated:
+            CsHelper.hup_dnsmasq("dnsmasq", "dnsmasq")
+            
+    def parse_dnsmasq(self):
+        try:
+            for line in open(DHCP_HOSTS):
+                self.list.append(line.strip())
         except IOError:
             pass
 
@@ -93,23 +130,35 @@ class CsDnsMasq(object):
     def compare_hosts(self, obj):
         return set(self.hosts) == set(obj.hosts)
 
+    def compare_dnsmasq(self, obj):
+        return list(set(self.list).symmetric_difference(set(obj.list)))
+
     def write_hosts(self):
-        logging.debug("Updating hosts file with new entry")
+        logging.debug("Updating hosts file")
         handle = open("/etc/hosts", 'w+')
         for line in self.hosts:
             handle.write("%s\n" % line)
         handle.close()
 
+    def write_dnsmasq(self):
+        logging.debug("Updating %s", DHCP_HOSTS)
+        handle = open(DHCP_HOSTS, 'w+')
+        for line in self.list:
+            handle.write("%s\n" % line)
+            b = line.split(',')
+        handle.close()
+
     def add(self,entry):
         self.add_host(entry['ipv4_adress'], entry['host_name'])
         self.add_dnsmasq(entry['ipv4_adress'], entry['host_name'], entry['mac_address'])
-
+        i = IPAddress(entry['ipv4_adress'])
+        # Calculate the device
+        for v in self.devinfo:
+            if i > v['network'].network and i < v['network'].broadcast:
+                v['dnsmasq'] = True
+                
     def add_dnsmasq(self, ip, host, mac):
         self.list.append("%s,%s,%s,infinite" % (mac, ip, host))
 
     def add_host(self, ip, host):
         self.hosts.append("%s\t%s" % (ip, host))
-
-    def to_str(self):
-        pprint(self.hosts)
-        pprint(self.list)
