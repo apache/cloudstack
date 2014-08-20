@@ -260,8 +260,10 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
         try {
             FirewallRule result = _firewallService.createEgressFirewallRule(this);
-            setEntityId(result.getId());
-            setEntityUuid(result.getUuid());
+            if (result != null) {
+                setEntityId(result.getId());
+                setEntityUuid(result.getUuid());
+            }
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " + ex.getMessage());
             s_logger.trace("Network Rule Conflict: ", ex);

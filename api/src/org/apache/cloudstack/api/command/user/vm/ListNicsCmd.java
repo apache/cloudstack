@@ -124,11 +124,15 @@ public class ListNicsCmd extends BaseListCmd {
         try {
             List<? extends Nic> results = _networkService.listNics(this);
             ListResponse<NicResponse> response = new ListResponse<NicResponse>();
-            List<NicResponse> resList = new ArrayList<NicResponse>(results.size());
-            for (Nic r : results) {
-                NicResponse resp = _responseGenerator.createNicResponse(r);
-                resp.setObjectName("nic");
-                resList.add(resp);
+            List<NicResponse> resList = null;
+            if (results != null) {
+                resList = new ArrayList<NicResponse>(results.size());
+                for (Nic r : results) {
+                    NicResponse resp = _responseGenerator.createNicResponse(r);
+                    resp.setObjectName("nic");
+                    resList.add(resp);
+                }
+                response.setResponses(resList);
             }
             response.setResponses(resList);
             response.setResponseName(getCommandName());
