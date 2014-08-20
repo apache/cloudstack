@@ -156,6 +156,8 @@ class CsNetfilter(object):
         self.seen = True
 
     def __convert_to_dict(self, rule):
+        rule = rule.lstrip()
+        rule = rule.replace('  ', ' ')
         rule = rule.replace('! -', '!_-')
         # -m can appear twice in a string
         rule = rule.replace('-m state', '-m2 state')

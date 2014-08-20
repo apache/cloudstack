@@ -502,6 +502,7 @@ class CsAcl(CsDataBag):
     """
         Deal with Network acls
     """
+
     class AclDevice():
         """ A little class for each list of acls per device """
 
@@ -518,12 +519,56 @@ class CsAcl(CsDataBag):
                 self.egress = obj['egress_rules']
 
         def create(self):
-            self.process(self.ingress)
-            self.process(self.egress)
+            self.process("ingress", self.ingress)
+            self.process("egress", self.egress)
 
-        def process(self,rule_list):
+        def process(self, direction, rule_list):
             for i in rule_list:
-                pprint(i)
+                r = self.AclRule(direction, self.device, i)
+                r.create()
+
+        class AclRule():
+
+            def __init__(self, direction, device, rule):
+                self.table = ""
+                self.device = device
+                self.chain = "ACL_INBOUND_%s" % self.device
+                self.dest  = "-s %s" % rule['cidr']
+                if direction == "egress":
+                    self.table = "mangle"
+                    self.chain = "ACL_OUTBOUND_%s" % self.device
+                    self.dest  = "-d %s" % rule['cidr']
+                self.type = ""
+                self.type = rule['type']
+                self.icmp_type = "any"
+                self.protocol = self.type
+                if "icmp_type" in rule.keys() and rule['icmp_type'] != -1:
+                    self.icmp_type = rule['icmp_type']
+                if "icmp_code" in rule.keys() and rule['icmp_code'] != -1:
+                    self.icmp_type = "%s/%s" % (self.icmp_type, rule['icmp_code'])
+                if self.type == "protocol":
+                    self.protocol = rule['protocol']
+                self.action = "DENY"
+                self.dport = ""
+                if 'allowed' in rule.keys() and rule['allowed'] and rule['allowed']:
+                    self.action = "ACCEPT"
+                global fw
+                if 'first_port' in rule.keys():
+                    self.dport = "--dport %s" % rule['first_port']
+                if 'last_port' in rule.keys() and self.dport and \
+                   rule['last_port'] != rule['first_port']:
+                    self.dport = "%s:%s" % (self.dport, rule['last_port'])
+
+
+            def create(self):
+                rstr = ""
+                rstr = "%s -A %s -p %s %s" % (rstr, self.chain, self.protocol, self.dest)
+                if self.type == "icmp":
+                    rstr = "%s -icmp_type %s" % (rstr, self.icmp_type)
+                rstr = "%s %s -j %s" % (rstr, self.dport, self.action)
+                fw.append([self.table, "front", rstr])
+                    
+
 
     def process(self):
         for item in self.dbag:
@@ -759,6 +804,7 @@ def main(argv):
 
     dh = CsDataBag("dhcpentry")
     dhcp = CsDhcp(dh.get_bag(), cl)
+
 
 if __name__ == "__main__":
     main(sys.argv)
