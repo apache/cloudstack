@@ -18,8 +18,6 @@ package org.apache.cloudstack.ldap;
 
 import java.util.List;
 
-import javax.naming.NamingException;
-
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
 import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
@@ -40,7 +38,7 @@ public interface LdapManager extends PluggableService {
 
     LdapConfigurationResponse deleteConfiguration(String hostname) throws InvalidParameterValueException;
 
-    LdapUser getUser(final String username) throws NamingException;
+    LdapUser getUser(final String username) throws NoLdapUserMatchingQueryException;
 
     List<LdapUser> getUsers() throws NoLdapUserMatchingQueryException;
 

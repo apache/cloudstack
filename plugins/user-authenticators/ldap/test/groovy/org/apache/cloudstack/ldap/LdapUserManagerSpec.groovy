@@ -26,6 +26,7 @@ import javax.naming.directory.Attributes
 import javax.naming.directory.InitialDirContext
 import javax.naming.directory.SearchControls
 import javax.naming.directory.SearchResult
+import javax.naming.ldap.InitialLdapContext
 import javax.naming.ldap.LdapContext
 
 class LdapUserManagerSpec extends spock.lang.Specification {
@@ -169,6 +170,8 @@ class LdapUserManagerSpec extends spock.lang.Specification {
         ldapConfiguration.getCommonNameAttribute() >> "cn"
         ldapConfiguration.getGroupObject() >> "groupOfUniqueNames"
         ldapConfiguration.getGroupUniqueMemeberAttribute() >> "uniquemember"
+        ldapConfiguration.getLdapPageSize() >> 1
+        ldapConfiguration.getReadTimeout() >> 1000
 
         username = "rmurphy"
         email = "rmurphy@test.com"
@@ -217,7 +220,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
         result.size() == 1
     }
 
-    def "Test successfully returning a NamingEnumeration from searchUsers"() {
+    def "Test successfully returning a ldap user from searchUsers"() {
         given: "We have a LdapUserManager"
         def userManager = new LdapUserManager(ldapConfiguration)
 
@@ -225,7 +228,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
         def result = userManager.searchUsers(createContext())
 
         then: "A list of users are returned."
-        result.next().getName() + "," + ldapConfiguration.getBaseDn() == principal
+        result.first().getPrincipal() == principal
     }
 
     def "Test successfully returning an Ldap user from a get user request"() {
@@ -324,7 +327,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
         def ldapUserManager = new LdapUserManager(ldapconfig)
 
         when: "A request for search users is made"
-        def result = ldapUserManager.searchUsers(new InitialDirContext())
+        def result = ldapUserManager.searchUsers(new InitialLdapContext())
 
         then: "An exception with no basedn defined is returned"
         def e = thrown(IllegalArgumentException)

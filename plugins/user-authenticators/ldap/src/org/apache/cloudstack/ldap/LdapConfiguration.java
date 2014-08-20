@@ -34,6 +34,9 @@ public class LdapConfiguration implements Configurable{
     private static final ConfigKey<Long> ldapReadTimeout = new ConfigKey<Long>(Long.class, "ldap.read.timeout", "Advanced", "1000",
         "LDAP connection Timeout in milli sec", true, ConfigKey.Scope.Global, 1l);
 
+    private static final ConfigKey<Integer> ldapPageSize = new ConfigKey<Integer>(Integer.class, "ldap.request.page.size", "Advanced", "1000",
+                                                                               "page size sent to ldap server on each request to get user", true, ConfigKey.Scope.Global, 1);
+
     private final static int scope = SearchControls.SUBTREE_SCOPE;
 
     @Inject
@@ -158,6 +161,10 @@ public class LdapConfiguration implements Configurable{
         return ldapReadTimeout.value();
     }
 
+    public Integer getLdapPageSize() {
+        return ldapPageSize.value();
+    }
+
     @Override
     public String getConfigComponentName() {
         return LdapConfiguration.class.getSimpleName();
@@ -165,6 +172,6 @@ public class LdapConfiguration implements Configurable{
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ldapReadTimeout};
+        return new ConfigKey<?>[] {ldapReadTimeout, ldapPageSize};
     }
 }

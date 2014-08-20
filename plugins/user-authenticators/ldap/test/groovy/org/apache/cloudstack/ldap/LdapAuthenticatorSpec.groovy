@@ -34,7 +34,7 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
 		when: "A user authentications"
         def result = ldapAuthenticator.authenticate("rmurphy", "password", 0, null)
 		then: "their authentication fails"
-		result == false
+		result.first() == false
     }
 
     def "Test failed authentication due to ldap bind being unsuccessful"() {
@@ -51,7 +51,7 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
 		def result = ldapAuthenticator.authenticate("rmurphy", "password", 0, null)
 
 		then: "their authentication fails"
-		result == false
+		result.first() == false
     }
 
     def "Test failed authentication due to ldap not being configured"() {
@@ -66,7 +66,7 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
 		when: "The user authenticates"
 		def result = ldapAuthenticator.authenticate("rmurphy", "password", 0, null)
 		then: "their authentication fails"
-		result == false
+		result.first() == false
     }
 
 	def "Test successful authentication"() {
@@ -83,7 +83,7 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
 		def result = ldapAuthenticator.authenticate("rmurphy", "password", 0, null)
 
 		then: "their authentication passes"
-		result == true
+		result.first() == true
 	}
 
     def "Test that encode doesn't change the input"() {

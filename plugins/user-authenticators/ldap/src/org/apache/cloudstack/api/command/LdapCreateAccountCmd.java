@@ -21,8 +21,6 @@ import java.security.SecureRandom;
 import java.util.Map;
 
 import javax.inject.Inject;
-import javax.naming.NamingException;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,6 +33,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
+import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
 import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 
@@ -134,7 +133,7 @@ public class LdapCreateAccountCmd extends BaseCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a user account");
             }
-        } catch (final NamingException e) {
+        } catch (NoLdapUserMatchingQueryException e) {
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, "No LDAP user exists with the username of " + username);
         }
     }
