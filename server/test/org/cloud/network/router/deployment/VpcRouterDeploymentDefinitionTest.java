@@ -40,7 +40,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.VirtualRouterProviderVO;
-import com.cloud.network.router.VpcNetworkHelper;
+import com.cloud.network.router.NicProfileHelper;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
@@ -67,7 +67,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     @Mock
     protected VpcManager vpcMgr;
     @Mock
-    protected VpcNetworkHelper vpcHelper;
+    protected NicProfileHelper vpcHelper;
 
     protected RouterDeploymentDefinition deployment;
 
