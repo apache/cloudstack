@@ -798,11 +798,10 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         //this.deployment.routers.add(routerVO1);
         RouterDeploymentDefinition deploymentUT = spy(this.deployment);
         doReturn(2).when(deploymentUT).getNumberOfRoutersToDeploy();
-        doReturn(null).when(this.mockNetworkGeneralHelper).createRouterNetworks(deploymentUT);
 
         final DomainRouterVO routerVO1 = mock(DomainRouterVO.class);
         final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
-        when(this.mockNetworkGeneralHelper.deployRouter(deploymentUT, null, false, null))
+        when(this.mockNetworkGeneralHelper.deployRouter(deploymentUT, false, null))
             .thenReturn(routerVO1).thenReturn(routerVO2);
 
         // Execute

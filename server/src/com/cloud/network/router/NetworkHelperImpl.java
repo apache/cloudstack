@@ -29,7 +29,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -99,9 +98,7 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
-@Component
-//This will not be a public service anymore, but a helper for the only public service
-@Local(value = {NetworkHelperImpl.class})
+@Local(value = {NetworkHelper.class})
 public class NetworkHelperImpl implements NetworkHelper {
 
     private static final Logger s_logger = Logger.getLogger(NetworkHelperImpl.class);
@@ -509,19 +506,8 @@ public class NetworkHelperImpl implements NetworkHelper {
         return result;
     }
 
-    //    @Override
-//    public DomainRouterVO deployRouter(final RouterDeploymentDefinition routerDeploymentDefinition) {
-//        routerDeploymentDefinition.createNetwork();
-//        doDeployRouter
-//    }
-
-    //    @Override
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.NetworkHelper#deployRouter(org.cloud.network.router.deployment.RouterDeploymentDefinition, java.util.LinkedHashMap, boolean, java.util.List)
-     */
     @Override
     public DomainRouterVO deployRouter(final RouterDeploymentDefinition routerDeploymentDefinition,
-            final LinkedHashMap<Network, List<? extends NicProfile>> networks,
             final boolean startRouter, final List<HypervisorType> supportedHypervisors)
                     throws InsufficientAddressCapacityException,
                     InsufficientServerCapacityException, InsufficientCapacityException,
@@ -590,6 +576,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                 router.setDynamicallyScalable(template.isDynamicallyScalable());
                 router.setRole(Role.VIRTUAL_ROUTER);
                 router = _routerDao.persist(router);
+                LinkedHashMap<Network, List<? extends NicProfile>> networks = this.createRouterNetworks(routerDeploymentDefinition);
                 _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, routerDeploymentDefinition.getPlan(), null);
                 router = _routerDao.findById(router.getId());
             } catch (final InsufficientCapacityException ex) {
@@ -704,10 +691,6 @@ public class NetworkHelperImpl implements NetworkHelper {
     }
 
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.NetworkHelper#createRouterNetworks(org.cloud.network.router.deployment.RouterDeploymentDefinition)
-     */
-    @Override
     public LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(
             final RouterDeploymentDefinition routerDeploymentDefinition)
                     throws ConcurrentOperationException, InsufficientAddressCapacityException {

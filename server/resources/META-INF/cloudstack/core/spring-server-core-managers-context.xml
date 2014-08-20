@@ -197,11 +197,17 @@
     <bean id="routerControlHelper"
         class="com.cloud.network.router.RouterControlHelper" />
         
-    <bean id="networkGeneralHelper"
-        class="com.cloud.network.router.NetworkGeneralHelper" />
+    <bean id="networkHelper"
+        class="com.cloud.network.router.NetworkHelperImpl" />
+        
+    <bean id="vpcNetworkHelper"
+        class="com.cloud.network.router.VpcNetworkHelperImpl" />
         
     <bean id="vpcVirtualNetworkHelper"
         class="com.cloud.network.router.VpcVirtualNetworkHelperImpl" />
+        
+    <bean id="nicProfileHelper"
+        class="com.cloud.network.router.NicProfileHelperImpl" />
         
     <bean id="routerDeploymentDefinitionBuilder"
         class="org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder" />

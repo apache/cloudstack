@@ -17,7 +17,6 @@
 package org.cloud.network.router.deployment;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,12 +29,10 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.router.VpcNetworkHelper;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -43,7 +40,6 @@ import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 
@@ -56,7 +52,6 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     protected PhysicalNetworkDao pNtwkDao;
     protected VpcManager vpcMgr;
     protected VlanDao vlanDao;
-    protected VpcNetworkHelper vpcNetworkHelper;
 
     protected Vpc vpc;
 
@@ -166,10 +161,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     protected void deployAllVirtualRouters()
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
-        LinkedHashMap<Network, List<? extends NicProfile>> networks = this.vpcNetworkHelper.createRouterNetworks(this);
-
-        DomainRouterVO router =
-                nwHelper.deployRouter(this, networks, true, vpcMgr.getSupportedVpcHypervisors());
+        DomainRouterVO router = this.nwHelper.deployRouter(this, true, vpcMgr.getSupportedVpcHypervisors());
 
         if (router != null) {
             this.routers.add(router);
