@@ -20,7 +20,7 @@
 package com.cloud.agent.resource.virtualnetwork.model;
 
 public class UdpAclRule extends AclRule {
-    private final String type = "ucp";
+    private final String type = "udp";
     private int firstPort;
     private int lastPort;
 
