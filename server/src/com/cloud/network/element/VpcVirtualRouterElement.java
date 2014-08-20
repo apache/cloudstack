@@ -384,8 +384,11 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         }
 
         VirtualRouter router = routers.get(0);
+        
+        DataCenterVO dcVO = _dcDao.findById(gateway.getZoneId());
+        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-        if (_vpcRouterMgr.setupPrivateGateway(gateway, router)) {
+        if (networkTopology.setupPrivateGateway(gateway, router)) {
             try {
                 List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(gateway.getNetworkACLId());
                 if (!applyACLItemsToPrivateGw(gateway, rules)) {

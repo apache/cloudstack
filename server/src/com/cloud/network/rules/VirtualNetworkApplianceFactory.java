@@ -30,6 +30,7 @@ import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -41,8 +42,11 @@ import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.NetworkACLManager;
+import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -122,6 +126,9 @@ public class VirtualNetworkApplianceFactory {
     protected IPAddressDao _ipAddressDao;
 
     @Inject
+    protected PrivateIpDao _privateIpDao;
+
+    @Inject
     protected RouterControlHelper _routerControlHelper;
 
     @Inject
@@ -131,7 +138,13 @@ public class VirtualNetworkApplianceFactory {
     protected IpAddressManager _ipAddrMgr;
 
     @Inject
+    protected NetworkACLManager _networkACLMgr;
+
+    @Inject
     protected NetworkHelper _networkHelper;
+
+    @Inject
+    protected VpcNetworkHelper _vpcNetworkHelper;
 
     public LoadBalancingRules createLoadBalancingRules(final Network network, final List<LoadBalancingRule> rules) {
         LoadBalancingRules lbRules = new LoadBalancingRules(network, rules);
@@ -305,11 +318,31 @@ public class VirtualNetworkApplianceFactory {
         return pvlanRules;
     }
 
-	public StaticRoutesRules createStaticRoutesRules(List<StaticRouteProfile> staticRoutes) {
-		StaticRoutesRules routesRules = new StaticRoutesRules(staticRoutes);
-		
-		initBeans(routesRules);
-		
-		return routesRules;
-	}
+    public StaticRoutesRules createStaticRoutesRules(final List<StaticRouteProfile> staticRoutes) {
+        StaticRoutesRules routesRules = new StaticRoutesRules(staticRoutes);
+
+        initBeans(routesRules);
+
+        return routesRules;
+    }
+
+    public AdvancedVpnRules createAdvancedVpnRules(final RemoteAccessVpn remoteAccessVpn, final List<? extends VpnUser> users) {
+        AdvancedVpnRules vpnRules = new AdvancedVpnRules(remoteAccessVpn, users);
+
+        initBeans(vpnRules);
+
+        return vpnRules;
+    }
+
+    public PrivateGatewayRules createPrivateGatewayRules(final PrivateGateway gateway) {
+        PrivateGatewayRules gwRules = new PrivateGatewayRules(gateway);
+
+        initBeans(gwRules);
+
+        gwRules._privateIpDao = _privateIpDao;
+        gwRules._networkACLMgr = _networkACLMgr;
+        gwRules._vpcNetworkHelper = _vpcNetworkHelper;
+
+        return gwRules;
+    }
 }
