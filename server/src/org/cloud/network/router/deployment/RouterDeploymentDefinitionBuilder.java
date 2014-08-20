@@ -56,7 +56,7 @@ public class RouterDeploymentDefinitionBuilder {
     @Inject
     protected NetworkDao networkDao;
     @Inject
-    private DomainRouterDao routerDao = null;
+    private DomainRouterDao routerDao;
     @Inject
     private PhysicalNetworkServiceProviderDao physicalProviderDao;
     @Inject
@@ -99,7 +99,7 @@ public class RouterDeploymentDefinitionBuilder {
 
     protected Long offeringId;
 
-    public void setOfferingId(Long offeringId) {
+    public void setOfferingId(final Long offeringId) {
         this.offeringId = offeringId;
     }
 
@@ -110,26 +110,26 @@ public class RouterDeploymentDefinitionBuilder {
     protected RouterDeploymentDefinition injectDependencies(
             final RouterDeploymentDefinition routerDeploymentDefinition) {
 
-        routerDeploymentDefinition.networkDao = this.networkDao;
-        routerDeploymentDefinition.routerDao = this.routerDao;
-        routerDeploymentDefinition.physicalProviderDao = this.physicalProviderDao;
-        routerDeploymentDefinition.networkModel = this.networkModel;
-        routerDeploymentDefinition.vrProviderDao = this.vrProviderDao;
-        routerDeploymentDefinition.networkOfferingDao = this.networkOfferingDao;
-        routerDeploymentDefinition.ipAddrMgr = this.ipAddrMgr;
-        routerDeploymentDefinition.vmDao = this.vmDao;
-        routerDeploymentDefinition.podDao = this.podDao;
-        routerDeploymentDefinition.accountMgr = this.accountMgr;
-        routerDeploymentDefinition.networkMgr = this.networkMgr;
-        routerDeploymentDefinition.nicDao = this.nicDao;
-        routerDeploymentDefinition.ipv6Dao = this.ipv6Dao;
-        routerDeploymentDefinition.ipAddressDao = this.ipAddressDao;
-        routerDeploymentDefinition.offeringId = this.offeringId;
+        routerDeploymentDefinition.networkDao = networkDao;
+        routerDeploymentDefinition.routerDao = routerDao;
+        routerDeploymentDefinition.physicalProviderDao = physicalProviderDao;
+        routerDeploymentDefinition.networkModel = networkModel;
+        routerDeploymentDefinition.vrProviderDao = vrProviderDao;
+        routerDeploymentDefinition.networkOfferingDao = networkOfferingDao;
+        routerDeploymentDefinition.ipAddrMgr = ipAddrMgr;
+        routerDeploymentDefinition.vmDao = vmDao;
+        routerDeploymentDefinition.podDao = podDao;
+        routerDeploymentDefinition.accountMgr = accountMgr;
+        routerDeploymentDefinition.networkMgr = networkMgr;
+        routerDeploymentDefinition.nicDao = nicDao;
+        routerDeploymentDefinition.ipv6Dao = ipv6Dao;
+        routerDeploymentDefinition.ipAddressDao = ipAddressDao;
+        routerDeploymentDefinition.offeringId = offeringId;
 
-        routerDeploymentDefinition.nwHelper = this.nwHelper;
+        routerDeploymentDefinition.nwHelper = nwHelper;
 
         if (routerDeploymentDefinition instanceof VpcRouterDeploymentDefinition) {
-            this.injectVpcDependencies((VpcRouterDeploymentDefinition) routerDeploymentDefinition);
+            injectVpcDependencies((VpcRouterDeploymentDefinition) routerDeploymentDefinition);
         }
 
         return routerDeploymentDefinition;
@@ -138,14 +138,14 @@ public class RouterDeploymentDefinitionBuilder {
     protected void injectVpcDependencies(
             final VpcRouterDeploymentDefinition routerDeploymentDefinition) {
 
-        routerDeploymentDefinition.vpcDao = this.vpcDao;
-        routerDeploymentDefinition.vpcOffDao = this.vpcOffDao;
-        routerDeploymentDefinition.pNtwkDao = this.pNtwkDao;
-        routerDeploymentDefinition.vpcMgr = this.vpcMgr;
-        routerDeploymentDefinition.vlanDao = this.vlanDao;
-        routerDeploymentDefinition.vpcHelper = this.vpcNwHelper;
+        routerDeploymentDefinition.vpcDao = vpcDao;
+        routerDeploymentDefinition.vpcOffDao = vpcOffDao;
+        routerDeploymentDefinition.pNtwkDao = pNtwkDao;
+        routerDeploymentDefinition.vpcMgr = vpcMgr;
+        routerDeploymentDefinition.vlanDao = vlanDao;
+        routerDeploymentDefinition.nwHelper = vpcNwHelper;
+        routerDeploymentDefinition.routerDao = routerDao;
     }
-
 
     public class IntermediateStateBuilder {
 
@@ -159,16 +159,16 @@ public class RouterDeploymentDefinitionBuilder {
         protected boolean isRedundant;
         protected List<DomainRouterVO> routers = new ArrayList<>();
 
-        protected IntermediateStateBuilder(RouterDeploymentDefinitionBuilder builder) {
+        protected IntermediateStateBuilder(final RouterDeploymentDefinitionBuilder builder) {
             this.builder = builder;
         }
 
         public IntermediateStateBuilder makeRedundant() {
-            this.isRedundant = true;
+            isRedundant = true;
             return this;
         }
 
-        public IntermediateStateBuilder setRedundant(boolean isRedundant) {
+        public IntermediateStateBuilder setRedundant(final boolean isRedundant) {
             this.isRedundant = isRedundant;
             return this;
         }
@@ -179,7 +179,7 @@ public class RouterDeploymentDefinitionBuilder {
         }
 
         public IntermediateStateBuilder setGuestNetwork(final Network nw) {
-            this.guestNetwork = nw;
+            guestNetwork = nw;
             return this;
         }
 
@@ -200,7 +200,7 @@ public class RouterDeploymentDefinitionBuilder {
 
         public RouterDeploymentDefinition build() {
             RouterDeploymentDefinition routerDeploymentDefinition = null;
-            if (this.vpc != null) {
+            if (vpc != null) {
                 routerDeploymentDefinition = new VpcRouterDeploymentDefinition(vpc, dest, owner, params, isRedundant);
             } else {
                 routerDeploymentDefinition = new RouterDeploymentDefinition(guestNetwork, dest, owner, params, isRedundant);
