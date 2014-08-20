@@ -13,7 +13,7 @@ Network-as-a-Service, user and account management, a full and open native API,
 resource accounting, and a first-class User Interface (UI).
 
 CloudStack currently supports the most popular hypervisors:
-VMware, KVM, XenServer, Xen Cloud Platform (XCP) and Hyper-V.
+VMware, KVM, XenServer, XenProject and Hyper-V.
 
 Users can manage their cloud with an easy to use Web interface, command line
 tools, and/or a full-featured RESTful API. In addition, CloudStack provides an
