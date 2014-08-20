@@ -30,6 +30,7 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Pod;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Status;
 import com.cloud.network.Network;
@@ -39,12 +40,14 @@ import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.DhcpSubNetRules;
 import com.cloud.network.rules.NetworkAclsRules;
 import com.cloud.network.rules.NicPlugInOutRules;
+import com.cloud.network.rules.PrivateGatewayRules;
 import com.cloud.network.rules.RuleApplier;
 import com.cloud.network.rules.RuleApplierWrapper;
 import com.cloud.network.rules.StaticRoutesRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -116,6 +119,15 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         DhcpSubNetRules subNetRules = _virtualNetworkApplianceFactory.createDhcpSubNetRules(network, nic, profile);
 
         return subNetRules.accept(_advancedVisitor, router);
+    }
+    
+    @Override
+    public boolean setupPrivateGateway(PrivateGateway gateway, VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
+    	s_logger.debug("SETUP PRIVATE GATEWAY RULES");
+
+    	PrivateGatewayRules routesRules = _virtualNetworkApplianceFactory.createPrivateGatewayRules(gateway);
+
+    	return routesRules.accept(_advancedVisitor, router);
     }
 
     @Override

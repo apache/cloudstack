@@ -649,42 +649,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return _nwHelper.sendCommandsToRouter(router, cmds);
     }
 
-    @Override
-    public boolean setupPrivateGateway(final PrivateGateway gateway, final VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
-        boolean result = true;
-        try {
-            Network network = _networkModel.getNetwork(gateway.getNetworkId());
-            NicProfile requested = vpcHelper.createPrivateNicProfileForGateway(gateway);
-
-            if (!_nwHelper.checkRouterVersion(router)) {
-                s_logger.warn("Router requires upgrade. Unable to send command to router: " + router.getId());
-                return false;
-            }
-            NicProfile guestNic = _itMgr.addVmToNetwork(router, network, requested);
-
-            //setup source nat
-            if (guestNic != null) {
-                result = setupVpcPrivateNetwork(router, true, guestNic);
-            } else {
-                s_logger.warn("Failed to setup gateway " + gateway + " on router " + router + " with the source nat");
-                result = false;
-            }
-        } catch (Exception ex) {
-            s_logger.warn("Failed to create private gateway " + gateway + " on router " + router + " due to ", ex);
-            result = false;
-        } finally {
-            if (!result) {
-                s_logger.debug("Removing gateway " + gateway + " from router " + router + " as a part of cleanup");
-                if (destroyPrivateGateway(gateway, router)) {
-                    s_logger.debug("Removed the gateway " + gateway + " from router " + router + " as a part of cleanup");
-                } else {
-                    s_logger.warn("Failed to remove the gateway " + gateway + " from router " + router + " as a part of cleanup");
-                }
-            }
-        }
-        return result;
-    }
-
     /**
      * @param router
      * @param add

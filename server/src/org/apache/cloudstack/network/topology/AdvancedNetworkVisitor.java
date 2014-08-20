@@ -28,6 +28,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.manager.Commands;
+import com.cloud.dc.DataCenter;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
@@ -41,9 +42,14 @@ import com.cloud.network.rules.StaticRoutesRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.PrivateIpAddress;
+import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.network.vpc.StaticRouteProfile;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicIpAliasVO;
 
@@ -123,7 +129,46 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
     @Override
     public boolean visit(final PrivateGatewayRules privateGW) throws ResourceUnavailableException {
-        return false;
+    	final VirtualRouter router = privateGW.getRouter();
+    	final NicProfile nicProfile = privateGW.getNicProfile();
+
+    	final boolean isAddOperation = privateGW.isAddOperation();
+
+    	if (router.getState() == State.Running) {
+    		
+            PrivateIpVO ipVO = privateGW.retrivePrivateIP();
+            Network network = privateGW.retrievePrivateNetwork();
+            
+            String netmask = NetUtils.getCidrNetmask(network.getCidr());
+            PrivateIpAddress ip = new PrivateIpAddress(ipVO, network.getBroadcastUri().toString(), network.getGateway(), netmask, nicProfile.getMacAddress());
+
+            List<PrivateIpAddress> privateIps = new ArrayList<PrivateIpAddress>(1);
+            privateIps.add(ip);
+            
+            Commands cmds = new Commands(Command.OnError.Stop);
+            privateGW.createVpcAssociatePrivateIPCommands(router, privateIps, cmds, isAddOperation);
+
+            try{
+                if (_networkGeneralHelper.sendCommandsToRouter(router, cmds)) {
+                    s_logger.debug("Successfully applied ip association for ip " + ip + " in vpc network " + network);
+                    return true;
+                } else {
+                    s_logger.warn("Failed to associate ip address " + ip + " in vpc network " + network);
+                    return false;
+                }
+            }catch (Exception ex) {
+                s_logger.warn("Failed to send  " + (isAddOperation ?"add ":"delete ") + " private network " + network + " commands to rotuer ");
+                return false;
+            }
+        } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+            s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending setup private network command to the backend");
+        } else {
+            s_logger.warn("Unable to setup private gateway, virtual router " + router + " is not in the right state " + router.getState());
+
+            throw new ResourceUnavailableException("Unable to setup Private gateway on the backend," + " virtual router " + router + " is not in the right state",
+                    DataCenter.class, router.getDataCenterId());
+        }
+        return true;
     }
 
     @Override
