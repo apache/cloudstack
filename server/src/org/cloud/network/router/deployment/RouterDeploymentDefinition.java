@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
@@ -88,15 +86,7 @@ public class RouterDeploymentDefinition {
     protected UserIpv6AddressDao ipv6Dao;
     protected IPAddressDao ipAddressDao;
     protected VirtualRouterProvider vrProvider;
-<<<<<<< HEAD
-
-
-    @Inject
-    protected NetworkGeneralHelper nwHelper;
-=======
     protected NetworkHelper nwHelper;
->>>>>>> 40df9d4... Refactor to include network creation as actual deployment
-
 
     protected Network guestNetwork;
     protected DeployDestination dest;
@@ -110,8 +100,7 @@ public class RouterDeploymentDefinition {
     protected boolean isPublicNetwork;
     protected PublicIp sourceNatIp;
 
-    protected RouterDeploymentDefinition(final Network guestNetwork, final DeployDestination dest,
-            final Account owner, final Map<Param, Object> params, final boolean isRedundant) {
+    protected RouterDeploymentDefinition(final Network guestNetwork, final DeployDestination dest, final Account owner, final Map<Param, Object> params, final boolean isRedundant) {
 
         this.guestNetwork = guestNetwork;
         this.dest = dest;
@@ -121,98 +110,105 @@ public class RouterDeploymentDefinition {
     }
 
     public Long getOfferingId() {
-        return this.offeringId;
+        return offeringId;
     }
 
     public Vpc getVpc() {
         return null;
     }
+
     public Network getGuestNetwork() {
         return guestNetwork;
     }
+
     public DeployDestination getDest() {
         return dest;
     }
+
     public Account getOwner() {
         return owner;
     }
+
     public Map<Param, Object> getParams() {
         return params;
     }
+
     public boolean isRedundant() {
         return isRedundant;
     }
+
     public DeploymentPlan getPlan() {
         return plan;
     }
+
     public boolean isVpcRouter() {
         return false;
     }
+
     public Pod getPod() {
         return dest.getPod();
     }
+
     public Long getPodId() {
         return dest.getPod() == null ? null : dest.getPod().getId();
     }
+
     public List<DomainRouterVO> getRouters() {
         return routers;
     }
 
     public VirtualRouterProvider getVirtualProvider() {
-        return this.vrProvider;
+        return vrProvider;
     }
 
     public boolean isBasic() {
-        return this.dest.getDataCenter().getNetworkType() == NetworkType.Basic;
+        return dest.getDataCenter().getNetworkType() == NetworkType.Basic;
     }
 
     public boolean isPublicNetwork() {
-        return this.isPublicNetwork;
+        return isPublicNetwork;
     }
 
     public PublicIp getSourceNatIP() {
-        return this.sourceNatIp;
+        return sourceNatIp;
     }
 
     protected void generateDeploymentPlan() {
-        final long dcId = this.dest.getDataCenter().getId();
+        final long dcId = dest.getDataCenter().getId();
         Long podId = null;
-        if (this.isBasic()) {
-            if (this.dest.getPod() == null) {
+        if (isBasic()) {
+            if (dest.getPod() == null) {
                 throw new CloudRuntimeException("Pod id is expected in deployment destination");
             }
-            podId = this.dest.getPod().getId();
+            podId = dest.getPod().getId();
         }
-        this.plan = new DataCenterDeployment(dcId, podId, null, null, null, null);
+        plan = new DataCenterDeployment(dcId, podId, null, null, null, null);
     }
 
-    public List<DomainRouterVO> deployVirtualRouter()
-            throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException {
+    public List<DomainRouterVO> deployVirtualRouter() throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
 
-        this.findOrDeployVirtualRouter();
+        findOrDeployVirtualRouter();
 
         return nwHelper.startRouters(this);
     }
 
     @DB
-    protected void findOrDeployVirtualRouter()
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+    protected void findOrDeployVirtualRouter() throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         try {
-            this.lock();
-            this.checkPreconditions();
+            lock();
+            checkPreconditions();
             // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
             final List<DeployDestination> destinations = findDestinations();
 
             for (final DeployDestination destination : destinations) {
-                this.dest = destination;
-                this.planDeploymentRouters();
-                this.generateDeploymentPlan();
-                this.executeDeployment();
+                dest = destination;
+                planDeploymentRouters();
+                generateDeploymentPlan();
+                executeDeployment();
             }
         } finally {
-            this.unlock();
+            unlock();
         }
     }
 
@@ -221,30 +217,25 @@ public class RouterDeploymentDefinition {
         if (lock == null) {
             throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
         }
-        this.tableLockId = lock.getId();
+        tableLockId = lock.getId();
     }
 
     protected void unlock() {
-        if (this.tableLockId != null) {
-            networkDao.releaseFromLockTable(this.tableLockId);
+        if (tableLockId != null) {
+            networkDao.releaseFromLockTable(tableLockId);
             if (logger.isDebugEnabled()) {
-                logger.debug("Lock is released for network id " + this.tableLockId
-                        + " as a part of router startup in " + dest);
+                logger.debug("Lock is released for network id " + tableLockId + " as a part of router startup in " + dest);
             }
         }
     }
 
     protected void checkPreconditions() throws ResourceUnavailableException {
-        if (guestNetwork.getState() != Network.State.Implemented &&
-                guestNetwork.getState() != Network.State.Setup &&
-                guestNetwork.getState() != Network.State.Implementing) {
-            throw new ResourceUnavailableException("Network is not yet fully implemented: " + guestNetwork,
-                    Network.class, this.guestNetwork.getId());
+        if (guestNetwork.getState() != Network.State.Implemented && guestNetwork.getState() != Network.State.Setup && guestNetwork.getState() != Network.State.Implementing) {
+            throw new ResourceUnavailableException("Network is not yet fully implemented: " + guestNetwork, Network.class, guestNetwork.getId());
         }
 
         if (guestNetwork.getTrafficType() != TrafficType.Guest) {
-            throw new ResourceUnavailableException("Network is not type Guest as expected: " + guestNetwork,
-                    Network.class, this.guestNetwork.getId());
+            throw new ResourceUnavailableException("Network is not type Guest as expected: " + guestNetwork, Network.class, guestNetwork.getId());
         }
     }
 
@@ -252,9 +243,11 @@ public class RouterDeploymentDefinition {
         // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
         final List<DeployDestination> destinations = new ArrayList<DeployDestination>();
 
-        // for basic zone, if 'dest' has pod set to null then this is network restart scenario otherwise it is a vm deployment scenario
-        if (this.isBasic() && dest.getPod() == null) {
-            // Find all pods in the data center with running or starting user vms
+        // for basic zone, if 'dest' has pod set to null then this is network
+        // restart scenario otherwise it is a vm deployment scenario
+        if (isBasic() && dest.getPod() == null) {
+            // Find all pods in the data center with running or starting user
+            // vms
             final long dcId = dest.getDataCenter().getId();
             final List<HostPodVO> pods = listByDataCenterIdVMTypeAndStates(dcId, VirtualMachine.Type.User, VirtualMachine.State.Starting, VirtualMachine.State.Running);
 
@@ -265,15 +258,19 @@ public class RouterDeploymentDefinition {
                 final List<DomainRouterVO> virtualRouters = routerDao.listByPodIdAndStates(podId, VirtualMachine.State.Starting, VirtualMachine.State.Running);
 
                 if (virtualRouters.size() > 1) {
-                    // FIXME Find or create a better and more specific exception for this
+                    // FIXME Find or create a better and more specific exception
+                    // for this
                     throw new CloudRuntimeException("Pod can have utmost one VR in Basic Zone, please check!");
                 }
 
-                // Add virtualRouters to the routers, this avoids the situation when
-                // all routers are skipped and VirtualRouterElement throws exception
-                this.routers.addAll(virtualRouters);
+                // Add virtualRouters to the routers, this avoids the situation
+                // when
+                // all routers are skipped and VirtualRouterElement throws
+                // exception
+                routers.addAll(virtualRouters);
 
-                // If List size is one, we already have a starting or running VR, skip deployment
+                // If List size is one, we already have a starting or running
+                // VR, skip deployment
                 if (virtualRouters.size() == 1) {
                     logger.debug("Skipping VR deployment: Found a running or starting VR in Pod " + pod.getName() + " id=" + podId);
                     continue;
@@ -290,43 +287,43 @@ public class RouterDeploymentDefinition {
 
     protected int getNumberOfRoutersToDeploy() {
         // TODO Are we sure this makes sense? Somebody said 5 was too many?
-        if (this.routers.size() >= 5) {
+        if (routers.size() >= 5) {
             logger.error("Too many redundant routers!");
         }
 
-        // If old network is redundant but new is single router, then routers.size() = 2 but routerCount = 1
+        // If old network is redundant but new is single router, then
+        // routers.size() = 2 but routerCount = 1
         int routersExpected = 1;
-        if (this.isRedundant) {
+        if (isRedundant) {
             routersExpected = 2;
         }
-        return routersExpected < this.routers.size() ?
-                0 : routersExpected - this.routers.size();
+        return routersExpected < routers.size() ? 0 : routersExpected - routers.size();
     }
 
     protected void setupAccountOwner() {
         if (networkModel.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
-            this.owner = accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
+            owner = accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
         }
     }
 
     /**
-     * It executes last pending tasks to prepare the deployment and checks the deployment
-     * can proceed. If it can't it return false
-     *
+     * It executes last pending tasks to prepare the deployment and checks the
+     * deployment can proceed. If it can't it return false
+     * 
      * @return if the deployment can proceed
      */
     protected boolean prepareDeployment() {
-        this.setupAccountOwner();
+        setupAccountOwner();
 
         // Check if public network has to be set on VR
-        this.isPublicNetwork = networkModel.isProviderSupportServiceInNetwork(
-                        guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter);
+        isPublicNetwork = networkModel.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter);
 
         boolean canProceed = true;
-        if (this.isRedundant && !this.isPublicNetwork) {
-            // TODO Shouldn't be this throw an exception instead of log error and empty list of routers
+        if (isRedundant && !isPublicNetwork) {
+            // TODO Shouldn't be this throw an exception instead of log error
+            // and empty list of routers
             logger.error("Didn't support redundant virtual router without public network!");
-            this.routers = new ArrayList<>();
+            routers = new ArrayList<>();
             canProceed = false;
         }
 
@@ -334,39 +331,39 @@ public class RouterDeploymentDefinition {
     }
 
     /**
-     * Executes preparation and deployment of the routers. After this method ends, {@link this#routers}
-     * should have all of the deployed routers ready for start, and no more.
-     *
+     * Executes preparation and deployment of the routers. After this method
+     * ends, {@link this#routers} should have all of the deployed routers ready
+     * for start, and no more.
+     * 
      * @throws ConcurrentOperationException
      * @throws InsufficientCapacityException
      * @throws ResourceUnavailableException
      */
-    protected void executeDeployment()
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+    protected void executeDeployment() throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
-        //Check current redundant routers, if possible(all routers are stopped), reset the priority
-        this.setupPriorityOfRedundantRouter();
+        // Check current redundant routers, if possible(all routers are
+        // stopped), reset the priority
+        setupPriorityOfRedundantRouter();
 
-        if (this.getNumberOfRoutersToDeploy() > 0 && this.prepareDeployment()) {
-            this.findVirtualProvider();
-            this.findOfferingId();
-            this.findSourceNatIP();
-            this.deployAllVirtualRouters();
+        if (getNumberOfRoutersToDeploy() > 0 && prepareDeployment()) {
+            findVirtualProvider();
+            findOfferingId();
+            findSourceNatIP();
+            deployAllVirtualRouters();
         }
     }
 
     protected void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
-        this.sourceNatIp = null;
-        if (this.isPublicNetwork) {
-            this.sourceNatIp = this.ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(
-                    this.owner,this.guestNetwork);
+        sourceNatIp = null;
+        if (isPublicNetwork) {
+            sourceNatIp = ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
         }
     }
 
     protected void findOfferingId() {
         Long networkOfferingId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
         if (networkOfferingId != null) {
-            this.offeringId = networkOfferingId;
+            offeringId = networkOfferingId;
         }
     }
 
@@ -374,42 +371,37 @@ public class RouterDeploymentDefinition {
         // Check if providers are supported in the physical networks
         final Type type = Type.VirtualRouter;
         final Long physicalNetworkId = networkModel.getPhysicalNetworkId(guestNetwork);
-        final PhysicalNetworkServiceProvider provider =
-                physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
+        final PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
 
         if (provider == null) {
-            throw new CloudRuntimeException(
-                    String.format("Cannot find service provider %s  in physical network %s",
-                            type.toString(), physicalNetworkId));
+            throw new CloudRuntimeException(String.format("Cannot find service provider %s  in physical network %s", type.toString(), physicalNetworkId));
         }
 
-        this.vrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), type);
-        if (this.vrProvider == null) {
-            throw new CloudRuntimeException(
-                    String.format("Cannot find virtual router provider %s as service provider %s",
-                            type.toString(), provider.getId()));
+        vrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), type);
+        if (vrProvider == null) {
+            throw new CloudRuntimeException(String.format("Cannot find virtual router provider %s as service provider %s", type.toString(), provider.getId()));
         }
     }
 
-    protected void deployAllVirtualRouters()
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+    protected void deployAllVirtualRouters() throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
-        int routersToDeploy = this.getNumberOfRoutersToDeploy();
-        for(int i = 0; i < routersToDeploy; i++) {
-            // Don't start the router as we are holding the network lock that needs to be released at the end of router allocation
-            DomainRouterVO router = this.nwHelper.deployRouter(this, false, null);
+        int routersToDeploy = getNumberOfRoutersToDeploy();
+        for (int i = 0; i < routersToDeploy; i++) {
+            // Don't start the router as we are holding the network lock that
+            // needs to be released at the end of router allocation
+            DomainRouterVO router = nwHelper.deployRouter(this, false, null);
 
             if (router != null) {
-                this.routerDao.addRouterToGuestNetwork(router, this.guestNetwork);
-                this.routers.add(router);
+                routerDao.addRouterToGuestNetwork(router, guestNetwork);
+                routers.add(router);
             }
         }
     }
 
     /**
-     * Lists all pods given a Data Center Id, a {@link VirtualMachine.Type} and a list of
-     * {@link VirtualMachine.State}
-     *
+     * Lists all pods given a Data Center Id, a {@link VirtualMachine.Type} and
+     * a list of {@link VirtualMachine.State}
+     * 
      * @param id
      * @param type
      * @param states
@@ -429,28 +421,27 @@ public class RouterDeploymentDefinition {
         final SearchCriteria<HostPodVO> sc = podIdSearch.create();
         sc.setParameters("dc", id);
         sc.setJoinParameters("vmInstanceSearch", "type", type);
-        sc.setJoinParameters("vmInstanceSearch", "states", (Object[])states);
+        sc.setJoinParameters("vmInstanceSearch", "states", (Object[]) states);
         return podDao.search(sc, null);
     }
 
     protected void planDeploymentRouters() {
-        if (this.isBasic()) {
-            this.routers = routerDao.listByNetworkAndPodAndRole(this.guestNetwork.getId(),
-                    this.getPodId(), Role.VIRTUAL_ROUTER);
+        if (isBasic()) {
+            routers = routerDao.listByNetworkAndPodAndRole(guestNetwork.getId(), getPodId(), Role.VIRTUAL_ROUTER);
         } else {
-            this.routers = routerDao.listByNetworkAndRole(this.guestNetwork.getId(),
-                    Role.VIRTUAL_ROUTER);
+            routers = routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.VIRTUAL_ROUTER);
         }
     }
 
     /**
-     * Routers need reset if at least one of the routers is not redundant or stopped.
-     *
+     * Routers need reset if at least one of the routers is not redundant or
+     * stopped.
+     * 
      * @return
      */
     protected boolean routersNeedReset() {
         boolean needReset = true;
-        for (final DomainRouterVO router : this.routers) {
+        for (final DomainRouterVO router : routers) {
             if (!router.getIsRedundantRouter() || router.getState() != VirtualMachine.State.Stopped) {
                 needReset = false;
                 break;
@@ -461,18 +452,18 @@ public class RouterDeploymentDefinition {
     }
 
     /**
-     * Only for redundant deployment and if any routers needed reset, we shall reset all
-     * routers priorities
+     * Only for redundant deployment and if any routers needed reset, we shall
+     * reset all routers priorities
      */
     protected void setupPriorityOfRedundantRouter() {
-            if (this.isRedundant && this.routersNeedReset()) {
-                for (final DomainRouterVO router : this.routers) {
-                    // getUpdatedPriority() would update the value later
-                    router.setPriority(0);
-                    router.setIsPriorityBumpUp(false);
-                    routerDao.update(router.getId(), router);
-                }
+        if (isRedundant && routersNeedReset()) {
+            for (final DomainRouterVO router : routers) {
+                // getUpdatedPriority() would update the value later
+                router.setPriority(0);
+                router.setIsPriorityBumpUp(false);
+                routerDao.update(router.getId(), router);
             }
+        }
     }
 
 }
