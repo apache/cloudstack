@@ -40,7 +40,10 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.router.VpcNetworkHelper;
+import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -95,11 +98,15 @@ public abstract class RuleApplier {
 
     protected IPAddressDao _ipAddressDao;
 
+    protected PrivateIpDao _privateIpDao;
+
     protected VpcManager _vpcMgr;
 
     protected VirtualMachineManager _itMgr;
 
     protected IpAddressManager _ipAddrMgr;
+
+    protected NetworkACLManager _networkACLMgr;
 
     protected Network _network;
 
@@ -108,6 +115,8 @@ public abstract class RuleApplier {
     protected RouterControlHelper _routerControlHelper;
 
     protected NetworkHelper _networkHelper;
+
+    protected VpcNetworkHelper _vpcNetworkHelper;
 
     public RuleApplier(final Network network) {
         _network = network;
