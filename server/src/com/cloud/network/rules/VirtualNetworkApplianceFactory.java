@@ -41,9 +41,13 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.network.router.VpcNetworkHelper;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.NetworkACLManager;
+import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -121,6 +125,9 @@ public class VirtualNetworkApplianceFactory {
 
     @Inject
     protected IPAddressDao _ipAddressDao;
+    
+    @Inject
+    protected PrivateIpDao _privateIpDao;
 
     @Inject
     protected RouterControlHelper _routerControlHelper;
@@ -130,9 +137,15 @@ public class VirtualNetworkApplianceFactory {
 
     @Inject
     protected IpAddressManager _ipAddrMgr;
+    
+    @Inject
+    protected NetworkACLManager _networkACLMgr;
 
     @Inject
     protected NetworkHelper _networkHelper;
+    
+    @Inject
+    protected VpcNetworkHelper _vpcNetworkHelper;
 
 
     public LoadBalancingRules createLoadBalancingRules(final Network network,
@@ -324,5 +337,17 @@ public class VirtualNetworkApplianceFactory {
         initBeans(vpnRules);
 
         return vpnRules;
+	}
+
+	public PrivateGatewayRules createPrivateGatewayRules(PrivateGateway gateway) {
+		PrivateGatewayRules gwRules = new PrivateGatewayRules(gateway);
+
+        initBeans(gwRules);
+        
+        gwRules._privateIpDao = _privateIpDao;
+        gwRules._networkACLMgr = _networkACLMgr;
+        gwRules._vpcNetworkHelper = _vpcNetworkHelper;
+
+        return gwRules;
 	}
 }

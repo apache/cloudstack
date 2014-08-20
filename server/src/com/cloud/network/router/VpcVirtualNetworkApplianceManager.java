@@ -30,15 +30,6 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
 
     /**
      * @param gateway
-     * @param router TODO
-     * @return
-     * @throws ResourceUnavailableException
-     * @throws ConcurrentOperationException
-     */
-    boolean setupPrivateGateway(PrivateGateway gateway, VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException;
-
-    /**
-     * @param gateway
      * @param router
      * @return
      * @throws ResourceUnavailableException

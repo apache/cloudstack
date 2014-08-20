@@ -20,6 +20,7 @@ package org.apache.cloudstack.network.topology;
 import java.util.List;
 
 import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
@@ -32,6 +33,7 @@ import com.cloud.network.rules.RuleApplier;
 import com.cloud.network.rules.RuleApplierWrapper;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -39,7 +41,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface NetworkTopology {
 
-    // ====== USER FOR VPC ONLY ====== //
+    // ====== USED FOR VPC ONLY ====== //
 
     boolean setupDhcpForPvlan(final boolean add, final DomainRouterVO router, final Long hostId, final NicProfile nic) throws ResourceUnavailableException;
 
@@ -51,9 +53,11 @@ public interface NetworkTopology {
 
     boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException;
     
+    boolean setupPrivateGateway(final PrivateGateway gateway, final VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException;
+    
     String[] applyVpnUsers(final RemoteAccessVpn vpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException;
 
-    // ====== USER FOR GUEST NETWORK AND VCP ====== //
+    // ====== USED FOR GUEST NETWORK AND VCP ====== //
 
     boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
             throws ResourceUnavailableException;
