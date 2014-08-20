@@ -177,6 +177,17 @@ Group: System Environment/Libraries
 %description awsapi
 Apache Cloudstack AWS API compatibility wrapper
 
+%if "%{_ossnoss}" == "NOREDIST"
+%package mysql-ha
+Summary: Apache CloudStack Balancing Strategy for MySQL
+Requires: mysql-connector-java
+Requires: tomcat7
+Group: System Environmnet/Libraries
+%description mysql-ha
+Apache CloudStack Balancing Strategy for MySQL
+
+%endif
+
 %prep
 echo Doing CloudStack build
 
@@ -343,6 +354,12 @@ for name in cloud-bridge.properties commons-logging.properties ec2-service.prope
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
 
+# MYSQL HA
+if [ "x%{_ossnoss}" == "xNOREDIST" ] ; then
+  mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
+  cp -r plugins/database/mysql-ha/target/cloud-plugin-database-mysqlha-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
+fi
+
 #Don't package the below for AWS API
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/db.properties
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/LICENSE.txt
@@ -362,9 +379,14 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-agen
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/NOTICE
-install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
-install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
+
+if [ "x%{_ossnoss}" == "xNOREDIST" ] ; then
+  install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-mysql-ha-%{version}/LICENSE
+  install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-mysql-ha-%{version}/NOTICE
+fi
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -646,11 +668,21 @@ fi
 %{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-awsapi-%{version}/NOTICE
 
+%if "%{_ossnoss}" == "NOREDIST"
+%files mysql-ha
+%defattr(0644,cloud,cloud,0755)
+%attr(0644,root,root) %{_datadir}/%{name}-mysql-ha/lib/*
+%{_defaultdocdir}/%{name}-mysql-ha-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-mysql-ha-%{version}/NOTICE
+%endif
+
 %files baremetal-agent
 %attr(0755,root,root) %{_bindir}/cloudstack-setup-baremetal
 
 
 %changelog
+* Fri Jul 04 2014 Hugo Trippaers <hugo@apache.org> 4.3.1
+- Add a package for the mysql ha module
 * Fri Oct 03 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
 - new style spec file
 
