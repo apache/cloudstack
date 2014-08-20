@@ -998,7 +998,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             StoragePoolVO storagePool = _storagePoolDao.findById(vol.getPoolId());
 
             if (currentSize != newSize && storagePool.isManaged()) {
-                if (hosts.length > 0) {
+                if (hosts != null && hosts.length > 0) {
                     volService.resizeVolumeOnHypervisor(volumeId, newSize, hosts[0], instanceName);
                 }
 
