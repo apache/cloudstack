@@ -579,6 +579,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
             self.services["shared_network_2"]["vlan"] = get_free_vlan(self.apiclient, self.zone.id)[1]
             network = Network.create(self.api_client,self.services["shared_network_2"],account.name,
                                      account.domainid, networkofferingid=self.shared_network_offering.id)
+            self.cleanup.append(network)
 
         if network is None:
             self.skipTest("Network should not be none. Case not handled for Network of type %s" % value)
@@ -632,9 +633,10 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
                                     domainid=self.child_domain_2.id)
             tempCleanupList.append(self.child_do_admin_2)
         except Exception as e:
+            self.fail(e)
+        finally:
             tempCleanupList.reverse()
             self.cleanup += tempCleanupList
-            self.fail(e)
 
         network = Network.create(self.api_client,self.services["isolated_network"],self.child_do_admin_1.name,
                                      self.child_do_admin_1.domainid,networkofferingid=self.isolated_network_offering.id)
