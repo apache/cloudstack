@@ -16,5 +16,8 @@ def merge(dbag, ip):
        ip['network'] = str(ipo.network) + '/' + str(ipo.prefixlen)
        if 'nw_type' not in ip.keys():
            ip['nw_type'] = 'public'
-       dbag.setdefault('eth' + str(ip['nic_dev_id']), []).append( ip )
+       if ip['nw_type'] == 'control':
+           dbag['eth' + str(ip['nic_dev_id'])] = [ ip ]
+       else:
+           dbag.setdefault('eth' + str(ip['nic_dev_id']), []).append( ip )
     return dbag
