@@ -204,6 +204,8 @@ public class KVMStoragePoolManager {
             StoragePoolInformation info = _storagePools.get(uuid);
             if (info != null) {
                 pool = createStoragePool(info.name, info.host, info.port, info.path, info.userInfo, info.poolType, info.type);
+            } else {
+                throw new CloudRuntimeException("Could not fetch storage pool " + uuid + " from libvirt");
             }
         }
         return pool;
