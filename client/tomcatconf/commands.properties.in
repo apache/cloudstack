@@ -763,3 +763,6 @@ createServiceInstance=1
 addOpenDaylightController=1
 deleteOpenDaylightController=1
 listOpenDaylightControllers=1
+
+### GloboDNS commands
+addGloboDnsHost=1
