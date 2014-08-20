@@ -35,7 +35,14 @@ import org.mockito.Mock;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.VirtualRouterProvider.Type;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
@@ -65,7 +72,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     @Mock
     protected VpcOfferingDao mockVpcOffDao;
     @Mock
-    protected VpcManager vpcMgr;
+    protected VpcManager mockVpcMgr;
     @Mock
     protected NicProfileHelper vpcHelper;
 
@@ -260,17 +267,73 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     }
 
     @Test
-    public void testPlanDeploymentRouters() {
-        // Prepare
-        VpcRouterDeploymentDefinition vpcDeployment = (VpcRouterDeploymentDefinition) this.deployment;
-        List<DomainRouterVO> routers = new ArrayList<>();
-        when(vpcDeployment.vpcHelper.getVpcRouters(VPC_ID)).thenReturn(routers);
+    public void testDeployAllVirtualRouters()
+            throws InsufficientAddressCapacityException, InsufficientServerCapacityException,
+            StorageUnavailableException, InsufficientCapacityException, ResourceUnavailableException {
 
-        // Execute
-        vpcDeployment.planDeploymentRouters();
+        DomainRouterVO router = mock(DomainRouterVO.class);
+        this.driveTestDeployAllVirtualRouters(router);
 
         // Assert
-        assertEquals("List of routers for deployment was not correctly prepared",
-                routers, vpcDeployment.routers);
+        assertEquals("Router for deployment was not correctly set",
+                router, this.deployment.routers.get(0));
+        assertEquals("No more than 1 routers should have been set",
+                1, this.deployment.routers.size());
+
     }
+
+    @Test
+    public void testDeployAllVirtualRoutersWithNoDeployedRouter()
+            throws InsufficientAddressCapacityException, InsufficientServerCapacityException,
+            StorageUnavailableException, InsufficientCapacityException, ResourceUnavailableException {
+
+        this.driveTestDeployAllVirtualRouters(null);
+
+        // Assert
+        assertTrue("No router should have been set as deployed", this.deployment.routers.isEmpty());
+
+    }
+
+    public void driveTestDeployAllVirtualRouters(final DomainRouterVO router)
+            throws InsufficientAddressCapacityException, InsufficientServerCapacityException,
+            StorageUnavailableException, InsufficientCapacityException, ResourceUnavailableException {
+        // Prepare
+        VpcRouterDeploymentDefinition vpcDeployment = (VpcRouterDeploymentDefinition) this.deployment;
+        List<HypervisorType> hypervisors = new ArrayList<>();
+        when(vpcDeployment.nwHelper.deployRouter(vpcDeployment, true, hypervisors)).thenReturn(router);
+
+        // Execute
+        vpcDeployment.deployAllVirtualRouters();
+    }
+
+    @Test
+    public void testPlanDeploymentRouters() {
+        // Prepare
+        List<DomainRouterVO> routers = new ArrayList<>();
+        when(this.mockRouterDao.listByVpcId(VPC_ID)).thenReturn(routers);
+
+        // Execute
+        this.deployment.planDeploymentRouters();
+
+        // Assert
+        assertEquals("Routers returned by RouterDao not properly set",
+                routers, this.deployment.routers);
+    }
+
+
+    @Test
+    public void testFindSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
+        // Prepare
+        PublicIp publicIp = mock(PublicIp.class);
+        when(this.mockVpcMgr.assignSourceNatIpAddressToVpc(this.mockOwner, this.mockVpc)).thenReturn(publicIp);
+
+        // Execute
+        this.deployment.findSourceNatIP();
+
+        // Assert
+        assertEquals("SourceNatIp returned by the VpcManager was not correctly set",
+                publicIp, this.deployment.sourceNatIp);
+    }
+
+
 }

@@ -56,7 +56,7 @@ public class RouterDeploymentDefinitionBuilder {
     @Inject
     protected NetworkDao networkDao;
     @Inject
-    private DomainRouterDao routerDao = null;
+    private DomainRouterDao routerDao;
     @Inject
     private PhysicalNetworkServiceProviderDao physicalProviderDao;
     @Inject
@@ -143,7 +143,8 @@ public class RouterDeploymentDefinitionBuilder {
         routerDeploymentDefinition.pNtwkDao = this.pNtwkDao;
         routerDeploymentDefinition.vpcMgr = this.vpcMgr;
         routerDeploymentDefinition.vlanDao = this.vlanDao;
-        routerDeploymentDefinition.vpcHelper = this.vpcNwHelper;
+        routerDeploymentDefinition.nwHelper = this.vpcNwHelper;
+        routerDeploymentDefinition.routerDao = this.routerDao;
     }
 
 
