@@ -70,6 +70,7 @@ Requires: /sbin/mount.nfs
 Requires: openssh-clients
 Requires: nfs-utils
 Requires: wget
+Requires: mysql
 Requires: mysql-connector-java
 Requires: ws-commons-util
 Requires: jpackage-utils
