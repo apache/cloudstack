@@ -20,7 +20,7 @@
 package com.cloud.agent.resource.virtualnetwork.model;
 
 public class IcmpAclRule extends AclRule {
-    private final String ruleType = "icmp";
+    private final String type = "icmp";
     private int icmpType;
     private int icmpCode;
 
