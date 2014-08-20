@@ -1,0 +1,54 @@
+{
+    "eth2": {
+        "device": "eth2", 
+        "egress_rules": [
+            {
+                "allowed": false, 
+                "cidr": "10.0.6.0/8", 
+                "first_port": 60, 
+                "last_port": 60, 
+                "type": "tcp"
+            }
+        ], 
+        "ingress_rules": [
+            {
+                "allowed": true, 
+                "cidr": "10.0.1.0/8", 
+                "protocol": 41, 
+                "type": "protocol"
+            }, 
+            {
+                "allowed": true, 
+                "cidr": "10.0.4.0/8", 
+                "type": "all"
+            }, 
+            {
+                "allowed": true, 
+                "cidr": "10.0.3.0/8", 
+                "icmp_code": -1, 
+                "icmp_type": -1, 
+                "type": "icmp"
+            }, 
+            {
+                "allowed": true, 
+                "cidr": "10.0.2.0/8", 
+                "first_port": 40, 
+                "last_port": 40, 
+                "type": "udp"
+            }, 
+            {
+                "allowed": true, 
+                "cidr": "10.0.1.0/8", 
+                "first_port": 30, 
+                "last_port": 30, 
+                "type": "tcp"
+            }
+        ], 
+        "mac_address": "02:00:0d:7b:00:04", 
+        "nic_ip": "172.16.1.1", 
+        "nic_netmask": "24", 
+        "private_gateway_acl": false, 
+        "type": "networkacl"
+    }, 
+    "id": "networkacl"
+}
