@@ -206,11 +206,7 @@ class CsApp:
     def __init__(self, ip):
         self.dev     = ip.getDevice()
         self.ip      = ip.get_ip_address()
-        self.domain  = "domain.local"
         self.type    = ip.get_type()
-        if self.type == "guest":
-            gn = CsGuestNetwork(self.dev)
-            self.domain = gn.get_domain()
         global fw
 
 class CsPasswdSvc(CsApp):
@@ -273,39 +269,6 @@ class CsDnsmasq(CsApp):
         fw.append(["", "front",
             "-A INPUT -i %s -d %s/32 -p tcp -m tcp --dport 53 -j ACCEPT" % ( self.dev, self.ip )
         ])
-
-    def configure_server(self, method = "add"):
-        file = CsFile("/etc/dnsmasq.d/cloud.conf")
-        file.search("dhcp-range=interface:%s" % self.dev, \
-                    "dhcp-range=interface:%s,set:interface-%s,%s,static" % (self.dev, self.dev, self.ip))
-        file.search("dhcp-option=tag:interface-%s," % self.dev, \
-                    "dhcp-option=tag:interface-%s,15,%s" % (self.dev, self.domain))
-        file.commit()
-
-        if file.is_changed():
-            CsHelper.service("dnsmasq", "restart")
-
-
-class CsGuestNetwork:
-    def __init__(self, device):
-        self.data = {}
-        db = dataBag()
-        db.setKey("guestnetwork")
-        db.load()
-        dbag = db.getDataBag()
-        for dev in dbag:
-            if dev == "id":
-                continue
-            if len(dbag[dev]) == 0:
-                continue
-            if dev == device:
-                self.data = dbag[dev][0]
-
-    def get_domain(self):
-        if 'domain_name' in self.data:
-            return self.data['domain_name']
-        else:
-            return "cloudnine.internal"
 
 class CsDevice:
     """ Configure Network Devices """
@@ -441,7 +404,6 @@ class CsIP:
             ])
             dns = CsDnsmasq(self)
             dns.add_firewall_rules()
-            dns.configure_server()
             app = CsApache(self)
             app.setup()
             pwdsvc = CsPasswdSvc(self).setup()
@@ -795,8 +757,8 @@ def main(argv):
     nf = CsNetfilters()
     nf.compare(fw)
 
-    acls = CsDataBag("dhcpentry")
-    dhcp = CsDhcp(acls.get_bag(), cl)
+    dh = CsDataBag("dhcpentry")
+    dhcp = CsDhcp(dh.get_bag(), cl)
 
 if __name__ == "__main__":
     main(sys.argv)

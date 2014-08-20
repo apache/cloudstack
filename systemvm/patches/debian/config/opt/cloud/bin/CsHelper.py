@@ -7,6 +7,8 @@ import logging
 import os.path
 import re
 import shutil
+from netaddr import *
+from pprint import pprint
 
 def updatefile(filename, val, mode):
     """ add val to file """
@@ -17,6 +19,36 @@ def updatefile(filename, val, mode):
     handle = open(filename, mode)
     handle.write(val)
     handle.close()
+
+def get_device_info():
+    """ Returns all devices on system with their ipv4 ip netmask """
+    list = []
+    for i in execute("ip addr show"):
+        vals = i.strip().lstrip().rstrip().split()
+        if vals[0] == "inet":
+            to = {}
+            to['ip'] = vals[1]
+            to['dev'] = vals[-1]
+            to['network'] = IPNetwork(to['ip'])
+            to['dnsmasq'] = False
+            list.append(to)
+    return list
+
+def get_domain():
+    for line in open("/etc/resolv.conf"):
+        vals = line.lstrip().split()
+        if vals[0] == "domain":
+            return vals[1]
+    return "cloudnine.internal"
+
+def get_ip(device):
+    """ Return first ip on an interface """
+    cmd = "ip addr show dev %s" % device
+    for i in execute(cmd):
+        vals = i.lstrip().split()
+        if (vals[0] == 'inet'):
+            return vals[1]
+    return ""
 
 def definedinfile(filename, val):
     """ Check if val is defined in the file """
@@ -31,6 +63,8 @@ def addifmissing(filename, val):
     if not definedinfile(filename, val):
          updatefile(filename, val + "\n", "a")
          logging.debug("Added %s to file %s" % (val, filename))
+         return True
+    return False
 
 def get_hostname():
     for line in open("/etc/hostname"):
@@ -45,6 +79,18 @@ def execute(command):
 def service(name, op):
     execute("service %s %s" % (name, op))
     logging.info("Service %s %s" % (name, op))
+
+def hup_dnsmasq(name, user):
+    pid = ""
+    for i in execute("ps -ef | grep %s" % name):
+        vals = i.lstrip().split()
+        if (vals[0] == user):
+            pid = vals[1]
+    if pid:
+        logging.info("Sent hup to %s", name)
+        execute("kill -HUP %s" % pid)
+    else:
+        service("dnsmasq", "start")
 
 def copy_if_needed(src, dest):
     """ Copy a file if the destination does not already exist
