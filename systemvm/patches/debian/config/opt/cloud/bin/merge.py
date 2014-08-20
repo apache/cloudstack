@@ -11,6 +11,7 @@ import cs_vmp
 import cs_network_acl
 import cs_vmdata
 import cs_dhcp
+import cs_forwardingrules
 
 from pprint import pprint
 
@@ -84,6 +85,8 @@ class updateDataBag:
           dbag = self.processVmData(self.db.getDataBag())
        elif self.qFile.type == 'dhcpentry':
           dbag = self.process_dhcp_entry(self.db.getDataBag())
+       elif self.qFile.type == 'staticnatrules' or self.qFile.type == 'forwardrules':
+          dbag = self.processForwardingRules(self.db.getDataBag())
        else:
           logging.error("Error I do not know what to do with file of type %s", self.qFile.type)
           return
@@ -114,6 +117,10 @@ class updateDataBag:
 
     def processVMpassword(self, dbag):
         return cs_vmp.merge(dbag, self.qFile.data)
+
+    def processForwardingRules(self, dbag):
+        # to be used by both staticnat and portforwarding
+        return cs_forwardingrules.merge(dbag, self.qFile.data)
 
     def processIP(self, dbag):
         for ip in self.qFile.data["ip_address"]:
