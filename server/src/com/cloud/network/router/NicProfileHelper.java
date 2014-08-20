@@ -4,7 +4,7 @@ import com.cloud.network.Network;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.vm.NicProfile;
 
-public interface VpcNetworkHelper extends NetworkHelper {
+public interface NicProfileHelper {
 
     public abstract NicProfile createPrivateNicProfileForGateway(
             VpcGateway privateGateway);
