@@ -35,7 +35,14 @@ import org.mockito.Mock;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.VirtualRouterProvider.Type;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
@@ -65,7 +72,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     @Mock
     protected VpcOfferingDao mockVpcOffDao;
     @Mock
-    protected VpcManager vpcMgr;
+    protected VpcManager mockVpcMgr;
     @Mock
     protected NicProfileHelper vpcHelper;
 
@@ -74,95 +81,95 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     @Override
     protected void initMocks() {
         super.initMocks();
-        when(this.mockVpc.getId()).thenReturn(VPC_ID);
-        when(this.mockVpc.getZoneId()).thenReturn(ZONE_ID);
-        when(this.mockVpc.getVpcOfferingId()).thenReturn(OFFERING_ID);
+        when(mockVpc.getId()).thenReturn(VPC_ID);
+        when(mockVpc.getZoneId()).thenReturn(ZONE_ID);
+        when(mockVpc.getVpcOfferingId()).thenReturn(OFFERING_ID);
     }
 
     @Before
     public void initTest() {
-        this.initMocks();
+        initMocks();
 
-        this.deployment = this.builder.create()
-                .setVpc(this.mockVpc)
-                .setDeployDestination(this.mockDestination)
-                .setAccountOwner(this.mockOwner)
-                .setParams(this.params)
+        deployment = builder.create()
+                .setVpc(mockVpc)
+                .setDeployDestination(mockDestination)
+                .setAccountOwner(mockOwner)
+                .setParams(params)
                 .build();
     }
 
     @Test
     public void testConstructionFieldsAndFlags() {
         assertTrue("Not really a VpcRouterDeploymentDefinition what the builder created",
-                this.deployment instanceof VpcRouterDeploymentDefinition);
+                deployment instanceof VpcRouterDeploymentDefinition);
         assertTrue("A VpcRouterDeploymentDefinition should declare it is",
-                this.deployment.isVpcRouter());
+                deployment.isVpcRouter());
         assertEquals("A VpcRouterDeploymentDefinition should have a Vpc",
-                this.mockVpc, this.deployment.getVpc());
+                mockVpc, deployment.getVpc());
     }
 
     @Test
     public void testLock() {
         // Prepare
-        when(this.mockVpcDao.acquireInLockTable(VPC_ID))
+        when(mockVpcDao.acquireInLockTable(VPC_ID))
         .thenReturn(mockVpc);
 
         // Execute
-        this.deployment.lock();
+        deployment.lock();
 
         // Assert
-        verify(this.mockVpcDao, times(1)).acquireInLockTable(VPC_ID);
-        assertNotNull(LOCK_NOT_CORRECTLY_GOT, this.deployment.tableLockId);
-        assertEquals(LOCK_NOT_CORRECTLY_GOT, VPC_ID, this.deployment.tableLockId.longValue());
+        verify(mockVpcDao, times(1)).acquireInLockTable(VPC_ID);
+        assertNotNull(LOCK_NOT_CORRECTLY_GOT, deployment.tableLockId);
+        assertEquals(LOCK_NOT_CORRECTLY_GOT, VPC_ID, deployment.tableLockId.longValue());
     }
 
     @Test(expected = ConcurrentOperationException.class)
     public void testLockFails() {
         // Prepare
-        when(this.mockVpcDao.acquireInLockTable(VPC_ID))
+        when(mockVpcDao.acquireInLockTable(VPC_ID))
         .thenReturn(null);
 
         // Execute
         try {
-            this.deployment.lock();
+            deployment.lock();
         } finally {
             // Assert
-            verify(this.mockVpcDao, times(1)).acquireInLockTable(VPC_ID);
-            assertNull(this.deployment.tableLockId);
+            verify(mockVpcDao, times(1)).acquireInLockTable(VPC_ID);
+            assertNull(deployment.tableLockId);
         }
     }
 
     @Test
     public void testUnlock() {
         // Prepare
-        this.deployment.tableLockId = VPC_ID;
+        deployment.tableLockId = VPC_ID;
 
         // Execute
-        this.deployment.unlock();
+        deployment.unlock();
 
         // Assert
-        verify(this.mockVpcDao, times(1)).releaseFromLockTable(VPC_ID);
+        verify(mockVpcDao, times(1)).releaseFromLockTable(VPC_ID);
     }
 
     @Test
     public void testUnlockWithoutLock() {
         // Prepare
-        this.deployment.tableLockId = null;
+        deployment.tableLockId = null;
 
         // Execute
-        this.deployment.unlock();
+        deployment.unlock();
 
         // Assert
-        verify(this.mockVpcDao, times(0)).releaseFromLockTable(anyLong());
+        verify(mockVpcDao, times(0)).releaseFromLockTable(anyLong());
     }
 
     @Test
     public void testFindDestinations() {
         // Execute
-        List<DeployDestination> foundDestinations = this.deployment.findDestinations();
+        List<DeployDestination> foundDestinations = deployment.findDestinations();
         // Assert
         assertEquals(FOR_VPC_ONLY_THE_GIVEN_DESTINATION_SHOULD_BE_USED,
-                this.deployment.dest, foundDestinations.get(0));
+                deployment.dest, foundDestinations.get(0));
         assertEquals(FOR_VPC_ONLY_THE_GIVEN_DESTINATION_SHOULD_BE_USED,
                 1, foundDestinations.size());
     }
@@ -170,16 +177,16 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     @Test
     public void testGetNumberOfRoutersToDeploy() {
         assertEquals("If there are no routers, it should deploy one",
-                1, this.deployment.getNumberOfRoutersToDeploy());
-        this.deployment.routers.add(mock(DomainRouterVO.class));
+                1, deployment.getNumberOfRoutersToDeploy());
+        deployment.routers.add(mock(DomainRouterVO.class));
         assertEquals("If there is already a router found, there is no need to deploy more",
-                0, this.deployment.getNumberOfRoutersToDeploy());
+                0, deployment.getNumberOfRoutersToDeploy());
     }
 
     @Test
     public void testPrepareDeployment() {
         assertTrue("There are no preconditions for Vpc Deployment, thus it should always pass",
-                this.deployment.prepareDeployment());
+                deployment.prepareDeployment());
     }
 
     @Test
@@ -196,81 +203,135 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
         when(mockPhNwDao.listByZone(ZONE_ID)).thenReturn(pNtwks);
 
         PhysicalNetworkServiceProviderVO provider1 = mock(PhysicalNetworkServiceProviderVO.class);
-        when(this.mockPhysicalProviderDao.findByServiceProvider(NW_ID_1, Type.VPCVirtualRouter.toString()))
+        when(mockPhysicalProviderDao.findByServiceProvider(NW_ID_1, Type.VPCVirtualRouter.toString()))
             .thenReturn(provider1);
         when(provider1.getId()).thenReturn(PROVIDER_ID_1);
         PhysicalNetworkServiceProviderVO provider2 = mock(PhysicalNetworkServiceProviderVO.class);
-        when(this.mockPhysicalProviderDao.findByServiceProvider(NW_ID_2, Type.VPCVirtualRouter.toString()))
+        when(mockPhysicalProviderDao.findByServiceProvider(NW_ID_2, Type.VPCVirtualRouter.toString()))
             .thenReturn(provider2);
         when(provider2.getId()).thenReturn(PROVIDER_ID_2);
 
-        when(this.mockVrProviderDao.findByNspIdAndType(PROVIDER_ID_1, Type.VPCVirtualRouter))
+        when(mockVrProviderDao.findByNspIdAndType(PROVIDER_ID_1, Type.VPCVirtualRouter))
             .thenReturn(null);
         VirtualRouterProviderVO vrp = mock(VirtualRouterProviderVO.class);
-        when(this.mockVrProviderDao.findByNspIdAndType(PROVIDER_ID_2, Type.VPCVirtualRouter))
+        when(mockVrProviderDao.findByNspIdAndType(PROVIDER_ID_2, Type.VPCVirtualRouter))
             .thenReturn(vrp);
 
 
         // Execute
-        this.deployment.findVirtualProvider();
+        deployment.findVirtualProvider();
 
         // Assert
-        assertEquals(vrp, this.deployment.vrProvider);
+        assertEquals(vrp, deployment.vrProvider);
     }
 
     @Test
     public void testFindOfferingIdLeavingPrevious() {
         // Prepare
-        Long initialOfferingId = this.deployment.offeringId;
+        Long initialOfferingId = deployment.offeringId;
         VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
-        when(this.mockVpcOffDao.findById(OFFERING_ID)).thenReturn(vpcOffering);
+        when(mockVpcOffDao.findById(OFFERING_ID)).thenReturn(vpcOffering);
         when(vpcOffering.getServiceOfferingId()).thenReturn(null);
 
         // Execute
-        this.deployment.findOfferingId();
+        deployment.findOfferingId();
 
         // Assert
         assertEquals("Offering Id shouldn't have been updated",
-                initialOfferingId, this.deployment.offeringId);
+                initialOfferingId, deployment.offeringId);
     }
 
     @Test
     public void testFindOfferingIdSettingNewOne() {
         // Prepare
         VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
-        when(this.mockVpcOffDao.findById(OFFERING_ID)).thenReturn(vpcOffering);
+        when(mockVpcOffDao.findById(OFFERING_ID)).thenReturn(vpcOffering);
         when(vpcOffering.getServiceOfferingId()).thenReturn(OFFERING_ID);
 
         // Test
-        this.deployment.findOfferingId();
+        deployment.findOfferingId();
 
         // Assert
         assertEquals("Offering Id should have been updated",
-                OFFERING_ID, this.deployment.offeringId.longValue());
+                OFFERING_ID, deployment.offeringId.longValue());
     }
 
     @Test
     public void testGenerateDeploymentPlan() {
         // Execute
-        this.deployment.generateDeploymentPlan();
+        deployment.generateDeploymentPlan();
 
         // Assert
         assertEquals("Destination was not created with the correct Data Center Id",
-                DATA_CENTER_ID.longValue(), this.deployment.plan.getDataCenterId());
+                DATA_CENTER_ID.longValue(), deployment.plan.getDataCenterId());
+    }
+
+    @Test
+    public void testDeployAllVirtualRouters()
+            throws InsufficientAddressCapacityException, InsufficientServerCapacityException,
+            StorageUnavailableException, InsufficientCapacityException, ResourceUnavailableException {
+
+        DomainRouterVO router = mock(DomainRouterVO.class);
+        driveTestDeployAllVirtualRouters(router);
+
+        // Assert
+        assertEquals("Router for deployment was not correctly set",
+                router, deployment.routers.get(0));
+        assertEquals("No more than 1 routers should have been set",
+                1, deployment.routers.size());
+
+    }
+
+    @Test
+    public void testDeployAllVirtualRoutersWithNoDeployedRouter()
+            throws InsufficientAddressCapacityException, InsufficientServerCapacityException,
+            StorageUnavailableException, InsufficientCapacityException, ResourceUnavailableException {
+
+        driveTestDeployAllVirtualRouters(null);
+
+        // Assert
+        assertTrue("No router should have been set as deployed", deployment.routers.isEmpty());
+
+    }
+
+    public void driveTestDeployAllVirtualRouters(final DomainRouterVO router)
+            throws InsufficientAddressCapacityException, InsufficientServerCapacityException,
+            StorageUnavailableException, InsufficientCapacityException, ResourceUnavailableException {
+        // Prepare
+        VpcRouterDeploymentDefinition vpcDeployment = (VpcRouterDeploymentDefinition) deployment;
+        List<HypervisorType> hypervisors = new ArrayList<>();
+        when(vpcDeployment.nwHelper.deployRouter(vpcDeployment, true, hypervisors)).thenReturn(router);
+
+        // Execute
+        vpcDeployment.deployAllVirtualRouters();
     }
 
     @Test
     public void testPlanDeploymentRouters() {
         // Prepare
-        VpcRouterDeploymentDefinition vpcDeployment = (VpcRouterDeploymentDefinition) this.deployment;
         List<DomainRouterVO> routers = new ArrayList<>();
-        when(vpcDeployment.vpcHelper.getVpcRouters(VPC_ID)).thenReturn(routers);
+        when(mockRouterDao.listByVpcId(VPC_ID)).thenReturn(routers);
 
         // Execute
-        vpcDeployment.planDeploymentRouters();
+        deployment.planDeploymentRouters();
 
         // Assert
-        assertEquals("List of routers for deployment was not correctly prepared",
-                routers, vpcDeployment.routers);
+        assertEquals("Routers returned by RouterDao not properly set",
+                routers, deployment.routers);
+    }
+
+
+    @Test
+    public void testFindSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
+        // Prepare
+        PublicIp publicIp = mock(PublicIp.class);
+        when(mockVpcMgr.assignSourceNatIpAddressToVpc(mockOwner, mockVpc)).thenReturn(publicIp);
+
+        // Execute
+        deployment.findSourceNatIP();
+
+        // Assert
+        assertEquals("SourceNatIp returned by the VpcManager was not correctly set",
+                publicIp, deployment.sourceNatIp);
     }
 }
