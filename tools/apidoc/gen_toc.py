@@ -92,6 +92,7 @@ known_categories = {
     'NetworkACL': 'Network ACL',
     'Network': 'Network',
     'CiscoNexus': 'Network',
+    'GloboDns': 'Network',
     'Vpn': 'VPN',
     'Limit': 'Limit',
     'ResourceCount': 'Limit',
