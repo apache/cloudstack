@@ -28,6 +28,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
@@ -174,8 +176,9 @@ public class CommandSetupHelper {
 
     @Inject
     private RouterControlHelper _routerControlHelper;
-    @Inject
-    private NetworkHelper _networkHelper;
+    @Autowired
+    @Qualifier("networkHelper")
+    protected NetworkHelper _networkHelper;
 
     private final String _dnsBasicZoneUpdates = "all";
 

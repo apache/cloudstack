@@ -89,7 +89,7 @@ public class BasicNetworkTopology implements NetworkTopology {
 
     @Autowired
     @Qualifier("networkHelper")
-    protected NetworkHelper _nwHelper;
+    protected NetworkHelper _networkHelper;
 
     @Override
     public NetworkTopologyVisitor getVisitor() {
@@ -402,7 +402,7 @@ public class BasicNetworkTopology implements NetworkTopology {
             // Shouldn't we include this check inside the method?
             if (!isZoneBasic && !disconnectedRouters.isEmpty() && disconnectedRouters.get(0).getIsRedundantRouter()) {
                 // These disconnected redundant virtual routers are out of sync now, stop them for synchronization
-                _nwHelper.handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
+                _networkHelper.handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
             }
         } else if (!disconnectedRouters.isEmpty()) {
             for (final VirtualRouter router : disconnectedRouters) {
