@@ -125,7 +125,7 @@ public class VirtualNetworkApplianceFactory {
 
     @Inject
     private IPAddressDao _ipAddressDao;
-    
+
     @Inject
     private PrivateIpDao _privateIpDao;
 
@@ -134,16 +134,16 @@ public class VirtualNetworkApplianceFactory {
 
     @Inject
     private IpAddressManager _ipAddrMgr;
-    
+
     @Inject
     private NetworkACLManager _networkACLMgr;
 
     @Inject
     private NetworkHelper _networkHelper;
-    
+
     @Inject
     private VpcNetworkHelperImpl _vpcNetworkHelper;
-    
+
     @Inject
     private NicProfileHelper _nicProfileHelper;
 
@@ -323,32 +323,32 @@ public class VirtualNetworkApplianceFactory {
         return pvlanRules;
     }
 
-	public StaticRoutesRules createStaticRoutesRules(List<StaticRouteProfile> staticRoutes) {
-		StaticRoutesRules routesRules = new StaticRoutesRules(staticRoutes);
-		
-		initBeans(routesRules);
-		
-		return routesRules;
-	}
+    public StaticRoutesRules createStaticRoutesRules(final List<StaticRouteProfile> staticRoutes) {
+        StaticRoutesRules routesRules = new StaticRoutesRules(staticRoutes);
 
-	public AdvancedVpnRules createAdvancedVpnRules(RemoteAccessVpn remoteAccessVpn, List<? extends VpnUser> users) {
-		AdvancedVpnRules vpnRules = new AdvancedVpnRules(remoteAccessVpn, users);
+        initBeans(routesRules);
+
+        return routesRules;
+    }
+
+    public AdvancedVpnRules createAdvancedVpnRules(final RemoteAccessVpn remoteAccessVpn, final List<? extends VpnUser> users) {
+        AdvancedVpnRules vpnRules = new AdvancedVpnRules(remoteAccessVpn, users);
 
         initBeans(vpnRules);
 
         return vpnRules;
-	}
+    }
 
-	public PrivateGatewayRules createPrivateGatewayRules(PrivateGateway gateway) {
-		PrivateGatewayRules gwRules = new PrivateGatewayRules(gateway);
+    public PrivateGatewayRules createPrivateGatewayRules(final PrivateGateway gateway) {
+        PrivateGatewayRules gwRules = new PrivateGatewayRules(gateway);
 
         initBeans(gwRules);
-        
+
         gwRules._privateIpDao = _privateIpDao;
         gwRules._networkACLMgr = _networkACLMgr;
         gwRules._vpcNetworkHelper = _vpcNetworkHelper;
         gwRules._nicProfileHelper = _nicProfileHelper;
 
         return gwRules;
-	}
+    }
 }
