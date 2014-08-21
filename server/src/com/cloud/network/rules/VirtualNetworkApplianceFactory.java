@@ -39,10 +39,9 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.NetworkHelper;
-import com.cloud.network.router.RouterControlHelper;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.network.router.VpcNetworkHelperImpl;
 import com.cloud.network.vpc.NetworkACLItem;
-import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.VpcManager;
@@ -123,28 +122,22 @@ public class VirtualNetworkApplianceFactory {
     protected VlanDao _vlanDao;
 
     @Inject
-    protected IPAddressDao _ipAddressDao;
+    private IPAddressDao _ipAddressDao;
 
     @Inject
-    protected PrivateIpDao _privateIpDao;
+    private PrivateIpDao _privateIpDao;
 
     @Inject
-    protected RouterControlHelper _routerControlHelper;
+    private IpAddressManager _ipAddrMgr;
 
     @Inject
     protected VirtualNetworkApplianceManager _applianceManager;
 
     @Inject
-    protected IpAddressManager _ipAddrMgr;
+    private NetworkHelper _networkHelper;
 
     @Inject
-    protected NetworkACLManager _networkACLMgr;
-
-    @Inject
-    protected NetworkHelper _networkHelper;
-
-    @Inject
-    protected VpcNetworkHelper _vpcNetworkHelper;
+    private VpcNetworkHelperImpl _vpcNetworkHelper;
 
     public LoadBalancingRules createLoadBalancingRules(final Network network, final List<LoadBalancingRule> rules) {
         LoadBalancingRules lbRules = new LoadBalancingRules(network, rules);
@@ -320,7 +313,6 @@ public class VirtualNetworkApplianceFactory {
 
     public StaticRoutesRules createStaticRoutesRules(final List<StaticRouteProfile> staticRoutes) {
         StaticRoutesRules routesRules = new StaticRoutesRules(staticRoutes);
-
         initBeans(routesRules);
 
         return routesRules;

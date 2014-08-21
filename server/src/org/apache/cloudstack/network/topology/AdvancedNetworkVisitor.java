@@ -32,7 +32,9 @@ import com.cloud.dc.DataCenter;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.AdvancedVpnRules;
 import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.DhcpSubNetRules;
 import com.cloud.network.rules.NetworkAclsRules;
@@ -118,7 +120,6 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         Map<String, String> vlanMacAddress = vpcip.getVlanMacAddress();
         List<PublicIpAddress> ipsToSend = vpcip.getIpsToSend();
 
-
         if (!ipsToSend.isEmpty()) {
             vpcip.createVpcAssociatePublicIPCommands(router, ipsToSend, cmds, vlanMacAddress);
             return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
@@ -129,26 +130,26 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
     @Override
     public boolean visit(final PrivateGatewayRules privateGW) throws ResourceUnavailableException {
-    	final VirtualRouter router = privateGW.getRouter();
-    	final NicProfile nicProfile = privateGW.getNicProfile();
+        final VirtualRouter router = privateGW.getRouter();
+        final NicProfile nicProfile = privateGW.getNicProfile();
 
-    	final boolean isAddOperation = privateGW.isAddOperation();
+        final boolean isAddOperation = privateGW.isAddOperation();
 
-    	if (router.getState() == State.Running) {
-    		
+        if (router.getState() == State.Running) {
+
             PrivateIpVO ipVO = privateGW.retrivePrivateIP();
             Network network = privateGW.retrievePrivateNetwork();
-            
+
             String netmask = NetUtils.getCidrNetmask(network.getCidr());
             PrivateIpAddress ip = new PrivateIpAddress(ipVO, network.getBroadcastUri().toString(), network.getGateway(), netmask, nicProfile.getMacAddress());
 
             List<PrivateIpAddress> privateIps = new ArrayList<PrivateIpAddress>(1);
             privateIps.add(ip);
-            
+
             Commands cmds = new Commands(Command.OnError.Stop);
             privateGW.createVpcAssociatePrivateIPCommands(router, privateIps, cmds, isAddOperation);
 
-            try{
+            try {
                 if (_networkGeneralHelper.sendCommandsToRouter(router, cmds)) {
                     s_logger.debug("Successfully applied ip association for ip " + ip + " in vpc network " + network);
                     return true;
@@ -156,8 +157,8 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
                     s_logger.warn("Failed to associate ip address " + ip + " in vpc network " + network);
                     return false;
                 }
-            }catch (Exception ex) {
-                s_logger.warn("Failed to send  " + (isAddOperation ?"add ":"delete ") + " private network " + network + " commands to rotuer ");
+            } catch (Exception ex) {
+                s_logger.warn("Failed to send  " + (isAddOperation ? "add " : "delete ") + " private network " + network + " commands to rotuer ");
                 return false;
             }
         } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
@@ -176,7 +177,8 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         final VirtualRouter router = dhcp.getRouter();
         final PvlanSetupCommand setupCommand = dhcp.getSetupCommand();
 
-        // In fact we send command to the host of router, we're not programming router but the host
+        // In fact we send command to the host of router, we're not programming
+        // router but the host
         Commands cmds = new Commands(Command.OnError.Stop);
         cmds.addCommand(setupCommand);
 
@@ -202,7 +204,8 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
         subnet.createIpAlias(router, ipaliasTo, nicAlias.getNetworkId(), cmds);
 
-        //also add the required configuration to the dnsmasq for supporting dhcp and dns on the new ip.
+        // also add the required configuration to the dnsmasq for supporting
+        // dhcp and dns on the new ip.
         subnet.configDnsMasq(router, network, cmds);
 
         return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
@@ -210,12 +213,26 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
     @Override
     public boolean visit(final StaticRoutesRules staticRoutesRules) throws ResourceUnavailableException {
-    	final VirtualRouter router = staticRoutesRules.getRouter();
-    	List<StaticRouteProfile> staticRoutes = staticRoutesRules.getStaticRoutes();
-    	
-    	Commands cmds = new Commands(Command.OnError.Continue);
-    	staticRoutesRules.createStaticRouteCommands(staticRoutes, router, cmds);
-    	
-    	return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
+        final VirtualRouter router = staticRoutesRules.getRouter();
+        List<StaticRouteProfile> staticRoutes = staticRoutesRules.getStaticRoutes();
+
+        Commands cmds = new Commands(Command.OnError.Continue);
+        staticRoutesRules.createStaticRouteCommands(staticRoutes, router, cmds);
+
+        return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
+    }
+
+    @Override
+    public boolean visit(final AdvancedVpnRules vpnRules) throws ResourceUnavailableException {
+        final VirtualRouter router = vpnRules.getRouter();
+        List<? extends VpnUser> users = vpnRules.getUsers();
+
+        Commands cmds = new Commands(Command.OnError.Continue);
+        vpnRules.createApplyVpnUsersCommand(users, router, cmds);
+
+        // Currently we receive just one answer from the agent. In the future we
+        // have to parse individual answers and set
+        // results accordingly
+        return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
 }

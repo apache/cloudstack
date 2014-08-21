@@ -102,11 +102,6 @@ public class BasicNetworkTopology implements NetworkTopology {
     }
 
     @Override
-    public String retrieveGuestDhcpRange(final NicProfile guestNic, final Network guestNetwork, final DataCenter dc) {
-        return null;
-    }
-
-    @Override
     public boolean setupPrivateGateway(final PrivateGateway gateway, final VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
         throw new CloudRuntimeException("setupPrivateGateway not implemented in Basic Network Topology.");
     }
