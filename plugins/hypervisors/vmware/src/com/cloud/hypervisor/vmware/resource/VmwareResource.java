@@ -5994,15 +5994,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     @Override
-    public PingCommand getCurrentStatus(long id) {
-        gcAndKillHungWorkerVMs();
+	public PingCommand getCurrentStatus(long id) {
+		try {
+			gcAndKillHungWorkerVMs();
 
-        HashMap<String, State> newStates = sync();
-        if (newStates == null) {
-            return null;
-        }
-        return new PingRoutingCommand(getType(), id, newStates, syncHostVmStates());
-    }
+			HashMap<String, State> newStates = sync();
+			if (newStates == null) {
+				return null;
+			}
+			return new PingRoutingCommand(getType(), id, newStates,
+					syncHostVmStates());
+		} finally {
+			recycleServiceContext();
+		}
+	}
 
     private void gcAndKillHungWorkerVMs() {
         try {
@@ -6071,8 +6076,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
                 invalidateServiceContext();
             }
-        } finally {
-            recycleServiceContext();
         }
     }
 
@@ -6939,67 +6942,62 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             _guestTrafficInfo = (VmwareTrafficLabel) params.get("guestTrafficInfo");
             _publicTrafficInfo = (VmwareTrafficLabel) params.get("publicTrafficInfo");
             VmwareContext context = getServiceContext();
+            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+            if (mgr == null) {
+                throw new ConfigurationException("Invalid vmwareContext:  vmwareMgr stock object is not set or cleared.");
+            }
+            mgr.setupResourceStartupParams(params);
 
-            // TODO ??? this is an invalid usage pattern. need to fix the reference to VolumeManagerImp here at resource file
-            // volMgr = ComponentContext.inject(VolumeManagerImpl.class);
-            try {
-                VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-                mgr.setupResourceStartupParams(params);
+            CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(context, context.getServiceContent().getCustomFieldsManager());
+            cfmMo.ensureCustomFieldDef("Datastore", CustomFieldConstants.CLOUD_UUID);
+            if (_publicTrafficInfo != null && _publicTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch ||
+                    _guestTrafficInfo != null && _guestTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
+                cfmMo.ensureCustomFieldDef("DistributedVirtualPortgroup", CustomFieldConstants.CLOUD_GC_DVP);
+            }
+            cfmMo.ensureCustomFieldDef("Network", CustomFieldConstants.CLOUD_GC);
+            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_UUID);
+            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_NIC_MASK);
+            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_WORKER);
+            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_WORKER_TAG);
 
-                CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(context, context.getServiceContent().getCustomFieldsManager());
-                cfmMo.ensureCustomFieldDef("Datastore", CustomFieldConstants.CLOUD_UUID);
-                if (_publicTrafficInfo != null && _publicTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch ||
-                        _guestTrafficInfo != null && _guestTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
-                    cfmMo.ensureCustomFieldDef("DistributedVirtualPortgroup", CustomFieldConstants.CLOUD_GC_DVP);
+            VmwareHypervisorHost hostMo = this.getHyperHost(context);
+            _hostName = hostMo.getHyperHostName();
+
+            Map<String, String> vsmCredentials;
+            if (_guestTrafficInfo.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch ||
+                    _publicTrafficInfo.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch) {
+                vsmCredentials = mgr.getNexusVSMCredentialsByClusterId(Long.parseLong(_cluster));
+                if (vsmCredentials != null) {
+                    s_logger.info("Stocking credentials while configuring resource.");
+                    context.registerStockObject("vsmcredentials", vsmCredentials);
                 }
-                cfmMo.ensureCustomFieldDef("Network", CustomFieldConstants.CLOUD_GC);
-                cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_UUID);
-                cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_NIC_MASK);
-                cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
-                cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_WORKER);
-                cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_WORKER_TAG);
-
-                VmwareHypervisorHost hostMo = this.getHyperHost(context);
-                _hostName = hostMo.getHyperHostName();
-
-                Map<String, String> vsmCredentials;
-                if (_guestTrafficInfo.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch ||
-                        _publicTrafficInfo.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch) {
-                    vsmCredentials = mgr.getNexusVSMCredentialsByClusterId(Long.parseLong(_cluster));
-                    if (vsmCredentials != null) {
-                        s_logger.info("Stocking credentials while configuring resource.");
-                        context.registerStockObject("vsmcredentials", vsmCredentials);
-                    }
-                    _privateNetworkVSwitchName = mgr.getPrivateVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
-                }
-
-            } catch (Exception e) {
-                s_logger.error("Unexpected Exception ", e);
+                _privateNetworkVSwitchName = mgr.getPrivateVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
             }
 
-            if(_privateNetworkVSwitchName == null) {
-                _privateNetworkVSwitchName = (String) params.get("private.network.vswitch.name");
+            if (_privateNetworkVSwitchName == null) {
+                _privateNetworkVSwitchName = (String)params.get("private.network.vswitch.name");
             }
 
-            String value = (String) params.get("vmware.reserve.cpu");
-            if(value != null && value.equalsIgnoreCase("true"))
+            String value = (String)params.get("vmware.reserve.cpu");
+            if (value != null && value.equalsIgnoreCase("true"))
                 _reserveCpu = true;
 
-            value = (String) params.get("vmware.recycle.hung.wokervm");
-            if(value != null && value.equalsIgnoreCase("true"))
+            value = (String)params.get("vmware.recycle.hung.wokervm");
+            if (value != null && value.equalsIgnoreCase("true"))
                 _recycleHungWorker = true;
 
-            value = (String) params.get("vmware.reserve.mem");
-            if(value != null && value.equalsIgnoreCase("true"))
+            value = (String)params.get("vmware.reserve.mem");
+            if (value != null && value.equalsIgnoreCase("true"))
                 _reserveMem = true;
 
             value = (String)params.get("vmware.root.disk.controller");
-            if(value != null && value.equalsIgnoreCase("scsi"))
+            if (value != null && value.equalsIgnoreCase("scsi"))
                 _rootDiskController = DiskControllerType.scsi;
             else
                 _rootDiskController = DiskControllerType.ide;
 
-            Integer intObj = (Integer) params.get("ports.per.dvportgroup");
+            Integer intObj = (Integer)params.get("ports.per.dvportgroup");
             if (intObj != null)
                 _portsPerDvPortGroup = intObj.intValue();
 
@@ -7009,15 +7007,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     ", guest traffic over " + _guestTrafficInfo.getVirtualSwitchType() + " : " +
                     _guestTrafficInfo.getVirtualSwitchName());
 
-            value = params.get("vmware.create.full.clone").toString();
-            if (value != null && value.equalsIgnoreCase("true")) {
+            Boolean boolObj = (Boolean)params.get("vmware.create.full.clone");
+            if (boolObj != null && boolObj.booleanValue()) {
                 _fullCloneFlag = true;
             } else {
                 _fullCloneFlag = false;
             }
 
-            value = params.get("vm.instancename.flag").toString();
-            if (value != null && value.equalsIgnoreCase("true")) {
+            boolObj = (Boolean)params.get("vm.instancename.flag");
+            if (boolObj != null && boolObj.booleanValue()) {
                 _instanceNameFlag = true;
             } else {
                 _instanceNameFlag = false;
@@ -7025,13 +7023,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             value = (String)params.get("scripts.timeout");
             int timeout = NumbersUtil.parseInt(value, 1440) * 1000;
-            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             VmwareStorageProcessor storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr,
                     timeout, this, _shutdown_waitMs, null
                     );
             storageHandler = new VmwareStorageSubsystemCommandHandler(storageProcessor);
 
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Successfully configured VmwareResource.");
+            }
             return true;
+        } catch (Exception e) {
+            s_logger.error("Unexpected Exception ", e);
+            throw new ConfigurationException("Failed to configure VmwareResource due to unexpect exception.");
         } finally {
             recycleServiceContext();
         }
@@ -7070,6 +7073,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if(s_serviceContext.get() != null) {
             context = s_serviceContext.get();
             if (context.validate()) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("ThreadLocal context is still valid, just reuse");
+                }
                 return context;
             } else {
                 s_logger.info("Validation of the context failed, dispose and use a new one");
@@ -7097,10 +7103,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     private static void recycleServiceContext() {
         VmwareContext context = s_serviceContext.get();
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Reset threadlocal context to null");
+        }
         s_serviceContext.set(null);
 
         if(context != null) {
             assert(context.getPool() != null);
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Recycling threadlocal context to pool");
+            }
             context.getPool().returnContext(context);
         }
     }

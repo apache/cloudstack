@@ -23,9 +23,9 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 
 public class VmwareContextPool {
     private static final Logger s_logger = Logger.getLogger(VmwareContextPool.class);
@@ -35,11 +35,11 @@ public class VmwareContextPool {
 	
     private List<VmwareContext> _outstandingRegistry = new ArrayList<VmwareContext>();
     
-	private Map<String, List<VmwareContext>> _pool;
+    private Map<String, List<VmwareContext>> _pool;
 	private int _maxIdleQueueLength = DEFAULT_IDLE_QUEUE_LENGTH;
 	private long _idleCheckIntervalMs = DEFAULT_CHECK_INTERVAL;
 			
-	private Timer _timer = new Timer();
+    private Timer _timer = new Timer();
 	
 	public VmwareContextPool() {
 		this(DEFAULT_IDLE_QUEUE_LENGTH, DEFAULT_CHECK_INTERVAL);
@@ -83,8 +83,9 @@ public class VmwareContextPool {
 				VmwareContext context = l.remove(0);
 				context.setPoolInfo(this, poolKey);
 				
-				if(s_logger.isTraceEnabled())
-					s_logger.trace("Return a VmwareContext from the idle pool: " + poolKey + ". current pool size: " + l.size() + ", outstanding count: " + VmwareContext.getOutstandingContextCount());
+                if (s_logger.isInfoEnabled())
+                    s_logger.info("Return a VmwareContext from the idle pool: " + poolKey + ". current pool size: " + l.size() + ", outstanding count: "
+                            + VmwareContext.getOutstandingContextCount());
 				return context;
 			}
 			
@@ -107,12 +108,12 @@ public class VmwareContextPool {
 				context.clearStockObjects();
 				l.add(context);
 				
-				if(s_logger.isTraceEnabled())
-					s_logger.trace("Recycle VmwareContext into idle pool: " + context.getPoolKey() + ", current idle pool size: " 
+                if (s_logger.isInfoEnabled())
+                    s_logger.info("Recycle VmwareContext into idle pool: " + context.getPoolKey() + ", current idle pool size: "
 						+ l.size() + ", outstanding count: " + VmwareContext.getOutstandingContextCount());
 			} else {
-				if(s_logger.isTraceEnabled())
-					s_logger.trace("VmwareContextPool queue exceeds limits, queue size: " + l.size());
+                if (s_logger.isInfoEnabled())
+                    s_logger.info("VmwareContextPool queue exceeds limits, queue size: " + l.size());
 				context.close();
 			}
 		}
