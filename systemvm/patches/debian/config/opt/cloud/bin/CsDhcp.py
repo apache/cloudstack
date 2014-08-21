@@ -39,6 +39,7 @@ class CsDhcp(object):
         dnsmasqb4.parse_hosts()
         dnsmasqb4.parse_dnsmasq()
         if not dnsmasq.compare_hosts(dnsmasqb4):
+            logging.info("Updating hosts file")
             dnsmasq.write_hosts()
         else:
             logging.debug("Hosts file is up to date")
@@ -94,8 +95,8 @@ class CsDnsMasq(object):
             return
 
     def configure_server(self):
-        self.updated = self.updated or CsHelper.addifmissing(CLOUD_CONF, "dhcp-hostsfile=/etc/dhcphosts.txt")
-        self.updated = self.updated or CsHelper.addifmissing(DNSMASQ_CONF, "dhcp-optsfile=%s:" % DHCP_OPTS)
+        self.updated = self.updated | CsHelper.addifmissing(CLOUD_CONF, "dhcp-hostsfile=/etc/dhcphosts.txt")
+        self.updated = self.updated | CsHelper.addifmissing(DNSMASQ_CONF, "dhcp-optsfile=%s:" % DHCP_OPTS)
         for i in self.devinfo:
             if not i['dnsmasq']:
                 continue
@@ -103,12 +104,12 @@ class CsDnsMasq(object):
             ip = i['ip'].split('/')[0]
             line = "dhcp-range=interface:%s,set:interface-%s,%s,static" \
                     % (device, device, ip)
-            self.updated = self.updated or CsHelper.addifmissing(CLOUD_CONF, line)
+            self.updated = self.updated | CsHelper.addifmissing(CLOUD_CONF, line)
             # Next add the domain
             # if this is a guest network get it there otherwise use the value in resolv.conf
             gn = CsGuestNetwork(device)
             line = "dhcp-option=tag:interface-%s,15,%s" % (device,gn.get_domain())
-            self.updated = self.updated or CsHelper.addifmissing(CLOUD_CONF, line)
+            self.updated = self.updated | CsHelper.addifmissing(CLOUD_CONF, line)
         if self.updated:
             if self.first_host:
                 CsHelper.service("dnsmasq", "restart")
