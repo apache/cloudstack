@@ -1348,7 +1348,7 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
                                             cls.services["service_offering"]
                                             )
         cls.isolated_persistent_network_offering = NetworkOffering.create(cls.api_client,
-                                                 cls.services["nw_off_isolated_persistent"],
+                                                 cls.services["nw_off_isolated_persistent_lb"],
                                                  conservemode=False)
 
         cls.isolated_persistent_network_offering_netscaler = NetworkOffering.create(cls.api_client,

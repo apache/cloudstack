@@ -224,6 +224,22 @@ test_data = {
             "PortForwarding": 'VirtualRouter',
         },
     },
+    "nw_off_isolated_persistent_lb": {
+        "name": 'Test Nw off isolated persistent',
+        "displaytext": 'Test Nw off isolated persistent',
+        "guestiptype": 'Isolated',
+        "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding, Lb',
+        "traffictype": 'GUEST',
+        "ispersistent": 'True',
+        "availability": 'Optional',
+        "serviceProviderList": {
+            "Dhcp": 'VirtualRouter',
+            "Dns": 'VirtualRouter',
+            "SourceNat": 'VirtualRouter',
+            "PortForwarding": 'VirtualRouter',
+	    "Lb": "VirtualRouter"
+        },
+    },
     "isolated_network_offering": {
         "name": "Network offering-DA services",
         "displaytext": "Network offering-DA services",
