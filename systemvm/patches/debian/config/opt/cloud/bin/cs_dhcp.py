@@ -5,5 +5,11 @@ def merge(dbag, data):
 
     # A duplicate ip address wil clobber the old value
     # This seems desirable ....
-    dbag[data['ipv4_adress']] = data
+    if "add" in data and data['add'] == False and \
+            "ipv4_adress" in data :
+       if data['ipv4_adress'] in dbag:
+           del(dbag[data['ipv4_adress']])
+       return dbag
+    else:
+        dbag[data['ipv4_adress']] = data
     return dbag
