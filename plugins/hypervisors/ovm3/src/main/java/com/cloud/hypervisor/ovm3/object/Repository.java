@@ -21,6 +21,12 @@ public class Repository extends OvmObject {
         setClient(c);
     }
 
+    public class RepoDetails {
+
+    }
+    public class RepoDbDetails {
+
+    }
     /*
      * delete_repository, <class 'agent.api.repository.Repository'> argument:
      * repo_uuid - default: None argument: erase - default: None
@@ -68,7 +74,8 @@ public class Repository extends OvmObject {
     }
 
     public Boolean discoverRepo(String id) throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("discover_repositories", id);
+        Object x = callWrapper("discover_repositories", id);
+        return true;
     }
 
     /*

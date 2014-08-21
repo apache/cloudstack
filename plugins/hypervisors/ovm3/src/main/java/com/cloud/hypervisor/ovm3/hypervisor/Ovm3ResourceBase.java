@@ -655,7 +655,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             if (!repoExists) {
                 try {
                     repo.createRepo(mountPoint, ovsRepo, primUuid,
-                            "OVS Reposutory");
+                            "OVS Repository");
                 } catch (Ovm3ResourceException  e) {
                     msg = "NFS repository " + mountPoint + " on " + ovsRepo
                             + " create failed!";

@@ -28,6 +28,7 @@ import java.util.Map.Entry;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.ovm3.object.Linux.FileSystem;
+import com.cloud.hypervisor.ovm3.object.StoragePlugin.StorageServer;
 
 class Test {
     private static final Logger LOGGER = Logger
@@ -136,7 +137,7 @@ class Test {
         boolean checkLinux = false;
         boolean checkCommon = false;
         boolean checkCluster = false;
-        boolean checkRepo = false;
+        boolean checkRepo = true;
         boolean checkPool = false;
         boolean checkOcfs2 = false;
         boolean checkNFSPlugin = false;
@@ -151,7 +152,7 @@ class Test {
         boolean checkPlugin = false;
         boolean checkRemote = false;
         boolean checkError = false;
-        boolean checkStoragePlugin = true;
+        boolean checkStoragePlugin = false;
 
         Integer hostCount = 0;
         String agentuser = "oracle";
@@ -182,9 +183,10 @@ class Test {
                 String poolUuid = "f12842eb-f5ed-3fe7-8da1-eb0e17f5ede8";
                 String file = "/OVS/Repositories/" + store.deDash(poolUuid)
                         + "/VirtualDisks/test.raw";
-                System.out.println(store.storagePluginListFs("cs-mgmt"));
+                // System.out.println(store.storagePluginListFs("cs-mgmt"));
+                StoragePlugin.StorageServer ss = store.storagePluginMountNFS("cs-mgmt", "/volumes/cs-data/secondary", "bd5c266b-5738-39a8-a6f0-6f2344ec861e", "/nfsmnt");
                 System.out.println(store.storagePluginUnmountNFS("cs-mgmt", "/volumes/cs-data/secondary", "bd5c266b-5738-39a8-a6f0-6f2344ec861e", "/nfsmnt"));
-                // System.out.println(store.storagePluginMountNFS("cs-mgmt", "/volumes/cs-data/secondary", "b8ca41cb-3469-4f74-a086-dddffe37dc2d", "/nfsmnt"));
+                // System.out.println(ss.getUuid());
             }
             if (checkError) {
                 Xen xen = new Xen(c);
@@ -333,25 +335,50 @@ class Test {
 
             /* still needs to be finished! */
             if (checkRepo) {
+                Linux host = new Linux(c);
+                Pool pool = new Pool(c);
+                if (host.get("Server_Roles").contentEquals(
+                        pool.getValidRoles().toString())) {
+                    pool.setServerRoles(pool.getValidRoles());
+                }
+                if (host.get("Membership_State").contentEquals("Unowned")) {
+                    pool.takeOwnership(pool.deDash(pool.newUuid("master")), "");
+                }
                 Repository repo = new Repository(c);
-                String repouuid = repo.deDash(repo.newUuid());
-                String remote = "cs-mgmt:/volumes/cs-data/secondary";
-                String local = "/OVS/Repositories/" + repouuid;
+                String mntUuid = repo.newUuid("repo");
+                String repoUuid = repo.deDash(mntUuid);
+                String remoteHost = "cs-mgmt";
+                String remotePath = "/volumes/cs-data/primary/ovm";
+                String remoteUri = remoteHost+":"+remotePath;
+                String local = "/OVS/Repositories/" + repoUuid;
                 String url = "http://nibbler/~funs/iso";
                 String iso = url + "/gentoo.iso";
                 String vhd = url + "/ovm.raw";
-                String isouuid = repo.deDash(repo.newUuid());
-                String vmuuid = repo.deDash(repo.newUuid());
-
-                repo.mountRepoFs(remote, local);
-                repo.createRepo(remote, repouuid, repouuid, "My Comment");
+                String isouuid = repo.deDash(repo.newUuid("iso"));
+                String vmuuid = repo.deDash(repo.newUuid("vm"));
+                repo.discoverRepo(repoUuid);
                 repo.discoverRepoDb();
-                repo.importIso(iso, isouuid + ".iso", repouuid, "");
-                repo.importVirtualDisk(vhd, vmuuid + ".img", repouuid, "");
-                repo.deleteRepo(repouuid, true);
+                repo.mountRepoFs(remoteUri, local);
+                repo.createRepo(remoteUri, repoUuid, repoUuid, "My Comment");
+                StoragePlugin store = new StoragePlugin(c);
+                StoragePlugin.StorageServer ss = store.storagePluginMountNFS(remoteHost,
+                        remotePath+"/VirtualMachines",
+                        mntUuid,
+                        "/nfsmnt");
+                System.out.println(ss.getUuid());
+                repo.discoverRepoDb();
+                // repo.importIso(iso, isouuid + ".iso", repoUuid, "");
+                // repo.importVirtualDisk(vhd, vmuuid + ".img", repoUuid);
+                System.out.println(store.storagePluginGetFileSystemInfo(repoUuid, mntUuid, remoteHost, remotePath+"/VirtualMachines").getFreeSize());
+                store.storagePluginUnmountNFS(remoteHost,
+                        remotePath+"/VirtualMachines",
+                        mntUuid,
+                        "/nfsmnt");
+                System.out.println(store.storagePluginGetFileSystemInfo(repoUuid, mntUuid, remoteHost, remotePath+"/VirtualMachines").getFreeSize());
+                repo.deleteRepo(repoUuid, true);
                 repo.unmountRepoFs(local);
                 repo.discoverRepoDb();
-                repo.discoverRepo(repouuid);
+                repo.discoverRepo(repoUuid);
             }
 
             if (checkPool) {

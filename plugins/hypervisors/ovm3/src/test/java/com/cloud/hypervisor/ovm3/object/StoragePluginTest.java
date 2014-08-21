@@ -225,7 +225,7 @@ public class StoragePluginTest {
 
     @Test(expected = Ovm3ResourceException.class)
     public void testStoragePluginIncorrectUuid() throws Ovm3ResourceException {
-        sPt.storageSource.setUuid(FSMNTUUID);
+        sPt.storageServer.setUuid(FSMNTUUID);
     }
 
     @Test(expected = Ovm3ResourceException.class)

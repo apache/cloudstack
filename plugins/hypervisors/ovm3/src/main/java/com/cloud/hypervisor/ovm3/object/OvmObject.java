@@ -42,6 +42,7 @@ public class OvmObject {
     private static List<?> emptyParams = new ArrayList<Object>();
     private static final Logger LOGGER = Logger
             .getLogger(OvmObject.class);
+    private boolean success = false;
 
     public OvmObject() {
     }
@@ -80,6 +81,14 @@ public class OvmObject {
             String msg = "Client call " + call  + " to " +  client.getIp() + " went wrong: " + e.getMessage();
             throw new Ovm3ResourceException(msg, e);
         }
+    }
+
+    public void setSuccess(boolean s) {
+        success = s;
+    }
+
+    public Boolean getSuccess() {
+        return success;
     }
 
     /* nice try but doesn't work like that .. */

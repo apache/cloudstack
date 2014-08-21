@@ -34,10 +34,9 @@ public class StoragePlugin extends OvmObject {
     private String unknown = EMPTY_STRING; /* empty */
     private Boolean active = true;
     private List<String> someList = new ArrayList<String>(); /* empty */
-    private String mountPoint = EMPTY_STRING;
     FileProperties fileProperties = new FileProperties();
     StorageDetails storageDetails = new StorageDetails();
-    StorageServer storageSource = new StorageServer();
+    StorageServer storageServer = new StorageServer();
 
     public StoragePlugin(Connection c) {
         setClient(c);
@@ -445,6 +444,9 @@ public class StoragePlugin extends OvmObject {
                 "storage_plugin_mount", this.getPluginType, ss.getStorageServer(),
                 sd.getStorageDetails(), mountPoint, this.unknown, this.active,
                 this.someList));
+        if (ss.getStorageServer() == null) {
+            throw new Ovm3ResourceException("FileSystem mount returned null, something is wrong, but we don't know what.");
+        }
         if (EMPTY_STRING.contains(ss.getUuid())) {
             throw new Ovm3ResourceException("Unable to mount NFS FileSystem");
         }
@@ -468,9 +470,10 @@ public class StoragePlugin extends OvmObject {
         sd.setAccessPath(nfsHost + ":" + remotePath);
         sd.setState(1);
         ss.setStorageType("FileSys");
-        mountPoint = localPath + File.separator + mntUuid;
-        return nullIsTrueCallWrapper("storage_plugin_unmount", this.getPluginType,
-                storageSource.getStorageServer(), storageDetails.getStorageDetails(), mountPoint, this.active);
+        String mountPoint = localPath + File.separator + mntUuid;
+        callWrapper("storage_plugin_unmount", this.getPluginType,
+            ss.getStorageServer(), sd.getStorageDetails(), mountPoint, this.active);
+        return true;
     }
 
     /*
