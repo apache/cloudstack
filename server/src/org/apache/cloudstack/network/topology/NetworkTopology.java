@@ -52,9 +52,9 @@ public interface NetworkTopology {
             throws ResourceUnavailableException;
 
     boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException;
-    
+
     boolean setupPrivateGateway(final PrivateGateway gateway, final VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException;
-    
+
     String[] applyVpnUsers(final RemoteAccessVpn vpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException;
 
     // ====== USED FOR GUEST NETWORK AND VCP ====== //

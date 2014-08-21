@@ -132,22 +132,22 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
     @Override
     public boolean visit(final PrivateGatewayRules privateGW) throws ResourceUnavailableException {
-    	final VirtualRouter router = privateGW.getRouter();
-    	final NicProfile nicProfile = privateGW.getNicProfile();
+        final VirtualRouter router = privateGW.getRouter();
+        final NicProfile nicProfile = privateGW.getNicProfile();
 
-    	final boolean isAddOperation = privateGW.isAddOperation();
+        final boolean isAddOperation = privateGW.isAddOperation();
 
-    	if (router.getState() == State.Running) {
-    		
+        if (router.getState() == State.Running) {
+
             PrivateIpVO ipVO = privateGW.retrivePrivateIP();
             Network network = privateGW.retrievePrivateNetwork();
-            
+
             String netmask = NetUtils.getCidrNetmask(network.getCidr());
             PrivateIpAddress ip = new PrivateIpAddress(ipVO, network.getBroadcastUri().toString(), network.getGateway(), netmask, nicProfile.getMacAddress());
 
             List<PrivateIpAddress> privateIps = new ArrayList<PrivateIpAddress>(1);
             privateIps.add(ip);
-            
+
             Commands cmds = new Commands(Command.OnError.Stop);
             privateGW.createVpcAssociatePrivateIPCommands(router, privateIps, cmds, isAddOperation);
 
@@ -213,22 +213,22 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
     @Override
     public boolean visit(final StaticRoutesRules staticRoutesRules) throws ResourceUnavailableException {
-    	final VirtualRouter router = staticRoutesRules.getRouter();
-    	List<StaticRouteProfile> staticRoutes = staticRoutesRules.getStaticRoutes();
-    	
-    	Commands cmds = new Commands(Command.OnError.Continue);
-    	staticRoutesRules.createStaticRouteCommands(staticRoutes, router, cmds);
-    	
-    	return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
-    }
-    
-    @Override
-    public boolean visit(AdvancedVpnRules vpnRules) throws ResourceUnavailableException {
-    	final VirtualRouter router = vpnRules.getRouter();
-    	List<? extends VpnUser> users = vpnRules.getUsers();
+        final VirtualRouter router = staticRoutesRules.getRouter();
+        List<StaticRouteProfile> staticRoutes = staticRoutesRules.getStaticRoutes();
 
-    	Commands cmds = new Commands(Command.OnError.Continue);
-    	vpnRules.createApplyVpnUsersCommand(users, router, cmds);
+        Commands cmds = new Commands(Command.OnError.Continue);
+        staticRoutesRules.createStaticRouteCommands(staticRoutes, router, cmds);
+
+        return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
+    }
+
+    @Override
+    public boolean visit(final AdvancedVpnRules vpnRules) throws ResourceUnavailableException {
+        final VirtualRouter router = vpnRules.getRouter();
+        List<? extends VpnUser> users = vpnRules.getUsers();
+
+        Commands cmds = new Commands(Command.OnError.Continue);
+        vpnRules.createApplyVpnUsersCommand(users, router, cmds);
 
         // Currently we receive just one answer from the agent. In the future we have to parse individual answers and set
         // results accordingly
