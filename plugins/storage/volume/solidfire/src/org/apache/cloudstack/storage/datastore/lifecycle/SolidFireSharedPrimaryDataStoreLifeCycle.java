@@ -621,7 +621,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             }
         }
 
-        SolidFireUtil.modifySolidFireVolume(sfConnection, getVolumeId(storagePool.getId()), size, minIops, maxIops, burstIops);
+        SolidFireUtil.modifySolidFireVolume(sfConnection, getVolumeId(storagePool.getId()), size, null, minIops, maxIops, burstIops);
 
         SolidFireUtil.updateCsDbWithSolidFireIopsInfo(storagePool.getId(), _primaryDataStoreDao, _storagePoolDetailsDao, minIops, maxIops, burstIops);
     }

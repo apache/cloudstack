@@ -1928,7 +1928,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Long volumeSize = Long.parseLong(details.get(DiskTO.VOLUME_SIZE));
 
         if (vdi == null) {
-
             vdi = createVdi(sr, vdiNameLabel, volumeSize);
         } else {
             // if VDI is not null, it must have already been created, so check whether a resize of the volume was performed
@@ -1939,7 +1938,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             long vdiVirtualSize = vdi.getVirtualSize(conn);
 
             if (vdiVirtualSize != volumeSize) {
-                s_logger.info("resizing the datadisk(vdi) from vdiVirtualsize :"+ vdiVirtualSize + "to volumeSize :" + volumeSize);
+                s_logger.info("resizing the data disk (vdi) from vdiVirtualsize: "+ vdiVirtualSize + " to volumeSize: " + volumeSize);
 
                 try {
                     vdi.resize(conn, volumeSize);

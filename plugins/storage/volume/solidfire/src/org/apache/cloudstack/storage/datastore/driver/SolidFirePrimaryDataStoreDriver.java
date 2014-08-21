@@ -420,8 +420,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             verifySufficientIopsForStoragePool(storagePoolId, volumeInfo.getId(), payload.newMinIops);
 
-            SolidFireUtil.modifySolidFireVolume(sfConnection, sfVolumeId, sfVolume.getTotalSize(), payload.newMinIops, payload.newMaxIops,
-                    getDefaultBurstIops(storagePoolId, payload.newMaxIops));
+            SolidFireUtil.modifySolidFireVolume(sfConnection, sfVolumeId, sfVolume.getTotalSize(), NumberFormat.getInstance().format(payload.newSize),
+                    payload.newMinIops, payload.newMaxIops, getDefaultBurstIops(storagePoolId, payload.newMaxIops));
 
             VolumeVO volume = _volumeDao.findById(volumeInfo.getId());
 

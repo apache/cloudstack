@@ -467,11 +467,14 @@ public class SolidFireUtil {
         return volumeCreateResult.result.volumeID;
     }
 
-    public static void modifySolidFireVolume(SolidFireConnection sfConnection, long volumeId, long totalSize, long minIops, long maxIops, long burstIops)
+    public static void modifySolidFireVolume(SolidFireConnection sfConnection, long volumeId, long totalSize, String strCloudStackVolumeSize,
+            long minIops, long maxIops, long burstIops)
     {
         final Gson gson = new GsonBuilder().create();
 
-        VolumeToModify volumeToModify = new VolumeToModify(volumeId, totalSize, minIops, maxIops, burstIops);
+        Object volumeToModify = strCloudStackVolumeSize != null && strCloudStackVolumeSize.trim().length() > 0 ?
+                new VolumeToModifyWithCloudStackVolumeSize(volumeId, totalSize, strCloudStackVolumeSize, minIops, maxIops, burstIops) :
+                new VolumeToModify(volumeId, totalSize, minIops, maxIops, burstIops);
 
         String strVolumeToModifyJson = gson.toJson(volumeToModify);
 
@@ -947,8 +950,8 @@ public class SolidFireUtil {
             private final long accountID;
             private final long totalSize;
             private final boolean enable512e;
-            private final VolumeToCreateParamsQoS qos;
             private final VolumeToCreateParamsAttributes attributes;
+            private final VolumeToCreateParamsQoS qos;
 
             private VolumeToCreateParams(final String strVolumeName, final long lAccountId, final long lTotalSize, final boolean bEnable512e,
                     final String strCloudStackVolumeSize, final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS) {
@@ -1020,6 +1023,57 @@ public class SolidFireUtil {
                     maxIOPS = lMaxIOPS;
                     burstIOPS = lBurstIOPS;
                 }
+            }
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static final class VolumeToModifyWithCloudStackVolumeSize
+    {
+        private final String method = "ModifyVolume";
+        private final VolumeToModifyParams params;
+
+        private VolumeToModifyWithCloudStackVolumeSize(final long lVolumeId, final long lTotalSize, final String strCloudStackVolumeSize,
+                final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS)
+        {
+            params = new VolumeToModifyParams(lVolumeId, lTotalSize, strCloudStackVolumeSize, lMinIOPS, lMaxIOPS, lBurstIOPS);
+        }
+
+        private static final class VolumeToModifyParams
+        {
+            private final long volumeID;
+            private final long totalSize;
+            private final VolumeToModifyParamsAttributes attributes;
+            private final VolumeToModifyParamsQoS qos;
+
+            private VolumeToModifyParams(final long lVolumeId, final long lTotalSize, String strCloudStackVolumeSize, final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS)
+            {
+                volumeID = lVolumeId;
+
+                totalSize = lTotalSize;
+
+                attributes = new VolumeToModifyParamsAttributes(strCloudStackVolumeSize);
+                qos = new VolumeToModifyParamsQoS(lMinIOPS, lMaxIOPS, lBurstIOPS);
+            }
+        }
+
+        private static final class VolumeToModifyParamsAttributes {
+            private final String CloudStackVolumeSize;
+
+            private VolumeToModifyParamsAttributes(final String strCloudStackVolumeSize) {
+                CloudStackVolumeSize = strCloudStackVolumeSize;
+            }
+        }
+
+        private static final class VolumeToModifyParamsQoS {
+            private final long minIOPS;
+            private final long maxIOPS;
+            private final long burstIOPS;
+
+            private VolumeToModifyParamsQoS(final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS) {
+                minIOPS = lMinIOPS;
+                maxIOPS = lMaxIOPS;
+                burstIOPS = lBurstIOPS;
             }
         }
     }

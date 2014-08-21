@@ -851,7 +851,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        // Note: The storage plug-in in question should perform validation on the IOPS to check if a sufficient number of IOPS are available to perform
+        // Note: The storage plug-in in question should perform validation on the IOPS to check if a sufficient number of IOPS is available to perform
         // the requested change
 
         /* If this volume has never been beyond allocated state, short circuit everything and simply update the database. */
@@ -970,9 +970,21 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 hosts = new long[] {userVm.getLastHostId()};
             }
 
+            final String errorMsg = "The VM must be stopped or the disk detached in order to resize with the XenServer Hypervisor.";
+
+            StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
+
+            if (storagePool.isManaged() && storagePool.getHypervisor() == HypervisorType.Any && hosts != null && hosts.length > 0) {
+                HostVO host = this._hostDao.findById(hosts[0]);
+
+                if (currentSize != newSize && host.getHypervisorType() == HypervisorType.XenServer && !userVm.getState().equals(State.Stopped)) {
+                    throw new InvalidParameterValueException(errorMsg);
+                }
+            }
+
             /* Xen only works offline, SR does not support VDI.resizeOnline */
             if (currentSize != newSize && _volsDao.getHypervisorType(volume.getId()) == HypervisorType.XenServer && !userVm.getState().equals(State.Stopped)) {
-                throw new InvalidParameterValueException("VM must be stopped or disk detached in order to resize with the Xen HV");
+                throw new InvalidParameterValueException(errorMsg);
             }
         }
 
@@ -982,8 +994,30 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             VolumeInfo vol = volFactory.getVolume(volume.getId());
             vol.addPayload(payload);
 
+            StoragePoolVO storagePool = _storagePoolDao.findById(vol.getPoolId());
+
+            // managed storage is designed in such a way that the storage plug-in does not
+            // talk to the hypervisor layer; as such, if the storage is managed and the
+            // current and new sizes are different, then CloudStack (i.e. not a storage plug-in)
+            // needs to tell the hypervisor to resize the disk
+            if (storagePool.isManaged() && currentSize != newSize) {
+                if (hosts != null && hosts.length > 0) {
+                    volService.resizeVolumeOnHypervisor(volumeId, newSize, hosts[0], instanceName);
+                }
+
+                volume.setSize(newSize);
+
+                _volsDao.update(volume.getId(), volume);
+            }
+
+            // this call to resize has a different impact depending on whether the
+            // underlying primary storage is managed or not
+            // if managed, this is the chance for the plug-in to change IOPS value, if applicable
+            // if not managed, this is the chance for the plug-in to talk to the hypervisor layer
+            // to change the size of the disk
             AsyncCallFuture<VolumeApiResult> future = volService.resize(vol);
             VolumeApiResult result = future.get();
+
             if (result.isFailed()) {
                 s_logger.warn("Failed to resize the volume " + volume);
                 String details = "";
@@ -995,19 +1029,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             volume = _volsDao.findById(volume.getId());
 
-            StoragePoolVO storagePool = _storagePoolDao.findById(vol.getPoolId());
-
-            if (currentSize != newSize && storagePool.isManaged()) {
-                if (hosts != null && hosts.length > 0) {
-                    volService.resizeVolumeOnHypervisor(volumeId, newSize, hosts[0], instanceName);
-                }
-
-                volume.setSize(newSize);
-            }
-
             if (newDiskOfferingId != null) {
                 volume.setDiskOfferingId(newDiskOfferingId);
             }
+
             _volsDao.update(volume.getId(), volume);
             // Log usage event for volumes belonging user VM's only
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
