@@ -134,7 +134,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     private EntityManager _entityMgr;
 
     @Inject
-    private NicProfileHelper vpcHelper;
+    private NicProfileHelper nicProfileHelper;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -322,7 +322,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             int i = 0;
 
             for (final PublicIpAddress ipAddr : ipAddrList) {
-                boolean add = (ipAddr.getState() == IpAddress.State.Releasing ? false : true);
+                boolean add = ipAddr.getState() == IpAddress.State.Releasing ? false : true;
 
                 String macAddress = vlanMacAddress.get(BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag())));
 
@@ -430,7 +430,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     public boolean finalizeCommandsOnStart(final Commands cmds, final VirtualMachineProfile profile) {
         DomainRouterVO router = _routerDao.findById(profile.getId());
 
-        boolean isVpc = (router.getVpcId() != null);
+        boolean isVpc = router.getVpcId() != null;
         if (!isVpc) {
             return super.finalizeCommandsOnStart(cmds, profile);
         }
@@ -620,7 +620,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (router.getVpcId() != null) {
             if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
                 List<NetworkACLItemVO> networkACLs = _networkACLMgr.listNetworkACLItems(guestNetworkId);
-                if ((networkACLs != null) && !networkACLs.isEmpty()) {
+                if (networkACLs != null && !networkACLs.isEmpty()) {
                     s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + router + " start for guest network id=" +
                             guestNetworkId);
                     createNetworkACLsCommands(networkACLs, router, cmds, guestNetworkId, false);

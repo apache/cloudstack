@@ -35,7 +35,7 @@ public class RouterControlHelper {
     private static final Logger logger = Logger.getLogger(RouterControlHelper.class);
 
     @Inject
-    private final DomainRouterDao routerDao = null;
+    private DomainRouterDao routerDao;
 
     @Inject
     private NetworkDao networkDao;

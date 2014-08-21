@@ -262,10 +262,10 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         RuleApplier ruleApplier =  ruleApplierWrapper.getRuleType();
 
         final DataCenter dc = _dcDao.findById(network.getDataCenterId());
-        final boolean isZoneBasic = (dc.getNetworkType() == NetworkType.Basic);
+        final boolean isZoneBasic = dc.getNetworkType() == NetworkType.Basic;
 
         // isPodLevelException and podId is only used for basic zone
-        assert !((!isZoneBasic && isPodLevelException) || (isZoneBasic && isPodLevelException && podId == null));
+        assert !(!isZoneBasic && isPodLevelException || isZoneBasic && isPodLevelException && podId == null);
 
         final List<VirtualRouter> connectedRouters = new ArrayList<VirtualRouter>();
         final List<VirtualRouter> disconnectedRouters = new ArrayList<VirtualRouter>();
@@ -314,6 +314,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         }
 
         if (!connectedRouters.isEmpty()) {
+            // Shouldn't we include this check inside the method?
             if (!isZoneBasic && !disconnectedRouters.isEmpty() && disconnectedRouters.get(0).getIsRedundantRouter()) {
                 // These disconnected redundant virtual routers are out of sync now, stop them for synchronization
                 _nwHelper.handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
