@@ -4239,12 +4239,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 break;
             }
             Host.Record hr = myself.getRecord(conn);
-            _host.productVersion = hr.softwareVersion.get("product_version");
-            if (_host.productVersion == null) {
-                _host.productVersion = hr.softwareVersion.get("platform_version");
-            } else {
-                _host.productVersion = _host.productVersion.trim();
-            }
+            _host.productVersion = CitrixHelper.getProductVersion(hr);
 
             XsLocalNetwork privateNic = getManagementNetwork(conn);
             _privateNetworkName = privateNic.getNetworkRecord(conn).nameLabel;
@@ -4300,6 +4295,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
             }
 
+            s_logger.info("XenServer Version is " + _host.productVersion + " for host " + _host.ip);
             s_logger.info("Private Network is " + _privateNetworkName + " for host " + _host.ip);
             s_logger.info("Guest Network is " + _guestNetworkName + " for host " + _host.ip);
             s_logger.info("Public Network is " + _publicNetworkName + " for host " + _host.ip);

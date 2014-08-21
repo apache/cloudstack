@@ -43,6 +43,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.xenserver.resource.CitrixHelper;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xenserver.resource.XcpOssResource;
 import com.cloud.hypervisor.xenserver.resource.XcpServerResource;
@@ -79,6 +80,7 @@ import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Types.SessionAuthenticationFailed;
 import com.xensource.xenapi.Types.UuidInvalid;
 import com.xensource.xenapi.Types.XenAPIException;
+
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
@@ -87,6 +89,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
+
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -284,10 +287,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 Host.Record record = entry.getValue();
                 String hostAddr = record.address;
 
-                String prodVersion = record.softwareVersion.get("product_version");
-                if (prodVersion == null) {
-                    prodVersion = record.softwareVersion.get("platform_version");
-                }
+                String prodVersion = CitrixHelper.getProductVersion(record);
                 String xenVersion = record.softwareVersion.get("xen");
                 String hostOS = record.softwareVersion.get("product_brand");
                 if (hostOS == null) {
@@ -409,7 +409,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             return new XenServer600Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0"))
             return new XenServer610Resource();
-        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.4.94"))
+        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.5.0"))
             return new Xenserver625Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.2.0")) {
             if (hotfix != null && hotfix.equals(XenserverConfigs.XSHotFix62ESP1004)) {
@@ -429,11 +429,13 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             return new XcpOssResource();
         }
         String msg =
-                "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0, 6.2.0 but this one is " +
+                "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0, 6.2.0, 6.5.0 but this one is " +
                         prodBrand + " " + prodVersion;
         s_logger.warn(msg);
         throw new RuntimeException(msg);
     }
+
+
 
     protected CitrixResourceBase createServerResource(long dcId, Long podId, Host.Record record, String hotfix) {
         String prodBrand = record.softwareVersion.get("product_brand");
@@ -442,13 +444,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         } else {
             prodBrand = prodBrand.trim();
         }
+        String prodVersion = CitrixHelper.getProductVersion(record);
 
-        String prodVersion = record.softwareVersion.get("product_version");
-        if (prodVersion == null) {
-            prodVersion = record.softwareVersion.get("platform_version").trim();
-        } else {
-            prodVersion = prodVersion.trim();
-        }
         String prodVersionTextShort = record.softwareVersion.get("product_version_text_short");
         return createServerResource(prodBrand, prodVersion, prodVersionTextShort, hotfix);
     }

@@ -21,6 +21,8 @@ import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 
+import com.xensource.xenapi.Host;
+
 /**
  * Reduce bloat inside CitrixResourceBase
  *
@@ -229,5 +231,19 @@ public class CitrixHelper {
         return recommendedMaxMinMemory.getMin();
     }
 
-
+    public static String getProductVersion(Host.Record record) {
+        String prodVersion = record.softwareVersion.get("product_version");
+        if (prodVersion == null) {
+            prodVersion = record.softwareVersion.get("platform_version").trim();
+        } else {
+            prodVersion = prodVersion.trim();
+            String[] items = prodVersion.split("\\.");
+            if (Integer.parseInt(items[0]) > 6) {
+                prodVersion = "6.5.0";
+            } else if (Integer.parseInt(items[0]) == 6 && Integer.parseInt(items[1]) >= 4) {
+                prodVersion = "6.5.0";
+            }
+        }
+        return prodVersion;
+    }
 }
