@@ -24,15 +24,8 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.routing.CreateIpAliasCommand;
-import com.cloud.agent.api.routing.DnsMasqConfigCommand;
-import com.cloud.agent.api.routing.IpAliasTO;
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.to.DhcpTO;
-import com.cloud.agent.manager.Commands;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -164,49 +157,5 @@ public class DhcpSubNetRules extends RuleApplier {
 
     public String getRouterAliasIp() {
         return _routerAliasIp;
-    }
-
-    public void createIpAlias(final VirtualRouter router, final List<IpAliasTO> ipAliasTOs, final Long networkid, final Commands cmds) {
-
-        final String routerip = _routerControlHelper.getRouterIpInNetwork(networkid, router.getId());
-        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-        final CreateIpAliasCommand ipaliasCmd = new CreateIpAliasCommand(routerip, ipAliasTOs);
-        ipaliasCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
-        ipaliasCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        ipaliasCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, routerip);
-        ipaliasCmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-
-        cmds.addCommand("ipalias", ipaliasCmd);
-    }
-
-    public void configDnsMasq(final VirtualRouter router, final Network network, final Commands cmds) {
-        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-        final List<NicIpAliasVO> ipAliasVOList = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.state.active);
-        final List<DhcpTO> ipList = new ArrayList<DhcpTO>();
-
-        final NicVO router_guest_nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
-        final String cidr = NetUtils.getCidrFromGatewayAndNetmask(router_guest_nic.getGateway(), router_guest_nic.getNetmask());
-        final String[] cidrPair = cidr.split("\\/");
-        final String cidrAddress = cidrPair[0];
-        final long cidrSize = Long.parseLong(cidrPair[1]);
-        final String startIpOfSubnet = NetUtils.getIpRangeStartIpFromCidr(cidrAddress, cidrSize);
-
-        ipList.add(new DhcpTO(router_guest_nic.getIp4Address(), router_guest_nic.getGateway(), router_guest_nic.getNetmask(), startIpOfSubnet));
-        for (final NicIpAliasVO ipAliasVO : ipAliasVOList) {
-            final DhcpTO DhcpTO = new DhcpTO(ipAliasVO.getIp4Address(), ipAliasVO.getGateway(), ipAliasVO.getNetmask(), ipAliasVO.getStartIpOfSubnet());
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("configDnsMasq : adding ip {" + DhcpTO.getGateway() + ", " + DhcpTO.getNetmask() + ", " + DhcpTO.getRouterIp() + ", " +
-                        DhcpTO.getStartIpOfSubnet() + "}");
-            }
-            ipList.add(DhcpTO);
-            ipAliasVO.setVmId(router.getId());
-        }
-        _dcDao.findById(router.getDataCenterId());
-        final DnsMasqConfigCommand dnsMasqConfigCmd = new DnsMasqConfigCommand(ipList);
-        dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
-        dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(network.getId(), router.getId()));
-        dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-        cmds.addCommand("dnsMasqConfig", dnsMasqConfigCmd);
     }
 }
