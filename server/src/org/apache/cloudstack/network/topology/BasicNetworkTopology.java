@@ -393,6 +393,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         }
 
         if (!connectedRouters.isEmpty()) {
+            // Shouldn't we include this check inside the method?
             if (!isZoneBasic && !disconnectedRouters.isEmpty() && disconnectedRouters.get(0).getIsRedundantRouter()) {
                 // These disconnected redundant virtual routers are out of sync now, stop them for synchronization
                 _nwHelper.handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
