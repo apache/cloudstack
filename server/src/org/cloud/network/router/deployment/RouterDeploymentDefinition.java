@@ -385,11 +385,18 @@ public class RouterDeploymentDefinition {
 
     protected void deployAllVirtualRouters() throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
+<<<<<<< HEAD
         int routersToDeploy = getNumberOfRoutersToDeploy();
         for (int i = 0; i < routersToDeploy; i++) {
             // Don't start the router as we are holding the network lock that
             // needs to be released at the end of router allocation
             DomainRouterVO router = nwHelper.deployRouter(this, false, null);
+=======
+        int routersToDeploy = this.getNumberOfRoutersToDeploy();
+        for(int i = 0; i < routersToDeploy; i++) {
+            // Don't start the router as we are holding the network lock that needs to be released at the end of router allocation
+            DomainRouterVO router = this.nwHelper.deployRouter(this, false);
+>>>>>>> 2e8879f... Refactor hypervisor retrieval from VpcNwHelper and NwHelper
 
             if (router != null) {
                 routerDao.addRouterToGuestNetwork(router, guestNetwork);

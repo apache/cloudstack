@@ -34,6 +34,12 @@ import org.mockito.Mock;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.router.NicProfileHelper;
@@ -184,8 +190,24 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     }
 
     @Test
-    public void testDeployVpcRouter() {
-        // TODO Implement this test
+    public void testDeployAllVirtualRoutersWithNoDeployedRouter() throws InsufficientAddressCapacityException, InsufficientServerCapacityException, StorageUnavailableException,
+            InsufficientCapacityException, ResourceUnavailableException {
+
+        driveTestDeployAllVirtualRouters(null);
+
+        // Assert
+        assertTrue("No router should have been set as deployed", deployment.routers.isEmpty());
+
+    }
+
+    public void driveTestDeployAllVirtualRouters(final DomainRouterVO router) throws InsufficientAddressCapacityException, InsufficientServerCapacityException,
+            StorageUnavailableException, InsufficientCapacityException, ResourceUnavailableException {
+        // Prepare
+        VpcRouterDeploymentDefinition vpcDeployment = (VpcRouterDeploymentDefinition) deployment;
+        when(vpcDeployment.nwHelper.deployRouter(vpcDeployment, true)).thenReturn(router);
+
+        // Execute
+        vpcDeployment.deployAllVirtualRouters();
     }
 
     @Test
@@ -193,4 +215,16 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
         // TODO Implement this test
     }
 
+    @Test
+    public void testFindSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
+        // Prepare
+        PublicIp publicIp = mock(PublicIp.class);
+        when(vpcMgr.assignSourceNatIpAddressToVpc(mockOwner, mockVpc)).thenReturn(publicIp);
+
+        // Execute
+        deployment.findSourceNatIP();
+
+        // Assert
+        assertEquals("SourceNatIp returned by the VpcManager was not correctly set", publicIp, deployment.sourceNatIp);
+    }
 }

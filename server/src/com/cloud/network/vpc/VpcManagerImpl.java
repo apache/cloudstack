@@ -20,6 +20,7 @@ package com.cloud.network.vpc;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -31,6 +32,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -213,6 +215,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     int _cleanupInterval;
     int _maxNetworks;
     SearchBuilder<IPAddressVO> IpAddressSearch;
+
+    protected final List<HypervisorType> hTypes = new ArrayList<HypervisorType>();
+
+    @PostConstruct
+    protected void setupSupportedVpcHypervisorsList() {
+        this.hTypes.add(HypervisorType.XenServer);
+        this.hTypes.add(HypervisorType.VMware);
+        this.hTypes.add(HypervisorType.KVM);
+        this.hTypes.add(HypervisorType.Simulator);
+        this.hTypes.add(HypervisorType.LXC);
+        this.hTypes.add(HypervisorType.Hyperv);
+    }
 
     @Override
     @DB
@@ -2396,14 +2410,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     public List<HypervisorType> getSupportedVpcHypervisors() {
-        List<HypervisorType> hTypes = new ArrayList<HypervisorType>();
-        hTypes.add(HypervisorType.XenServer);
-        hTypes.add(HypervisorType.VMware);
-        hTypes.add(HypervisorType.KVM);
-        hTypes.add(HypervisorType.Simulator);
-        hTypes.add(HypervisorType.LXC);
-        hTypes.add(HypervisorType.Hyperv);
-        return hTypes;
+        return Collections.unmodifiableList(this.hTypes);
     }
 
     private List<Provider> getVpcProviders(long vpcId) {
