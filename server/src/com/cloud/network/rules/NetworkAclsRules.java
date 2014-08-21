@@ -17,23 +17,14 @@
 
 package com.cloud.network.rules;
 
-import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.routing.SetNetworkACLCommand;
-import com.cloud.agent.api.to.NetworkACLTO;
-import com.cloud.agent.manager.Commands;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.NetworkACLItem;
-import com.cloud.network.vpc.VpcGateway;
 
 public class NetworkAclsRules extends RuleApplier {
 
@@ -59,35 +50,5 @@ public class NetworkAclsRules extends RuleApplier {
 
     public boolean isPrivateGateway() {
         return _isPrivateGateway;
-    }
-
-    public void createNetworkACLsCommands(final List<? extends NetworkACLItem> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId, final boolean privateGateway) {
-        List<NetworkACLTO> rulesTO = new ArrayList<NetworkACLTO>();
-        String guestVlan = null;
-        Network guestNtwk = _networkDao.findById(guestNetworkId);
-        URI uri = guestNtwk.getBroadcastUri();
-        if (uri != null) {
-            guestVlan = BroadcastDomainType.getValue(uri);
-        }
-
-        if (rules != null) {
-            for (NetworkACLItem rule : rules) {
-                NetworkACLTO ruleTO = new NetworkACLTO(rule, guestVlan, rule.getTrafficType());
-                rulesTO.add(ruleTO);
-            }
-        }
-
-        SetNetworkACLCommand cmd = new SetNetworkACLCommand(rulesTO, _networkHelper.getNicTO(router, guestNetworkId, null));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, guestVlan);
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-        if (privateGateway) {
-            cmd.setAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY, String.valueOf(VpcGateway.Type.Private));
-        }
-
-        cmds.addCommand(cmd);
     }
 }
