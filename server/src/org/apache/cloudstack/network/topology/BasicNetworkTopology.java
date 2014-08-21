@@ -87,7 +87,8 @@ public class BasicNetworkTopology implements NetworkTopology {
     @Inject
     protected HostDao _hostDao;
 
-    @Inject
+    @Autowired
+    @Qualifier("networkHelper")
     protected NetworkHelper _nwHelper;
 
     @Override
