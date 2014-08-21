@@ -20,11 +20,18 @@ package com.cloud.baremetal.manager;
 import com.cloud.baremetal.database.BaremetalRctDao;
 import com.cloud.baremetal.database.BaremetalRctVO;
 import com.cloud.baremetal.networkservice.BaremetalRctResponse;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.google.gson.Gson;
 import org.apache.cloudstack.api.AddBaremetalRctCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.springframework.web.client.RestTemplate;
 
 import javax.inject.Inject;
@@ -32,6 +39,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by frank on 5/8/14.
@@ -41,6 +49,12 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
 
     @Inject
     private BaremetalRctDao rctDao;
+    @Inject
+    private AccountDao acntDao;
+    @Inject
+    private UserDao userDao;
+    @Inject
+    private AccountManager acntMgr;
 
     @Override
     public BaremetalRctResponse addRct(AddBaremetalRctCmd cmd) {
@@ -76,6 +90,41 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
     @Override
     public String getName() {
         return "Baremetal Vlan Manager";
+    }
+
+    @Override
+    public boolean start() {
+        QueryBuilder<AccountVO> acntq = QueryBuilder.create(AccountVO.class);
+        acntq.and(acntq.entity().getAccountName(), SearchCriteria.Op.EQ, BaremetalVlanManager.BAREMETAL_SYSTEM_ACCOUNT_NAME);
+        AccountVO acnt = acntq.find();
+        if (acnt != null) {
+            return true;
+        }
+
+        acnt = new AccountVO();
+        acnt.setAccountName(BAREMETAL_SYSTEM_ACCOUNT_NAME);
+        acnt.setUuid(UUID.randomUUID().toString());
+        acnt.setState(Account.State.enabled);
+        acnt.setDomainId(1);
+        acnt = acntDao.persist(acnt);
+
+        UserVO user = new UserVO();
+        user.setState(Account.State.enabled);
+        user.setUuid(UUID.randomUUID().toString());
+        user.setAccountId(acnt.getAccountId());
+        user.setUsername(BAREMETAL_SYSTEM_ACCOUNT_NAME);
+        user.setFirstname(BAREMETAL_SYSTEM_ACCOUNT_NAME);
+        user.setLastname(BAREMETAL_SYSTEM_ACCOUNT_NAME);
+        user.setPassword(UUID.randomUUID().toString());
+        user = userDao.persist(user);
+
+        RegisterCmd cmd = new RegisterCmd();
+        cmd.setId(user.getId());
+        String[] keys = acntMgr.createApiKeyAndSecretKey(cmd);
+        user.setApiKey(keys[0]);
+        user.setSecretKey(keys[1]);
+        userDao.update(user.getId(), user);
+        return true;
     }
 
 

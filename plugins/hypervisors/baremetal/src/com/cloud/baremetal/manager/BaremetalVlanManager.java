@@ -26,5 +26,7 @@ import org.apache.cloudstack.api.AddBaremetalRctCmd;
  * Created by frank on 4/30/14.
  */
 public interface BaremetalVlanManager extends Manager, PluggableService {
+    public static final String BAREMETAL_SYSTEM_ACCOUNT_NAME = "baremetal-system-account";
+
     BaremetalRctResponse addRct(AddBaremetalRctCmd cmd);
 }
