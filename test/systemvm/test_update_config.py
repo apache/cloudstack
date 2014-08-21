@@ -77,6 +77,16 @@ class UpdateConfigTestCase(SystemVMTestCase):
         "type":"networkacl"
     }
 
+    basic_dhcp_entry = {
+        "host_name":"VM-58976c22-0832-451e-9ab2-039e9f27e415",
+        "mac_address":"02:00:26:c3:00:02",
+        "ipv4_adress":"172.16.1.102",
+        "ipv6_duid":"00:03:00:01:02:00:26:c3:00:02",
+        "default_gateway":"172.16.1.1",
+        "default_entry":True,
+        "type":"dhcpentry"
+    }
+
     def update_config(self, config):
         config_json = json.dumps(config, indent=2)
         print_doc('config.json', config_json)
@@ -205,14 +215,35 @@ class UpdateConfigTestCase(SystemVMTestCase):
         assert ip.has_ip("%s/%s" % (config['router_guest_ip'], config['cidr']), config['device'])
         assert process.is_up("apache2"), "Apache2 should be running after adding a guest network"
         assert process.is_up("dnsmasq"), "Dnsmasq should be running after adding a guest network"
+		# Add a host to the dhcp server
+		# This must happen in order for dnsmasq to be listening
+        octets = config['router_guest_ip'].split('.')
+        configs = []
+        for n in range(10):
+            ipb = ".".join(octets[0:3])
+            ipa = "%s.%s" % (ipb, n)
+            gw = "%s.1" % ipb
+            self.basic_dhcp_entry['ipv4_adress'] =  ipa
+            self.basic_dhcp_entry['default_gateway'] =  gw
+            self.basic_dhcp_entry['host_name'] =  "host_%s" % (ipa)
+            self.update_config(self.basic_dhcp_entry)
+            configs.append(copy.deepcopy(self.basic_dhcp_entry))
         assert port.is_listening(80)
         assert port.is_listening(53)
         assert port.is_listening(53)
         assert port.is_listening(67)
+        for o in configs:
+            line = "%s,%s,%s,infinite" % (o['mac_address'], o['ipv4_adress'], o['host_name'])
+            assert file.has_line("/etc/dhcphosts.txt", line)
         config['add'] = False
         self.update_config(config)
         assert not ip.has_ip("%s/%s" % (config['router_guest_ip'], config['cidr']), config['device'])
-
+        for o in configs:
+            o['add'] = False
+            self.update_config(o)
+        for o in configs:
+            line = "%s,%s,%s,infinite" % (o['mac_address'], o['ipv4_adress'], o['host_name'])
+            assert file.has_line("/etc/dhcphosts.txt", line) is False
 
 if __name__ == '__main__':
     import unittest
