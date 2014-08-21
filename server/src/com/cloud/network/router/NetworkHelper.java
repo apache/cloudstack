@@ -30,7 +30,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.vm.DomainRouterVO;
@@ -79,7 +78,7 @@ public interface NetworkHelper {
 
     public abstract DomainRouterVO deployRouter(
             RouterDeploymentDefinition routerDeploymentDefinition,
-            boolean startRouter, List<HypervisorType> supportedHypervisors)
+            boolean startRouter)
             throws InsufficientAddressCapacityException,
             InsufficientServerCapacityException, InsufficientCapacityException,
             StorageUnavailableException, ResourceUnavailableException;
