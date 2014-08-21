@@ -60,18 +60,13 @@ public class CloudStackPlugin extends OvmObject {
             returnCode.putAll(m);
         }
 
-        public Boolean getRc() {
-            try {
-                Long rc = (Long) returnCode.get("rc");
-                returnCode.put("exit", rc);
-                if (rc != 0) {
-                    return false;
-                }
-                return true;
-            } catch (Exception e) {
-                LOGGER.error("Unable to get return code!", e);
+        public Boolean getRc() throws Ovm3ResourceException {
+            Long rc = (Long) returnCode.get("rc");
+            returnCode.put("exit", rc);
+            if (rc != 0) {
+                return false;
             }
-            return false;
+            return true;
         }
 
         public String getStdOut() {
@@ -86,7 +81,7 @@ public class CloudStackPlugin extends OvmObject {
             if (returnCode.get("exit") == null) {
                 returnCode.put("exit", returnCode.get("rc"));
             }
-            return Integer.valueOf((String) returnCode.get("exit"));
+            return ((Long) returnCode.get("exit")).intValue();
         }
     }
 
@@ -101,14 +96,14 @@ public class CloudStackPlugin extends OvmObject {
         Boolean x = false;
         /* should deduct the interval from the timeout and sleep on it */
         Integer sleep = interval;
-        while (!x && retries > 0) {
-            x = (Boolean) callWrapper("check_domr_port", ip, port, interval);
-            retries--;
-            try {
+        try {
+            while (!x && retries > 0) {
+                x = (Boolean) nullIsFalseCallWrapper("check_domr_port", ip, port, interval);
+                retries--;
                 Thread.sleep(sleep * 1000);
-            } catch (InterruptedException e) {
-                LOGGER.info("Domr port check interrupted: " + e.getMessage());
             }
+        } catch (Exception e) {
+            LOGGER.info("Domr port check failed: " + e.getMessage());
         }
         return x;
     }
@@ -124,27 +119,22 @@ public class CloudStackPlugin extends OvmObject {
     }
 
     public boolean domrCheckPort(String ip, Integer port) throws Ovm3ResourceException{
-        Object x = callWrapper("check_domr_port", ip, port);
-        return (Boolean) x;
+        return (Boolean) callWrapper("check_domr_port", ip, port);
     }
 
     public boolean domrCheckSsh(String ip) throws Ovm3ResourceException {
-        Object x = callWrapper("check_domr_ssh", ip);
-        return (Boolean) x;
+        return (Boolean) callWrapper("check_domr_ssh", ip);
     }
 
     public boolean ovsControlInterface(String dev, String cidr) throws Ovm3ResourceException {
-        Object x = callWrapper("ovs_control_interface", dev, cidr);
-        return (Boolean) x;
+        return (Boolean) callWrapper("ovs_control_interface", dev, cidr);
     }
 
     public boolean ping(String host) throws Ovm3ResourceException {
-        Object x = callWrapper("ping", host);
-        return (Boolean) x;
+        return (Boolean) callWrapper("ping", host);
     }
 
     public boolean ovsCheckFile(String file) throws Ovm3ResourceException {
-        Object x = callWrapper("ovs_check_file", file);
-        return (Boolean) x;
+        return (Boolean) callWrapper("ovs_check_file", file);
     }
 }

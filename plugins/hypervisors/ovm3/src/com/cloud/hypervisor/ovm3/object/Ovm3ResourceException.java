@@ -3,10 +3,6 @@
  */
 package com.cloud.hypervisor.ovm3.object;
 
-/**
- * @author funs
- *
- */
 public class Ovm3ResourceException extends Exception {
     private static final long serialVersionUID = 1L;
     private final Throwable cause = null;

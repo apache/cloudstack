@@ -24,9 +24,7 @@ import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-/*
- * should become an interface implementation
- */
+
 public class Xen extends OvmObject {
     private static final Logger LOGGER = Logger
             .getLogger(Xen.class);
@@ -139,10 +137,8 @@ public class Xen extends OvmObject {
 
         public boolean isControlDomain() {
             if (this.getVmUuid().contains(
-                    "00000000-0000-0000-0000-000000000000")) {
-                return true;
-            }
-            if (this.getVmName().contains("Domain-0")) {
+                    "00000000-0000-0000-0000-000000000000") ||
+                    this.getVmName().contains("Domain-0")) {
                 return true;
             }
             return false;
@@ -153,8 +149,12 @@ public class Xen extends OvmObject {
             return true;
         }
 
-        public String getPrimaryPoolUuid() {
-            return this.vmPrimaryPoolUuid;
+        public String getPrimaryPoolUuid() throws Ovm3ResourceException {
+            if (this.vmPrimaryPoolUuid.equals("")) {
+                return this.getVmRootDiskPoolId();
+            } else {
+                return this.vmPrimaryPoolUuid;
+            }
         }
 
         public Map<String, Object> getVmParams() {
@@ -289,29 +289,10 @@ public class Xen extends OvmObject {
             return this.vmVifsPrep;
         }
 
-        public boolean addVif() {
-            List<String> vif = new ArrayList<String>();
-            for (final String entry : vmVifsPrep.get(0).split(",")) {
-                final String[] parts = entry.split("=");
-                assert parts.length == 2 : "Invalid entry: " + entry;
-                vif.add(parts[0] + "=" + parts[1]);
-            }
-            vmVifsPrep.add(StringUtils.join(vif, ","));
-            return true;
-        }
-
         public Boolean addVif(Integer id, String bridge, String mac) {
             String vif = "mac=" + mac + ",bridge=" + bridge;
             vmVifs[id] = vif;
-            return true;
-        }
-
-        public boolean setupVifs() {
-            for (String vif : vmVifs) {
-                if (vif != null) {
-                    vmVifsPrep.add(vif);
-                }
-            }
+            vmVifsPrep.add(vif);
             return true;
         }
 
@@ -406,11 +387,12 @@ public class Xen extends OvmObject {
         public String getVmDiskPoolId(int disk) throws Ovm3ResourceException {
             int fi = 3;
             String diskPath = "";
-            diskPath = getVmDiskDetailFromMap(disk, "uname");
-            String[] st = diskPath.split(File.separator);
-            if (st.length < fi) {
+            try {
+                diskPath = getVmDiskDetailFromMap(disk, "uname");
+            } catch (NullPointerException e) {
                 throw new Ovm3ResourceException("No valid disk found for id: " + disk);
             }
+            String[] st = diskPath.split(File.separator);
             return st[fi];
         }
 
@@ -435,18 +417,10 @@ public class Xen extends OvmObject {
             return true;
         }
 
-        public Boolean setVnc(String address) {
-            return setVnc("vnc", address, "en-us");
-        }
-
-        public Boolean setVnc(String type, String address, String map) {
-            /* unused off is domid + 5900, with unused=1 it will be "smart" and not work */
-            vmVnc.put("type", type);
-            vmVnc.put("vncunused", this.getVncUsed());
-            vmVnc.put("vnclisten", address);
-            vmVnc.put("keymap", map);
-            setVnc();
-            return true;
+        public Boolean setVnc(String address, String password) {
+            setVncAddress(address);
+            setVncPassword(password);
+            return setVnc();
         }
 
         public void setVncUsed(String used) {
@@ -499,7 +473,11 @@ public class Xen extends OvmObject {
             Map<String, Object[]> o = (Map<String, Object[]>) vmParams
                     .get("device");
             vmVnc = (Map<String, String>) o.get("vfb")[0];
-            return vmVnc.get(el);
+            if (vmVnc.containsKey(el)) {
+                return vmVnc.get(el);
+            } else {
+                return null;
+            }
         }
 
         /* Don't think we'll use this? */
@@ -615,9 +593,10 @@ public class Xen extends OvmObject {
      * default: None argument: repo_id - default: None argument: vm_id -
      * default: None
      */
+
     public Boolean listVm(String repoId, String vmId) throws Ovm3ResourceException {
-        defVm = (Vm) callWrapper("list_vm", repoId, vmId);
-        if (defVm == null) {
+        defVm.setVmParams((Map<String,Object>) callWrapper("list_vm", repoId, vmId));
+        if (defVm.getVmParams() == null) {
             return false;
         }
         return true;
@@ -857,6 +836,7 @@ public class Xen extends OvmObject {
             return true;
         }
         return false;
+        // throw new Ovm3ResourceException(x);
     }
 
     /*
@@ -888,30 +868,30 @@ public class Xen extends OvmObject {
      */
     public Vm getVmConfig(String repoId, String vmId) throws Ovm3ResourceException {
         try {
-        Xen.Vm nVm = new Xen.Vm();
-        Map<String, Object[]> x = (Map<String, Object[]>) callWrapper(
-                "get_vm_config", repoId, vmId);
-        if (x == null) {
+            Xen.Vm nVm = new Xen.Vm();
+            Map<String, Object[]> x = (Map<String, Object[]>) callWrapper(
+                    "get_vm_config", repoId, vmId);
+            if (x == null) {
+                return nVm;
+            }
+            nVm.setVmVifs(Arrays.asList(Arrays.copyOf(x.get("vif"),
+                    x.get("vif").length, String[].class)));
+            x.remove("vif");
+            nVm.setVmDisks(Arrays.asList(Arrays.copyOf(x.get("disk"),
+                    x.get("disk").length, String[].class)));
+            x.remove("disk");
+            nVm.setVmVncs(Arrays.asList(Arrays.copyOf(x.get("vfb"),
+                    x.get("vfb").length, String[].class)));
+            x.remove("vfb");
+            Map<String, Object> remains = new HashMap<String, Object>();
+            for (final Map.Entry<String, Object[]> not : x.entrySet()) {
+                remains.put(not.getKey(), not.getValue());
+            }
+            nVm.setVmParams(remains);
+            nVm.setPrimaryPoolUuid(repoId);
+            /* to make sure stuff doesn't blow up in our face... */
+            defVm = nVm;
             return nVm;
-        }
-        nVm.setVmVifs(Arrays.asList(Arrays.copyOf(x.get("vif"),
-                x.get("vif").length, String[].class)));
-        x.remove("vif");
-        nVm.setVmDisks(Arrays.asList(Arrays.copyOf(x.get("disk"),
-                x.get("disk").length, String[].class)));
-        x.remove("disk");
-        nVm.setVmVifs(Arrays.asList(Arrays.copyOf(x.get("vfb"),
-                x.get("vfb").length, String[].class)));
-        x.remove("vfb");
-        Map<String, Object> remains = new HashMap<String, Object>();
-        for (final Map.Entry<String, Object[]> not : x.entrySet()) {
-            remains.put(not.getKey(), not.getValue());
-        }
-        nVm.setVmParams(remains);
-        nVm.setPrimaryPoolUuid(repoId);
-        /* to make sure stuff doesn't blow up in our face... */
-        defVm = nVm;
-        return nVm;
         } catch (Ovm3ResourceException e) {
             throw e;
         }

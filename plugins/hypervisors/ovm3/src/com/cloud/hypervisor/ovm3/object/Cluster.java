@@ -13,9 +13,6 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
 
-/*
- * should become an interface implementation
- */
 class Cluster extends OvmObject {
     public Cluster(Connection c) {
         setClient(c);

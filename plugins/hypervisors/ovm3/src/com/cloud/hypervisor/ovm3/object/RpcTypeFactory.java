@@ -66,12 +66,10 @@ public class RpcTypeFactory extends TypeFactoryImpl {
          * Tag name of an i8 value.
          */
         public static final String I8_TAG = "i8";
-
         /*
          * Fully qualified name of an i8 value.
          */
         public static final String EX_I8_TAG = "i8";
-
         @Override
         public void write(ContentHandler pHandler, Object pObject)
                 throws SAXException {

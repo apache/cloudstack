@@ -13,9 +13,6 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
 
-/*
- * should become an interface implementation
- */
 public class Remote extends OvmObject {
 
     public Remote(Connection c) {

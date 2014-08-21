@@ -23,14 +23,15 @@ import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.TimingOutCallback;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
+import org.apache.xmlrpc.client.XmlRpcClientRequestImpl;
 
 public class Connection extends XmlRpcClient {
     private static final Logger LOGGER = Logger.getLogger(Connection.class);
     private final XmlRpcClientConfigImpl xmlClientConfig = new XmlRpcClientConfigImpl();
-    private final XmlRpcClient xmlClient;
-    private final String hostUser;
-    private final String hostPass;
-    private final String hostIp;
+    public XmlRpcClient xmlClient;
+    private String hostUser = null;
+    private String hostPass = null;
+    private String hostIp;
     private Integer hostPort = 8898;
     private Boolean hostUseSsl = false;
     private String cert = "";
@@ -39,22 +40,26 @@ public class Connection extends XmlRpcClient {
     private final Integer timeoutMs = 1200;
     private final Integer timeoutS = timeoutMs * 1000;
 
+    public Connection() {
+        // xmlClient = setupXmlClient();
+    }
+
     public Connection(String ip, Integer port, String username, String password) {
         hostIp = ip;
         hostPort = port;
         hostUser = username;
         hostPass = password;
-        xmlClient = getXmlClient();
+        xmlClient = setupXmlClient();
     }
 
     public Connection(String ip, String username, String password) {
         hostIp = ip;
         hostUser = username;
         hostPass = password;
-        xmlClient = getXmlClient();
+        xmlClient = setupXmlClient();
     }
 
-    private XmlRpcClient getXmlClient() {
+    private XmlRpcClient setupXmlClient() {
         final XmlRpcClient client = new XmlRpcClient();
 
         URL url;
@@ -73,8 +78,10 @@ public class Connection extends XmlRpcClient {
             xmlClientConfig.setConnectionTimeout(60000);
             /* reply time is 5 mins */
             xmlClientConfig.setReplyTimeout(60 * 15000);
-            xmlClientConfig.setBasicUserName(hostUser);
-            xmlClientConfig.setBasicPassword(hostPass);
+            if (hostUser != null && hostPass != null) {
+                xmlClientConfig.setBasicUserName(hostUser);
+                xmlClientConfig.setBasicPassword(hostPass);
+            }
             xmlClientConfig.setXmlRpcServer(null);
             client.setConfig(xmlClientConfig);
             client.setTypeFactory(new RpcTypeFactory(client));
@@ -101,12 +108,13 @@ public class Connection extends XmlRpcClient {
              * some parameters including hostUser password should not be printed in
              * log
              */
-
             LOGGER.debug("Call Ovm3 agent: " + method + " with " + params);
         }
         long startTime = System.currentTimeMillis();
         try {
-            xmlClient.executeAsync(method, params, callback);
+            /* returns actual xml */
+            XmlRpcClientRequestImpl req = new XmlRpcClientRequestImpl(xmlClient.getClientConfig(), method, params);
+            xmlClient.executeAsync(req, callback);
             return callback.waitForResponse();
         } catch (TimingOutCallback.TimeoutException e) {
             LOGGER.info("Timeout: ", e);
@@ -119,7 +127,7 @@ public class Connection extends XmlRpcClient {
             throw new XmlRpcException(e.getMessage());
         } catch (Throwable e) {
             LOGGER.error("Holy crap batman!: ", e);
-            throw new XmlRpcException(e.getMessage());
+            throw new XmlRpcException(e.getMessage(), e);
         } finally {
             long endTime = System.currentTimeMillis();
             /* in seconds */
@@ -156,6 +164,7 @@ public class Connection extends XmlRpcClient {
     public String getCert() {
         return cert;
     }
+
     public String getKey() {
         return key;
     }

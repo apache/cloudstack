@@ -13,191 +13,311 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.w3c.dom.Document;
+
 /*
  * should become an interface implementation
  */
 public class StoragePlugin extends OvmObject {
-    private String pluginType = "oracle.generic.NFSPlugin.GenericNFSPlugin";
-    private String unknown = ""; /* empty */
+    private static final String EMPTY_STRING = "";
+    private String pluginPath = "//Discover_Storage_Plugins_Result/storage_plugin_info_list/storage_plugin_info";
+    private String nfsPlugin = "oracle.generic.NFSPlugin.GenericNFSPlugin";
+    private String getPluginType = nfsPlugin;
+    private List<String> supportedPlugins = new ArrayList<String>();
+    private Map<String, Object> supportedPluginsProperties = new HashMap<String, Object>();
+    private String unknown = EMPTY_STRING; /* empty */
     private Boolean active = true;
     private List<String> someList = new ArrayList<String>(); /* empty */
+    private String mountPoint = EMPTY_STRING;
+    FileProperties fileProperties = new FileProperties();
+    StorageDetails storageDetails = new StorageDetails();
+    StorageServer storageSource = new StorageServer();
 
     public StoragePlugin(Connection c) {
         setClient(c);
     }
-    /* TODO: subclass Storage Base Properties*/
-    private Map<String, Object> baseProps = new HashMap<String, Object>() {
-        {
-            put("status", "");
-            /* iscsi */
-            put("admin_user", "");
-            put("admin_host", "");
-            /* no dash uuid */
-            put("uuid", "");
-            put("total_sz", "");
-            /* iscsi or fc */
-            put("admin_passwd", "");
-            put("storage_desc", "");
-            put("free_sz", 0);
-            /* remote host for fs */
-            put("access_host", "");
-            /* type, guess lun ? */
-            put("storage_type", "FileSys");
-            put("alloc_size", 0);
-            put("access_groups", new ArrayList<String>());
-            put("sed_size", 0);
-            /* uuid no dashes */
-            put("name", "");
+    /* TODO: subclass storagedetails? */
+    /* uuid has dashes here!, and ss_uuid is the relation to the storage source uuid */
+    public class StorageDetails {
+        private Map<String, Object> storageDetails = new HashMap<String, Object>() {
+            {
+                put("status", EMPTY_STRING);
+                put("uuid", EMPTY_STRING);
+                put("ss_uuid", EMPTY_STRING);
+                put("size", EMPTY_STRING);
+                put("free_sz", 0);
+                put("state", 0);
+                put("access_grp_names", new ArrayList<String>());
+                put("access_path", EMPTY_STRING);
+                put("name", EMPTY_STRING);
+                put("mount_options", new ArrayList<String>());
+            }
+        };
+        public Map<String, Object> getStorageDetails() {
+            return storageDetails;
         }
-    };
-
-    public String setUuid(String val) {
-        this.baseProps.put("uuid", val);
-        return val;
-    }
-
-    public String getUuid() {
-        return (String) this.baseProps.get("uuid");
-    }
-
-    public String setName(String val) {
-        this.baseProps.put("name", val);
-        return val;
-    }
-
-    public String getName() {
-        return (String) this.baseProps.get("name");
-    }
-
-    public String setFsType(String val) {
-        this.baseProps.put("storage_type", val);
-        return val;
-    }
-
-    public String getFsType() {
-        return (String) this.baseProps.get("storage_type");
-    }
-
-    public String setFsHost(String val) {
-        this.baseProps.put("access_host", val);
-        return val;
-    }
-
-    public String getFsHost() {
-        return (String) this.baseProps.get("access_host");
-    }
-
-    public String setFsServer(String val) {
-        return this.setFsHost(val);
-    }
-
-    public String getFsServer() {
-        return this.getFsHost();
-    }
-
-    /* TODO: subclass Storage Specific Properties */
-    private Map<String, Object> ssProps = new HashMap<String, Object>() {
-        {
-            /* empty */
-            put("status", "");
-            /* with dashes */
-            put("uuid", "");
-            /* no dashes */
-            put("ss_uuid", "");
-            put("size", "");
-            put("free_sz", "");
-            /* guess this is active ? */
-            put("state", 1);
-            put("access_grp_names", new ArrayList<String>());
-            /* remote path */
-            put("access_path", "");
-            put("name", "");
-            /* array of values that match normal mount options */
-            put("mount_options", new ArrayList<String>());
+        public void setStorageDetails(Map<String, Object> details) {
+            storageDetails = details;
         }
-    };
-
-    public String setFsSourcePath(String val) {
-        this.ssProps.put("access_path", val);
-        return val;
+        public void setSize(String val) {
+            this.storageDetails.put("size", val);
+        }
+        public String getSize() {
+            return (String) this.storageDetails.get("size");
+        }
+        public void setFreeSize(String val) {
+            this.storageDetails.put("free_sz", val);
+        }
+        public String getFreeSize() {
+            return (String) this.storageDetails.get("free_sz");
+        }
+        public void setState(Integer val) {
+            this.storageDetails.put("state", val);
+        }
+        public Integer getState() {
+            return (Integer) this.storageDetails.get("state");
+        }
+        public void setStatus(String val) {
+            this.storageDetails.put("status", val);
+        }
+        public String getStatus() {
+            return (String) this.storageDetails.get("status");
+        }
+        /* format depends on storagesource type ? */
+        public void setAccessPath(String val) {
+            this.storageDetails.put("access_path", val);
+        }
+        public String getAccessPath() {
+            return (String) this.storageDetails.get("access_path");
+        }
+        public void setName(String val) {
+            this.storageDetails.put("name", val);
+        }
+        public String getName() {
+            return (String) this.storageDetails.get("name");
+        }
+        public void setUuid(String val) throws Ovm3ResourceException {
+            if (!val.contains("-")) {
+                throw new Ovm3ResourceException("Storage Details UUID should contain dashes: " + val);
+            }
+            this.storageDetails.put("uuid", val);
+        }
+        public String getUuid() {
+            return (String) this.storageDetails.get("uuid");
+        }
+        public void setStorageServerRelationalUuid(String val) throws Ovm3ResourceException {
+            if (val.contains("-")) {
+                throw new Ovm3ResourceException("Storage Details UUID that relates to Storage Source should notcontain dashes: " + val);
+            }
+            this.storageDetails.put("ss_uuid", val);
+        }
+        public String getStorageServerRelationalUuid() {
+            return (String) this.storageDetails.get("ss_uuid");
+        }
+        public void setAccessGroupNames(List<String> l) {
+            this.storageDetails.put("access_grp_names", l);
+        }
+        public List<String> getAccessGroupNames() {
+            return (List<String>) this.storageDetails.get("access_grp_names");
+        }
+        public void setMountOptions(List<String> l) {
+            this.storageDetails.put("mount_options", l);
+        }
+        public List<String> getMountOptions() {
+            return (List<String>) this.storageDetails.get("mount_options");
+        }
     }
-
-    public String getFsSourcePath() {
-        return (String) this.ssProps.get("access_path");
-    }
-
-    public String setMntUuid(String val) {
-        this.ssProps.put("uuid", val);
-        return val;
-    }
-
-    public String getMntUuid() {
-        return (String) this.ssProps.get("uuid");
-    }
-
-    public String setSsUuid(String val) {
-        this.ssProps.put("ss_uuid", val);
-        return val;
-    }
-
-    public String getSsUuid() {
-        return (String) this.ssProps.get("ss_uuid");
-    }
-
-    public String setSsName(String val) {
-        this.ssProps.put("name", val);
-        return val;
-    }
-
-    public String getSsName() {
-        return (String) this.ssProps.get("ss_uuid");
-    }
-
-    public String getFreeSize() {
-        return this.ssProps.get("free_sz").toString();
-    }
-
-    public String getTotalSize() {
-        return this.ssProps.get("size").toString();
-    }
-
-    public String getSize() {
-        return this.ssProps.get("size").toString();
+    /* TODO: subclass Storage Source */
+    /* mind you uuid has NO dashes here */
+    public class StorageServer {
+        private Map<String, Object> storageSource = new HashMap<String, Object>() {
+            {
+                put("status", EMPTY_STRING);
+                put("admin_user", EMPTY_STRING);
+                put("admin_host", EMPTY_STRING);
+                put("uuid", EMPTY_STRING);
+                put("total_sz", 0);
+                put("admin_passwd", EMPTY_STRING);
+                put("storage_desc", EMPTY_STRING);
+                put("free_sz", 0);
+                put("access_host", EMPTY_STRING);
+                put("storage_type", EMPTY_STRING);
+                put("alloc_sz", 0);
+                put("access_grps",  new ArrayList<String>());
+                put("used_sz", 0);
+                put("name", EMPTY_STRING);
+            }
+        };
+        public Map<String, Object> getStorageServer() {
+            return storageSource;
+        }
+        public void setStorageServer(Map<String, Object> details) {
+            storageSource = details;
+        }
+        public void setAccessGroups(List<String> l) {
+            this.storageSource.put("access_grps", l);
+        }
+        public List<String> getAccessGroups() {
+            return (List<String>) this.storageSource.get("access_grps");
+        }
+        public void setStatus(String val) {
+            this.storageSource.put("status", val);
+        }
+        public String getStatus() {
+            return (String) this.storageSource.get("status");
+        }
+        public void setAdminUser(String val) {
+            this.storageSource.put("admin_user", val);
+        }
+        public String getAdminUser() {
+            return (String) this.storageSource.get("admin_user");
+        }
+        public void setAdminHost(String val) {
+            this.storageSource.put("admin_host", val);
+        }
+        public String getAdminHost() {
+            return (String) this.storageSource.get("admin_host");
+        }
+        public void setUuid(String val) throws Ovm3ResourceException {
+            if (val.contains("-")) {
+                throw new Ovm3ResourceException("Storage Source UUID should not contain dashes: " + val);
+            }
+            this.storageSource.put("uuid", val);
+        }
+        public String getUuid() {
+            return (String) this.storageSource.get("uuid");
+        }
+        public String getTotalSize() {
+            return (String) this.storageSource.get("total_sz");
+        }
+        public void setTotalSize(Integer val) {
+            this.storageSource.put("total_sz", val);
+        }
+        public void setAdminPassword(String val) {
+            this.storageSource.put("admin_password", val);
+        }
+        public String getAdminPassword() {
+            return (String) this.storageSource.get("admin_password");
+        }
+        public void setDescription(String val) {
+            this.storageSource.put("storage_desc", val);
+        }
+        public String getDescription() {
+            return (String) this.storageSource.get("storage_desc");
+        }
+        public String getFreeSize() {
+            return (String) this.storageSource.get("free_sz");
+        }
+        public void setFreeSize(Integer val) {
+            this.storageSource.put("free_sz", val);
+        }
+        public void setAccessHost(String val) {
+            this.storageSource.put("access_host", val);
+        }
+        public String getAccessHost() {
+            return (String) this.storageSource.get("access_host");
+        }
+        public void setStorageType(String val) {
+            this.storageSource.put("storage_type", val);
+        }
+        public String getStorageType() {
+            return (String) this.storageSource.get("storage_type");
+        }
+        public void setAllocationSize(Integer val) {
+            this.storageSource.put("alloc_sz", val);
+        }
+        public Integer getAllocationSize() {
+            return (Integer) this.storageSource.get("alloc_sz");
+        }
+        public void setUsedSize(Integer val) {
+            this.storageSource.put("used_sz", val);
+        }
+        public Integer getUsedSize() {
+            return (Integer) this.storageSource.get("used_sz");
+        }
+        public void setName(String val) {
+            this.storageSource.put("name", val);
+        }
+        public String getName() {
+            return (String) this.storageSource.get("name");
+        }
     }
 
     /* TODO: subclass FileProperties */
-    private Map<String, Object> fileProps = new HashMap<String, Object>() {
-        {
-            put("fr_type", "");
-            put("ondisk_sz", "");
-            put("fs_uuid", "");
-            put("file_path", "");
-            put("file_sz", "");
+    public class FileProperties {
+        private Map<String, Object> fileProperties = new HashMap<String, Object>() {
+            {
+                put("fr_type", EMPTY_STRING);
+                put("ondisk_sz", EMPTY_STRING);
+                put("fs_uuid", EMPTY_STRING);
+                put("file_path", EMPTY_STRING);
+                put("file_sz", EMPTY_STRING);
+            }
+        };
+        public Map<String, Object> getProperties() {
+            return fileProperties;
         }
-    };
-
-    public String getFileName() {
-        return (String) this.fileProps.get("file_path");
+        public void setProperties(Map<String, Object> props) {
+            fileProperties = props;
+        }
+        public String getName() {
+            return (String) this.fileProperties.get("file_path");
+        }
+        public String setName(String f) {
+            return (String) this.fileProperties.put("file_path", f);
+        }
+        public String setType(String t) {
+            return (String) this.fileProperties.put("fr_type", t);
+        }
+        public String getType() {
+            return (String) this.fileProperties.get("fr_type");
+        }
+        public void setSize(Long t) {
+            this.fileProperties.put("file_sz", t);
+        }
+        public Long getSize() {
+            return (Long) Long.getLong((String) this.fileProperties.get("file_sz"));
+        }
+        public String setOnDiskSize(String t) {
+            return (String) this.fileProperties.put("ondisk_sz", t);
+        }
+        public String getOnDiskSize() {
+            return (String) this.fileProperties.get("ondisk_sz");
+        }
+        public String setUuid(String t) {
+            return (String) this.fileProperties.put("fs_uuid", t);
+        }
+        public String getUuid() {
+            return (String) this.fileProperties.get("fs_uuid");
+        }
     }
 
-    public long getFileSize() {
-        return Long.parseLong((String) this.fileProps.get("file_sz"));
+    public String getPluginType() {
+        return this.getPluginType;
     }
-
-    private String mountPoint = "";
-
-    public String setFsMountPoint(String val) {
-        this.mountPoint = val;
-        return val;
+    private Boolean setPluginType(String val) throws Ovm3ResourceException {
+        for(String plugin : discoverStoragePlugins()) {
+            if (plugin.matches("(?i:.*"+val+".*)")) {
+                this.getPluginType = plugin;
+                return true;
+            }
+        }
+        return false;
     }
-
-    public String getFsMountPoint() {
-        return mountPoint;
+    public Boolean setISCSI() throws Ovm3ResourceException {
+        return setPluginType("SCSI");
+    }
+    public Boolean setOCFS2() throws Ovm3ResourceException {
+        return setPluginType("OCFS2");
+    }
+    public Boolean setNFS() throws Ovm3ResourceException {
+        return setPluginType("NFS");
     }
 
     /* Actions for the storage plugin */
@@ -223,41 +343,28 @@ public class StoragePlugin extends OvmObject {
      */
 
     /*
-     * TODO: make more generic now only for files storage_plugin_create, <class
+     * now only for files
+     * storage_plugin_create, <class
      * 'agent.api.storageplugin.StoragePlugin'> argument: impl_name - default:
      * None - calls resize secretly.. after "create"
      */
-    public Boolean storagePluginCreate(String poolUuid, String host,
+    public FileProperties storagePluginCreate(String poolUuid, String host,
             String file, Long size) throws Ovm3ResourceException{
-        /* this is correct ordering stuff */
+        /* this is correct ordering stuff and correct naming!!! */
         String uuid = this.deDash(poolUuid);
-        ssProps.put("uuid", uuid);
-        ssProps.put("access_host", host);
-        ssProps.put("storage_type", "FileSys");
-        ssProps.put("name", "");
-        ssProps.put("status", "");
-        ssProps.put("admin_user", "");
-        ssProps.put("admin_passwd", "");
-        ssProps.put("admin_host", "");
-        ssProps.put("total_sz", "");
-        ssProps.put("free_sz", "");
-        ssProps.put("used_sz", "");
-        ssProps.put("access_grps", "");
-        ssProps.put("storage_desc", "");
-
-        baseProps.put("ss_uuid", uuid);
-        baseProps.put("state", 2);
-        baseProps.put("uuid", poolUuid);
-        /* some more bogus values */
-        baseProps.put("status", "");
-        baseProps.put("access_path", "");
-        baseProps.put("access_grp_names", "");
-        baseProps.put("name", "");
-        baseProps.put("size", "");
-
-        return nullIsTrueCallWrapper(
-                "storage_plugin_create", this.pluginType, this.ssProps,
-                this.baseProps, file, "File", size);
+        StorageServer ss = new StorageServer();
+        StorageDetails sd = new StorageDetails();
+        FileProperties fp = new FileProperties();
+        ss.setUuid(uuid);
+        ss.setStorageType("FileSys");
+        ss.setAccessHost(host);
+        sd.setUuid(poolUuid);
+        sd.setStorageServerRelationalUuid(uuid);
+        sd.setState(2);
+        fp.setProperties((HashMap<String, Object>) callWrapper("storage_plugin_create",
+                this.getPluginType, ss.getStorageServer(),
+                sd.getStorageDetails(), file, "File", size));
+        return fp;
     }
 
     /*
@@ -283,15 +390,13 @@ public class StoragePlugin extends OvmObject {
      * 'agent.api.storageplugin.StoragePlugin'> argument: impl_name - default:
      * None
      */
-    public Boolean storagePluginListFs(String type) throws Ovm3ResourceException {
-        this.pluginType = type;
-        return storagePluginListFs();
-    }
-
-    public Boolean storagePluginListFs() throws Ovm3ResourceException {
-        Map<String, String> y = new HashMap<String, String>();
-        return nullIsTrueCallWrapper("storage_plugin_listFileSystems",
-                this.pluginType, y);
+    public Boolean storagePluginListFs(String host) throws Ovm3ResourceException {
+        StorageServer ss = new StorageServer();
+        ss.setAccessHost(host);
+        ss.setStorageType("FileSys");
+        ss.setStorageServer((Map<String, Object>) callWrapper("storage_plugin_listFileSystems",
+                this.getPluginType, ss.getStorageServer()));
+        return true;
     }
 
     /*
@@ -322,29 +427,28 @@ public class StoragePlugin extends OvmObject {
      * . storage_plugin_mount, <class 'agent.api.storageplugin.StoragePlugin'>
      * argument: impl_name - default: None
      */
-    public final Boolean storagePluginMount(String nfsHost, String nfsPath,
+    public final StorageServer storagePluginMountNFS(String nfsHost, String nfsRemotePath,
             String mntUuid, String mountPoint) throws Ovm3ResourceException {
         String propUuid = this.deDash(mntUuid);
-        this.setUuid(propUuid);
-        this.setName(propUuid);
-        this.setFsServer(nfsHost);
-        this.setFsSourcePath(nfsHost + ":" + nfsPath);
-        this.setMntUuid(mntUuid);
-        this.setSsUuid(propUuid);
-        this.setSsName("nfs:" + nfsPath);
-        this.setFsMountPoint(mountPoint);
-        this.storagePluginMount();
-        return nullIsTrueCallWrapper(
-                "storage_plugin_mount", this.pluginType, this.baseProps,
-                this.ssProps, this.mountPoint, this.unknown, this.active,
-                this.someList);
-    }
-
-    public Boolean storagePluginMount() throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper(
-                "storage_plugin_mount", this.pluginType, this.baseProps,
-                this.ssProps, this.mountPoint, this.unknown, this.active,
-                this.someList);
+        StorageServer ss = new StorageServer();
+        StorageDetails sd = new StorageDetails();
+        ss.setUuid(propUuid);
+        ss.setName(propUuid);
+        ss.setAccessHost(nfsHost);
+        sd.setStorageServerRelationalUuid(propUuid);
+        sd.setUuid(mntUuid);
+        sd.setAccessPath(nfsHost + ":" + nfsRemotePath);
+        if (!mountPoint.contains(mntUuid)) {
+            mountPoint += File.separator + mntUuid;
+        }
+        ss.setStorageServer((HashMap<String, Object>) callWrapper(
+                "storage_plugin_mount", this.getPluginType, ss.getStorageServer(),
+                sd.getStorageDetails(), mountPoint, this.unknown, this.active,
+                this.someList));
+        if (EMPTY_STRING.contains(ss.getUuid())) {
+            throw new Ovm3ResourceException("Unable to mount NFS FileSystem");
+        }
+        return ss;
     }
 
     /**
@@ -354,9 +458,19 @@ public class StoragePlugin extends OvmObject {
      * @return boolean
      *
      */
-    public final Boolean storagePluginUnmount() throws Ovm3ResourceException{
-        return nullIsTrueCallWrapper("storage_plugin_unmount", this.pluginType,
-                this.baseProps, this.ssProps, this.mountPoint, this.active);
+    public final Boolean storagePluginUnmountNFS(String nfsHost, String remotePath, String mntUuid, String localPath) throws Ovm3ResourceException {
+        StorageServer ss = new StorageServer();
+        StorageDetails sd = new StorageDetails();
+        sd.setUuid(mntUuid);
+        sd.setStorageServerRelationalUuid(this.deDash(mntUuid));
+        ss.setUuid(this.deDash(mntUuid));
+        ss.setAccessHost(nfsHost);
+        sd.setAccessPath(nfsHost + ":" + remotePath);
+        sd.setState(1);
+        ss.setStorageType("FileSys");
+        mountPoint = localPath + File.separator + mntUuid;
+        return nullIsTrueCallWrapper("storage_plugin_unmount", this.getPluginType,
+                storageSource.getStorageServer(), storageDetails.getStorageDetails(), mountPoint, this.active);
     }
 
     /*
@@ -408,13 +522,45 @@ public class StoragePlugin extends OvmObject {
     /*
      * discover_storage_plugins, <class 'agent.api.storageplugin.StoragePlugin'>
      */
-    public Boolean discoverStoragePlugins() throws Ovm3ResourceException{
+    public List<String> discoverStoragePlugins() throws Ovm3ResourceException{
         Object result = callWrapper("discover_storage_plugins");
-        /* TODO: Actually parse */
-        if (result != null) {
-            return true;
+        if (result == null) {
+            return null;
         }
-        return false;
+        Document xmlDocument = prepParse((String) result);
+        supportedPlugins = new ArrayList<String>();
+        supportedPlugins.addAll(xmlToList(pluginPath + "/@plugin_impl_name", xmlDocument));
+        return supportedPlugins;
+    }
+
+    private Map<String,String> checkStoragePluginDetails(String plugin, Boolean ability) throws Ovm3ResourceException {
+        Object result = callWrapper("discover_storage_plugins");
+        Document xmlDocument = prepParse((String) result);
+        if (discoverStoragePlugins().contains(plugin)) {
+            String details = pluginPath + "[@plugin_impl_name='" + plugin + "']";
+            if (ability) {
+                return xmlToMap(details + "/abilities", xmlDocument);
+            } else {
+                return xmlToMap(details, xmlDocument);
+            }
+        } else {
+            throw new Ovm3ResourceException("StoragePlugin should be one of: " + supportedPlugins);
+        }
+    }
+
+    private String checkStoragePluginBoth(String type, String property, Boolean ab) throws Ovm3ResourceException{
+        String val = checkStoragePluginDetails(type, ab).get(property);
+        if (val == null) {
+            throw new Ovm3ResourceException("StoragePlugin " + type + " has no " + property);
+        }
+        return val;
+    }
+
+    public String checkStoragePluginAbility(String type, String property) throws Ovm3ResourceException {
+        return checkStoragePluginBoth(type, property, true);
+    }
+    public String checkStoragePluginProperties(String type, String property) throws Ovm3ResourceException {
+        return checkStoragePluginBoth(type, property, false);
     }
 
     /*
@@ -430,33 +576,25 @@ public class StoragePlugin extends OvmObject {
      */
 
     /*
-     * TODO: is used for files and dirs..., we only implement files for now...
+     * INFO: is used for files and dirs..., we only implement files for now...
      * storage_plugin_destroy, <class 'agent.api.storageplugin.StoragePlugin'>
      * argument: impl_name - default: None
      */
-    public Boolean storagePluginDestroy(String poolUuid, String file) throws Ovm3ResourceException{
-        /* TODO: clean the props, the empty ones are checked, but not for content... */
-        baseProps.put("uuid", "");
-        baseProps.put("access_host", "");
-        baseProps.put("storage_type", "FileSys");
-        ssProps.put("ss_uuid", "");
-        ssProps.put("access_path", "");
-        ssProps.put("uuid", poolUuid);
-        fileProps.put("fr_type", "File");
-        fileProps.put("fs_uuid", poolUuid);
-        fileProps.put("file_path", file);
-        fileProps.put("file_sz", "");
-        fileProps.put("ondisk_sz", "");
+    public Boolean storagePluginDestroy(String poolUuid, String file) throws Ovm3ResourceException {
+        String uuid = this.deDash(poolUuid);
+        StorageServer ss = new StorageServer();
+        StorageDetails sd = new StorageDetails();
+        FileProperties fp = new FileProperties();
+        // ss.setStorageType("FileSys");));
+        ss.setUuid(uuid);
+        sd.setStorageServerRelationalUuid(uuid);
+        sd.setUuid(poolUuid);
+        fp.setType("file");
+        fp.setUuid(poolUuid);
+        fp.setName(file);
         return nullIsTrueCallWrapper(
-                "storage_plugin_destroy", this.pluginType, this.baseProps,
-                this.ssProps, this.fileProps);
-    }
-
-    public Boolean storagePluginDestroy() throws Ovm3ResourceException{
-        /* TODO: clean the props */
-        return nullIsTrueCallWrapper(
-                "storage_plugin_destroy", this.pluginType, this.baseProps,
-                this.ssProps, this.fileProps);
+                "storage_plugin_destroy", this.getPluginType, ss.getStorageServer(),
+                sd.getStorageDetails(), fp.getProperties());
     }
 
     /*
@@ -505,83 +643,54 @@ public class StoragePlugin extends OvmObject {
      * 'agent.api.storageplugin.StoragePlugin'> argument: impl_name - default:
      * None
      */
-    public Boolean storagePluginGetFileInfo() throws Ovm3ResourceException {
-        fileProps = (HashMap<String, Object>) callWrapper(
-                "storage_plugin_getFileInfo", this.pluginType, this.baseProps,
-                this.fileProps);
-        if (fileProps == null) {
-            return false;
-        }
-        return true;
-    }
-
-    public Boolean storagePluginGetFileInfo(String file) throws Ovm3ResourceException{
-        fileProps.put("file_path", file);
-        fileProps = (HashMap<String, Object>) callWrapper(
-                "storage_plugin_getFileInfo", this.pluginType, this.ssProps,
-                this.baseProps, this.fileProps);
-        if (fileProps == null) {
-            return false;
-        }
-        return true;
-    }
-
-    public Boolean storagePluginGetFileInfo(String poolUuid, String host,
+    public FileProperties storagePluginGetFileInfo(String poolUuid, String host,
             String file) throws Ovm3ResourceException {
         /* file path is the full path */
         String uuid = this.deDash(poolUuid);
-        baseProps.put("uuid", poolUuid);
-        baseProps.put("access_host", host);
-        ssProps.put("access_path", "");
-        ssProps.put("uuid", uuid);
-        ssProps.put("state", 1);
-        ssProps.put("ss_uuid", poolUuid);
-        ssProps.put("name", "");
-        fileProps.put("file_path", file);
-        fileProps = (HashMap<String, Object>) callWrapper(
-                "storage_plugin_getFileInfo", this.pluginType, this.ssProps,
-                this.baseProps, this.fileProps);
-        if (fileProps == null) {
-            return false;
+        StorageServer ss = new StorageServer();
+        StorageDetails sd = new StorageDetails();
+        FileProperties fp = new FileProperties();
+        ss.setUuid(uuid);
+        ss.setAccessHost(host);
+        sd.setUuid(poolUuid);
+        sd.setStorageServerRelationalUuid(uuid);
+        sd.setState(1);
+        fp.setName(file);
+        fp.setProperties((HashMap<String, Object>) callWrapper(
+                "storage_plugin_getFileInfo",
+                this.getPluginType,
+                ss.getStorageServer(),
+                sd.getStorageDetails(),
+                fp.getProperties()));
+        if ("".equals(fp.getName())) {
+            throw new Ovm3ResourceException("Unable to get file info for " + file);
         }
-        return true;
+        return fp;
     }
 
     /*
-     * TODO: input checking of ss and base /* storage_plugin_getFileSystemInfo,
+     * Should do some input checking of ss and base
+     * storage_plugin_getFileSystemInfo,
      * <class 'agent.api.storageplugin.StoragePlugin'> argument: impl_name -
      * default: None requires a minumum of uuid, access_host, storage_type
      * ss_uuid, access_path, uuid (the ss
      */
-    public Boolean storagePluginGetFileSystemInfo(String propUuid,
+    public StorageServer storagePluginGetFileSystemInfo(String propUuid,
             String mntUuid, String nfsHost, String nfsPath) throws Ovm3ResourceException{
         /* clean the props */
-        this.setUuid(propUuid);
-        this.setSsUuid(propUuid);
-        this.setMntUuid(mntUuid);
-        this.setFsHost(nfsHost);
-        this.setFsSourcePath(nfsHost + ":" + nfsPath);
-        this.setFsType("FileSys");
-        Map<String, Object> props = (HashMap<String, Object>) callWrapper(
-                "storage_plugin_getFileSystemInfo", this.pluginType,
-                this.baseProps, this.ssProps);
-        this.ssProps = props;
-        if (props == null) {
-            return false;
-        }
-        return true;
-    }
-
-    /* TODO: double check base and ss ordering!!!! */
-    public Boolean storagePluginGetFileSystemInfo() throws Ovm3ResourceException {
-        Map<String, Object> props = (HashMap<String, Object>) callWrapper(
-                "storage_plugin_getFileSystemInfo", this.pluginType,
-                this.baseProps, this.ssProps);
-        this.ssProps = props;
-        if (props == null) {
-            return false;
-        }
-        return true;
+        StorageServer ss = new StorageServer();
+        StorageDetails sd = new StorageDetails();
+        FileProperties fp = new FileProperties();
+        ss.setUuid(propUuid);
+        sd.setStorageServerRelationalUuid(propUuid);
+        sd.setUuid(mntUuid);
+        ss.setAccessHost(nfsHost);
+        sd.setAccessPath(nfsHost + ":" + nfsPath);
+        ss.setStorageType("FileSys");
+        ss.setStorageServer((HashMap<String, Object>) callWrapper(
+                "storage_plugin_getFileSystemInfo", this.getPluginType,
+                ss.getStorageServer(), sd.getStorageDetails()));
+        return ss;
     }
 
     /*
@@ -711,23 +820,4 @@ public class StoragePlugin extends OvmObject {
      * 'agent.api.storageplugin.StoragePlugin'> argument: impl_name - default:
      * None
      */
-    /* should really make that stuff a class as this is weird now... */
-    public Boolean storagePluginListMounts() throws Ovm3ResourceException {
-        Object x = callWrapper("storage_plugin_listMountPoints",
-                this.pluginType, this.baseProps);
-        if (x == null) {
-            return true;
-        }
-        return false;
-    }
-
-    public Boolean storagePluginListMounts(String uuid) throws Ovm3ResourceException {
-        /* should allow for putting in the uuid */
-        Object x = callWrapper("storage_plugin_listMountPoints",
-                this.pluginType, this.baseProps);
-        if (x == null) {
-            return true;
-        }
-        return false;
-    }
 }

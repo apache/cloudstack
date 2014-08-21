@@ -16,9 +16,6 @@ package com.cloud.hypervisor.ovm3.object;
 import java.util.ArrayList;
 import java.util.List;
 
-/*
- * should become an interface implementation
- */
 public class Ntp extends OvmObject {
     private List<String> ntpHosts = new ArrayList<String>();
     private Boolean isServer = null;
@@ -44,6 +41,9 @@ public class Ntp extends OvmObject {
 
     public List<String> getServers() {
         return ntpHosts;
+    }
+    public void setServers(List<String> s) {
+        ntpHosts = s;
     }
 
     public Boolean isRunning() {
@@ -73,10 +73,6 @@ public class Ntp extends OvmObject {
                 if (c == 1) {
                     this.isRunning = (Boolean) o;
                 }
-                // should not get here
-                if (c > 1) {
-                    return false;
-                }
                 c += 1;
             } else if (o instanceof java.lang.Object) {
                 Object[] s = (Object[]) o;
@@ -96,6 +92,9 @@ public class Ntp extends OvmObject {
      */
     public Boolean setNtp(List<String> ntpHosts, Boolean running)
             throws Ovm3ResourceException {
+        if (ntpHosts.isEmpty()) {
+            return false;
+        }
         return nullIsTrueCallWrapper("set_ntp", ntpHosts, running);
     }
 

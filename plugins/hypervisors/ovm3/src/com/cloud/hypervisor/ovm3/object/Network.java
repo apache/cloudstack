@@ -22,9 +22,6 @@ import java.util.Map.Entry;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 
-/*
- * should become an interface implementation
- */
 public class Network extends OvmObject {
     private static final Logger LOGGER = Logger
             .getLogger(Network.class);

@@ -38,7 +38,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class OvmObject {
-    /* figure  this one out! */
     private volatile Connection client;
     private static List<?> emptyParams = new ArrayList<Object>();
     private static final Logger LOGGER = Logger
@@ -99,20 +98,24 @@ public class OvmObject {
         }
     }
 
-    public  <T> Boolean nullCallWrapper(String call, Boolean nullReturn, T... args) throws Ovm3ResourceException {
+    /* should check on nil ? */
+    @SafeVarargs
+    public final <T> Boolean nullCallWrapper(String call, Boolean nullReturn, T... args) throws Ovm3ResourceException {
         Object x = callWrapper(call, args);
         if (x == null) {
             return nullReturn;
+        } else if (!nullReturn) {
+            return true;
         }
-        if (nullReturn) {
-            return false;
-        }
-        return true;
+        return false;
     }
-    public  <T> Boolean nullIsFalseCallWrapper(String call, T... args) throws Ovm3ResourceException {
+
+    @SafeVarargs
+    public final <T> Boolean nullIsFalseCallWrapper(String call, T... args) throws Ovm3ResourceException {
         return nullCallWrapper(call, false, args);
     }
-    public  <T> Boolean nullIsTrueCallWrapper(String call, T... args) throws Ovm3ResourceException {
+    @SafeVarargs
+    public final <T> Boolean nullIsTrueCallWrapper(String call, T... args) throws Ovm3ResourceException {
         return nullCallWrapper(call, true, args);
     }
 
@@ -132,7 +135,6 @@ public class OvmObject {
 
         Object[] results = (Object[]) result;
 
-        /* TODO: check if we need this */
         if (results.length == 0) {
             return null;
         }
@@ -147,7 +149,6 @@ public class OvmObject {
             throws Ovm3ResourceException {
         XPathFactory factory = javax.xml.xpath.XPathFactory.newInstance();
         XPath xPath = factory.newXPath();
-        // capabilities, date_time etc
         try {
             XPathExpression xPathExpression = xPath.compile(path);
             NodeList nodeList = (NodeList) xPathExpression.evaluate(xmlDocument,

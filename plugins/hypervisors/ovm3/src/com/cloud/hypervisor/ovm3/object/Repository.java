@@ -15,10 +15,6 @@ package com.cloud.hypervisor.ovm3.object;
 
 import java.util.Map;
 
-
-/*
- * should become an interface implementation
- */
 public class Repository extends OvmObject {
 
     public Repository(Connection c) {

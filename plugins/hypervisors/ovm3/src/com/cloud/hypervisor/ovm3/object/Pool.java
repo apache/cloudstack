@@ -56,7 +56,6 @@ public class Pool extends OvmObject {
         return this.poolId;
     }
 
-    /* TODO: check the toString for the list x,x */
     public List<String> getValidRoles() {
         return this.validRoles;
     }
@@ -311,7 +310,6 @@ public class Pool extends OvmObject {
         return poolHosts;
     }
 
-    /* TODO: need to change the logic here */
     public Boolean setPoolMemberList(String host) throws Ovm3ResourceException {
         this.poolHosts = new ArrayList<String>();
         this.poolHosts.add(host);

@@ -137,8 +137,8 @@ class Test {
         boolean checkCommon = false;
         boolean checkCluster = false;
         boolean checkRepo = false;
-        boolean checkPool = true;
-        boolean checkOcfs2 = true;
+        boolean checkPool = false;
+        boolean checkOcfs2 = false;
         boolean checkNFSPlugin = false;
         boolean checkXen = false;
         boolean checkVnc = false;
@@ -149,6 +149,9 @@ class Test {
         boolean checkBridge = false;
         boolean checkFs = false;
         boolean checkPlugin = false;
+        boolean checkRemote = false;
+        boolean checkError = false;
+        boolean checkStoragePlugin = true;
 
         Integer hostCount = 0;
         String agentuser = "oracle";
@@ -174,14 +177,33 @@ class Test {
              * needs to be finished and implement ovs + bridge, or do we count
              * on chef ?
              */
+            if (checkStoragePlugin) {
+                StoragePlugin store = new StoragePlugin(c);
+                String poolUuid = "f12842eb-f5ed-3fe7-8da1-eb0e17f5ede8";
+                String file = "/OVS/Repositories/" + store.deDash(poolUuid)
+                        + "/VirtualDisks/test.raw";
+                System.out.println(store.storagePluginListFs("cs-mgmt"));
+                System.out.println(store.storagePluginUnmountNFS("cs-mgmt", "/volumes/cs-data/secondary", "bd5c266b-5738-39a8-a6f0-6f2344ec861e", "/nfsmnt"));
+                // System.out.println(store.storagePluginMountNFS("cs-mgmt", "/volumes/cs-data/secondary", "b8ca41cb-3469-4f74-a086-dddffe37dc2d", "/nfsmnt"));
+            }
+            if (checkError) {
+                Xen xen = new Xen(c);
+                try {
+                    Xen.Vm vm = xen.getRunningVmConfig("testikkel");
+                    // Xen.Vm vm = xen.getVmConfig("test", "test");
+                } catch (Ovm3ResourceException y) {
+                    System.out.println(y);
+                }
+            }
+            if (checkRemote) {
+                Remote rem = new Remote(c);
+                System.out.println(rem.sysReboot());
+            }
             if (checkPlugin) {
                 CloudStackPlugin csp = new CloudStackPlugin(c);
                 try {
-                    System.out.println(csp.ovsUploadSshKey("test",
-                            "testing 123"));
-                    String ip = "169.254.1.202";
-                    String domain = "i-2-29-VM";
-                    String pubnic = "bond0";
+                    String domain = "r-4-VM";
+                    String pubnic = "xenbr0";
                     System.out.println("vnc Port: " + csp.getVncPort(domain));
                     Map<String, String> stats = csp.ovsDomUStats(domain);
                     Thread.sleep(1000);
@@ -229,9 +251,9 @@ class Test {
                 Common com1 = new Common(connections.get(1));
                 System.out.println(com.getClient().getPort() + " " + connections.get(0).getPort());
                 System.out.println(com1.getClient().getPort() + " " + connections.get(1).getPort());
-                String x = com.getApiVersion();
+                Integer x = com.getApiVersion();
                 System.out.println("Api Version: " + x);
-                String y = com.sleep(1);
+                Boolean y = com.sleep(1);
                 System.out.println("Sleep: " + y);
                 String msg = com.echo("testing 1 2 3");
                 System.out.println("Echo: " + msg);
@@ -413,20 +435,10 @@ class Test {
                 }
                 /* get primary storage mounted and registered */
                 StoragePlugin sp = new StoragePlugin(c);
-                String propUuid = sp.deDash(sp.newUuid());
                 String mntUuid = sp.newUuid();
                 String nfsHost = "cs-mgmt";
                 String nfsPath = "/volumes/cs-data/primary";
-                String fsType = "FileSys";
-                sp.setUuid(propUuid);
-                sp.setName(propUuid);
-                sp.setFsType(fsType);
-                sp.setFsServer(nfsHost);
-                sp.setFsSourcePath(nfsHost + ":" + nfsPath);
-                sp.setMntUuid(mntUuid);
-                sp.setSsUuid(propUuid);
-                sp.setSsName("nfs:" + nfsPath);
-                sp.setFsMountPoint("/nfsmnt/" + mntUuid);
+                String mountPoint = "/nfsmnt/" + mntUuid;
 
                 /* setup a repo */
                 Repository repo = new Repository(c);
@@ -449,11 +461,11 @@ class Test {
                 repo.importIso(iso, isoname, repouuid, "");
                 repo.importVirtualDisk(vhd, imgname, repouuid, "");
 
-                if (sp.storagePluginMount() != null) {
+                if (sp.storagePluginMountNFS(nfsHost, nfsPath, mntUuid, mountPoint) != null) {
                     /* prep the VM disk to go to primary storage */
                     Linux vmDisk = new Linux(c);
                     String srcvmimg = repopath + "/VirtualDisks/" + imgname;
-                    String dstvmimg = sp.getFsMountPoint() + "/" + imgname;
+                    String dstvmimg = mountPoint + "/" + imgname;
                     /*
                      * the "solving" of no real primary and secondary storage in
                      * OVS
@@ -479,7 +491,7 @@ class Test {
                     vm.addRootDisk(dstvmimg);
 
                     vm.addVif(0, "c0a80100", "00:21:f6:00:00:02");
-                    vm.setVnc("0.0.0.0");
+                    vm.setVnc("0.0.0.0", "meh");
                     xen.createVm(repouuid, vm.getVmName());
                     xen.startVm(repouuid, vm.getVmName());
                     System.out.println("Created VM with: " + vmName);

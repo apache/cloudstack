@@ -142,6 +142,8 @@ import com.cloud.hypervisor.ovm3.object.Pool;
 import com.cloud.hypervisor.ovm3.object.PoolOCFS2;
 import com.cloud.hypervisor.ovm3.object.Repository;
 import com.cloud.hypervisor.ovm3.object.StoragePlugin;
+import com.cloud.hypervisor.ovm3.object.StoragePlugin.FileProperties;
+import com.cloud.hypervisor.ovm3.object.StoragePlugin.StorageServer;
 import com.cloud.hypervisor.ovm3.object.Xen;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
@@ -181,7 +183,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     private String agentIp;
     Long agentZoneId;
     Long agentPodId;
-    Long agentPoolId;
+    String agentPoolId;
     Long agentClusterId;
     String agentHostname;
     String csGuid;
@@ -428,7 +430,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         return Type.Routing;
     }
 
-    /* TODO: might need to steal the network setup from here with the default bridge */
     protected void fillHostInfo(StartupRoutingCommand cmd) {
         try {
             /* get data we need from parts */
@@ -715,7 +716,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
 
         try {
             /* systemvm iso is imported here */
-            prepareSecondaryStorageStore(ovsRepo);
+            prepareSecondaryStorageStore(ovsRepo, cmd.getUuid(), cmd.getHost());
         } catch (Exception e) {
             msg = "systemvm.iso copy failed to " + ovsRepo;
             LOGGER.debug(msg, e);
@@ -725,7 +726,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     }
 
     /*  */
-    public void prepareSecondaryStorageStore(String storageUrl) {
+    public void prepareSecondaryStorageStore(String storageUrl, String poolUuid, String host) {
         String mountPoint = storageUrl;
 
         GlobalLock lock = GlobalLock.getInternLock("prepare.systemvm");
@@ -738,14 +739,17 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             if (lock.lock(3600)) {
                 try {
                     /*
-                     * TODO: save src iso real name for reuse, so we don't
+                     * save src iso real name for reuse, so we don't
                      * depend on other happy little accidents.
                      */
                     File srcIso = getSystemVMPatchIsoFile();
                     String destPath = mountPoint + "/ISOs/";
                     try {
                         StoragePlugin sp = new StoragePlugin(c);
-                        if (sp.getFileSize() > 0) {
+                        FileProperties fp = sp.storagePluginGetFileInfo(poolUuid,
+                                host,
+                                destPath + File.separator + getSystemVMIsoFileNameOnDatastore());
+                        if (fp.getSize() != srcIso.getTotalSpace()) {
                             LOGGER.info(" System VM patch ISO file already exists: "
                                     + srcIso.getAbsolutePath().toString()
                                     + ", destination: " + destPath);
@@ -868,16 +872,11 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             String mntUuid = pool.getUuid();
             String nfsHost = pool.getHost();
             String nfsPath = pool.getPath();
-            store.setUuid(propUuid);
-            store.setSsUuid(propUuid);
-            store.setMntUuid(mntUuid);
-            store.setFsHost(nfsHost);
-            store.setFsSourcePath(nfsHost + ":" + nfsPath);
-            store.storagePluginGetFileSystemInfo();
+            StorageServer ss = store.storagePluginGetFileSystemInfo(propUuid, mntUuid, nfsHost, nfsPath);
 
             Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
             return new ModifyStoragePoolAnswer(cmd,
-                    Long.parseLong(store.getTotalSize()), Long.parseLong(store
+                    Long.parseLong(ss.getTotalSize()), Long.parseLong(ss
                             .getFreeSize()), tInfo);
         } catch (Exception e) {
             LOGGER.debug("ModifyStoragePoolCommand failed", e);
@@ -921,8 +920,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
 
     /*
      * Download some primary storage into the repository, we need the repoid to
-     * do that, but also have a uuid for the disk... TODO: check disk TODO:
-     * looks like we don't need this for now! (dead code)
+     * do that, but also have a uuid for the disk...
+     * TODO: looks like we don't need this for now! (dead code)
      */
     protected PrimaryStorageDownloadAnswer execute(
             final PrimaryStorageDownloadCommand cmd) {
@@ -1062,9 +1061,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
 
         try {
             StoragePlugin store = new StoragePlugin(c);
-            store.setUuid(primaryStorage.getUuid());
-            store.setName(primaryStorage.getUserInfo());
-            store.setSsUuid(primaryStorage.getUserInfo());
             if (cmd.getTemplateUrl() != null) {
                 LOGGER.debug("CreateCommand " + cmd.getTemplateUrl() + " "
                         + dst);
@@ -1077,11 +1073,13 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                         primaryStorage.getHost(), dst, disk.getSize());
             }
 
-            store.storagePluginGetFileInfo(dst);
+            FileProperties fp = store.storagePluginGetFileInfo(primaryStorage.getUuid(),
+                    primaryStorage.getHost(),
+                    dst);
             VolumeTO volume = new VolumeTO(cmd.getVolumeId(), disk.getType(),
                     primaryStorage.getType(), primaryStorage.getUuid(),
-                    primaryStorage.getPath(), fileName, store.getFileName(),
-                    store.getFileSize(), null);
+                    primaryStorage.getPath(), fileName, fp.getName(),
+                    fp.getSize(), null);
             return new CreateAnswer(cmd, volume);
         } catch (Exception e) {
             LOGGER.debug("CreateCommand failed", e);
@@ -1152,7 +1150,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                 throw new CloudRuntimeException(msg);
             }
         }
-        vm.setupVifs();
         return true;
     }
 
@@ -1185,7 +1182,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         return brName;
     }
 
-    // TODO: complete all network support
     protected String getNetwork(NicTO nic) throws Ovm3ResourceException {
         String vlanId = null;
         String bridgeName = null;
@@ -1259,10 +1255,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         this.vmStats.remove(vmName);
     }
 
-    /*
-     * TODO: The actual VM provisioning start to end, we can rip this from our
-     * simple stuff
-     */
     @Override
     public synchronized StartAnswer execute(StartCommand cmd) {
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
@@ -1316,9 +1308,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             createVifs(vm, vmSpec);
 
             /* vm migration requires a 0.0.0.0 bind */
-            vm.setVncPassword(vmSpec.getVncPassword());
-            vm.setVncAddress("0.0.0.0");
-            vm.setVnc();
+            vm.setVnc("0.0.0.0", vmSpec.getVncPassword());
 
             /* this should be getVmRootDiskPoolId ? */
             xen.createVm(ovmObject.deDash(vm.getPrimaryPoolUuid()),
@@ -1372,11 +1362,9 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         } catch (Exception e) {
             LOGGER.debug("Start vm " + vmName + " failed", e);
             state = State.Stopped;
-            /* TODO: cleanup vm details ? */
             return new StartAnswer(cmd, e.getMessage());
         } finally {
             synchronized (this.vmStateMap) {
-                // TODO: check if we have to set to Stopped???
                 this.vmStateMap.put(vmName, state);
             }
         }
@@ -1449,7 +1437,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     @Override
     public ExecutionResult executeInVR(String routerIp, String script,
             String args, int timeout) {
-        /* TODO: either here OR on cloudstack.py */
         if (!script.contains(this.domRCloudPath)) {
             script = this.domRCloudPath + "/" + script;
         }
@@ -1698,7 +1685,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                 Thread.sleep(10 * 1000);
             }
             vms.deleteVm(repoId, vmId);
-            /* TODO: Check cleanup */
             this.cleanup(vm);
 
             if (vms.getRunningVmConfig(vmName) != null) {
@@ -1709,7 +1695,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             state = State.Stopped;
             return new StopAnswer(cmd, "success", true);
         } catch (Exception e) {
-            /* TODO: check output of message, might be that it did get removed */
             LOGGER.debug("Stop " + vmName + " failed ", e);
             return new StopAnswer(cmd, e.getMessage(), false);
         } finally {
@@ -1735,11 +1720,9 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         try {
             Xen xen = new Xen(c);
             Xen.Vm vm = xen.getRunningVmConfig(vmName);
-            /* TODO: stop, start or reboot, reboot for now ? */
             xen.rebootVm(ovmObject.deDash(vm.getVmRootDiskPoolId()),
                     vm.getVmUuid());
             vm = xen.getRunningVmConfig(vmName);
-            /* erh but this don't work, should point at cloudstackplugin */
             Integer vncPort = vm.getVncPort();
             return new RebootAnswer(cmd, null, vncPort);
         } catch (Exception e) {
@@ -1767,7 +1750,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             throws Ovm3ResourceException {
         final Map<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
         for (final Map.Entry<String, State> vm : vmStateMap.entrySet()) {
-            /* TODO: Figure out how to get xentools version in here */
             LOGGER.debug("VM " + vm.getKey() + " state: " + vm.getValue()
                     + ":" + convertStateToPower(vm.getValue()));
             vmStates.put(vm.getKey(), new HostVmStateReportEntry(
@@ -1790,8 +1772,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     }
 
     /*
-     * Get all the states and set them up according to xm(1) TODO: check
-     * migrating ?
+     * Get all the states and set them up according to xm(1)
+     * TODO: check migrating ?
      */
     protected Map<String, State> getAllVmStates() throws Ovm3ResourceException {
         Map<String, Xen.Vm> vms = getAllVms();
@@ -1880,7 +1862,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                                     : "null"));
                 }
 
-                /* TODO: is this really true ? should be right ? */
                 if (newState == State.Migrating) {
                     LOGGER.trace(vmName
                             + " is migrating, skipping state check");
@@ -1949,7 +1930,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                     LOGGER.trace("VM "
                             + vmName
                             + " is now missing from ovm3 server so removing it");
-                    /* TODO: something about killed/halted VM's in here ? */
                     changes.put(vmName, state);
                     vmStateMap.remove(vmName);
                     vmStateMap.put(vmName, state);
@@ -1969,20 +1949,12 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                     .getFileSystemList("nfs");
             Linux.FileSystem fs = fsList.get(cmd.getStorageId());
             StoragePlugin store = new StoragePlugin(c);
-            /*
-             * TODO: something odd here where do I get which Storage I need to
-             * look at ?
-             */
             String propUuid = store.deDash(cmd.getStorageId());
             String mntUuid = cmd.getStorageId();
-            store.setUuid(propUuid);
-            store.setSsUuid(propUuid);
-            store.setMntUuid(mntUuid);
-            store.setFsHost(fs.getHost());
-            store.setFsSourcePath(fs.getDevice());
-            store.storagePluginGetFileSystemInfo();
-            long total = Long.parseLong(store.getTotalSize());
-            long used = total - Long.parseLong(store.getFreeSize());
+            /* or is it mntUuid ish ? */
+            StorageServer ss = store.storagePluginGetFileSystemInfo(propUuid, mntUuid, fs.getHost(), fs.getDevice());
+            long total = Long.parseLong(ss.getTotalSize());
+            long used = total - Long.parseLong(ss.getFreeSize());
             return new GetStorageStatsAnswer(cmd, total, used);
         } catch (Ovm3ResourceException  e) {
             LOGGER.debug(
@@ -2041,7 +2013,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         return stats;
     }
 
-    /* TODO: The main caller for vm statstics */
     protected GetVmStatsAnswer execute(GetVmStatsCommand cmd) {
         List<String> vmNames = cmd.getVmNames();
         Map<String, VmStatsEntry> vmStatsNameMap = new HashMap<String, VmStatsEntry>();
@@ -2064,7 +2035,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         String vmName = cmd.getVmName();
         try {
             StoragePlugin store = new StoragePlugin(c);
-            // TODO: check if path is correct...
             store.storagePluginDestroy(vol.getPoolUuid(), vol.getPath());
             return new Answer(cmd, true, "Success");
         } catch (Ovm3ResourceException e) {
@@ -2158,7 +2128,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                 LOGGER.debug(msg, e);
                 return new MigrateAnswer(cmd, false, msg, null);
             } finally {
-                /* TODO: should we add a stopped check here ? */
                 synchronized (vmStateMap) {
                     vmStateMap.put(vmName, state);
                 }
@@ -2403,7 +2372,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         if (fs == null || !fs.getMountPoint().equals(mountPoint)) {
             try {
                 StoragePlugin sp = new StoragePlugin(c);
-                sp.storagePluginMount(uri.getHost(), uri.getPath(), uuid,
+                sp.storagePluginMountNFS(uri.getHost(), uri.getPath(), uuid,
                         mountPoint);
                 msg = "Nfs storage " + uri + " mounted on " + mountPoint;
                 return uuid;
@@ -2895,7 +2864,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             return createVolume(cmd);
         } else if (data.getObjectType() == DataObjectType.SNAPSHOT) {
             /*
-             * if stopped yes, if runniing ... no, unless we have ocfs2 when
+             * if stopped yes, if running ... no, unless we have ocfs2 when
              * using raw partitions (file:) if using tap:aio we cloud...
              */
             LOGGER.debug("Snapshot object creation not supported.");
@@ -2922,11 +2891,11 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                     + "/VirtualDisks/" + volume.getUuid() + ".raw";
             Long size = volume.getSize();
             StoragePlugin sp = new StoragePlugin(c);
-            sp.storagePluginCreate(poolUuid, host, file, size);
-            sp.storagePluginGetFileInfo(file);
+            FileProperties fp = sp.storagePluginCreate(poolUuid, host, file, size);
+            // sp.storagePluginGetFileInfo(file);
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setName(volume.getName());
-            newVol.setSize(sp.getFileSize());
+            newVol.setSize(fp.getSize());
             newVol.setPath(file);
             return new CreateObjectAnswer(newVol);
         } catch (Ovm3ResourceException  | URISyntaxException e) {

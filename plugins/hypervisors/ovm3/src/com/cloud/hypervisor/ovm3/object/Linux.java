@@ -20,9 +20,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 
-/*
- * should become an interface implementation
- */
 public class Linux extends OvmObject {
     private static final Logger LOGGER = Logger
             .getLogger(Linux.class);
@@ -203,7 +200,6 @@ public class Linux extends OvmObject {
     }
 
     public String get(String element) throws Ovm3ResourceException {
-        /* TODO: Figure out if this is smart */
         try {
             initMaps();
         } catch (Ovm3ResourceException e) {

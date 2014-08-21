@@ -19,7 +19,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 
-/* should ingest this into Pool */
 public class PoolOCFS2 extends OvmObject {
     private static final Logger LOGGER = Logger
             .getLogger(PoolOCFS2.class);

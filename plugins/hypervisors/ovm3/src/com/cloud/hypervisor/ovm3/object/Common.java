@@ -13,9 +13,6 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.object;
 
-/*
- * should become an interface implementation
- */
 public class Common extends OvmObject {
     public Common(Connection c) {
         setClient(c);
@@ -24,16 +21,16 @@ public class Common extends OvmObject {
     /*
      * get_api_version, <class 'agent.api.common.Common'>
      */
-    public String getApiVersion() throws Ovm3ResourceException {
-        return callString("get_api_version");
-
+    public Integer getApiVersion() throws Ovm3ResourceException {
+        Object[] x = (Object[]) callWrapper("get_api_version");
+        return (Integer) x[0];
     }
 
     /*
      * sleep, <class 'agent.api.common.Common'> argument: secs - default: None
      */
-    public String sleep(int seconds) throws Ovm3ResourceException {
-        return callString("sleep", seconds);
+    public Boolean sleep(int seconds) throws Ovm3ResourceException {
+        return nullIsTrueCallWrapper("sleep", seconds);
     }
 
     /*
