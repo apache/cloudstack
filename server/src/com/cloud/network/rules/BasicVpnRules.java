@@ -40,7 +40,7 @@ public class BasicVpnRules extends RuleApplier {
         _users = users;
     }
 
-	@Override
+    @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
         _router = router;
 

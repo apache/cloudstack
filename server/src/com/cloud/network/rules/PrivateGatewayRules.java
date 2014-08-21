@@ -42,21 +42,21 @@ import com.cloud.vm.NicProfile;
 
 public class PrivateGatewayRules extends RuleApplier {
 
-	private static final Logger s_logger = Logger.getLogger(PrivateGatewayRules.class);
-	
-	private final PrivateGateway _privateGateway;
-	
-	private boolean _isAddOperation;
-	private NicProfile _nicProfile;
+    private static final Logger s_logger = Logger.getLogger(PrivateGatewayRules.class);
+
+    private final PrivateGateway _privateGateway;
+
+    private boolean _isAddOperation;
+    private NicProfile _nicProfile;
 
     public PrivateGatewayRules(final PrivateGateway privateGateway) {
         super(null);
-        this._privateGateway = privateGateway;
+        _privateGateway = privateGateway;
     }
 
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
-        this._router = router;
+        _router = router;
 
         boolean result = false;
         try {
@@ -71,7 +71,7 @@ public class PrivateGatewayRules extends RuleApplier {
 
             //setup source nat
             if (_nicProfile != null) {
-            	_isAddOperation = true;
+                _isAddOperation = true;
                 //result = setupVpcPrivateNetwork(router, true, guestNic);
                 result = visitor.visit(this);
             }
@@ -79,10 +79,10 @@ public class PrivateGatewayRules extends RuleApplier {
             s_logger.warn("Failed to create private gateway " + _privateGateway + " on router " + router + " due to ", ex);
         } finally {
             if (!result) {
-            	s_logger.debug("Failed to setup gateway " + _privateGateway + " on router " + router + " with the source nat. Will now remove the gateway.");
-            	_isAddOperation = false;
-            	boolean isRemoved = destroyPrivateGateway(visitor);
-            	
+                s_logger.debug("Failed to setup gateway " + _privateGateway + " on router " + router + " with the source nat. Will now remove the gateway.");
+                _isAddOperation = false;
+                boolean isRemoved = destroyPrivateGateway(visitor);
+
                 if (isRemoved) {
                     s_logger.debug("Removed the gateway " + _privateGateway + " from router " + router + " as a part of cleanup");
                 } else {
@@ -92,25 +92,25 @@ public class PrivateGatewayRules extends RuleApplier {
         }
         return result;
     }
-    
+
     public boolean isAddOperation() {
-		return _isAddOperation;
-	}
-    
+        return _isAddOperation;
+    }
+
     public NicProfile getNicProfile() {
-		return _nicProfile;
-	}
+        return _nicProfile;
+    }
 
     public PrivateIpVO retrivePrivateIP() {
-    	PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(_nicProfile.getNetworkId(), _nicProfile.getIp4Address());
-    	return ipVO;
+        PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(_nicProfile.getNetworkId(), _nicProfile.getIp4Address());
+        return ipVO;
     }
-    
+
     public Network retrievePrivateNetwork() {
-    	// This network might be the same we have already as an instance in the RuleApplier super class.
-    	// Just doing this here, but will double check is remove if it's not needed.
-    	Network network = _networkDao.findById(_nicProfile.getNetworkId());
-    	return network;
+        // This network might be the same we have already as an instance in the RuleApplier super class.
+        // Just doing this here, but will double check is remove if it's not needed.
+        Network network = _networkDao.findById(_nicProfile.getNetworkId());
+        return network;
     }
 
     protected boolean destroyPrivateGateway(final NetworkTopologyVisitor visitor) throws ConcurrentOperationException, ResourceUnavailableException {
