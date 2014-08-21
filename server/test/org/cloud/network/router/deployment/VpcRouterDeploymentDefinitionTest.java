@@ -40,7 +40,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -299,8 +298,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
             StorageUnavailableException, InsufficientCapacityException, ResourceUnavailableException {
         // Prepare
         VpcRouterDeploymentDefinition vpcDeployment = (VpcRouterDeploymentDefinition) deployment;
-        List<HypervisorType> hypervisors = new ArrayList<>();
-        when(vpcDeployment.nwHelper.deployRouter(vpcDeployment, true, hypervisors)).thenReturn(router);
+        when(vpcDeployment.nwHelper.deployRouter(vpcDeployment, true)).thenReturn(router);
 
         // Execute
         vpcDeployment.deployAllVirtualRouters();

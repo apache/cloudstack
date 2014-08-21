@@ -25,12 +25,14 @@ import java.util.TreeSet;
 
 import javax.inject.Inject;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -50,10 +52,21 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
     @Inject
     private VlanDao _vlanDao;
     @Inject
-    protected VpcManager _vpcMgr;
+    protected VpcManager vpcMgr;
     @Inject
     protected NicProfileHelper nicProfileHelper;
 
+    protected final String noHypervisorsErrMsgDetails = StringUtils.join(this.vpcMgr.getSupportedVpcHypervisors(), ',');
+
+    @Override
+    protected String getNoHypervisorsErrMsgDetails() {
+        return this.noHypervisorsErrMsgDetails;
+    }
+
+    @Override
+    protected void filterSupportedHypervisors(final List<HypervisorType> hypervisors) {
+        hypervisors.retainAll(this.vpcMgr.getSupportedVpcHypervisors());
+    }
 
     @Override
     public LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(
@@ -70,7 +83,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
 
         final Long vpcId = vpcRouterDeploymentDefinition.getVpc().getId();
         //2) allocate nic for private gateways if needed
-        final List<PrivateGateway> privateGateways = this._vpcMgr.getVpcPrivateGateways(vpcId);
+        final List<PrivateGateway> privateGateways = this.vpcMgr.getVpcPrivateGateways(vpcId);
         if (privateGateways != null && !privateGateways.isEmpty()) {
             for (PrivateGateway privateGateway : privateGateways) {
                 NicProfile privateNic = this.nicProfileHelper.createPrivateNicProfileForGateway(privateGateway);
@@ -80,7 +93,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
         }
 
         //3) allocate nic for guest gateway if needed
-        List<? extends Network> guestNetworks = this._vpcMgr.getVpcNetworks(vpcId);
+        List<? extends Network> guestNetworks = this.vpcMgr.getVpcNetworks(vpcId);
         for (Network guestNetwork : guestNetworks) {
             if (_networkModel.isPrivateGateway(guestNetwork.getId())) {
                 continue;
@@ -97,7 +110,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
         Network publicNetwork = null;
         for (IPAddressVO ip : ips) {
             PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, this._vlanDao.findById(ip.getVlanId()));
-            if ((ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) && this._vpcMgr.isIpAllocatedToVpc(ip) &&
+            if ((ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) && this.vpcMgr.isIpAllocatedToVpc(ip) &&
                     !publicVlans.contains(publicIp.getVlanTag())) {
                 s_logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());
                 NicProfile publicNic = new NicProfile();
