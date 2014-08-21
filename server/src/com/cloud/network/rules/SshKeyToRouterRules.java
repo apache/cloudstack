@@ -19,15 +19,10 @@ package com.cloud.network.rules;
 
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.routing.SavePasswordCommand;
-import com.cloud.agent.manager.Commands;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.utils.PasswordGenerator;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
@@ -62,24 +57,6 @@ public class SshKeyToRouterRules extends RuleApplier {
         _template = _templateDao.findByIdIncludingRemoved(_profile.getTemplateId());
 
         return visitor.visit(this);
-    }
-
-    public void createPasswordCommand(final VirtualRouter router, final VirtualMachineProfile profile, final NicVO nic, final Commands cmds) {
-        final String password = (String)profile.getParameter(VirtualMachineProfile.Param.VmPassword);
-        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-
-        // password should be set only on default network element
-        if (password != null && nic.isDefaultNic()) {
-            final String encodedPassword = PasswordGenerator.rot13(password);
-            final SavePasswordCommand cmd =
-                    new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getHostName(), _networkModel.getExecuteInSeqNtwkElmtCmd());
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(nic.getNetworkId(), router.getId()));
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-
-            cmds.addCommand("password", cmd);
-        }
     }
 
     public VirtualMachineProfile getProfile() {

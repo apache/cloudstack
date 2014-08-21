@@ -41,6 +41,8 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface NetworkTopology {
 
+    NetworkTopologyVisitor getVisitor();
+
     // ====== USED FOR VPC ONLY ====== //
 
     boolean setupDhcpForPvlan(final boolean add, final DomainRouterVO router, final Long hostId, final NicProfile nic) throws ResourceUnavailableException;
