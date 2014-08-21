@@ -206,9 +206,6 @@
     <bean id="vpcNetworkHelper"
         class="com.cloud.network.router.VpcNetworkHelperImpl" />
         
-    <bean id="vpcVirtualNetworkHelper"
-        class="com.cloud.network.router.VpcVirtualNetworkHelperImpl" />
-        
     <bean id="nicProfileHelper"
         class="com.cloud.network.router.NicProfileHelperImpl" />
         
