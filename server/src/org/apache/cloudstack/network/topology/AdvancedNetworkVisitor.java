@@ -70,8 +70,8 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         final NicVO nicVo = userdata.getNicVo();
         final UserVmVO userVM = userdata.getUserVM();
 
-        userdata.createPasswordCommand(router, profile, nicVo, commands);
-        userdata.createVmDataCommand(router, userVM, nicVo, userVM.getDetail("SSH.PublicKey"), commands);
+        _commandSetupHelper.createPasswordCommand(router, profile, nicVo, commands);
+        _commandSetupHelper.createVmDataCommand(router, userVM, nicVo, userVM.getDetail("SSH.PublicKey"), commands);
 
         return _networkGeneralHelper.sendCommandsToRouter(router, commands);
     }
@@ -84,7 +84,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         final NicVO nicVo = dhcp.getNicVo();
         final UserVmVO userVM = dhcp.getUserVM();
 
-        dhcp.createDhcpEntryCommand(router, userVM, nicVo, commands);
+        _commandSetupHelper.createDhcpEntryCommand(router, userVM, nicVo, commands);
 
         return _networkGeneralHelper.sendCommandsToRouter(router, commands);
     }
@@ -108,7 +108,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
         Commands commands = new Commands(Command.OnError.Continue);
         List<? extends NetworkACLItem> rules = acls.getRules();
-        acls.createNetworkACLsCommands(rules, router, commands, network.getId(), acls.isPrivateGateway());
+        _commandSetupHelper.createNetworkACLsCommands(rules, router, commands, network.getId(), acls.isPrivateGateway());
 
         return _networkGeneralHelper.sendCommandsToRouter(router, commands);
     }
@@ -123,7 +123,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
 
         if (!ipsToSend.isEmpty()) {
-            vpcip.createVpcAssociatePublicIPCommands(router, ipsToSend, cmds, vlanMacAddress);
+            _commandSetupHelper.createVpcAssociatePublicIPCommands(router, ipsToSend, cmds, vlanMacAddress);
             return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
         } else {
             return true;
@@ -149,7 +149,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
             privateIps.add(ip);
 
             Commands cmds = new Commands(Command.OnError.Stop);
-            privateGW.createVpcAssociatePrivateIPCommands(router, privateIps, cmds, isAddOperation);
+            _commandSetupHelper.createVpcAssociatePrivateIPCommands(router, privateIps, cmds, isAddOperation);
 
             try{
                 if (_networkGeneralHelper.sendCommandsToRouter(router, cmds)) {
@@ -203,10 +203,10 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         final List<IpAliasTO> ipaliasTo = new ArrayList<IpAliasTO>();
         ipaliasTo.add(new IpAliasTO(routerAliasIp, nicAlias.getNetmask(), nicAlias.getAliasCount().toString()));
 
-        subnet.createIpAlias(router, ipaliasTo, nicAlias.getNetworkId(), cmds);
+        _commandSetupHelper.createIpAlias(router, ipaliasTo, nicAlias.getNetworkId(), cmds);
 
         //also add the required configuration to the dnsmasq for supporting dhcp and dns on the new ip.
-        subnet.configDnsMasq(router, network, cmds);
+        _commandSetupHelper.configDnsMasq(router, network, cmds);
 
         return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
@@ -217,7 +217,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         List<StaticRouteProfile> staticRoutes = staticRoutesRules.getStaticRoutes();
 
         Commands cmds = new Commands(Command.OnError.Continue);
-        staticRoutesRules.createStaticRouteCommands(staticRoutes, router, cmds);
+        _commandSetupHelper.createStaticRouteCommands(staticRoutes, router, cmds);
 
         return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
@@ -228,7 +228,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         List<? extends VpnUser> users = vpnRules.getUsers();
 
         Commands cmds = new Commands(Command.OnError.Continue);
-        vpnRules.createApplyVpnUsersCommand(users, router, cmds);
+        _commandSetupHelper.createApplyVpnUsersCommand(users, router, cmds);
 
         // Currently we receive just one answer from the agent. In the future we have to parse individual answers and set
         // results accordingly

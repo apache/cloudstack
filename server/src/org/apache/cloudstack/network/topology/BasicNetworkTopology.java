@@ -91,6 +91,11 @@ public class BasicNetworkTopology implements NetworkTopology {
     protected NetworkHelper _nwHelper;
 
     @Override
+    public NetworkTopologyVisitor getVisitor() {
+        return _basicVisitor;
+    }
+
+    @Override
     public boolean setupPrivateGateway(final PrivateGateway gateway, final VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
         throw new CloudRuntimeException("setupPrivateGateway not implemented in Basic Network Topology.");
     }
@@ -364,7 +369,7 @@ public class BasicNetworkTopology implements NetworkTopology {
                 }
 
                 try {
-                    ruleApplier.accept(_basicVisitor, router);
+                    ruleApplier.accept(getVisitor(), router);
 
                     connectedRouters.add(router);
                 } catch (final AgentUnavailableException e) {
