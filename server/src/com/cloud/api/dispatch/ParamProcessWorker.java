@@ -341,11 +341,14 @@ public class ParamProcessWorker implements DispatchWorker {
                     field.set(cmdObj, Short.valueOf(paramObj.toString()));
                     break;
                 case STRING:
-                    if ((paramObj != null) && paramObj.toString().length() > annotation.length()) {
-                        s_logger.error("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
-                        throw new InvalidParameterValueException("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
+                    if ((paramObj != null)) {
+                        if (paramObj.toString().length() > annotation.length()) {
+                            s_logger.error("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
+                            throw new InvalidParameterValueException("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
+                        } else {
+                            field.set(cmdObj, paramObj.toString());
+                        }
                     }
-                    field.set(cmdObj, paramObj.toString());
                     break;
                 case TZDATE:
                     field.set(cmdObj, DateUtil.parseTZDateString(paramObj.toString()));

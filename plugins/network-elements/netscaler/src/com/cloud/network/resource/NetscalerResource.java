@@ -3174,7 +3174,9 @@ public class NetscalerResource implements ServerResource {
                 scaleUpAction.set_vserver(nsVirtualServerName); // Actions Vserver, the one that is autoscaled, with CS
                 // now both are same. Not exposed in API.
                 scaleUpAction.set_profilename(profileName);
-                scaleUpAction.set_quiettime(scaleUpQuietTime);
+                if(scaleUpQuietTime != null) {
+                    scaleUpAction.set_quiettime(scaleUpQuietTime);
+                }
                 String scaleUpParameters =
                         "command=deployVirtualMachine" + "&" + ApiConstants.ZONE_ID + "=" + profileTO.getZoneId() + "&" + ApiConstants.SERVICE_OFFERING_ID + "=" +
                                 profileTO.getServiceOfferingId() + "&" + ApiConstants.TEMPLATE_ID + "=" + profileTO.getTemplateId() + "&" + ApiConstants.DISPLAY_NAME + "=" +

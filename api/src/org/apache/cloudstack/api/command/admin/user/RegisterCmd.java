@@ -75,8 +75,10 @@ public class RegisterCmd extends BaseCmd {
     public void execute() {
         String[] keys = _accountService.createApiKeyAndSecretKey(this);
         RegisterResponse response = new RegisterResponse();
-        response.setApiKey(keys[0]);
-        response.setSecretKey(keys[1]);
+        if (keys != null) {
+            response.setApiKey(keys[0]);
+            response.setSecretKey(keys[1]);
+        }
         response.setObjectName("userkeys");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

@@ -80,13 +80,14 @@ public class ListTrafficTypesCmd extends BaseListCmd {
         Pair<List<? extends PhysicalNetworkTrafficType>, Integer> trafficTypes = _networkService.listTrafficTypes(getPhysicalNetworkId());
         ListResponse<TrafficTypeResponse> response = new ListResponse<TrafficTypeResponse>();
         List<TrafficTypeResponse> trafficTypesResponses = new ArrayList<TrafficTypeResponse>();
-        for (PhysicalNetworkTrafficType trafficType : trafficTypes.first()) {
-            TrafficTypeResponse trafficTypeResponse = _responseGenerator.createTrafficTypeResponse(trafficType);
-            trafficTypesResponses.add(trafficTypeResponse);
+        if(trafficTypes != null) {
+            for (PhysicalNetworkTrafficType trafficType : trafficTypes.first()) {
+                TrafficTypeResponse trafficTypeResponse = _responseGenerator.createTrafficTypeResponse(trafficType);
+                trafficTypesResponses.add(trafficTypeResponse);
+            }
+            response.setResponses(trafficTypesResponses, trafficTypes.second());
+            response.setResponseName(getCommandName());
         }
-
-        response.setResponses(trafficTypesResponses, trafficTypes.second());
-        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

@@ -172,10 +172,6 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         }
         Long zoneId = getZoneId();
 
-        if (zoneId == null) {
-            return null;
-        }
-
         DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
         if (zone.getNetworkType() == NetworkType.Advanced) {
             List<? extends Network> networks = _networkService.getIsolatedNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));

@@ -749,13 +749,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         }
 
                         Pair<NicProfile, Integer> vmNicPair = allocateNic(requested, config, isDefaultNic, deviceId, vm);
-
-                        NicProfile vmNic = vmNicPair.first();
-                        if (vmNic == null) {
-                            continue;
+                        NicProfile vmNic = null;
+                        if(vmNicPair != null) {
+                            vmNic = vmNicPair.first();
+                            if (vmNic == null) {
+                                continue;
+                            }
+                            deviceId = vmNicPair.second();
                         }
-
-                        deviceId = vmNicPair.second();
 
                         int devId = vmNic.getDeviceId();
                         if (devId > deviceIds.length) {

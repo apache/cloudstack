@@ -2141,7 +2141,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         if (sendCommand) {
-            if (host.getHypervisorType() == HypervisorType.KVM &&
+            if (host != null && host.getHypervisorType() == HypervisorType.KVM &&
                     volumeToAttachStoragePool.isManaged() &&
                     volumeToAttach.getPath() == null) {
                 volumeToAttach.setPath(volumeToAttach.get_iScsiName());
@@ -2178,8 +2178,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             try {
                 answer = (AttachAnswer)_agentMgr.send(hostId, cmd);
             } catch (Exception e) {
-                volService.disconnectVolumeFromHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
-
+                if(host!=null) {
+                    volService.disconnectVolumeFromHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
+                }
                 throw new CloudRuntimeException(errorMsg + " due to: " + e.getMessage());
             }
         }
@@ -2216,9 +2217,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     errorMsg += "; " + details;
                 }
             }
-
-            volService.disconnectVolumeFromHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
-
+            if(host!= null) {
+                volService.disconnectVolumeFromHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
+            }
             throw new CloudRuntimeException(errorMsg);
         }
     }
