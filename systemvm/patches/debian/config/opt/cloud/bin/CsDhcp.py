@@ -44,9 +44,10 @@ class CsDhcp(object):
             logging.debug("Hosts file is up to date")
         diff = dnsmasq.compare_dnsmasq(dnsmasqb4)
         if len(diff) > 0:
-            self.updated = True
+            dnsmasq.updated = True
             dnsmasq.delete_leases(diff)
             dnsmasq.write_dnsmasq()
+        dnsmasq.first_host = dnsmasqb4.first_host
         dnsmasq.configure_server()
 
 class CsDnsMasq(object):
@@ -58,6 +59,7 @@ class CsDnsMasq(object):
         self.updated = False
         self.devinfo = CsHelper.get_device_info()
         self.devs = []
+        self.first_host = False
         if preload:
             self.add_host("127.0.0.1", "localhost")
             self.add_host("::1",     "localhost ip6-localhost ip6-loopback")
@@ -108,14 +110,20 @@ class CsDnsMasq(object):
             line = "dhcp-option=tag:interface-%s,15,%s" % (device,gn.get_domain())
             self.updated = self.updated or CsHelper.addifmissing(CLOUD_CONF, line)
         if self.updated:
-            CsHelper.hup_dnsmasq("dnsmasq", "dnsmasq")
+            if self.first_host:
+                CsHelper.service("dnsmasq", "restart")
+            else:
+                CsHelper.hup_dnsmasq("dnsmasq", "dnsmasq")
             
     def parse_dnsmasq(self):
+        self.first_host = False
         try:
             for line in open(DHCP_HOSTS):
                 self.list.append(line.strip())
+            if len(self.list) == 0:
+                self.first_host = True
         except IOError:
-            pass
+            self.first_host = True
 
     def parse_hosts(self):
         for line in open("/etc/hosts"):
