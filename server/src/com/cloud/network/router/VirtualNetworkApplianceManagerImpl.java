@@ -59,6 +59,8 @@ import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -355,7 +357,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Inject
     protected NetworkTopologyContext _networkTopologyContext;
-    @Inject
+    @Autowired
+    @Qualifier("networkHelper")
     protected NetworkHelper _nwHelper;
     @Inject
     protected CommandSetupHelper _commandSetupHelper;

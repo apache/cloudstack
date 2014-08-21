@@ -19,9 +19,9 @@ package org.apache.cloudstack.network.topology;
 
 import java.util.List;
 
-import javax.inject.Inject;
-
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
@@ -69,7 +69,8 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
     private static final Logger s_logger = Logger.getLogger(BasicNetworkVisitor.class);
 
-    @Inject
+    @Autowired
+    @Qualifier("networkHelper")
     protected NetworkHelper _networkGeneralHelper;
 
     @Inject
