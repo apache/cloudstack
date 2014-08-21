@@ -12,10 +12,12 @@ from pprint import pprint
 
 def updatefile(filename, val, mode):
     """ add val to file """
-    for line in open(filename):
-        if line.strip().lstrip("0") == val:
+    handle = open(filename, 'r')
+    for line in handle.read():
+        if line.strip().lstrip() == val:
             return
     # set the value
+    handle.close()
     handle = open(filename, mode)
     handle.write(val)
     handle.close()
