@@ -118,7 +118,7 @@ public abstract class RuleApplier {
     protected NetworkHelper _networkHelper;
 
     protected VpcNetworkHelperImpl _vpcNetworkHelper;
-    
+
     protected NicProfileHelper _nicProfileHelper;
 
     public RuleApplier(final Network network) {

@@ -68,13 +68,13 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     protected AdvancedNetworkVisitor _advancedVisitor;
 
     @Override
-    public String[] applyVpnUsers(RemoteAccessVpn remoteAccessVpn, List<? extends VpnUser> users, VirtualRouter router) throws ResourceUnavailableException {
-    	
-    	s_logger.debug("APPLYING ADVANCED VPN USERS RULES");
-    	
-    	AdvancedVpnRules routesRules = _virtualNetworkApplianceFactory.createAdvancedVpnRules(remoteAccessVpn, users);
-    	
-    	boolean agentResult = routesRules.accept(_advancedVisitor, router);
+    public String[] applyVpnUsers(final RemoteAccessVpn remoteAccessVpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException {
+
+        s_logger.debug("APPLYING ADVANCED VPN USERS RULES");
+
+        AdvancedVpnRules routesRules = _virtualNetworkApplianceFactory.createAdvancedVpnRules(remoteAccessVpn, users);
+
+        boolean agentResult = routesRules.accept(_advancedVisitor, router);
 
         String[] result = new String[users.size()];
         for (int i = 0; i < result.length; i++) {
@@ -87,25 +87,25 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
         return result;
     }
-    
+
     @Override
     public boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
-        
-    	s_logger.debug("APPLYING STATIC ROUTES RULES");
-    	
-    	if (staticRoutes == null || staticRoutes.isEmpty()) {
+
+        s_logger.debug("APPLYING STATIC ROUTES RULES");
+
+        if (staticRoutes == null || staticRoutes.isEmpty()) {
             s_logger.debug("No static routes to apply");
             return true;
         }
 
-    	StaticRoutesRules routesRules = _virtualNetworkApplianceFactory.createStaticRoutesRules(staticRoutes);
-        
+        StaticRoutesRules routesRules = _virtualNetworkApplianceFactory.createStaticRoutesRules(staticRoutes);
+
         boolean result = true;
         for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
-            	
+
                 result = result && routesRules.accept(_advancedVisitor, router);
-                
+
             } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
                 s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending StaticRoute command to the backend");
             } else {
@@ -121,8 +121,8 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Override
     public boolean setupDhcpForPvlan(final boolean isAddPvlan, final DomainRouterVO router, final Long hostId, final NicProfile nic) throws ResourceUnavailableException {
 
-    	s_logger.debug("SETUP DHCP PVLAN RULES");
-    	
+        s_logger.debug("SETUP DHCP PVLAN RULES");
+
         if (!nic.getBroadCastUri().getScheme().equals("pvlan")) {
             return false;
         }
@@ -150,14 +150,14 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
         return subNetRules.accept(_advancedVisitor, router);
     }
-    
+
     @Override
-    public boolean setupPrivateGateway(PrivateGateway gateway, VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
-    	s_logger.debug("SETUP PRIVATE GATEWAY RULES");
+    public boolean setupPrivateGateway(final PrivateGateway gateway, final VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
+        s_logger.debug("SETUP PRIVATE GATEWAY RULES");
 
-    	PrivateGatewayRules routesRules = _virtualNetworkApplianceFactory.createPrivateGatewayRules(gateway);
+        PrivateGatewayRules routesRules = _virtualNetworkApplianceFactory.createPrivateGatewayRules(gateway);
 
-    	return routesRules.accept(_advancedVisitor, router);
+        return routesRules.accept(_advancedVisitor, router);
     }
 
     @Override
