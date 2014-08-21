@@ -20,8 +20,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -32,29 +30,25 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
-import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.NetworkHelper;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
-import com.cloud.network.router.VpcNetworkHelperImpl;
+import com.cloud.network.router.NicProfileHelper;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -62,82 +56,47 @@ import com.cloud.vm.dao.UserVmDao;
 public class VirtualNetworkApplianceFactory {
 
     @Inject
-    protected NetworkModel _networkModel;
-
+    private NetworkModel _networkModel;
     @Inject
-    protected LoadBalancingRulesManager _lbMgr;
-
+    private LoadBalancingRulesManager _lbMgr;
     @Inject
-    protected LoadBalancerDao _loadBalancerDao;
-
+    private LoadBalancerDao _loadBalancerDao;
     @Inject
-    protected ConfigurationDao _configDao;
-
+    private NicDao _nicDao;
     @Inject
-    protected NicDao _nicDao;
-
+    private VirtualMachineManager _itMgr;
     @Inject
-    protected VirtualMachineManager _itMgr;
-
+    private DataCenterDao _dcDao;
     @Inject
-    protected NetworkOfferingDao _networkOfferingDao;
-
+    private UserVmDao _userVmDao;
     @Inject
-    protected DataCenterDao _dcDao;
-
+    private UserStatisticsDao _userStatsDao;
     @Inject
-    protected UserVmDao _userVmDao;
-
+    private VpcDao _vpcDao;
     @Inject
-    protected UserStatisticsDao _userStatsDao;
-
+    private VpcManager _vpcMgr;
     @Inject
-    protected VpcDao _vpcDao;
-
+    private VMTemplateDao _templateDao;
     @Inject
-    protected VpcManager _vpcMgr;
-
+    private NetworkDao _networkDao;
     @Inject
-    protected ServiceOfferingDao _serviceOfferingDao;
-
+    private NicIpAliasDao _nicIpAliasDao;
     @Inject
-    protected VMTemplateDao _templateDao;
-
+    private HostPodDao _podDao;
     @Inject
-    protected DomainRouterDao _routerDao;
-
-    @Inject
-    protected NetworkDao _networkDao;
-
-    @Inject
-    protected FirewallRulesDao _rulesDao;
-
-    @Inject
-    protected NicIpAliasDao _nicIpAliasDao;
-
-    @Inject
-    protected HostPodDao _podDao;
-
-    @Inject
-    protected VlanDao _vlanDao;
-
+    private VlanDao _vlanDao;
     @Inject
     private IPAddressDao _ipAddressDao;
-
     @Inject
     private PrivateIpDao _privateIpDao;
-
     @Inject
     private IpAddressManager _ipAddrMgr;
-
     @Inject
-    protected VirtualNetworkApplianceManager _applianceManager;
-
+    private NetworkACLManager _networkACLMgr;
     @Inject
     private NetworkHelper _networkHelper;
-
     @Inject
-    private VpcNetworkHelperImpl _vpcNetworkHelper;
+    private NicProfileHelper _nicProfileHelper;
 
     public LoadBalancingRules createLoadBalancingRules(final Network network, final List<LoadBalancingRule> rules) {
         LoadBalancingRules lbRules = new LoadBalancingRules(network, rules);
@@ -153,7 +112,6 @@ public class VirtualNetworkApplianceFactory {
         initBeans(fwRules);
 
         fwRules._networkDao = _networkDao;
-        fwRules._rulesDao = _rulesDao;
 
         return fwRules;
     }
@@ -171,12 +129,8 @@ public class VirtualNetworkApplianceFactory {
         applier._dcDao = _dcDao;
         applier._lbMgr = _lbMgr;
         applier._loadBalancerDao = _loadBalancerDao;
-        applier._configDao = _configDao;
         applier._nicDao = _nicDao;
         applier._itMgr = _itMgr;
-        applier._networkOfferingDao = _networkOfferingDao;
-        applier._routerDao = _routerDao;
-        applier._routerControlHelper = _routerControlHelper;
         applier._networkHelper = _networkHelper;
     }
 
@@ -225,7 +179,6 @@ public class VirtualNetworkApplianceFactory {
 
         sshKeyToRouterRules._userVmDao = _userVmDao;
         sshKeyToRouterRules._templateDao = _templateDao;
-        sshKeyToRouterRules._serviceOfferingDao = _serviceOfferingDao;
 
         return sshKeyToRouterRules;
     }
@@ -237,7 +190,6 @@ public class VirtualNetworkApplianceFactory {
 
         userdataRules._userVmDao = _userVmDao;
         userdataRules._templateDao = _templateDao;
-        userdataRules._serviceOfferingDao = _serviceOfferingDao;
 
         return userdataRules;
     }
@@ -249,7 +201,6 @@ public class VirtualNetworkApplianceFactory {
 
         userdataRules._userVmDao = _userVmDao;
         userdataRules._templateDao = _templateDao;
-        userdataRules._serviceOfferingDao = _serviceOfferingDao;
 
         return userdataRules;
     }
@@ -333,7 +284,7 @@ public class VirtualNetworkApplianceFactory {
 
         gwRules._privateIpDao = _privateIpDao;
         gwRules._networkACLMgr = _networkACLMgr;
-        gwRules._vpcNetworkHelper = _vpcNetworkHelper;
+        gwRules._nicProfileHelper = _nicProfileHelper;
 
         return gwRules;
     }

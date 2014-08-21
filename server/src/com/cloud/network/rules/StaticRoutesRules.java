@@ -21,10 +21,6 @@ import java.util.List;
 
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.routing.SetStaticRouteCommand;
-import com.cloud.agent.manager.Commands;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.StaticRouteProfile;
@@ -47,14 +43,5 @@ public class StaticRoutesRules extends RuleApplier {
         _router = router;
 
         return visitor.visit(this);
-    }
-
-    public void createStaticRouteCommands(final List<StaticRouteProfile> staticRoutes, final VirtualRouter router, final Commands cmds) {
-        SetStaticRouteCommand cmd = new SetStaticRouteCommand(staticRoutes);
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _networkHelper.getRouterControlIp(router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-        cmds.addCommand(cmd);
     }
 }
