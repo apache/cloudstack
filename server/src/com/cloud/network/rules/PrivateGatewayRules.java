@@ -17,27 +17,15 @@
 
 package com.cloud.network.rules;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.routing.IpAssocVpcCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.to.IpAddressTO;
-import com.cloud.agent.manager.Commands;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.PrivateIpAddress;
 import com.cloud.network.vpc.PrivateIpVO;
-import com.cloud.user.Account;
 import com.cloud.vm.NicProfile;
 
 public class PrivateGatewayRules extends RuleApplier {
@@ -141,48 +129,5 @@ public class PrivateGatewayRules extends RuleApplier {
         result = result && _itMgr.removeVmFromNetwork(_router, privateNetwork, null);
         s_logger.debug("Private gateawy " + _privateGateway + " is removed from router " + _router);
         return result;
-    }
-
-    public void createVpcAssociatePrivateIPCommands(final VirtualRouter router, final List<PrivateIpAddress> ips, final Commands cmds, final boolean add) {
-
-        // Ensure that in multiple vlans case we first send all ip addresses of vlan1, then all ip addresses of vlan2, etc..
-        Map<String, ArrayList<PrivateIpAddress>> vlanIpMap = new HashMap<String, ArrayList<PrivateIpAddress>>();
-        for (final PrivateIpAddress ipAddress : ips) {
-            String vlanTag = ipAddress.getBroadcastUri();
-            ArrayList<PrivateIpAddress> ipList = vlanIpMap.get(vlanTag);
-            if (ipList == null) {
-                ipList = new ArrayList<PrivateIpAddress>();
-            }
-
-            ipList.add(ipAddress);
-            vlanIpMap.put(vlanTag, ipList);
-        }
-
-        for (Map.Entry<String, ArrayList<PrivateIpAddress>> vlanAndIp : vlanIpMap.entrySet()) {
-            List<PrivateIpAddress> ipAddrList = vlanAndIp.getValue();
-            IpAddressTO[] ipsToSend = new IpAddressTO[ipAddrList.size()];
-            int i = 0;
-
-            for (final PrivateIpAddress ipAddr : ipAddrList) {
-                Network network = _networkModel.getNetwork(ipAddr.getNetworkId());
-                IpAddressTO ip =
-                        new IpAddressTO(Account.ACCOUNT_ID_SYSTEM, ipAddr.getIpAddress(), add, false, ipAddr.getSourceNat(), ipAddr.getBroadcastUri(), ipAddr.getGateway(),
-                                ipAddr.getNetmask(), ipAddr.getMacAddress(), null, false);
-
-                ip.setTrafficType(network.getTrafficType());
-                ip.setNetworkName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
-                ipsToSend[i++] = ip;
-
-            }
-
-            IpAssocVpcCommand cmd = new IpAssocVpcCommand(ipsToSend);
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(ipAddrList.get(0).getNetworkId(), router.getId()));
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-            cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-
-            cmds.addCommand("IPAssocVpcCommand", cmd);
-        }
     }
 }
