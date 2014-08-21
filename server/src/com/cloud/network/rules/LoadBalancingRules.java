@@ -21,12 +21,6 @@ import java.util.List;
 
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 
-import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.agent.manager.Commands;
-import com.cloud.configuration.Config;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.dao.LoadBalancerVO;
@@ -37,11 +31,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.net.Ip;
-import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.Nic;
-import com.cloud.vm.NicProfile;
 
 public class LoadBalancingRules extends RuleApplier {
 
@@ -77,61 +67,5 @@ public class LoadBalancingRules extends RuleApplier {
 
     public List<LoadBalancingRule> getRules() {
         return _rules;
-    }
-
-    public void createApplyLoadBalancingRulesCommands(final List<LoadBalancingRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
-        final LoadBalancerTO[] lbs = new LoadBalancerTO[rules.size()];
-        int i = 0;
-        // We don't support VR to be inline currently
-        final boolean inline = false;
-        for (final LoadBalancingRule rule : rules) {
-            final boolean revoked = (rule.getState().equals(FirewallRule.State.Revoke));
-            final String protocol = rule.getProtocol();
-            final String algorithm = rule.getAlgorithm();
-            final String uuid = rule.getUuid();
-
-            final String srcIp = rule.getSourceIp().addr();
-            final int srcPort = rule.getSourcePortStart();
-            final List<LbDestination> destinations = rule.getDestinations();
-            final List<LbStickinessPolicy> stickinessPolicies = rule.getStickinessPolicies();
-            final LoadBalancerTO lb = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, inline, destinations, stickinessPolicies);
-            lbs[i++] = lb;
-        }
-        String routerPublicIp = null;
-
-        if (router instanceof DomainRouterVO) {
-            final DomainRouterVO domr = _routerDao.findById(router.getId());
-            routerPublicIp = domr.getPublicIpAddress();
-        }
-
-        final Network guestNetwork = _networkModel.getNetwork(guestNetworkId);
-        final Nic nic = _nicDao.findByNtwkIdAndInstanceId(guestNetwork.getId(), router.getId());
-        final NicProfile nicProfile =
-                new NicProfile(nic, guestNetwork, nic.getBroadcastUri(), nic.getIsolationUri(), _networkModel.getNetworkRate(guestNetwork.getId(), router.getId()),
-                        _networkModel.isSecurityGroupSupportedInNetwork(guestNetwork), _networkModel.getNetworkTag(router.getHypervisorType(), guestNetwork));
-        final NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
-        String maxconn = null;
-        if (offering.getConcurrentConnections() == null) {
-            maxconn = _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
-        } else {
-            maxconn = offering.getConcurrentConnections().toString();
-        }
-
-        final LoadBalancerConfigCommand cmd =
-                new LoadBalancerConfigCommand(lbs, routerPublicIp, _routerControlHelper.getRouterIpInNetwork(
-                        guestNetworkId, router.getId()), router.getPrivateIpAddress(), _itMgr.toNicTO(
-                                nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled());
-
-        cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
-        cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
-        cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
-        cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
-
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-        cmds.addCommand(cmd);
     }
 }

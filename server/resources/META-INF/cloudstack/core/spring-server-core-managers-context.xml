@@ -197,6 +197,9 @@
     <bean id="basicNetworkVisitor" class="org.apache.cloudstack.network.topology.BasicNetworkVisitor" />
     <bean id="advancedNetworkVisitor" class="org.apache.cloudstack.network.topology.AdvancedNetworkVisitor" />
     
+    <bean id="commandSetupHelper"
+        class="com.cloud.network.router.CommandSetupHelper" />
+    
     <bean id="routerControlHelper"
         class="com.cloud.network.router.RouterControlHelper" />
         
