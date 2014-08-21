@@ -17,7 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import os, sys, subprocess, socket,fcntl, struct
+import os, sys, subprocess, socket, fcntl, struct
 from socket import gethostname
 from xml.dom.minidom import parseString
 import errno
@@ -28,7 +28,7 @@ from xmlrpclib import ServerProxy, Error
 def spCon(proto, auth, host, port):
     print "trying %s on %s@%s:%s" % (proto, auth, host, port)
     try:
-        x=ServerProxy("%s://%s@%s:%s" % (proto, auth, host, port))
+        x = ServerProxy("%s://%s@%s:%s" % (proto, auth, host, port))
         x.echo(proto)
         return x
     except Error, v:
@@ -56,46 +56,46 @@ def get_ip_address(ifname):
     )[20:24])
 
 # hmm master actions don't apply to a slave
-master="192.168.1.161"
-port=8899
-passw='test123'
-user='oracle'
-auth="%s:%s" % (user, passw)
+master = "192.168.1.161"
+port = 8899
+passw = 'test123'
+user = 'oracle'
+auth = "%s:%s" % (user, passw)
 server = getCon(auth, "localhost", port)
 mserver = getCon(auth, master, port)
 try:
     mserver.echo("test")
 except AttributeError, v:
     print "no mserver, becoming mserver"
-    mserver=server
+    mserver = server
 
-poolNode=True
+poolNode = True
 interface = "c0a80100"
-role='xen,utility'
-hostname=gethostname()
+role = 'xen,utility'
+hostname = gethostname()
 ip = get_ip_address(interface)
-nodes=[]
+nodes = []
 
 try:
     # pooling related same as primary storage!
-    poolalias="Pool 0"
-    clusterid="ba9aaf00ae5e2d72"
-    mgr="d1a749d4295041fb99854f52ea4dea97"
-    poolmvip=master
+    poolalias = "Pool 0"
+    clusterid = "ba9aaf00ae5e2d72"
+    mgr = "d1a749d4295041fb99854f52ea4dea97"
+    poolmvip = master
 
     # primary
-    primuuid="7718562d872f47a7b4548f9cac4ffa3a"
-    ssuuid="7718562d-872f-47a7-b454-8f9cac4ffa3a"
-    fshost="cs-mgmt"
-    fstarget="/volumes/cs-data/primary/ovm"
-    fstype="nfs"
-    fsname="Primary storage"
-    fsmntpoint="%s:%s" % (fshost, fstarget)
-    fsmntpoint2="%s:%s" % (fshost, "/volumes/cs-data/secondary")
-    fsmntpoint="%s/VirtualMachines" % (fsmntpoint2)
-    fsmnt="/nfsmnt/%s" % (ssuuid)
-    fsplugin="oracle.generic.NFSPlugin.GenericNFSPlugin"
-    repo="/OVS/Repositories/%s" % (primuuid)
+    primuuid = "7718562d872f47a7b4548f9cac4ffa3a"
+    ssuuid = "7718562d-872f-47a7-b454-8f9cac4ffa3a"
+    fshost = "cs-mgmt"
+    fstarget = "/volumes/cs-data/primary/ovm"
+    fstype = "nfs"
+    fsname = "Primary storage"
+    fsmntpoint = "%s:%s" % (fshost, fstarget)
+    fsmntpoint2 = "%s:%s" % (fshost, "/volumes/cs-data/secondary")
+    fsmntpoint = "%s/VirtualMachines" % (fsmntpoint2)
+    fsmnt = "/nfsmnt/%s" % (ssuuid)
+    fsplugin = "oracle.generic.NFSPlugin.GenericNFSPlugin"
+    repo = "/OVS/Repositories/%s" % (primuuid)
 
     # set the basics we require to "operate"
     print server.take_ownership(mgr, '')
@@ -108,14 +108,14 @@ try:
     except Error, v:
         print "will create the repo, as it's not there", v
         print server.create_repository(fsmntpoint2, repo, primuuid, "A repository")
-    
+
     # if we're pooling pool...
     if (poolNode == True):
         poolCount = 0
         pooled = False
 
         # check pooling
-       	poolDom = parseString(mserver.discover_server_pool())
+        poolDom = parseString(mserver.discover_server_pool())
         for node in poolDom.getElementsByTagName('Server_Pool'):
             id = node.getElementsByTagName('Unique_Id')[0].firstChild.nodeValue
             alias = node.getElementsByTagName('Pool_Alias')[0].firstChild.nodeValue
@@ -135,24 +135,24 @@ try:
         try:
             if (poolCount == 0):
                 print "master"
-                # check if a pool exists already if not create 
+                # check if a pool exists already if not create
                 # pool if so add us to the pool
                 print server.configure_virtual_ip(master, ip)
                 print server.create_pool_filesystem(
-                    fstype, 
+                    fstype,
                     fsmntpoint,
                     clusterid,
                     primuuid,
                     ssuuid,
                     mgr,
                     primuuid
-                )       
-                print server.create_server_pool(poolalias, 
-                    primuuid, 
-                    poolmvip, 
-                    poolCount, 
-                    hostname, 
-                    ip, 
+                )
+                print server.create_server_pool(poolalias,
+                    primuuid,
+                    poolmvip,
+                    poolCount,
+                    hostname,
+                    ip,
                     role
                 )
             else:
@@ -181,27 +181,27 @@ try:
     # sys.exit()
     # mount the primary fs
     print server.storage_plugin_mount(
-        fsplugin, 
+        fsplugin,
         {
-            'uuid': primuuid, 
-            'storage_desc': fsname, 
-            'access_host': fshost, 
-            'storage_type': 'FileSys', 
-            'name':primuuid 
-       }, 
+            'uuid': primuuid,
+            'storage_desc': fsname,
+            'access_host': fshost,
+            'storage_type': 'FileSys',
+            'name':primuuid
+       },
         {
-            'status': '', 
+            'status': '',
             'uuid': ssuuid,
-            'ss_uuid': primuuid, 
-            'size': 0, 
-            'state': 1, 
-            'access_grp_names': [], 
+            'ss_uuid': primuuid,
+            'size': 0,
+            'state': 1,
+            'access_grp_names': [],
             'access_path': fsmntpoint,
             'name': fsname
         },
         fsmnt,
-        '', 
-        True, 
+        '',
+        True,
         []
     )
 

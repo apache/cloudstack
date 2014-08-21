@@ -72,38 +72,38 @@ try:
             print "Failed repo: %s not destroyed!" % repoUuid.value
 
     # for now only treat NFS stuff as we're testing with that..
-    nfsHost='cs-mgmt'
+    nfsHost = 'cs-mgmt'
     nfsDom = server.storage_plugin_listMountPoints(
-        'oracle.generic.NFSPlugin.GenericNFSPlugin', 
-            { 'status': '', 
-                'admin_user': '', 
-                'admin_host': '', 
-                'uuid': '', 
-                'total_sz': 0, 
+        'oracle.generic.NFSPlugin.GenericNFSPlugin',
+            { 'status': '',
+                'admin_user': '',
+                'admin_host': '',
+                'uuid': '',
+                'total_sz': 0,
                 'admin_passwd': '',
-                'free_sz': 0, 
-                'name': '', 
-                'access_host': nfsHost, 
-                'storage_type': 'FileSys', 
-                'alloc_sz': 0, 
-                'access_grps': [], 
-                'used_sz': 0, 
+                'free_sz': 0,
+                'name': '',
+                'access_host': nfsHost,
+                'storage_type': 'FileSys',
+                'alloc_sz': 0,
+                'access_grps': [],
+                'used_sz': 0,
                 'storage_desc': ''
             })
     for node in nfsDom:
-        props = {'status': node['status'], 
-            'uuid': '', 
-            'access_host': nfsHost, 
-            'storage_type': 'FileSys', 
+        props = {'status': node['status'],
+            'uuid': '',
+            'access_host': nfsHost,
+            'storage_type': 'FileSys',
             'name': '' }
-        extprops = {'status': node['status'], 
-            'uuid': node['fs_uuid'], 
-            'ss_uuid': '', 
-            'size': 0, 
-            'free_sz': '', 
-            'state': 1, 
-            'access_grp_names': [], 
-            'access_path': nfsHost + ':' + '/volumes/cs-data/secondary', 
+        extprops = {'status': node['status'],
+            'uuid': node['fs_uuid'],
+            'ss_uuid': '',
+            'size': 0,
+            'free_sz': '',
+            'state': 1,
+            'access_grp_names': [],
+            'access_path': nfsHost + ':' + '/volumes/cs-data/secondary',
             'name': ''}
         # rc = server.storage_plugin_unmount('oracle.generic.NFSPlugin.GenericNFSPlugin', props, extprops, nfsMnt, True)
         # print rc
@@ -124,26 +124,26 @@ try:
 
   if pooledFs:
     print "pooling"
-    # pool stuff 
-    poolalias="ItsMyPool"
-    poolmvip="192.168.1.161"
+    # pool stuff
+    poolalias = "ItsMyPool"
+    poolmvip = "192.168.1.161"
     poolfirsthost = {
         'ip': "192.168.1.64",
         'hn': "ovm-1",
         'id': 0,
         'role': 'utility,xen'
     }
-    fstype="nfs"
-    fstarget="cs-mgmt:/volumes/cs-data/primary"
-    poolid="0004fb0000020000ba9aaf00ae5e2d73"
-    clusterid="ba9aaf00ae5e2d72"
-    poolfsuuid="0004fb0000050000e70fbddeb802208f"
-    poolfsnfsbaseuuid="b8ca41cb-3469-4f74-a086-dddffe37dc2d"
-    manageruuid="0004fb00000100000af70d20dcce7d65"
-    pooluuid="0004fb0000020000ba9aaf00ae5e2d73"
-    blocksize=""
-    clustersize=""
-    journalesize=""
+    fstype = "nfs"
+    fstarget = "cs-mgmt:/volumes/cs-data/primary"
+    poolid = "0004fb0000020000ba9aaf00ae5e2d73"
+    clusterid = "ba9aaf00ae5e2d72"
+    poolfsuuid = "0004fb0000050000e70fbddeb802208f"
+    poolfsnfsbaseuuid = "b8ca41cb-3469-4f74-a086-dddffe37dc2d"
+    manageruuid = "0004fb00000100000af70d20dcce7d65"
+    pooluuid = "0004fb0000020000ba9aaf00ae5e2d73"
+    blocksize = ""
+    clustersize = ""
+    journalesize = ""
 
     # o2cb is the problem.... /etc/init.d/o2cb
     #   sets it's config in /etc/sysconfig/o2cb (can be removed)
@@ -151,7 +151,7 @@ try:
     #   then the removal of the config, after which dmsetup
     #   can remove the device from /dev/mapper/
     # eventually cluster cleanup can be done by removing
-    #   stuff from /etc/ovs-agent/db 
+    #   stuff from /etc/ovs-agent/db
     #   also clean /etc/ocfs2/cluster.conf
     print server.create_pool_filesystem(
         fstype,
@@ -165,7 +165,7 @@ try:
 
     # poolDom = server.discover_server_pool()
     # print poolDom
-    # poolDom = parseString(server.discover_server_pool()) 
+    # poolDom = parseString(server.discover_server_pool())
     # if poolDom.getElementsByTagName('Server_Pool'):
     # get unique id
     cluster = server.is_cluster_online()
@@ -174,7 +174,7 @@ try:
         # print server.destroy_cluster(poolfsuuid)
         # deconfigure cluster
         # print server.destroy_server_pool(poolid)
-        
+
     if cluster == False:
         print "create_server_pool"
         # first take ownership. without an owner nothing happens
@@ -195,56 +195,56 @@ try:
             manageruuid,
             pooluuid
         )
-        print server.create_server_pool(poolalias, 
-            pooluuid, 
-            poolmvip, 
-            poolfirsthost['id'], 
-            poolfirsthost['hn'], 
-            poolfirsthost['ip'], 
+        print server.create_server_pool(poolalias,
+            pooluuid,
+            poolmvip,
+            poolfirsthost['id'],
+            poolfirsthost['hn'],
+            poolfirsthost['ip'],
             poolfirsthost['role'])
-        
+
         print "configure_virtual_ip"
         server.configure_virtual_ip(poolmvip, poolfirsthost['ip'])
-        server.set_pool_member_ip_list(['192.168.1.64','192.168.1.65'],)
+        server.set_pool_member_ip_list(['192.168.1.64', '192.168.1.65'],)
         print "configure for cluster"
         server.configure_server_for_cluster(
             {
-                'O2CB_HEARTBEAT_THRESHOLD': '61', 
-                'O2CB_RECONNECT_DELAY_MS': '2000', 
-                'O2CB_KEEPALIVE_DELAY_MS': '2000', 
-                'O2CB_BOOTCLUSTER': clusterid, 
-                'O2CB_IDLE_TIMEOUT_MS': '60000', 
-                'O2CB_ENABLED': 'true', 
+                'O2CB_HEARTBEAT_THRESHOLD': '61',
+                'O2CB_RECONNECT_DELAY_MS': '2000',
+                'O2CB_KEEPALIVE_DELAY_MS': '2000',
+                'O2CB_BOOTCLUSTER': clusterid,
+                'O2CB_IDLE_TIMEOUT_MS': '60000',
+                'O2CB_ENABLED': 'true',
                 'O2CB_STACK': 'o2cb'
-            }, 
+            },
             {
                 'node': [
                     {
-                        'ip_port': 7777, 
-                        'cluster': clusterid, 
-                        'ip_address': poolfirsthost['ip'], 
-                        'name': poolfirsthost['hn'], 
+                        'ip_port': 7777,
+                        'cluster': clusterid,
+                        'ip_address': poolfirsthost['ip'],
+                        'name': poolfirsthost['hn'],
                         'number': poolfirsthost['id']
                     }
-                ], 
+                ],
                 'heartbeat': [
                     {
-                        'cluster': clusterid, 
+                        'cluster': clusterid,
                         # uppercase poolfsuuid
                         'region': '0004FB0000050000E70FBDDEB802208F'
                     }
-                ], 
+                ],
                 'cluster': [
                     {
-                        'heartbeat_mode': 'global', 
-                        'node_count': 1, 
+                        'heartbeat_mode': 'global',
+                        'node_count': 1,
                         'name': clusterid
                     }
                 ]
-            }, 
-            'nfs', 
-            'cs-mgmt:/volumes/cs-data/primary', 
-            poolfsuuid, 
+            },
+            'nfs',
+            'cs-mgmt:/volumes/cs-data/primary',
+            poolfsuuid,
             poolfsnfsbaseuuid
         )
         print "create cluster"

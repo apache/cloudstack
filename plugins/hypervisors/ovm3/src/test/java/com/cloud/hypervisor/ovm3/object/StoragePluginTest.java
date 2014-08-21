@@ -120,23 +120,21 @@ public class StoragePluginTest {
             + "&lt;clone&gt;UNSUPPORTED&lt;/clone&gt;"
             + "&lt;resize&gt;UNSUPPORTED&lt;/resize&gt;"
             + "&lt;snapclone_is_sync&gt;UNSUPPORTED&lt;/snapclone_is_sync&gt;"
-            + "&lt;/abilities&gt;"
-            + "&lt;/storage_plugin_info&gt;"
+            + "&lt;/abilities&gt;" + "&lt;/storage_plugin_info&gt;"
             + "&lt;/storage_plugin_info_list&gt;"
-            + "&lt;/Discover_Storage_Plugins_Result&gt;"
-            + "</string>";
-    String NFSMOUNTRESPONSEXML = "<struct>"
-            + "<member>"
-            + "<name>status</name>"
-            + "<value><string></string></value>"
-            + "</member>"
-            + "<member>"
-            + "<name>uuid</name>"
-            + "<value><string>" + FSPROPUUID + "</string></value>"
+            + "&lt;/Discover_Storage_Plugins_Result&gt;" + "</string>";
+    String NFSMOUNTRESPONSEXML = "<struct>" + "<member>"
+            + "<name>status</name>" + "<value><string></string></value>"
+            + "</member>" + "<member>" + "<name>uuid</name>"
+            + "<value><string>"
+            + FSPROPUUID
+            + "</string></value>"
             + "</member>"
             + "<member>"
             + "<name>ss_uuid</name>"
-            + "<value><string>" + FSMNTUUID + "</string></value>"
+            + "<value><string>"
+            + FSMNTUUID
+            + "</string></value>"
             + "</member>"
             + "<member>"
             + "<name>size</name>"
@@ -162,40 +160,33 @@ public class StoragePluginTest {
             + "</member>"
             + "<member>"
             + "<name>access_path</name>"
-            + "<value><string>"+ NFSHOST + ":" + NFSPATH + "</string></value>"
+            + "<value><string>"
+            + NFSHOST
+            + ":"
+            + NFSPATH
+            + "</string></value>"
             + "</member>"
             + "<member>"
             + "<name>name</name>"
-            + "<value><string>nfs:"+ NFSPATH + "</string></value>"
-            + "</member>"
-            + "</struct>";
-    String FILECREATEXML = "<struct>"
-            + "<member>"
-            + "<name>fr_type</name>"
-            + "<value><string>File</string></value>"
-            + "</member>"
-            + "<member>"
-            + "<name>ondisk_sz</name>"
-            + "<value><string>0</string></value>"
-            + "</member>"
-            + "<member>"
-            + "<name>fs_uuid</name>"
-            + "<value><string>" + FSMNTUUID + "</string></value>"
-            + "</member>"
-            + "<member>"
-            + "<name>file_path</name>"
-            + "<value><string>/OVS/Repositories/"+ POOLUUID +"/VirtualDisks/" + FILE + "</string></value>"
-            + "</member>"
-            + "<member>"
-            + "<name>file_sz</name>"
-            + "<value><string>" + SIZE +"</string></value>"
-            + "</member>"
-            + "</struct>";
+            + "<value><string>nfs:"
+            + NFSPATH
+            + "</string></value>" + "</member>" + "</struct>";
+    String FILECREATEXML = "<struct>" + "<member>" + "<name>fr_type</name>"
+            + "<value><string>File</string></value>" + "</member>" + "<member>"
+            + "<name>ondisk_sz</name>" + "<value><string>0</string></value>"
+            + "</member>" + "<member>" + "<name>fs_uuid</name>"
+            + "<value><string>" + FSMNTUUID + "</string></value>" + "</member>"
+            + "<member>" + "<name>file_path</name>"
+            + "<value><string>/OVS/Repositories/" + POOLUUID + "/VirtualDisks/"
+            + FILE + "</string></value>" + "</member>" + "<member>"
+            + "<name>file_sz</name>" + "<value><string>" + SIZE
+            + "</string></value>" + "</member>" + "</struct>";
 
     @Test
     public void testNFSStorageMountCreation() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(NFSMOUNTRESPONSEXML));
-        StorageServer ss = sPt.storagePluginMountNFS(NFSHOST, NFSPATH, FSMNTUUID, NFSMNT);
+        StorageServer ss = sPt.storagePluginMountNFS(NFSHOST, NFSPATH,
+                FSMNTUUID, NFSMNT);
         con.setResult(results.simpleResponseWrapWrapper(NFSMOUNTRESPONSEXML));
         NFSMNT = NFSMNT + File.separator + FSMNTUUID;
         ss = sPt.storagePluginMountNFS(NFSHOST, NFSPATH, FSMNTUUID, NFSMNT);
@@ -214,47 +205,63 @@ public class StoragePluginTest {
         ss.getUsedSize();
         ss.getUuid();
     }
+
     @Test
     public void testNFSStorageUnmount() throws Ovm3ResourceException {
         con.setResult(results.getNil());
         sPt.storagePluginUnmountNFS(NFSHOST, NFSPATH, FSMNTUUID, NFSMNT);
     }
-    @Test (expected = Ovm3ResourceException.class) 
+
+    @Test(expected = Ovm3ResourceException.class)
     public void testStoragePluginIncorrectSsUuid() throws Ovm3ResourceException {
         sPt.storageDetails.setStorageServerRelationalUuid(FSMNTUUID);
     }
-    @Test (expected = Ovm3ResourceException.class) 
-    public void testStoragePluginIncorrectMntUuid() throws Ovm3ResourceException {
+
+    @Test(expected = Ovm3ResourceException.class)
+    public void testStoragePluginIncorrectMntUuid()
+            throws Ovm3ResourceException {
         sPt.storageDetails.setUuid(FSPROPUUID);
     }
-    @Test (expected = Ovm3ResourceException.class) 
+
+    @Test(expected = Ovm3ResourceException.class)
     public void testStoragePluginIncorrectUuid() throws Ovm3ResourceException {
         sPt.storageSource.setUuid(FSMNTUUID);
     }
-    @Test (expected = Ovm3ResourceException.class) 
-    public void testStoragePluginNFSmountInvalidUuid() throws Ovm3ResourceException {
-        NFSMOUNTRESPONSEXML=NFSMOUNTRESPONSEXML.replaceAll(FSPROPUUID, sPt.deDash(FSMNTUUID));
+
+    @Test(expected = Ovm3ResourceException.class)
+    public void testStoragePluginNFSmountInvalidUuid()
+            throws Ovm3ResourceException {
+        NFSMOUNTRESPONSEXML = NFSMOUNTRESPONSEXML.replaceAll(FSPROPUUID,
+                sPt.deDash(FSMNTUUID));
         con.setResult(results.simpleResponseWrapWrapper(NFSMOUNTRESPONSEXML));
-        System.out.println(sPt.storagePluginMountNFS(NFSHOST, NFSPATH, FSPROPUUID, NFSMNT));
+        System.out.println(sPt.storagePluginMountNFS(NFSHOST, NFSPATH,
+                FSPROPUUID, NFSMNT));
     }
-    
+
     @Test
     public void testStorageFileCreation() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(FILECREATEXML));
-        FileProperties file = sPt.storagePluginCreate(FSMNTUUID, NFSHOST, FILE, SIZE);
+        FileProperties file = sPt.storagePluginCreate(FSMNTUUID, NFSHOST, FILE,
+                SIZE);
         file.getOnDiskSize();
     }
-    @Test (expected = Ovm3ResourceException.class)
-    public void testStorageFileCreationFileExistS() throws Ovm3ResourceException {
-        con.setResult(results.errorResponseWrap("exceptions OSError:[Errno.17] File exists " + FILE));
-        FileProperties file = sPt.storagePluginCreate(FSMNTUUID, NFSHOST, FILE, SIZE);
+
+    @Test(expected = Ovm3ResourceException.class)
+    public void testStorageFileCreationFileExistS()
+            throws Ovm3ResourceException {
+        con.setResult(results
+                .errorResponseWrap("exceptions OSError:[Errno.17] File exists "
+                        + FILE));
+        FileProperties file = sPt.storagePluginCreate(FSMNTUUID, NFSHOST, FILE,
+                SIZE);
         file.getSize();
     }
 
     @Test
     public void testStorageFileInfo() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(FILECREATEXML));
-        FileProperties file = sPt.storagePluginGetFileInfo(FSMNTUUID, NFSHOST, FILE);
+        FileProperties file = sPt.storagePluginGetFileInfo(FSMNTUUID, NFSHOST,
+                FILE);
         file.getName();
         file.getUuid();
         file.getType();
@@ -264,41 +271,52 @@ public class StoragePluginTest {
     @Test
     public void testDiscoverStoragePlugins() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(STORAGEPLUGINXML));
-        for(String plugin : sPt.discoverStoragePlugins()) {
+        for (String plugin : sPt.discoverStoragePlugins()) {
             sPt.checkStoragePluginProperties(plugin, "plugin_version");
             sPt.checkStoragePluginAbility(plugin, "snapshot");
         }
     }
-    @Test (expected = Ovm3ResourceException.class)
-    public void testCheckStoragePluginBogusPlugin() throws Ovm3ResourceException {
+
+    @Test(expected = Ovm3ResourceException.class)
+    public void testCheckStoragePluginBogusPlugin()
+            throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(STORAGEPLUGINXML));
         sPt.checkStoragePluginProperties("bogus", "plugin_version");
     }
-    @Test (expected = Ovm3ResourceException.class) 
-    public void testCheckStoragePluginBogusProperty() throws Ovm3ResourceException {
+
+    @Test(expected = Ovm3ResourceException.class)
+    public void testCheckStoragePluginBogusProperty()
+            throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(STORAGEPLUGINXML));
         sPt.checkStoragePluginAbility(sPt.getPluginType(), "blabla");
     }
+
     @Test
     public void testMounts() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(NFSMOUNTRESPONSEXML));
         sPt.storagePluginListFs(NFSHOST);
     }
+
     @Test
     public void testGetFileSystemInfo() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(NFSMOUNTRESPONSEXML));
-        sPt.storagePluginGetFileSystemInfo(FSPROPUUID, FSMNTUUID, NFSHOST, NFSPATH);
+        sPt.storagePluginGetFileSystemInfo(FSPROPUUID, FSMNTUUID, NFSHOST,
+                NFSPATH);
     }
+
     @Test
     public void testStoragepluginDestroy() throws Ovm3ResourceException {
         con.setResult(results.getNil());
         sPt.storagePluginDestroy(FSMNTUUID, FILE);
     }
-    @Test (expected = Ovm3ResourceException.class) 
-    public void testStoragepluginDestroyWrongUUID() throws Ovm3ResourceException {
+
+    @Test(expected = Ovm3ResourceException.class)
+    public void testStoragepluginDestroyWrongUUID()
+            throws Ovm3ResourceException {
         con.setResult(results.getNil());
         sPt.storagePluginDestroy(FSPROPUUID, FILE);
     }
+
     @Test
     public void testStoragePluginSwitch() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(STORAGEPLUGINXML));

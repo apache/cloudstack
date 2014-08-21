@@ -17,7 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import os, sys, subprocess, socket,fcntl, struct
+import os, sys, subprocess, socket, fcntl, struct
 from socket import gethostname
 from xml.dom.minidom import parseString
 
@@ -45,17 +45,17 @@ def is_it_up(host, port):
     return True
 
 # hmm master actions don't apply to a slave
-master="192.168.1.161"
-port=8899
+master = "192.168.1.161"
+port = 8899
 user = "oracle"
 password = "*******"
 auth = "%s:%s" % (user, password)
 server = ServerProxy("http://%s:%s" % ("localhost", port))
 mserver = ServerProxy("http://%s@%s:%s" % (auth, master, port))
-poolNode=True
+poolNode = True
 interface = "c0a80100"
-role='xen,utility'
-hostname=gethostname()
+role = 'xen,utility'
+hostname = gethostname()
 ip = get_ip_address(interface)
 poolMembers = []
 xserver = server
@@ -72,31 +72,31 @@ else:
 # other mechanism must be used to make interfaces equal...
 try:
     # pooling related same as primary storage!
-    poolalias="Pool 0"
-    poolid="0004fb0000020000ba9aaf00ae5e2d73"
-    poolfsnfsbaseuuid="7718562d-872f-47a7-b454-8f9cac4ffa3a"
-    pooluuid=poolid
-    poolfsuuid=poolid
-    clusterid="ba9aaf00ae5e2d72"
-    mgr="d1a749d4295041fb99854f52ea4dea97"
-    poolmvip=master
+    poolalias = "Pool 0"
+    poolid = "0004fb0000020000ba9aaf00ae5e2d73"
+    poolfsnfsbaseuuid = "7718562d-872f-47a7-b454-8f9cac4ffa3a"
+    pooluuid = poolid
+    poolfsuuid = poolid
+    clusterid = "ba9aaf00ae5e2d72"
+    mgr = "d1a749d4295041fb99854f52ea4dea97"
+    poolmvip = master
 
-    poolfsnfsbaseuuid="6824e646-5908-48c9-ba44-bb1a8a778084"
-    repoid="6824e646590848c9ba44bb1a8a778084"
-    poolid=repoid
-    repo="/OVS/Repositories/%s" % (repoid)
-    repomount="cs-mgmt:/volumes/cs-data/secondary"
+    poolfsnfsbaseuuid = "6824e646-5908-48c9-ba44-bb1a8a778084"
+    repoid = "6824e646590848c9ba44bb1a8a778084"
+    poolid = repoid
+    repo = "/OVS/Repositories/%s" % (repoid)
+    repomount = "cs-mgmt:/volumes/cs-data/secondary"
 
     # primary
-    primuuid="7718562d872f47a7b4548f9cac4ffa3a"
-    ssuuid="7718562d-872f-47a7-b454-8f9cac4ffa3a"
-    fshost="cs-mgmt"
-    fstarget="/volumes/cs-data/primary"
-    fstype="nfs"
-    fsname="Primary storage"
-    fsmntpoint="%s:%s" % (fshost, fstarget)
-    fsmnt="/nfsmnt/%s" % (ssuuid)
-    fsplugin="oracle.generic.NFSPlugin.GenericNFSPlugin"
+    primuuid = "7718562d872f47a7b4548f9cac4ffa3a"
+    ssuuid = "7718562d-872f-47a7-b454-8f9cac4ffa3a"
+    fshost = "cs-mgmt"
+    fstarget = "/volumes/cs-data/primary"
+    fstype = "nfs"
+    fsname = "Primary storage"
+    fsmntpoint = "%s:%s" % (fshost, fstarget)
+    fsmnt = "/nfsmnt/%s" % (ssuuid)
+    fsplugin = "oracle.generic.NFSPlugin.GenericNFSPlugin"
 
     # set the basics we require to "operate"
     print server.take_ownership(mgr, '')
@@ -126,28 +126,28 @@ try:
                     else:
                         poolMembers.append(mip)
 
-        except Error,v:
+        except Error, v:
             print "no master will become master, %s" % v
-            
+
         if (pooled == False):
             # setup the repository
             print "setup repo"
             print server.mount_repository_fs(repomount, repo)
-            try:    
+            try:
                 print "adding repo"
                 print server.add_repository(repomount, repo)
             except Error, v:
                 print "will create the repo, as it's not there", v
-                print server.create_repository(repomount, repo, repoid, "repo") 
+                print server.create_repository(repomount, repo, repoid, "repo")
 
             print "not pooled!"
             if (poolCount == 0):
                 print "no pool yet, create it"
-                # check if a pool exists already if not create 
+                # check if a pool exists already if not create
                 # pool if so add us to the pool
                 print "create pool fs"
                 print server.create_pool_filesystem(
-                    fstype, 
+                    fstype,
                     "%s/VirtualMachines/" % repomount,
                     clusterid,
                     poolfsuuid,
@@ -155,13 +155,13 @@ try:
                     mgr,
                     pooluuid
                 )
-                print "create pool"      
-                print server.create_server_pool(poolalias, 
-                    pooluuid, 
-                    poolmvip, 
-                    poolCount, 
-                    hostname, 
-                    ip, 
+                print "create pool"
+                print server.create_server_pool(poolalias,
+                    pooluuid,
+                    poolmvip,
+                    poolCount,
+                    hostname,
+                    ip,
                     role
                 )
             else:
