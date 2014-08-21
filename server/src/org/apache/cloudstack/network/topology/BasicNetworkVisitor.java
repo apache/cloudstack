@@ -34,12 +34,13 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.AdvancedVpnRules;
+import com.cloud.network.rules.BasicVpnRules;
 import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.DhcpPvlanRules;
 import com.cloud.network.rules.DhcpSubNetRules;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.AdvancedVpnRules;
 import com.cloud.network.rules.FirewallRules;
 import com.cloud.network.rules.IpAssociationRules;
 import com.cloud.network.rules.LoadBalancingRules;
@@ -56,7 +57,6 @@ import com.cloud.network.rules.StaticRoutesRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
-import com.cloud.network.rules.BasicVpnRules;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
@@ -275,9 +275,9 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     public boolean visit(final StaticRoutesRules staticRoutesRules) throws ResourceUnavailableException {
         throw new CloudRuntimeException("StaticRoutesRules not implemented in Basic Network Topology.");
     }
-    
+
     @Override
-    public boolean visit(AdvancedVpnRules vpnRules) throws ResourceUnavailableException {
+    public boolean visit(final AdvancedVpnRules vpnRules) throws ResourceUnavailableException {
         throw new CloudRuntimeException("AdvancedVpnRules not implemented in Basic Network Topology.");
     }
 }
