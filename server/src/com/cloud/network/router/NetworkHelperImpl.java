@@ -195,22 +195,16 @@ public class NetworkHelperImpl implements NetworkHelper {
             throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
         }
 
-        if (answers == null) {
-            return false;
-        }
-
-        if (answers.length != cmds.size()) {
+        if (answers == null || answers.length != cmds.size()) {
             return false;
         }
 
         // FIXME: Have to return state for individual command in the future
         boolean result = true;
-        if (answers.length > 0) {
-            for (final Answer answer : answers) {
-                if (!answer.getResult()) {
-                    result = false;
-                    break;
-                }
+        for (final Answer answer : answers) {
+            if (!answer.getResult()) {
+                result = false;
+                break;
             }
         }
         return result;
@@ -253,7 +247,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         final int connRouterPR = getRealPriority(connectedRouter);
         final int disconnRouterPR = getRealPriority(disconnectedRouter);
         if (connRouterPR < disconnRouterPR) {
-            //connRouterPR < disconnRouterPR, they won't equal at anytime
+            //connRouterPR < disconnRouterPR, they won't equal at any time
             if (!connectedRouter.getIsPriorityBumpUp()) {
                 final BumpUpPriorityCommand command = new BumpUpPriorityCommand();
                 command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(connectedRouter.getId()));
