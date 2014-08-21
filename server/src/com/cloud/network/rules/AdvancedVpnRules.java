@@ -32,16 +32,16 @@ import com.cloud.vm.VirtualMachine.State;
 
 public class AdvancedVpnRules extends BasicVpnRules {
 
-	private static final Logger s_logger = Logger.getLogger(AdvancedVpnRules.class);
-	
-    private RemoteAccessVpn _remoteAccessVpn;
+    private static final Logger s_logger = Logger.getLogger(AdvancedVpnRules.class);
 
-    public AdvancedVpnRules(RemoteAccessVpn remoteAccessVpn, List<? extends VpnUser> users) {
-		super(null, users);
-		_remoteAccessVpn = remoteAccessVpn;
-	}
+    private final RemoteAccessVpn _remoteAccessVpn;
 
-	@Override
+    public AdvancedVpnRules(final RemoteAccessVpn remoteAccessVpn, final List<? extends VpnUser> users) {
+        super(null, users);
+        _remoteAccessVpn = remoteAccessVpn;
+    }
+
+    @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
         _router = router;
 

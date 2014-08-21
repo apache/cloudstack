@@ -45,6 +45,7 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.BasicVpnRules;
 import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRules;
@@ -59,7 +60,6 @@ import com.cloud.network.rules.StaticNatRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VirtualNetworkApplianceFactory;
-import com.cloud.network.rules.BasicVpnRules;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
@@ -91,15 +91,15 @@ public class BasicNetworkTopology implements NetworkTopology {
     protected NetworkHelper _nwHelper;
 
     @Override
-    public boolean setupPrivateGateway(PrivateGateway gateway, VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean setupPrivateGateway(final PrivateGateway gateway, final VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
         throw new CloudRuntimeException("setupPrivateGateway not implemented in Basic Network Topology.");
     }
-    
+
     @Override
-    public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users, VirtualRouter router) throws ResourceUnavailableException {
+    public String[] applyVpnUsers(final RemoteAccessVpn vpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException {
         throw new CloudRuntimeException("applyVpnUsers not implemented in Basic Network Topology.");
     }
-    
+
     @Override
     public boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
         throw new CloudRuntimeException("applyStaticRoutes not implemented in Basic Network Topology.");
