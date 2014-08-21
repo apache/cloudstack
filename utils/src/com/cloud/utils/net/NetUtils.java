@@ -191,7 +191,12 @@ public class NetUtils {
                 return null;
             }
 
-            String[] info = NetUtils.getNetworkParams(nic);
+            String[] info = null;
+            try {
+                info = NetUtils.getNetworkParams(nic);
+            } catch (NullPointerException ignored) {
+                s_logger.debug("Caught NullPointerException when trying to getDefaultHostIp");
+            }
             if (info != null) {
                 return info[0];
             }
