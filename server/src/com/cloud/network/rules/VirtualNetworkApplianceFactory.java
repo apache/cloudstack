@@ -20,6 +20,13 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+<<<<<<< HEAD
+=======
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
+>>>>>>> Fix Spring collision of beans implementing NetworkHelper
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -93,8 +100,11 @@ public class VirtualNetworkApplianceFactory {
     private IpAddressManager _ipAddrMgr;
     @Inject
     private NetworkACLManager _networkACLMgr;
-    @Inject
+
+    @Autowired
+    @Qualifier("networkHelper")
     private NetworkHelper _networkHelper;
+
     @Inject
     private NicProfileHelper _nicProfileHelper;
 
