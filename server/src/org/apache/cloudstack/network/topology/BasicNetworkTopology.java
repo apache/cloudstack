@@ -90,8 +90,9 @@ public class BasicNetworkTopology implements NetworkTopology {
     @Inject
     protected HostDao _hostDao;
 
-    @Inject
-    protected NetworkHelper _nwHelper;
+    @Autowired
+    @Qualifier("networkHelper")
+    protected NetworkHelper _networkHelper;
 
     @Inject
     protected UserVmDao _userVmDao;
@@ -419,9 +420,8 @@ public class BasicNetworkTopology implements NetworkTopology {
         if (!connectedRouters.isEmpty()) {
             // Shouldn't we include this check inside the method?
             if (!isZoneBasic && !disconnectedRouters.isEmpty() && disconnectedRouters.get(0).getIsRedundantRouter()) {
-                // These disconnected redundant virtual routers are out of sync
-                // now, stop them for synchronization
-                _nwHelper.handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
+                // These disconnected redundant virtual routers are out of sync now, stop them for synchronization
+                _networkHelper.handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
             }
         } else if (!disconnectedRouters.isEmpty()) {
             for (final VirtualRouter router : disconnectedRouters) {
