@@ -61,7 +61,7 @@ public class PrivateGatewayRules extends RuleApplier {
         boolean result = false;
         try {
             _network = _networkModel.getNetwork(_privateGateway.getNetworkId());
-            NicProfile requested = _vpcNetworkHelper.createPrivateNicProfileForGateway(_privateGateway);
+            NicProfile requested = _nicProfileHelper.createPrivateNicProfileForGateway(_privateGateway);
 
             if (!_networkHelper.checkRouterVersion(router)) {
                 s_logger.warn("Router requires upgrade. Unable to send command to router: " + router.getId());

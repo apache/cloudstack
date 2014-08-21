@@ -142,9 +142,6 @@ public class NetworkHelperImpl implements NetworkHelper {
     @Inject
     protected NetworkOrchestrationService _networkMgr;
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.NetworkHelper#getRouterControlIp(long)
-     */
     @Override
     public String getRouterControlIp(final long routerId) {
         String routerControlIpAddress = null;
@@ -167,19 +164,12 @@ public class NetworkHelperImpl implements NetworkHelper {
         return routerControlIpAddress;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.NetworkHelper#getRouterIpInNetwork(long, long)
-     */
     @Override
     public String getRouterIpInNetwork(final long networkId, final long instanceId) {
         return _nicDao.getIpAddress(networkId, instanceId);
     }
 
 
-    //    @Override
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.NetworkHelper#sendCommandsToRouter(com.cloud.network.router.VirtualRouter, com.cloud.agent.manager.Commands)
-     */
     @Override
     public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException {
         if(!checkRouterVersion(router)){
@@ -269,9 +259,6 @@ public class NetworkHelperImpl implements NetworkHelper {
         }
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.NetworkHelper#getRealPriority(com.cloud.vm.DomainRouterVO)
-     */
     @Override
     public int getRealPriority(final DomainRouterVO router) {
         int priority = router.getPriority();
@@ -281,10 +268,6 @@ public class NetworkHelperImpl implements NetworkHelper {
         return priority;
     }
 
-    //    @Override
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.NetworkHelper#getNicTO(com.cloud.network.router.VirtualRouter, java.lang.Long, java.lang.String)
-     */
     @Override
     public NicTO getNicTO(final VirtualRouter router, final Long networkId, final String broadcastUri) {
         NicProfile nicProfile = _networkModel.getNicProfile(router, networkId, broadcastUri);
@@ -292,10 +275,6 @@ public class NetworkHelperImpl implements NetworkHelper {
         return _itMgr.toNicTO(nicProfile, router.getHypervisorType());
     }
 
-    //    @Override
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.NetworkHelper#destroyRouter(long, com.cloud.user.Account, java.lang.Long)
-     */
     @Override
     public VirtualRouter destroyRouter(final long routerId, final Account caller, final Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
 
@@ -315,10 +294,6 @@ public class NetworkHelperImpl implements NetworkHelper {
         return router;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.NetworkHelper#checkRouterVersion(com.cloud.network.router.VirtualRouter)
-     */
-    //    @Override
     @Override
     public boolean checkRouterVersion(final VirtualRouter router) {
         if(!VirtualNetworkApplianceManagerImpl.routerVersionCheckEnabled.value()){
@@ -384,10 +359,6 @@ public class NetworkHelperImpl implements NetworkHelper {
     }
 
 
-    //    @Override
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.NetworkHelper#startRouters(org.cloud.network.router.deployment.RouterDeploymentDefinition)
-     */
     @Override
     public List<DomainRouterVO> startRouters(final RouterDeploymentDefinition routerDeploymentDefinition)
             throws StorageUnavailableException, InsufficientCapacityException,
@@ -417,10 +388,6 @@ public class NetworkHelperImpl implements NetworkHelper {
         return runningRouters;
     }
 
-    //    @Override
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.NetworkHelper#startVirtualRouter(com.cloud.vm.DomainRouterVO, com.cloud.user.User, com.cloud.user.Account, java.util.Map)
-     */
     @Override
     public DomainRouterVO startVirtualRouter(final DomainRouterVO router, final User user, final Account caller, final Map<Param, Object> params)
             throws StorageUnavailableException, InsufficientCapacityException,
