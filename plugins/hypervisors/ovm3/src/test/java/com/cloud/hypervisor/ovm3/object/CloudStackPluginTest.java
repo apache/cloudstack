@@ -21,7 +21,7 @@ public class CloudStackPluginTest {
     Integer port = 8899;
     Integer retries = 1;
     Integer interval = 1;
-    
+
     ConnectionTest con = new ConnectionTest();
     CloudStackPlugin cSp = new CloudStackPlugin(con);
     XmlTestResultTest results = new XmlTestResultTest();

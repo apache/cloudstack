@@ -1,5 +1,5 @@
 package com.cloud.hypervisor.ovm3.object;
-import org.junit.Test;
+// import org.junit.Test;
 
 public class LinuxTest {
     ConnectionTest con = new ConnectionTest();

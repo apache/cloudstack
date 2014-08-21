@@ -12,7 +12,6 @@ import org.apache.xmlrpc.parser.XmlRpcResponseParser;
 import org.apache.xmlrpc.util.SAXParsers;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
-import org.junit.Test;
 
 public class ConnectionTest extends Connection {
     String result;

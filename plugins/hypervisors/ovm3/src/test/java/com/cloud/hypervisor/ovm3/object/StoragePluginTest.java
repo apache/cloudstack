@@ -1,10 +1,7 @@
 package com.cloud.hypervisor.ovm3.object;
 
 import java.io.File;
-
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import com.cloud.hypervisor.ovm3.object.StoragePlugin.FileProperties;
 import com.cloud.hypervisor.ovm3.object.StoragePlugin.StorageServer;

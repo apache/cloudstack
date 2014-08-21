@@ -24,7 +24,6 @@ public class NtpTest {
             + "<value><boolean>1</boolean></value>\n"
             + "</data>\n"
             + "</array>\n");
-    
 
     public void testGetNtp() throws Ovm3ResourceException {
         con.setResult(results.getNil());
