@@ -19,20 +19,10 @@ package com.cloud.network.rules;
 
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 
-import com.cloud.agent.api.routing.DhcpEntryCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.manager.Commands;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.Network.Provider;
-import com.cloud.network.Network.Service;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
@@ -77,58 +67,4 @@ public class DhcpEntryRules extends RuleApplier {
     public UserVmVO getUserVM() {
         return _userVM;
     }
-
-    public DeployDestination getDestination() {
-        return _destination;
-    }
-
-    public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final Commands cmds) {
-        final DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName(), nic.getIp6Address(),
-                _networkModel.getExecuteInSeqNtwkElmtCmd());
-        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-        final Nic defaultNic = findGatewayIp(vm.getId());
-        String gatewayIp = defaultNic.getGateway();
-        if (gatewayIp != null && !gatewayIp.equals(nic.getGateway())) {
-            gatewayIp = "0.0.0.0";
-        }
-        dhcpCommand.setDefaultRouter(gatewayIp);
-        dhcpCommand.setIp6Gateway(nic.getIp6Gateway());
-        String ipaddress = null;
-        final NicVO domrDefaultNic = findDefaultDnsIp(vm.getId());
-        if (domrDefaultNic != null) {
-            ipaddress = domrDefaultNic.getIp4Address();
-        }
-        dhcpCommand.setDefaultDns(ipaddress);
-        dhcpCommand.setDuid(NetUtils.getDuidLL(nic.getMacAddress()));
-        dhcpCommand.setDefault(nic.isDefaultNic());
-
-        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
-        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(nic.getNetworkId(), router.getId()));
-        dhcpCommand.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-
-        cmds.addCommand("dhcp", dhcpCommand);
-    }
-
-    private NicVO findGatewayIp(final long userVmId) {
-        final NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
-        return defaultNic;
-    }
-
-    private NicVO findDefaultDnsIp(final long userVmId) {
-        final NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
-
-        // check if DNS provider is the domR
-        if (!_networkModel.isProviderSupportServiceInNetwork(defaultNic.getNetworkId(), Service.Dns, Provider.VirtualRouter)) {
-            return null;
-        }
-
-        final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(defaultNic.getNetworkId()).getNetworkOfferingId());
-        if (offering.getRedundantRouter()) {
-            return findGatewayIp(userVmId);
-        }
-
-        return null;
-    }
-
 }

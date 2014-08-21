@@ -42,6 +42,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public interface NetworkTopology {
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     StringBuilder createGuestBootLoadArgs(final NicProfile guestNic, final String defaultDns1, final String defaultDns2, DomainRouterVO router);
 
     String retrieveGuestDhcpRange(final NicProfile guestNic, final Network guestNetwork, final DataCenter dc);
@@ -51,6 +52,10 @@ public interface NetworkTopology {
 
     // ====== USER FOR VPC ONLY ====== //
 =======
+=======
+    NetworkTopologyVisitor getVisitor();
+
+>>>>>>> 06c77f1... refactor all private methods in the virtual router appliance and VPC appliance
     // ====== USED FOR VPC ONLY ====== //
 >>>>>>> 0b8b22f... adding setupPrivateGateway to new style;
 
