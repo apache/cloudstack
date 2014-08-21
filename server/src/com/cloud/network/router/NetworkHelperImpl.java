@@ -18,15 +18,18 @@ package com.cloud.network.router;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 
@@ -141,6 +144,17 @@ public class NetworkHelperImpl implements NetworkHelper {
     private UserIpv6AddressDao _ipv6Dao;
     @Inject
     protected NetworkOrchestrationService _networkMgr;
+
+    protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
+
+    @PostConstruct
+    protected void setupHypervisorsMap() {
+        this.hypervisorsMap.put(HypervisorType.XenServer, VirtualNetworkApplianceManager.RouterTemplateXen);
+        this.hypervisorsMap.put(HypervisorType.KVM, VirtualNetworkApplianceManager.RouterTemplateKvm);
+        this.hypervisorsMap.put(HypervisorType.VMware, VirtualNetworkApplianceManager.RouterTemplateVmware);
+        this.hypervisorsMap.put(HypervisorType.Hyperv, VirtualNetworkApplianceManager.RouterTemplateHyperV);
+        this.hypervisorsMap.put(HypervisorType.LXC, VirtualNetworkApplianceManager.RouterTemplateLxc);
+    }
 
     @Override
     public String getRouterControlIp(final long routerId) {
@@ -469,18 +483,17 @@ public class NetworkHelperImpl implements NetworkHelper {
 
     @Override
     public DomainRouterVO deployRouter(final RouterDeploymentDefinition routerDeploymentDefinition,
-            final boolean startRouter, final List<HypervisorType> supportedHypervisors)
+            final boolean startRouter)
                     throws InsufficientAddressCapacityException,
                     InsufficientServerCapacityException, InsufficientCapacityException,
                     StorageUnavailableException, ResourceUnavailableException {
 
         final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(routerDeploymentDefinition.getOfferingId());
-        final DeployDestination dest = routerDeploymentDefinition.getDest();
         final Account owner = routerDeploymentDefinition.getOwner();
 
         // Router is the network element, we don't know the hypervisor type yet.
         // Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
-        final List<HypervisorType> hypervisors = getHypervisors(routerDeploymentDefinition, supportedHypervisors);
+        final List<HypervisorType> hypervisors = getHypervisors(routerDeploymentDefinition);
 
         int allocateRetry = 0;
         int startRetry = 0;
@@ -490,29 +503,13 @@ public class NetworkHelperImpl implements NetworkHelper {
             try {
                 final long id = _routerDao.getNextInSequence(Long.class, "id");
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Allocating the VR i=" + id + " in datacenter " + dest.getDataCenter() + "with the hypervisor type " + hType);
+                    s_logger.debug(String.format(
+                            "Allocating the VR with id=%s in datacenter %s with the hypervisor type %s",
+                            id, routerDeploymentDefinition.getDest().getDataCenter(), hType));
                 }
 
-                String templateName = null;
-                switch (hType) {
-                    case XenServer:
-                        templateName = VirtualNetworkApplianceManager.RouterTemplateXen.valueIn(dest.getDataCenter().getId());
-                        break;
-                    case KVM:
-                        templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(dest.getDataCenter().getId());
-                        break;
-                    case VMware:
-                        templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(dest.getDataCenter().getId());
-                        break;
-                    case Hyperv:
-                        templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(dest.getDataCenter().getId());
-                        break;
-                    case LXC:
-                        templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(dest.getDataCenter().getId());
-                        break;
-                    default:
-                        break;
-                }
+                String templateName = this.hypervisorsMap.get(hType)
+                        .valueIn(routerDeploymentDefinition.getDest().getDataCenter().getId());
                 final VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
 
                 if (template == null) {
@@ -576,7 +573,15 @@ public class NetworkHelperImpl implements NetworkHelper {
         return router;
     }
 
-    protected List<HypervisorType> getHypervisors(final RouterDeploymentDefinition routerDeploymentDefinition, final List<HypervisorType> supportedHypervisors)
+    protected void filterSupportedHypervisors(final List<HypervisorType> hypervisors) {
+        // For non vpc we keep them all assuming all types in the list are supported
+    }
+
+    protected String getNoHypervisorsErrMsgDetails() {
+        return "";
+    }
+
+    protected List<HypervisorType> getHypervisors(final RouterDeploymentDefinition routerDeploymentDefinition)
             throws InsufficientServerCapacityException {
         final DeployDestination dest = routerDeploymentDefinition.getDest();
         List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
@@ -597,23 +602,17 @@ public class NetworkHelperImpl implements NetworkHelper {
             }
         }
 
-        //keep only elements defined in supported hypervisors
-        final StringBuilder hTypesStr = new StringBuilder();
-        if (supportedHypervisors != null && !supportedHypervisors.isEmpty()) {
-            hypervisors.retainAll(supportedHypervisors);
-            for (final HypervisorType hType : supportedHypervisors) {
-                hTypesStr.append(hType).append(" ");
-            }
-        }
+        this.filterSupportedHypervisors(hypervisors);
 
         if (hypervisors.isEmpty()) {
-            final String errMsg = (hTypesStr.capacity() > 0) ? "supporting hypervisors " + hTypesStr.toString() : "";
             if (routerDeploymentDefinition.getPodId() != null) {
-                throw new InsufficientServerCapacityException("Unable to create virtual router, " + "there are no clusters in the pod " + errMsg, Pod.class,
-                        routerDeploymentDefinition.getPodId());
+                throw new InsufficientServerCapacityException(
+                        "Unable to create virtual router, there are no clusters in the pod." + getNoHypervisorsErrMsgDetails(),
+                        Pod.class, routerDeploymentDefinition.getPodId());
             }
-            throw new InsufficientServerCapacityException("Unable to create virtual router, " + "there are no clusters in the zone " + errMsg, DataCenter.class,
-                    dest.getDataCenter().getId());
+            throw new InsufficientServerCapacityException(
+                    "Unable to create virtual router, there are no clusters in the zone." + getNoHypervisorsErrMsgDetails(),
+                    DataCenter.class, dest.getDataCenter().getId());
         }
         return hypervisors;
     }
