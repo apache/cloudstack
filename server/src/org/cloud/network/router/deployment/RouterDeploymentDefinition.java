@@ -387,7 +387,7 @@ public class RouterDeploymentDefinition {
         int routersToDeploy = this.getNumberOfRoutersToDeploy();
         for(int i = 0; i < routersToDeploy; i++) {
             // Don't start the router as we are holding the network lock that needs to be released at the end of router allocation
-            DomainRouterVO router = this.nwHelper.deployRouter(this, false, null);
+            DomainRouterVO router = this.nwHelper.deployRouter(this, false);
 
             if (router != null) {
                 this.routerDao.addRouterToGuestNetwork(router, this.guestNetwork);

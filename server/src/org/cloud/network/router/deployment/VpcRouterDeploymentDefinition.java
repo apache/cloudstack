@@ -159,7 +159,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     protected void deployAllVirtualRouters()
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
-        DomainRouterVO router = this.nwHelper.deployRouter(this, true, vpcMgr.getSupportedVpcHypervisors());
+        DomainRouterVO router = this.nwHelper.deployRouter(this, true);
 
         if (router != null) {
             this.routers.add(router);
