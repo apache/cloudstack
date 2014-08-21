@@ -28,7 +28,6 @@ import java.util.Map.Entry;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.ovm3.object.Linux.FileSystem;
-import com.cloud.hypervisor.ovm3.object.StoragePlugin.StorageServer;
 
 class Test {
     private static final Logger LOGGER = Logger
