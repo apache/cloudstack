@@ -1523,6 +1523,7 @@ class TestVolumes(cloudstackTestCase):
                                  )
         # Deleting a single snapshot and verifying that snapshot does not exists on page 2
         Snapshot.delete(snapshot_created, self.userapiclient)
+        self.cleanup.remove(snapshot_created)
  
         list_snapshot_page2 = Snapshot.list(
                                             self.userapiclient,
