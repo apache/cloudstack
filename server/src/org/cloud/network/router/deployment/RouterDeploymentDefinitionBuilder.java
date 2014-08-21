@@ -23,6 +23,8 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -92,9 +94,11 @@ public class RouterDeploymentDefinitionBuilder {
     @Inject
     private VlanDao vlanDao;
 
-    @Inject
+    @Autowired
+    @Qualifier("networkHelper")
     protected NetworkHelper nwHelper;
-    @Inject
+    @Autowired
+    @Qualifier("vpcNetworkHelper")
     protected VpcNetworkHelperImpl vpcNwHelper;
 
     protected Long offeringId;
