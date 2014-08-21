@@ -64,10 +64,14 @@ public interface NetworkTopology {
 
     boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException;
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     
+=======
+
+>>>>>>> 5e11fba... fixing check style issues
     boolean setupPrivateGateway(final PrivateGateway gateway, final VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException;
-    
+
     String[] applyVpnUsers(final RemoteAccessVpn vpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException;
 >>>>>>> 0b8b22f... adding setupPrivateGateway to new style;
 

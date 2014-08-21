@@ -38,9 +38,10 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.NetworkHelper;
+import com.cloud.network.router.NicProfileHelper;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.router.VpcNetworkHelper;
+import com.cloud.network.router.VpcNetworkHelperImpl;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.PrivateIpDao;
@@ -116,7 +117,9 @@ public abstract class RuleApplier {
 
     protected NetworkHelper _networkHelper;
 
-    protected VpcNetworkHelper _vpcNetworkHelper;
+    protected VpcNetworkHelperImpl _vpcNetworkHelper;
+
+    protected NicProfileHelper _nicProfileHelper;
 
     public RuleApplier(final Network network) {
         _network = network;
@@ -141,8 +144,9 @@ public abstract class RuleApplier {
                         vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId()));
     }
 
-    public VmDataCommand generateVmDataCommand(final VirtualRouter router, final String vmPrivateIpAddress, final String userData, final String serviceOffering, final String zoneName,
-            final String guestIpAddress, final String vmName, final String vmInstanceName, final long vmId, final String vmUuid, final String publicKey, final long guestNetworkId) {
+    public VmDataCommand generateVmDataCommand(final VirtualRouter router, final String vmPrivateIpAddress, final String userData, final String serviceOffering,
+            final String zoneName, final String guestIpAddress, final String vmName, final String vmInstanceName, final long vmId, final String vmUuid, final String publicKey,
+            final long guestNetworkId) {
         final VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName, _networkModel.getExecuteInSeqNtwkElmtCmd());
 
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
