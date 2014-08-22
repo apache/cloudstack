@@ -1363,3 +1363,16 @@ def isDomainResourceCountEqualToExpectedCount(apiclient, domainid, expectedcount
     if resourcecount == expectedcount:
         isResourceCountEqual = True
     return [isExceptionOccured, reasonForException, isResourceCountEqual]
+
+def isNetworkDeleted(apiclient, networkid, timeout=600):
+    """ List the network and check that the list is empty or not"""
+    networkDeleted = False
+    while timeout >= 0:
+        networks = Network.list(apiclient, id=networkid)
+        if networks is None:
+            networkDeleted = True
+            break
+        timeout -= 60
+        time.sleep(60)
+    #end while
+    return networkDeleted
