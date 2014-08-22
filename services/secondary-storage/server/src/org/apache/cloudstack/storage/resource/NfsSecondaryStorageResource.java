@@ -1525,7 +1525,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private String deleteLocalFile(String fullPath) {
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("rm -f " + fullPath);
+        command.add("rm -rf " + fullPath);
         String result = command.execute();
         if (result != null) {
             String errMsg = "Failed to delete file " + fullPath + ", err=" + result;
