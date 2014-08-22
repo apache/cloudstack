@@ -2560,7 +2560,7 @@ class Network:
     def create(cls, apiclient, services, accountid=None, domainid=None,
                networkofferingid=None, projectid=None,
                subdomainaccess=None, zoneid=None,
-               gateway=None, netmask=None, vpcid=None, aclid=None):
+               gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -2591,7 +2591,9 @@ class Network:
             cmd.startip = services["startip"]
         if "endip" in services:
             cmd.endip = services["endip"]
-        if "vlan" in services:
+        if vlan:
+            cmd.vlan = vlan
+        elif "vlan" in services:
             cmd.vlan = services["vlan"]
         if "acltype" in services:
             cmd.acltype = services["acltype"]
