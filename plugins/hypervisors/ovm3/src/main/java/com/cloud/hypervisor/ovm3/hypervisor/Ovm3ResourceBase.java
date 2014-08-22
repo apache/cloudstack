@@ -144,7 +144,6 @@ import com.cloud.hypervisor.ovm3.object.Repository;
 import com.cloud.hypervisor.ovm3.object.StoragePlugin;
 import com.cloud.hypervisor.ovm3.object.StoragePlugin.FileProperties;
 import com.cloud.hypervisor.ovm3.object.StoragePlugin.StorageDetails;
-import com.cloud.hypervisor.ovm3.object.StoragePlugin.StorageServer;
 import com.cloud.hypervisor.ovm3.object.Xen;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;

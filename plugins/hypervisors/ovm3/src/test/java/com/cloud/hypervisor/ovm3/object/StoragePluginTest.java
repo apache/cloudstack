@@ -6,7 +6,6 @@ import org.junit.Test;
 
 import com.cloud.hypervisor.ovm3.object.StoragePlugin.FileProperties;
 import com.cloud.hypervisor.ovm3.object.StoragePlugin.StorageDetails;
-import com.cloud.hypervisor.ovm3.object.StoragePlugin.StorageServer;
 
 public class StoragePluginTest {
     ConnectionTest con = new ConnectionTest();
@@ -193,7 +192,6 @@ public class StoragePluginTest {
         con.setResult(results.simpleResponseWrapWrapper(NFSMOUNTRESPONSEXML));
         NFSMNT = NFSMNT + File.separator + FSMNTUUID;
         sd = sPt.storagePluginMountNFS(NFSHOST, NFSPATH, FSMNTUUID, NFSMNT);
-        System.out.println(sd.getSize());
         results.basicLongTest(Long.valueOf(sd.getSize()), 263166853120L);
         results.basicLongTest(Long.valueOf(sd.getFreeSize()), 259377299456L);
         results.basicStringTest(sd.getName(), "nfs:" + NFSPATH);
