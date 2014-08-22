@@ -1,9 +1,11 @@
 package com.cloud.hypervisor.ovm3.object;
 
 import java.io.File;
+
 import org.junit.Test;
 
 import com.cloud.hypervisor.ovm3.object.StoragePlugin.FileProperties;
+import com.cloud.hypervisor.ovm3.object.StoragePlugin.StorageDetails;
 import com.cloud.hypervisor.ovm3.object.StoragePlugin.StorageServer;
 
 public class StoragePluginTest {
@@ -171,6 +173,7 @@ public class StoragePluginTest {
             + "<value><string>nfs:"
             + NFSPATH
             + "</string></value>" + "</member>" + "</struct>";
+    String NFSFILESYSTEMINFO = NFSMOUNTRESPONSEXML;
     String FILECREATEXML = "<struct>" + "<member>" + "<name>fr_type</name>"
             + "<value><string>File</string></value>" + "</member>" + "<member>"
             + "<name>ondisk_sz</name>" + "<value><string>0</string></value>"
@@ -185,25 +188,17 @@ public class StoragePluginTest {
     @Test
     public void testNFSStorageMountCreation() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(NFSMOUNTRESPONSEXML));
-        StorageServer ss = sPt.storagePluginMountNFS(NFSHOST, NFSPATH,
+        StorageDetails sd = sPt.storagePluginMountNFS(NFSHOST, NFSPATH,
                 FSMNTUUID, NFSMNT);
         con.setResult(results.simpleResponseWrapWrapper(NFSMOUNTRESPONSEXML));
         NFSMNT = NFSMNT + File.separator + FSMNTUUID;
-        ss = sPt.storagePluginMountNFS(NFSHOST, NFSPATH, FSMNTUUID, NFSMNT);
-        ss.getAccessGroups();
-        ss.getAccessHost();
-        ss.getAdminHost();
-        ss.getAdminUser();
-        ss.getAdminPassword();
-        ss.getFreeSize();
-        ss.getDescription();
-        ss.getFreeSize();
-        ss.getName();
-        ss.getStatus();
-        ss.getStorageType();
-        ss.getTotalSize();
-        ss.getUsedSize();
-        ss.getUuid();
+        sd = sPt.storagePluginMountNFS(NFSHOST, NFSPATH, FSMNTUUID, NFSMNT);
+        System.out.println(sd.getSize());
+        results.basicLongTest(Long.valueOf(sd.getSize()), 263166853120L);
+        results.basicLongTest(Long.valueOf(sd.getFreeSize()), 259377299456L);
+        results.basicStringTest(sd.getName(), "nfs:" + NFSPATH);
+        results.basicStringTest(sd.getUuid(), FSPROPUUID);
+        results.basicStringTest(sd.getDetailsRelationalUuid(),FSMNTUUID);
     }
 
     @Test
@@ -214,7 +209,7 @@ public class StoragePluginTest {
 
     @Test(expected = Ovm3ResourceException.class)
     public void testStoragePluginIncorrectSsUuid() throws Ovm3ResourceException {
-        sPt.storageDetails.setStorageServerRelationalUuid(FSMNTUUID);
+        sPt.storageDetails.setDetailsRelationalUuid(FSMNTUUID);
     }
 
     @Test(expected = Ovm3ResourceException.class)

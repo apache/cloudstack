@@ -58,10 +58,10 @@ public class StoragePlugin extends OvmObject {
                 put("mount_options", new ArrayList<String>());
             }
         };
-        public Map<String, Object> getStorageDetails() {
+        public Map<String, Object> getDetails() {
             return storageDetails;
         }
-        public void setStorageDetails(Map<String, Object> details) {
+        public void setDetails(Map<String, Object> details) {
             storageDetails = details;
         }
         public void setSize(String val) {
@@ -110,13 +110,13 @@ public class StoragePlugin extends OvmObject {
         public String getUuid() {
             return (String) this.storageDetails.get("uuid");
         }
-        public void setStorageServerRelationalUuid(String val) throws Ovm3ResourceException {
+        public void setDetailsRelationalUuid(String val) throws Ovm3ResourceException {
             if (val.contains("-")) {
                 throw new Ovm3ResourceException("Storage Details UUID that relates to Storage Source should notcontain dashes: " + val);
             }
             this.storageDetails.put("ss_uuid", val);
         }
-        public String getStorageServerRelationalUuid() {
+        public String getDetailsRelationalUuid() {
             return (String) this.storageDetails.get("ss_uuid");
         }
         public void setAccessGroupNames(List<String> l) {
@@ -153,10 +153,10 @@ public class StoragePlugin extends OvmObject {
                 put("name", EMPTY_STRING);
             }
         };
-        public Map<String, Object> getStorageServer() {
+        public Map<String, Object> getDetails() {
             return storageSource;
         }
-        public void setStorageServer(Map<String, Object> details) {
+        public void setDetails(Map<String, Object> details) {
             storageSource = details;
         }
         public void setAccessGroups(List<String> l) {
@@ -358,11 +358,11 @@ public class StoragePlugin extends OvmObject {
         ss.setStorageType("FileSys");
         ss.setAccessHost(host);
         sd.setUuid(poolUuid);
-        sd.setStorageServerRelationalUuid(uuid);
+        sd.setDetailsRelationalUuid(uuid);
         sd.setState(2);
         fp.setProperties((HashMap<String, Object>) callWrapper("storage_plugin_create",
-                this.getPluginType, ss.getStorageServer(),
-                sd.getStorageDetails(), file, "File", size));
+                this.getPluginType, ss.getDetails(),
+                sd.getDetails(), file, "File", size));
         return fp;
     }
 
@@ -393,8 +393,8 @@ public class StoragePlugin extends OvmObject {
         StorageServer ss = new StorageServer();
         ss.setAccessHost(host);
         ss.setStorageType("FileSys");
-        ss.setStorageServer((Map<String, Object>) callWrapper("storage_plugin_listFileSystems",
-                this.getPluginType, ss.getStorageServer()));
+        ss.setDetails((Map<String, Object>) callWrapper("storage_plugin_listFileSystems",
+                this.getPluginType, ss.getDetails()));
         return true;
     }
 
@@ -426,7 +426,7 @@ public class StoragePlugin extends OvmObject {
      * . storage_plugin_mount, <class 'agent.api.storageplugin.StoragePlugin'>
      * argument: impl_name - default: None
      */
-    public final StorageServer storagePluginMountNFS(String nfsHost, String nfsRemotePath,
+    public final StorageDetails storagePluginMountNFS(String nfsHost, String nfsRemotePath,
             String mntUuid, String mountPoint) throws Ovm3ResourceException {
         String propUuid = this.deDash(mntUuid);
         StorageServer ss = new StorageServer();
@@ -434,23 +434,26 @@ public class StoragePlugin extends OvmObject {
         ss.setUuid(propUuid);
         ss.setName(propUuid);
         ss.setAccessHost(nfsHost);
-        sd.setStorageServerRelationalUuid(propUuid);
+        sd.setDetailsRelationalUuid(propUuid);
         sd.setUuid(mntUuid);
         sd.setAccessPath(nfsHost + ":" + nfsRemotePath);
         if (!mountPoint.contains(mntUuid)) {
             mountPoint += File.separator + mntUuid;
         }
-        ss.setStorageServer((HashMap<String, Object>) callWrapper(
-                "storage_plugin_mount", this.getPluginType, ss.getStorageServer(),
-                sd.getStorageDetails(), mountPoint, this.unknown, this.active,
+        sd.setDetails((HashMap<String, Object>) callWrapper(
+                "storage_plugin_mount", this.getPluginType, ss.getDetails(),
+                sd.getDetails(), mountPoint, this.unknown, this.active,
                 this.someList));
-        if (ss.getStorageServer() == null) {
-            throw new Ovm3ResourceException("FileSystem mount returned null, something is wrong, but we don't know what.");
+        /* this magically means it's already mounted....
+         * double check */
+        if (sd.getDetails() == null) {
+            sd = storagePluginGetFileSystemInfo(propUuid,
+                    mntUuid, nfsHost, nfsRemotePath);
         }
         if (EMPTY_STRING.contains(ss.getUuid())) {
             throw new Ovm3ResourceException("Unable to mount NFS FileSystem");
         }
-        return ss;
+        return sd;
     }
 
     /**
@@ -464,7 +467,7 @@ public class StoragePlugin extends OvmObject {
         StorageServer ss = new StorageServer();
         StorageDetails sd = new StorageDetails();
         sd.setUuid(mntUuid);
-        sd.setStorageServerRelationalUuid(this.deDash(mntUuid));
+        sd.setDetailsRelationalUuid(this.deDash(mntUuid));
         ss.setUuid(this.deDash(mntUuid));
         ss.setAccessHost(nfsHost);
         sd.setAccessPath(nfsHost + ":" + remotePath);
@@ -472,7 +475,7 @@ public class StoragePlugin extends OvmObject {
         ss.setStorageType("FileSys");
         String mountPoint = localPath + File.separator + mntUuid;
         callWrapper("storage_plugin_unmount", this.getPluginType,
-            ss.getStorageServer(), sd.getStorageDetails(), mountPoint, this.active);
+            ss.getDetails(), sd.getDetails(), mountPoint, this.active);
         return true;
     }
 
@@ -590,14 +593,14 @@ public class StoragePlugin extends OvmObject {
         FileProperties fp = new FileProperties();
         // ss.setStorageType("FileSys");));
         ss.setUuid(uuid);
-        sd.setStorageServerRelationalUuid(uuid);
+        sd.setDetailsRelationalUuid(uuid);
         sd.setUuid(poolUuid);
         fp.setType("file");
         fp.setUuid(poolUuid);
         fp.setName(file);
         return nullIsTrueCallWrapper(
-                "storage_plugin_destroy", this.getPluginType, ss.getStorageServer(),
-                sd.getStorageDetails(), fp.getProperties());
+                "storage_plugin_destroy", this.getPluginType, ss.getDetails(),
+                sd.getDetails(), fp.getProperties());
     }
 
     /*
@@ -607,7 +610,7 @@ public class StoragePlugin extends OvmObject {
      */
 
     /*
-     * storage_plugin_getStorageServerInfo, <class
+     * storage_plugin_getDetailsInfo, <class
      * 'agent.api.storageplugin.StoragePlugin'> argument: impl_name - default:
      * None
      */
@@ -656,14 +659,14 @@ public class StoragePlugin extends OvmObject {
         ss.setUuid(uuid);
         ss.setAccessHost(host);
         sd.setUuid(poolUuid);
-        sd.setStorageServerRelationalUuid(uuid);
+        sd.setDetailsRelationalUuid(uuid);
         sd.setState(1);
         fp.setName(file);
         fp.setProperties((HashMap<String, Object>) callWrapper(
                 "storage_plugin_getFileInfo",
                 this.getPluginType,
-                ss.getStorageServer(),
-                sd.getStorageDetails(),
+                ss.getDetails(),
+                sd.getDetails(),
                 fp.getProperties()));
         if ("".equals(fp.getName())) {
             throw new Ovm3ResourceException("Unable to get file info for " + file);
@@ -678,22 +681,22 @@ public class StoragePlugin extends OvmObject {
      * default: None requires a minumum of uuid, access_host, storage_type
      * ss_uuid, access_path, uuid (the ss
      */
-    public StorageServer storagePluginGetFileSystemInfo(String propUuid,
-            String mntUuid, String nfsHost, String nfsPath) throws Ovm3ResourceException{
+    public StorageDetails storagePluginGetFileSystemInfo(String propUuid,
+            String mntUuid, String nfsHost, String nfsRemotePath) throws Ovm3ResourceException{
         /* clean the props */
         StorageServer ss = new StorageServer();
         StorageDetails sd = new StorageDetails();
         FileProperties fp = new FileProperties();
         ss.setUuid(propUuid);
-        sd.setStorageServerRelationalUuid(propUuid);
+        sd.setDetailsRelationalUuid(propUuid);
         sd.setUuid(mntUuid);
         ss.setAccessHost(nfsHost);
-        sd.setAccessPath(nfsHost + ":" + nfsPath);
+        sd.setAccessPath(nfsHost + ":" + nfsRemotePath);
         ss.setStorageType("FileSys");
-        ss.setStorageServer((HashMap<String, Object>) callWrapper(
+        sd.setDetails((HashMap<String, Object>) callWrapper(
                 "storage_plugin_getFileSystemInfo", this.getPluginType,
-                ss.getStorageServer(), sd.getStorageDetails()));
-        return ss;
+                ss.getDetails(), sd.getDetails()));
+        return sd;
     }
 
     /*

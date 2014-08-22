@@ -86,4 +86,7 @@ public class XmlTestResultTest {
         assertNotNull(result);
         assertEquals(desired, result);
     }
+    public void basicLongTest(Long result, Long desired) {
+        assertEquals(desired, result);
+    }
 }

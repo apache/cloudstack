@@ -143,6 +143,7 @@ import com.cloud.hypervisor.ovm3.object.PoolOCFS2;
 import com.cloud.hypervisor.ovm3.object.Repository;
 import com.cloud.hypervisor.ovm3.object.StoragePlugin;
 import com.cloud.hypervisor.ovm3.object.StoragePlugin.FileProperties;
+import com.cloud.hypervisor.ovm3.object.StoragePlugin.StorageDetails;
 import com.cloud.hypervisor.ovm3.object.StoragePlugin.StorageServer;
 import com.cloud.hypervisor.ovm3.object.Xen;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -654,6 +655,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             }
             if (!repoExists) {
                 try {
+                    /* a mount of the NFS fs by the createrepo actually generates a
+                     * null if it is already mounted... -sigh- */
                     repo.createRepo(mountPoint, ovsRepo, primUuid,
                             "OVS Repository");
                 } catch (Ovm3ResourceException  e) {
@@ -854,7 +857,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         LOGGER.debug("modifying pool " + pool);
         try {
             if (pool.getType() == StoragePoolType.NetworkFilesystem) {
-                /* this should actually not be here */
+                /* TODO: this should actually not be here */
                 createRepo(pool);
             } else if (pool.getType() == StoragePoolType.OCFS2) {
                 createOCFS2Sr(pool);
@@ -872,11 +875,11 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             String mntUuid = pool.getUuid();
             String nfsHost = pool.getHost();
             String nfsPath = pool.getPath();
-            StorageServer ss = store.storagePluginGetFileSystemInfo(propUuid, mntUuid, nfsHost, nfsPath);
+            StorageDetails ss = store.storagePluginGetFileSystemInfo(propUuid, mntUuid, nfsHost, nfsPath);
 
             Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
             return new ModifyStoragePoolAnswer(cmd,
-                    Long.parseLong(ss.getTotalSize()), Long.parseLong(ss
+                    Long.parseLong(ss.getSize()), Long.parseLong(ss
                             .getFreeSize()), tInfo);
         } catch (Exception e) {
             LOGGER.debug("ModifyStoragePoolCommand failed", e);
@@ -1952,9 +1955,9 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             String propUuid = store.deDash(cmd.getStorageId());
             String mntUuid = cmd.getStorageId();
             /* or is it mntUuid ish ? */
-            StorageServer ss = store.storagePluginGetFileSystemInfo(propUuid, mntUuid, fs.getHost(), fs.getDevice());
-            long total = Long.parseLong(ss.getTotalSize());
-            long used = total - Long.parseLong(ss.getFreeSize());
+            StorageDetails sd = store.storagePluginGetFileSystemInfo(propUuid, mntUuid, fs.getHost(), fs.getDevice());
+            long total = Long.parseLong(sd.getSize());
+            long used = total - Long.parseLong(sd.getFreeSize());
             return new GetStorageStatsAnswer(cmd, total, used);
         } catch (Ovm3ResourceException  e) {
             LOGGER.debug(

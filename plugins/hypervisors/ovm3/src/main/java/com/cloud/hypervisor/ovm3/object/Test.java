@@ -171,7 +171,7 @@ class Test {
             } else {
                 throw new Ovm3ResourceException("No hosts found that were up!!!!");
             }
-            Connection c = connections.get(0);
+            Connection c = connections.get(1);
 
             /*
              * needs to be finished and implement ovs + bridge, or do we count
@@ -365,6 +365,10 @@ class Test {
                         mntUuid,
                         "/nfsmnt");
                 System.out.println(ss.getUuid());
+                ss = store.storagePluginMountNFS(remoteHost,
+                        remotePath+"/VirtualMachines",
+                        mntUuid,
+                        "/nfsmnt");
                 repo.discoverRepoDb();
                 // repo.importIso(iso, isouuid + ".iso", repoUuid, "");
                 // repo.importVirtualDisk(vhd, vmuuid + ".img", repoUuid);
@@ -373,7 +377,7 @@ class Test {
                         remotePath+"/VirtualMachines",
                         mntUuid,
                         "/nfsmnt");
-                System.out.println(store.storagePluginGetFileSystemInfo(repoUuid, mntUuid, remoteHost, remotePath+"/VirtualMachines").getFreeSize());
+                System.out.println(store.storagePluginGetFileSystemInfo(repoUuid, mntUuid, remoteHost, remotePath+"/VirtualMachines").getTotalSize());
                 repo.deleteRepo(repoUuid, true);
                 repo.unmountRepoFs(local);
                 repo.discoverRepoDb();
