@@ -1751,7 +1751,7 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
         virtual_machine.add_nic(self.apiclient, isolated_network.id)
 
         self.debug("Listing virtual machine so that to retrive the list of non-default and default nic")
-        vm_list = list_virtual_machines(self.apiclient, id=virtual_machine.id)
+        vm_list = list_virtual_machines(self.apiclient, id=virtual_machine.id, listall=True)
         vm_list_validation_result = validateList(vm_list)
         self.assertEqual(vm_list_validation_result[0], PASS, "vm list validation failed due to %s" %
 			 vm_list_validation_result[2])
@@ -1771,7 +1771,7 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
         self.debug("Default nic of VM is %s and non default nic of VM is %s"
                     % (defaultNicIdBeforeUpdate, nonDefaultNicIdBeforeUpdate))
         self.debug("Destroying VM %s" % virtual_machine.id)
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=False)
 
         self.debug("Making non default nic as default nic")
 
