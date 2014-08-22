@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.TreeSet;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.commons.lang.StringUtils;
@@ -56,7 +57,13 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
     @Inject
     protected NicProfileHelper nicProfileHelper;
 
-    protected final String noHypervisorsErrMsgDetails = StringUtils.join(this.vpcMgr.getSupportedVpcHypervisors(), ',');
+    protected String noHypervisorsErrMsgDetails;
+
+    @PostConstruct
+    protected void setupNoHypervisorsErrMsgDetails() {
+        this.noHypervisorsErrMsgDetails = StringUtils.join(this.vpcMgr.getSupportedVpcHypervisors(), ',');
+        this.noHypervisorsErrMsgDetails += " are the only supported Hypervisors";
+    }
 
     @Override
     protected String getNoHypervisorsErrMsgDetails() {
