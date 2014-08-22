@@ -407,7 +407,9 @@ class CsIP:
             app = CsApache(self)
             app.setup()
             pwdsvc = CsPasswdSvc(self).setup()
-
+        elif self.get_type() == "public":
+            if self.address["source_nat"] == True:
+                fw.append(["nat","","-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
         route.flush()
 
     def list(self):
