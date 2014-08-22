@@ -691,7 +691,11 @@ public class StoragePlugin extends OvmObject {
         sd.setDetailsRelationalUuid(propUuid);
         sd.setUuid(mntUuid);
         ss.setAccessHost(nfsHost);
-        sd.setAccessPath(nfsHost + ":" + nfsRemotePath);
+        if (nfsRemotePath.contains(nfsHost + ":")) {
+            sd.setAccessPath(nfsRemotePath);
+        } else {
+            sd.setAccessPath(nfsHost + ":" + nfsRemotePath);
+        }
         ss.setStorageType("FileSys");
         sd.setDetails((HashMap<String, Object>) callWrapper(
                 "storage_plugin_getFileSystemInfo", this.getPluginType,

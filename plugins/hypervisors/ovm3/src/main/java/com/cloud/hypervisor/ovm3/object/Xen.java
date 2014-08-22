@@ -187,7 +187,7 @@ public class Xen extends OvmObject {
         }
 
         public void setVmCpus(Integer val) {
-            if (getVmMaxCpus() >= val) {
+            if (getVmMaxCpus() == 0 || getVmMaxCpus() >= val) {
                 vmParams.put("vcpus", val);
             } else if (getVmMaxCpus() < val) {
                 setVmCpus(getVmMaxCpus());
