@@ -188,7 +188,8 @@ class CsNetfilter(object):
         """ Convert the rule back into aynactically correct iptables command """
         # Order is important 
         order = ['-A', '-s', '-d', '!_-d', '-i', '-m', '-m2', '--state', 
-                '--dport', '-p', '-o', '-j', '--set-xmark', '--to-source']
+                '--dport', '--destination-port', '-p', '-o', '-j', '--set-xmark',
+                 '--to-source', '--to-destination']
         str = ''
         for k in order:
             if k in self.rule.keys():
