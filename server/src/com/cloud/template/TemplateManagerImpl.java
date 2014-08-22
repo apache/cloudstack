@@ -31,7 +31,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.DateUtil;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -160,6 +159,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
@@ -1361,7 +1361,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Long volumeId = command.getVolumeId();
         Long snapshotId = command.getSnapshotId();
         VMTemplateVO privateTemplate = null;
-        final Long accountId = null;
+        final Long accountId = CallContext.current().getCallingAccountId();
         SnapshotVO snapshot = null;
         VolumeVO volume = null;
 
