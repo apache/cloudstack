@@ -409,6 +409,11 @@ class CsIP:
             pwdsvc = CsPasswdSvc(self).setup()
         elif self.get_type() == "public":
             if self.address["source_nat"] == True:
+                cmdline = CsDataBag("cmdline")
+                dbag = cmdline.get_bag()
+                # FIXME way to VPC specific
+                vpccidr = dbag["config"]["vpccidr"]
+                fw.append(["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
                 fw.append(["nat","","-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
         route.flush()
 
