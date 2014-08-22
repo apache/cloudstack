@@ -778,6 +778,61 @@ class CsAddress(CsDataBag):
                     if CsDevice(dev).waitfordevice():
                         ip.configure()
 
+class CsForwardingRules(CsDataBag):
+    def __init__(self, key):
+        super(CsForwardingRules, self).__init__(key)
+        global fw
+    
+    def process(self):
+        for public_ip in self.dbag:
+            if public_ip == "id":
+                continue
+            for rule in self.dbag[public_ip]:
+                if rule["type"] == "forward":
+                    self.processForwardRule(rule)
+                elif rule["type"] == "staticnat":
+                    self.processStaticNatRule(rule)
+
+    def getDeviceByIp(self, ip):
+        ips = CsDataBag("ips")
+        dbag = ips.get_bag()
+        for device in dbag:
+            if device == "id":
+                continue
+            for addy in dbag[device]:
+                if addy["public_ip"] == ip:
+                    return device
+        return None
+                    
+    def portsToString(self, ports, delimiter):
+        ports_parts = ports.split(":", 2)
+        if ports_parts[0] == ports_parts[1]:
+            return str(ports_parts[0])
+        else:
+            return "%s%s%s" % (port_parts, delimiter, port_parts[1])
+
+
+    def processForwardRule(self, rule):
+        # FIXME this seems to be different for regular VRs?
+        fwrule = "-A PREROUTING -d %s/32" % rule["public_ip"]
+        if not rule["protocol"] == "any":
+            fwrule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
+        if not rule["public_ports"] == "any":
+            fwrule += " --dport %s" % self.portsToString(rule["public_ports"], ":")
+        fwrule += " -j DNAT --to-destination %s" % rule["internal_ip"]
+        if not rule["internal_ports"] == "any":
+            fwrule += ":" + self.portsToString(rule["internal_ports"], "-")
+        fw.append(["nat","",fwrule])
+        
+
+    def processStaticNatRule(self, rule):
+        # FIXME this needs ordering with the VPN no nat rule
+        device = self.getDeviceByIp(rule["public_ip"])
+        if device == None:
+            raise Exception("Ip address %s has no device in the ips databag" % rule["public_ip"])
+        fw.append(["nat","","-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % ( rule["public_ip"], rule["internal_ip"]) ])
+        fw.append(["nat","","-A POSTROUTING -o %s -s %s/32 -j SNAT --to-source %s" % ( device, rule["internal_ip"], rule["public_ip"]) ])
+
 def main(argv):
 
     logging.basicConfig(filename='/var/log/cloud.log',
@@ -799,11 +854,15 @@ def main(argv):
     acls = CsAcl('networkacl')
     acls.process()
 
+    fwd = CsForwardingRules("forwardingrules")
+    fwd.process()
+
     nf = CsNetfilters()
     nf.compare(fw)
 
     dh = CsDataBag("dhcpentry")
     dhcp = CsDhcp(dh.get_bag(), cl)
+
 
 
 if __name__ == "__main__":
