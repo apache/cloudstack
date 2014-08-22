@@ -183,7 +183,7 @@ class Test {
                 String file = "/OVS/Repositories/" + store.deDash(poolUuid)
                         + "/VirtualDisks/test.raw";
                 // System.out.println(store.storagePluginListFs("cs-mgmt"));
-                StoragePlugin.StorageServer ss = store.storagePluginMountNFS("cs-mgmt", "/volumes/cs-data/secondary", "bd5c266b-5738-39a8-a6f0-6f2344ec861e", "/nfsmnt");
+                StoragePlugin.StorageDetails ds = store.storagePluginMountNFS("cs-mgmt", "/volumes/cs-data/secondary", "bd5c266b-5738-39a8-a6f0-6f2344ec861e", "/nfsmnt");
                 System.out.println(store.storagePluginUnmountNFS("cs-mgmt", "/volumes/cs-data/secondary", "bd5c266b-5738-39a8-a6f0-6f2344ec861e", "/nfsmnt"));
                 // System.out.println(ss.getUuid());
             }
@@ -360,12 +360,12 @@ class Test {
                 repo.mountRepoFs(remoteUri, local);
                 repo.createRepo(remoteUri, repoUuid, repoUuid, "My Comment");
                 StoragePlugin store = new StoragePlugin(c);
-                StoragePlugin.StorageServer ss = store.storagePluginMountNFS(remoteHost,
+                StoragePlugin.StorageDetails sd = store.storagePluginMountNFS(remoteHost,
                         remotePath+"/VirtualMachines",
                         mntUuid,
                         "/nfsmnt");
-                System.out.println(ss.getUuid());
-                ss = store.storagePluginMountNFS(remoteHost,
+                System.out.println(sd.getUuid());
+                sd = store.storagePluginMountNFS(remoteHost,
                         remotePath+"/VirtualMachines",
                         mntUuid,
                         "/nfsmnt");
@@ -377,7 +377,7 @@ class Test {
                         remotePath+"/VirtualMachines",
                         mntUuid,
                         "/nfsmnt");
-                System.out.println(store.storagePluginGetFileSystemInfo(repoUuid, mntUuid, remoteHost, remotePath+"/VirtualMachines").getTotalSize());
+                System.out.println(store.storagePluginGetFileSystemInfo(repoUuid, mntUuid, remoteHost, remotePath+"/VirtualMachines").getSize());
                 repo.deleteRepo(repoUuid, true);
                 repo.unmountRepoFs(local);
                 repo.discoverRepoDb();
