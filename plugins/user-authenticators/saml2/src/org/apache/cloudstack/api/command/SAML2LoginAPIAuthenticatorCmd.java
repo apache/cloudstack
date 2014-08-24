@@ -18,8 +18,11 @@
 package org.apache.cloudstack.api.command;
 
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.configuration.Config;
+import com.cloud.domain.Domain;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
+import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.db.EntityManager;
@@ -35,6 +38,7 @@ import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.utils.auth.SAMLUtils;
 import org.apache.log4j.Logger;
@@ -84,6 +88,10 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     ApiServerService _apiServer;
     @Inject
     EntityManager _entityMgr;
+    @Inject
+    ConfigurationDao _configDao;
+    @Inject
+    private DomainManager _domainMgr;
 
     SAML2AuthManager _samlAuthManager;
 
@@ -186,8 +194,23 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 }
 
                 String uniqueUserId = null;
-                String accountName = "admin"; //GET from config, try, fail
-                Long domainId = 1L; // GET from config, try, fail
+                String accountName = _configDao.getValue(Config.SAMLUserAccountName.key());
+                String domainString = _configDao.getValue(Config.SAMLUserDomain.key());
+
+                Long domainId = -1L;
+                Domain domain = _domainMgr.getDomain(domainString);
+                if (domain != null) {
+                    domainId = domain.getId();
+                } else {
+                    try {
+                        domainId = Long.parseLong(domainString);
+                    } catch (NumberFormatException ignore) {
+                    }
+                }
+                if (domainId == -1L) {
+                    s_logger.error("The default domain ID for SAML users is not set correct, it should be a UUID");
+                }
+
                 String username = null;
                 String password = "";
                 String firstName = "";
@@ -246,7 +269,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                             resp.addCookie(new Cookie("account", URLEncoder.encode(loginResponse.getAccount(), HttpUtils.UTF_8)));
                             resp.addCookie(new Cookie("timezone", URLEncoder.encode(loginResponse.getTimeZone(), HttpUtils.UTF_8)));
                             resp.addCookie(new Cookie("userfullname", loginResponse.getFirstName() + "%20" + loginResponse.getLastName()));
-                            resp.sendRedirect("http://localhost:8080/client");
+                            resp.sendRedirect(_configDao.getValue(Config.SAMLCloudStackRedirectionUrl.key()));
                             return ApiResponseSerializer.toSerializedString(loginResponse, responseType);
 
                         }
