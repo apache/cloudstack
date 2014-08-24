@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
+import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.saml.SAML2AuthManager;
@@ -49,7 +50,10 @@ import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.io.MarshallingException;
 import org.opensaml.xml.io.UnmarshallingException;
+import org.opensaml.xml.security.x509.BasicX509Credential;
 import org.opensaml.xml.signature.Signature;
+import org.opensaml.xml.signature.SignatureValidator;
+import org.opensaml.xml.validation.ValidationException;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
@@ -80,7 +84,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     ApiServerService _apiServer;
     @Inject
     EntityManager _entityMgr;
-    @Inject
+
     SAML2AuthManager _samlAuthManager;
 
     /////////////////////////////////////////////////////
@@ -135,9 +139,10 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     public Response processSAMLResponse(String responseMessage) {
         Response responseObject = null;
         try {
+            DefaultBootstrap.bootstrap();
             responseObject = SAMLUtils.decodeSAMLResponse(responseMessage);
 
-        } catch (ConfigurationException | ParserConfigurationException | SAXException | IOException | UnmarshallingException e) {
+        } catch (ConfigurationException | FactoryConfigurationError | ParserConfigurationException | SAXException | IOException | UnmarshallingException e) {
             s_logger.error("SAMLResponse processing error: " + e.getMessage());
         }
         return responseObject;
@@ -165,9 +170,20 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                             params, responseType));
                 }
 
-                Signature sig = processedSAMLResponse.getSignature();
-                //SignatureValidator validator = new SignatureValidator(credential);
-                //validator.validate(sig);
+                if (_samlAuthManager.getIdpSigningKey() != null) {
+                    Signature sig = processedSAMLResponse.getSignature();
+                    BasicX509Credential credential = new BasicX509Credential();
+                    credential.setEntityCertificate(_samlAuthManager.getIdpSigningKey());
+                    SignatureValidator validator = new SignatureValidator(credential);
+                    try {
+                        validator.validate(sig);
+                    } catch (ValidationException e) {
+                        s_logger.error("SAML Response's signature failed to be validated by IDP signing key:" + e.getMessage());
+                        throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(),
+                                "SAML Response's signature failed to be validated by IDP signing key",
+                                params, responseType));
+                    }
+                }
 
                 String uniqueUserId = null;
                 String accountName = "admin"; //GET from config, try, fail
@@ -250,5 +266,17 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     @Override
     public APIAuthenticationType getAPIType() {
         return APIAuthenticationType.LOGIN_API;
+    }
+
+    @Override
+    public void setAuthenticators(List<PluggableAPIAuthenticator> authenticators) {
+        for (PluggableAPIAuthenticator authManager: authenticators) {
+            if (authManager instanceof SAML2AuthManager) {
+                _samlAuthManager = (SAML2AuthManager) authManager;
+            }
+        }
+        if (_samlAuthManager == null) {
+            s_logger.error("No suitable Pluggable Authentication Manager found for SAML2 Login Cmd");
+        }
     }
 }
