@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.api;
 
-import com.cloud.api.auth.APIAuthenticationManager;
-import com.cloud.api.auth.APIAuthenticationType;
-import com.cloud.api.auth.APIAuthenticator;
+import org.apache.cloudstack.api.auth.APIAuthenticationManager;
+import org.apache.cloudstack.api.auth.APIAuthenticationType;
+import org.apache.cloudstack.api.auth.APIAuthenticator;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
@@ -26,6 +26,7 @@ import com.cloud.utils.HttpUtils;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;

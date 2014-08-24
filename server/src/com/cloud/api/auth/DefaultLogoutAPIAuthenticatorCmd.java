@@ -22,6 +22,8 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.auth.APIAuthenticationType;
+import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.response.LogoutCmdResponse;
 import org.apache.log4j.Logger;
 

@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.api;
 
-import com.cloud.api.auth.APIAuthenticationManager;
-import com.cloud.api.auth.APIAuthenticationType;
-import com.cloud.api.auth.APIAuthenticator;
+import org.apache.cloudstack.api.auth.APIAuthenticationManager;
+import org.apache.cloudstack.api.auth.APIAuthenticationType;
+import org.apache.cloudstack.api.auth.APIAuthenticator;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;

@@ -32,7 +32,10 @@
                       http://www.springframework.org/schema/util/spring-util-3.0.xsd"
                       >
 
-    <bean id="authenticationManagerImpl" class="com.cloud.api.auth.APIAuthenticationManagerImpl" />
+    <bean id="authenticationManagerImpl" class="com.cloud.api.auth.APIAuthenticationManagerImpl">
+        <property name="apiAuthenticators"
+                  value="#{pluggableAPIAuthenticatorsRegistry.registered}" />
+    </bean>
 
     <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl">
         <property name="userAuthenticators"
