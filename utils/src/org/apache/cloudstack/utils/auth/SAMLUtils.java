@@ -64,7 +64,9 @@ import java.util.zip.DeflaterOutputStream;
 public class SAMLUtils {
     public static final Logger s_logger = Logger.getLogger(SAMLUtils.class);
 
-    public static final String SAML_NS = "saml-";
+    public static final String SAML_NS = "saml://";
+
+    public static final String CERTIFICATE_NAME = "SAMLSP_CERTIFICATE";
 
     public static String createSAMLId(String uid) {
         return SAML_NS + uid;
@@ -108,15 +110,15 @@ public class SAMLUtils {
         authnRequest.setID(authnId);
         authnRequest.setDestination(idpUrl);
         authnRequest.setVersion(SAMLVersion.VERSION_20);
-        authnRequest.setForceAuthn(true);
+        authnRequest.setForceAuthn(false);
         authnRequest.setIsPassive(false);
         authnRequest.setIssuer(issuer);
         authnRequest.setIssueInstant(new DateTime());
-        authnRequest.setProviderName(spId);
         authnRequest.setProtocolBinding(SAMLConstants.SAML2_REDIRECT_BINDING_URI);
         authnRequest.setAssertionConsumerServiceURL(consumerUrl);
-        authnRequest.setNameIDPolicy(nameIdPolicy);
-        authnRequest.setRequestedAuthnContext(requestedAuthnContext);
+        //authnRequest.setProviderName(spId);
+        //authnRequest.setNameIDPolicy(nameIdPolicy);
+        //authnRequest.setRequestedAuthnContext(requestedAuthnContext);
 
         return authnRequest;
     }
