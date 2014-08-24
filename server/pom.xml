@@ -136,7 +136,7 @@
     <dependency>
       <groupId>org.opensaml</groupId>
       <artifactId>opensaml</artifactId>
-      <version>2.6.1</version>
+      <version>${cs.opensaml.version}</version>
     </dependency>
   </dependencies>
   <build>

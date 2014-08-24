@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.api.auth;
 
-import com.cloud.api.ApiServerService;
+import org.apache.cloudstack.api.ApiServerService;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
@@ -26,6 +26,8 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.auth.APIAuthenticationType;
+import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.log4j.Logger;
 
