@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.api.auth;
+package org.apache.cloudstack.api.auth;
 
 import com.cloud.utils.component.PluggableService;
 

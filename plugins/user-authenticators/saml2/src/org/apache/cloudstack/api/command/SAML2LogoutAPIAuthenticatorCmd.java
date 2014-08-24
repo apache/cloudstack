@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.auth;
+package org.apache.cloudstack.api.command;
 
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.user.Account;
@@ -22,6 +22,8 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.auth.APIAuthenticationType;
+import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.response.LogoutCmdResponse;
 import org.apache.log4j.Logger;
 
