@@ -37,5 +37,4 @@ public interface APIAuthenticator {
                                HttpSession session, String remoteAddress, String responseType,
                                StringBuilder auditTrailSb, final HttpServletResponse resp) throws ServerApiException;
     public APIAuthenticationType getAPIType();
-
 }
