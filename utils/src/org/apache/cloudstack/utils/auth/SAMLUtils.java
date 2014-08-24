@@ -23,7 +23,6 @@ import com.cloud.utils.HttpUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
-import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.core.AuthnContextClassRef;
@@ -54,7 +53,6 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.FactoryConfigurationError;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -144,11 +142,6 @@ public class SAMLUtils {
     public static Response decodeSAMLResponse(String responseMessage)
             throws ConfigurationException, ParserConfigurationException,
             SAXException, IOException, UnmarshallingException {
-        try {
-            DefaultBootstrap.bootstrap();
-        } catch (ConfigurationException | FactoryConfigurationError e) {
-            s_logger.error("SAML response message decoding error: " + e.getMessage());
-        }
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
         documentBuilderFactory.setNamespaceAware(true);
         DocumentBuilder docBuilder = documentBuilderFactory.newDocumentBuilder();
