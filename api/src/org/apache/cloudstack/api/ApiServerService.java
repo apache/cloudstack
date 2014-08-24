@@ -17,9 +17,6 @@
 package org.apache.cloudstack.api;
 
 import com.cloud.exception.CloudAuthenticationException;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.ServerApiException;
-
 import javax.servlet.http.HttpSession;
 import java.util.Map;
 
