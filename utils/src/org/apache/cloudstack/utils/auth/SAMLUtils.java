@@ -29,16 +29,22 @@ import org.opensaml.saml2.core.AuthnContextClassRef;
 import org.opensaml.saml2.core.AuthnContextComparisonTypeEnumeration;
 import org.opensaml.saml2.core.AuthnRequest;
 import org.opensaml.saml2.core.Issuer;
+import org.opensaml.saml2.core.LogoutRequest;
+import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.NameIDPolicy;
 import org.opensaml.saml2.core.NameIDType;
 import org.opensaml.saml2.core.RequestedAuthnContext;
 import org.opensaml.saml2.core.Response;
+import org.opensaml.saml2.core.SessionIndex;
 import org.opensaml.saml2.core.impl.AuthnContextClassRefBuilder;
 import org.opensaml.saml2.core.impl.AuthnRequestBuilder;
 import org.opensaml.saml2.core.impl.IssuerBuilder;
+import org.opensaml.saml2.core.impl.LogoutRequestBuilder;
 import org.opensaml.saml2.core.impl.NameIDPolicyBuilder;
 import org.opensaml.saml2.core.impl.RequestedAuthnContextBuilder;
+import org.opensaml.saml2.core.impl.SessionIndexBuilder;
 import org.opensaml.xml.ConfigurationException;
+import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.io.MarshallingException;
 import org.opensaml.xml.io.Unmarshaller;
@@ -57,7 +63,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.math.BigInteger;
 import java.net.URLEncoder;
+import java.security.SecureRandom;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 
@@ -65,6 +73,8 @@ public class SAMLUtils {
     public static final Logger s_logger = Logger.getLogger(SAMLUtils.class);
 
     public static final String SAML_NS = "saml://";
+    public static final String SAML_NAMEID = "SAML_NAMEID";
+    public static final String SAML_SESSION = "SAML_SESSION";
 
     public static final String CERTIFICATE_NAME = "SAMLSP_CERTIFICATE";
 
@@ -76,7 +86,12 @@ public class SAMLUtils {
         return uuid.startsWith(SAML_NS);
     }
 
-    public static AuthnRequest buildAuthnRequestObject(String authnId, String spId, String idpUrl, String consumerUrl) {
+    public static String generateSecureRandomId() {
+        return new BigInteger(130, new SecureRandom()).toString(32);
+    }
+
+    public static AuthnRequest buildAuthnRequestObject(String spId, String idpUrl, String consumerUrl) {
+        String authnId = generateSecureRandomId();
         // Issuer object
         IssuerBuilder issuerBuilder = new IssuerBuilder();
         Issuer issuer = issuerBuilder.buildObject();
@@ -123,7 +138,26 @@ public class SAMLUtils {
         return authnRequest;
     }
 
-    public static String encodeSAMLRequest(AuthnRequest authnRequest)
+    public static LogoutRequest buildLogoutRequest(String logoutUrl, String spId, NameID nameId, String sessionIndex) {
+        IssuerBuilder issuerBuilder = new IssuerBuilder();
+        Issuer issuer = issuerBuilder.buildObject();
+        issuer.setValue(spId);
+
+        SessionIndex sessionIndexElement = new SessionIndexBuilder().buildObject();
+        sessionIndexElement.setSessionIndex(sessionIndex);
+
+        LogoutRequest logoutRequest = new LogoutRequestBuilder().buildObject();
+        logoutRequest.setID(generateSecureRandomId());
+        logoutRequest.setDestination(logoutUrl);
+        logoutRequest.setVersion(SAMLVersion.VERSION_20);
+        logoutRequest.setIssueInstant(new DateTime());
+        logoutRequest.setIssuer(issuer);
+        logoutRequest.getSessionIndexes().add(sessionIndexElement);
+        logoutRequest.setNameID(nameId);
+        return logoutRequest;
+    }
+
+    public static String encodeSAMLRequest(XMLObject authnRequest)
             throws MarshallingException, IOException {
         Marshaller marshaller = Configuration.getMarshallerFactory()
                 .getMarshaller(authnRequest);
