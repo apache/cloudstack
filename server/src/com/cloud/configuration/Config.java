@@ -1403,6 +1403,14 @@ public enum Config {
             "http://localhost:8080/client/api?command=samlslo",
             "SAML2 CloudStack Service Provider Single Log Out URL",
             null),
+    SAMLIdentityProviderID(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "saml2.idp.id",
+            "https://openidp.feide.no",
+            "SAML2 Identity Provider Identifier String",
+            null),
     SAMLIdentityProviderMetadataURL(
             "Advanced",
             ManagementServer.class,
