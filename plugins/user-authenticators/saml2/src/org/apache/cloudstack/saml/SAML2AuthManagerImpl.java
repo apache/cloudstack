@@ -19,6 +19,7 @@ package org.apache.cloudstack.saml;
 import com.cloud.configuration.Config;
 import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
+import org.apache.cloudstack.api.command.GetServiceProviderMetaDataCmd;
 import org.apache.cloudstack.api.command.SAML2LoginAPIAuthenticatorCmd;
 import org.apache.cloudstack.api.command.SAML2LogoutAPIAuthenticatorCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -147,6 +148,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(SAML2LoginAPIAuthenticatorCmd.class);
         cmdList.add(SAML2LogoutAPIAuthenticatorCmd.class);
+        cmdList.add(GetServiceProviderMetaDataCmd.class);
         return cmdList;
     }
 
