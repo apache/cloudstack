@@ -94,6 +94,7 @@
     <cs.mycila.license.version>2.5</cs.mycila.license.version>
     <cs.findbugs.version>2.5.3</cs.findbugs.version>
     <cs.javadoc.version>2.9.1</cs.javadoc.version>
+    <cs.opensaml.version>2.6.1</cs.opensaml.version>
   </properties>
 
   <distributionManagement>
