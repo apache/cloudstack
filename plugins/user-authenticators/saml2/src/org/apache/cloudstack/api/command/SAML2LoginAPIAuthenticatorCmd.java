@@ -15,9 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.api.auth;
+package org.apache.cloudstack.api.command;
 
-import com.cloud.api.ApiServerService;
+import org.apache.cloudstack.api.ApiServerService;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
@@ -30,6 +30,8 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.auth.APIAuthenticationType;
+import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
@@ -187,7 +189,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         authnRequest.setIssuer(issuer);
         authnRequest.setIssueInstant(new DateTime());
         authnRequest.setProviderName("Apache CloudStack");
-        authnRequest.setProtocolBinding(SAMLConstants.SAML2_REDIRECT_BINDING_URI); //SAML2_ARTIFACT_BINDING_URI);
+        authnRequest.setProtocolBinding(SAMLConstants.SAML2_REDIRECT_BINDING_URI);
         authnRequest.setAssertionConsumerServiceURL(consumerUrl);
         authnRequest.setNameIDPolicy(nameIdPolicy);
         authnRequest.setRequestedAuthnContext(requestedAuthnContext);
