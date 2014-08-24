@@ -29,7 +29,7 @@
         <property name="name" value="SAML2"/>
     </bean>
 
-    <bean id="SAML2Manager" class="org.apache.cloudstack.saml.SAML2AuthServiceImpl">
+    <bean id="SAML2Manager" class="org.apache.cloudstack.saml.SAML2AuthManagerImpl">
         <property name="name" value="SAML2Auth"/>
     </bean>
 
