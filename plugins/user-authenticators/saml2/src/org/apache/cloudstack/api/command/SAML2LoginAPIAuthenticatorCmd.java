@@ -34,63 +34,35 @@ import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.utils.auth.SAMLUtils;
 import org.apache.log4j.Logger;
-import org.joda.time.DateTime;
-import org.opensaml.Configuration;
 import org.opensaml.DefaultBootstrap;
-import org.opensaml.common.SAMLVersion;
-import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeStatement;
-import org.opensaml.saml2.core.AuthnContextClassRef;
-import org.opensaml.saml2.core.AuthnContextComparisonTypeEnumeration;
 import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.NameID;
-import org.opensaml.saml2.core.NameIDPolicy;
 import org.opensaml.saml2.core.NameIDType;
-import org.opensaml.saml2.core.RequestedAuthnContext;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.StatusCode;
-import org.opensaml.saml2.core.impl.AuthnContextClassRefBuilder;
-import org.opensaml.saml2.core.impl.AuthnRequestBuilder;
-import org.opensaml.saml2.core.impl.IssuerBuilder;
-import org.opensaml.saml2.core.impl.NameIDPolicyBuilder;
-import org.opensaml.saml2.core.impl.RequestedAuthnContextBuilder;
 import org.opensaml.xml.ConfigurationException;
-import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.io.MarshallingException;
-import org.opensaml.xml.io.Unmarshaller;
-import org.opensaml.xml.io.UnmarshallerFactory;
 import org.opensaml.xml.io.UnmarshallingException;
 import org.opensaml.xml.signature.Signature;
-import org.opensaml.xml.util.Base64;
-import org.opensaml.xml.util.XMLHelper;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.FactoryConfigurationError;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
 
 @APICommand(name = "samlsso", description = "SP initiated SAML Single Sign On", requestHasSensitiveInfo = true, responseObject = LoginCmdResponse.class, entityType = {})
 public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
@@ -142,107 +114,23 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         String redirectUrl = "";
         try {
             DefaultBootstrap.bootstrap();
-            AuthnRequest authnRequest = this.buildAuthnRequestObject(randomId, spId, identityProviderUrl, consumerUrl);
-            redirectUrl = identityProviderUrl + "?SAMLRequest=" + encodeAuthnRequest(authnRequest);
+            AuthnRequest authnRequest = SAMLUtils.buildAuthnRequestObject(randomId, spId, identityProviderUrl, consumerUrl);
+            redirectUrl = identityProviderUrl + "?SAMLRequest=" + SAMLUtils.encodeSAMLRequest(authnRequest);
         } catch (ConfigurationException | FactoryConfigurationError | MarshallingException | IOException e) {
             s_logger.error("SAML AuthnRequest message building error: " + e.getMessage());
         }
         return redirectUrl;
     }
 
-    private AuthnRequest buildAuthnRequestObject(String authnId, String spId, String idpUrl, String consumerUrl) {
-        // Issuer object
-        IssuerBuilder issuerBuilder = new IssuerBuilder();
-        Issuer issuer = issuerBuilder.buildObject();
-        issuer.setValue(spId);
-
-        // NameIDPolicy
-        NameIDPolicyBuilder nameIdPolicyBuilder = new NameIDPolicyBuilder();
-        NameIDPolicy nameIdPolicy = nameIdPolicyBuilder.buildObject();
-        nameIdPolicy.setFormat(NameIDType.PERSISTENT);
-        nameIdPolicy.setSPNameQualifier("Apache CloudStack");
-        nameIdPolicy.setAllowCreate(true);
-
-        // AuthnContextClass
-        AuthnContextClassRefBuilder authnContextClassRefBuilder = new AuthnContextClassRefBuilder();
-        AuthnContextClassRef authnContextClassRef = authnContextClassRefBuilder.buildObject(
-                SAMLConstants.SAML20_NS,
-                "AuthnContextClassRef", "saml");
-        authnContextClassRef.setAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport");
-
-        // AuthnContex
-        RequestedAuthnContextBuilder requestedAuthnContextBuilder = new RequestedAuthnContextBuilder();
-        RequestedAuthnContext requestedAuthnContext = requestedAuthnContextBuilder.buildObject();
-        requestedAuthnContext
-                .setComparison(AuthnContextComparisonTypeEnumeration.MINIMUM);
-        requestedAuthnContext.getAuthnContextClassRefs().add(
-                authnContextClassRef);
-
-        // Creation of AuthRequestObject
-        AuthnRequestBuilder authRequestBuilder = new AuthnRequestBuilder();
-        AuthnRequest authnRequest = authRequestBuilder.buildObject();
-        authnRequest.setID(authnId);
-        authnRequest.setDestination(idpUrl);
-        authnRequest.setVersion(SAMLVersion.VERSION_20);
-        authnRequest.setForceAuthn(true);
-        authnRequest.setIsPassive(false);
-        authnRequest.setIssuer(issuer);
-        authnRequest.setIssueInstant(new DateTime());
-        authnRequest.setProviderName("Apache CloudStack");
-        authnRequest.setProtocolBinding(SAMLConstants.SAML2_REDIRECT_BINDING_URI);
-        authnRequest.setAssertionConsumerServiceURL(consumerUrl);
-        authnRequest.setNameIDPolicy(nameIdPolicy);
-        authnRequest.setRequestedAuthnContext(requestedAuthnContext);
-
-        return authnRequest;
-    }
-
-    private String encodeAuthnRequest(AuthnRequest authnRequest)
-            throws MarshallingException, IOException {
-        Marshaller marshaller = Configuration.getMarshallerFactory()
-                .getMarshaller(authnRequest);
-        Element authDOM = marshaller.marshall(authnRequest);
-        StringWriter requestWriter = new StringWriter();
-        XMLHelper.writeNode(authDOM, requestWriter);
-        String requestMessage = requestWriter.toString();
-        Deflater deflater = new Deflater(Deflater.DEFLATED, true);
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteArrayOutputStream, deflater);
-        deflaterOutputStream.write(requestMessage.getBytes());
-        deflaterOutputStream.close();
-        String encodedRequestMessage = Base64.encodeBytes(byteArrayOutputStream.toByteArray(), Base64.DONT_BREAK_LINES);
-        encodedRequestMessage = URLEncoder.encode(encodedRequestMessage, "UTF-8").trim();
-        return encodedRequestMessage;
-    }
-
     public Response processSAMLResponse(String responseMessage) {
-        XMLObject responseObject = null;
+        Response responseObject = null;
         try {
-            responseObject = this.unmarshall(responseMessage);
+            responseObject = SAMLUtils.decodeSAMLResponse(responseMessage);
 
         } catch (ConfigurationException | ParserConfigurationException | SAXException | IOException | UnmarshallingException e) {
             s_logger.error("SAMLResponse processing error: " + e.getMessage());
         }
-        return (Response) responseObject;
-    }
-
-    private XMLObject unmarshall(String responseMessage)
-            throws ConfigurationException, ParserConfigurationException,
-            SAXException, IOException, UnmarshallingException {
-        try {
-            DefaultBootstrap.bootstrap();
-        } catch (ConfigurationException | FactoryConfigurationError e) {
-            s_logger.error("SAML response message decoding error: " + e.getMessage());
-        }
-        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-        documentBuilderFactory.setNamespaceAware(true);
-        DocumentBuilder docBuilder = documentBuilderFactory.newDocumentBuilder();
-        byte[] base64DecodedResponse = Base64.decode(responseMessage);
-        Document document = docBuilder.parse(new ByteArrayInputStream(base64DecodedResponse));
-        Element element = document.getDocumentElement();
-        UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
-        Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
-        return unmarshaller.unmarshall(element);
+        return responseObject;
     }
 
     @Override
@@ -282,7 +170,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
                 if (nameId.getFormat().equals(NameIDType.PERSISTENT) || nameId.getFormat().equals(NameIDType.EMAIL)) {
                     username = nameId.getValue();
-                    uniqueUserId = "saml-" + username;
+                    uniqueUserId = SAMLUtils.createSAMLId(username);
                     if (nameId.getFormat().equals(NameIDType.EMAIL)) {
                         email = username;
                     }
@@ -299,7 +187,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                     String attributeValue = attribute.getAttributeValues().get(0).getDOM().getTextContent();
                     if (attributeName.equalsIgnoreCase("uid") && uniqueUserId == null) {
                         username = attributeValue;
-                        uniqueUserId = "saml-" + username;
+                        uniqueUserId = SAMLUtils.createSAMLId(username);
                     } else if (attributeName.equalsIgnoreCase("givenName")) {
                         firstName = attributeValue;
                     } else if (attributeName.equalsIgnoreCase(("sn"))) {

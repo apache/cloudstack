@@ -21,6 +21,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.utils.auth.SAMLUtils;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
@@ -48,7 +49,7 @@ public class SAML2UserAuthenticator extends DefaultUserAuthenticator {
         } else {
             User user = _userDao.getUser(userAccount.getId());
             // TODO: check SAMLRequest, signature etc. from requestParameters
-            if (user != null && user.getUuid().startsWith("saml")) {
+            if (user != null && SAMLUtils.checkSAMLUserId(user.getUuid())) {
                 return new Pair<Boolean, ActionOnFailedAuthentication>(true, null);
             }
         }
