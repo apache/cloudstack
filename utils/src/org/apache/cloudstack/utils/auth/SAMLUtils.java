@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.utils.auth;
 
+import com.cloud.utils.HttpUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
@@ -85,7 +86,7 @@ public class SAMLUtils {
         NameIDPolicyBuilder nameIdPolicyBuilder = new NameIDPolicyBuilder();
         NameIDPolicy nameIdPolicy = nameIdPolicyBuilder.buildObject();
         nameIdPolicy.setFormat(NameIDType.PERSISTENT);
-        nameIdPolicy.setSPNameQualifier("Apache CloudStack");
+        nameIdPolicy.setSPNameQualifier(spId);
         nameIdPolicy.setAllowCreate(true);
 
         // AuthnContextClass
@@ -113,7 +114,7 @@ public class SAMLUtils {
         authnRequest.setIsPassive(false);
         authnRequest.setIssuer(issuer);
         authnRequest.setIssueInstant(new DateTime());
-        authnRequest.setProviderName("Apache CloudStack");
+        authnRequest.setProviderName(spId);
         authnRequest.setProtocolBinding(SAMLConstants.SAML2_REDIRECT_BINDING_URI);
         authnRequest.setAssertionConsumerServiceURL(consumerUrl);
         authnRequest.setNameIDPolicy(nameIdPolicy);
@@ -136,7 +137,7 @@ public class SAMLUtils {
         deflaterOutputStream.write(requestMessage.getBytes());
         deflaterOutputStream.close();
         String encodedRequestMessage = Base64.encodeBytes(byteArrayOutputStream.toByteArray(), Base64.DONT_BREAK_LINES);
-        encodedRequestMessage = URLEncoder.encode(encodedRequestMessage, "UTF-8").trim();
+        encodedRequestMessage = URLEncoder.encode(encodedRequestMessage, HttpUtils.UTF_8).trim();
         return encodedRequestMessage;
     }
 
