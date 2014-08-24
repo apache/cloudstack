@@ -124,7 +124,6 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     }
 
     public String buildAuthnRequestUrl(String idpUrl) {
-        String randomSecureId = new BigInteger(130, new SecureRandom()).toString(32);
         String spId = _samlAuthManager.getServiceProviderId();
         String consumerUrl = _samlAuthManager.getSpSingleSignOnUrl();
         String identityProviderUrl = _samlAuthManager.getIdpSingleSignOnUrl();
@@ -136,7 +135,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         String redirectUrl = "";
         try {
             DefaultBootstrap.bootstrap();
-            AuthnRequest authnRequest = SAMLUtils.buildAuthnRequestObject(randomSecureId, spId, identityProviderUrl, consumerUrl);
+            AuthnRequest authnRequest = SAMLUtils.buildAuthnRequestObject(spId, identityProviderUrl, consumerUrl);
             redirectUrl = identityProviderUrl + "?SAMLRequest=" + SAMLUtils.encodeSAMLRequest(authnRequest);
         } catch (ConfigurationException | FactoryConfigurationError | MarshallingException | IOException e) {
             s_logger.error("SAML AuthnRequest message building error: " + e.getMessage());
@@ -220,6 +219,9 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
                 Assertion assertion = processedSAMLResponse.getAssertions().get(0);
                 NameID nameId = assertion.getSubject().getNameID();
+                String sessionIndex = assertion.getAuthnStatements().get(0).getSessionIndex();
+                session.setAttribute(SAMLUtils.SAML_NAMEID, nameId);
+                session.setAttribute(SAMLUtils.SAML_SESSION, sessionIndex);
 
                 if (nameId.getFormat().equals(NameIDType.PERSISTENT) || nameId.getFormat().equals(NameIDType.EMAIL)) {
                     username = nameId.getValue();
