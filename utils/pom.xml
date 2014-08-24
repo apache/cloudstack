@@ -144,6 +144,11 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>org.opensaml</groupId>
+      <artifactId>opensaml</artifactId>
+      <version>${cs.opensaml.version}</version>
+    </dependency>
+    <dependency>
         <groupId>commons-net</groupId>
         <artifactId>commons-net</artifactId>
         <version>3.3</version>
