@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command;
 
-import org.apache.cloudstack.api.ApiServerService;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
@@ -27,6 +26,7 @@ import com.cloud.utils.db.EntityManager;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.utils.auth.SAMLUtils;
 import org.apache.log4j.Logger;
 import org.opensaml.DefaultBootstrap;
@@ -79,6 +80,8 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     ApiServerService _apiServer;
     @Inject
     EntityManager _entityMgr;
+    @Inject
+    SAML2AuthManager _samlAuthManager;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -108,13 +111,20 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         throw new ServerApiException(ApiErrorCode.METHOD_NOT_ALLOWED, "This is an authentication api, cannot be used directly");
     }
 
-    public String buildAuthnRequestUrl(String consumerUrl, String identityProviderUrl) {
-        String randomId = new BigInteger(130, new SecureRandom()).toString(32);
-        String spId = "org.apache.cloudstack";
+    public String buildAuthnRequestUrl(String idpUrl) {
+        String randomSecureId = new BigInteger(130, new SecureRandom()).toString(32);
+        String spId = _samlAuthManager.getServiceProviderId();
+        String consumerUrl = _samlAuthManager.getSpSingleSignOnUrl();
+        String identityProviderUrl = _samlAuthManager.getIdpSingleSignOnUrl();
+
+        if (idpUrl != null) {
+            identityProviderUrl = idpUrl;
+        }
+
         String redirectUrl = "";
         try {
             DefaultBootstrap.bootstrap();
-            AuthnRequest authnRequest = SAMLUtils.buildAuthnRequestObject(randomId, spId, identityProviderUrl, consumerUrl);
+            AuthnRequest authnRequest = SAMLUtils.buildAuthnRequestObject(randomSecureId, spId, identityProviderUrl, consumerUrl);
             redirectUrl = identityProviderUrl + "?SAMLRequest=" + SAMLUtils.encodeSAMLRequest(authnRequest);
         } catch (ConfigurationException | FactoryConfigurationError | MarshallingException | IOException e) {
             s_logger.error("SAML AuthnRequest message building error: " + e.getMessage());
@@ -137,8 +147,12 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     public String authenticate(final String command, final Map<String, Object[]> params, final HttpSession session, final String remoteAddress, final String responseType, final StringBuilder auditTrailSb, final HttpServletResponse resp) throws ServerApiException {
         try {
             if (!params.containsKey("SAMLResponse")) {
-                final String[] idps = (String[])params.get("idpurl");
-                String redirectUrl = buildAuthnRequestUrl("http://localhost:8080/client/api?command=samlsso", idps[0]);
+                String idpUrl = null;
+                final String[] idps = (String[])params.get(ApiConstants.IDP_URL);
+                if (idps != null && idps.length > 0) {
+                    idpUrl = idps[0];
+                }
+                String redirectUrl = buildAuthnRequestUrl(idpUrl);
                 resp.sendRedirect(redirectUrl);
                 return "";
             } else {
