@@ -67,9 +67,7 @@ import javax.servlet.http.HttpSession;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.FactoryConfigurationError;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.URLEncoder;
-import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
 
@@ -123,7 +121,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         throw new ServerApiException(ApiErrorCode.METHOD_NOT_ALLOWED, "This is an authentication api, cannot be used directly");
     }
 
-    public String buildAuthnRequestUrl(String idpUrl) {
+    private String buildAuthnRequestUrl(String idpUrl) {
         String spId = _samlAuthManager.getServiceProviderId();
         String consumerUrl = _samlAuthManager.getSpSingleSignOnUrl();
         String identityProviderUrl = _samlAuthManager.getIdpSingleSignOnUrl();
@@ -143,7 +141,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         return redirectUrl;
     }
 
-    public Response processSAMLResponse(String responseMessage) {
+    private Response processSAMLResponse(String responseMessage) {
         Response responseObject = null;
         try {
             DefaultBootstrap.bootstrap();
@@ -168,7 +166,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 resp.sendRedirect(redirectUrl);
                 return "";
             } else {
-                final String samlResponse = ((String[])params.get("SAMLResponse"))[0];
+                final String samlResponse = ((String[])params.get(SAMLUtils.SAML_RESPONSE))[0];
                 Response processedSAMLResponse = processSAMLResponse(samlResponse);
                 String statusCode = processedSAMLResponse.getStatus().getStatusCode().getValue();
                 if (!statusCode.equals(StatusCode.SUCCESS_URI)) {
