@@ -72,10 +72,10 @@ import java.util.zip.DeflaterOutputStream;
 public class SAMLUtils {
     public static final Logger s_logger = Logger.getLogger(SAMLUtils.class);
 
+    public static final String SAML_RESPONSE = "SAMLResponse";
     public static final String SAML_NS = "saml://";
     public static final String SAML_NAMEID = "SAML_NAMEID";
     public static final String SAML_SESSION = "SAML_SESSION";
-
     public static final String CERTIFICATE_NAME = "SAMLSP_CERTIFICATE";
 
     public static String createSAMLId(String uid) {
