@@ -1384,7 +1384,7 @@ public enum Config {
             ManagementServer.class,
             String.class,
             "saml2.sp.id",
-            "Apache CloudStack",
+            "org.apache.cloudstack",
             "SAML2 Service Provider Identifier String",
             null),
     SAMLServiceProviderSingleSignOnURL(
