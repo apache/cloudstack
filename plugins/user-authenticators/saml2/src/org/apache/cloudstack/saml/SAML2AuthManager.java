@@ -17,11 +17,20 @@
 
 package org.apache.cloudstack.saml;
 
-public interface SAML2AuthManager {
-    public String getServiceProviderId();
-    public String getSpSingleSignOnUrl();
-    public String getSpSingleLogOutUrl();
+import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 
+import java.security.cert.X509Certificate;
+
+public interface SAML2AuthManager extends PluggableAPIAuthenticator {
+    public String getServiceProviderId();
+    public String getIdentityProviderId();
+
+    public X509Certificate getIdpSigningKey();
+    public X509Certificate getIdpEncryptionKey();
+
+    public String getSpSingleSignOnUrl();
     public String getIdpSingleSignOnUrl();
+
+    public String getSpSingleLogOutUrl();
     public String getIdpSingleLogOutUrl();
 }
