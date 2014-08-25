@@ -89,7 +89,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    private DomainManager _domainMgr;
+    DomainManager _domainMgr;
 
     SAML2AuthManager _samlAuthManager;
 
@@ -141,7 +141,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         return redirectUrl;
     }
 
-    private Response processSAMLResponse(String responseMessage) {
+    public Response processSAMLResponse(String responseMessage) {
         Response responseObject = null;
         try {
             DefaultBootstrap.bootstrap();
@@ -162,12 +162,12 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 if (idps != null && idps.length > 0) {
                     idpUrl = idps[0];
                 }
-                String redirectUrl = buildAuthnRequestUrl(idpUrl);
+                String redirectUrl = this.buildAuthnRequestUrl(idpUrl);
                 resp.sendRedirect(redirectUrl);
                 return "";
             } else {
                 final String samlResponse = ((String[])params.get(SAMLUtils.SAML_RESPONSE))[0];
-                Response processedSAMLResponse = processSAMLResponse(samlResponse);
+                Response processedSAMLResponse = this.processSAMLResponse(samlResponse);
                 String statusCode = processedSAMLResponse.getStatus().getStatusCode().getValue();
                 if (!statusCode.equals(StatusCode.SUCCESS_URI)) {
                     throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(),
@@ -209,7 +209,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 }
 
                 String username = null;
-                String password = "";
+                String password = SAMLUtils.generateSecureRandomId(); // Random password
                 String firstName = "";
                 String lastName = "";
                 String timeZone = "";
@@ -229,8 +229,6 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                     }
                 }
 
-                String issuer = assertion.getIssuer().getValue();
-                String audience = assertion.getConditions().getAudienceRestrictions().get(0).getAudiences().get(0).getAudienceURI();
                 AttributeStatement attributeStatement = assertion.getAttributeStatements().get(0);
                 List<Attribute> attributes = attributeStatement.getAttributes();
 
