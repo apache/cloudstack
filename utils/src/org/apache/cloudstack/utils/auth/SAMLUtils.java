@@ -21,6 +21,8 @@ package org.apache.cloudstack.utils.auth;
 
 import com.cloud.utils.HttpUtils;
 import org.apache.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.x509.X509V1CertificateGenerator;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.common.SAMLVersion;
@@ -57,6 +59,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.security.auth.x500.X500Principal;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -66,7 +69,17 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.net.URLEncoder;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
+import java.security.Security;
+import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
+import java.util.Date;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 
@@ -88,7 +101,7 @@ public class SAMLUtils {
     }
 
     public static String generateSecureRandomId() {
-        return new BigInteger(130, new SecureRandom()).toString(32);
+        return new BigInteger(160, new SecureRandom()).toString(32);
     }
 
     public static AuthnRequest buildAuthnRequestObject(String spId, String idpUrl, String consumerUrl) {
@@ -192,6 +205,28 @@ public class SAMLUtils {
         UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
         Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
         return (Response) unmarshaller.unmarshall(element);
+    }
+
+    public static X509Certificate generateRandomX509Certification() throws NoSuchAlgorithmException, NoSuchProviderException, CertificateEncodingException, SignatureException, InvalidKeyException {
+        Date validityBeginDate = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
+        Date validityEndDate = new Date(System.currentTimeMillis() + 2 * 365 * 24 * 60 * 60 * 1000);
+
+        Security.addProvider(new BouncyCastleProvider());
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
+        keyPairGenerator.initialize(1024, new SecureRandom());
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+
+        X500Principal dnName = new X500Principal("CN=John Doe");
+        X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
+        certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
+        certGen.setSubjectDN(dnName);
+        certGen.setIssuerDN(dnName); // use the same
+        certGen.setNotBefore(validityBeginDate);
+        certGen.setNotAfter(validityEndDate);
+        certGen.setPublicKey(keyPair.getPublic());
+        certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
+
+        return certGen.generate(keyPair.getPrivate(), "BC");
     }
 
 }
