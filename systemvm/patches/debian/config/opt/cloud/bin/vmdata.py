@@ -121,7 +121,7 @@ def createfile(ip, folder, file, data):
         os.chmod(metamanifest, 0644)
 
 def htaccess(ip, folder, file):
-    entry = "RewriteRule ^" + file + "$  ../" + folder + "/%{REMOTE_ADDR}/" + file + " [L,NC,QSA]"
+    entry = "RewriteRule ^" + file + "/?$  ../" + folder + "/%{REMOTE_ADDR}/" + file + " [L,NC,QSA]"
     htaccessFolder = "/var/www/html/latest"
     htaccessFile = htaccessFolder + "/.htaccess"
 
@@ -167,7 +167,7 @@ def htaccess(ip, folder, file):
     fh.close()
 
     if folder == "metadata" or folder == "meta-data":
-        entry = "RewriteRule ^meta-data/(.+)$  ../" + folder + "/%{REMOTE_ADDR}/$1 [L,NC,QSA]"
+        entry = "RewriteRule ^meta-data/(.+[^/])/?$  ../" + folder + "/%{REMOTE_ADDR}/$1 [L,NC,QSA]"
         htaccessFolder = "/var/www/html/latest"
         htaccessFile = htaccessFolder + "/.htaccess"
 
