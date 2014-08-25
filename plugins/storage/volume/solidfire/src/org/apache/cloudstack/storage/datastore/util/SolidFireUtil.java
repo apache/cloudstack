@@ -69,6 +69,8 @@ public class SolidFireUtil {
     public static final String PROVIDER_NAME = "SolidFire";
     public static final String SHARED_PROVIDER_NAME = "SolidFireShared";
 
+    public static final String LOG_PREFIX = "SolidFire: ";
+
     public static final String MANAGEMENT_VIP = "mVip";
     public static final String STORAGE_VIP = "sVip";
 
@@ -90,6 +92,13 @@ public class SolidFireUtil {
 
     public static final String ACCOUNT_ID = "accountId";
     public static final String VOLUME_ID = "volumeId";
+    public static final String SNAPSHOT_ID = "snapshotId";
+    public static final String CLONE_ID = "cloneId";
+
+    public static final String VOLUME_SIZE = "sfVolumeSize";
+    public static final String SNAPSHOT_SIZE = "sfSnapshotSize";
+
+    public static final String SNAPSHOT_STORAGE_POOL_ID = "sfSnapshotStoragePoolId";
 
     public static final String CHAP_INITIATOR_USERNAME = "chapInitiatorUsername";
     public static final String CHAP_INITIATOR_SECRET = "chapInitiatorSecret";
@@ -554,10 +563,8 @@ public class SolidFireUtil {
         return deletedVolumes;
     }
 
-    public static SolidFireVolume deleteSolidFireVolume(SolidFireConnection sfConnection, long lVolumeId)
+    public static void deleteSolidFireVolume(SolidFireConnection sfConnection, long lVolumeId)
     {
-        SolidFireVolume sfVolume = getSolidFireVolume(sfConnection, lVolumeId);
-
         final Gson gson = new GsonBuilder().create();
 
         VolumeToDelete volumeToDelete = new VolumeToDelete(lVolumeId);
@@ -565,8 +572,6 @@ public class SolidFireUtil {
         String strVolumeToDeleteJson = gson.toJson(volumeToDelete);
 
         executeJsonRpc(sfConnection, strVolumeToDeleteJson);
-
-        return sfVolume;
     }
 
    public static void purgeSolidFireVolume(SolidFireConnection sfConnection, long lVolumeId)
@@ -655,6 +660,49 @@ public class SolidFireUtil {
 
             return false;
         }
+    }
+
+    public static long createSolidFireSnapshot(SolidFireConnection sfConnection, long lVolumeId, String snapshotName) {
+        final Gson gson = new GsonBuilder().create();
+
+        SnapshotToCreate snapshotToCreate = new SnapshotToCreate(lVolumeId, snapshotName);
+
+        String strSnapshotToCreateJson = gson.toJson(snapshotToCreate);
+
+        String strSnapshotCreateResultJson = executeJsonRpc(sfConnection, strSnapshotToCreateJson);
+
+        SnapshotCreateResult snapshotCreateResult = gson.fromJson(strSnapshotCreateResultJson, SnapshotCreateResult.class);
+
+        verifyResult(snapshotCreateResult.result, strSnapshotCreateResultJson, gson);
+
+        return snapshotCreateResult.result.snapshotID;
+    }
+
+    public static void deleteSolidFireSnapshot(SolidFireConnection sfConnection, long lSnapshotId)
+    {
+        final Gson gson = new GsonBuilder().create();
+
+        SnapshotToDelete snapshotToDelete = new SnapshotToDelete(lSnapshotId);
+
+        String strSnapshotToDeleteJson = gson.toJson(snapshotToDelete);
+
+        executeJsonRpc(sfConnection, strSnapshotToDeleteJson);
+    }
+
+    public static long createSolidFireClone(SolidFireConnection sfConnection, long lVolumeId, String cloneName) {
+        final Gson gson = new GsonBuilder().create();
+
+        CloneToCreate cloneToCreate = new CloneToCreate(lVolumeId, cloneName);
+
+        String strCloneToCreateJson = gson.toJson(cloneToCreate);
+
+        String strCloneCreateResultJson = executeJsonRpc(sfConnection, strCloneToCreateJson);
+
+        CloneCreateResult cloneCreateResult = gson.fromJson(strCloneCreateResultJson, CloneCreateResult.class);
+
+        verifyResult(cloneCreateResult.result, strCloneCreateResultJson, gson);
+
+        return cloneCreateResult.result.cloneID;
     }
 
     public static long createSolidFireAccount(SolidFireConnection sfConnection, String strAccountName)
@@ -1207,6 +1255,65 @@ public class SolidFireUtil {
     }
 
     @SuppressWarnings("unused")
+    private static final class SnapshotToCreate {
+        private final String method = "CreateSnapshot";
+        private final SnapshotToCreateParams params;
+
+        private SnapshotToCreate(final long lVolumeId, final String snapshotName) {
+            params = new SnapshotToCreateParams(lVolumeId, snapshotName);
+        }
+
+        private static final class SnapshotToCreateParams {
+            private long volumeID;
+            private String name;
+
+            private SnapshotToCreateParams(final long lVolumeId, final String snapshotName) {
+                volumeID = lVolumeId;
+                name = snapshotName;
+            }
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static final class SnapshotToDelete
+    {
+        private final String method = "DeleteSnapshot";
+        private final SnapshotToDeleteParams params;
+
+        private SnapshotToDelete(final long lSnapshotId) {
+            params = new SnapshotToDeleteParams(lSnapshotId);
+        }
+
+        private static final class SnapshotToDeleteParams {
+            private long snapshotID;
+
+            private SnapshotToDeleteParams(final long lSnapshotId) {
+                snapshotID = lSnapshotId;
+            }
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static final class CloneToCreate {
+        private final String method = "CloneVolume";
+        private final CloneToCreateParams params;
+
+        private CloneToCreate(final long lVolumeId, final String cloneName) {
+            params = new CloneToCreateParams(lVolumeId, cloneName);
+        }
+
+        private static final class CloneToCreateParams {
+            private long volumeID;
+            private String name;
+
+            private CloneToCreateParams(final long lVolumeId, final String cloneName) {
+                volumeID = lVolumeId;
+                name = cloneName;
+            }
+        }
+    }
+
+    @SuppressWarnings("unused")
     private static final class AccountToAdd
     {
         private final String method = "AddAccount";
@@ -1424,6 +1531,22 @@ public class SolidFireUtil {
         }
     }
 
+    private static final class SnapshotCreateResult {
+        private Result result;
+
+        private static final class Result {
+            private long snapshotID;
+        }
+    }
+
+    private static final class CloneCreateResult {
+        private Result result;
+
+        private static final class Result {
+            private long cloneID;
+        }
+    }
+
     private static final class AccountAddResult {
         private Result result;
 
@@ -1528,7 +1651,7 @@ public class SolidFireUtil {
 
             httpClient = getHttpClient(sfConnection.getManagementPort());
 
-            URI uri = new URI("https://" + sfConnection.getManagementVip() + ":" + sfConnection.getManagementPort() + "/json-rpc/5.0");
+            URI uri = new URI("https://" + sfConnection.getManagementVip() + ":" + sfConnection.getManagementPort() + "/json-rpc/6.0");
             AuthScope authScope = new AuthScope(uri.getHost(), uri.getPort(), AuthScope.ANY_SCHEME);
             UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(sfConnection.getClusterAdminUsername(), sfConnection.getClusterAdminPassword());
 

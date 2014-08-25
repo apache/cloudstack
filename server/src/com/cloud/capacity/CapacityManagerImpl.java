@@ -516,30 +516,16 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @Override
     public long getUsedBytes(StoragePoolVO pool) {
-        long usedBytes = 0;
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
 
-        List<VolumeVO> volumes = _volumeDao.findByPoolId(pool.getId(), null);
+        if (storeDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
 
-        if (volumes != null && volumes.size() > 0) {
-            DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
-            DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
-            PrimaryDataStoreDriver primaryStoreDriver = null;
-
-            if (storeDriver instanceof PrimaryDataStoreDriver) {
-                primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
-            }
-
-            for (VolumeVO volume : volumes) {
-                if (primaryStoreDriver != null) {
-                    usedBytes += primaryStoreDriver.getVolumeSizeIncludingHypervisorSnapshotReserve(volume, pool);
-                }
-                else {
-                    usedBytes += volume.getSize();
-                }
-            }
+            return primaryStoreDriver.getUsedBytes(pool);
         }
 
-        return usedBytes;
+        throw new CloudRuntimeException("Storage driver in CapacityManagerImpl.getUsedBytes(StoragePoolVO) is not a PrimaryDataStoreDriver.");
     }
 
     @Override
@@ -548,7 +534,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         List<VolumeVO> volumes = _volumeDao.findByPoolId(pool.getId(), null);
 
-        if (volumes != null && volumes.size() > 0) {
+        if (volumes != null) {
             for (VolumeVO volume : volumes) {
                 usedIops += volume.getMinIops() != null ? volume.getMinIops() : 0;
             }

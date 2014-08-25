@@ -1578,7 +1578,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
             if (volume.getState() != Volume.State.Ready) {
-                totalAskingSize = totalAskingSize + getVolumeSizeIncludingHvSsReserve(volume, pool);
+                totalAskingSize = totalAskingSize + getVolumeSizeIncludingHypervisorSnapshotReserve(volume, pool);
             }
         }
 
@@ -1623,7 +1623,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return true;
     }
 
-    private long getVolumeSizeIncludingHvSsReserve(Volume volume, StoragePool pool) {
+    private long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
 

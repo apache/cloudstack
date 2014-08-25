@@ -55,6 +55,11 @@ public class FakePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {}
 
     @Override
+    public long getUsedBytes(StoragePool storagePool) {
+        return 0;
+    }
+
+    @Override
     public long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
         return volume.getSize();
     }
