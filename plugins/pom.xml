@@ -134,17 +134,6 @@
       </modules>
     </profile>
     <profile>
-      <id>kvm</id>
-      <activation>
-        <property>
-          <name>noredist</name>
-        </property>
-      </activation>
-      <modules>
-        <module>hypervisors/kvm</module>
-      </modules>
-    </profile>
-    <profile>
       <id>f5</id>
       <activation>
         <property>
