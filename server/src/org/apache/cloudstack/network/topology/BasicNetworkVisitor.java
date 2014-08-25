@@ -60,6 +60,7 @@ import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
@@ -91,7 +92,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     @Override
     public boolean visit(final LoadBalancingRules loadbalancing) throws ResourceUnavailableException {
         final Network network = loadbalancing.getNetwork();
-        final VirtualRouter router = loadbalancing.getRouter();
+        final DomainRouterVO router = (DomainRouterVO) loadbalancing.getRouter();
         final List<LoadBalancingRule> rules = loadbalancing.getRules();
 
         final Commands cmds = new Commands(Command.OnError.Continue);
@@ -113,7 +114,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final Commands cmds = new Commands(Command.OnError.Continue);
         if (purpose == Purpose.LoadBalancing) {
 
-            _commandSetupHelper.createApplyLoadBalancingRulesCommands(loadbalancingRules, router, cmds, network.getId());
+            _commandSetupHelper.createApplyLoadBalancingRulesCommands(loadbalancingRules, (DomainRouterVO) router, cmds, network.getId());
 
             return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
 
@@ -125,7 +126,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
         } else if (purpose == Purpose.StaticNat) {
 
-            _commandSetupHelper.createApplyStaticNatRulesCommands((List<StaticNatRule>)rules, router, cmds, network.getId());
+            _commandSetupHelper.createApplyStaticNatRulesCommands((List<StaticNatRule>) rules, router, cmds, network.getId());
 
             return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
 
@@ -201,7 +202,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final NicVO nicVo = sshkey.getNicVo();
         final VMTemplateVO template = sshkey.getTemplate();
 
-        if (template != null && template.getEnablePassword()) {
+        if ((template != null) && template.getEnablePassword()) {
             _commandSetupHelper.createPasswordCommand(router, profile, nicVo, commands);
         }
 
@@ -237,8 +238,8 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
     @Override
     public boolean visit(final BasicVpnRules vpnRules) throws ResourceUnavailableException {
-        VirtualRouter router = vpnRules.getRouter();
-        List<? extends VpnUser> users = vpnRules.getUsers();
+        final VirtualRouter router = vpnRules.getRouter();
+        final List<? extends VpnUser> users = vpnRules.getUsers();
 
         final Commands cmds = new Commands(Command.OnError.Continue);
         _commandSetupHelper.createApplyVpnUsersCommand(users, router, cmds);
