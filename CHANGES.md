@@ -1,20 +1,74 @@
-
 Apache CloudStack CHANGES
-======================================
+=========================
 
 Full release notes for each release are located in the project's documentation website:  
-http://cloudstack.apache.org/docs
+http://docs.cloudstack.apache.org
+
+Version 4.3.1
+-------------
+
+This is a bug fix release. The following issues were fixed:
+
+    CLOUDSTACK-7405: allowing VR meta-data to be accessed without trailing slash
+    CLOUDSTACK-7260: Management server not responding after some time for Vmware due to Oom (cannot create native thread).
+    CLOUDSTACK-7038: Add mysql client dependency for mgmt server pkg for debian
+    CLOUDSTACK-6892: Create separate package for the mysql HA component
+    CLOUDSTACK-7038: Add mysql client dependency for mgmt server/rpms
+    CLOUDSTACK-7193: handle domain ID being an int
+    CLOUDSTACK-7309: using findProjectByProjectAccountIdIncludingRemoved
+    CLOUDSTACK-6886: Fixed the issue created by the SSL feature with the SDX:
+    CLOUDSTACK-6508: impossible to list projects from API with domainid set
+    CLOUDSTACK-4725: if storage pool has different path, but the uuid is the same, then treat them as the same storage pool
+    CLOUDSTACK-7087: Latest OS X VPN client not working Downgrading openswan version to 1:2.6.37-3
+    CLOUDSTACK-6926: removed hard coded jdk dirs and setting java home using readlink and dirname
+    CLOUDSTACK-6665: A fix for vpc routers not releasing dhcp leases.
+    CLOUDSTACK-6665: A fix for vpc routers not releasing dhcp leases.
+    CLOUDSTACK-7006: Restore template ID in ROOT volume usages
+    CLOUDSTACK-6747: call a more forgiving test on the supplied peer cidr-list
+    CLOUDSTACK-6747: test for test to allow all cidrs on other end of a vpc
+    CLOUDSTACK-6747: test to allow all cidrs on other end of vpc, public or
+    CLOUDSTACK-6272: Fix icons for recover/restore VM
+    CLOUDSTACK-6272: UI > Instance > actions > replace internal action name "restore" with "recover", "reset" with "reinstall".
+    CLOUDSTACK-6272: Fix recover/restore VM actions
+    CLOUDSTACK-6927: store virsh list in list instead of querying libvirt for each chain to speedup the function
+    CLOUDSTACK-6317: [VMware] Tagged VLAN support broken for Management/Control/Storage traffic
+    CLOUDSTACK-5891: [VMware] If a template has been registered and "cpu.corespersocket=X" template details have been added for it,
+    CLOUDSTACK-6478: Failed to download Template when having 3 SSVM's in one
+    CLOUDSTACK-6464: if guest network type is vlan://untagged, and traffic label is used, kvm agent needs to honor traffic label
+    CLOUDSTACK-6816: bugfix: cloudstack-setup-management make /root directory's permission 0777 improperly
+    CLOUDSTACK-6204: applying missed patch
+    CLOUDSTACK-6472: (4.3 specific) listUsageRecords: Pull information from removed items as well, fixing NPEs/Null UUIDs with usage API calls.
+    CLOUDSTACK-5976: Typo in "ssh_keypairs" table's foreign key constraints on the Upgraded Setup
+    CLOUDSTACK-6240: Fixed updating advanced SG rules for vm nic secondary ip
+    CLOUDSTACK-6509: Cannot import multiple LDAP/AD users into a cloudstack account
+    CLOUDSTACK-6485: private gateway network should not be associated with vpc
+    CLOUDSTACK-6156: removing rampart maven dependencies from awsapi
+    CLOUDSTACK-6433: Don't return success if only one of RvR successfully created
+    CLOUDSTACK-6285: Fix savepassword.sh script for clear out old entries
+    CLOUDSTACK-4665: Check if a snapshot is protected before trying to unprotect
+    CLOUDSTACK-4665: Depend on rados-java 0.1.4
+    CLOUDSTACK-6375: suppress the prompt while installing libssl
+    CLOUDSTACK-6375: suppress the prompt while installing openssl
+    CLOUDSTACK-4665: Check if a snapshot is protected before trying to unprotect
+    CLOUDSTACK-4665: Depend on rados-java 0.1.4
+    CLOUDSTACK-6375: suppress the prompt while installing libssl
+    CLOUDSTACK-6360: adding mysql-connector to class path and it will be loaded while starting cloudstack-usage
+    CLOUDSTACK-6326: Fixed password visible in plain text in some of commands in Hyper-v Agent logs.
+    CLOUDSTACK-6325: [hyper-v] fixed cleaning of bin and obj directories when building with mono, they were not cleaning up and resulting in use of stale dlls in some cases
+    CLOUDSTACK-6285: Fix savepassword.sh script for clear out old entries
+    CLOUDSTACK-6299: Fixed apidoc info with base64 encoded
+    CLOUDSTACK-5743: The link generated for downlading a volume or a template was giving a permission error on hyper-v.
 
 Version 4.3.0
-------------------------
+-------------
 Please refer to release notes for list of changes 
 
 Version 4.2.0
------------------------
+-------------
 Released on October 1 2013. Please refer to Release Notes for list of changes
 
 Version 4.1.0
-------------------------
+-------------
 
 This is the second major release of CloudStack from within the Apache Software Foundation, and the
 first major release as a Top-Level Project (TLP). 
