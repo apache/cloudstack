@@ -3014,9 +3014,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         if ((accountName != null) && (domainId != null)) {
             vlanOwner = _accountDao.findActiveAccount(accountName, domainId);
-            if (vlanOwner == null) {
-                throw new InvalidParameterValueException("Unable to find account by name " + accountName);
-            }
+        }
+        if (vlanOwner == null) {
+            throw new InvalidParameterValueException("Unable to find account by name " + accountName);
         }
         vlanOwnerId = vlanOwner.getAccountId();
 
