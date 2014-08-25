@@ -49,7 +49,7 @@ public class SAML2UserAuthenticator extends DefaultUserAuthenticator {
         } else {
             User user = _userDao.getUser(userAccount.getId());
             if (user != null && SAMLUtils.checkSAMLUserId(user.getUuid()) &&
-                    requestParameters.containsKey(SAMLUtils.SAML_RESPONSE)) {
+                    requestParameters != null && requestParameters.containsKey(SAMLUtils.SAML_RESPONSE)) {
                 return new Pair<Boolean, ActionOnFailedAuthentication>(true, null);
             }
         }
@@ -59,8 +59,6 @@ public class SAML2UserAuthenticator extends DefaultUserAuthenticator {
 
     @Override
     public String encode(final String password) {
-        // TODO: Complete method
-        StringBuilder sb = new StringBuilder(32);
-        return sb.toString();
+        return SAMLUtils.generateSecureRandomId();
     }
 }

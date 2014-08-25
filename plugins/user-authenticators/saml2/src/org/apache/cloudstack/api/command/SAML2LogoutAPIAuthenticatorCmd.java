@@ -99,7 +99,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
                     params, responseType));
         }
 
-        if (params.containsKey("SAMLResponse")) {
+        if (params != null && params.containsKey("SAMLResponse")) {
             try {
                 final String samlResponse = ((String[])params.get(SAMLUtils.SAML_RESPONSE))[0];
                 Response processedSAMLResponse = SAMLUtils.decodeSAMLResponse(samlResponse);
