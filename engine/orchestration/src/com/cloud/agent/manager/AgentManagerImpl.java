@@ -170,7 +170,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     private int _directAgentThreadCap;
 
     protected StateMachine2<Status, Status.Event, Host> _statusStateMachine = Status.getStateMachine();
-    private final Map<Long, Long> _pingMap = new ConcurrentHashMap<Long, Long>(10007);
+    private final ConcurrentHashMap<Long, Long> _pingMap = new ConcurrentHashMap<Long, Long>(10007);
 
     @Inject
     ResourceManager _resourceMgr;
@@ -1469,7 +1469,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     public void pingBy(long agentId) {
-        _pingMap.put(agentId, InaccurateClock.getTimeInSeconds());
+        // Update PingMap with the latest time if agent entry exists in the PingMap
+        if (_pingMap.replace(agentId, InaccurateClock.getTimeInSeconds()) == null) {
+            s_logger.info("PingMap for agent: " + agentId + " will not be updated because agent is no longer in the PingMap");
+        }
     }
 
     protected class MonitorTask extends ManagedContextRunnable {
