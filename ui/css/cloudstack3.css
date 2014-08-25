@@ -48,7 +48,6 @@ div.toolbar,
 body {
   min-width: 1024px;
   font-family: sans-serif;
-  height: 769px !important;
   overflow: auto;
   background: #EDE8E8;
 }
