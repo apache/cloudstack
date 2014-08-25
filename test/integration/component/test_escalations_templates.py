@@ -111,7 +111,7 @@ class TestTemplates(cloudstackTestCase):
                                                                                           ))
         return return_flag
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_list_templates_pagination(self):
         """
         @Desc: Test to List Templates pagination
@@ -267,7 +267,7 @@ class TestTemplates(cloudstackTestCase):
         del self.services["templateregister"]["ostype"]
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_02_download_template(self):
         """
         @Desc: Test to Download Template
@@ -384,7 +384,7 @@ class TestTemplates(cloudstackTestCase):
         del self.services["templateregister"]["isextractable"]
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_03_edit_template_details(self):
         """
         @Desc: Test to Edit Template name, displaytext, OSType
@@ -696,7 +696,7 @@ class TestTemplates(cloudstackTestCase):
         del self.services["templateregister"]["ostype"]
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_04_copy_template(self):
         """
         @Desc: Test to copy Template from one zone to another

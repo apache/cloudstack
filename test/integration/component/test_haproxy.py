@@ -695,7 +695,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
                                                      listall=True)
         return
 
-    @attr(tags=["advanced", "advancedns", "provisioning"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_07_delete_account(self):
         """Test Delete account  and check the router and its rules"""
 
@@ -736,7 +736,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
                                        listall=True)
         return
 
-    @attr(tags=["advanced", "advancedns", "provisioning"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_08_create_policy_router_stopped(self):
         """Test verify create stickiness policy when router is stopped state"""
 
@@ -769,7 +769,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
         self.validate_Stickiness_Policy(lb_rule, "LbCookie", self.public_ip.ipaddress.ipaddress)
         return
 
-    @attr(tags=["advanced", "advancedns", "provisioning"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_09_create_policy_router_destroy(self):
         """Test check the stickiness policy rules after destroying router"""
 
@@ -800,7 +800,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "provisioning"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_10_create_policy_enable_disable_vpn(self):
         """Test enable/disable the VPN after applying sticky policy rules"""
 
@@ -831,7 +831,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
         self.validate_Stickiness_Policy(lb_rule, "LbCookie", self.public_ip.ipaddress.ipaddress)
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_11_invalid_params(self):
         """Test verfify functionality syncronous and asyncronous validations"""
 

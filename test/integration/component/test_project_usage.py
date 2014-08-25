@@ -204,7 +204,7 @@ class TestVmUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_vm_usage(self):
         """Test Create/Destroy VM and verify usage calculation
         """
@@ -420,7 +420,7 @@ class TestPublicIPUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_public_ip_usage(self):
         """Test Assign new IP and verify usage calculation
         """
@@ -578,7 +578,7 @@ class TestVolumeUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_volume_usage(self):
         """Test Create/delete a volume and verify correct usage is recorded
         """
@@ -774,7 +774,7 @@ class TestTemplateUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
     def test_01_template_usage(self):
         """Test Upload/ delete a template and verify correct usage is generated
             for the template uploaded
@@ -929,7 +929,7 @@ class TestISOUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
     def test_01_ISO_usage(self):
         """Test Create/Delete a ISO and verify its usage is generated correctly
         """
@@ -1102,7 +1102,7 @@ class TestLBRuleUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_lb_usage(self):
         """Test Create/Delete a LB rule and verify correct usage is recorded
         """
@@ -1269,7 +1269,7 @@ class TestSnapshotUsage(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_snapshot_usage(self):
         """Test Create/Delete a manual snap shot and verify
         correct usage is recorded
@@ -1459,7 +1459,7 @@ class TestNatRuleUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "simulator"], required_hardware="false")
     def test_01_nat_usage(self):
         """Test Create/Delete a PF rule and verify correct usage is recorded
         """
@@ -1642,7 +1642,7 @@ class TestVpnUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "simulator"], required_hardware="false")
     def test_01_vpn_usage(self):
         """Test Create/Delete a VPN and verify correct usage is recorded
         """

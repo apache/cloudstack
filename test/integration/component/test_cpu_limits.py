@@ -177,7 +177,7 @@ class TestCPULimits(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to deploy an instance: %s" % e)
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_01_multiplecore_start_stop_instance(self):
         """Test Deploy VM with multiple core CPU & verify the usage"""
 
@@ -232,7 +232,7 @@ class TestCPULimits(cloudstackTestCase):
                          "Resource count should be same after stopping the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "provisioning"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="true")
     def test_02_multiplecore_migrate_instance(self):
         """Test Deploy VM with multiple core CPU & verify the usage"""
 
@@ -273,7 +273,7 @@ class TestCPULimits(cloudstackTestCase):
                          "Resource count should be same after migrating the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_03_multiplecore_delete_instance(self):
         """Test Deploy VM with multiple core CPU & verify the usage"""
 
@@ -309,7 +309,7 @@ class TestCPULimits(cloudstackTestCase):
         self.assertEqual(resource_count, 0 , "Resource count for %s should be 0" % get_resource_type(resource_id=8))#CPU
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "provisioning"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="true")
     def test_04_deploy_multiple_vm_with_multiple_cpus(self):
         """Test Deploy multiple VM with 4 core CPU & verify the usage"""
 
@@ -465,7 +465,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_01_stop_start_instance(self):
         """Test Deploy VM with 4 core CPU & verify the usage"""
 
@@ -537,7 +537,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             "Resource count should be same after starting the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "provisioning"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="true")
     def test_02_migrate_instance(self):
         """Test Deploy VM with 4 core CPU & verify the usage"""
 
@@ -597,7 +597,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             "Resource count should be same after starting the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_03_delete_instance(self):
         """Test Deploy VM with 4 core CPU & verify the usage"""
 

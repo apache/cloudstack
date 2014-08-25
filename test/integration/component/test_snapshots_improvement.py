@@ -185,7 +185,7 @@ class TestSnapshotOnRootVolume(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_snapshot_on_rootVolume(self):
         """Test create VM with default cent os template and create snapshot
             on root disk of the vm

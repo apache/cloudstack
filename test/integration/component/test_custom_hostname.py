@@ -187,7 +187,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
 
 
     @attr(configuration='vm.instancename.flag')
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_user_provided_hostname(self):
         """ Verify user provided hostname to an instance
         """
@@ -334,7 +334,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         return
 
     @attr(configuration='vm.instancename.flag')
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_02_instancename_from_default_configuration(self):
         """ Verify for globally set instancename
         """
@@ -445,7 +445,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         return
 
     @attr(configuration='vm.instancename.flag')
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_03_duplicate_name(self):
         """ Test the duplicate name when old VM is in non-expunged state
         """
@@ -505,7 +505,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         return
 
     @attr(configuration='vm.instancename.flag')
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_instance_name_with_hyphens(self):
         """ Test the instance  name with hyphens
         """
@@ -555,7 +555,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
 
 
     @attr(configuration='vm.instancename.flag')
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_04_edit_display_name(self):
         """ Test Edit the Display name Through the UI.
         """
@@ -648,7 +648,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         return
 
     @attr(configuration='vm.instancename.flag')
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_05_unsupported_chars_in_display_name(self):
         """ Test Unsupported chars in the display name
             (eg: Spaces,Exclamation,yet to get unsupported chars from the dev)
@@ -740,7 +740,7 @@ class TestInstanceNameFlagFalse(cloudstackTestCase):
         return
 
     @attr(configuration='vm.instancename.flag')
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_custom_hostname_instancename_false(self):
         """ Verify custom hostname for the instance when
             vm.instancename.flag=false

@@ -146,7 +146,7 @@ class TestSnapshots(cloudstackTestCase):
                                                                                           ))
         return return_flag
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_list_volume_snapshots_pagination(self):
         """
         @Desc: Test to List Volume Snapshots pagination
@@ -278,7 +278,7 @@ class TestSnapshots(cloudstackTestCase):
                           )
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_02_list_volume_snapshots_byid(self):
         """
         @Desc: Test to List Volume Snapshots by Id
@@ -396,7 +396,7 @@ class TestSnapshots(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_03_list_vm_snapshots_pagination(self):
         """
         @Desc: Test to List VM Snapshots pagination
@@ -534,7 +534,7 @@ class TestSnapshots(cloudstackTestCase):
                                     )
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_04_list_vm_snapshots_byid(self):
         """
         @summary: Test to List VM Snapshots by Id

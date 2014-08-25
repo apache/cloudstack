@@ -209,7 +209,7 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
             #raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="false")
     def test_restart_ntwk_no_cleanup(self):
         """Test restarting RvR network without cleanup
         """
@@ -343,7 +343,7 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="false")
     def test_restart_ntwk_with_cleanup(self):
         """Test restart RvR network with cleanup
         """
@@ -477,7 +477,7 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="false")
     def test_network_gc(self):
         """Test network garbage collection with RVR
         """

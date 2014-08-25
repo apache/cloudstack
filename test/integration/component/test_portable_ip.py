@@ -194,7 +194,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_create_portable_ip_range(self):
         """Test create new portable ip range
         """
@@ -217,7 +217,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
             self.fail("Failed to create portable IP range: %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_create_portable_ip_range_non_root_admin(self):
         """Test create new portable ip range with non admin root account
         """
@@ -254,7 +254,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_create_portable_ip_range_invalid_region(self):
         """Test create portable ip range with invalid region id"""
 
@@ -337,7 +337,7 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_delete_portable_ip_range(self):
         """Test delete ip range
         """
@@ -347,7 +347,7 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
         self.portable_ip_range.delete(self.apiclient)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_delete_portable_ip_range_non_root_admin(self):
         """Test delete ip range - non admin root
         """
@@ -379,7 +379,7 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
             self.portable_ip_range.delete(self.apiclient)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_delete_portable_ip_range_in_use(self):
         """Test delete ip range
         """
@@ -505,7 +505,7 @@ class TestListPortablePublicIpRanges(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_list_portable_ip_range(self):
         """Test list portable ip ranges
         """
@@ -537,7 +537,7 @@ class TestListPortablePublicIpRanges(cloudstackTestCase):
                          "Listed netmask not matching with the netmask of created public ip range")
         return
 
-    @attr(tags=["advanced","swamy", "selfservice"])
+    @attr(tags=["advanced","swamy"], required_hardware="false")
     def test_list_portable_ip_range_non_root_admin(self):
         """Test list portable ip ranges with non admin root account
         """
@@ -658,7 +658,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_associate_ip_address(self):
         """ Test assocoate public ip address
         """
@@ -707,7 +707,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_associate_ip_address_invalid_zone(self):
         """ Test Associate IP with invalid zone id
         """
@@ -729,7 +729,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
             publicipaddress.delete(self.apiclient)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_associate_ip_address_services_enable_disable(self):
         """ Test enabling and disabling NAT, Firewall services on portable ip
         """
@@ -828,7 +828,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
             portableip.delete(self.apiclient)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_associate_ip_address_no_free_ip(self):
         """ Test assocoate public ip address
         """
@@ -991,7 +991,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_disassociate_ip_address_no_services(self):
         """ Test disassociating portable ip
         """
@@ -1014,7 +1014,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
             raise Exception("Exception occured: %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_disassociate_ip_address_services_enabled(self):
         """ Test disassociating portable ip
         """
@@ -1071,7 +1071,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
             raise Exception("Exception while disassociating portable ip: %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_disassociate_ip_address_other_account(self):
         """ Test disassociating portable IP with non-owner account
         """
@@ -1210,7 +1210,7 @@ class TestDeleteAccount(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_delete_account_services_disabled(self):
         """ test delete account with portable ip with no services enabled
         """
@@ -1232,7 +1232,7 @@ class TestDeleteAccount(cloudstackTestCase):
         self.assertEqual(list_publicips, None, "List of ip addresses should be empty")
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_delete_account_services_enabled(self):
         """ test delete account with portable ip with PF and firewall services enabled
         """
@@ -1443,7 +1443,7 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced","swamy", "selfservice"])
+    @attr(tags=["advanced","swamy"], required_hardware="false")
     def test_list_portable_ip_range_non_root_admin(self):
         """Test list portable ip ranges with non admin root account
         """

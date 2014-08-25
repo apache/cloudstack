@@ -146,7 +146,7 @@ class TestListInstances(cloudstackTestCase):
                                                                                           ))
         return return_flag
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_01_list_instances_pagination(self):
         """  
         @Desc: Test List Instances pagination
@@ -280,7 +280,7 @@ class TestListInstances(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_02_list_Running_vm(self):
         """  
         @Desc: Test List Running VM's
@@ -371,7 +371,7 @@ class TestListInstances(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_03_list_Stopped_vm(self):
         """  
         @Desc: Test List Stopped VM's
@@ -464,7 +464,7 @@ class TestListInstances(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_04_list_Destroyed_vm(self):
         """
         @Desc: Test List Destroyed VM's
@@ -572,7 +572,7 @@ class TestListInstances(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_05_list_vm_by_id(self):
         """
         @Desc: Test List VM by Id
@@ -674,7 +674,7 @@ class TestListInstances(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_06_list_vm_by_name(self):
         """
         @Desc: Test List VM's by Name
@@ -809,7 +809,7 @@ class TestListInstances(cloudstackTestCase):
                           )
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_07_list_vm_by_name_state(self):
         """  
         @Desc: Test List VM's by Name and State
@@ -952,7 +952,7 @@ class TestListInstances(cloudstackTestCase):
                           )
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_08_list_vm_by_zone(self):
         """  
         @Desc: Test List VM by Zone. 
@@ -1091,7 +1091,7 @@ class TestListInstances(cloudstackTestCase):
             self.services["virtual_machine"]["template"] = current_template
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_09_list_vm_by_zone_name(self):
         """  
         @Desc: Test List VM by Zone. 
@@ -1273,7 +1273,7 @@ class TestListInstances(cloudstackTestCase):
             self.services["virtual_machine"]["template"] = current_template
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_10_list_vm_by_zone_name_state(self):
         """  
         @Desc: Test List VM by Zone. 
@@ -1464,7 +1464,7 @@ class TestListInstances(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_11_register_reset_vm_sshkey(self):
         """  
         @Desc: Test to verify registering and reset of SSH Key for VM
@@ -1590,7 +1590,7 @@ class TestListInstances(cloudstackTestCase):
                           )
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_12_vm_nics(self):
         """
         @Desc: Test to verify Nics for a VM
@@ -1989,7 +1989,7 @@ class TestInstances(cloudstackTestCase):
                                                                                           ))
         return return_flag
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_13_attach_detach_iso(self):
         """
         @Desc: Test Attach ISO to VM and Detach ISO from VM.
@@ -2119,7 +2119,7 @@ class TestInstances(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_14_vm_snapshot_pagination(self):
         """
         @Desc: Test VM Snapshots pagination.
@@ -2278,7 +2278,7 @@ class TestInstances(cloudstackTestCase):
                           )
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_15_revert_vm_to_snapshot(self):
         """
         @Desc: Test Revert VM to Snapshot functionality.
@@ -2440,7 +2440,7 @@ class TestInstances(cloudstackTestCase):
                           )
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_16_list_vm_volumes_pagination(self):
         """
         @Desc: Test to verify pagination of Volumes for a VM
@@ -2645,7 +2645,7 @@ class TestInstances(cloudstackTestCase):
                                      )
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_17_running_vm_scaleup(self):
         """
         @Desc: Test to verify change service for Running VM
@@ -2785,7 +2785,7 @@ class TestInstances(cloudstackTestCase):
                               )
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_18_stopped_vm_change_service(self):
         """
         @Desc: Test to verify change service for Stopped VM
@@ -2905,7 +2905,7 @@ class TestInstances(cloudstackTestCase):
                           )
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_19_create_reset_vm_sshkey(self):
         """
         @Desc: Test to verify creation and reset of SSH Key for VM
@@ -3032,7 +3032,7 @@ class TestInstances(cloudstackTestCase):
                           )
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_20_update_vm_displayname_group(self):
         """
         @Desc: Test to verify Update VM details
@@ -3133,7 +3133,7 @@ class TestInstances(cloudstackTestCase):
                           )
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_21_restore_vm(self):
         """
         @Desc: Test to verify Restore VM
@@ -3220,7 +3220,7 @@ class TestInstances(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_22_deploy_vm_multiple_networks(self):
         """
         @Desc: Test to verify deploy VM with multiple networks
@@ -3354,7 +3354,7 @@ class TestInstances(cloudstackTestCase):
                                   )
         return
 
-    @attr(tags=["basic", "provisioning"])
+    @attr(tags=["basic"], required_hardware="true")
     def test_23_deploy_vm_multiple_securitygroups(self):
         """
         @Desc: Test to verify deploy VM with multiple Security Groups
@@ -3470,7 +3470,7 @@ class TestInstances(cloudstackTestCase):
                           )
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_24_deploy_vm_with_static_ip_ES1662(self):
         """
         @Desc: Test to verify deploy VM with static ip address assignment
@@ -3579,7 +3579,7 @@ class TestInstances(cloudstackTestCase):
             raise Exception("Warning: Exception in expunging vm : %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_25_ip_reallocation_ES1377(self):
         """
         @Desc: Test to verify dnsmasq dhcp conflict issue due to /ect/hosts not getting udpated

@@ -83,7 +83,7 @@ class TestUpdateVirtualMachine(cloudstackTestCase):
             self.account
         ]
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "selfservice"])
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware="false")
     def test_update_vm_name(self):
         """Test Update VirtualMachine Name
 

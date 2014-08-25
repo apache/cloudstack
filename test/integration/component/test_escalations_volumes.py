@@ -141,7 +141,7 @@ class TestVolumes(cloudstackTestCase):
                                                                                           ))
         return return_flag
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_list_volumes_pagination(self):
         """  
         @summary: Test List Volumes pagination
@@ -268,7 +268,7 @@ class TestVolumes(cloudstackTestCase):
                     )
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"]) 
+    @attr(tags=["advanced", "basic"], required_hardware="true") 
     def test_02_list_volume_byid(self):
         """       
         @summary: Test List Volumes with Id
@@ -431,7 +431,7 @@ class TestVolumes(cloudstackTestCase):
                          )
         return
  
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_03_data_volume_resize(self):
         """  
         @summary: Test to verify creation and resize of data volume
@@ -545,7 +545,7 @@ class TestVolumes(cloudstackTestCase):
                           )
         return
  
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_04_custom_volume_resize(self):
         """  
         @summary: Test to verify creation and resize of custom volume
@@ -664,7 +664,7 @@ class TestVolumes(cloudstackTestCase):
                           )
         return
  
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_05_volume_snapshot(self):
         """  
         @summary: Test to verify creation of snapshot from volume and creation of template, volume from snapshot
@@ -874,7 +874,7 @@ class TestVolumes(cloudstackTestCase):
                           )
         return
  
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_06_volume_snapshot_policy_hourly(self):
         """  
         @summary: Test to verify creation of Hourly Snapshot policies from volume
@@ -998,7 +998,7 @@ class TestVolumes(cloudstackTestCase):
                           )
         return
  
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_07_volume_snapshot_policy_daily(self):
         """  
         @summary: Test to verify creation of Daily Snapshot policies from volume
@@ -1121,7 +1121,7 @@ class TestVolumes(cloudstackTestCase):
                           )
         return
  
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_08_volume_snapshot_policy_weekly(self):
         """  
         @summary: Test to verify creation of Weekly Snapshot policies from volume
@@ -1244,7 +1244,7 @@ class TestVolumes(cloudstackTestCase):
                           )
         return
  
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_09_volume_snapshot_policy_monthly(self):
         """  
         @summary: Test to verify creation of Monthly Snapshot policies from volume
@@ -1375,7 +1375,7 @@ class TestVolumes(cloudstackTestCase):
                           )
         return
  
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_10_volume_snapshots_pagination(self):
         """  
         @summary: Test to verify pagination of snapshots for Volume
@@ -1551,7 +1551,7 @@ class TestVolumes(cloudstackTestCase):
                          )
         return
  
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_11_volume_extract(self):
         """  
         @summary: Test to verify extract/download a Volume
@@ -1659,7 +1659,7 @@ class TestVolumes(cloudstackTestCase):
                           )
         return
  
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_12_volume_upload(self):
         """  
         @summary: Test to verify upload volume

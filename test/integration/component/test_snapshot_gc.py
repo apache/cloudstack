@@ -217,7 +217,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "basic", "sg", "provisioning"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg"], required_hardware="true")
     def test_02_accountSnapshotClean(self):
         """Test snapshot cleanup after account deletion
         """

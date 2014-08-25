@@ -159,7 +159,7 @@ class TestResizeVolume(cloudstackTestCase):
             return [FAIL, e]
         return [PASS, None]
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_01_increase_volume_size_within_account_limit(self):
 	"""Test increasing volume size within the account limit and verify primary storage usage
 
@@ -223,7 +223,7 @@ class TestResizeVolume(cloudstackTestCase):
             self.fail("Failed with exception: %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_02_increase_volume_size_above_account_limit(self):
 	"""Test increasing volume size above the account limit
 
@@ -281,7 +281,7 @@ class TestResizeVolume(cloudstackTestCase):
             volume.resize(apiclient, diskofferingid=self.disk_offering_20_GB.id)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_03_increase_volume_size_above_domain_limit(self):
 	"""Test increasing volume size above the domain limit
 

@@ -210,7 +210,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
                               domainid=self.child_do_admin_2.domainid)
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_01_change_service_offering(self):
         """Test Deploy VM with specified RAM & verify the usage"""
 
@@ -349,7 +349,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "provisioning"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="true")
     def test_02_migrate_vm(self):
         """Test Deploy VM with specified RAM & verify the usage"""
 
@@ -410,7 +410,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
                             "Resource count should be same after migrating the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_03_delete_vm(self):
         """Test Deploy VM with specified RAM & verify the usage"""
 
@@ -469,7 +469,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.assertEqual(resource_count_after_delete, 0 , "Resource count for %s should be 0" % get_resource_type(resource_id=9))#RAM
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_04_deploy_multiple_vm(self):
         """Test Deploy multiple VM with specified RAM & verify the usage"""
 
@@ -684,7 +684,7 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
                  }
         return users
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_01_multiple_child_domains(self):
         """Test memory limits with multiple child domains"""
 

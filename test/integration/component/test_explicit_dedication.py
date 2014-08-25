@@ -153,7 +153,7 @@ class TestExplicitDedication(cloudstackTestCase):
     # This test requires multi host and at least one host which is empty (no vms should
     # be running on that host). It explicitly dedicates empty host to an account, deploys
     # a vm for that account and verifies that the vm gets deployed to the dedicated host.
-    @attr(tags=["advanced", "basic", "multihosts", "explicitdedication", "selfservice"])
+    @attr(tags=["advanced", "basic", "multihosts", "explicitdedication"], required_hardware="false")
     def test_01_deploy_vm_with_explicit_dedication(self):
         """Test explicit dedication is placing vms of an account on dedicated hosts.
         """

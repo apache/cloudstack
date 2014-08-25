@@ -196,7 +196,7 @@ class TestPersistentNetworks(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_network_state_after_destroying_vms(self):
         # steps
         # 1. Create an isolated persistent network
@@ -247,7 +247,7 @@ class TestPersistentNetworks(cloudstackTestCase):
                 self.fail(exceptionMessage)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_shared_network_offering_with_persistent(self):
         # steps
         # 1. create shared network offering with persistent field enabled

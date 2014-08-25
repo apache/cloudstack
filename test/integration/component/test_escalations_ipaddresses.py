@@ -140,7 +140,7 @@ class TestIpAddresses(cloudstackTestCase):
                                                                                           ))
         return return_flag
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_01_list_ipaddresses_pagination(self):
         """
         @summary: Test List IP Addresses pagination
@@ -312,7 +312,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_02_list_ipaddresses_byid(self):
         """
         @summary: Test List IP Addresses details by ID
@@ -489,7 +489,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_03_associate_ipaddress_for_vpc(self):
         """
         @summary: Test to Associate IP Address for VPC
@@ -641,7 +641,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_04_create_delete_lbrule_fornonvpc(self):
         """
         @summary: Test to list, create and delete Load Balancer Rule for IP Address associated to Non VPC network
@@ -813,7 +813,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_05_create_delete_lbrule_forvpc(self):
         """
         @summary: Test to list, create and delete Load Balancer Rule for IP Address associated to VPC
@@ -1019,7 +1019,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_06_update_lbrule_name(self):
         """
         @summary: Test to Update Load Balancer Rule Name for IP Address associated to Non VPC network
@@ -1218,7 +1218,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_07_assign_remove_lbrule_toinstance(self):
         """
         @summary: Test to Assign and Remove Load Balancer Rule to an Instance
@@ -1534,7 +1534,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_08_list_create_delete_lbsticky_policy(self):
         """
         @summary: Test to List, Create, Delete Load Balancer Stickyness Policy
@@ -1773,7 +1773,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_09_create_delete_portforwarding_fornonvpc(self):
         """
         @summary: Test to list, create and delete Port Forwarding for IP Address associated to Non VPC network
@@ -1997,7 +1997,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_10_create_delete_portforwarding_forvpc(self):
         """
         @summary: Test to list, create and delete Port Forwarding Rule for IP Address associated to VPC
@@ -2220,7 +2220,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_11_create_delete_firewallrule(self):
         """
         @summary: Test to list, create and delete Firewall Rule for IP Address associated to Non VPC network
@@ -2396,7 +2396,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_12_create_delete_remoteaccessvpn(self):
         """
         @summary: Test to list, create and delete Remote Access VPNs
@@ -2569,7 +2569,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_13_add_remove_vpnusers(self):
         """
         @summary: Test to list, add and remove VPN Users
@@ -2780,7 +2780,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_14_enable_disable_staticnat_fornonvpc(self):
         """
         @summary: Test to Enable and Disable StaticNat for IP Address associated to Non VPC Network
@@ -2956,7 +2956,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_15_enable_disable_staticnat_forvpc(self):
         """
         @summary: Test to Enable and Disable StaticNat for IP Address associated to VPC Network
@@ -3156,7 +3156,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_16_create_delete_ipforwardingrule(self):
         """
         @summary: Test to list, create and delete IP Forwarding Rules for IP Address
@@ -3364,7 +3364,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_17_create_update_autoscalepolicy(self):
         """
         @summary: Test to list, create and update Autoscale Policy
@@ -3642,7 +3642,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_18_create_update_autoscaleprofiles(self):
         """
         @summary: Test to list, create and update Autoscale VM Profiles
@@ -3962,7 +3962,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.cleanup.append(self.account)
         return
 
-    @attr(tags=["advanced", "provisioning"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_19_create_update_autoscalevmgroup(self):
         """  
         @summary: Test to list, create, update, enable, disable Autoscale VM Profiles

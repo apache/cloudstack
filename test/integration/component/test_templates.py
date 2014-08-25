@@ -162,7 +162,7 @@ class TestCreateTemplate(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "provisioning"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_01_create_template(self):
         """Test create public & private template
         """
@@ -387,7 +387,7 @@ class TestTemplates(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_01_create_template_volume(self):
         """Test Create template from volume
         """
@@ -426,7 +426,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_03_delete_template(self):
         """Test Delete template
         """
@@ -482,7 +482,7 @@ class TestTemplates(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_04_template_from_snapshot(self):
         """Create Template from snapshot
         """

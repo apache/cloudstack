@@ -483,7 +483,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         return nwacl_internet_1
 
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_01_network_services_VPC_StopCreatePF(self):
         """ Test : Create VPC PF rules on acquired public ip when VpcVirtualRouter is stopped
         """
@@ -514,7 +514,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_02_network_services_VPC_CreatePF(self):
         """ Test Create VPC PF rules on acquired public ip when VpcVirtualRouter is Running
         """
@@ -534,7 +534,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_03_network_services_VPC_StopCreateMultiplePF(self):
         """ Test Create multiple VPC PF rules on acquired public ip in diff't networks when VpcVirtualRouter is stopped
         """
@@ -570,7 +570,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=False)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_04_network_services_VPC_CreateMultiplePF(self):
         """ Test Create multiple VPC PF rules on acquired public ip in diff't networks when VpcVirtualRouter is running
         """
@@ -598,7 +598,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=False)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_05_network_services_VPC_StopDeletePF(self):
         """ Test delete a PF rule in VPC when VpcVirtualRouter is Stopped
         """
@@ -629,7 +629,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_06_network_services_VPC_DeletePF(self):
         """ Test delete a PF rule in VPC when VpcVirtualRouter is Running
         """
@@ -656,7 +656,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_07_network_services_VPC_StopDeleteAllPF(self):
         """ Test delete all PF rules in VPC when VpcVirtualRouter is Stopped
         """
@@ -690,7 +690,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_08_network_services_VPC_DeleteAllPF(self):
         """ Test delete all PF rules in VPC when VpcVirtualRouter is Running
         """
@@ -720,7 +720,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_09_network_services_VPC_StopDeleteAllMultiplePF(self):
         """ Test delete all PF rules in VPC across multiple networks when VpcVirtualRouter is Stopped
         """
@@ -787,7 +787,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_4, public_ip_4, testnegative=True)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_10_network_services_VPC_DeleteAllMultiplePF(self):
         """ Test delete all PF rules in VPC across multiple networks when VpcVirtualRouter is Running
         """

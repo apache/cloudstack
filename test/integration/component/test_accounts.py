@@ -164,7 +164,7 @@ class TestAccounts(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg", "selfservice"])
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"], required_hardware="false")
     def test_01_create_account(self):
         """Test Create Account and user for that account
         """
@@ -300,7 +300,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg", "selfservice"])
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"], required_hardware="false")
     def test_01_user_remove_VM_running(self):
         """Test Remove one user from the account
         """
@@ -452,7 +452,7 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg", "selfservice"])
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"], required_hardware="false")
     def test_01_non_root_admin_Privileges(self):
         """Test to verify Non Root admin previleges"""
 
@@ -574,7 +574,7 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg", "selfservice"])
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"], required_hardware="false")
     def test_01_service_offering_siblings(self):
         """Test to verify service offerings at same level in hierarchy"""
 
@@ -692,7 +692,7 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg", "selfservice"])
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"], required_hardware="false")
     def test_01_service_offering_hierarchy(self):
         """Test to verify service offerings at same level in hierarchy"""
 
@@ -981,7 +981,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg", "selfservice"])
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"], required_hardware="false")
     def test_01_add_vm_to_subdomain(self):
         """ Test Sub domain allowed to launch VM  when a Domain level zone is created"""
 
@@ -1525,7 +1525,7 @@ class TestDomainForceRemove(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["domains", "advanced", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["domains", "advanced", "advancedns", "simulator"], required_hardware="false")
     def test_forceDeleteDomain(self):
         """ Test delete domain with force option"""
 
@@ -1695,7 +1695,7 @@ class TestDomainForceRemove(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["domains", "advanced", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["domains", "advanced", "advancedns", "simulator"], required_hardware="false")
     def test_DeleteDomain(self):
         """ Test delete domain without force option"""
 

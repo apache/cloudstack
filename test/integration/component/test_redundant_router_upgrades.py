@@ -199,7 +199,7 @@ class TestRvRUpgradeDowngrade(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="false")
     def test_upgradeVR_to_redundantVR(self):
         """Test upgrade virtual router to redundant virtual router
         """
@@ -344,7 +344,7 @@ class TestRvRUpgradeDowngrade(cloudstackTestCase):
                     )
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="false")
     def test_downgradeRvR_to_VR(self):
         """Test downgrade redundant virtual router to virtual router
         """

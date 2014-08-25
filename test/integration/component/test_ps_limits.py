@@ -145,7 +145,7 @@ class TestVolumeLimits(cloudstackTestCase):
         return [PASS, None]
 
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_stop_start_vm(self, value):
         """Test Deploy VM with 5 GB volume & verify the usage
 
@@ -184,7 +184,7 @@ class TestVolumeLimits(cloudstackTestCase):
 
     @unittest.skip("skip")
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_destroy_recover_vm(self, value):
         """Test delete and recover instance
 
@@ -222,7 +222,7 @@ class TestVolumeLimits(cloudstackTestCase):
         return
 
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_attach_detach_volume(self, value):
         """Stop attach and detach volume from VM
 
@@ -291,7 +291,7 @@ class TestVolumeLimits(cloudstackTestCase):
         return
 
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_create_multiple_volumes(self, value):
         """Test create multiple volumes
 
@@ -385,7 +385,7 @@ class TestVolumeLimits(cloudstackTestCase):
         return
 
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_deploy_multiple_vm(self, value):
         """Test Deploy multiple VMs with & verify the usage
         # Validate the following
@@ -494,7 +494,7 @@ class TestVolumeLimits(cloudstackTestCase):
 	return
 
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_create_template_snapshot(self, value):
         """Test create snapshot and templates from volume
 
