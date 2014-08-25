@@ -219,7 +219,7 @@ class UpdateConfigTestCase(SystemVMTestCase):
 		# This must happen in order for dnsmasq to be listening
         octets = config['router_guest_ip'].split('.')
         configs = []
-        for n in range(10):
+        for n in range(3,13):
             ipb = ".".join(octets[0:3])
             ipa = "%s.%s" % (ipb, n)
             gw = "%s.1" % ipb
