@@ -40,6 +40,7 @@ import org.opensaml.saml2.core.impl.AuthnContextClassRefBuilder;
 import org.opensaml.saml2.core.impl.AuthnRequestBuilder;
 import org.opensaml.saml2.core.impl.IssuerBuilder;
 import org.opensaml.saml2.core.impl.LogoutRequestBuilder;
+import org.opensaml.saml2.core.impl.NameIDBuilder;
 import org.opensaml.saml2.core.impl.NameIDPolicyBuilder;
 import org.opensaml.saml2.core.impl.RequestedAuthnContextBuilder;
 import org.opensaml.saml2.core.impl.SessionIndexBuilder;
@@ -138,13 +139,17 @@ public class SAMLUtils {
         return authnRequest;
     }
 
-    public static LogoutRequest buildLogoutRequest(String logoutUrl, String spId, NameID nameId, String sessionIndex) {
+    public static LogoutRequest buildLogoutRequest(String logoutUrl, String spId, NameID sessionNameId, String sessionIndex) {
         IssuerBuilder issuerBuilder = new IssuerBuilder();
         Issuer issuer = issuerBuilder.buildObject();
         issuer.setValue(spId);
 
         SessionIndex sessionIndexElement = new SessionIndexBuilder().buildObject();
         sessionIndexElement.setSessionIndex(sessionIndex);
+
+        NameID nameID = new NameIDBuilder().buildObject();
+        nameID.setValue(sessionNameId.getValue());
+        nameID.setFormat(sessionNameId.getFormat());
 
         LogoutRequest logoutRequest = new LogoutRequestBuilder().buildObject();
         logoutRequest.setID(generateSecureRandomId());
@@ -153,7 +158,7 @@ public class SAMLUtils {
         logoutRequest.setIssueInstant(new DateTime());
         logoutRequest.setIssuer(issuer);
         logoutRequest.getSessionIndexes().add(sessionIndexElement);
-        logoutRequest.setNameID(nameId);
+        logoutRequest.setNameID(nameID);
         return logoutRequest;
     }
 
