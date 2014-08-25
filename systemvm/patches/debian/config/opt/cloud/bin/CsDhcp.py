@@ -96,7 +96,7 @@ class CsDnsMasq(object):
 
     def configure_server(self):
         self.updated = self.updated | CsHelper.addifmissing(CLOUD_CONF, "dhcp-hostsfile=/etc/dhcphosts.txt")
-        self.updated = self.updated | CsHelper.addifmissing(DNSMASQ_CONF, "dhcp-optsfile=%s:" % DHCP_OPTS)
+        #self.updated = self.updated | CsHelper.addifmissing(DNSMASQ_CONF, "dhcp-optsfile=%s:" % DHCP_OPTS)
         for i in self.devinfo:
             if not i['dnsmasq']:
                 continue
