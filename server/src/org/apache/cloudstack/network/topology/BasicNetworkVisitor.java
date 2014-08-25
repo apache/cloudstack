@@ -55,9 +55,9 @@ import com.cloud.network.rules.StaticRoutesRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
-import com.cloud.network.rules.VpnRules;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
@@ -92,7 +92,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     @Override
     public boolean visit(final LoadBalancingRules loadbalancing) throws ResourceUnavailableException {
         final Network network = loadbalancing.getNetwork();
-        final VirtualRouter router = loadbalancing.getRouter();
+        final DomainRouterVO router = (DomainRouterVO) loadbalancing.getRouter();
         final List<LoadBalancingRule> rules = loadbalancing.getRules();
 
         final Commands cmds = new Commands(Command.OnError.Continue);
@@ -237,9 +237,9 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     }
 
     @Override
-    public boolean visit(final VpnRules vpn) throws ResourceUnavailableException {
-        VirtualRouter router = vpn.getRouter();
-        List<? extends VpnUser> users = vpn.getUsers();
+    public boolean visit(final BasicVpnRules vpnRules) throws ResourceUnavailableException {
+        final VirtualRouter router = vpnRules.getRouter();
+        final List<? extends VpnUser> users = vpnRules.getUsers();
 
         final Commands cmds = new Commands(Command.OnError.Continue);
         _commandSetupHelper.createApplyVpnUsersCommand(users, router, cmds);
