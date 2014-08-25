@@ -3852,7 +3852,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             addProviderToPhysicalNetwork(physicalNetworkId, "BaremetalDhcpProvider", null, null);
             addProviderToPhysicalNetwork(physicalNetworkId, "BaremetalPxeProvider", null, null);
             addProviderToPhysicalNetwork(physicalNetworkId, "BaremetalUserdataProvider", null, null);
+        } else if (dvo.getNetworkType() == NetworkType.Advanced) {
+            addProviderToPhysicalNetwork(physicalNetworkId, "BaremetalPxeProvider", null, null);
         }
+
         return null;
     }
 
