@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command;
 
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.configuration.Config;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,18 +28,24 @@ import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.LogoutCmdResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.utils.auth.SAMLUtils;
 import org.apache.log4j.Logger;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.saml2.core.LogoutRequest;
 import org.opensaml.saml2.core.NameID;
+import org.opensaml.saml2.core.Response;
+import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.io.MarshallingException;
+import org.opensaml.xml.io.UnmarshallingException;
+import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.FactoryConfigurationError;
 import java.io.IOException;
 import java.util.List;
@@ -51,6 +58,8 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
 
     @Inject
     ApiServerService _apiServer;
+    @Inject
+    ConfigurationDao _configDao;
     SAML2AuthManager _samlAuthManager;
 
     /////////////////////////////////////////////////////
@@ -79,6 +88,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
         LogoutCmdResponse response = new LogoutCmdResponse();
         response.setDescription("success");
         response.setResponseName(getCommandName());
+        String responseString = ApiResponseSerializer.toSerializedString(response, responseType);
 
         try {
             DefaultBootstrap.bootstrap();
@@ -89,8 +99,35 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
                     params, responseType));
         }
 
+        if (params.containsKey("SAMLResponse")) {
+            try {
+                final String samlResponse = ((String[])params.get(SAMLUtils.SAML_RESPONSE))[0];
+                Response processedSAMLResponse = SAMLUtils.decodeSAMLResponse(samlResponse);
+                String statusCode = processedSAMLResponse.getStatus().getStatusCode().getValue();
+                if (!statusCode.equals(StatusCode.SUCCESS_URI)) {
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, _apiServer.getSerializedApiError(ApiErrorCode.INTERNAL_ERROR.getHttpCode(),
+                            "SAML SLO LogoutResponse status is not Success",
+                            params, responseType));
+                }
+            } catch (ConfigurationException | FactoryConfigurationError | ParserConfigurationException | SAXException | IOException | UnmarshallingException e) {
+                s_logger.error("SAMLResponse processing error: " + e.getMessage());
+            }
+            try {
+                resp.sendRedirect(_configDao.getValue(Config.SAMLCloudStackRedirectionUrl.key()));
+            } catch (IOException ignored) {
+            }
+            return responseString;
+        }
+
         NameID nameId = (NameID) session.getAttribute(SAMLUtils.SAML_NAMEID);
         String sessionIndex = (String) session.getAttribute(SAMLUtils.SAML_SESSION);
+        if (nameId == null || sessionIndex == null) {
+            try {
+                resp.sendRedirect(_configDao.getValue(Config.SAMLCloudStackRedirectionUrl.key()));
+            } catch (IOException ignored) {
+            }
+            return responseString;
+        }
         LogoutRequest logoutRequest = SAMLUtils.buildLogoutRequest(_samlAuthManager.getIdpSingleLogOutUrl(), _samlAuthManager.getServiceProviderId(), nameId, sessionIndex);
 
         try {
@@ -102,8 +139,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
                     "SAML Single Logout Error",
                     params, responseType));
         }
-
-        return ApiResponseSerializer.toSerializedString(response, responseType);
+        return responseString;
     }
 
     @Override
