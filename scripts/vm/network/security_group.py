@@ -33,6 +33,11 @@ iptables = Command("iptables")
 bash = Command("/bin/bash")
 ebtablessave = Command("ebtables-save")
 ebtables = Command("ebtables")
+driver = "qemu:///system"
+cfo = configFileOps("/etc/cloudstack/agent/agent.properties")
+hyper = cfo.getEntry("hypervisor.type")
+if hyper == "lxc":
+    driver = "lxc:///"
 def execute(cmd):
     logging.debug(cmd)
     return bash("-c", cmd).stdout
@@ -96,7 +101,7 @@ def virshlist(*states):
 
     searchstates = list(libvirt_states[state] for state in states)
 
-    conn = libvirt.openReadOnly('qemu:///system')
+    conn = libvirt.openReadOnly(driver)
     if conn == None:
        print 'Failed to open connection to the hypervisor'
        sys.exit(3)
@@ -124,7 +129,7 @@ def virshdomstate(domain):
                      libvirt.VIR_DOMAIN_CRASHED  : 'crashed',
     }
 
-    conn = libvirt.openReadOnly('qemu:///system')
+    conn = libvirt.openReadOnly(driver)
     if conn == None:
        print 'Failed to open connection to the hypervisor'
        sys.exit(3)
@@ -141,7 +146,7 @@ def virshdomstate(domain):
 
 def virshdumpxml(domain):
 
-    conn = libvirt.openReadOnly('qemu:///system')
+    conn = libvirt.openReadOnly(driver)
     if conn == None:
        print 'Failed to open connection to the hypervisor'
        sys.exit(3)
@@ -925,7 +930,7 @@ def getBridges(vmName):
 
 def getvmId(vmName):
 
-    conn = libvirt.openReadOnly('qemu:///system')
+    conn = libvirt.openReadOnly(driver)
     if conn == None:
        print 'Failed to open connection to the hypervisor'
        sys.exit(3)
