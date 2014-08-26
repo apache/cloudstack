@@ -90,6 +90,14 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
         response.setResponseName(getCommandName());
         String responseString = ApiResponseSerializer.toSerializedString(response, responseType);
 
+        if (session == null) {
+            try {
+                resp.sendRedirect(_configDao.getValue(Config.SAMLCloudStackRedirectionUrl.key()));
+            } catch (IOException ignored) {
+            }
+            return responseString;
+        }
+
         try {
             DefaultBootstrap.bootstrap();
         } catch (ConfigurationException | FactoryConfigurationError e) {
