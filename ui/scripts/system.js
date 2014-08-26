@@ -14290,7 +14290,8 @@
                                             }
                                         }
                                         args.response.success({
-                                            data: item
+                                            data: item,
+                                            actionFilter: clusterActionfilter
                                         });
                                     },
                                     error: function (XMLHttpResponse) {
@@ -14298,17 +14299,6 @@
                                         args.response.error(errorMsg);
                                     }
                                 });
-                            },
-                            
-                            notification: {
-                                poll: function (args) {
-                                    args.complete({
-                                        actionFilter: clusterActionfilter,
-                                        data: {
-                                            state: 'Enabled'
-                                        }
-                                    });
-                                }
                             }
                         }
                     },
