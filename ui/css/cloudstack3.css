@@ -7680,7 +7680,7 @@ label.error {
 .multi-wizard.zone-wizard .select-container .field .value input,
 .multi-wizard.zone-wizard .select-container .field .value select {
   width: 316px;
-  height: 12px;
+  height: 20px;
   margin: 13px 13px 0 18px;
   float: left;
 }
