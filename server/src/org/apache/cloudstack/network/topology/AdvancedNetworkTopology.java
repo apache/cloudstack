@@ -70,11 +70,11 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Override
     public String[] applyVpnUsers(final RemoteAccessVpn remoteAccessVpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException {
 
-    	s_logger.debug("APPLYING ADVANCED VPN USERS RULES");
+        s_logger.debug("APPLYING ADVANCED VPN USERS RULES");
 
-    	AdvancedVpnRules routesRules = _virtualNetworkApplianceFactory.createAdvancedVpnRules(remoteAccessVpn, users);
+        AdvancedVpnRules routesRules = _virtualNetworkApplianceFactory.createAdvancedVpnRules(remoteAccessVpn, users);
 
-    	boolean agentResult = routesRules.accept(_advancedVisitor, router);
+        boolean agentResult = routesRules.accept(_advancedVisitor, router);
 
         String[] result = new String[users.size()];
         for (int i = 0; i < result.length; i++) {
@@ -91,14 +91,14 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Override
     public boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
 
-    	s_logger.debug("APPLYING STATIC ROUTES RULES");
+        s_logger.debug("APPLYING STATIC ROUTES RULES");
 
-    	if (staticRoutes == null || staticRoutes.isEmpty()) {
+        if (staticRoutes == null || staticRoutes.isEmpty()) {
             s_logger.debug("No static routes to apply");
             return true;
         }
 
-    	StaticRoutesRules routesRules = _virtualNetworkApplianceFactory.createStaticRoutesRules(staticRoutes);
+        StaticRoutesRules routesRules = _virtualNetworkApplianceFactory.createStaticRoutesRules(staticRoutes);
 
         boolean result = true;
         for (VirtualRouter router : routers) {
@@ -121,7 +121,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Override
     public boolean setupDhcpForPvlan(final boolean isAddPvlan, final DomainRouterVO router, final Long hostId, final NicProfile nic) throws ResourceUnavailableException {
 
-    	s_logger.debug("SETUP DHCP PVLAN RULES");
+        s_logger.debug("SETUP DHCP PVLAN RULES");
 
         if (!nic.getBroadCastUri().getScheme().equals("pvlan")) {
             return false;
