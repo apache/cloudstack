@@ -49,7 +49,7 @@ public interface StorageAdaptor {
     // handled by your adaptor, return false if not. 2) clean up device, return true
     public boolean disconnectPhysicalDiskByPath(String localPath);
 
-    public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool);
+    public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool, Storage.ImageFormat format);
 
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template,
             String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size,

@@ -347,6 +347,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                 newVol.setFormat(ImageFormat.RAW);
             } else if (vol.getFormat() == PhysicalDiskFormat.QCOW2) {
                 newVol.setFormat(ImageFormat.QCOW2);
+            } else if (vol.getFormat() == PhysicalDiskFormat.DIR) {
+                newVol.setFormat(ImageFormat.DIR);
             }
 
             return new CopyCmdAnswer(newVol);
@@ -1203,7 +1205,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 s_logger.debug("can't find volume: " + vol.getPath() + ", return true");
                 return new Answer(null);
             }
-            pool.deletePhysicalDisk(vol.getPath());
+            pool.deletePhysicalDisk(vol.getPath(), vol.getFormat());
             return new Answer(null);
         } catch (CloudRuntimeException e) {
             s_logger.debug("Failed to delete volume: ", e);

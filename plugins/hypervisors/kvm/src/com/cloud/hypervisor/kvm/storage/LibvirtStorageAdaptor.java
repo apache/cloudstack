@@ -796,7 +796,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool) {
+    public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool, Storage.ImageFormat format) {
 
         s_logger.info("Attempting to remove volume " + uuid + " from pool " + pool.getUuid());
 
@@ -849,7 +849,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         try {
             StorageVol vol = getVolume(libvirtPool.getPool(), uuid);
             s_logger.debug("Instructing libvirt to remove volume " + uuid + " from pool " + pool.getUuid());
-            deleteVol(libvirtPool, vol);
+            if(Storage.ImageFormat.DIR.equals(format)){
+                deleteDirVol(libvirtPool, vol);
+            } else {
+                deleteVol(libvirtPool, vol);
+            }
             vol.free();
             return true;
         } catch (LibvirtException e) {
@@ -1315,4 +1319,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         vol.delete(0);
     }
 
+    private void deleteDirVol(LibvirtStoragePool pool, StorageVol vol) throws LibvirtException {
+        Script.runSimpleBashScript("rm -r --interactive=never " + vol.getPath());
+    }
 }
