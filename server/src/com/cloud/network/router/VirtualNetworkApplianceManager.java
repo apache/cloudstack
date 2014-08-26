@@ -17,7 +17,6 @@
 package com.cloud.network.router;
 
 import java.util.List;
-import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 

@@ -25,17 +25,12 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.utils.net.NetUtils;
-
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.log4j.Logger;
@@ -96,7 +91,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -110,7 +104,6 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
-
 import com.google.gson.Gson;
 
 @Local(value = {NetworkElement.class, FirewallServiceProvider.class,
@@ -321,7 +314,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             {
                 return false; // at least one numeric and one char. example:
             }
-
             // 3h
             char strEnd = str.toCharArray()[str.length() - 1];
             for (char c : endChar.toCharArray()) {
@@ -336,7 +328,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             }
         }
         try {
-            Integer.parseInt(number);
+            int i = Integer.parseInt(number);
         } catch (NumberFormatException e) {
             return false;
         }
@@ -345,11 +337,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
     public static boolean validateHAProxyLBRule(final LoadBalancingRule rule) {
         String timeEndChar = "dhms";
-
-        if (rule.getSourcePortStart() == NetUtils.HAPROXY_STATS_PORT) {
-            s_logger.debug("Can't create LB on port 8081, haproxy is listening for  LB stats on this port");
-            return false;
-        }
 
         for (LbStickinessPolicy stickinessPolicy : rule.getStickinessPolicies()) {
             List<Pair<String, String>> paramsList = stickinessPolicy.getParams();
@@ -379,6 +366,13 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
                 }
             } else if (StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
+                /*
+                 * FORMAT : appsession <cookie> len <length> timeout <holdtime>
+                 * [request-learn] [prefix] [mode
+                 * <path-parameters|query-string>]
+                 */
+                /* example: appsession JSESSIONID len 52 timeout 3h */
+                String cookieName = null; // optional
                 String length = null; // optional
                 String holdTime = null; // optional
 

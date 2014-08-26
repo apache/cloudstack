@@ -19,6 +19,8 @@ package org.apache.cloudstack.network.topology;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
