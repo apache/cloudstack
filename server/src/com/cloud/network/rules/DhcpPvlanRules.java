@@ -49,10 +49,9 @@ public class DhcpPvlanRules extends RuleApplier {
         }
 
         final Network network = _networkDao.findById(_nic.getNetworkId());
-        final String networkTag = _networkModel.getNetworkTag(router.getHypervisorType(), network);
+        final String networkTag = _networkModel.getNetworkTag(_router.getHypervisorType(), network);
 
-        _setupCommand = PvlanSetupCommand.createDhcpSetup(op, _nic.getBroadCastUri(), networkTag,
-                router.getInstanceName(), _nic.getMacAddress(), _nic.getIp4Address());
+        _setupCommand = PvlanSetupCommand.createDhcpSetup(op, _nic.getBroadCastUri(), networkTag, _router.getInstanceName(), _nic.getMacAddress(), _nic.getIp4Address());
 
         return visitor.visit(this);
     }
