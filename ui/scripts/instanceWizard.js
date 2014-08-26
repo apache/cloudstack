@@ -895,6 +895,11 @@
             	});
             }
 
+            $(window).trigger('cloudStack.deployVirtualMachine', {
+                deployVmData: deployVmData,
+                formData: args.data
+            });
+
             $.ajax({
                 url: createURL('deployVirtualMachine'),
                 data: deployVmData,
