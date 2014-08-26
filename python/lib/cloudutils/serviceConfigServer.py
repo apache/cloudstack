@@ -102,7 +102,9 @@ class cloudManagementConfig(serviceCfgBase):
                 bash("rm -f /etc/cloudstack/management/tomcat6.conf")
             bash("ln -s /etc/cloudstack/management/server-nonssl.xml /etc/cloudstack/management/server.xml")
             bash("ln -s /etc/cloudstack/management/tomcat6-nonssl.conf /etc/cloudstack/management/tomcat6.conf")
-        
+
+        bash("touch /var/run/cloudstack-management.pid")
+        bash("chown cloud.cloud /var/run/cloudstack-management.pid")
         #distro like sl 6.1 needs this folder, or tomcat6 failed to start
         checkHostName()
         bash("mkdir /var/log/cloudstack-management/")
