@@ -132,6 +132,10 @@ elif [ $# -gt 0 ] ; then
         esac
     done
 
+    if [ -z "${os+xxx}" ]; then
+        echo "Setting os to default"
+        os="default"
+    fi
     echo "Passed OS = $os and packageval = $packageval"
     packaging $os $packageval
 else
