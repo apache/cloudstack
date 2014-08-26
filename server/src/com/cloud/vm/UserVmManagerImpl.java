@@ -1776,19 +1776,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // If vm is assigned to static nat, disable static nat for the ip
         // address and disassociate ip if elasticIP is enabled
-        IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(vmId);
-        try {
-            if (ip != null) {
+        List<IPAddressVO> ips = _ipAddressDao.findAllByAssociatedVmId(vmId);
+
+        for (IPAddressVO ip : ips) {
+            try {
                 if (_rulesMgr.disableStaticNat(ip.getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM, true)) {
                     s_logger.debug("Disabled 1-1 nat for ip address " + ip + " as a part of vm id=" + vmId + " expunge");
                 } else {
                     s_logger.warn("Failed to disable static nat for ip address " + ip + " as a part of vm id=" + vmId + " expunge");
                     success = false;
                 }
+            } catch (ResourceUnavailableException e) {
+                success = false;
+                s_logger.warn("Failed to disable static nat for ip address " + ip + " as a part of vm id=" + vmId + " expunge because resource is unavailable", e);
             }
-        } catch (ResourceUnavailableException e) {
-            success = false;
-            s_logger.warn("Failed to disable static nat for ip address " + ip + " as a part of vm id=" + vmId + " expunge because resource is unavailable", e);
         }
 
         return success;
@@ -4340,8 +4341,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Remove the load balancing rules for this VM before assigning to another user.");
         }
         // check for one on one nat
-        IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(cmd.getVmId());
-        if (ip != null) {
+        List<IPAddressVO> ips = _ipAddressDao.findAllByAssociatedVmId(cmd.getVmId());
+        for (IPAddressVO ip : ips) {
             if (ip.isOneToOneNat()) {
                 throw new InvalidParameterValueException("Remove the one to one nat rule for this VM for ip " + ip.toString());
             }
