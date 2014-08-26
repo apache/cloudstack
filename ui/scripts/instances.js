@@ -1629,14 +1629,14 @@
                         },
                         action: function(args) {                            
                             $.ajax({
-                                url: createURL('assignVirtualMachine&virtualmachine'),
+                                url: createURL('assignVirtualMachine'),
                                 data: {
                                     virtualmachineid: args.context.instances[0].id,
                                     domainid: args.data.domainid,
                                     account: args.data.account
                                 },                                
                                 success: function(json) {   
-                                    var item = json.virtualmachine.virtualmachine;                                     
+                                    var item = json.assignvirtualmachineresponse.virtualmachine;                                     
                                     args.response.success({
                                         data: item
                                     });                                    
