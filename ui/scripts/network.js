@@ -2785,6 +2785,9 @@
                                         label: 'label.static.nat',
                                         converter: cloudStack.converters.toBooleanText
                                     },
+                                    vmipaddress: {
+                                        label: 'label.vm.ip'
+                                    },
                                     issystem: {
                                         label: 'label.is.system',
                                         converter: cloudStack.converters.toBooleanText
