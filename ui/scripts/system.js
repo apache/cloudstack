@@ -15864,14 +15864,14 @@
                                         return 'label.action.remove.host';
                                     }
                                 },
-                                preFilter: function(args) { //bug to fix: preFilter is not picked up from here                              
-                                	if (!isAdmin()) {
-                                        args.$form.find('.form-item[rel=isForced]').hide();
-                                    }
-                                },
                                 createForm: {
                                     title: 'label.action.remove.host',
                                     desc: 'message.action.remove.host',
+                                    preFilter: function(args) { //bug to fix: preFilter is not picked up from here
+                                        if (!isAdmin()) {
+                                            args.$form.find('.form-item[rel=isForced]').hide();
+                                        }
+                                    },
                                     fields: {
                                         isForced: {
                                             label: 'force.remove',
