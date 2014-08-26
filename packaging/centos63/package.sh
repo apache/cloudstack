@@ -18,11 +18,13 @@
 
 function usage() {
     echo ""
-    echo "usage: ./package.sh [-p|--pack] [-h|--help] [ARGS]"
+    echo "usage: ./package.sh [-p|--pack] [-h|--help] [-o|--operating-system] [ARGS]"
     echo ""
     echo "The commonly used Arguments are:"
-    echo "oss|OSS             To package with only redistributable libraries (default)"
-    echo "noredist|NOREDIST   To package with non-redistributable libraries"
+    echo "-p|--pack oss|OSS             To package with only redistributable libraries (default)"
+    echo "-p|--pack noredist|NOREDIST   To package with non-redistributable libraries"
+    echo "-o default|DEFAULT            To build in default Operating System mode"
+    echo "-o rhel7|RHEL7                To build for rhel7"
     echo ""
     echo "Examples: ./package.sh -p|--pack oss|OSS"
     echo "          ./package.sh -p|--pack noredist|NOREDIST"
@@ -34,8 +36,13 @@ function packaging() {
     CWD=`pwd`
     RPMDIR=$CWD/../../dist/rpmbuild
     PACK_PROJECT=cloudstack
-    if [ -n "$1" ] ; then
-        DEFOSSNOSS="-D_ossnoss $packageval"
+    if [ -n "$1" ] ;then
+        DOS="-D_os $1"
+        echo "$DOS"
+    fi
+    if [ -n "$2" ] ; then
+        DEFOSSNOSS="-D_ossnoss $2"
+        echo "$DEFOSSNOSS"
     fi
 
     VERSION=`(cd ../../; mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep --color=none '^[0-9]\.'`
@@ -64,22 +71,23 @@ function packaging() {
 
     echo ". executing rpmbuild"
     cp cloud.spec $RPMDIR/SPECS
+    cp -rf default $RPMDIR/SPECS
+    cp -rf rhel7 $RPMDIR/SPECS
 
-    (cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "${DEFVER}" "${DEFREL}" ${DEFPRE+"${DEFPRE}"} ${DEFOSSNOSS+"$DEFOSSNOSS"} -bb SPECS/cloud.spec)
+    (cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "${DEFVER}" "${DEFREL}" ${DEFPRE+"${DEFPRE}"} ${DEFOSSNOSS+"$DEFOSSNOSS"} "${DOS}" -bb SPECS/cloud.spec)
 
     echo "Done"
     exit
 }
 
 if [ $# -lt 1 ] ; then
-    packaging
+    packaging "default"
 elif [ $# -gt 0 ] ; then
-    SHORTOPTS="hp:"
-    LONGOPTS="help,pack:"
-
-    ARGS=$(getopt -s bash -u -a --options $SHORTOPTS  --longoptions $LONGOPTS --name $0 -- "$@" )
+    SHORTOPTS="hp:o:"
+    LONGOPTS="help,pack:,operating-system:"
+    ARGS=$(getopt -s bash -u -a --options $SHORTOPTS  --longoptions $LONGOPTS --name $0 -- "$@")
     eval set -- "$ARGS"
-
+    echo "$ARGS"
     while [ $# -gt 0 ] ; do
         case "$1" in
             -h | --help)
@@ -89,14 +97,29 @@ elif [ $# -gt 0 ] ; then
         -p | --pack)
             echo "Doing CloudStack Packaging ....."
             packageval=$2
+            echo "$packageval"
             if [ "$packageval" == "oss" -o "$packageval" == "OSS" ] ; then
-                packaging
+                packageval = ""
             elif [ "$packageval" == "noredist" -o "$packageval" == "NOREDIST" ] ; then
-                packaging noredist
+                packageval="noredist"
             else
                 echo "Error: Incorrect value provided in package.sh script, Please see help ./package.sh --help|-h for more details."
                 exit 1
             fi
+            shift
+            ;;
+        -o | --operating-system)
+            os=$2
+            echo "$os"
+            if [ "$os" == "default" -o "$os" == "DEFAULT" ] ; then
+                os = "default"
+            elif [ "$os" == "rhel7" -o "$os" == "RHEL7" ] ; then
+                os="rhel7"
+            else
+                echo "Error: Incorrect value provided in package.sh script for -o, Please see help ./package.sh --help|-h for more details."
+		exit 1
+            fi
+            shift
             ;;
         -)
             echo "Unrecognized option..."
@@ -108,6 +131,9 @@ elif [ $# -gt 0 ] ; then
             ;;
         esac
     done
+
+    echo "Passed OS = $os and packageval = $packageval"
+    packaging $os $packageval
 else
     echo "Incorrect choice.  Nothing to do." >&2
     echo "Please, execute ./package.sh --help for more help"

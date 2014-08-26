@@ -5,7 +5,7 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 # 
 # Unless required by applicable law or agreed to in writing,
@@ -43,8 +43,10 @@ Group:     System Environment/Libraries
 Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
+%include SPECS/%{_os}/macros.spec
+
 BuildRequires: java-1.7.0-openjdk-devel
-BuildRequires: tomcat6
+BuildRequires: %{_tomcatversion}
 BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
@@ -59,8 +61,8 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: tomcat6
-Requires: java7
+Requires: %{_tomcatversion}
+Requires: %{_javaversion}
 Requires: python
 Requires: bash
 Requires: bzip2
@@ -80,14 +82,15 @@ Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
 Requires: mkisofs
 Requires: MySQL-python
-Requires: python-paramiko
+%{_pythonparamiko}
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
-Requires: %{name}-awsapi = %{_ver} 
+Requires: %{name}-awsapi = %{_ver}
+%{_iptablesservice}
 Obsoletes: cloud-client < 4.1.0
 Obsoletes: cloud-client-ui < 4.1.0
 Obsoletes: cloud-server < 4.1.0
-Obsoletes: cloud-test < 4.1.0 
+Obsoletes: cloud-test < 4.1.0
 Provides:  cloud-client
 Group:     System Environment/Libraries
 %description management
@@ -113,14 +116,14 @@ The Apache CloudStack files shared between agent and management server
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
-Requires: java7
+Requires: %{_javaversion}
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
 Requires: ebtables
 Requires: iptables
 Requires: ethtool
-Requires: vconfig
+Requires: %{_vlanconfigtool}
 Requires: ipset
 Requires: jsvc
 Requires: jakarta-commons-daemon
@@ -151,7 +154,7 @@ The CloudStack baremetal agent
 
 %package usage
 Summary: CloudStack Usage calculation server
-Requires: java7
+Requires: %{_javaversion}
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
@@ -182,7 +185,7 @@ Apache Cloudstack AWS API compatibility wrapper
 %package mysql-ha
 Summary: Apache CloudStack Balancing Strategy for MySQL
 Requires: mysql-connector-java
-Requires: tomcat7
+Requires: %{_tomcatversion}
 Group: System Environmnet/Libraries
 %description mysql-ha
 Apache CloudStack Balancing Strategy for MySQL
@@ -252,9 +255,9 @@ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
 
 # Specific for tomcat
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
-ln -sf /usr/share/tomcat6/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
+ln -sf /usr/share/%{_tomcatpathname}/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
 ln -sf /etc/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/conf
-ln -sf /usr/share/tomcat6/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
+ln -sf /usr/share/%{_tomcatpathname}/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
 ln -sf /var/log/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/logs
 ln -sf /var/cache/%{name}/management/temp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/temp
 ln -sf /var/cache/%{name}/management/work ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/work
@@ -278,11 +281,18 @@ cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
-for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf server-ssl.xml server-nonssl.xml \
+for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf %{_serverxmlname}-ssl.xml %{_serverxmlname}-nonssl.xml \
             catalina.policy catalina.properties classpath.conf tomcat-users.xml web.xml environment.properties ; do
   mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
+
+if [ -f "${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server7-nonssl.xml" ]; then
+    mv ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server7-nonssl.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server-nonssl.xml
+fi
+if [ -f "${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server7-ssl.xml" ]; then
+    mv ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server7-ssl.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server-ssl.xml
+fi
 
 ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
     ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
@@ -294,8 +304,10 @@ install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/
 install -D client/target/pythonlibs/jasypt-1.9.0.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.0.jar
 
 install -D packaging/centos63/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
-install -D packaging/centos63/cloud-management.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-management
+install -D packaging/centos63/cloud-management.rc ${RPM_BUILD_ROOT}%{_managementstartscriptpath}/%{name}-management
 install -D packaging/centos63/cloud-management.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/%{name}-management
+install -D packaging/centos63/%{_os}/tomcat.sh ${RPM_BUILD_ROOT}%{_managementstartscriptpath}/tomcat.sh
+%{_managementservice}
 
 chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina
 chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost
@@ -581,16 +593,19 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/cloud-bridge.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/ec2-service.properties
-%attr(0755,root,root) %{_initrddir}/%{name}-management
+%attr(0755,root,root) %{_managementstartscriptpath}/%{name}-management
+%attr(0755,root,root) %{_managementstartscriptpath}/tomcat.sh
+%{_managementserviceattribute}
+
 %attr(0755,root,root) %{_bindir}/%{name}-setup-management
 %attr(0755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
 %{_datadir}/%{name}-management/webapps
-%dir %{_datadir}/%{name}-management/bin
-%dir %{_datadir}/%{name}-management/conf
-%dir %{_datadir}/%{name}-management/lib
-%dir %{_datadir}/%{name}-management/logs
-%dir %{_datadir}/%{name}-management/temp
-%dir %{_datadir}/%{name}-management/work
+%{_datadir}/%{name}-management/bin
+%{_datadir}/%{name}-management/conf
+%{_datadir}/%{name}-management/lib
+%{_datadir}/%{name}-management/logs
+%{_datadir}/%{name}-management/temp
+%{_datadir}/%{name}-management/work
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-password
