@@ -1908,10 +1908,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public Answer execute(DestroyCommand cmd) {
         VolumeTO vol = cmd.getVolume();
-
         try {
             KVMStoragePool pool = _storagePoolMgr.getStoragePool(vol.getPoolType(), vol.getPoolUuid());
-            pool.deletePhysicalDisk(vol.getPath());
+            pool.deletePhysicalDisk(vol.getPath(), null);
             return new Answer(cmd, true, "Success");
         } catch (CloudRuntimeException e) {
             s_logger.debug("Failed to delete volume: " + e.toString());
