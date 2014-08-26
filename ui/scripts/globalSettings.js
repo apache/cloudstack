@@ -63,7 +63,8 @@
                     fields: {
                         name: {
                             label: 'label.name',
-                            id: true
+                            id: true,
+                            truncate: true
                         },
                         description: {
                             label: 'label.description'

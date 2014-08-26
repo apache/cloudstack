@@ -164,7 +164,7 @@ table tbody td.loading {
 
 table tbody td.truncated {
   overflow: visible;
-  max-width: 88px;
+  max-width: 120px;
 }
 
 table tbody td.truncated > span {
