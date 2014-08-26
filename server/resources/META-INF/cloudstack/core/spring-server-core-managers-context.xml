@@ -172,43 +172,43 @@
 
     <bean id="uploadMonitorImpl" class="com.cloud.storage.upload.UploadMonitorImpl" />
     <bean id="usageServiceImpl" class="com.cloud.usage.UsageServiceImpl" />
-    
+
     <bean id="virtualNetworkApplianceManagerImpl"
         class="com.cloud.network.router.VirtualNetworkApplianceManagerImpl" />
-        
+
     <bean id="vpcManagerImpl" class="com.cloud.network.vpc.VpcManagerImpl" >
         <property name="vpcElements" value="#{vpcProvidersRegistry.registered}"></property>
     </bean>
-    
+
     <bean id="vpcVirtualNetworkApplianceManagerImpl"
         class="com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl" />
-    
+
     <bean id="virtualNetworkApplianceFactory"
         class="com.cloud.network.rules.VirtualNetworkApplianceFactory" />
-    
+
     <bean id="topologyContext" class="org.apache.cloudstack.network.topology.NetworkTopologyContext" init-method="init" />
-    
+
     <bean id="basicNetworkTopology" class="org.apache.cloudstack.network.topology.BasicNetworkTopology" />
     <bean id="advancedNetworkTopology" class="org.apache.cloudstack.network.topology.AdvancedNetworkTopology" />
-    
+
     <bean id="basicNetworkVisitor" class="org.apache.cloudstack.network.topology.BasicNetworkVisitor" />
     <bean id="advancedNetworkVisitor" class="org.apache.cloudstack.network.topology.AdvancedNetworkVisitor" />
-    
+
     <bean id="commandSetupHelper"
         class="com.cloud.network.router.CommandSetupHelper" />
-    
+
     <bean id="routerControlHelper"
         class="com.cloud.network.router.RouterControlHelper" />
-        
+
     <bean id="networkHelper"
         class="com.cloud.network.router.NetworkHelperImpl" />
-        
+
     <bean id="vpcNetworkHelper"
         class="com.cloud.network.router.VpcNetworkHelperImpl" />
-        
+
     <bean id="nicProfileHelper"
         class="com.cloud.network.router.NicProfileHelperImpl" />
-        
+
     <bean id="routerDeploymentDefinitionBuilder"
         class="org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder" />
 
