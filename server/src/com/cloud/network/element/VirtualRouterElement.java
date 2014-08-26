@@ -75,6 +75,7 @@ import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
@@ -91,9 +92,11 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -328,7 +331,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             }
         }
         try {
-            int i = Integer.parseInt(number);
+            Integer.parseInt(number);
         } catch (NumberFormatException e) {
             return false;
         }
@@ -337,6 +340,11 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
     public static boolean validateHAProxyLBRule(final LoadBalancingRule rule) {
         String timeEndChar = "dhms";
+
+        if (rule.getSourcePortStart() == NetUtils.HAPROXY_STATS_PORT) {
+            s_logger.debug("Can't create LB on port 8081, haproxy is listening for  LB stats on this port");
+            return false;
+        }
 
         for (LbStickinessPolicy stickinessPolicy : rule.getStickinessPolicies()) {
             List<Pair<String, String>> paramsList = stickinessPolicy.getParams();
@@ -366,22 +374,12 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
                 }
             } else if (StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
-                /*
-                 * FORMAT : appsession <cookie> len <length> timeout <holdtime>
-                 * [request-learn] [prefix] [mode
-                 * <path-parameters|query-string>]
-                 */
-                /* example: appsession JSESSIONID len 52 timeout 3h */
-                String cookieName = null; // optional
                 String length = null; // optional
                 String holdTime = null; // optional
 
                 for (Pair<String, String> paramKV : paramsList) {
                     String key = paramKV.first();
                     String value = paramKV.second();
-                    if ("cookie-name".equalsIgnoreCase(key)) {
-                        cookieName = value;
-                    }
                     if ("length".equalsIgnoreCase(key)) {
                         length = value;
                     }
@@ -742,10 +740,25 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
         VirtualMachineProfile uservm = vm;
 
+        // If any router is running then send save password command otherwise save the password in DB
         DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
         NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+        for (VirtualRouter router : routers) {
+            if (router.getState() == State.Running) {
+                return networkTopology.savePasswordToRouter(network, nic, uservm, routers);
+            }
+        }
+        String password = (String) uservm.getParameter(VirtualMachineProfile.Param.VmPassword);
+        String password_encrypted = DBEncryptionUtil.encrypt(password);
+        UserVmVO userVmVO = _userVmDao.findById(vm.getId());
 
-        return networkTopology.savePasswordToRouter(network, nic, uservm, routers);
+        _userVmDao.loadDetails(userVmVO);
+        userVmVO.setDetail("password", password_encrypted);
+        _userVmDao.saveDetails(userVmVO);
+
+        userVmVO.setUpdateParameters(true);
+        _userVmDao.update(userVmVO.getId(), userVmVO);
+        return true;
     }
 
     @Override
@@ -1217,12 +1230,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
     @Override
     public boolean cleanupAggregatedExecution(final Network network, final DeployDestination dest) throws ResourceUnavailableException {
-        List<DomainRouterVO> routers = getRouters(network, dest);
-
-        if ((routers == null) || (routers.size() == 0)) {
-            throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
-        }
-
-        return _routerMgr.cleanupAggregatedExecution(network, routers);
-    }
+        // The VR code already cleanup in the Finish routine using finally, lets not waste another command
+        return true;
+   }
 }

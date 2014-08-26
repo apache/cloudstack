@@ -30,6 +30,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 
@@ -40,6 +41,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -144,6 +146,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     private UserIpv6AddressDao _ipv6Dao;
     @Inject
     protected NetworkOrchestrationService _networkMgr;
+    @Inject
+    ConfigurationDao configDao;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -481,6 +485,24 @@ public class NetworkHelperImpl implements NetworkHelper {
         return result;
     }
 
+    protected String retrieveTemplateName(HypervisorType hType, final long datacenterId) {
+        if (hType == HypervisorType.BareMetal) {
+            String peerHvType = configDao.getValue(Config.BaremetalPeerHypervisorType.key());
+            if (peerHvType == null) {
+                throw new CloudRuntimeException(String.format("To use baremetal in advanced networking, you must set %s to type of hypervisor(e.g XenServer)" +
+                        " that exists in the same zone with baremetal host. That hyperivsor is used to spring up virtual router for baremetal instance",
+                        Config.BaremetalPeerHypervisorType.key()));
+            }
+
+            hType = HypervisorType.getType(peerHvType);
+            if (HypervisorType.XenServer != hType && HypervisorType.KVM != hType && HypervisorType.VMware!= hType) {
+                throw new CloudRuntimeException(String.format("Baremetal only supports peer hypervisor(XenServer/KVM/VMWare) right now, you specified %s", peerHvType));
+            }
+        }
+
+        return this.hypervisorsMap.get(hType).valueIn(datacenterId);
+    }
+
     @Override
     public DomainRouterVO deployRouter(final RouterDeploymentDefinition routerDeploymentDefinition,
             final boolean startRouter)
@@ -508,8 +530,8 @@ public class NetworkHelperImpl implements NetworkHelper {
                             id, routerDeploymentDefinition.getDest().getDataCenter(), hType));
                 }
 
-                String templateName = this.hypervisorsMap.get(hType)
-                        .valueIn(routerDeploymentDefinition.getDest().getDataCenter().getId());
+                String templateName = this.retrieveTemplateName(hType,
+                        routerDeploymentDefinition.getDest().getDataCenter().getId());
                 final VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
 
                 if (template == null) {
