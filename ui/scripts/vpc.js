@@ -955,6 +955,54 @@
                                             listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
                                                 type: 'checkbox',
                                                 filters: false,
+                                                multiSelect: false,
+                                                subselect: {
+                                                    isMultiple: true,
+                                                    label: 'label.use.vm.ip',
+                                                    dataProvider: function(args) {        
+                                                        var instance = args.context.instances[0];
+                                                        var network = args.context.networks[0];
+
+                                                        $.ajax({
+                                                            url: createURL('listNics'),
+                                                            data: {
+                                                                virtualmachineid: instance.id,
+                                                                nicId: instance.nic[0].id
+                                                            },
+                                                            success: function(json) {                	
+                                                                var nic = json.listnicsresponse.nic[0];
+                                                                var primaryIp = nic.ipaddress;
+                                                                var secondaryIps = nic.secondaryip ? nic.secondaryip : [];
+                                                                var ipSelection = [];
+                                                                var existingIps = $(args.context.subItemData).map(
+                                                                    function(index, item) { return item.itemIp; }
+                                                                );
+
+                                                                // Add primary IP as default
+                                                                if ($.inArray(primaryIp, existingIps) == -1) {
+                                                                    ipSelection.push({
+                                                                        id: primaryIp,
+                                                                        description: primaryIp + ' (Primary)'
+                                                                    });
+                                                                }
+
+                                                                // Add secondary IPs
+                                                                $(secondaryIps).map(function(index, secondaryIp) {
+                                                                    if ($.inArray(secondaryIp.ipaddress, existingIps) == -1) {
+                                                                        ipSelection.push({
+                                                                            id: secondaryIp.ipaddress,
+                                                                            description: secondaryIp.ipaddress
+                                                                        });
+                                                                    }
+                                                                });
+
+                                                                args.response.success({
+                                                                    data: ipSelection
+                                                                });
+                                                            }
+                                                        });
+                                                    }
+                                                },
                                                 dataProvider: function(args) {
                                                     var assignedInstances;
                                                     $.ajax({
@@ -1007,6 +1055,7 @@
                                                 }
                                             }),
                                             action: function(args) {
+                                                debugger;
                                                 var vms = args.context.instances;
                                                 var array1 = [];
                                                 for (var i = 0; i < vms.length; i++) {
