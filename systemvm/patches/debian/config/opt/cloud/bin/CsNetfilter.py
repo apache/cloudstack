@@ -1,3 +1,4 @@
+# -- coding: utf-8 --
 import CsHelper
 from pprint import pprint
 import logging
@@ -103,7 +104,12 @@ class CsNetfilters(object):
                 logging.debug("rule %s exists in table %s", fw[2], new_rule.get_table())
             else:
                 logging.info("Add rule %s in table %s", fw[2], new_rule.get_table())
-                CsHelper.execute("iptables -t %s %s" % (new_rule.get_table(), fw[2]))
+                # front means insert instead of append
+                cpy = fw[2]
+                if fw[1] == "front":
+                    cpy = cpy.replace('-A', '-I')
+
+                CsHelper.execute("iptables -t %s %s" % (new_rule.get_table(), cpy))
         self.del_standard()
         self.get_unseen()
 
@@ -156,13 +162,14 @@ class CsNetfilter(object):
         self.seen = True
 
     def __convert_to_dict(self, rule):
-        rule = rule.lstrip()
-        rule = rule.replace('  ', ' ')
+        rule = unicode(rule.lstrip())
         rule = rule.replace('! -', '!_-')
+        rule = rule.replace('-p all', '')
+        rule = rule.replace('  ', ' ')
         # -m can appear twice in a string
         rule = rule.replace('-m state', '-m2 state')
         bits = rule.split(' ')
-        rule = dict(zip(bits[0::2], bits[1::2]))
+        rule = dict(zip(bits[0::2],bits[1::2]))
         if "-A" in rule.keys():
             self.chain = rule["-A"]
         return rule
@@ -187,8 +194,8 @@ class CsNetfilter(object):
     def to_str(self, delete = False):
         """ Convert the rule back into aynactically correct iptables command """
         # Order is important 
-        order = ['-A', '-s', '-d', '!_-d', '-i', '-m', '-m2', '--state', 
-                '--dport', '--destination-port', '-p', '-o', '-j', '--set-xmark',
+        order = ['-A', '-s', '-d', '!_-d', '-i', '-p', '-m', '-m2', '--state', 
+                '--dport', '--destination-port', '-o', '-j', '--set-xmark',
                  '--to-source', '--to-destination']
         str = ''
         for k in order:
@@ -197,7 +204,10 @@ class CsNetfilter(object):
                 printable = printable.replace('!_-', '! -')
                 if delete:
                     printable = printable.replace('-A', '-D')
-                str = "%s %s %s" % (str, printable, self.rule[k])
+                if str == '':
+                    str = "%s %s" % (printable, self.rule[k])
+                else:
+                    str = "%s %s %s" % (str, printable, self.rule[k])
         return str
 
     def __eq__(self, rule):
@@ -205,10 +215,10 @@ class CsNetfilter(object):
             return False
         if rule.get_chain() != self.get_chain():
             return False
-        for r in rule.get_rule():
-            if not r in self.get_rule().keys():
-                return False
-            if rule.get_rule()[r] != self.get_rule()[r]:
-               return False
+        if len(rule.get_rule().items()) != len(self.get_rule().items()):
+            return False
+        common = set(rule.get_rule().items()) & set(self.get_rule().items())
+        if len(common) != len(rule.get_rule()):
+            return False
         return True
 
