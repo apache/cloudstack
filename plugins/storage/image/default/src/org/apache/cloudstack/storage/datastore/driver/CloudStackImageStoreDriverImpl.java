@@ -81,14 +81,21 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     }
 
     @Override
-    public void deleteEntityExtractUrl(DataStore store, String installPath, String downloadUrl) {
+    public void deleteEntityExtractUrl(DataStore store, String installPath, String downloadUrl, Upload.Type entityType) {
         // find an endpoint to send command
         EndPoint ep = _epSelector.select(store);
-        // Create Symlink at ssvm
-        //CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity) store).getMountPoint(), installPath, uuid);
-        DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(installPath, Upload.Type.VOLUME, downloadUrl, ((ImageStoreEntity) store).getMountPoint());
 
-        Answer ans = ep.sendMessage(cmd);
+        // Delete Symlink at ssvm. In case of volume also delete the volume.
+        DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(installPath, entityType, downloadUrl, ((ImageStoreEntity) store).getMountPoint());
+
+        Answer ans = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            ans = new Answer(cmd, false, errMsg);
+        } else {
+            ans = ep.sendMessage(cmd);
+        }
         if (ans == null || !ans.getResult()) {
             String errorString = "Unable to delete the url " + downloadUrl + " for path " + installPath + " on ssvm, " + ans.getDetails();
             s_logger.error(errorString);

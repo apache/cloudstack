@@ -1214,7 +1214,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
             // Remove it from image store
             ImageStoreEntity secStore = (ImageStoreEntity) _dataStoreMgr.getDataStore(volumeOnImageStore.getDataStoreId(), DataStoreRole.Image);
-            secStore.deleteExtractUrl(volumeOnImageStore.getInstallPath(), volumeOnImageStore.getExtractUrl());
+            secStore.deleteExtractUrl(volumeOnImageStore.getInstallPath(), volumeOnImageStore.getExtractUrl(), Upload.Type.VOLUME);
 
              // Now remove it from DB.
              volumeOnImageStore.setExtractUrl(null);
@@ -1240,7 +1240,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                 // Remove it from image store
                 ImageStoreEntity secStore = (ImageStoreEntity) _dataStoreMgr.getDataStore(templateOnImageStore.getDataStoreId(), DataStoreRole.Image);
-                secStore.deleteExtractUrl(templateOnImageStore.getInstallPath(), templateOnImageStore.getExtractUrl());
+                secStore.deleteExtractUrl(templateOnImageStore.getInstallPath(), templateOnImageStore.getExtractUrl(), Upload.Type.TEMPLATE);
 
                 // Now remove it from DB.
                 templateOnImageStore.setExtractUrl(null);

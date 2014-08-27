@@ -23,11 +23,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Upload;
+import com.cloud.storage.Upload.Type;
 
 public interface ImageStoreDriver extends DataStoreDriver {
 
     String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format, DataObject dataObject);
 
-    void deleteEntityExtractUrl(DataStore store, String installPath, String url);
+	void deleteEntityExtractUrl(DataStore store, String installPath, String downloadUrl, Upload.Type entityType);
 
 }

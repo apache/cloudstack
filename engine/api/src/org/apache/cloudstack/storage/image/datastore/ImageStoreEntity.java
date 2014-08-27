@@ -27,6 +27,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.storage.ImageStore;
+import com.cloud.storage.Upload;
 import com.cloud.storage.Storage.ImageFormat;
 
 public interface ImageStoreEntity extends DataStore, ImageStore {
@@ -44,5 +45,5 @@ public interface ImageStoreEntity extends DataStore, ImageStore {
 
     String createEntityExtractUrl(String installPath, ImageFormat format, DataObject dataObject);  // get the entity download URL
 
-    void deleteExtractUrl(String installPath, String url);
+    void deleteExtractUrl(String installPath, String url, Upload.Type volume);
 }

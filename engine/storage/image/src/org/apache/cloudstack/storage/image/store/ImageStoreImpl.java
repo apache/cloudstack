@@ -45,6 +45,7 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.Upload;
 import com.cloud.utils.component.ComponentContext;
 
 public class ImageStoreImpl implements ImageStoreEntity {
@@ -195,8 +196,8 @@ public class ImageStoreImpl implements ImageStoreEntity {
     }
 
     @Override
-    public void deleteExtractUrl(String installPath, String url) {
-        driver.deleteEntityExtractUrl(this, installPath, url);
+    public void deleteExtractUrl(String installPath, String url, Upload.Type entityType ) {
+        driver.deleteEntityExtractUrl(this, installPath, url, entityType);
     }
 
 }
