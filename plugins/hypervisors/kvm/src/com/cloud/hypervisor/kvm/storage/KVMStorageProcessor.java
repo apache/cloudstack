@@ -947,7 +947,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     if (resource.getHypervisorType() == Hypervisor.HypervisorType.LXC) {
                         String[] splitPoolImage = attachingDisk.getPath().split("/");
                         //ToDo: rbd showmapped supports json and xml output. Use json/xml to get device
-                        String device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"  "+splitPoolImage[1]+"\" | cut -d \" \" -f10");
+                        String device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"[ ]*"+splitPoolImage[1]+"\" | grep -o \"[^ ]*[ ]*$\"");
                         if (device != null) {
                             s_logger.debug("RBD device on host is: "+device);
                             attachingDisk.setPath(device);
@@ -974,7 +974,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                         //Split pool and image details from disk path
                         String[] splitPoolImage = attachingDisk.getPath().split("/");
                         //ToDo: rbd showmapped supports json and xml output. Use json/xml to get device
-                        String device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"  "+splitPoolImage[1]+"\" | cut -d \" \" -f10");
+                        String device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"[ ]*"+splitPoolImage[1]+"\" | grep -o \"[^ ]*[ ]*$\"");
                         if (device != null) {
                             s_logger.debug("RBD device on host is: "+device);
                             diskdef.defBlockBasedDisk(device, devId, DiskDef.diskBus.VIRTIO);
