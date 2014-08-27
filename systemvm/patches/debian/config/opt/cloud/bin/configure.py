@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -- coding: utf-8 --
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -249,7 +250,7 @@ class CsApache(CsApp):
             CsHelper.service("apache2", "restart")
 
         fw.append(["", "front",
-            "-A INPUT -i %s -d %s/32 -p tcp -m state -m tcp --state NEW --dport 80 -j ACCEPT" % (self.dev, self.ip)
+            "-A INPUT -i %s -d %s/32 -p tcp -m tcp -m state --state NEW --dport 80 -j ACCEPT" % (self.dev, self.ip)
         ])
 
 class CsDnsmasq(CsApp):
@@ -388,13 +389,13 @@ class CsIP:
             devChain = "ACL_INBOUND_%s" % (self.dev)
             CsDevice(self.dev).configure_rp()
 
-            fw.append(["nat", "", 
+            fw.append(["nat", "front", 
             "-A POSTROUTING -s %s -o %s -j SNAT --to-source %s" % \
             (self.address['network'], self.dev, self.address['public_ip'])
             ])
-            fw.append(["mangle", "", "-A %s -j ACCEPT" % devChain])
+            fw.append(["mangle", "front", "-A %s -j ACCEPT" % devChain])
 
-            fw.append(["", "", 
+            fw.append(["", "front", 
             "-A FORWARD -o %s -d %s -j %s" % (self.dev, self.address['network'], devChain)
             ])
             fw.append(["", "", "-A %s -j DROP" % devChain])
@@ -554,14 +555,16 @@ class CsAcl(CsDataBag):
                 if "icmp_code" in rule.keys() and rule['icmp_code'] != -1:
                     self.icmp_type = "%s/%s" % (self.icmp_type, rule['icmp_code'])
                 if self.type == "protocol":
+                    if rule['protocol'] == 41:
+                        rule['protocol'] = "ipv6"
                     self.protocol = rule['protocol']
-                self.action = "DENY"
+                self.action = "DROP"
                 self.dport = ""
                 if 'allowed' in rule.keys() and rule['allowed'] and rule['allowed']:
                     self.action = "ACCEPT"
                 global fw
                 if 'first_port' in rule.keys():
-                    self.dport = "--dport %s" % rule['first_port']
+                    self.dport = "-m %s --dport %s" % (self.protocol, rule['first_port'])
                 if 'last_port' in rule.keys() and self.dport and \
                    rule['last_port'] != rule['first_port']:
                     self.dport = "%s:%s" % (self.dport, rule['last_port'])
@@ -571,12 +574,12 @@ class CsAcl(CsDataBag):
                 rstr = ""
                 rstr = "%s -A %s -p %s %s" % (rstr, self.chain, self.protocol, self.dest)
                 if self.type == "icmp":
-                    rstr = "%s -icmp_type %s" % (rstr, self.icmp_type)
+                    rstr = "%s -m icmp --icmp-type %s" % (rstr, self.icmp_type)
                 rstr = "%s %s -j %s" % (rstr, self.dport, self.action)
+                rstr = rstr.replace("  ", " ").lstrip()
                 fw.append([self.table, "front", rstr])
+
                     
-
-
     def process(self):
         for item in self.dbag:
             if item == "id":
@@ -837,8 +840,8 @@ class CsForwardingRules(CsDataBag):
         device = self.getDeviceByIp(rule["public_ip"])
         if device == None:
             raise Exception("Ip address %s has no device in the ips databag" % rule["public_ip"])
-        fw.append(["nat","","-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % ( rule["public_ip"], rule["internal_ip"]) ])
-        fw.append(["nat","","-A POSTROUTING -o %s -s %s/32 -j SNAT --to-source %s" % ( device, rule["internal_ip"], rule["public_ip"]) ])
+        fw.append(["nat","front","-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % ( rule["public_ip"], rule["internal_ip"]) ])
+        fw.append(["nat","front","-A POSTROUTING -o %s -s %s/32 -j SNAT --to-source %s" % ( device, rule["internal_ip"], rule["public_ip"]) ])
 
 def main(argv):
 
