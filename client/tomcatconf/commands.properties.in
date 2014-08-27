@@ -655,6 +655,12 @@ listApis=15
 getApiLimit=15
 resetApiLimit=1
 
+#### API SolidFire Service Command
+getSolidFireAccountId=15
+getSolidFireVolumeSize=15
+getSolidFireVolumeAccessGroupId=15
+getSolidFireVolumeIscsiName=15
+
 #### Region commands
 addRegion=1
 updateRegion=1
