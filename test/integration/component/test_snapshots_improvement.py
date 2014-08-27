@@ -615,8 +615,13 @@ class TestCreateSnapshot(cloudstackTestCase):
             self.debug("Create a template from snapshot: %s" % snapshot.name)
             jobs.append(self.create_Template_from_Snapshot(snapshot))
 
+
+        userapiclient = self.testClient.getUserApiClient(
+                                UserName=self.account.name,
+                                DomainName=self.account.domain)
+
         # Verify IO usage by submitting the concurrent jobs
-        self.testClient.submitCmdsAndWait(jobs)
+        self.testClient.submitCmdsAndWait(jobs, apiclient=userapiclient)
 
         self.debug("Verifying if templates are created properly or not?")
         templates = Template.list(
