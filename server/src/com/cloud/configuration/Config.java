@@ -1379,6 +1379,14 @@ public enum Config {
             "300000",
             "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.",
             null),
+    SAMLIsPluginEnabled(
+            "Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "saml2.enabled",
+            "true",
+            "Set it to true to enable SAML SSO plugin",
+            null),
     SAMLUserAccountName(
             "Advanced",
             ManagementServer.class,
