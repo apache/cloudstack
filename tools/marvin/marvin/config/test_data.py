@@ -228,7 +228,7 @@ test_data = {
         "name": 'Test Nw off isolated persistent',
         "displaytext": 'Test Nw off isolated persistent',
         "guestiptype": 'Isolated',
-        "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding, Lb',
+        "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Lb',
         "traffictype": 'GUEST',
         "ispersistent": 'True',
         "availability": 'Optional',
