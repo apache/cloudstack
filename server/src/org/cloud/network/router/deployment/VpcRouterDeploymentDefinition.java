@@ -71,6 +71,11 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     }
 
     @Override
+    public boolean isPublicNetwork() {
+        return true;
+    }
+
+    @Override
     protected void lock() {
         Vpc vpcLock = vpcDao.acquireInLockTable(vpc.getId());
         if (vpcLock == null) {
