@@ -2239,7 +2239,7 @@ class TestResourceTags(cloudstackTestCase):
         "Test creation of tag on stopped vm."
 
         self.debug("Destroying instance: %s" % self.vm_1.name)
-        self.vm_1.delete(self.apiclient)
+        self.vm_1.delete(self.apiclient, expunge=False)
 
         self.debug("Creating a tag for user VM")
         tag = Tag.create(
