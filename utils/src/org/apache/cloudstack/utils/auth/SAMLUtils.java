@@ -90,7 +90,7 @@ public class SAMLUtils {
     public static final String SAML_NS = "saml://";
     public static final String SAML_NAMEID = "SAML_NAMEID";
     public static final String SAML_SESSION = "SAML_SESSION";
-    public static final String CERTIFICATE_NAME = "SAMLSP_CERTIFICATE";
+    public static final String CERTIFICATE_NAME = "SAMLSP_X509CERTIFICATE";
 
     public static String createSAMLId(String uid) {
         return SAML_NS + uid;
@@ -207,20 +207,20 @@ public class SAMLUtils {
         return (Response) unmarshaller.unmarshall(element);
     }
 
-    public static X509Certificate generateRandomX509Certification() throws NoSuchAlgorithmException, NoSuchProviderException, CertificateEncodingException, SignatureException, InvalidKeyException {
+    public static X509Certificate generateRandomX509Certificate() throws NoSuchAlgorithmException, NoSuchProviderException, CertificateEncodingException, SignatureException, InvalidKeyException {
         Date validityBeginDate = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
-        Date validityEndDate = new Date(System.currentTimeMillis() + 2 * 365 * 24 * 60 * 60 * 1000);
+        Date validityEndDate = new Date(System.currentTimeMillis() + 365 * 24 * 60 * 60 * 1000);
 
         Security.addProvider(new BouncyCastleProvider());
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
         keyPairGenerator.initialize(1024, new SecureRandom());
         KeyPair keyPair = keyPairGenerator.generateKeyPair();
 
-        X500Principal dnName = new X500Principal("CN=John Doe");
+        X500Principal dnName = new X500Principal("CN=Apache CloudStack");
         X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
         certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
         certGen.setSubjectDN(dnName);
-        certGen.setIssuerDN(dnName); // use the same
+        certGen.setIssuerDN(dnName);
         certGen.setNotBefore(validityBeginDate);
         certGen.setNotAfter(validityEndDate);
         certGen.setPublicKey(keyPair.getPublic());
