@@ -264,6 +264,7 @@ class TestSnapshots(cloudstackTestCase):
                         snapshot_created,
                         self.userapiclient
                         )
+        self.cleanup.remove(snapshot_created)
         # Listing all the snapshots in page 2 again
         list_vol_snaps_page2 = Snapshot.list(
                                              self.userapiclient,
