@@ -680,6 +680,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     protected VmDataCommand generateVmDataCommand() {
         VmDataCommand cmd = new VmDataCommand("10.1.10.4", "i-4-VM", true);
+        // if you add new metadata files, also edit systemvm/patches/debian/config/var/www/html/latest/.htaccess
         cmd.addVmData("userdata", "user-data", "user-data");
         cmd.addVmData("metadata", "service-offering", "serviceOffering");
         cmd.addVmData("metadata", "availability-zone", "zoneName");
