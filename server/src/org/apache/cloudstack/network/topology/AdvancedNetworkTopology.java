@@ -93,7 +93,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
         s_logger.debug("APPLYING STATIC ROUTES RULES");
 
-        if (staticRoutes == null || staticRoutes.isEmpty()) {
+        if ((staticRoutes == null) || staticRoutes.isEmpty()) {
             s_logger.debug("No static routes to apply");
             return true;
         }
@@ -106,7 +106,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
                 result = result && routesRules.accept(_advancedVisitor, router);
 
-            } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+            } else if ((router.getState() == State.Stopped) || (router.getState() == State.Stopping)) {
                 s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending StaticRoute command to the backend");
             } else {
                 s_logger.warn("Unable to apply StaticRoute, virtual router is not in the right state " + router.getState());
@@ -138,12 +138,11 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
         s_logger.debug("CONFIG DHCP FOR SUBNETS RULES");
 
-        //Asuming we have only one router per network For Now.
+        // Asuming we have only one router per network For Now.
         final DomainRouterVO router = routers.get(0);
         if (router.getState() != State.Running) {
             s_logger.warn("Failed to configure dhcp: router not in running state");
-            throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class,
-                    network.getDataCenterId());
+            throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
         }
 
         DhcpSubNetRules subNetRules = _virtualNetworkApplianceFactory.createDhcpSubNetRules(network, nic, profile);
@@ -161,8 +160,8 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     }
 
     @Override
-    public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
-            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+    public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
+            throws ResourceUnavailableException {
 
         s_logger.debug("APPLYING VPC USERDATA RULES");
 
@@ -177,8 +176,8 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     }
 
     @Override
-    public boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
-            throws ResourceUnavailableException {
+    public boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
+            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
 
         s_logger.debug("APPLYING VPC DHCP ENTRY RULES");
 
@@ -196,12 +195,12 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     public boolean associatePublicIP(final Network network, final List<? extends PublicIpAddress> ipAddresses, final List<? extends VirtualRouter> routers)
             throws ResourceUnavailableException {
 
-        if (ipAddresses == null || ipAddresses.isEmpty()) {
+        if ((ipAddresses == null) || ipAddresses.isEmpty()) {
             s_logger.debug("No ip association rules to be applied for network " + network.getId());
             return true;
         }
 
-        //only one router is supported in VPC now
+        // only one router is supported in VPC for now
         VirtualRouter router = routers.get(0);
 
         if (router.getVpcId() == null) {
@@ -232,7 +231,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final List<? extends VirtualRouter> routers, final boolean isPrivateGateway)
             throws ResourceUnavailableException {
 
-        if (rules == null || rules.isEmpty()) {
+        if ((rules == null) || rules.isEmpty()) {
             s_logger.debug("No network ACLs to be applied for network " + network.getId());
             return true;
         }
@@ -249,4 +248,3 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(aclsRules));
     }
 }
-
