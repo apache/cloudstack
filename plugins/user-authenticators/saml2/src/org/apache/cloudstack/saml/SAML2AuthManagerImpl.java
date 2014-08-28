@@ -69,12 +69,14 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
     @Inject
     ConfigurationDao _configDao;
 
-    protected SAML2AuthManagerImpl() {
-        super();
-    }
-
     @Override
     public boolean start() {
+        return isSAMLPluginEnabled() && setup();
+    }
+
+    private boolean setup() {
+        // TODO: In future if need added logic to get SP X509 cert for Idps that need signed requests
+
         this.serviceProviderId = _configDao.getValue(Config.SAMLServiceProviderID.key());
         this.identityProviderId = _configDao.getValue(Config.SAMLIdentityProviderID.key());
 
@@ -145,6 +147,9 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
 
     @Override
     public List<Class<?>> getAuthCommands() {
+        if (!isSAMLPluginEnabled()) {
+            return null;
+        }
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(SAML2LoginAPIAuthenticatorCmd.class);
         cmdList.add(SAML2LogoutAPIAuthenticatorCmd.class);
@@ -182,5 +187,9 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
 
     public X509Certificate getIdpEncryptionKey() {
         return idpEncryptionKey;
+    }
+
+    public Boolean isSAMLPluginEnabled() {
+        return Boolean.valueOf(_configDao.getValue(Config.SAMLIsPluginEnabled.key()));
     }
 }
