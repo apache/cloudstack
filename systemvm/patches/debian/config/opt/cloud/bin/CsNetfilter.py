@@ -95,6 +95,11 @@ class CsNetfilters(object):
 
     def compare(self, list):
         """ Compare reality with what is needed """
+        for c in self.chain.get("filter"):
+            # Ensure all inbound chains have a default drop rule
+            if c.startswith("ACL_INBOUND"):
+                list.append(["filter", "", "-A %s -j DROP" % c])
+        print list
         for fw in list:
             new_rule = CsNetfilter()
             new_rule.parse(fw[2])
@@ -118,6 +123,7 @@ class CsNetfilters(object):
         """ Add the given chain if it is not already present """
         if not self.has_chain(rule.get_table(), rule.get_chain()):
            CsHelper.execute("iptables -t %s -N %s" % (rule.get_table(), rule.get_chain()))
+           self.chain.add(rule.get_table(), rule.get_chain())
 
     def del_standard(self):
         """ Del rules that are there but should not be deleted 
