@@ -2049,7 +2049,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if(!allowNetworkRate) {
                 throw new InvalidParameterValueException("Network rate can be specified only for non-System offering and system offerings having \"domainrouter\" systemvmtype");
             }
-            if(cmd.getNetworkRate().intValue() <= 1) {
+            if(cmd.getNetworkRate().intValue() < 1) {
                 throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the network rate value more than 0");
             }
         }
