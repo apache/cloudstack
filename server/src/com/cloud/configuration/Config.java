@@ -1384,7 +1384,7 @@ public enum Config {
             ManagementServer.class,
             Boolean.class,
             "saml2.enabled",
-            "true",
+            "false",
             "Set it to true to enable SAML SSO plugin",
             null),
     SAMLUserAccountName(
