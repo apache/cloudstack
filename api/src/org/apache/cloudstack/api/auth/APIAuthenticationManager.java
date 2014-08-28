@@ -14,8 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.auth;
 
-public enum APIAuthenticationType {
-    LOGIN_API, LOGOUT_API
+package org.apache.cloudstack.api.auth;
+
+import com.cloud.utils.component.PluggableService;
+
+public interface APIAuthenticationManager extends PluggableService {
+    public APIAuthenticator getAPIAuthenticator(String name);
 }

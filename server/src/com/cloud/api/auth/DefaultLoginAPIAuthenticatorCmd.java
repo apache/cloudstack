@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.api.auth;
 
-import com.cloud.api.ApiServerService;
+import org.apache.cloudstack.api.ApiServerService;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
@@ -25,15 +25,17 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.auth.APIAuthenticationType;
+import org.apache.cloudstack.api.auth.APIAuthenticator;
+import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 
 @APICommand(name = "login", description = "Logs a user into the CloudStack. A successful login attempt will generate a JSESSIONID cookie value that can be passed in subsequent Query command calls until the \"logout\" command has been issued or the session has expired.", requestHasSensitiveInfo = true, responseObject = LoginCmdResponse.class, entityType = {})
@@ -100,54 +102,6 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
         throw new ServerApiException(ApiErrorCode.METHOD_NOT_ALLOWED, "This is an authentication api, cannot be used directly");
     }
 
-    private String createLoginResponse(HttpSession session, String responseType) {
-        LoginCmdResponse response = new LoginCmdResponse();
-        response.setTimeout(session.getMaxInactiveInterval());
-
-        final String user_UUID = (String)session.getAttribute("user_UUID");
-        session.removeAttribute("user_UUID");
-        response.setUserId(user_UUID);
-
-        final String domain_UUID = (String)session.getAttribute("domain_UUID");
-        session.removeAttribute("domain_UUID");
-        response.setDomainId(domain_UUID);
-
-        // FIXME: the while loop mess
-        final Enumeration attrNames = session.getAttributeNames();
-        if (attrNames != null) {
-            while (attrNames.hasMoreElements()) {
-                final String attrName = (String) attrNames.nextElement();
-                final Object attrObj = session.getAttribute(attrName);
-                if (ApiConstants.USERNAME.equalsIgnoreCase(attrName)) {
-                    response.setUsername(attrObj.toString());
-                }
-                if (ApiConstants.ACCOUNT.equalsIgnoreCase(attrName)) {
-                    response.setAccount(attrObj.toString());
-                }
-                if (ApiConstants.FIRSTNAME.equalsIgnoreCase(attrName)) {
-                    response.setFirstName(attrObj.toString());
-                }
-                if (ApiConstants.LASTNAME.equalsIgnoreCase(attrName)) {
-                    response.setLastName(attrObj.toString());
-                }
-                if (ApiConstants.TYPE.equalsIgnoreCase(attrName)) {
-                    response.setType((attrObj.toString()));
-                }
-                if (ApiConstants.TIMEZONE.equalsIgnoreCase(attrName)) {
-                    response.setTimeZone(attrObj.toString());
-                }
-                if (ApiConstants.REGISTERED.equalsIgnoreCase(attrName)) {
-                    response.setRegistered(attrObj.toString());
-                }
-                if (ApiConstants.SESSIONKEY.equalsIgnoreCase(attrName)) {
-                    response.setSessionKey(attrObj.toString());
-                }
-            }
-        }
-        response.setResponseName(getCommandName());
-        return ApiResponseSerializer.toSerializedString((ResponseObject) response, responseType);
-    }
-
     @Override
     public String authenticate(String command, Map<String, Object[]> params, HttpSession session, String remoteAddress, String responseType, StringBuilder auditTrailSb, final HttpServletResponse resp) throws ServerApiException {
 
@@ -197,10 +151,8 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
         if (username != null) {
             final String pwd = ((password == null) ? null : password[0]);
             try {
-                _apiServer.loginUser(session, username[0], pwd, domainId, domain, remoteAddress, params);
-                auditTrailSb.insert(0, "(userId=" + session.getAttribute("userid") + " accountId=" + ((Account) session.getAttribute("accountobj")).getId() +
-                        " sessionId=" + session.getId() + ")");
-                return createLoginResponse(session, responseType);
+                return ApiResponseSerializer.toSerializedString(_apiServer.loginUser(session, username[0], pwd, domainId, domain, remoteAddress, params),
+                        responseType);
             } catch (final CloudAuthenticationException ex) {
                 // TODO: fall through to API key, or just fail here w/ auth error? (HTTP 401)
                 try {
@@ -221,5 +173,9 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
     @Override
     public APIAuthenticationType getAPIType() {
         return APIAuthenticationType.LOGIN_API;
+    }
+
+    @Override
+    public void setAuthenticators(List<PluggableAPIAuthenticator> authenticators) {
     }
 }

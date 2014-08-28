@@ -129,17 +129,25 @@
            i.e. calling listCapabilities API with g_sessionKey from $.cookie('sessionKey') will succeed,
            then userValid will be set to true, then an user object (instead of "false") will be returned, then login screen will be bypassed.
            */
+                    var unBoxCookieValue = function (cookieName) {
+                        var cookieValue = $.cookie(cookieName);
+                        if (cookieValue && cookieValue.length > 2 && cookieValue[0] === '"' && cookieValue[cookieValue.length-1] === '"') {
+                            cookieValue = cookieValue.slice(1, cookieValue.length-1);
+                            $.cookie(cookieName, cookieValue, { expires: 1 });
+                        }
+                        return cookieValue;
+                    };
                     g_mySession = $.cookie('JSESSIONID');
-                    g_sessionKey = $.cookie('sessionKey');
-                    g_role = $.cookie('role');
-                    g_username = $.cookie('username');
-                    g_userid = $.cookie('userid');
-                    g_account = $.cookie('account');
-                    g_domainid = $.cookie('domainid');
-                    g_userfullname = $.cookie('userfullname');
-                    g_timezone = $.cookie('timezone');
+                    g_sessionKey = unBoxCookieValue('sessionKey');
+                    g_role = unBoxCookieValue('role');
+                    g_userid = unBoxCookieValue('userid');
+                    g_domainid = unBoxCookieValue('domainid');
+                    g_account = unBoxCookieValue('account');
+                    g_username = unBoxCookieValue('username');
+                    g_userfullname = unBoxCookieValue('userfullname');
+                    g_timezone = unBoxCookieValue('timezone');
                     if ($.cookie('timezoneoffset') != null)
-                        g_timezoneoffset = isNaN($.cookie('timezoneoffset')) ? null : parseFloat($.cookie('timezoneoffset'));
+                        g_timezoneoffset = isNaN(unBoxCookieValue('timezoneoffset')) ? null : parseFloat(unBoxCookieValue('timezoneoffset'));
                     else
                         g_timezoneoffset = null;
                 } else { //single-sign-on	(bypass login screen)

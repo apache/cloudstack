@@ -19,6 +19,9 @@ package com.cloud.api.auth;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.auth.APIAuthenticationManager;
+import org.apache.cloudstack.api.auth.APIAuthenticator;
+import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
@@ -32,10 +35,19 @@ import java.util.Map;
 public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuthenticationManager {
     public static final Logger s_logger = Logger.getLogger(APIAuthenticationManagerImpl.class.getName());
 
+    private List<PluggableAPIAuthenticator> _apiAuthenticators;
+
     private static Map<String, Class<?>> s_authenticators = null;
-    private static List<Class<?>> s_commandList = null;
 
     public APIAuthenticationManagerImpl() {
+    }
+
+    public List<PluggableAPIAuthenticator> getApiAuthenticators() {
+        return _apiAuthenticators;
+    }
+
+    public void setApiAuthenticators(List<PluggableAPIAuthenticator> authenticators) {
+        _apiAuthenticators = authenticators;
     }
 
     @Override
@@ -53,12 +65,13 @@ public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuth
 
     @Override
     public List<Class<?>> getCommands() {
-        if (s_commandList == null) {
-            s_commandList = new ArrayList<Class<?>>();
-            s_commandList.add(DefaultLoginAPIAuthenticatorCmd.class);
-            s_commandList.add(DefaultLogoutAPIAuthenticatorCmd.class);
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(DefaultLoginAPIAuthenticatorCmd.class);
+        cmdList.add(DefaultLogoutAPIAuthenticatorCmd.class);
+        for (PluggableAPIAuthenticator apiAuthenticator: _apiAuthenticators) {
+            cmdList.addAll(apiAuthenticator.getAuthCommands());
         }
-        return s_commandList;
+        return cmdList;
     }
 
     @Override
@@ -68,6 +81,7 @@ public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuth
             try {
                 apiAuthenticator = (APIAuthenticator) s_authenticators.get(name).newInstance();
                 apiAuthenticator = ComponentContext.inject(apiAuthenticator);
+                apiAuthenticator.setAuthenticators(_apiAuthenticators);
             } catch (InstantiationException | IllegalAccessException e) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("APIAuthenticationManagerImpl::getAPIAuthenticator failed: " + e.getMessage());

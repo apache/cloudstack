@@ -35,7 +35,17 @@
     <dependency>
       <groupId>org.opensaml</groupId>
       <artifactId>opensaml</artifactId>
-      <version>2.6.1</version>
+      <version>${cs.opensaml.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-utils</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-api</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 </project>

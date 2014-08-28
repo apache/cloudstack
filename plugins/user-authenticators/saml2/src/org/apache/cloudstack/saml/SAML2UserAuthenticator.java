@@ -12,7 +12,7 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
-package org.apache.cloudstack;
+package org.apache.cloudstack.saml;
 
 import com.cloud.server.auth.DefaultUserAuthenticator;
 import com.cloud.server.auth.UserAuthenticator;
@@ -21,6 +21,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.utils.auth.SAMLUtils;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
@@ -47,8 +48,8 @@ public class SAML2UserAuthenticator extends DefaultUserAuthenticator {
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         } else {
             User user = _userDao.getUser(userAccount.getId());
-            // TODO: check SAMLRequest, signature etc. from requestParameters
-            if (user != null && user.getUuid().startsWith("saml")) {
+            if (user != null && SAMLUtils.checkSAMLUserId(user.getUuid()) &&
+                    requestParameters != null && requestParameters.containsKey(SAMLUtils.SAML_RESPONSE)) {
                 return new Pair<Boolean, ActionOnFailedAuthentication>(true, null);
             }
         }
@@ -58,8 +59,6 @@ public class SAML2UserAuthenticator extends DefaultUserAuthenticator {
 
     @Override
     public String encode(final String password) {
-        // TODO: Complete method
-        StringBuilder sb = new StringBuilder(32);
-        return sb.toString();
+        return SAMLUtils.generateSecureRandomId();
     }
 }

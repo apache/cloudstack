@@ -14,12 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.auth;
+package org.apache.cloudstack.api.auth;
 
 import org.apache.cloudstack.api.ServerApiException;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.util.List;
 import java.util.Map;
 
 /*
@@ -36,6 +37,8 @@ public interface APIAuthenticator {
     public String authenticate(String command, Map<String, Object[]> params,
                                HttpSession session, String remoteAddress, String responseType,
                                StringBuilder auditTrailSb, final HttpServletResponse resp) throws ServerApiException;
+
     public APIAuthenticationType getAPIType();
 
+    public void setAuthenticators(List<PluggableAPIAuthenticator> authenticators);
 }

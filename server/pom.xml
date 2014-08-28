@@ -133,6 +133,11 @@
       <artifactId>cloud-engine-components-api</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.opensaml</groupId>
+      <artifactId>opensaml</artifactId>
+      <version>${cs.opensaml.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <testResources>

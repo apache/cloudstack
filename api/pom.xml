@@ -36,6 +36,11 @@
       <artifactId>gson</artifactId>
     </dependency>
     <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>servlet-api</artifactId>
+      <version>${cs.servlet.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-db</artifactId>
       <version>${project.version}</version>
