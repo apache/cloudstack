@@ -1785,7 +1785,14 @@
                         isHidden: true
                     },
 
-                    //SMB                                           
+                    //SMB
+                    smbDomain: {
+                    	label: 'label.smb.domain',
+                    	validation: {
+                            required: true
+                        },
+                        isHidden: true
+                    },          
                     smbUsername: {
                     	label: 'label.smb.username',
                     	validation: {
@@ -1801,13 +1808,7 @@
                         },
                         isHidden: true
                     },
-                    smbDomain: {
-                    	label: 'label.smb.domain',
-                    	validation: {
-                            required: true
-                        },
-                        isHidden: true
-                    },                          
+                                    
                     
                     //iscsi
                     iqn: {
@@ -2121,7 +2122,13 @@
                     //NFS, SMB (end)
 
 
-                    //SMB (begin)                                            
+                    //SMB (begin) 
+                    smbDomain: {
+                    	label: 'label.smb.domain',
+                    	validation: {
+                            required: true
+                        }
+                    },
                     smbUsername: {
                     	label: 'label.smb.username',
                     	validation: {
@@ -2134,13 +2141,7 @@
                     	validation: {
                             required: true
                         }
-                    },
-                    smbDomain: {
-                    	label: 'label.smb.domain',
-                    	validation: {
-                            required: true
-                        }
-                    },
+                    },                    
                     //SMB (end)
                     
                     //S3 (begin)
