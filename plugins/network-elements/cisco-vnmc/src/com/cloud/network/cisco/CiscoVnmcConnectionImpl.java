@@ -1228,14 +1228,13 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     private String sendRequest(String service, String xmlRequest) throws ExecutionException {
-        org.apache.commons.httpclient.protocol.Protocol myhttps = null;
         HttpClient client = new HttpClient();
         byte[] response = null;
         PostMethod method = new PostMethod("/xmlIM/" + service);
         method.setRequestBody(xmlRequest);
 
         try {
-            myhttps = new org.apache.commons.httpclient.protocol.Protocol("https", new EasySSLProtocolSocketFactory(), 443);
+            org.apache.commons.httpclient.protocol.Protocol myhttps = new org.apache.commons.httpclient.protocol.Protocol("https", new EasySSLProtocolSocketFactory(), 443);
             client.getHostConfiguration().setHost(_ip, 443, myhttps);
             int statusCode = client.executeMethod(method);
 
