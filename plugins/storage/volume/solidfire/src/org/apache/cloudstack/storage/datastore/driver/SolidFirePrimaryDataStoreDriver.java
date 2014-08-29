@@ -43,9 +43,11 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -65,6 +67,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Inject private AccountDao _accountDao;
     @Inject private AccountDetailsDao _accountDetailsDao;
     @Inject private CapacityManager _capacityMgr;
+    @Inject private ClusterDao _clusterDao;
     @Inject private ClusterDetailsDao _clusterDetailsDao;
     @Inject private DataCenterDao _zoneDao;
     @Inject private HostDao _hostDao;
@@ -135,7 +138,9 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             SolidFireUtil.modifySolidFireVag(sfConnection, sfVag.getId(), hostIqns, volumeIds);
         }
         else {
-            SolidFireUtil.placeVolumeInVolumeAccessGroup(sfConnection, sfVolumeId, storagePoolId, hosts, _clusterDetailsDao);
+            ClusterVO cluster = _clusterDao.findById(clusterId);
+
+            SolidFireUtil.placeVolumeInVolumeAccessGroup(sfConnection, sfVolumeId, storagePoolId, cluster.getUuid(), hosts, _clusterDetailsDao);
         }
 
         return true;

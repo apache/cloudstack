@@ -229,8 +229,8 @@ public class SolidFireUtil {
         }
     }
 
-    public static long placeVolumeInVolumeAccessGroup(SolidFireConnection sfConnection, long sfVolumeId, long storagePoolId, List<HostVO> hosts,
-            ClusterDetailsDao clusterDetailsDao) {
+    public static long placeVolumeInVolumeAccessGroup(SolidFireConnection sfConnection, long sfVolumeId, long storagePoolId,
+            String vagUuid, List<HostVO> hosts, ClusterDetailsDao clusterDetailsDao) {
         if (hosts == null || hosts.isEmpty()) {
             throw new CloudRuntimeException("There must be at least one host in the cluster.");
         }
@@ -238,7 +238,7 @@ public class SolidFireUtil {
         long lVagId;
 
         try {
-            lVagId = SolidFireUtil.createSolidFireVag(sfConnection, "CloudStack-" + UUID.randomUUID().toString(),
+            lVagId = SolidFireUtil.createSolidFireVag(sfConnection, "CloudStack-" + vagUuid,
                 SolidFireUtil.getIqnsFromHosts(hosts), new long[] { sfVolumeId });
         }
         catch (Exception ex) {
