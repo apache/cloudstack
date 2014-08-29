@@ -710,7 +710,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(cmd.getNewDiskOfferingId());
+        DiskOfferingVO newDiskOffering = null;
+
+        if (cmd.getNewDiskOfferingId() != null && volume.getDiskOfferingId() != cmd.getNewDiskOfferingId()) {
+            newDiskOffering = _diskOfferingDao.findById(cmd.getNewDiskOfferingId());
+        }
 
         /* Only works for KVM/XenServer/VMware (or "Any") for now, and volumes with 'None' since they're just allocated in DB */
 
