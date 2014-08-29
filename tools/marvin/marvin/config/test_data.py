@@ -715,7 +715,7 @@ test_data = {
         "name": "SSH",
         "alg": "roundrobin",
         "privateport": 22,
-        "publicport": 22,
+        "publicport": 2222,
         "protocol": 'TCP'
     },
     "icmprule": {

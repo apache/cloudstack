@@ -947,7 +947,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -982,7 +982,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -996,7 +996,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         with self.assertRaises(Exception):
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1027,7 +1027,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1038,7 +1038,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         with self.assertRaises(Exception):
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1072,7 +1072,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1087,7 +1087,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1123,7 +1123,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1138,7 +1138,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1172,7 +1172,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1190,7 +1190,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         with self.assertRaises(Exception):
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1223,7 +1223,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1251,7 +1251,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1284,7 +1284,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1295,7 +1295,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1442,7 +1442,7 @@ class TestNetworkOperations(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1459,7 +1459,7 @@ class TestNetworkOperations(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1496,7 +1496,7 @@ class TestNetworkOperations(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1513,7 +1513,7 @@ class TestNetworkOperations(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1550,7 +1550,7 @@ class TestNetworkOperations(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1567,7 +1567,7 @@ class TestNetworkOperations(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1609,7 +1609,7 @@ class TestNetworkOperations(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1649,7 +1649,7 @@ class TestNetworkOperations(cloudstackTestCase):
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
@@ -1812,7 +1812,7 @@ class TestExternalLoadBalancer(cloudstackTestCase):
 
         try:
             SshClient(public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
+                      self.testdata['lbrule']["publicport"],
                       self.virtual_machine.username,
                       self.virtual_machine.password
                       )
