@@ -71,7 +71,10 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
 
     @Override
     public boolean start() {
-        return isSAMLPluginEnabled() && setup();
+        if (isSAMLPluginEnabled()) {
+            setup();
+        }
+        return super.start();
     }
 
     private boolean setup() {
@@ -147,10 +150,10 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
 
     @Override
     public List<Class<?>> getAuthCommands() {
-        if (!isSAMLPluginEnabled()) {
-            return null;
-        }
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        if (!isSAMLPluginEnabled()) {
+            return cmdList;
+        }
         cmdList.add(SAML2LoginAPIAuthenticatorCmd.class);
         cmdList.add(SAML2LogoutAPIAuthenticatorCmd.class);
         cmdList.add(GetServiceProviderMetaDataCmd.class);
