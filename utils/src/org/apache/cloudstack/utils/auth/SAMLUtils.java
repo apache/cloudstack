@@ -53,6 +53,7 @@ import org.opensaml.xml.io.MarshallingException;
 import org.opensaml.xml.io.Unmarshaller;
 import org.opensaml.xml.io.UnmarshallerFactory;
 import org.opensaml.xml.io.UnmarshallingException;
+import org.opensaml.xml.signature.SignatureConstants;
 import org.opensaml.xml.util.Base64;
 import org.opensaml.xml.util.XMLHelper;
 import org.w3c.dom.Document;
@@ -67,6 +68,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.security.InvalidKeyException;
@@ -74,8 +76,10 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -90,7 +94,7 @@ public class SAMLUtils {
     public static final String SAML_NS = "saml://";
     public static final String SAML_NAMEID = "SAML_NAMEID";
     public static final String SAML_SESSION = "SAML_SESSION";
-    public static final String CERTIFICATE_NAME = "SAMLSP_X509CERTIFICATE";
+    public static final String CERTIFICATE_NAME = "SAMLSP_CERTIFICATE";
 
     public static String createSAMLId(String uid) {
         return SAML_NS + uid;
@@ -207,15 +211,25 @@ public class SAMLUtils {
         return (Response) unmarshaller.unmarshall(element);
     }
 
-    public static X509Certificate generateRandomX509Certificate() throws NoSuchAlgorithmException, NoSuchProviderException, CertificateEncodingException, SignatureException, InvalidKeyException {
-        Date validityBeginDate = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
-        Date validityEndDate = new Date(System.currentTimeMillis() + 365 * 24 * 60 * 60 * 1000);
+    public static String generateSAMLRequestSignature(String urlEncodedString, PrivateKey signingKey)
+            throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, UnsupportedEncodingException {
+        String url = urlEncodedString + "&SigAlg=" + URLEncoder.encode(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1, HttpUtils.UTF_8);
+        Signature signature = Signature.getInstance("SHA1withRSA");
+        signature.initSign(signingKey);
+        signature.update(url.getBytes());
+        return URLEncoder.encode(Base64.encodeBytes(signature.sign(), Base64.DONT_BREAK_LINES), HttpUtils.UTF_8);
+    }
 
+    public static KeyPair generateRandomKeyPair() throws NoSuchProviderException, NoSuchAlgorithmException {
         Security.addProvider(new BouncyCastleProvider());
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
-        keyPairGenerator.initialize(1024, new SecureRandom());
-        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+        keyPairGenerator.initialize(2048, new SecureRandom());
+        return keyPairGenerator.generateKeyPair();
+    }
 
+    public static X509Certificate generateRandomX509Certificate(KeyPair keyPair) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateEncodingException, SignatureException, InvalidKeyException {
+        Date validityBeginDate = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
+        Date validityEndDate = new Date(System.currentTimeMillis() + 365 * 24 * 60 * 60 * 1000);
         X500Principal dnName = new X500Principal("CN=Apache CloudStack");
         X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
         certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
