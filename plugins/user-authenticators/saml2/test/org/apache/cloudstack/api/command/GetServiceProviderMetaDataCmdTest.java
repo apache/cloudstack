@@ -71,7 +71,7 @@ public class GetServiceProviderMetaDataCmdTest {
 
         String spId = "someSPID";
         String url = "someUrl";
-        X509Certificate cert = SAMLUtils.generateRandomX509Certificate();
+        X509Certificate cert = SAMLUtils.generateRandomX509Certificate(SAMLUtils.generateRandomKeyPair());
         Mockito.when(samlAuthManager.getServiceProviderId()).thenReturn(spId);
         Mockito.when(samlAuthManager.getIdpSigningKey()).thenReturn(cert);
         Mockito.when(samlAuthManager.getIdpSingleLogOutUrl()).thenReturn(url);
