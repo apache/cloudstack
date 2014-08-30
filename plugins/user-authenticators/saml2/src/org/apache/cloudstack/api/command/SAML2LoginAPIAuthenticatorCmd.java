@@ -55,7 +55,8 @@ import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.io.MarshallingException;
 import org.opensaml.xml.io.UnmarshallingException;
 import org.opensaml.xml.security.x509.BasicX509Credential;
-import org.opensaml.xml.signature.Signature;
+import org.opensaml.xml.signature.SignatureConstants;
+import org.opensaml.xml.signature.SignatureException;
 import org.opensaml.xml.signature.SignatureValidator;
 import org.opensaml.xml.validation.ValidationException;
 import org.xml.sax.SAXException;
@@ -68,6 +69,10 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.FactoryConfigurationError;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Signature;
 import java.util.List;
 import java.util.Map;
 
@@ -134,8 +139,9 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         try {
             DefaultBootstrap.bootstrap();
             AuthnRequest authnRequest = SAMLUtils.buildAuthnRequestObject(spId, identityProviderUrl, consumerUrl);
-            redirectUrl = identityProviderUrl + "?SAMLRequest=" + SAMLUtils.encodeSAMLRequest(authnRequest);
-        } catch (ConfigurationException | FactoryConfigurationError | MarshallingException | IOException e) {
+            redirectUrl = "SAMLRequest=" + SAMLUtils.encodeSAMLRequest(authnRequest);
+            redirectUrl = identityProviderUrl + "?" + SAMLUtils.generateSAMLRequestSignature(redirectUrl, privateKey);
+        } catch (ConfigurationException | FactoryConfigurationError | MarshallingException | IOException | SignatureException | NoSuchAlgorithmException | InvalidKeyException | java.security.SignatureException e) {
             s_logger.error("SAML AuthnRequest message building error: " + e.getMessage());
         }
         return redirectUrl;
@@ -176,7 +182,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 }
 
                 if (_samlAuthManager.getIdpSigningKey() != null) {
-                    Signature sig = processedSAMLResponse.getSignature();
+                    org.opensaml.xml.signature.Signature sig = processedSAMLResponse.getSignature();
                     BasicX509Credential credential = new BasicX509Credential();
                     credential.setEntityCertificate(_samlAuthManager.getIdpSigningKey());
                     SignatureValidator validator = new SignatureValidator(credential);

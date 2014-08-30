@@ -23,6 +23,9 @@ import org.apache.cloudstack.api.command.GetServiceProviderMetaDataCmd;
 import org.apache.cloudstack.api.command.SAML2LoginAPIAuthenticatorCmd;
 import org.apache.cloudstack.api.command.SAML2LogoutAPIAuthenticatorCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.security.keystore.KeystoreDao;
+import org.apache.cloudstack.framework.security.keystore.KeystoreVO;
+import org.apache.cloudstack.utils.auth.SAMLUtils;
 import org.apache.log4j.Logger;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.xml.SAMLConstants;
@@ -42,8 +45,17 @@ import org.springframework.stereotype.Component;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.xml.stream.FactoryConfigurationError;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.RSAPrivateKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,6 +81,9 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
     @Inject
     ConfigurationDao _configDao;
 
+    @Inject
+    private KeystoreDao _ksDao;
+
     @Override
     public boolean start() {
         if (isSAMLPluginEnabled()) {
@@ -79,6 +94,29 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
 
     private boolean setup() {
         // TODO: In future if need added logic to get SP X509 cert for Idps that need signed requests
+
+        KeystoreVO keyStoreVO = _ksDao.findByName(SAMLUtils.CERTIFICATE_NAME);
+        if (keyStoreVO == null) {
+            try {
+                KeyPair keyPair = SAMLUtils.generateRandomKeyPair();
+                _ksDao.save(SAMLUtils.CERTIFICATE_NAME, keyPair.getPrivate().getEncoded().toString(), keyPair.getPublic().getEncoded().toString(), "saml-sp");
+                keyStoreVO = _ksDao.findByName(SAMLUtils.CERTIFICATE_NAME);
+            } catch (NoSuchProviderException | NoSuchAlgorithmException e) {
+                s_logger.error("Unable to create and save SAML keypair");
+            }
+        }
+
+        if (keyStoreVO != null) {
+            PrivateKey privateKey = new RSAPrivateKeySpec();
+            KeyPair keyPair = new KeyPair();
+        }
+
+        try {
+
+            X509Certificate spCert = SAMLUtils.generateRandomX509Certificate();
+        } catch (NoSuchAlgorithmException | NoSuchProviderException | CertificateEncodingException | SignatureException | InvalidKeyException e) {
+            e.printStackTrace();
+        }
 
         this.serviceProviderId = _configDao.getValue(Config.SAMLServiceProviderID.key());
         this.identityProviderId = _configDao.getValue(Config.SAMLIdentityProviderID.key());
