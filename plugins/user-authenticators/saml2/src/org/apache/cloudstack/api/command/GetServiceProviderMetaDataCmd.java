@@ -191,7 +191,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
     @Override
     public void setAuthenticators(List<PluggableAPIAuthenticator> authenticators) {
         for (PluggableAPIAuthenticator authManager: authenticators) {
-            if (authManager instanceof SAML2AuthManager) {
+            if (authManager != null && authManager instanceof SAML2AuthManager) {
                 _samlAuthManager = (SAML2AuthManager) authManager;
             }
         }
