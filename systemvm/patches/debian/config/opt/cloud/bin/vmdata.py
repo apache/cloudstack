@@ -176,7 +176,7 @@ def htaccess(ip, folder, file):
         if not entry in fh.read():
             fh.write(entry + '\n')
 
-        entry = "RewriteRule ^meta-data/$  ../" + folder + "/%{REMOTE_ADDR}/meta-data [L,NC,QSA]"
+        entry = "RewriteRule ^meta-data/?$  ../" + folder + "/%{REMOTE_ADDR}/meta-data [L,NC,QSA]"
 
         fh.seek(0)
         if not entry in fh.read():
