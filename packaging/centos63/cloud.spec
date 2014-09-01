@@ -556,6 +556,12 @@ if [ -f "%{_sysconfdir}/%{name}/management/db.properties" ]; then
     /sbin/chkconfig --level 345 cloudstack-usage on > /dev/null 2>&1 || true
 fi
 
+if [ -f "%{_sysconfdir}/%{name}/management/key" ]; then
+    echo Replacing key with management server key
+    rm -f %{_sysconfdir}/%{name}/usage/key
+    ln -s %{_sysconfdir}/%{name}/management/key %{_sysconfdir}/%{name}/usage/key
+fi
+
 #%post awsapi
 #if [ -d "%{_datadir}/%{name}-management" ] ; then
 #   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
