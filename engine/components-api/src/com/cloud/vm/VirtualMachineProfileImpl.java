@@ -103,7 +103,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     @Override
     public VirtualMachineTemplate getTemplate() {
         if (_template == null && _vm != null) {
-            _template = s_entityMgr.findById(VirtualMachineTemplate.class, _vm.getTemplateId());
+            _template = s_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, _vm.getTemplateId());
         }
         return _template;
     }
