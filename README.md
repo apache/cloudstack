@@ -1,4 +1,6 @@
-Apache CloudStack Version 4.3.0
+# Apache CloudStack Version 4.3.0
+
+[![Build Status](https://travis-ci.org/apache/cloudstack.svg?branch=4.3)](https://travis-ci.org/apache/cloudstack)
 
 # About Apache CloudStack
 
