@@ -929,7 +929,7 @@ test_data = {
         "name": "hostantiaffinity",
         "type": "host anti-affinity",
     },
-    "vgpu":{
+   "vgpu":{
         "disk_offering":{
                     "displaytext": "Small",
                     "name": "Small",
@@ -945,7 +945,20 @@ test_data = {
                               "ispublic": "true",
                               "hypervisor": "XenServer"
                               },
-
+    "clusters": {
+            "clustername": "Xen Cluster Vgpu",
+            "clustertype": "CloudManaged",
+            "hypervisor": "XenServer"
+      },
+    "hosts": {
+        "nonvgpuxenserver": {
+            "hypervisor": 'XenServer',
+            "clustertype": 'CloudManaged',
+            "url": 'http://10.102.192.57',
+            "username": "root",
+            "password": "freebsd",
+             },
+       },
         "account": {
                     "email": "test@test.com",
                     "firstname": "Test",
@@ -955,8 +968,8 @@ test_data = {
                     # ensure unique username generated each time
                     "password": "password",
                     },
-            "vgpu260q":
-                    {
+            "vgpu260q":   # Create a virtual machine instance with vgpu type as 260q
+                    {   
                     "displayname": "testserver",
                     "username": "root", # VM creds for SSH
                     "password": "password",
@@ -966,7 +979,7 @@ test_data = {
                     "publicport": 22,
                     "protocol": 'TCP',
                 },
-                "vgpu140q":
+                "vgpu140q":   # Create a virtual machine instance with vgpu type as 140q
                 {
                     "displayname": "testserver",
                     "username": "root",
@@ -981,40 +994,40 @@ test_data = {
                 {
                  "GRID K260Q":
                    {
-                        "name": "Windows Instance with vGPU260Q",
-                        "displaytext": "Windows Instance with vGPU260Q",
+                        "name": "vGPU260Q",
+                        "displaytext": "vGPU260Q",
                         "cpunumber": 2,
                         "cpuspeed": 1600, # in MHz
                         "memory": 3072, # In MBs
                     },
                  "GRID K240Q":
                    {
-                        "name": "Windows Instance with vGPU240Q",
-                        "displaytext": "Windows Instance with vGPU240Q",
+                        "name": "vGPU240Q",
+                        "displaytext": "vGPU240Q",
                         "cpunumber": 2,
                         "cpuspeed": 1600, # in MHz
                         "memory": 3072, # In MBs
                     },
                  "GRID K220Q":
                    {
-                        "name": "Windows Instance with vGPU220Q",
-                        "displaytext": "Windows Instance with vGPU220Q",
+                        "name": "vGPU220Q",
+                        "displaytext": "vGPU220Q",
                         "cpunumber": 2,
                         "cpuspeed": 1600, # in MHz
                         "memory": 3072, # In MBs
                     },
                  "GRID K200":
                    {
-                        "name": "Windows Instance with vGPU200",
-                        "displaytext": "Windows Instance with vGPU200",
+                        "name": "vGPU200",
+                        "displaytext": "vGPU200",
                         "cpunumber": 2,
                         "cpuspeed": 1600, # in MHz
                         "memory": 3072, # In MBs
                     },
                  "passthrough":
                    {
-                        "name": "Windows Instance with vGPU passthrough",
-                        "displaytext": "Windows Instance with vGPU passthrough",
+                        "name": "vGPU passthrough",
+                        "displaytext": "vGPU passthrough",
                         "cpunumber": 2,
                         "cpuspeed": 1600, # in MHz
                         "memory": 3072, # In MBs
@@ -1023,36 +1036,45 @@ test_data = {
                     {
                      # Small service offering ID to for change VM
                      # service offering from medium to small
-                        "name": "Windows Instance with vGPU140Q",
-                        "displaytext": "Windows Instance with vGPU140Q",
+                        "name": "vGPU140Q",
+                        "displaytext": "vGPU140Q",
                         "cpunumber": 2,
                         "cpuspeed": 1600,
                         "memory": 3072,
                     },
                    "GRID K120Q":
                     {
-                        "name": "Windows Instance with vGPU120Q",
-                        "displaytext": "Windows Instance with vGPU120Q",
+                        "name": "vGPU120Q",
+                        "displaytext": "vGPU120Q",
                         "cpunumber": 2,
                         "cpuspeed": 1600,
                         "memory": 3072,
                     },
                    "GRID K100":
                      {
-                        "name": "Windows Instance with vGPU100",
-                        "displaytext": "Windows Instance with vGPU100",
+                        "name": "vGPU100",
+                        "displaytext": "vGPU100",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,
+                        "memory": 3072,
+                     },
+                   "nonvgpuoffering":
+                     {
+                        "name": "nonvgpuoffering",
+                        "displaytext": "nonvgpuoffering",
                         "cpunumber": 2,
                         "cpuspeed": 1600,
                         "memory": 3072,
                      }
-                                  
+
             },
             "diskdevice": ['/dev/vdc',  '/dev/vdb', '/dev/hdb', '/dev/hdc', '/dev/xvdd', '/dev/cdrom', '/dev/sr0', '/dev/cdrom1' ],
+            # Disk device where ISO is attached to instance
             "mount_dir": "/mnt/tmp",
-            "sleep": 90,
+            "sleep": 180,
             "timeout": 60,
             "ostype": 'Windows 8 (64-bit)',
-
+            "nongpu_host_ip":"10.102.192.57"
     },
       "acl":{
                 #data for domains and accounts
