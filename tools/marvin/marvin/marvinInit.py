@@ -40,7 +40,7 @@ import os
 class MarvinInit:
 
     def __init__(self, config_file,
-                 deploy_dc_flag=None,
+                 deploy_dc_flag=False,
                  test_mod_name="deploydc",
                  zone=None,
                  hypervisor_type=None,
@@ -109,12 +109,19 @@ class MarvinInit:
         '''
         try:
             if not self.__hypervisorType:
-                self.__hypervisorType = XEN_SERVER
+                if self.__parsedConfig and self.__parsedConfig.zones is not None:
+                    for zone in self.__parsedConfig.zones:
+                        for pod in zone.pods and pod is not None:
+                            for cluster in pod.clusters and cluster is not None:
+                                self.__hypervisorType = cluster.hypervisor
+                                break
             if not self.__zoneForTests:
                 if self.__parsedConfig and self.__parsedConfig.zones is not None:
                     for zone in self.__parsedConfig.zones:
                         self.__zoneForTests = zone.name
                         break
+            if not self.__hypervisorType:
+                self.__hypervisorType = XEN_SERVER
             return SUCCESS
         except Exception as e:
             print "\n Exception Occurred Under init " \
@@ -133,13 +140,16 @@ class MarvinInit:
         @Output : SUCCESS or FAILED
         '''
         try:
+            print "\n==== Marvin Init Started ===="
             if ((self.__parseConfig() != FAILED) and
                     (self.__setHypervisorAndZoneInfo())and
                     (self.__setTestDataPath() != FAILED) and
                     (self.__initLogging() != FAILED) and
                     (self.__createTestClient() != FAILED) and
                     (self.__deployDC() != FAILED)):
+                print "\n==== Marvin Init Successful ===="
                 return SUCCESS
+            print "\n==== Marvin Init Failed ===="
             return FAILED
         except Exception as e:
             print "\n Exception Occurred Under init " \
@@ -232,10 +242,8 @@ class MarvinInit:
                                                self.__parsedConfig,
                                                self.__tcRunLogger)
                 ret = deploy_obj.deploy()
-                if ret == SUCCESS:
-                    print "Deploy DC Successful"
-                else:
-                    print "Deploy DC Failed"
+                if ret != SUCCESS:
+                    print "==== Deploy DC Failed ===="
             return ret
         except Exception as e:
             print "\n Exception Occurred Under __deployDC : %s" % \
