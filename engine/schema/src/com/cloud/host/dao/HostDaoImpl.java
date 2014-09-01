@@ -633,7 +633,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         host = createForUpdate();
         host.setManagementServerId(null);
-        host.setLastPinged((System.currentTimeMillis() >> 10) - (10 * 60));
+        host.setLastPinged(lastPing);
         host.setDisconnectedOn(new Date());
         ub = getUpdateBuilder(host);
         update(ub, sc, null);
