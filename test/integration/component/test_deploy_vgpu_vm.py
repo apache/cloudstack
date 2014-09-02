@@ -73,8 +73,8 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
              for ghost in hosts :
                  if ghost.hypervisorversion >= "6.2.0":
-                    #sshClient = SshClient(host=ghost.ipaddress, port=22, user='root',passwd="host_password")
-                    sshClient = SshClient(host=ghost.ipaddress, port=22, user='root',passwd="host_password")
+                    #sshClient = SshClient(host=ghost.ipaddress, port=22, user='root',passwd=cls.testdata["host_password"])
+                    sshClient = SshClient(host=ghost.ipaddress, port=22, user='root',passwd=cls.testdata["host_password"])
 
                     if ghost.hypervisorversion == "6.2.0":
                        res = len(sshClient.execute("xe patch-list uuid=0850b186-4d47-11e3-a720-001b2151a503"))
@@ -341,7 +341,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                                self.apiclient,
                                id=hostid
                                )
-        ssh_client = SshClient(host=vgpu_host[0].ipaddress, port=22, user='root',passwd="host_password")
+        ssh_client = SshClient(host=vgpu_host[0].ipaddress, port=22, user='root',passwd=self.testdata["host_password"])
         """
         Get vGPU type model
         """
@@ -775,7 +775,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                hypervisor="XenServer"
                )
 
-        sshClient1 = SshClient(host=lhosts[0].ipaddress, port=22, user='root',passwd="host_password")
+        sshClient1 = SshClient(host=lhosts[0].ipaddress, port=22, user='root',passwd=self.testdata["host_password"])
         totalxenhosts=len(sshClient1.execute("xe host-list | grep uuid"))
 
         for hostlist in lhosts:
