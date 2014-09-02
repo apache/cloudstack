@@ -48,6 +48,22 @@ public class SslCertResponse extends BaseResponse {
     @Param(description = "account for the certificate")
     private String accountName;
 
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the certificate")
+    private String projectId;
+
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the certificate")
+    private String projectName;
+
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain id of the network owner")
+    private String domainId;
+
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the network owner")
+    private String domain;
+
     @SerializedName(ApiConstants.CERTIFICATE_CHAIN)
     @Param(description = "certificate chain")
     private String certchain;
@@ -77,6 +93,22 @@ public class SslCertResponse extends BaseResponse {
 
     public void setAccountName(String accountName) {
         this.accountName = accountName;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setDomainName(String domain) {
+        this.domain = domain;
     }
 
     public void setCertchain(String chain) {

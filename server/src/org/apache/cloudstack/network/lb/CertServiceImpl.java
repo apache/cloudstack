@@ -63,6 +63,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PasswordFinder;
 
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.domain.DomainVO;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -73,6 +75,8 @@ import com.cloud.network.dao.SslCertDao;
 import com.cloud.network.dao.SslCertVO;
 import com.cloud.network.lb.CertService;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
@@ -90,6 +94,10 @@ public class CertServiceImpl implements CertService {
     @Inject
     AccountDao _accountDao;
     @Inject
+    ProjectService _projectMgr;
+    @Inject
+    DomainDao _domainDao;
+    @Inject
     SslCertDao _sslCertDao;
     @Inject
     LoadBalancerCertMapDao _lbCertDao;
@@ -105,7 +113,6 @@ public class CertServiceImpl implements CertService {
     @ActionEvent(eventType = EventTypes.EVENT_LB_CERT_UPLOAD, eventDescription = "Uploading a certificate to cloudstack", async = false)
     public SslCertResponse uploadSslCert(UploadSslCertCmd certCmd) {
         try {
-
             String cert = certCmd.getCert();
             String key = certCmd.getKey();
             String password = certCmd.getPassword();
@@ -116,8 +123,18 @@ public class CertServiceImpl implements CertService {
 
             String fingerPrint = generateFingerPrint(parseCertificate(cert));
 
-            Long accountId = CallContext.current().getCallingAccount().getId();
-            Long domainId = CallContext.current().getCallingAccount().getDomainId();
+            CallContext ctx = CallContext.current();
+            Account caller = ctx.getCallingAccount();
+
+            Account owner = null;
+            if ((certCmd.getAccountName() != null && certCmd.getDomainId() != null) || certCmd.getProjectId() != null) {
+                owner = _accountMgr.finalizeOwner(caller, certCmd.getAccountName(), certCmd.getDomainId(), certCmd.getProjectId());
+            } else {
+                owner = caller;
+            }
+
+            Long accountId = owner.getId();
+            Long domainId = owner.getDomainId();
 
             SslCertVO certVO = new SslCertVO(cert, key, password, chain, accountId, domainId, fingerPrint);
             _sslCertDao.persist(certVO);
@@ -170,18 +187,18 @@ public class CertServiceImpl implements CertService {
         Long certId = listSslCertCmd.getCertId();
         Long accountId = listSslCertCmd.getAccountId();
         Long lbRuleId = listSslCertCmd.getLbId();
+        Long projectId = listSslCertCmd.getProjectId();
 
         List<SslCertResponse> certResponseList = new ArrayList<SslCertResponse>();
 
-        if (certId == null && accountId == null && lbRuleId == null) {
-            throw new InvalidParameterValueException("Invalid parameters either certificate ID or Account ID or Loadbalancer ID required");
+        if (certId == null && accountId == null && lbRuleId == null && projectId == null) {
+            throw new InvalidParameterValueException("Invalid parameters either certificate ID or Account ID or Loadbalancer ID or Project ID required");
         }
 
         List<LoadBalancerCertMapVO> certLbMap = null;
         SslCertVO certVO = null;
 
         if (certId != null) {
-
             certVO = _sslCertDao.findById(certId);
 
             if (certVO == null) {
@@ -200,7 +217,7 @@ public class CertServiceImpl implements CertService {
             LoadBalancer lb = _entityMgr.findById(LoadBalancerVO.class, lbRuleId);
 
             if (lb == null) {
-                throw new InvalidParameterValueException("found no loadbalancer  wth id: " + lbRuleId);
+                throw new InvalidParameterValueException("Found no loadbalancer with id: " + lbRuleId);
             }
 
             _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, lb);
@@ -222,6 +239,25 @@ public class CertServiceImpl implements CertService {
 
         }
 
+        if (projectId != null) {
+            Project project = _projectMgr.getProject(projectId);
+
+            if (project == null) {
+                throw new InvalidParameterValueException("Found no project with id: " + projectId);
+            }
+
+            List<SslCertVO> projectCertVOList = _sslCertDao.listByAccountId(project.getProjectAccountId());
+            if (projectCertVOList == null || projectCertVOList.isEmpty())
+                return certResponseList;
+            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, projectCertVOList.get(0));
+
+            for (SslCertVO cert : projectCertVOList) {
+                certLbMap = _lbCertDao.listByCertId(cert.getId());
+                certResponseList.add(createCertResponse(cert, certLbMap));
+            }
+            return certResponseList;
+        }
+
         //reached here look by accountId
         List<SslCertVO> certVOList = _sslCertDao.listByAccountId(accountId);
         if (certVOList == null || certVOList.isEmpty())
@@ -232,7 +268,6 @@ public class CertServiceImpl implements CertService {
             certLbMap = _lbCertDao.listByCertId(cert.getId());
             certResponseList.add(createCertResponse(cert, certLbMap));
         }
-
         return certResponseList;
     }
 
@@ -264,13 +299,24 @@ public class CertServiceImpl implements CertService {
         SslCertResponse response = new SslCertResponse();
 
         Account account = _accountDao.findByIdIncludingRemoved(cert.getAccountId());
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            // find the project
+            Project project = _projectMgr.findByProjectAccountIdIncludingRemoved(account.getId());
+            response.setProjectId(project.getUuid());
+            response.setProjectName(project.getName());
+        } else {
+            response.setAccountName(account.getAccountName());
+        }
+
+        DomainVO domain = _domainDao.findByIdIncludingRemoved(cert.getDomainId());
+        response.setDomainId(domain.getUuid());
+        response.setDomainName(domain.getName());
 
         response.setObjectName("sslcert");
         response.setId(cert.getUuid());
         response.setCertificate(cert.getCertificate());
         response.setPrivatekey(cert.getKey());
         response.setFingerprint(cert.getFingerPrint());
-        response.setAccountName(account.getAccountName());
 
         if (cert.getChain() != null)
             response.setCertchain(cert.getChain());
