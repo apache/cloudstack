@@ -176,6 +176,7 @@ public class CommandSetupHelper {
 
     @Inject
     private RouterControlHelper _routerControlHelper;
+
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper _networkHelper;
@@ -195,7 +196,7 @@ public class CommandSetupHelper {
         final List<VpnUser> addUsers = new ArrayList<VpnUser>();
         final List<VpnUser> removeUsers = new ArrayList<VpnUser>();
         for (final VpnUser user : users) {
-            if ((user.getState() == VpnUser.State.Add) || (user.getState() == VpnUser.State.Active)) {
+            if (user.getState() == VpnUser.State.Add || user.getState() == VpnUser.State.Active) {
                 addUsers.add(user);
             } else if (user.getState() == VpnUser.State.Revoke) {
                 removeUsers.add(user);
@@ -218,7 +219,7 @@ public class CommandSetupHelper {
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         final Nic defaultNic = findGatewayIp(vm.getId());
         String gatewayIp = defaultNic.getGateway();
-        if ((gatewayIp != null) && !gatewayIp.equals(nic.getGateway())) {
+        if (gatewayIp != null && !gatewayIp.equals(nic.getGateway())) {
             gatewayIp = "0.0.0.0";
         }
         dhcpCommand.setDefaultRouter(gatewayIp);
@@ -290,7 +291,7 @@ public class CommandSetupHelper {
         // We don't support VR to be inline currently
         final boolean inline = false;
         for (final LoadBalancingRule rule : rules) {
-            final boolean revoked = (rule.getState().equals(FirewallRule.State.Revoke));
+            final boolean revoked = rule.getState().equals(FirewallRule.State.Revoke);
             final String protocol = rule.getProtocol();
             final String algorithm = rule.getAlgorithm();
             final String uuid = rule.getUuid();
@@ -392,7 +393,7 @@ public class CommandSetupHelper {
         Boolean defaultEgressPolicy = false;
         if (rules != null) {
             if (rules.size() > 0) {
-                if ((rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress) && (rules.get(0).getType() == FirewallRule.FirewallRuleType.System)) {
+                if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System) {
                     systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
                 }
             }
@@ -407,7 +408,7 @@ public class CommandSetupHelper {
                     final NetworkVO network = _networkDao.findById(guestNetworkId);
                     final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
                     defaultEgressPolicy = offering.getEgressDefaultPolicy();
-                    assert (rule.getSourceIpAddressId() == null) : "ipAddressId should be null for egress firewall rule. ";
+                    assert rule.getSourceIpAddressId() == null : "ipAddressId should be null for egress firewall rule. ";
                     final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, "", Purpose.Firewall, traffictype, defaultEgressPolicy);
                     rulesTO.add(ruleTO);
                 }
@@ -435,7 +436,7 @@ public class CommandSetupHelper {
         Boolean defaultEgressPolicy = false;
         if (rules != null) {
             if (rules.size() > 0) {
-                if ((rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress) && (rules.get(0).getType() == FirewallRule.FirewallRuleType.System)) {
+                if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System) {
                     systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
                 }
             }
@@ -450,7 +451,7 @@ public class CommandSetupHelper {
                     final NetworkVO network = _networkDao.findById(guestNetworkId);
                     final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
                     defaultEgressPolicy = offering.getEgressDefaultPolicy();
-                    assert (rule.getSourceIpAddressId() == null) : "ipAddressId should be null for egress firewall rule. ";
+                    assert rule.getSourceIpAddressId() == null : "ipAddressId should be null for egress firewall rule. ";
                     final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, "", Purpose.Firewall, traffictype, defaultEgressPolicy);
                     rulesTO.add(ruleTO);
                 }
@@ -485,7 +486,7 @@ public class CommandSetupHelper {
             }
             // domR doesn't support release for sourceNat IP address; so reset
             // the state
-            if (ipAddress.isSourceNat() && (ipAddress.getState() == IpAddress.State.Releasing)) {
+            if (ipAddress.isSourceNat() && ipAddress.getState() == IpAddress.State.Releasing) {
                 ipAddress.setState(IpAddress.State.Allocated);
             }
             ipList.add(ipAddress);
@@ -510,7 +511,7 @@ public class CommandSetupHelper {
                 public int compare(final PublicIpAddress o1, final PublicIpAddress o2) {
                     final boolean s1 = o1.isSourceNat();
                     final boolean s2 = o2.isSourceNat();
-                    return (s1 ^ s2) ? ((s1 ^ true) ? 1 : -1) : 0;
+                    return s1 ^ s2 ? s1 ^ true ? 1 : -1 : 0;
                 }
             });
 
@@ -524,7 +525,7 @@ public class CommandSetupHelper {
 
             for (final PublicIpAddress ipAddr : ipAddrList) {
 
-                final boolean add = (ipAddr.getState() == IpAddress.State.Releasing ? false : true);
+                final boolean add = ipAddr.getState() == IpAddress.State.Releasing ? false : true;
                 boolean sourceNat = ipAddr.isSourceNat();
                 /* enable sourceNAT for the first ip of the public interface */
                 if (firstIP) {
@@ -538,7 +539,7 @@ public class CommandSetupHelper {
                 // first public nic's MAC
                 // We cannot depends on first ip because we need to deal with
                 // first ip of other nics
-                if (!ipAddr.isSourceNat() && (ipAddr.getVlanId() != 0)) {
+                if (!ipAddr.isSourceNat() && ipAddr.getVlanId() != 0) {
                     vifMacAddress = NetUtils.generateMacOnIncrease(baseMac, ipAddr.getVlanId());
                 } else {
                     vifMacAddress = ipAddr.getMacAddress();
@@ -605,7 +606,7 @@ public class CommandSetupHelper {
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
 
         // password should be set only on default network element
-        if ((password != null) && nic.isDefaultNic()) {
+        if (password != null && nic.isDefaultNic()) {
             final String encodedPassword = PasswordGenerator.rot13(password);
             final SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getHostName(),
                     _networkModel.getExecuteInSeqNtwkElmtCmd());
@@ -641,8 +642,8 @@ public class CommandSetupHelper {
     }
 
     public void createStaticRouteCommands(final List<StaticRouteProfile> staticRoutes, final VirtualRouter router, final Commands cmds) {
-        final SetStaticRouteCommand cmd = new SetStaticRouteCommand(staticRoutes);
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _networkHelper.getRouterControlIp(router.getId()));
+        SetStaticRouteCommand cmd = new SetStaticRouteCommand(staticRoutes);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
@@ -660,7 +661,7 @@ public class CommandSetupHelper {
         final String cidr = network.getCidr();
 
         final RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(isCreate, ip.getAddress().addr(), vpn.getLocalIp(), vpn.getIpRange(),
-                vpn.getIpsecPresharedKey(), (vpn.getVpcId() != null));
+                vpn.getIpsecPresharedKey(), vpn.getVpcId() != null);
         startVpnCmd.setLocalCidr(cidr);
         startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -675,7 +676,7 @@ public class CommandSetupHelper {
         final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
         for (final UserVmVO vm : vms) {
             boolean createVmData = true;
-            if ((dc.getNetworkType() == NetworkType.Basic) && (router.getPodIdToDeployIn().longValue() != vm.getPodIdToDeployIn().longValue())) {
+            if (dc.getNetworkType() == NetworkType.Basic && router.getPodIdToDeployIn().longValue() != vm.getPodIdToDeployIn().longValue()) {
                 createVmData = false;
             }
 
@@ -694,7 +695,7 @@ public class CommandSetupHelper {
         final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
         for (final UserVmVO vm : vms) {
             boolean createDhcp = true;
-            if ((dc.getNetworkType() == NetworkType.Basic) && (router.getPodIdToDeployIn().longValue() != vm.getPodIdToDeployIn().longValue())
+            if (dc.getNetworkType() == NetworkType.Basic && router.getPodIdToDeployIn().longValue() != vm.getPodIdToDeployIn().longValue()
                     && _dnsBasicZoneUpdates.equalsIgnoreCase("pod")) {
                 createDhcp = false;
             }
@@ -737,7 +738,7 @@ public class CommandSetupHelper {
             }
             // VR doesn't support release for sourceNat IP address; so reset the
             // state
-            if (ipAddress.isSourceNat() && (ipAddress.getState() == IpAddress.State.Releasing)) {
+            if (ipAddress.isSourceNat() && ipAddress.getState() == IpAddress.State.Releasing) {
                 ipAddress.setState(IpAddress.State.Allocated);
             }
             ipList.add(ipAddress);
@@ -755,7 +756,7 @@ public class CommandSetupHelper {
             int i = 0;
 
             for (final PublicIpAddress ipAddr : ipAddrList) {
-                final boolean add = (ipAddr.getState() == IpAddress.State.Releasing ? false : true);
+                final boolean add = ipAddr.getState() == IpAddress.State.Releasing ? false : true;
 
                 final String macAddress = vlanMacAddress.get(BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag())));
 
@@ -978,7 +979,7 @@ public class CommandSetupHelper {
         }
 
         final DataCenter dc = _dcDao.findById(_networkModel.getNetwork(defaultNic.getNetworkId()).getDataCenterId());
-        final boolean isZoneBasic = (dc.getNetworkType() == NetworkType.Basic);
+        final boolean isZoneBasic = dc.getNetworkType() == NetworkType.Basic;
 
         // find domR's nic in the network
         NicVO domrDefaultNic;
