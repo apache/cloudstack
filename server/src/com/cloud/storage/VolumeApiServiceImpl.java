@@ -738,7 +738,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (newSize != null) {
                 if (!diskOffering.isCustomized() && !volume.getVolumeType().equals(Volume.Type.ROOT)) {
                     throw new InvalidParameterValueException("To change a volume's size without providing a new disk offering, its current disk offering must be " +
-                            "customizable or it must be a root volume.");
+                            "customizable or it must be a root volume (if providing a disk offering, make sure it is different from the current disk offering).");
                 }
 
                 // convert from bytes to GiB
