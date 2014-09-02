@@ -1055,8 +1055,18 @@
                                                 }
                                             }),
                                             action: function(args) {
-                                                debugger;
+                                                var $rows = $(':ui-dialog .list-view tbody tr');
                                                 var vms = args.context.instances;
+                                                
+                                                // Assign subselect values
+                                                $(vms).each(function() {
+                                                    var vm = this;
+                                                    var $vmRow = $rows.filter(function() {
+                                                        return $(this).data('json-obj') === vm;
+                                                    });
+                                                    $.extend(vm, { _subselect: $vmRow.find('.subselect select').val() });
+                                                });
+
                                                 var array1 = [];
                                                 for (var i = 0; i < vms.length; i++) {
                                                     array1.push(vms[i].id);
