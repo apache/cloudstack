@@ -37,17 +37,13 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 
 public interface NetworkHelper {
 
-    public abstract String getRouterControlIp(long routerId);
-
-    public abstract String getRouterIpInNetwork(long networkId, long instanceId);
-
     public abstract boolean sendCommandsToRouter(VirtualRouter router,
             Commands cmds) throws AgentUnavailableException;
 
     public abstract void handleSingleWorkingRedundantRouter(
             List<? extends VirtualRouter> connectedRouters,
             List<? extends VirtualRouter> disconnectedRouters, String reason)
-            throws ResourceUnavailableException;
+                    throws ResourceUnavailableException;
 
     public abstract int getRealPriority(DomainRouterVO router);
 
@@ -68,19 +64,19 @@ public interface NetworkHelper {
 
     public abstract List<DomainRouterVO> startRouters(
             RouterDeploymentDefinition routerDeploymentDefinition)
-            throws StorageUnavailableException, InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException;
+                    throws StorageUnavailableException, InsufficientCapacityException,
+                    ConcurrentOperationException, ResourceUnavailableException;
 
     public abstract DomainRouterVO startVirtualRouter(DomainRouterVO router,
             User user, Account caller, Map<Param, Object> params)
-            throws StorageUnavailableException, InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException;
+                    throws StorageUnavailableException, InsufficientCapacityException,
+                    ConcurrentOperationException, ResourceUnavailableException;
 
     public abstract DomainRouterVO deployRouter(
             RouterDeploymentDefinition routerDeploymentDefinition,
             boolean startRouter)
-            throws InsufficientAddressCapacityException,
-            InsufficientServerCapacityException, InsufficientCapacityException,
-            StorageUnavailableException, ResourceUnavailableException;
+                    throws InsufficientAddressCapacityException,
+                    InsufficientServerCapacityException, InsufficientCapacityException,
+                    StorageUnavailableException, ResourceUnavailableException;
 
 }
