@@ -68,12 +68,10 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -145,48 +143,22 @@ public class NetworkHelperImpl implements NetworkHelper {
     @Inject
     private UserIpv6AddressDao _ipv6Dao;
     @Inject
-    protected NetworkOrchestrationService _networkMgr;
+    private RouterControlHelper _routerControlHelper;
     @Inject
-    ConfigurationDao configDao;
+    private ConfigurationDao _configDao;
+    @Inject
+    protected NetworkOrchestrationService _networkMgr;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
     @PostConstruct
     protected void setupHypervisorsMap() {
-        this.hypervisorsMap.put(HypervisorType.XenServer, VirtualNetworkApplianceManager.RouterTemplateXen);
-        this.hypervisorsMap.put(HypervisorType.KVM, VirtualNetworkApplianceManager.RouterTemplateKvm);
-        this.hypervisorsMap.put(HypervisorType.VMware, VirtualNetworkApplianceManager.RouterTemplateVmware);
-        this.hypervisorsMap.put(HypervisorType.Hyperv, VirtualNetworkApplianceManager.RouterTemplateHyperV);
-        this.hypervisorsMap.put(HypervisorType.LXC, VirtualNetworkApplianceManager.RouterTemplateLxc);
+        hypervisorsMap.put(HypervisorType.XenServer, VirtualNetworkApplianceManager.RouterTemplateXen);
+        hypervisorsMap.put(HypervisorType.KVM, VirtualNetworkApplianceManager.RouterTemplateKvm);
+        hypervisorsMap.put(HypervisorType.VMware, VirtualNetworkApplianceManager.RouterTemplateVmware);
+        hypervisorsMap.put(HypervisorType.Hyperv, VirtualNetworkApplianceManager.RouterTemplateHyperV);
+        hypervisorsMap.put(HypervisorType.LXC, VirtualNetworkApplianceManager.RouterTemplateLxc);
     }
-
-    @Override
-    public String getRouterControlIp(final long routerId) {
-        String routerControlIpAddress = null;
-        final List<NicVO> nics = _nicDao.listByVmId(routerId);
-        for (final NicVO n : nics) {
-            final NetworkVO nc = _networkDao.findById(n.getNetworkId());
-            if (nc != null && nc.getTrafficType() == TrafficType.Control) {
-                routerControlIpAddress = n.getIp4Address();
-                // router will have only one control ip
-                break;
-            }
-        }
-
-        if (routerControlIpAddress == null) {
-            s_logger.warn("Unable to find router's control ip in its attached NICs!. routerId: " + routerId);
-            final DomainRouterVO router = _routerDao.findById(routerId);
-            return router.getPrivateIpAddress();
-        }
-
-        return routerControlIpAddress;
-    }
-
-    @Override
-    public String getRouterIpInNetwork(final long networkId, final long instanceId) {
-        return _nicDao.getIpAddress(networkId, instanceId);
-    }
-
 
     @Override
     public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException {
@@ -261,7 +233,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             //connRouterPR < disconnRouterPR, they won't equal at any time
             if (!connectedRouter.getIsPriorityBumpUp()) {
                 final BumpUpPriorityCommand command = new BumpUpPriorityCommand();
-                command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(connectedRouter.getId()));
+                command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(connectedRouter.getId()));
                 command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, connectedRouter.getInstanceName());
                 final Answer answer = _agentMgr.easySend(connectedRouter.getHostId(), command);
                 if (!answer.getResult()) {
@@ -487,7 +459,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
     protected String retrieveTemplateName(HypervisorType hType, final long datacenterId) {
         if (hType == HypervisorType.BareMetal) {
-            String peerHvType = configDao.getValue(Config.BaremetalPeerHypervisorType.key());
+            String peerHvType = _configDao.getValue(Config.BaremetalPeerHypervisorType.key());
             if (peerHvType == null) {
                 throw new CloudRuntimeException(String.format("To use baremetal in advanced networking, you must set %s to type of hypervisor(e.g XenServer)" +
                         " that exists in the same zone with baremetal host. That hyperivsor is used to spring up virtual router for baremetal instance",
@@ -500,7 +472,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             }
         }
 
-        return this.hypervisorsMap.get(hType).valueIn(datacenterId);
+        return hypervisorsMap.get(hType).valueIn(datacenterId);
     }
 
     @Override
@@ -530,7 +502,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                             id, routerDeploymentDefinition.getDest().getDataCenter(), hType));
                 }
 
-                String templateName = this.retrieveTemplateName(hType,
+                String templateName = retrieveTemplateName(hType,
                         routerDeploymentDefinition.getDest().getDataCenter().getId());
                 final VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
 
@@ -556,7 +528,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                 router.setDynamicallyScalable(template.isDynamicallyScalable());
                 router.setRole(Role.VIRTUAL_ROUTER);
                 router = _routerDao.persist(router);
-                LinkedHashMap<Network, List<? extends NicProfile>> networks = this.createRouterNetworks(routerDeploymentDefinition);
+                LinkedHashMap<Network, List<? extends NicProfile>> networks = createRouterNetworks(routerDeploymentDefinition);
                 _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, routerDeploymentDefinition.getPlan(), null);
                 router = _routerDao.findById(router.getId());
             } catch (final InsufficientCapacityException ex) {
@@ -624,7 +596,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             }
         }
 
-        this.filterSupportedHypervisors(hypervisors);
+        filterSupportedHypervisors(hypervisors);
 
         if (hypervisors.isEmpty()) {
             if (routerDeploymentDefinition.getPodId() != null) {
