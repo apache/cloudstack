@@ -96,8 +96,8 @@
                             label: 'Add LDAP Account',
                             isHeader: true,
                             preFilter: function(args) {
-                                //if ((isAdmin() || isDomainAdmin()) && true) { //for testing only
-                                if ((isAdmin() || isDomainAdmin()) && isLdapEnabled()) {
+                                //if (isAdmin() && true) { //for testing only
+                                if (isAdmin() && isLdapEnabled()) {
                                     return true;
                                 } else {
                                     return false;
