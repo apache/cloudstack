@@ -588,29 +588,11 @@ class TestVolumes(cloudstackTestCase):
         elif hosts[0].hypervisor.lower() in ("vmware", "hyperv"):
             self.skipTest("Resize Volume is unsupported on VmWare and Hyper-V")
 
-        self.apiClient.resizeVolume(cmd)
-        count = 0
-        success = True
-        while count < 10:
-            list_volume_response = Volume.list(
-                                                self.apiClient,
-                                                id=self.volume.id,
-                                                type='DATADISK'
-                                                )
-            for vol in list_volume_response:
-                if vol.id == self.volume.id and vol.size != currentSize and vol.state != "Resizing":
-                    success = False
-            if success:
-                break
-            else:
-                time.sleep(1)
-                count += 1
+        # Attempting to resize it should throw an exception, as we're using a non
+        # customisable disk offering, therefore our size parameter should be ignored
+        with self.assertRaises(Exception):
+            self.apiClient.resizeVolume(cmd)
 
-        self.assertEqual(
-                         success,
-                         True,
-                         "Verify the volume did not resize"
-                         )
         if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.start(self.apiClient)
             time.sleep(30)
