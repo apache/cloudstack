@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
-    var vmMigrationHostObjs;
+    var vmMigrationHostObjs, ostypeObjs;
 
     var vmSnapshotAction = function(args) {
         var action = {
@@ -1175,25 +1175,27 @@
                                 },
                                 osTypeId: {
                                     label: 'label.os.type',
-                                    select: function(args) {
-                                        $.ajax({
-                                            url: createURL("listOsTypes"),
-                                            dataType: "json",
-                                            async: true,
-                                            success: function(json) {
-                                                var ostypes = json.listostypesresponse.ostype;
-                                                var items = [];
-                                                $(ostypes).each(function() {
-                                                    items.push({
-                                                        id: this.id,
-                                                        description: this.description
-                                                    });
-                                                });
-                                                args.response.success({
-                                                    data: items
-                                                });
-                                            }
+                                    select: function(args) {                                   
+                                    	if (ostypeObjs == undefined) {                                     	
+	                                        $.ajax({
+	                                            url: createURL("listOsTypes"),
+	                                            dataType: "json",
+	                                            async: false,
+	                                            success: function(json) {	                                            	
+	                                            	ostypeObjs = json.listostypesresponse.ostype;	
+	                                            }
+	                                        });
+                                    	}                                    	
+                                    	var items = [];
+                                        $(ostypeObjs).each(function() {
+                                            items.push({
+                                                id: this.id,
+                                                description: this.description
+                                            });
                                         });
+                                        args.response.success({
+                                            data: items
+                                        });                                    	
                                     }
                                 },
                                 isPublic: {
@@ -1685,7 +1687,32 @@
                             }
                             
                             if ('instances' in args.context && args.context.instances[0].hypervisor != 'XenServer') {
-                          	  hiddenFields.push('xenserverToolsVersion61plus');
+                          	    hiddenFields.push('xenserverToolsVersion61plus');
+                            }
+                            
+                            if ('instances' in args.context && args.context.instances[0].guestosid != undefined) {                        
+                            	if (ostypeObjs == undefined) {
+	                            	$.ajax({
+	                                    url: createURL("listOsTypes"),
+	                                    dataType: "json",
+	                                    async: false,
+	                                    success: function(json) {	                                    	
+	                                    	ostypeObjs = json.listostypesresponse.ostype;		                                    	
+	                                    }
+	                                });
+                            	}                            	
+                            	if (ostypeObjs != undefined) {
+                            		var ostypeName;
+                            		for (var i = 0; i < ostypeObjs.length; i++) {
+                            			if (ostypeObjs[i].id == args.context.instances[0].guestosid) {                            				
+                            				ostypeName = ostypeObjs[i].description;
+                            				break;
+                            			}
+                            		}                            		
+                            		if (ostypeName == undefined || ostypeName.indexOf("win") == -1) {                            			
+                            			hiddenFields.push('xenserverToolsVersion61plus');
+                            		}                            		
+                            	}
                             }
                             
                             if (!args.context.instances[0].publicip) {
@@ -1743,24 +1770,26 @@
                             guestosid: {
                                 label: 'label.os.type',
                                 isEditable: true,
-                                select: function(args) {
-                                    $.ajax({
-                                        url: createURL("listOsTypes"),
-                                        dataType: "json",
-                                        async: true,
-                                        success: function(json) {
-                                            var ostypes = json.listostypesresponse.ostype;
-                                            var items = [];
-                                            $(ostypes).each(function() {
-                                                items.push({
-                                                    id: this.id,
-                                                    description: this.description
-                                                });
-                                            });
-                                            args.response.success({
-                                                data: items
-                                            });
-                                        }
+                                select: function(args) {                                
+                                    if (ostypeObjs == undefined) {                                	
+	                                	$.ajax({
+	                                        url: createURL("listOsTypes"),
+	                                        dataType: "json",
+	                                        async: false,
+	                                        success: function(json) {	                                       
+	                                        	ostypeObjs = json.listostypesresponse.ostype;	 
+	                                        }
+	                                    });
+                                    }                                    
+                                    var items = [];
+                                    $(ostypeObjs).each(function() {
+                                        items.push({
+                                            id: this.id,
+                                            description: this.description
+                                        });
+                                    });
+                                    args.response.success({
+                                        data: items
                                     });
                                 }
                             },
