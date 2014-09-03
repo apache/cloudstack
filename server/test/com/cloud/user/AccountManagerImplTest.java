@@ -253,8 +253,8 @@ public class AccountManagerImplTest {
         Mockito.when(_accountDao.findById(42l)).thenReturn(account);
         Mockito.when(
                 securityChecker.checkAccess(Mockito.any(Account.class),
-                        Mockito.any(AccessType.class), Mockito.anyString(),
-                        Mockito.any(ControlledEntity[].class)))
+                    Mockito.any(ControlledEntity.class), Mockito.any(AccessType.class),
+                    Mockito.anyString()))
                 .thenReturn(true);
         Mockito.when(_accountDao.remove(42l)).thenReturn(true);
         Mockito.when(_configMgr.releaseAccountSpecificVirtualRanges(42l))
@@ -279,8 +279,8 @@ public class AccountManagerImplTest {
         Mockito.when(_accountDao.findById(42l)).thenReturn(account);
         Mockito.when(
                 securityChecker.checkAccess(Mockito.any(Account.class),
-                        Mockito.any(AccessType.class), Mockito.anyString(),
-                        Mockito.any(ControlledEntity[].class)))
+                        Mockito.any(ControlledEntity.class), Mockito.any(AccessType.class),
+                        Mockito.anyString()))
                 .thenReturn(true);
         Mockito.when(_accountDao.remove(42l)).thenReturn(true);
         Mockito.when(_configMgr.releaseAccountSpecificVirtualRanges(42l))
