@@ -748,6 +748,13 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         #    able to create template without any error
 
         try:
+            apiclient_account1 = self.testClient.getUserApiClient(
+                                      UserName=self.account_1.name,
+                                      DomainName=self.account_1.domain)
+
+            apiclient_account2 = self.testClient.getUserApiClient(
+                                      UserName=self.account_2.name,
+                                      DomainName=self.account_2.domain)
             self.debug(
                        "Updating template resource limit for account: %s" %
                                                 self.account_1.name)
@@ -818,7 +825,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                 "Creating template from volume: %s" % volume.id)
             # Create a template from the ROOTDISK (Account 1)
             template_1 = Template.create(
-                            self.apiclient,
+                            apiclient_account1,
                             self.services["template"],
                             volumeid=volume.id,
                             account=self.account_1.name,
@@ -837,7 +844,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         # Exception should be raised for second snapshot (account_1)
         with self.assertRaises(Exception):
             Template.create(
-                            self.apiclient,
+                            apiclient_account1,
                             self.services["template"],
                             volumeid=volume.id,
                             account=self.account_1.name,
@@ -864,7 +871,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                 "Creating template from volume: %s" % volume.id)
             # Create a snapshot from the ROOTDISK (Account 1)
             template_2 = Template.create(
-                            self.apiclient,
+                            apiclient_account2,
                             self.services["template"],
                             volumeid=volume.id,
                             account=self.account_2.name,
@@ -882,7 +889,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                 "Creating template from volume: %s" % volume.id)
             # Create a second volume from the ROOTDISK (Account 2)
             template_3 = Template.create(
-                            self.apiclient,
+                            apiclient_account2,
                             self.services["template"],
                             volumeid=volume.id,
                             account=self.account_2.name,
