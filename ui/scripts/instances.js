@@ -936,14 +936,14 @@
                                                         	 //do nothing                                                        	 
                                                          } else if (result.jobstatus == 2) {
                                                         	 cloudStack.dialog.notice({
-                                                                 message: "Failed to update XenServer Tools Version 6.1+ field. Error: " + _s(result.jobresult.errortext)
+                                                                 message: _s(result.jobresult.errortext)
                                                              });                                                             
                                                          }
                                                      }
                                                  },
                                                  error: function(XMLHttpResponse) {                                                    
                                                      cloudStack.dialog.notice({
-                                                         message: "Failed to update XenServer Tools Version 6.1+ field. Error: " + parseXMLHttpResponse(XMLHttpResponse)
+                                                         message: parseXMLHttpResponse(XMLHttpResponse)
                                                      });                                                          
                                                  }
                                              });
