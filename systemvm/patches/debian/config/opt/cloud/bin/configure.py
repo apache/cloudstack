@@ -412,10 +412,15 @@ class CsIP:
             if self.address["source_nat"] == True:
                 cmdline = CsDataBag("cmdline")
                 dbag = cmdline.get_bag()
-                # FIXME way to VPC specific
-                vpccidr = dbag["config"]["vpccidr"]
-                fw.append(["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
-                fw.append(["nat","","-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
+                type = dbag["config"]["type"]
+                if type == "vpcrouter":
+                    vpccidr = dbag["config"]["vpccidr"]
+                    fw.append(["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
+                    fw.append(["nat","","-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
+                elif type == "router":
+                    logging.error("Not able to setup sourcenat for a regular router yet")
+                else:
+                    logging.error("Unable to process source nat configuration for router of type %s" % type)
         route.flush()
 
     def list(self):
