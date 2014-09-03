@@ -586,6 +586,11 @@ class TestTemplates(cloudstackTestCase):
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls.userapiclient = cls.testClient.getUserApiClient(
+                                UserName=cls.account.name,
+                                DomainName=cls.domain.name
+				)
+
         cls._cleanup = [
                         cls.project,
                         cls.service_offering,
@@ -722,10 +727,9 @@ class TestTemplates(cloudstackTestCase):
             self.debug("Creating template from volume: %s" % volume.id)
             # Create a template from the ROOTDISK
             template_1 = Template.create(
-                            self.apiclient,
+                            self.userapiclient,
                             self.services["template"],
-                            volumeid=volume.id,
-                            projectid=self.project.id
+                            volumeid=volume.id
                             )
 
             self.cleanup.append(template_1)
