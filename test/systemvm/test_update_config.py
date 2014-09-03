@@ -87,6 +87,61 @@ class UpdateConfigTestCase(SystemVMTestCase):
         "type":"dhcpentry"
     }
 
+    basic_network_acl = {
+        "device":"eth2",
+        "mac_address":"02:00:5d:8d:00:03",
+        "private_gateway_acl":False,
+        "nic_ip":"172.16.1.1",
+        "nic_netmask":"24",
+        "ingress_rules":
+        [ ],
+        "egress_rules":
+        [ ],
+        "type":"networkacl"
+    }
+
+    basic_acl_rules = [
+        # block range tcp
+        {
+            "allowed": False, 
+            "cidr": "1.2.3.0/24", 
+            "first_port": 60, 
+            "last_port": 70, 
+            "type": "tcp"
+        },
+        # block range udp
+        {
+            "allowed": False, 
+            "cidr": "1.2.3.0/24", 
+            "first_port": 60, 
+            "last_port": 70, 
+            "type": "udp"
+        },
+        # ipv6
+        {
+            "allowed": True, 
+            "cidr": "1.2.3.0/24", 
+            "protocol": 41, 
+            "type": "protocol"
+        }, 
+        # Single port
+        {
+            "allowed": True, 
+            "cidr": "1.2.3.0/24", 
+            "first_port": 30, 
+            "last_port": 30, 
+            "type": "tcp"
+        },
+        # Icmp
+        {
+            "allowed": True, 
+            "cidr": "10.0.0.0/8", 
+            "icmp_code": -1, 
+            "icmp_type": -1, 
+            "type": "icmp"
+        }
+    ]
+
     def update_config(self, config):
         config_json = json.dumps(config, indent=2)
         print_doc('config.json', config_json)
@@ -136,16 +191,19 @@ class UpdateConfigTestCase(SystemVMTestCase):
             ip_address["add"] = True
             ip_address["one_to_one_nat"] = r.choice((True, False))
             ip_address["first_i_p"] = r.choice((True, False))
-            ip_address["nic_dev_id"] = 3
+            ip_address["nic_dev_id"] = r.choice((2,3))
             config["ip_address"].append(ip_address)
             # runs a bunch of times adding an IP address each time
             self.update_config(config)
             ip_address["add"] = False
             buffer.append(copy.deepcopy(ip_address))
             self.check_no_errors()
-            #self.clear_log()
+            self.clear_log()
             assert ip.has_ip("%s/24" % ip_address["public_ip"], "eth%s" % ip_address["nic_dev_id"]), \
                     "Configure %s on eth%s failed" % (ip_address["public_ip"], ip_address["nic_dev_id"])
+        # Create some acls for the IPs we just created
+        # This will lead to multiple attempts to add the same acl - *this is intentional*
+        self.check_acl(buffer)
         # Now delete all the IPs we just made
         for ips in buffer:
             config = copy.deepcopy(self.basic_config)
@@ -172,7 +230,7 @@ class UpdateConfigTestCase(SystemVMTestCase):
                   "172.16.1.22" : "22"
                   }
         self.check_password(passw)
-        self.check_acl(self.basic_acl)
+        #self.check_acl(self.basic_acl)
 
         passw = { "172.16.1.20" : "120",
                   "172.16.1.21" : "121",
@@ -193,8 +251,22 @@ class UpdateConfigTestCase(SystemVMTestCase):
                    }
         self.guest_network(config)
 
-    def check_acl(self, config):
-        self.update_config(config)
+    def check_acl(self, list):
+        # clear all acls
+        for ips in list:
+            config = copy.deepcopy(self.basic_network_acl)
+            config['device'] = "eth%s" % ips["nic_dev_id"]
+            config['nic_ip'] = ips["public_ip"]
+            for rule in self.basic_acl_rules:
+                config['ingress_rules'].append(rule)
+                config['egress_rules'].append(rule)
+            self.update_config(config)
+
+    #def count_acls(self):
+        #p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        #result = p.communicate()[0]
+        #for i in result.splitlines():
+
 
     def check_password(self,passw):
         for val in passw:
