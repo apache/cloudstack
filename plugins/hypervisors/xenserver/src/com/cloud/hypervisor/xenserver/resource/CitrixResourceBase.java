@@ -1331,27 +1331,28 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vmr.memoryStaticMax = getStaticMax(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam());
             vmr.memoryDynamicMin = vmSpec.getMinRam();
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
+            if (guestOsTypeName.toLowerCase().contains("windows")) {
+                vmr.VCPUsMax = (long)vmSpec.getCpus();
+            } else {
+                // XenServer has a documented limit of 16 vcpus per vm
+                vmr.VCPUsMax = 2L * vmSpec.getCpus();
+                if (vmr.VCPUsMax > 16)
+                {
+                    vmr.VCPUsMax = 16L;
+                }
+            }
         } else {
             //scaling disallowed, set static memory target
             if (vmSpec.isEnableDynamicallyScaleVm() && !isDmcEnabled(conn, host)) {
                 s_logger.warn("Host " + host.getHostname(conn) + " does not support dynamic scaling, so the vm " + vmSpec.getName() + " is not dynamically scalable");
             }
-            vmr.memoryStaticMin = vmSpec.getMinRam();
+            vmr.memoryStaticMin = vmSpec.getMaxRam();
             vmr.memoryStaticMax = vmSpec.getMaxRam();
-            vmr.memoryDynamicMin = vmSpec.getMinRam();
+            vmr.memoryDynamicMin = vmSpec.getMaxRam();;
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
+            vmr.VCPUsMax = (long)vmSpec.getCpus();
         }
 
-        if (guestOsTypeName.toLowerCase().contains("windows")) {
-            vmr.VCPUsMax = (long)vmSpec.getCpus();
-        } else {
-            // XenServer has a documented limit of 16 vcpus per vm
-            vmr.VCPUsMax = 2L * vmSpec.getCpus();
-            if (vmr.VCPUsMax > 16)
-            {
-                vmr.VCPUsMax = 16L;
-            }
-        }
 
         vmr.VCPUsAtStartup = (long)vmSpec.getCpus();
         vmr.consoles.clear();

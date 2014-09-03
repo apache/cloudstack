@@ -602,6 +602,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             if (answer != null && answer.getResult() && answer instanceof SetupAnswer) {
                 host.setSetup(true);
                 host.setLastPinged((System.currentTimeMillis() >> 10) - 5 * 60);
+                host.setHypervisorVersion(prodVersion);
                 _hostDao.update(host.getId(), host);
                 if (((SetupAnswer)answer).needReconnect()) {
                     throw new ConnectionException(false, "Reinitialize agent after setup.");
