@@ -1709,7 +1709,7 @@
                             				break;
                             			}
                             		}                            		
-                            		if (ostypeName == undefined || ostypeName.indexOf("win") == -1) {                            			
+                            		if (ostypeName == undefined || ostypeName.indexOf("Win") == -1) {                            			
                             			hiddenFields.push('xenserverToolsVersion61plus');
                             		}                            		
                             	}
