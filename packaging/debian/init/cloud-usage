@@ -102,7 +102,7 @@ start() {
         exit 1
     fi
 
-    if start_daemon -p $PIDFILE $DAEMON -cp "$CLASSPATH" -pidfile "$PIDFILE" -outfile SYSLOG -errfile SYSLOG -Dpid=$$ $CLASS
+    if start_daemon -p $PIDFILE $DAEMON -home "$JAVA_HOME" -cp "$CLASSPATH" -pidfile "$PIDFILE" -outfile SYSLOG -errfile SYSLOG -Dpid=$$ $CLASS
         RETVAL=$?
     then
         rc=0
