@@ -537,8 +537,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     granted = true;
                     break;
                 }
-                granted = true;
-                break;
             }
 
             if (!granted) {
