@@ -62,6 +62,9 @@ def definedinfile(filename, val):
 def addifmissing(filename, val):
     """ Add something to a file
     if it is not already there """
+    if not os.path.isfile(filename):
+         logging.debug("File %s doesn't exist, so create" % filename)
+         open(filename,"w").close()
     if not definedinfile(filename, val):
          updatefile(filename, val + "\n", "a")
          logging.debug("Added %s to file %s" % (val, filename))
