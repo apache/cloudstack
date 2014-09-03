@@ -887,13 +887,20 @@
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>findbugs-maven-plugin</artifactId>
           <version>${cs.findbugs.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.cloudstack</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>${project.version}</version>
+            </dependency>
+          </dependencies>
           <configuration>
             <effort>Max</effort>
             <threshold>High</threshold>
             <xmlOutput>true</xmlOutput>
             <failOnError>false</failOnError>
             <maxHeap>2048</maxHeap>
-            <excludeFilterFile>${basedir}/findbugsExcludeFilter.xml</excludeFilterFile>
+            <excludeFilterFile>findbugsExcludeFilter.xml</excludeFilterFile>
           </configuration>
           <executions>
             <execution>

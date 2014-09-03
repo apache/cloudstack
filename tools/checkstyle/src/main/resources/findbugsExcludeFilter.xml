@@ -21,11 +21,20 @@
 -->
 <FindBugsFilter>
 
-     <!-- Match all XYZ violations. -->
+     <!-- project: cloud-plugin-hypervisor-xenserver -->
      <Match>
        <Class name="CitrixResourceBase" />
        <Method name="getStatsRawXML" />
        <Bug pattern="DM_DEFAULT_ENCODING" />
      </Match>
+
+     <!-- project: utils -->
+     <Match>
+       <Class name="SSHCmdHelper" />
+       <Method name="sshExecuteCmdOneShotWithExitCode" />
+       <Bug pattern="DM_DEFAULT_ENCODING" />
+     </Match>
+
+
 
 </FindBugsFilter>
