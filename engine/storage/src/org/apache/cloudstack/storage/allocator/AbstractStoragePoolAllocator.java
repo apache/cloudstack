@@ -27,6 +27,7 @@ import java.util.Random;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.Storage;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -177,6 +178,23 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
                 s_logger.debug("StoragePool does not have required hypervisorType, skipping this pool");
             }
             return false;
+        }
+
+        if(HypervisorType.LXC.equals(dskCh.getHypervisorType())){
+            if(Volume.Type.ROOT.equals(dskCh.getType())){
+                //LXC ROOT disks supports NFS and local storage pools only
+                if(!(Storage.StoragePoolType.NetworkFilesystem.equals(pool.getPoolType()) ||
+                        Storage.StoragePoolType.Filesystem.equals(pool.getPoolType())) ){
+                    s_logger.debug("StoragePool does not support LXC ROOT disk, skipping this pool");
+                    return false;
+                }
+            } else if (Volume.Type.DATADISK.equals(dskCh.getType())){
+                //LXC DATA disks supports NFS and local storage pools only
+                if(!Storage.StoragePoolType.RBD.equals(pool.getPoolType())){
+                    s_logger.debug("StoragePool does not support LXC DATA disk, skipping this pool");
+                    return false;
+                }
+            }
         }
 
         // check capacity
