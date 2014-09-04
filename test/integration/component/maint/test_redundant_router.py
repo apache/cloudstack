@@ -94,11 +94,6 @@ class Services:
                                         },
                                     },
                         },
-                        "host": {
-                                 "username": "root",
-                                 "password": "password",
-                                 "publicport": 22,
-                        },
                         "network": {
                                   "name": "Test Network",
                                   "displaytext": "Test Network",
@@ -854,14 +849,20 @@ class TestRVRInternals(cloudstackTestCase):
                                 hypervisor=self.hypervisor
                                 )
         else:
-            result = get_process_status(
-                                master_host.ipaddress,
-                                self.services['host']["publicport"],
-                                self.services['host']["username"],
-                                self.services['host']["password"],
-                                master_router.linklocalip,
-                                'ip addr show eth2'
+            try:
+                host = {}
+                host.user, host.passwd = get_host_credentials(self.config, master_host.ipaddress)
+                result = get_process_status(
+                                    master_host.ipaddress,
+                                    22,
+                                    host.user,
+                                    host.passwd,
+                                    master_router.linklocalip,
+                                    "ip addr show eth2"
                                 )
+
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
 
         res = str(result)
 
@@ -890,14 +891,21 @@ class TestRVRInternals(cloudstackTestCase):
                                 hypervisor=self.hypervisor
                                 )
         else:
-            result = get_process_status(
-                                backup_host.ipaddress,
-                                self.services['host']["publicport"],
-                                self.services['host']["username"],
-                                self.services['host']["password"],
-                                backup_router.linklocalip,
-                                'ip addr show eth2',
+            try:
+                host = {}
+                host.user, host.passwd = get_host_credentials(self.config, backup_host.ipaddress)
+                result = get_process_status(
+                                    master_host.ipaddress,
+                                    22,
+                                    host.user,
+                                    host.passwd,
+                                    backup_router.linklocalip,
+                                    "ip addr show eth2"
                                 )
+
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
+
         res = str(result)
 
         self.debug("Command 'ip addr show eth2': %s" % result)
