@@ -323,7 +323,7 @@ class TestISO(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "provisioning"], BugId="CLOUDSTACK-6769, CLOUDSTACK-6774")
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns"], BugId="CLOUDSTACK-6769, CLOUDSTACK-6774", required_hardware="true")
     def test_04_extract_Iso(self):
         "Test for extract ISO"
 
