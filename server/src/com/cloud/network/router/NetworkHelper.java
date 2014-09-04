@@ -78,5 +78,4 @@ public interface NetworkHelper {
                     throws InsufficientAddressCapacityException,
                     InsufficientServerCapacityException, InsufficientCapacityException,
                     StorageUnavailableException, ResourceUnavailableException;
-
 }
