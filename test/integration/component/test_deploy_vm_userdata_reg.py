@@ -175,8 +175,6 @@ class TestDeployVmWithUserData(cloudstackTestCase):
             'Running',
             "Check list router response for router state"
         )
-        host.user="root"
-        host.passwd="password"
         cmd="cat /var/www/html/userdata/"+deployVmResponse.ipaddress+"/user-data"
 
         if self.hypervisor.lower() in ('vmware', 'hyperv'):
@@ -200,6 +198,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
 
         else:
             try:
+                host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
                 result = get_process_status(
                     host.ipaddress,
                     22,
