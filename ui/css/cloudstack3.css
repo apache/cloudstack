@@ -1396,7 +1396,7 @@ div.list-view td.state.off span {
   width: 470px;
   display: inline-block;
   padding-top: 0;
-  margin-left: 8px;
+  margin-left: 0px;
 }
 
 .quick-view-tooltip > div.title {
