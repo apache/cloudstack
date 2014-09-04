@@ -285,6 +285,7 @@ public class VirtualNetworkApplianceFactory {
         gwRules._privateIpDao = _privateIpDao;
         gwRules._networkACLMgr = _networkACLMgr;
         gwRules._nicProfileHelper = _nicProfileHelper;
+        gwRules._networkDao = _networkDao;
 
         return gwRules;
     }
