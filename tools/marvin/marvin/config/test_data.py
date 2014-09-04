@@ -1234,5 +1234,23 @@ test_data = {
                     },
                 },
                 "ostype": 'CentOS 5.6 (64-bit)',
-        }
+        },
+        "ldap_account": {
+            "email": "rmurphy@cloudstack.org",
+            "firstname": "Ryan",
+            "lastname": "Murphy",
+            "username": "rmurphy",
+            "password": "internalcloudstackpassword",
+            },
+        "ldapConfiguration_1":
+            {
+            "basedn": "dc=cloudstack,dc=org",
+            "emailAttribute": "mail",
+            "userObject": "inetOrgPerson",
+            "usernameAttribute": "uid",
+            "hostname": "localhost",
+            "port": "10389",
+            "ldapUsername": "rmurphy",
+            "ldapPassword": "password"
+            }
 }
