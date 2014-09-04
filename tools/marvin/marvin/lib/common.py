@@ -288,16 +288,11 @@ def get_template(
     Get the Templates pertaining to the inputs provided
     '''
     list_templatesout = apiclient.listTemplates(cmd)
-
-    if list_templatesout is None:
-        return FAILED
-
-    if validateList(list_templatesout[0]) == FAIL:
+    if validateList(list_templatesout)[0] != PASS:
         return FAILED
 
     for template in list_templatesout:
-        if template.isready and template.templatetype == template_type and template.ostypename == ostype_desc:
-            print("found template")
+        if template.isready and template.templatetype == template_type:
             return template
     '''
     Return default first template, if no template matched
