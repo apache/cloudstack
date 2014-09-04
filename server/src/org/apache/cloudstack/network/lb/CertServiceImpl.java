@@ -279,7 +279,9 @@ public class CertServiceImpl implements CertService {
             List<String> lbIds = new ArrayList<String>();
             for (LoadBalancerCertMapVO mapVO : lbCertMap) {
                 LoadBalancer lb = _entityMgr.findById(LoadBalancerVO.class, mapVO.getLbId());
-                lbIds.add(lb.getUuid());
+                if (lb != null) {
+                    lbIds.add(lb.getUuid());
+                }
             }
             response.setLbIds(lbIds);
         }
