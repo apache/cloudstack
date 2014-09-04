@@ -106,6 +106,9 @@ public class NetworkHelperImpl implements NetworkHelper {
 
     private static final Logger s_logger = Logger.getLogger(NetworkHelperImpl.class);
 
+    protected static Account s_systemAccount;
+    protected static String s_vmInstanceName;
+
     @Inject
     protected NicDao _nicDao;
     @Inject
@@ -559,7 +562,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                 Long vpcId = routerDeploymentDefinition.getVpc() != null ? routerDeploymentDefinition.getVpc().getId() : null;
 
                 router = new DomainRouterVO(id, routerOffering.getId(), routerDeploymentDefinition.getVirtualProvider().getId(), VirtualMachineName.getRouterName(id,
-                        VirtualNetworkStatus.instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(),
+                        s_vmInstanceName), template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(),
                         routerDeploymentDefinition.isRedundant(), 0, false, RedundantState.UNKNOWN, offerHA, false, vpcId);
 
                 router.setDynamicallyScalable(template.isDynamicallyScalable());
@@ -747,7 +750,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         s_logger.debug("Adding nic for Virtual Router in Control network ");
         List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         NetworkOffering controlOffering = offerings.get(0);
-        Network controlConfig = _networkMgr.setupNetwork(VirtualNetworkStatus.account, controlOffering, routerDeploymentDefinition.getPlan(), null, null, false).get(0);
+        Network controlConfig = _networkMgr.setupNetwork(s_systemAccount, controlOffering, routerDeploymentDefinition.getPlan(), null, null, false).get(0);
         networks.put(controlConfig, new ArrayList<NicProfile>());
         // 3) Public network
         if (routerDeploymentDefinition.isPublicNetwork()) {
@@ -776,8 +779,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                 defaultNic.setDeviceId(2);
             }
             final NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
-            final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(VirtualNetworkStatus.account, publicOffering, routerDeploymentDefinition.getPlan(), null,
-                    null, false);
+            final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(s_systemAccount, publicOffering, routerDeploymentDefinition.getPlan(), null, null, false);
             final String publicIp = defaultNic.getIp4Address();
             // We want to use the identical MAC address for RvR on public
             // interface if possible
@@ -790,5 +792,13 @@ public class NetworkHelperImpl implements NetworkHelper {
         }
 
         return networks;
+    }
+
+    public static void setSystemAccount(final Account systemAccount) {
+        s_systemAccount = systemAccount;
+    }
+
+    public static void setVMInstanceName(final String vmInstanceName) {
+        s_vmInstanceName = vmInstanceName;
     }
 }
