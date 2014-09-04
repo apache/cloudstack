@@ -92,6 +92,7 @@ class CsNetfilters(object):
         for r in del_list:
             cmd = "iptables -t %s %s" % (r.get_table(), r.to_str(True))
             CsHelper.execute(cmd)
+            print "Delete rule %s from table %s" % (r.to_str(True), r.get_table())
             logging.info("Delete rule %s from table %s", r.to_str(True), r.get_table())
 
     def compare(self, list):
@@ -205,7 +206,7 @@ class CsNetfilter(object):
     def to_str(self, delete = False):
         """ Convert the rule back into aynactically correct iptables command """
         # Order is important 
-        order = ['-A', '-s', '-d', '!_-d', '-i', '-p', '-m', '-m2', '--state', 
+        order = ['-A', '-s', '-d', '!_-d', '-i', '-p', '-m', '-m2', '--icmp-type', '--state', 
                 '--dport', '--destination-port', '-o', '-j', '--set-xmark',
                  '--to-source', '--to-destination']
         str = ''
