@@ -19,6 +19,7 @@
 import sys
 import os
 from merge import dataBag
+from cs_databag import CsDataBag, CsCmdLine
 from pprint import pprint
 import subprocess
 import logging
@@ -488,28 +489,27 @@ class CsIP:
             self.post_config_change("delete")
 
 
-class CsDataBag(object):
 
-    def __init__(self, key):
-        self.data = {}
-        db = dataBag()
-        db.setKey(key)
-        db.load()
-        self.dbag = db.getDataBag()
-        global fw
 
-    def get_bag(self):
-        return self.dbag
+class CsPassword(CsDataBag):
+    """
+      Update the password cache
+
+      A stupid step really as we should just rewrite the password server to
+      use the databag
+    """
+    cache = "/var/cache/cloud/passwords"
 
     def process(self):
-        pass
+        file = CsFile(self.cache)
+        for item in self.dbag:
+            if item == "id":
+                continue
+            self.__update(file, item, self.dbag[item])
+        file.commit()
 
-class CsCmdLine(CsDataBag):
-    """ Get cmdline config parameters """
-    def is_redundant(self):
-        if "redundant" in self.dbag['config']:
-            return self.dbag['config']['redundant'] == "true"
-        return False
+    def __update(self, file, ip, password):
+        file.search("%s=" % ip, "%s=%s" % (ip, password))
 
 class CsAcl(CsDataBag):
     """
@@ -591,26 +591,6 @@ class CsAcl(CsDataBag):
                 continue
             dev_obj = self.AclDevice(self.dbag[item]).create()
 
-
-class CsPassword(CsDataBag):
-    """
-      Update the password cache
-
-      A stupid step really as we should just rewrite the password server to
-      use the databag
-    """
-    cache = "/var/cache/cloud/passwords"
-
-    def process(self):
-        file = CsFile(self.cache)
-        for item in self.dbag:
-            if item == "id":
-                continue
-            self.__update(file, item, self.dbag[item])
-        file.commit()
-
-    def __update(self, file, ip, password):
-        file.search("%s=" % ip, "%s=%s" % (ip, password))
 
 class CsVmMetadata(CsDataBag):
 

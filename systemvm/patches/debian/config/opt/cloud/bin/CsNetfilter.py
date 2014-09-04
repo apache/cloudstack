@@ -1,6 +1,7 @@
 # -- coding: utf-8 --
 import CsHelper
 from pprint import pprint
+from cs_databag import CsDataBag, CsCmdLine
 import logging
 
 class CsChain(object):
@@ -99,7 +100,6 @@ class CsNetfilters(object):
             # Ensure all inbound chains have a default drop rule
             if c.startswith("ACL_INBOUND"):
                 list.append(["filter", "", "-A %s -j DROP" % c])
-        print list
         for fw in list:
             new_rule = CsNetfilter()
             new_rule.parse(fw[2])
@@ -127,16 +127,20 @@ class CsNetfilters(object):
 
     def del_standard(self):
         """ Del rules that are there but should not be deleted 
-        from the host but that configure does not actually manage """
-        self.del_rule("mangle", "-m udp --dport 68 -A OUTPUT -p udp -j CHECKSUM")
+        These standard firewall rules vary according to the device type
+        """
+        type = CsCmdLine("cmdline").get_type()
 
-        self.del_rule("filter", "-d 224.0.0.18/32 -A INPUT -j ACCEPT")
-        self.del_rule("filter", "-d 225.0.0.50/32 -A INPUT -j ACCEPT")
-        self.del_rule("filter", "-A INPUT -p icmp -j ACCEPT")
-        self.del_rule("filter", "-i lo -A INPUT -j ACCEPT")
-        self.del_rule("filter", "-A INPUT -m tcp -i eth0 -m state --dport 3922 -p tcp --state NEW -j ACCEPT")
-        self.del_rule("filter", "-j ACCEPT -A INPUT --state RELATED,ESTABLISHED -m state")
-        self.del_rule("filter", "-j ACCEPT -A FORWARD --state RELATED,ESTABLISHED -m state")
+        try:
+            table = ''
+            for i in open("/etc/iptables/iptables-%s" % type):
+                if i.startswith('*'): # Table
+                    table = i[1:].strip()
+                if i.startswith('-A'): # Rule
+                    self.del_rule(table, i.strip())
+        except IOError:
+            # Nothing can be done
+            return
 
     def del_rule(self, table, rule):
         nr = CsNetfilter()
@@ -148,7 +152,6 @@ class CsNetfilters(object):
         """ Delete a rule from the list of configured rules
         The rule will not actually be removed on the host """
         self.rules[:] = [x for x in self.rules if not x == rule]
-
 
 class CsNetfilter(object):
      
@@ -172,8 +175,10 @@ class CsNetfilter(object):
         rule = rule.replace('! -', '!_-')
         rule = rule.replace('-p all', '')
         rule = rule.replace('  ', ' ')
+        rule = rule.replace('bootpc', '68')
         # -m can appear twice in a string
         rule = rule.replace('-m state', '-m2 state')
+        rule = rule.replace('ESTABLISHED,RELATED', 'RELATED,ESTABLISHED')
         bits = rule.split(' ')
         rule = dict(zip(bits[0::2],bits[1::2]))
         if "-A" in rule.keys():
