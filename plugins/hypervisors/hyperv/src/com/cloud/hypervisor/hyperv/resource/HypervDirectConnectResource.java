@@ -516,7 +516,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             // Only Answer instances are returned by remote agents.
             // E.g. see Response.getAnswers()
             Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
-            String logResult = cleanPassword(StringEscapeUtils.unescapeJava(result.toString()));
+            String logResult = cleanPassword(s_gson.toJson(result));
             s_logger.debug("executeRequest received response " + logResult);
             if (result.length > 0) {
                 return result[0];
@@ -547,7 +547,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
 
         Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
-        String logResult = cleanPassword(StringEscapeUtils.unescapeJava(result.toString()));
+        String logResult = cleanPassword(s_gson.toJson(result));
         s_logger.debug("executeRequest received response " + logResult);
         if (result.length > 0) {
             return result[0];
