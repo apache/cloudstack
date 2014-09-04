@@ -641,7 +641,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } else {
                 throw new InvalidParameterValueException("Missing parameter hypervisor. Hypervisor type is required to create zone wide primary storage.");
             }
-            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Hyperv && hypervisorType != HypervisorType.Any) {
+            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Hyperv && hypervisorType != HypervisorType.LXC && hypervisorType != HypervisorType.Any) {
                 throw new InvalidParameterValueException("zone wide storage pool is not supported for hypervisor type " + hypervisor);
             }
         }

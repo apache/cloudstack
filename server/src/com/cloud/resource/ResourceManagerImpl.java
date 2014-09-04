@@ -1195,6 +1195,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (hosts == null || hosts.isEmpty() || !answer.getMigrate()) {
                     // for the last host in this cluster, stop all the VMs
                     _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                } else if (HypervisorType.LXC.equals(host.getHypervisorType())){
+                    //Stop LXC Vms. LXC doesn't support migration
+                    _haMgr.scheduleStop(vm, hostId, WorkType.Stop);
                 } else {
                     _haMgr.scheduleMigration(vm);
                 }
@@ -2092,7 +2095,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             _agentMgr.pullAgentOutMaintenance(hostId);
 
             // for kvm, need to log into kvm host, restart cloudstack-agent
-            if (host.getHypervisorType() == HypervisorType.KVM) {
+            if (host.getHypervisorType() == HypervisorType.KVM || host.getHypervisorType() == HypervisorType.LXC) {
 
                 boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(Config.KvmSshToAgentEnabled.key()));
                 if (!sshToAgent) {
@@ -2166,7 +2169,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return true;
         }
 
-        if (host.getHypervisorType() == HypervisorType.KVM) {
+        if (host.getHypervisorType() == HypervisorType.KVM || host.getHypervisorType() == HypervisorType.LXC) {
             MaintainAnswer answer = (MaintainAnswer)_agentMgr.easySend(hostId, new MaintainCommand());
         }
 
