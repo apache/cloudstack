@@ -125,7 +125,7 @@ clean_vbox="${clean_vbox:-}"
 # while building with vbox, we need a quite unique appliance name in order to prevent conflicts with multiple
 # concurrent executors on jenkins
 if [ -z "${branch}" ] ; then
- branch=`(git name-rev --no-undefined --name-only HEAD 2>/dev/null || echo unknown) | sed -e 's/remotes\/.*\///g'`
+ branch=`(git name-rev --no-undefined --name-only HEAD 2>/dev/null || echo unknown) | sed -e 's/remotes\/.*\///g' | sed -e 's|/|_|g'`
 fi
 
 branch_tag=
