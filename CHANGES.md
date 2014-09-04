@@ -9,7 +9,7 @@ Version 4.3.1
 
 This is a bug fix release. The following issues were fixed:
  
-    CLOUDSTACK-6531: Stopping the route in case of command failures
+    CLOUDSTACK-6531: Stopping the router in case of command failures
     CLOUDSTACK-6115: TravisCI configuration
     CLOUDSTACK-7405: allowing VR meta-data to be accessed without trailing slash
     CLOUDSTACK-7260: Management server not responding after some time for Vmware due to Oom (cannot create native thread).
