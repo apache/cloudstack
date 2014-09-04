@@ -773,12 +773,19 @@ test_data = {
         "templatefilter": "self"
     },
     "templatefilter": 'self',
-
     "templates": {
         "displaytext": 'Template',
         "name": 'Template',
         "ostype": "CentOS 5.3 (64-bit)",
         "templatefilter": 'self',
+    },
+    "win2012template": {
+        "displaytext": "win2012",
+        "name": "win2012",
+        "passwordenabled": False,
+        "url": "http://nfs1.lab.vmops.com/templates/vmware/new-test-win.ova",
+        "format": "OVA",
+        "ostype": "Windows 8 (64-bit)",
     },
     "templateregister": {
         "displaytext": "xs",

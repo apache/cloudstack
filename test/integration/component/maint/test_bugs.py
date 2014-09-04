@@ -37,14 +37,6 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
             cls.testClient = super(Test42xBugsMgmtSvr, cls).getClsTestClient()
             cls.apiClient = cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
-            cls.services["win2012template"] = {
-                                             "displaytext": "win2012",
-                                             "name": "win2012",
-                                             "passwordenabled": False,
-                                             "url": "http://nfs1.lab.vmops.com/templates/vmware/new-test-win.ova",
-                                             "format": "OVA",
-                                             "ostype": "Windows 8 (64-bit)",
-                                             }
             cls.hypervisor = cls.testClient.getHypervisorInfo()
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
@@ -333,6 +325,7 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         self.domain_userapiclient = self.testClient.getUserApiClient(self.domain_user.username, self.newdomain.name)
 
         # Step2: Register a template as Domain admin.
+        self.services["templateregister"]["ostype"] = self.services["ostype"]
         self.domain_template = Template.register(
                                         self.apiClient,
                                         self.services["templateregister"],
@@ -549,7 +542,7 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         self.services["virtual_machine"]["template"] = self.win2012_template.id
         vm1 = VirtualMachine.create(
             self.apiClient,
-            self.services["virtual_machine2"],
+            self.services["virtual_machine"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
