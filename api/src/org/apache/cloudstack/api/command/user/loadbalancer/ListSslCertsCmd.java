@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SslCertResponse;
 import org.apache.cloudstack.context.CallContext;
 
@@ -58,6 +59,9 @@ public class ListSslCertsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = false, description = "Loadbalancer Rule Id")
     private Long lbId;
 
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = false, description = "project who owns the ssl cert")
+    private Long projectId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -72,6 +76,10 @@ public class ListSslCertsCmd extends BaseCmd {
 
     public Long getLbId() {
         return lbId;
+    }
+
+    public Long getProjectId() {
+        return projectId;
     }
 
     /////////////////////////////////////////////////////
