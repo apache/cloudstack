@@ -23,8 +23,10 @@ from fabric.api import hide
 import json
 import random
 import datetime
+import subprocess
 from envassert import file, process, package, user, group, port, cron, detect, ip
 import copy
+from fabric import state
 
 try:
     from . import SystemVMTestCase, has_line, print_doc
@@ -144,7 +146,7 @@ class UpdateConfigTestCase(SystemVMTestCase):
 
     def update_config(self, config):
         config_json = json.dumps(config, indent=2)
-        print_doc('config.json', config_json)
+        #print_doc('config.json', config_json)
         file_write('/var/cache/cloud/update_config_test.json', config_json)
         with hide("everything"):
             result = run("python /opt/cloud/bin/update_config.py update_config_test.json",
@@ -164,7 +166,8 @@ class UpdateConfigTestCase(SystemVMTestCase):
         # todo config update should exit 1 on convergence errors!
         found, context = has_line('/var/log/cloud.log', 'cannot be configured')
         if found:
-            print_doc('/var/log/cloud.log', context)
+            #print_doc('/var/log/cloud.log', context)
+            pass
         assert not found, 'cloud.log should not contain "cannot be configured"'
 
     @attr(tags=["systemvm"], required_hardware="true")
@@ -252,7 +255,21 @@ class UpdateConfigTestCase(SystemVMTestCase):
         self.guest_network(config)
 
     def check_acl(self, list):
-        # clear all acls
+        clear1 = self.clear_all_acls()
+        clear2 = self.clear_all_acls()
+        assert clear1 == clear2, "Clear all acls called twice and produced different results"
+        unique = {}
+
+        # How many unique devices
+        for ips in list:
+            unique["eth%s" % ips["nic_dev_id"]] = 1
+
+        # If this is the first run, the drops will not be there yet
+        # this is so I can get get a true count of what is explicitly added
+        drops = len(unique)
+        for dev in unique:
+            drops -= ip.count_fw_rules('ACL_INBOUND_%s -j DROP' % dev)
+
         for ips in list:
             config = copy.deepcopy(self.basic_network_acl)
             config['device'] = "eth%s" % ips["nic_dev_id"]
@@ -262,11 +279,29 @@ class UpdateConfigTestCase(SystemVMTestCase):
                 config['egress_rules'].append(rule)
             self.update_config(config)
 
-    #def count_acls(self):
-        #p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        #result = p.communicate()[0]
-        #for i in result.splitlines():
+        # Check the default drop rules are there
+        for dev in unique:
+            drop = ip.count_fw_rules('ACL_INBOUND_%s -j DROP' % dev)
+            assert drop == 1, "ACL_INBOUND_%s does not have a default drop rule" % dev
 
+        after = ip.count_fw_rules()
+        # How many new acls should we get?
+        # The number of rules * the number of devices * 2 (in and out)
+        expected = len(unique) * 2 * len(self.basic_acl_rules) + clear2 + drops
+        assert expected == after, "Number of acl rules does not match what I expected to see"
+        for dev in range(6):
+            config = copy.deepcopy(self.basic_network_acl)
+            config['device'] = "eth%s" % dev
+            self.update_config(config)
+        clear2 = self.clear_all_acls() - drops
+        assert clear1 == clear2, "Clear all acls appears to have failed"
+
+    def clear_all_acls(self):
+        for dev in range(6):
+            config = copy.deepcopy(self.basic_network_acl)
+            config['device'] = "eth%s" % dev
+            self.update_config(config)
+        return ip.count_fw_rules()
 
     def check_password(self,passw):
         for val in passw:
@@ -318,5 +353,4 @@ class UpdateConfigTestCase(SystemVMTestCase):
             assert file.has_line("/etc/dhcphosts.txt", line) is False
 
 if __name__ == '__main__':
-    import unittest
     unittest.main()
