@@ -44,12 +44,13 @@ except (NameError, ImportError):
     subprocess.check_output = check_output
 
 import logging
-logging.getLogger('paramiko.transport').setLevel(logging.WARNING)
+logging.getLogger('paramiko.transport').setLevel(logging.ERROR)
 
 from vagrant import Vagrant
 from unittest import TestCase
 from paramiko.config import SSHConfig
 from paramiko.client import SSHClient, AutoAddPolicy
+from fabric import state
 from fabric.api import env
 from fabric.api import run, hide
 from envassert import file, detect
@@ -177,6 +178,11 @@ class SystemVMTestCase(TestCase):
         env.timeout = 5
         env.disable_known_hosts = True
         env.platform_family = detect.detect()
+        state.output.running = False
+        state.output.status = False
+        state.output.stdout = False
+        state.output.stderr = False
+        state.output.warnings = False
 
         # this could break down when executing multiple test cases in parallel in the same python process
         # def tearDown(self):
