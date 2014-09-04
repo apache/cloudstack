@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -64,7 +64,7 @@ def main(argv):
                 deletefile(ip, folder, file)
             else:
                 createfile(ip, folder, file, data)
-    
+
     if fpath != '':
         fh.close()
         os.remove(fpath)
@@ -77,7 +77,7 @@ def deletefile(ip, folder, file):
 
 def createfile(ip, folder, file, data):
     dest = "/var/www/html/" + folder + "/" + ip + "/" + file
-    metamanifestdir = "/var/www/html/" + folder + "/" + ip 
+    metamanifestdir = "/var/www/html/" + folder + "/" + ip
     metamanifest =  metamanifestdir + "/meta-data"
 
     # base64 decode userdata
@@ -105,7 +105,7 @@ def createfile(ip, folder, file, data):
                 sys.exit(1)
         if os.path.exists(metamanifest):
             fh = open(metamanifest, "r+a")
-            exflock(fh) 
+            exflock(fh)
             if not file in fh.read():
                 fh.write(file + '\n')
             unflock(fh)
@@ -121,33 +121,6 @@ def createfile(ip, folder, file, data):
         os.chmod(metamanifest, 0644)
 
 def htaccess(ip, folder, file):
-    entry = "RewriteRule ^" + file + "$  ../" + folder + "/%{REMOTE_ADDR}/" + file + " [L,NC,QSA]"
-    htaccessFolder = "/var/www/html/latest"
-    htaccessFile = htaccessFolder + "/.htaccess"
-
-    try:
-        os.mkdir(htaccessFolder,0755)
-    except OSError as e:
-        # error 17 is already exists, we do it this way for concurrency
-        if e.errno != 17:
-            print "failed to make directories " + htaccessFolder + " due to :" +e.strerror
-            sys.exit(1)
-
-    if os.path.exists(htaccessFile):
-        fh = open(htaccessFile, "r+a")
-        exflock(fh)
-        if not entry in fh.read():
-            fh.write(entry + '\n')
-        unflock(fh) 
-        fh.close()
-    else:
-        fh = open(htaccessFile, "w")
-        exflock(fh)
-        fh.write("Options +FollowSymLinks\nRewriteEngine On\n\n")  
-        fh.write(entry + '\n')
-        unflock(fh)
-        fh.close()
-
     entry="Options -Indexes\nOrder Deny,Allow\nDeny from all\nAllow from " + ip
     htaccessFolder = "/var/www/html/" + folder + "/" + ip
     htaccessFile = htaccessFolder+"/.htaccess"
@@ -166,24 +139,6 @@ def htaccess(ip, folder, file):
     unflock(fh)
     fh.close()
 
-    if folder == "metadata" or folder == "meta-data":
-        entry = "RewriteRule ^meta-data/(.+)$  ../" + folder + "/%{REMOTE_ADDR}/$1 [L,NC,QSA]"
-        htaccessFolder = "/var/www/html/latest"
-        htaccessFile = htaccessFolder + "/.htaccess"
-
-        fh = open(htaccessFile, "r+a")
-        exflock(fh)
-        if not entry in fh.read():
-            fh.write(entry + '\n')
-
-        entry = "RewriteRule ^meta-data/?$  ../" + folder + "/%{REMOTE_ADDR}/meta-data [L,NC,QSA]"
-
-        fh.seek(0)
-        if not entry in fh.read():
-            fh.write(entry + '\n')
-        unflock(fh)
-        fh.close()
-
 def exflock(file):
     try:
         flock(file, LOCK_EX)
@@ -191,7 +146,7 @@ def exflock(file):
         print "failed to lock file" + file.name + " due to : " + e.strerror
         sys.exit(1)
     return True
-    
+
 def unflock(file):
     try:
         flock(file, LOCK_UN)
