@@ -357,9 +357,11 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Inject
     protected NetworkTopologyContext _networkTopologyContext;
+
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper _nwHelper;
+
     @Inject
     protected CommandSetupHelper _commandSetupHelper;
     @Inject
@@ -368,7 +370,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     int _routerRamSize;
     int _routerCpuMHz;
     int _retry = 2;
-    String _instance;
     String _mgmtCidr;
 
     int _routerStatsInterval = 300;
@@ -599,10 +600,12 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         _rvrStatusUpdateExecutor = Executors.newFixedThreadPool(_rvrStatusUpdatePoolSize, new NamedThreadFactory("RedundantRouterStatusMonitor"));
 
-        _instance = configs.get("instance.name");
-        if (_instance == null) {
-            _instance = "DEFAULT";
+        String instance = configs.get("instance.name");
+        if (instance == null) {
+            instance = "DEFAULT";
         }
+
+        NetworkHelperImpl.setVMInstanceName(instance);
 
         final String rpValue = configs.get("network.disable.rpfilter");
         if ((rpValue != null) && rpValue.equalsIgnoreCase("true")) {
@@ -623,7 +626,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         offering = _serviceOfferingDao.persistSystemServiceOffering(offering);
         _routerDeploymentManagerBuilder.setOfferingId(offering.getId());
 
-        VirtualNetworkStatus.account = _accountMgr.getSystemAccount();
+        NetworkHelperImpl.setSystemAccount(_accountMgr.getSystemAccount());
 
         final String aggregationRange = configs.get("usage.stats.job.aggregation.range");
         _usageAggregationRange = NumbersUtil.parseInt(aggregationRange, 1440);
