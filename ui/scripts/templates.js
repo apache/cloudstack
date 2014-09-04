@@ -1025,25 +1025,23 @@
                                 }),
 
 
-                                dataProvider: function(args) {
-                                    var jsonObj = args.context.templates[0];
-                                    var apiCmd = "listTemplates&templatefilter=self&id=" + jsonObj.id;
-                                    if (jsonObj.zoneid != null)
-                                        apiCmd = apiCmd + "&zoneid=" + jsonObj.zoneid;
-
+                                dataProvider: function(args) {  // UI > Templates menu (listing) > select a template from listing > Details tab                               
                                     $.ajax({
-                                        url: createURL(apiCmd),
-                                        dataType: "json",
+                                        url: createURL("listTemplates"),
+                                        data: {
+                                        	templatefilter: "self",
+                                        	id: args.context.templates[0].id
+                                        },
                                         success: function(json) {
                                         	var jsonObj = json.listtemplatesresponse.template[0];
-
+                                        	
                                         	if ('details' in jsonObj && 'hypervisortoolsversion' in jsonObj.details) {
                                         	    if (jsonObj.details.hypervisortoolsversion == 'xenserver61')
                                         	        jsonObj.xenserverToolsVersion61plus = true;
                                         	    else
                                         	        jsonObj.xenserverToolsVersion61plus = false;
                                         	}
-
+                                        	
                                         	args.response.success({
                                         	    actionFilter: templateActionfilter,
                                         	    data: jsonObj
@@ -1072,24 +1070,34 @@
                                     hideSearchBar: true,
 
 
-                                    dataProvider: function(args) {		
-	                                                var jsonObj = args.context.templates[0];
-                                                        var apiCmd = "listTemplates&templatefilter=self&id=" + jsonObj.id;
-
-                                                        $.ajax({
-                                                            url: createURL(apiCmd),
-                                                            dataType: "json",
-                                                            success: function(json) {
-                                                                    var templates = json.listtemplatesresponse.template;
-                                                                    var zones = [];
-                                                                    zones = templates;
-
-                                                        args.response.success({
-                                                                    actionFilter: templateActionfilter,
-                                                                    data: zones
-                                                        });
-                                                }
-                                            });
+                                    dataProvider: function(args) {  // UI > Templates menu (listing) > select a template from listing > Details tab > Zones tab (listing) 
+                                    	$.ajax({
+                                            url: createURL("listTemplates"),
+                                            data: {
+                                            	templatefilter: "self",
+                                            	id: args.context.templates[0].id
+                                            },
+                                            success: function(json) {
+                                            	var jsonObjs = json.listtemplatesresponse.template;
+                                            	                                            	
+                                            	if (jsonObjs != undefined) {
+                                            		for (var i = 0; i < jsonObjs.length; i++) {
+                                            			var jsonObj = jsonObjs[i];
+                                            			if ('details' in jsonObj && 'hypervisortoolsversion' in jsonObj.details) {
+                                                    	    if (jsonObj.details.hypervisortoolsversion == 'xenserver61')
+                                                    	        jsonObj.xenserverToolsVersion61plus = true;
+                                                    	    else
+                                                    	        jsonObj.xenserverToolsVersion61plus = false;
+                                                    	}
+                                            		}
+                                            	}                                            	
+                                            	
+                                            	args.response.success({
+                                            	    actionFilter: templateActionfilter,
+                                            	    data: jsonObjs
+                                            	});
+                                            }
+                                        });                                      	                        
                                     },
                                     
                                     detailView: {
@@ -1410,31 +1418,20 @@
                                             }),
 
 
-                                            dataProvider: function(args) {
-                                                var jsonObj = args.context.templates[0];
-                                                var apiCmd = "listTemplates&templatefilter=self&id=" + jsonObj.id;
-                                                if (jsonObj.zoneid != null)
-                                                    apiCmd = apiCmd + "&zoneid=" + jsonObj.zoneid;
+                                            dataProvider: function(args) {  // UI > Templates menu (listing) > select a template from listing > Details tab > Zones tab (listing) > select a zone from listing > Details tab  
+                                            	var jsonObj = args.context.zones[0];
 
-                                                $.ajax({
-                                                    url: createURL(apiCmd),
-                                                    dataType: "json",
-                                                    success: function(json) {
-                                                    	var jsonObj = json.listtemplatesresponse.template[0];
+                                            	if ('details' in jsonObj && 'hypervisortoolsversion' in jsonObj.details) {
+                                            	    if (jsonObj.details.hypervisortoolsversion == 'xenserver61')
+                                            	        jsonObj.xenserverToolsVersion61plus = true;
+                                            	    else
+                                            	        jsonObj.xenserverToolsVersion61plus = false;
+                                            	}
 
-                                                    	if ('details' in jsonObj && 'hypervisortoolsversion' in jsonObj.details) {
-                                                    	    if (jsonObj.details.hypervisortoolsversion == 'xenserver61')
-                                                    	        jsonObj.xenserverToolsVersion61plus = true;
-                                                    	    else
-                                                    	        jsonObj.xenserverToolsVersion61plus = false;
-                                                    	}
-
-                                                    	args.response.success({
-                                                    	    actionFilter: templateActionfilter,
-                                                    	    data: jsonObj
-                                                    	});
-                                                    }
-                                                });
+                                            	args.response.success({
+                                            	    actionFilter: templateActionfilter,
+                                            	    data: jsonObj
+                                            	});                        	
                                             }
                                         }
                                     }}
