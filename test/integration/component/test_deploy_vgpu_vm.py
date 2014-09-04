@@ -73,7 +73,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
              for ghost in hosts :
                  if ghost.hypervisorversion >= "6.2.0":
-                    #sshClient = SshClient(host=ghost.ipaddress, port=22, user='root',passwd=cls.testdata["host_password"])
+
                     sshClient = SshClient(host=ghost.ipaddress, port=22, user='root',passwd=cls.testdata["host_password"])
 
                     if ghost.hypervisorversion == "6.2.0":
@@ -136,6 +136,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                )
 
         cls.template = get_windows_template(cls.apiclient, cls.zone.id ,ostype_desc="Windows 8 (64-bit)")
+        #cls.template = get_windows_template(cls.apiclient, cls.zone.id ,ostype_desc="Windows Server 2012 (64-bit)")
 
         if  cls.template == FAILED:
             cls.template = Template.register(
@@ -170,7 +171,6 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                       raise unittest.SkipTest("Failed to download template(ID: %s)" % template_response.id)
 
                   timeout = timeout - 1
-
 
         """
         Create Service Offerings for Both K1 and K2 cards to be used for VM life cycle tests
@@ -279,6 +279,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                                                        self.apiclient,
                                                        self.testdata["vgpu"]["service_offerings"][gtype]
                                                           )
+           self.debug("service offering details are:%s"%self.service_offering)
            list_service_response = ServiceOffering.list(
                self.apiclient,
                id=self.service_offering.id
@@ -290,7 +291,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
            self.assertEqual(
                  list_service_response[0].displaytext,
                  self.testdata["vgpu"]["service_offerings"][gtype]["displaytext"],
-                 "Check server displaytext in createServiceOfferings"
+                 "Check server display text in createServiceOfferings"
                 )
            self.assertEqual(
                list_service_response[0].name,
@@ -315,7 +316,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
               self.assertEqual(
                  list_service_response[0].serviceofferingdetails.vgpuType,
                         gtype,
-                    "Failed To Create Service Offering . Check vGPU Service Offering list for K2 passthrough"
+                    "Failed To Create Service Offering . Check vGPU Service Offering list"
                   )
               self.assertEqual(
                  list_service_response[0].displaytext,
@@ -346,6 +347,13 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         Get vGPU type model
         """
         vgpu_type_model = ssh_client.execute("xe vgpu-list vm-name-label=" + vminstancename + " params=type-model-name --minimal")
+        self.debug("vgpu type model is %s and value is %s and length is %s"%(vgpu_type_model,vgpu_type_model[0],len(vgpu_type_model[0])))
+        if vgputype is None:
+            if len(vgpu_type_model[0])==0:
+                self.debug("This is non GPU instance")
+                return
+            else:
+                self.fail("Non vGPU VM has GPU cards @ host:%s"%vminstancename)
         self.assertNotEqual(
                             len(vgpu_type_model),
                             0,
@@ -360,14 +368,16 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                )
         """ Check whether the vgputype in the service offering is same as the one obtained by listing the vgpu type model
         """
+        self.debug("VM vGPU type is: %s and vGPU type on XenServer is : %s"%(list_service_offering_response[0].serviceofferingdetails.vgpuType,vgpu_type_model[0]))
         self.assertEqual(
                       list_service_offering_response[0].serviceofferingdetails.vgpuType,
                       vgpu_type_model[0],
-                      "Vm does not have the correct GPU resources, verified on the host"
+                      "VM does not have the correct GPU resources, verified on the host"
                       )
         """
         Check whether the VM is deployed with the card which was mentioned in the service offering
         """
+
         self.assertEqual(
                          vgputype,
                          list_service_offering_response[0].serviceofferingdetails.vgpuType,
@@ -425,7 +435,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             "Running",
             msg="VM is not in Running state"
         )
-        if vgput != "None":
+        if vgput != "nonvgpuoffering":
            self.assertEqual(
               vm.vgpu,
               vgput,
@@ -451,6 +461,30 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             "Check if service offering exists in listServiceOfferings"
                     )
         return
+
+    @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
+    def check_for_vm(self,vgpucard,vgpuofferingid,vmid):
+        list_vm_response = list_virtual_machines(
+                                                     self.apiclient,
+                                                     id=vmid
+                                                     )
+
+        if isinstance(list_vm_response, list):
+                vm = list_vm_response[0]
+                if vm.state == 'Running':
+                   self.debug("VM state: %s" % vm.state)
+                else:
+                    self.fail("Failed to start VM (ID: %s)" % vm.id)
+                if vm.serviceofferingid == vgpuofferingid:
+                    self.debug("VM service offering id : %s" % vm.serviceofferingid)
+                else:
+                    self.fail("Service Offering is not matching " % vm.id)
+                if vgpucard !="nonvgpuoffering":
+                    if vm.vgpu == vgpucard:
+                        self.debug("VM vGPU card is : %s" % vm.vgpu)
+                    else:
+                        self.fail("Failed to start VM (ID: %s) with %s vGPU card " % (vm.id,vgpucard))
+        return(list_vm_response[0])
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
     def destroy_vm(self):
@@ -526,6 +560,49 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                             "Running",
                             "Check virtual machine is in running state"
                         )
+        return
+
+    @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
+    def serviceoffering_upgrade(self,sourcetype,sourcemodel,desttype,destmodel):
+
+        self.sourcevgpuoffering=self.vgpu_serviceoffering_creation(sourcetype,sourcemodel)
+        self.deploy_vGPU_windows_vm(self.sourcevgpuoffering.id,sourcetype)
+        time.sleep(self.testdata["vgpu"]["sleep"])
+
+        vm=self.check_for_vm(sourcetype,self.sourcevgpuoffering.id,self.virtual_machine.id)
+        self.check_for_vGPU_resource(vm.hostid,vm.instancename,vm.serviceofferingid,vm.vgpu)
+
+        self.stop_vm()
+
+        self.destvgpuoffering=self.vgpu_serviceoffering_creation(desttype,destmodel)
+        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
+        cmd.id = vm.id
+        cmd.serviceofferingid = self.destvgpuoffering.id
+        self.apiclient.changeServiceForVirtualMachine(cmd)
+
+        self.debug("Starting VM - ID: %s" % vm.id)
+        self.start_vm()
+        time.sleep(self.testdata["vgpu"]["sleep"])
+
+            # Ensure that VM is in running state
+        vm=self.check_for_vm(desttype,self.destvgpuoffering.id,vm.id)
+        self.check_for_vGPU_resource(vm.hostid,vm.instancename,vm.serviceofferingid,vm.vgpu)
+        self.delete_vgpu_service_offering(self.destvgpuoffering)
+        self.delete_vgpu_service_offering(self.sourcevgpuoffering)
+        self.destroy_vm()
+        return
+
+    @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
+    def deploy_vm(self,type,model):
+
+        self.vgpuoffering=self.vgpu_serviceoffering_creation(type,model)
+        if self.vgpuoffering is not None:
+              self.deploy_vGPU_windows_vm(self.vgpuoffering.id,type)
+              time.sleep(self.testdata["vgpu"]["sleep"])
+              vm=self.check_for_vm(type,self.vgpuoffering.id,self.virtual_machine.id)
+              self.check_for_vGPU_resource(vm.hostid,vm.instancename,vm.serviceofferingid,vm.vgpu)
+              self.destroy_vm()
+              self.delete_vgpu_service_offering(self.vgpuoffering)
         return
 
 
@@ -614,17 +691,15 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
 
-    def test_01_create_deploy_windows_vm_with_k100_vgpu_service_offering(self):
+    def test_02_create_deploy_windows_vm_with_k100_vgpu_service_offering(self):
         """Test to create and deploy vm with K100 vGPU service offering"""
+
         k100capacity=self.check_host_vgpu_capacity("Group of NVIDIA Corporation GK107GL [GRID K1] GPUs","GRID K100")
-        self.debug("k100capacity is:%s"%(k100capacity))
-        self.debug("k100gpuhosts is:%s"%(self.k100gpuhosts))
+
         if (self.k100gpuhosts == 0) or (k100capacity == 0):
            raise unittest.SkipTest("No XenServer available with K100 vGPU Drivers installed")
-        self.vgpuoffering=self.vgpu_serviceoffering_creation("GRID K100","Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
-        self.deploy_vGPU_windows_vm(self.vgpuoffering.id,"GRID K100")
-        self.destroy_vm()
-        self.delete_vgpu_service_offering(self.vgpuoffering)
+
+        self.deploy_vm("GRID K100","Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
 
@@ -636,12 +711,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         if (self.k120qgpuhosts == 0) or (k120qcapacity==0):
            raise unittest.SkipTest("No XenServer available with K120Q vGPU Drivers installed")
 
-        self.vgpuoffering=self.vgpu_serviceoffering_creation("GRID K120Q","Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
-        if self.vgpuoffering is not None:
-              self.deploy_vGPU_windows_vm(self.vgpuoffering.id,"GRID K120Q")
-              self.delete_vgpu_service_offering(self.vgpuoffering)
-              self.destroy_vm()
-              self.delete_vgpu_service_offering(self.vgpuoffering)
+        self.deploy_vm("GRID K120Q","Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
 
@@ -653,12 +723,8 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         if (self.k140qgpuhosts == 0) or (k140qcapacity ==0):
            raise unittest.SkipTest("No XenServer available with K140Q vGPU Drivers installed")
 
-        self.vgpuoffering=self.vgpu_serviceoffering_creation("GRID K140Q","Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
-        if self.vgpuoffering is not None:
-              self.deploy_vGPU_windows_vm(self.vgpuoffering.id,"GRID K140Q")
-              self.delete_vgpu_service_offering(self.vgpuoffering)
-              self.destroy_vm()
-              self.delete_vgpu_service_offering(self.vgpuoffering)
+        self.deploy_vm("GRID K140Q","Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
+
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
 
@@ -670,12 +736,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         if (self.k1passthroughgpuhosts == 0) or (k1passcapacity==0):
            raise unittest.SkipTest("No XenServer available with K1 passthrough installed")
 
-        self.vgpuoffering=self.vgpu_serviceoffering_creation("passthrough","Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
-        if self.vgpuoffering is not None:
-              self.deploy_vGPU_windows_vm(self.vgpuoffering.id,"passthrough")
-              self.delete_vgpu_service_offering(self.vgpuoffering)
-              self.destroy_vm()
-              self.delete_vgpu_service_offering(self.vgpuoffering)
+        self.deploy_vm("passthrough","Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
 
@@ -683,16 +744,11 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         """Test to create and deploy vm with K2 pasthrough vGPU service offering"""
 
         k2passcapacity=self.check_host_vgpu_capacity("Group of NVIDIA Corporation GK104GL [GRID K2] GPUs","passthrough")
-        
+
         if (self.k2passthroughgpuhosts == 0) or (k2passcapacity==0):
            raise unittest.SkipTest("No XenServer available with K2 passthrough installed")
 
-        self.vgpuoffering=self.vgpu_serviceoffering_creation("passthrough","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
-        if self.vgpuoffering is not None:
-              self.deploy_vGPU_windows_vm(self.vgpuoffering.id,"passthrough")
-              self.delete_vgpu_service_offering(self.vgpuoffering)
-              self.destroy_vm()
-              self.delete_vgpu_service_offering(self.vgpuoffering)
+        self.deploy_vm("passthrough","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
 
@@ -704,12 +760,8 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         if (self.k260qgpuhosts == 0) or (k260qcapacity == 0):
            raise unittest.SkipTest("No XenServer available with K260Q vGPU Drivers installed")
 
-        self.vgpuoffering=self.vgpu_serviceoffering_creation("GRID K260Q","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
-        if self.vgpuoffering is not None:
-              self.deploy_vGPU_windows_vm(self.vgpuoffering.id,"GRID K260Q")
-              self.delete_vgpu_service_offering(self.vgpuoffering)
-              self.destroy_vm()
-              self.delete_vgpu_service_offering(self.vgpuoffering)
+        self.deploy_vm("GRID K260Q","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
+
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
 
@@ -721,12 +773,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         if (self.k240qgpuhosts == 0) or (k240qcapacity==0):
            raise unittest.SkipTest("No XenServer available with K240Q vGPU Drivers installed")
 
-        self.vgpuoffering=self.vgpu_serviceoffering_creation("GRID K240Q","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
-        if self.vgpuoffering is not None:
-              self.deploy_vGPU_windows_vm(self.vgpuoffering.id,"GRID K240Q")
-              self.delete_vgpu_service_offering(self.vgpuoffering)
-              self.destroy_vm()
-              self.delete_vgpu_service_offering(self.vgpuoffering)
+        self.deploy_vm("GRID K240Q","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
 
@@ -738,12 +785,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         if (self.k220qgpuhosts == 0) or (k220qcapacity==0):
            raise unittest.SkipTest("No XenServer available with K220Q vGPU Drivers installed")
 
-        self.vgpuoffering=self.vgpu_serviceoffering_creation("GRID K220Q","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
-        if self.vgpuoffering is not None:
-              self.deploy_vGPU_windows_vm(self.vgpuoffering.id,"GRID K220Q")
-              self.delete_vgpu_service_offering(self.vgpuoffering)
-              self.destroy_vm()
-              self.delete_vgpu_service_offering(self.vgpuoffering)
+        self.deploy_vm("GRID K220Q","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
 
@@ -755,13 +797,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         if (self.k200gpuhosts == 0) or (k200capacity==0):
            raise unittest.SkipTest("No XenServer available with K200 vGPU Drivers installed")
 
-        self.vgpuoffering=self.vgpu_serviceoffering_creation("GRID K200","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
-        if self.vgpuoffering is not None:
-              self.deploy_vGPU_windows_vm(self.vgpuoffering.id,"GRID K200")
-              self.delete_vgpu_service_offering(self.vgpuoffering)
-              self.destroy_vm()
-              self.delete_vgpu_service_offering(self.vgpuoffering)
-
+        self.deploy_vm("GRID K200","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
 
@@ -870,7 +906,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
 
-    def test_13_validate_deployed_vGPU_windows_vm(self):
+    def test_12_validate_deployed_vGPU_windows_vm(self):
         """ Test deploy virtual machine
         """
         self.debug("Check if deployed VMs are in running state?")
@@ -890,7 +926,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         return
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
-    def test_14_stop_vGPU_windows_vm(self):
+    def test_13_stop_vGPU_windows_vm(self):
         """ Test stop virtual machine
         """
         if(self.vm_k1_card):
@@ -902,7 +938,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         return
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
-    def test_15_start_vGPU_windows_vm(self):
+    def test_14_start_vGPU_windows_vm(self):
         """ Test start virtual machine
         """
         if(self.vm_k1_card):
@@ -918,7 +954,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         return
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
-    def test_16_restore_vGPU_windows_vm(self):
+    def test_15_restore_vGPU_windows_vm(self):
         """Test restore Virtual Machine
         """
         if(self.vm_k1_card):
@@ -942,7 +978,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         return
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
-    def test_17_reboot_vGPU_windows_vm(self):
+    def test_16_reboot_vGPU_windows_vm(self):
         """ Test reboot virtual machine
         """
         if(self.vm_k1_card):
@@ -966,7 +1002,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         return
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
-    def test_18_destroy_vGPU_windows_vm(self):
+    def test_17_destroy_vGPU_windows_vm(self):
         """Test destroy Virtual Machine
         """
         if(self.vm_k1_card):
@@ -984,7 +1020,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         return
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
-    def test_19_recover_vGPU_windows_vm(self):
+    def test_18_recover_vGPU_windows_vm(self):
         """Test recover Virtual Machine
         """
         if(self.vm_k1_card):
@@ -1000,6 +1036,135 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                                    self.apiclient,
                                    "Stopped")
 
+        return
+
+    def test_19_destroy_vGPU_windows_vm_after_recover(self):
+        """Test destroy Virtual Machine
+        """
+        if(self.vm_k1_card):
+          self.vm_k1_card.delete(self.apiclient)
+          self.vm_k1_card.getState(
+                                   self.apiclient,
+                                   "Destroyed")
+
+        if(self.vm_k2_card):
+          self.vm_k2_card.delete(self.apiclient)
+          self.vm_k2_card.getState(
+                                   self.apiclient,
+                                   "Destroyed")
+
+        return
+
+
+    @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
+
+    def test_20_nonvgpuvm_k2vgpuvm_offline(self):
+        """Test to change service from non vgpu to vgpu K200"""
+        k200capacity=self.check_host_vgpu_capacity("Group of NVIDIA Corporation GK104GL [GRID K2] GPUs","GRID K200")
+        if (self.k200gpuhosts == 0) or (k200capacity==0):
+           raise unittest.SkipTest("No XenServer available with K200 vGPU Drivers installed. Skipping non gpu to K200 Offering Upgrade")
+
+        self.serviceoffering_upgrade("nonvgpuoffering","None","GRID K200","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
+
+        return
+
+    @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
+
+    def test_21_K2_vgpuvm_vgpuvm_offline(self):
+        """Test to change service from vgpu K200 to vgpu K240Q"""
+        k240qcapacity=self.check_host_vgpu_capacity("Group of NVIDIA Corporation GK104GL [GRID K2] GPUs","GRID K240Q")
+        k200capacity=self.check_host_vgpu_capacity("Group of NVIDIA Corporation GK104GL [GRID K2] GPUs","GRID K200")
+        if (self.k240qgpuhosts == 0) or (self.k200gpuhosts == 0) or (k240qcapacity==0) or (k200capacity==0):
+           raise unittest.SkipTest("No XenServer available with K240Q,K200Q vGPU Drivers installed. Skipping K200 to K240Q Offering Upgrade")
+
+        self.serviceoffering_upgrade("GRID K200","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs","GRID K240Q","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
+
+        return
+
+
+
+    @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
+
+    def test_22_K1_vgpuvm_vgpuvm_offline(self):
+        """Test to change service from K1 vgpu K120Q to K1 vgpu K140Q"""
+
+        k140qcapacity=self.check_host_vgpu_capacity("Group of NVIDIA Corporation GK107GL [GRID K1] GPUs","GRID K140Q")
+        k120qcapacity=self.check_host_vgpu_capacity("Group of NVIDIA Corporation GK107GL [GRID K1] GPUs","GRID K120Q")
+
+        if (self.k140qgpuhosts == 0) or (self.k120qgpuhosts == 0) or (k140qcapacity==0) or (k120qcapacity==0):
+           raise unittest.SkipTest("No XenServer available with K140Q,K120Q vGPU Drivers installed. Skipping K200 to K240Q Offering Upgrade")
+
+        self.serviceoffering_upgrade("GRID K120Q","Group of NVIDIA Corporation GK107GL [GRID K1] GPUs","GRID K140Q","Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
+
+        return
+
+    @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
+
+    def test_23_nonvgpuvm_k1vgpuvm_offline(self):
+        """Test to change service from non vgpu to vgpu K100"""
+
+        k100capacity=self.check_host_vgpu_capacity("Group of NVIDIA Corporation GK107GL [GRID K1] GPUs","GRID K100")
+        if (self.k100gpuhosts == 0) or (k100capacity == 0):
+           raise unittest.SkipTest("No XenServer available with K100 vGPU Drivers installed. Skipping non gpu to K100 Offering Upgrade")
+        self.serviceoffering_upgrade("nonvgpuoffering","None","GRID K100","Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
+
+        return
+
+
+    @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
+
+    def test_24_K2_vgpuvm_nonvgpuvm_offline(self):
+        """Test to change service from non vgpu to vgpu K240Q"""
+
+        k240qcapacity=self.check_host_vgpu_capacity("Group of NVIDIA Corporation GK104GL [GRID K2] GPUs","GRID K240Q")
+        if (self.k240qgpuhosts == 0) or (k240qcapacity==0):
+           raise unittest.SkipTest("No XenServer available with K240Q vGPU Drivers installed. Skipping K2 vgpu 240Q to nonvgpu Offering Upgrade")
+
+        self.serviceoffering_upgrade("GRID K240Q","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs","nonvgpuoffering","None")
+
+        return
+
+    @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
+
+    def test_25_K1_vgpuvm_nonvgpuvm_offline(self):
+        """Test to change service from non vgpu to vgpu K140Q"""
+
+        k140qcapacity=self.check_host_vgpu_capacity("Group of NVIDIA Corporation GK107GL [GRID K1] GPUs","GRID K140Q")
+
+        if (self.k140qgpuhosts == 0) or (k140qcapacity==0):
+           raise unittest.SkipTest("No XenServer available with K140Q vGPU Drivers installed. Skipping K1 vgpu 140Q to nonvgpu Offering Upgrade")
+
+        self.serviceoffering_upgrade("GRID K140Q","Group of NVIDIA Corporation GK107GL [GRID K1] GPUs","nonvgpuoffering","None")
+
+        return
+
+
+    @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
+
+    def test_26_K140Q_vgpuvm_K240Q_vgpuvm_offline(self):
+        """Test to change service from K1 vgpu K140Q to K2 vgpu K240Q"""
+
+        k140qcapacity=self.check_host_vgpu_capacity("Group of NVIDIA Corporation GK107GL [GRID K1] GPUs","GRID K140Q")
+        k240qcapacity=self.check_host_vgpu_capacity("Group of NVIDIA Corporation GK104GL [GRID K2] GPUs","GRID K240Q")
+
+        if (self.k140qgpuhosts == 0) or (self.k240qgpuhosts == 0) or (k140qcapacity == 0) or (k240qcapacity==0):
+            raise unittest.SkipTest("No XenServer available with K140Q,K240Q vGPU Drivers installed. Skipping K140Q to K240Q Offering Upgrade")
+
+        self.serviceoffering_upgrade("GRID K140Q","Group of NVIDIA Corporation GK107GL [GRID K1] GPUs","GRID K240Q","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
+        return
+
+    @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
+
+    def test_27_K240Q_vgpuvm_K140Q_vgpuvm_offline(self):
+        """Test to change service from K2 vgpu K240Q to K1 vgpu K140Q"""
+
+        k140qcapacity=self.check_host_vgpu_capacity("Group of NVIDIA Corporation GK107GL [GRID K1] GPUs","GRID K140Q")
+        k240qcapacity=self.check_host_vgpu_capacity("Group of NVIDIA Corporation GK104GL [GRID K2] GPUs","GRID K240Q")
+
+        if (self.k140qgpuhosts == 0) or (self.k240qgpuhosts == 0) or (k140qcapacity == 0) or (k240qcapacity==0):
+            raise unittest.SkipTest("No XenServer available with K140Q,K240Q vGPU Drivers installed. Skipping K140Q to K240Q Offering Upgrade")
+
+        self.serviceoffering_upgrade("GRID K240Q","Group of NVIDIA Corporation GK104GL [GRID K2] GPUs","GRID K140Q","Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
         return
 
 
