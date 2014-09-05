@@ -528,11 +528,19 @@ class VirtualMachine:
         cmd.id = self.id
         apiclient.rebootVirtualMachine(cmd)
 
+        response = self.getState(apiclient, VirtualMachine.RUNNING)
+        if response[0] == FAIL:
+            raise Exception(response[1])
+
     def recover(self, apiclient):
         """Recover the instance"""
         cmd = recoverVirtualMachine.recoverVirtualMachineCmd()
         cmd.id = self.id
         apiclient.recoverVirtualMachine(cmd)
+
+        response = self.getState(apiclient, VirtualMachine.STOPPED)
+        if response[0] == FAIL:
+            raise Exception(response[1])
 
     def restore(self, apiclient, templateid=None):
         """Restore the instance"""

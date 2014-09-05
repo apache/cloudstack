@@ -549,7 +549,7 @@ test_data = {
         "name": "Isolated Network for VPC",
         "displaytext": "Isolated Network for VPC",
         "guestiptype": "Isolated",
-        "supportedservices": "Dhcp,Dns,SourceNat,PortForwarding,Vpn,UserData,StaticNat,NetworkACL",
+        "supportedservices": "Dhcp,Dns,SourceNat,PortForwarding,Vpn,UserData,StaticNat,NetworkACL,Lb",
         "traffictype": "GUEST",
         "availability": "Optional",
         "ispersistent": "False",
@@ -562,7 +562,8 @@ test_data = {
             "Vpn": "VpcVirtualRouter",
             "UserData": "VpcVirtualRouter",
             "StaticNat": "VpcVirtualRouter",
-            "NetworkACL": "VpcVirtualRouter"
+            "NetworkACL": "VpcVirtualRouter",
+            "Lb": "VpcVirtualRouter"
         }
     },
     "nw_off_persistent_VPCVR_LB": {
@@ -696,6 +697,13 @@ test_data = {
         "publicport": 2222,
         "protocol": 'TCP'
     },
+    "vpclbrule": {
+        "name": "SSH",
+        "alg": "roundrobin",
+        "privateport": 22,
+        "publicport": 22,
+        "protocol": 'TCP'
+    },
     "icmprule": {
         "icmptype":-1,
         "icmpcode":-1,
@@ -746,6 +754,16 @@ test_data = {
         "ostype": "CentOS 5.6 (64-bit)",
         "isfeatured": True,
         "ispublic": True,
+        "isextractable": True,
+        "mode": "HTTP_DOWNLOAD",
+        "templatefilter": "self"
+    },
+    "privatetemplate": {
+        "displaytext": "Public Template",
+        "name": "Public template",
+        "ostype": "CentOS 5.6 (64-bit)",
+        "isfeatured": True,
+        "ispublic": False,
         "isextractable": True,
         "mode": "HTTP_DOWNLOAD",
         "templatefilter": "self"
