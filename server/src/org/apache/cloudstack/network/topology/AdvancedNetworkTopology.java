@@ -138,12 +138,11 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
         s_logger.debug("CONFIG DHCP FOR SUBNETS RULES");
 
-        //Asuming we have only one router per network For Now.
+        // Asuming we have only one router per network For Now.
         final DomainRouterVO router = routers.get(0);
         if (router.getState() != State.Running) {
             s_logger.warn("Failed to configure dhcp: router not in running state");
-            throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class,
-                    network.getDataCenterId());
+            throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
         }
 
         DhcpSubNetRules subNetRules = _virtualNetworkApplianceFactory.createDhcpSubNetRules(network, nic, profile);
@@ -161,8 +160,8 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     }
 
     @Override
-    public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
-            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+    public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
+            throws ResourceUnavailableException {
 
         s_logger.debug("APPLYING VPC USERDATA RULES");
 
@@ -177,8 +176,8 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     }
 
     @Override
-    public boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
-            throws ResourceUnavailableException {
+    public boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
+            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
 
         s_logger.debug("APPLYING VPC DHCP ENTRY RULES");
 
@@ -201,7 +200,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
             return true;
         }
 
-        //only one router is supported in VPC now
+        // only one router is supported in VPC for now
         VirtualRouter router = routers.get(0);
 
         if (router.getVpcId() == null) {
