@@ -74,7 +74,7 @@ public class DhcpSubNetRules extends RuleApplier {
         _userVmDao.loadDetails(vm);
 
         // check if this is not the primary subnet.
-        final NicVO domr_guest_nic = _nicDao.findByInstanceIdAndIpAddressAndVmtype(router.getId(), _nicDao.getIpAddress(_nic.getNetworkId(), router.getId()),
+        final NicVO domr_guest_nic = _nicDao.findByInstanceIdAndIpAddressAndVmtype(_router.getId(), _nicDao.getIpAddress(_nic.getNetworkId(), _router.getId()),
                 VirtualMachine.Type.DomainRouter);
         // check if the router ip address and the vm ip address belong to same
         // subnet.
@@ -94,7 +94,7 @@ public class DhcpSubNetRules extends RuleApplier {
             }
 
             PublicIp routerPublicIP = null;
-            final DataCenter dc = _dcDao.findById(router.getDataCenterId());
+            final DataCenter dc = _dcDao.findById(_router.getDataCenterId());
             if (ipInVmsubnet == false) {
                 try {
                     if ((_network.getTrafficType() == TrafficType.Guest) && (_network.getGuestType() == GuestType.Shared)) {
@@ -106,10 +106,10 @@ public class DhcpSubNetRules extends RuleApplier {
                             vlanDbIdList.add(vlan.getId());
                         }
                         if (dc.getNetworkType() == NetworkType.Basic) {
-                            routerPublicIP = _ipAddrMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), vm.getPodIdToDeployIn(), caller, Vlan.VlanType.DirectAttached,
+                            routerPublicIP = _ipAddrMgr.assignPublicIpAddressFromVlans(_router.getDataCenterId(), vm.getPodIdToDeployIn(), caller, Vlan.VlanType.DirectAttached,
                                     vlanDbIdList, _nic.getNetworkId(), null, false);
                         } else {
-                            routerPublicIP = _ipAddrMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), null, caller, Vlan.VlanType.DirectAttached, vlanDbIdList,
+                            routerPublicIP = _ipAddrMgr.assignPublicIpAddressFromVlans(_router.getDataCenterId(), null, caller, Vlan.VlanType.DirectAttached, vlanDbIdList,
                                     _nic.getNetworkId(), null, false);
                         }
 
@@ -121,7 +121,7 @@ public class DhcpSubNetRules extends RuleApplier {
                     return false;
                 }
                 // this means we did not create an IP alias on the router.
-                _nicAlias = new NicIpAliasVO(domr_guest_nic.getId(), _routerAliasIp, router.getId(), CallContext.current().getCallingAccountId(), _network.getDomainId(),
+                _nicAlias = new NicIpAliasVO(domr_guest_nic.getId(), _routerAliasIp, _router.getId(), CallContext.current().getCallingAccountId(), _network.getDomainId(),
                         _nic.getNetworkId(), _nic.getGateway(), _nic.getNetmask());
                 _nicAlias.setAliasCount((routerPublicIP.getIpMacAddress()));
                 _nicIpAliasDao.persist(_nicAlias);
@@ -129,7 +129,7 @@ public class DhcpSubNetRules extends RuleApplier {
                 final boolean result = visitor.visit(this);
 
                 if (result == false) {
-                    final NicIpAliasVO ipAliasVO = _nicIpAliasDao.findByInstanceIdAndNetworkId(_network.getId(), router.getId());
+                    final NicIpAliasVO ipAliasVO = _nicIpAliasDao.findByInstanceIdAndNetworkId(_network.getId(), _router.getId());
                     final PublicIp routerPublicIPFinal = routerPublicIP;
                     Transaction.execute(new TransactionCallbackNoReturn() {
                         @Override

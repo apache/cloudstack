@@ -58,14 +58,14 @@ public class VpcIpAssociationRules extends RuleApplier {
 
         for (PublicIpAddress ipAddr : _ipAddresses) {
             String broadcastURI = BroadcastDomainType.Vlan.toUri(ipAddr.getVlanTag()).toString();
-            Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(ipAddr.getNetworkId(), router.getId(), broadcastURI);
+            Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(ipAddr.getNetworkId(), _router.getId(), broadcastURI);
 
             String macAddress = null;
             if (nic == null) {
                 if (ipAddr.getState() != IpAddress.State.Releasing) {
                     throw new CloudRuntimeException("Unable to find the nic in network " + ipAddr.getNetworkId() + "  to apply the ip address " + ipAddr + " for");
                 }
-                s_logger.debug("Not sending release for ip address " + ipAddr + " as its nic is already gone from VPC router " + router);
+                s_logger.debug("Not sending release for ip address " + ipAddr + " as its nic is already gone from VPC router " + _router);
             } else {
                 macAddress = nic.getMacAddress();
                 _vlanMacAddress.put(BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag())), macAddress);
