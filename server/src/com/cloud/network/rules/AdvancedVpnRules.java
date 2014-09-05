@@ -47,7 +47,7 @@ public class AdvancedVpnRules extends BasicVpnRules {
 
         Vpc vpc = _vpcDao.findById(_remoteAccessVpn.getVpcId());
 
-        if (router.getState() != State.Running) {
+        if (_router.getState() != State.Running) {
             s_logger.warn("Failed to add/remove Remote Access VPN users: router not in running state");
             throw new ResourceUnavailableException("Failed to add/remove Remote Access VPN users: router not in running state: " + router.getState(), DataCenter.class,
                     vpc.getZoneId());

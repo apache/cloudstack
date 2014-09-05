@@ -197,7 +197,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
             return true;
         }
 
-        // only one router is supported in VPC now
+        // only one router is supported in VPC for now
         VirtualRouter router = routers.get(0);
 
         if (router.getVpcId() == null) {
