@@ -799,6 +799,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         value = (String) params.get("kvmclock.disable");
         if (Boolean.parseBoolean(value)) {
             _noKvmClock = true;
+        } else if(HypervisorType.LXC.equals(_hypervisorType) && (value == null)){
+            //Disable kvmclock by default for LXC
+            _noKvmClock = true;
         }
 
         LibvirtConnection.initialize(_hypervisorURI);
