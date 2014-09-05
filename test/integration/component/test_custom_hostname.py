@@ -185,7 +185,6 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         return
 
 
-
     @attr(configuration='vm.instancename.flag')
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_user_provided_hostname(self):
@@ -280,9 +279,18 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         self.debug("Query result: %s" % qresult)
         vmid = qresult[0]
 
-        #internal Name = i-<user ID>-<VM ID>-Display name
-        internal_name = "i-" + str(account_id) + "-" + str(vmid) + "-" + vm.displayname
-        self.debug("Internal name: %s" % internal_name)
+        self.debug("Fetching the global config value for instance.name")
+        configs = Configurations.list(
+                                      self.apiclient,
+                                      name="instance.name",
+                                      listall=True
+                                      )
+
+        config = configs[0]
+        instance_name = config.value
+
+        #internal Name = i-<user ID>-<VM ID>-instance.name flag value
+        internal_name = "i-" + str(account_id) + "-" + str(vmid) + "-" + instance_name
         self.assertEqual(
                         vm.instancename,
                         internal_name,
@@ -473,6 +481,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
                                   domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   )
+        self.cleanup.append(virtual_machine)
         self.debug(
             "Checking if the virtual machine is created properly or not?")
         vms = VirtualMachine.list(
@@ -519,7 +528,6 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
             self.skipTest('vm.instancename.flag should be true. skipping')
 
         self.services["virtual_machine"]["displayname"] = "TestVM-test-name"
-        self.services["virtual_machine"]["name"] = "TestVM"
 
         self.debug("Deploying an instance in account: %s" %
                                         self.account.name)
