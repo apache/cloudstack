@@ -180,21 +180,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             return false;
         }
 
-        if(HypervisorType.LXC.equals(dskCh.getHypervisorType())){
-            if(Volume.Type.ROOT.equals(dskCh.getType())){
-                //LXC ROOT disks supports NFS and local storage pools only
-                if(!(Storage.StoragePoolType.NetworkFilesystem.equals(pool.getPoolType()) ||
-                        Storage.StoragePoolType.Filesystem.equals(pool.getPoolType())) ){
-                    s_logger.debug("StoragePool does not support LXC ROOT disk, skipping this pool");
-                    return false;
-                }
-            } else if (Volume.Type.DATADISK.equals(dskCh.getType())){
-                //LXC DATA disks supports NFS and local storage pools only
-                if(!Storage.StoragePoolType.RBD.equals(pool.getPoolType())){
-                    s_logger.debug("StoragePool does not support LXC DATA disk, skipping this pool");
-                    return false;
-                }
-            }
+        if(!checkHypervisorCompatibility(dskCh.getHypervisorType(), dskCh.getType(), pool.getPoolType())){
+            return false;
         }
 
         // check capacity
@@ -202,5 +189,28 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         List<Volume> requestVolumes = new ArrayList<Volume>();
         requestVolumes.add(volume);
         return storageMgr.storagePoolHasEnoughIops(requestVolumes, pool) && storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool);
+    }
+
+    /*
+    Check StoragePool and Volume type compatibility for the hypervisor
+     */
+    private boolean checkHypervisorCompatibility(HypervisorType hyperType, Volume.Type volType, Storage.StoragePoolType poolType){
+        if(HypervisorType.LXC.equals(hyperType)){
+            if(Volume.Type.ROOT.equals(volType)){
+                //LXC ROOT disks supports NFS and local storage pools only
+                if(!(Storage.StoragePoolType.NetworkFilesystem.equals(poolType) ||
+                        Storage.StoragePoolType.Filesystem.equals(poolType)) ){
+                    s_logger.debug("StoragePool does not support LXC ROOT disk, skipping this pool");
+                    return false;
+                }
+            } else if (Volume.Type.DATADISK.equals(volType)){
+                //LXC DATA disks supports RBD storage pool only
+                if(!Storage.StoragePoolType.RBD.equals(poolType)){
+                    s_logger.debug("StoragePool does not support LXC DATA disk, skipping this pool");
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }
