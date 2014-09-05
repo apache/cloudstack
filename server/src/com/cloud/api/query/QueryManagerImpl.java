@@ -1738,9 +1738,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         // display UserVM volumes only
         sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
         sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
-        if (!(cmd instanceof ListVolumesCmdByAdmin)) {
-            sb.and("displayVolume", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
-        }
         sb.cp();
 
         // now set the SC criteria...
@@ -1761,7 +1758,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (display != null) {
-            sc.setParameters("displayVolume", display);
+            sc.setParameters("display", display);
         }
 
         sc.setParameters("systemUse", 1);
@@ -1800,10 +1797,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (storageId != null) {
             sc.setParameters("storageId", storageId);
-        }
-
-        if (!(cmd instanceof ListVolumesCmdByAdmin)) {
-            sc.setParameters("displayVolume", 1);
         }
 
         // Don't return DomR and ConsoleProxy volumes
