@@ -79,7 +79,7 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#stop(com.cloud.network.router.VirtualRouter, boolean, com.cloud.user.User, com.cloud.user.Account)
      */
     @Override
-    public VirtualRouter stop(final VirtualRouter router, final boolean forced, final User callingUser, final Account callingAccount) throws ConcurrentOperationException,
+    public VirtualRouter stop(final VirtualRouter router, final boolean forced, final User callingUser, final Account callingAccount) throws ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -102,7 +102,7 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.VirtualNetworkApplianceService#startRouter(long, boolean)
      */
     @Override
-    public VirtualRouter startRouter(final long routerId, final boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException,
+    public VirtualRouter startRouter(final long routerId, final boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -111,7 +111,7 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.VirtualNetworkApplianceService#rebootRouter(long, boolean)
      */
     @Override
-    public VirtualRouter rebootRouter(final long routerId, final boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException,
+    public VirtualRouter rebootRouter(final long routerId, final boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -201,7 +201,7 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.VpcVirtualNetworkApplianceService#removeVpcRouterFromGuestNetwork(com.cloud.network.router.VirtualRouter, com.cloud.network.Network, boolean)
      */
     @Override
-    public boolean removeVpcRouterFromGuestNetwork(final VirtualRouter router, final Network network, final boolean isRedundant) throws ConcurrentOperationException,
+    public boolean removeVpcRouterFromGuestNetwork(final VirtualRouter router, final Network network, final boolean isRedundant) throws ConcurrentOperationException {
         // TODO Auto-generated method stub
         return false;
     }

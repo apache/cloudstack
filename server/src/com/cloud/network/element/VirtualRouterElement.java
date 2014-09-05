@@ -379,9 +379,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 for (Pair<String, String> paramKV : paramsList) {
                     String key = paramKV.first();
                     String value = paramKV.second();
-                    if ("cookie-name".equalsIgnoreCase(key)) {
-                        cookieName = value;
-                    }
                     if ("length".equalsIgnoreCase(key)) {
                         length = value;
                     }
@@ -742,10 +739,13 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
         VirtualMachineProfile uservm = vm;
 
+        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
         // If any router is running then send save password command otherwise save the password in DB
         for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
-                return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
+                return networkTopology.savePasswordToRouter(network, nic, uservm, routers);
             }
         }
         String password = (String) uservm.getParameter(VirtualMachineProfile.Param.VmPassword);
@@ -759,10 +759,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         userVmVO.setUpdateParameters(true);
         _userVmDao.update(userVmVO.getId(), userVmVO);
 
-        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
-        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
-
-        return networkTopology.savePasswordToRouter(network, nic, uservm, routers);
+        return true;
     }
 
     @Override

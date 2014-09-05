@@ -2590,9 +2590,4 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     public boolean completeAggregatedExecution(final Network network, final List<DomainRouterVO> routers) throws AgentUnavailableException {
         return aggregationExecution(Action.Finish, network, routers);
     }
-
-    @Override
-    public boolean cleanupAggregatedExecution(final Network network, final List<DomainRouterVO> routers) throws AgentUnavailableException {
-        return aggregationExecution(Action.Cleanup, network, routers);
-    }
 }
