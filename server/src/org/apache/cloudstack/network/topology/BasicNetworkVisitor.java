@@ -19,6 +19,8 @@ package org.apache.cloudstack.network.topology;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -114,7 +116,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final Commands cmds = new Commands(Command.OnError.Continue);
         if (purpose == Purpose.LoadBalancing) {
 
-            _commandSetupHelper.createApplyLoadBalancingRulesCommands(loadbalancingRules, (DomainRouterVO) router, cmds, network.getId());
+            _commandSetupHelper.createApplyLoadBalancingRulesCommands(loadbalancingRules, router, cmds, network.getId());
 
             return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
 
@@ -202,7 +204,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final NicVO nicVo = sshkey.getNicVo();
         final VMTemplateVO template = sshkey.getTemplate();
 
-        if ((template != null) && template.getEnablePassword()) {
+        if (template != null && template.getEnablePassword()) {
             _commandSetupHelper.createPasswordCommand(router, profile, nicVo, commands);
         }
 
