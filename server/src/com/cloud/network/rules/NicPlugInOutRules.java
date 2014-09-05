@@ -62,31 +62,31 @@ public class NicPlugInOutRules extends RuleApplier {
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
         _router = router;
 
-        final Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> nicsToChange = getNicsToChangeOnRouter(_ipAddresses, router);
-        final Map<String, PublicIpAddress> nicsToPlug = nicsToChange.first();
-        final Map<String, PublicIpAddress> nicsToUnplug = nicsToChange.second();
+        Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> nicsToChange = getNicsToChangeOnRouter(_ipAddresses);
+        Map<String, PublicIpAddress> nicsToPlug = nicsToChange.first();
+        Map<String, PublicIpAddress> nicsToUnplug = nicsToChange.second();
 
         // 1) Unplug the nics
-        for (final Entry<String, PublicIpAddress> entry : nicsToUnplug.entrySet()) {
+        for (Entry<String, PublicIpAddress> entry : nicsToUnplug.entrySet()) {
             Network publicNtwk = null;
             try {
                 publicNtwk = _networkModel.getNetwork(entry.getValue().getNetworkId());
-                final URI broadcastUri = BroadcastDomainType.Vlan.toUri(entry.getKey());
-                _itMgr.removeVmFromNetwork(router, publicNtwk, broadcastUri);
-            } catch (final ConcurrentOperationException e) {
-                s_logger.warn("Failed to remove router " + router + " from vlan " + entry.getKey() + " in public network " + publicNtwk + " due to ", e);
+                URI broadcastUri = BroadcastDomainType.Vlan.toUri(entry.getKey());
+                _itMgr.removeVmFromNetwork(_router, publicNtwk, broadcastUri);
+            } catch (ConcurrentOperationException e) {
+                s_logger.warn("Failed to remove router " + _router + " from vlan " + entry.getKey() + " in public network " + publicNtwk + " due to ", e);
                 return false;
             }
         }
 
         _netUsageCommands = new Commands(Command.OnError.Continue);
-        final VpcVO vpc = _vpcDao.findById(router.getVpcId());
+        VpcVO vpc = _vpcDao.findById(_router.getVpcId());
 
         // 2) Plug the nics
-        for (final String vlanTag : nicsToPlug.keySet()) {
-            final PublicIpAddress ip = nicsToPlug.get(vlanTag);
+        for (String vlanTag : nicsToPlug.keySet()) {
+            PublicIpAddress ip = nicsToPlug.get(vlanTag);
             // have to plug the nic(s)
-            final NicProfile defaultNic = new NicProfile();
+            NicProfile defaultNic = new NicProfile();
             if (ip.isSourceNat()) {
                 defaultNic.setDefaultNic(true);
             }
@@ -102,26 +102,25 @@ public class NicPlugInOutRules extends RuleApplier {
             Network publicNtwk = null;
             try {
                 publicNtwk = _networkModel.getNetwork(ip.getNetworkId());
-                publicNic = _itMgr.addVmToNetwork(router, publicNtwk, defaultNic);
-            } catch (final ConcurrentOperationException e) {
-                s_logger.warn("Failed to add router " + router + " to vlan " + vlanTag + " in public network " + publicNtwk + " due to ", e);
-            } catch (final InsufficientCapacityException e) {
-                s_logger.warn("Failed to add router " + router + " to vlan " + vlanTag + " in public network " + publicNtwk + " due to ", e);
+                publicNic = _itMgr.addVmToNetwork(_router, publicNtwk, defaultNic);
+            } catch (ConcurrentOperationException e) {
+                s_logger.warn("Failed to add router " + _router + " to vlan " + vlanTag + " in public network " + publicNtwk + " due to ", e);
+            } catch (InsufficientCapacityException e) {
+                s_logger.warn("Failed to add router " + _router + " to vlan " + vlanTag + " in public network " + publicNtwk + " due to ", e);
             } finally {
                 if (publicNic == null) {
-                    s_logger.warn("Failed to add router " + router + " to vlan " + vlanTag + " in public network " + publicNtwk);
+                    s_logger.warn("Failed to add router " + _router + " to vlan " + vlanTag + " in public network " + publicNtwk);
                     return false;
                 }
             }
             // Create network usage commands. Send commands to router after
             // IPAssoc
-            final NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), true, defaultNic.getIp4Address(),
-                    vpc.getCidr());
+            NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(_router.getPrivateIpAddress(), _router.getInstanceName(), true, defaultNic.getIp4Address(), vpc.getCidr());
             _netUsageCommands.addCommand(netUsageCmd);
-            UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), publicNtwk.getId(), publicNic.getIp4Address(), router.getId(), router
-                    .getType().toString());
+            UserStatisticsVO stats = _userStatsDao.findBy(_router.getAccountId(), _router.getDataCenterId(), publicNtwk.getId(), publicNic.getIp4Address(), _router.getId(),
+                    _router.getType().toString());
             if (stats == null) {
-                stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterId(), publicNic.getIp4Address(), router.getId(), router.getType().toString(),
+                stats = new UserStatisticsVO(_router.getAccountId(), _router.getDataCenterId(), publicNic.getIp4Address(), _router.getId(), _router.getType().toString(),
                         publicNtwk.getId());
                 _userStatsDao.persist(stats);
             }
@@ -140,15 +139,15 @@ public class NicPlugInOutRules extends RuleApplier {
         return _netUsageCommands;
     }
 
-    private Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> getNicsToChangeOnRouter(final List<? extends PublicIpAddress> publicIps, final VirtualRouter router) {
+    private Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> getNicsToChangeOnRouter(final List<? extends PublicIpAddress> publicIps) {
         // 1) check which nics need to be plugged/unplugged and plug/unplug them
 
         final Map<String, PublicIpAddress> nicsToPlug = new HashMap<String, PublicIpAddress>();
         final Map<String, PublicIpAddress> nicsToUnplug = new HashMap<String, PublicIpAddress>();
 
         // find out nics to unplug
-        for (final PublicIpAddress ip : publicIps) {
-            final long publicNtwkId = ip.getNetworkId();
+        for (PublicIpAddress ip : publicIps) {
+            long publicNtwkId = ip.getNetworkId();
 
             // if ip is not associated to any network, and there are no firewall
             // rules, release it on the backend
@@ -157,7 +156,7 @@ public class NicPlugInOutRules extends RuleApplier {
             }
 
             if (ip.getState() == IpAddress.State.Releasing) {
-                final Nic nic = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, router.getId(), ip.getAddress().addr());
+                Nic nic = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, _router.getId(), ip.getAddress().addr());
                 if (nic != null) {
                     nicsToUnplug.put(ip.getVlanTag(), ip);
                     s_logger.debug("Need to unplug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
@@ -166,9 +165,9 @@ public class NicPlugInOutRules extends RuleApplier {
         }
 
         // find out nics to plug
-        for (final PublicIpAddress ip : publicIps) {
-            final URI broadcastUri = BroadcastDomainType.Vlan.toUri(ip.getVlanTag());
-            final long publicNtwkId = ip.getNetworkId();
+        for (PublicIpAddress ip : publicIps) {
+            URI broadcastUri = BroadcastDomainType.Vlan.toUri(ip.getVlanTag());
+            long publicNtwkId = ip.getNetworkId();
 
             // if ip is not associated to any network, and there are no firewall
             // rules, release it on the backend
@@ -176,18 +175,18 @@ public class NicPlugInOutRules extends RuleApplier {
                 ip.setState(IpAddress.State.Releasing);
             }
 
-            if ((ip.getState() == IpAddress.State.Allocated) || (ip.getState() == IpAddress.State.Allocating)) {
+            if (ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) {
                 // nic has to be plugged only when there are no nics for this
                 // vlan tag exist on VR
-                final Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(publicNtwkId, router.getId(), broadcastUri.toString());
+                Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(publicNtwkId, _router.getId(), broadcastUri.toString());
 
-                if ((nic == null) && (nicsToPlug.get(ip.getVlanTag()) == null)) {
+                if (nic == null && nicsToPlug.get(ip.getVlanTag()) == null) {
                     nicsToPlug.put(ip.getVlanTag(), ip);
                     s_logger.debug("Need to plug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
                 } else {
                     final PublicIpAddress nicToUnplug = nicsToUnplug.get(ip.getVlanTag());
                     if (nicToUnplug != null) {
-                        final NicVO nicVO = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, router.getId(), nicToUnplug.getAddress().addr());
+                        NicVO nicVO = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, _router.getId(), nicToUnplug.getAddress().addr());
                         nicVO.setIp4Address(ip.getAddress().addr());
                         _nicDao.update(nicVO.getId(), nicVO);
                         s_logger.debug("Updated the nic " + nicVO + " with the new ip address " + ip.getAddress().addr());
@@ -197,7 +196,7 @@ public class NicPlugInOutRules extends RuleApplier {
             }
         }
 
-        final Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> nicsToChange = new Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>>(nicsToPlug,
+        Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> nicsToChange = new Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>>(nicsToPlug,
                 nicsToUnplug);
 
         return nicsToChange;
