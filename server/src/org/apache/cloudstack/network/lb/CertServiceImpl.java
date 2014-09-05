@@ -302,8 +302,13 @@ public class CertServiceImpl implements CertService {
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             // find the project
             Project project = _projectMgr.findByProjectAccountIdIncludingRemoved(account.getId());
-            response.setProjectId(project.getUuid());
-            response.setProjectName(project.getName());
+            if (project != null)
+            {
+                response.setProjectId(project.getUuid());
+                response.setProjectName(project.getName());
+            } else {
+                response.setAccountName(account.getAccountName());
+            }
         } else {
             response.setAccountName(account.getAccountName());
         }
