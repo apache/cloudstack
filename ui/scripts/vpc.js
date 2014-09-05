@@ -762,7 +762,7 @@
                                         });
                                     }
                                 }),
-                                action: function(args) {
+                                action: function(args) {  //UI > Network menu > VPC section > select and configure a VPC from listing > select an internal LB tier > click Internal LB > Quickview on an internal LB rule from listing > click Assign VMs button > Select VM dailog
                                     var vms = args.context.instances;
                                     var array1 = [];
                                     for (var i = 0; i < vms.length; i++) {
@@ -1054,7 +1054,7 @@
                                                     });
                                                 }
                                             }),
-                                            action: function(args) {
+                                            action: function(args) {  //UI > Network menu > VPC section > select and configure a VPC from listing > select an internal LB tier > click Internal LB > select an internal LB rule from listing > Details tab > click Assigned VMs tab > click Assign VMs button > Select VM dailog 
                                                 var $rows = $(':ui-dialog .list-view tbody tr');
                                                 var vms = args.context.instances;
                                                 
@@ -1067,18 +1067,57 @@
                                                     $.extend(vm, { _subselect: $vmRow.find('.subselect select').val() });
                                                 });
 
+                                                /*
                                                 var array1 = [];
                                                 for (var i = 0; i < vms.length; i++) {
                                                     array1.push(vms[i].id);
                                                 }
                                                 var virtualmachineids = array1.join(',');
+                                                var inputData = {
+                                                    id: args.context.internalLoadBalancers[0].id,
+                                                    virtualmachineids: virtualmachineids
+                                                };
+                                                */
+                                                //virtualmachineids parameter has been replaced with vmidipmap parameter, so comment out the lines above.
+                                                
+                                                                                                
+                                                var inputData = {
+                                                	id: args.context.internalLoadBalancers[0].id
+                                                };   
+                                                /* 
+                                                 * e.g. first VM(xxx) has two IPs(10.1.1.~), second VM(yyy) has three IPs(10.2.2.~):
+                                                 * vmidipmap[0].vmid=xxx  vmidipmap[0].vmip=10.1.1.11 
+                                                 * vmidipmap[1].vmid=xxx  vmidipmap[1].vmip=10.1.1.12 
+                                                 * vmidipmap[2].vmid=yyy  vmidipmap[2].vmip=10.2.2.77 
+                                                 * vmidipmap[3].vmid=yyy  vmidipmap[3].vmip=10.2.2.78 
+                                                 * vmidipmap[4].vmid=yyy  vmidipmap[4].vmip=10.2.2.79 
+                                                 */
+                                                var selectedVMs = vms;
+                                                if (selectedVMs != null) {
+                                                	var vmidipmapIndex = 0;
+                                            		for (var vmIndex = 0; vmIndex < selectedVMs.length; vmIndex++) {      
+                                            			var selectedIPs = selectedVMs[vmIndex]._subselect;
+                                            			for (var ipIndex = 0; ipIndex < selectedIPs.length; ipIndex++) {
+                                            				inputData['vmidipmap[' + vmidipmapIndex + '].vmid'] = selectedVMs[vmIndex].id;
+                                                			
+                                            				//"ipAddresses" is not in args.context since this LB rule is under a VPC, not an address. 
+                                            				/*
+                                            				if (args.context.ipAddresses[0].isportable) {
+                                                			    inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex].split(',')[1];  
+                                                			} else {
+                                                				inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
+                                                			}
+                                                			*/
+                                            				inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
+                                            				
+                                            				vmidipmapIndex++;
+                                            			}                                                			
+                                            		}
+                                            	}   
 
                                                 $.ajax({
                                                     url: createURL('assignToLoadBalancerRule'),
-                                                    data: {
-                                                        id: args.context.internalLoadBalancers[0].id,
-                                                        virtualmachineids: virtualmachineids
-                                                    },
+                                                    data: inputData,
                                                     dataType: 'json',
                                                     async: true,
                                                     success: function(data) {
