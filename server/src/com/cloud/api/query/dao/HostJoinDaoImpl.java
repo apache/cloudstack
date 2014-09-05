@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
@@ -43,6 +44,9 @@ import com.cloud.gpu.HostGpuGroupsVO;
 import com.cloud.gpu.VGPUTypesVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.StorageStats;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -55,6 +59,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
     @Inject
     private ConfigurationDao _configDao;
+    @Inject
+    private HostDao hostDao;
 
     private final SearchBuilder<HostJoinVO> hostSearch;
 
@@ -179,6 +185,19 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                     hostResponse.setNetworkKbsRead((new Double(hostStats.getNetworkReadKBs())).longValue());
                     hostResponse.setNetworkKbsWrite((new Double(hostStats.getNetworkWriteKBs())).longValue());
 
+                }
+            }
+
+            if (details.contains(HostDetails.all) && host.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+                //only kvm has the requirement to return host details
+                try {
+                    HostVO h = hostDao.findById(host.getId());
+                    hostDao.loadDetails(h);
+                    Map<String, String> hostVoDetails;
+                    hostVoDetails = h.getDetails();
+                    hostResponse.setDetails(hostVoDetails);
+                } catch (Exception e) {
+                    s_logger.debug("failed to get host details", e);
                 }
             }
 
