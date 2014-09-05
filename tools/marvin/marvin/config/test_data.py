@@ -1212,8 +1212,100 @@ test_data = {
                     "username": "testROOT",
                     "password": "password",
                 },
+                #data reqd for virtual machine creation
+                "vmD1" : {
+                    "name" : "d1",
+                    "displayname" : "d1",
+                },
+                "vmD1A" : {
+                    "name" : "d1a",
+                    "displayname" : "d1a",
+                },
+                "vmD1B" : {
+                    "name" : "d1b",
+                    "displayname" : "d1b",
+                },
+                "vmD11" : {
+                   "name" : "d11",
+                   "displayname" : "d11",
+                },
+                "vmD11A" : {
+                   "name" : "d11a",
+                   "displayname" : "d11a",
+                },
+                "vmD11B" : {
+                    "name" : "d11b",
+                    "displayname" : "d11b",
+                },
+                "vmD111A" : {
+                    "name" : "d111a",
+                    "displayname" : "d111a",
+                },
+                "vmD12A" : {
+                    "name" : "d12a",
+                    "displayname" : "d12a",
+                },
+                "vmD12B" : {
+                    "name" : "d12b",
+                    "displayname" : "d12b",
+                },
+                "vmD2A" : {
+                    "name" : "d2a",
+                    "displayname" : "d2a",
+                },
+
+                "vmROOTA" : {
+                    "name" : "roota",
+                    "displayname" : "roota",
+                },
+                "vmROOT" : {
+                    "name" : "root",
+                    "displayname" : "root",
+                },
 
                 #data reqd for Network creation
+                "network_all": {
+                     "name": "SharedNetwork-All",
+                     "displaytext": "SharedNetwork-All",
+                     "vlan" : "4001",
+                     "gateway" :"10.223.1.1",
+                     "netmask" :"255.255.255.0",
+                     "startip" :"10.223.1.2",
+                     "endip" :"10.223.1.100",
+                     "acltype" : "Domain"
+                },
+                "network_domain_with_no_subdomain_access": {
+                     "name": "SharedNetwork-Domain-nosubdomain",
+                     "displaytext": "SharedNetwork-Domain-nosubdomain",
+                     "vlan" : "4002",
+                     "gateway" :"10.223.1.1",
+                     "netmask" :"255.255.255.0",
+                     "startip" :"10.223.1.2",
+                     "endip" :"10.223.1.100",
+                     "acltype" : "Domain",
+                     "subdomainaccess" : "false"
+                },
+                "network_domain_with_subdomain_access": {
+                     "name": "SharedNetwork-Domain-withsubdomain",
+                     "displaytext": "SharedNetwork-Domain-withsubdomain",
+                     "vlan" : "4003",
+                     "gateway" :"10.223.1.1",
+                     "netmask" :"255.255.255.0",
+                     "startip" :"10.223.1.2",
+                     "endip" :"10.223.1.100",
+                     "acltype" : "Domain",
+                     "subdomainaccess" : "true"
+                },
+                "network_account": {
+                     "name": "SharedNetwork-Account",
+                     "displaytext": "SharedNetwork-Account",
+                     "vlan" : "4004",
+                     "gateway" :"10.223.1.1",
+                     "netmask" :"255.255.255.0",
+                     "startip" :"10.223.1.2",
+                     "endip" :"10.223.1.100",
+                     "acltype" : "Account"
+               },
 
                 "network": {
                      "name": "Network-",
