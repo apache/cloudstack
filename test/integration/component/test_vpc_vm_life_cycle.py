@@ -19,7 +19,7 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.base import (VirtualMachine,
                                          NATRule,
@@ -34,7 +34,8 @@ from marvin.lib.base import (VirtualMachine,
                                          Router,
                                          Account,
                                          ServiceOffering,
-                                         Host)
+                                         Host,
+                                         Cluster)
 from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
@@ -76,7 +77,7 @@ class Services:
                 "cpunumber": 1,
                 "cpuspeed": 100,
                 "memory": 128,
-                "tags": "host1"
+                "hosttags": "host1"
             },
             "service_offering_2": {
                 "name": "Tiny Instance- tagged host 2",
@@ -84,7 +85,7 @@ class Services:
                 "cpunumber": 1,
                 "cpuspeed": 100,
                 "memory": 128,
-                "tags": "host2"
+                "hosttags": "host2"
             },
             "network_offering": {
                 "name": 'VPC Network offering',
@@ -2660,7 +2661,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         try:
 
             cls.testClient = super(TestVMLifeCycleDiffHosts, cls).getClsTestClient()
-	    cls.api_client = cls.testClient.getApiClient()
+            cls.api_client = cls.testClient.getApiClient()
 
             cls.services = Services().services
             # Get Zone, Domain and templates
@@ -2674,19 +2675,25 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
             cls.services["virtual_machine"]["zoneid"] = cls.zone.id
             cls.services["virtual_machine"]["template"] = cls.template.id
 
-            hosts = list_hosts(cls.api_client)
+            # 2 hosts are needed within cluster to run the test cases and
+            # 3rd host is needed to run the migrate test case
+            # Even if only 2 hosts are present, remaining test cases will be run and
+            # migrate test will be skipped automatically
+            cluster = cls.FindClusterWithSufficientHosts(numberofhosts = 3)
+            if cluster is None:
+                raise unittest.SkipTest("Skipping as unable to find a cluster with\
+                        sufficient number of hosts")
+
+            hosts = list_hosts(cls.api_client, type="Routing", listall=True, clusterid=cluster.id)
 
             assert isinstance(hosts, list), "list_hosts should return a list response,\
                                         instead got %s" % hosts
 
-            if len(hosts) < 3:
-                raise Exception("Minimum 3 hosts should be available to run this test suite")
-
             Host.update(cls.api_client, id=hosts[0].id, hosttags="host1")
+            Host.update(cls.api_client, id=hosts[1].id, hosttags="host2")
 
-            Host.update(cls.api_client, id=hosts[1].id, hosttags="host1")
-
-            Host.update(cls.api_client, id=hosts[2].id, hosttags="host2")
+            if len(hosts) > 2:
+                Host.update(cls.api_client, id=hosts[2].id, hosttags="host1")
 
             cls.service_offering_1 = ServiceOffering.create(
                                             cls.api_client,
@@ -2908,6 +2915,21 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
+
+    @classmethod
+    def FindClusterWithSufficientHosts(cls, numberofhosts = 3):
+        """ Find a cluster in the zone with given number of hosts
+            or at most 1 less than the given number as the extra host
+            is needed only for migrate"""
+
+        clusters = Cluster.list(cls.api_client, zoneid=cls.zone.id)
+        for cluster in clusters:
+            hosts = Host.list(cls.api_client, clusterid=cluster.id)
+            if len(hosts) >= (numberofhosts - 1):
+                return cluster
+        #end for
+        return None
+
 
     def validate_vm_deployment(self):
         """Validates VM deployment on different hosts"""
@@ -3487,7 +3509,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         self.debug("Delete virtual machines in account: %s" %
                                                 self.account.name)
         try:
-            self.vm_1.delete(self.apiclient)
+            self.vm_1.delete(self.apiclient, expunge=False)
 
             list_vm_response = list_virtual_machines(
                                                  self.apiclient,
@@ -3502,7 +3524,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                     "VM state should be destroyed"
                     )
 
-            self.vm_2.delete(self.apiclient)
+            self.vm_2.delete(self.apiclient, expunge=False)
 
             list_vm_response = list_virtual_machines(
                                                  self.apiclient,
@@ -3517,7 +3539,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                     "VM state should be destroyed"
                     )
 
-            self.vm_3.delete(self.apiclient)
+            self.vm_3.delete(self.apiclient, expunge=False)
 
             list_vm_response = list_virtual_machines(
                                                  self.apiclient,
