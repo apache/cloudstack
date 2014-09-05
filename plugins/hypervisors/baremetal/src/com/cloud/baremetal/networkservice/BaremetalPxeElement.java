@@ -19,8 +19,11 @@
 package com.cloud.baremetal.networkservice;
 
 import com.cloud.baremetal.database.BaremetalPxeVO;
+import com.cloud.baremetal.manager.BaremetalVlanManager;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -67,6 +70,10 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
     VMInstanceDao _vmDao;
     @Inject
     NicDao _nicDao;
+    @Inject
+    BaremetalVlanManager vlanMgr;
+    @Inject
+    DataCenterDao zoneDao;
 
     static {
         Capability cap = new Capability(BaremetalPxeManager.BAREMETAL_PXE_CAPABILITY);
@@ -133,13 +140,29 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
             }
         }
 
-        return false;
+        if (dest.getDataCenter().getNetworkType() == DataCenter.NetworkType.Advanced){
+            prepareVlan(network, dest);
+        }
+
+        return true;
+    }
+
+    private void prepareVlan(Network network, DeployDestination dest) {
+        vlanMgr.prepareVlan(network, dest);
     }
 
     @Override
     public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException {
+        DataCenterVO dc = zoneDao.findById(vm.getVirtualMachine().getDataCenterId());
+        if (dc.getNetworkType() == DataCenter.NetworkType.Advanced) {
+            releaseVlan(network, vm);
+        }
         return true;
+    }
+
+    private void releaseVlan(Network network, VirtualMachineProfile vm) {
+        vlanMgr.releaseVlan(network, vm);
     }
 
     @Override

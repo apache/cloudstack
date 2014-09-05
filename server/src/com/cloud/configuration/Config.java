@@ -1841,6 +1841,14 @@ public enum Config {
             "The maximum number of retrying times to search for an available IPv6 address in the table",
             null),
 
+    BaremetalEnableCompleteNotification(
+            "Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "baremetal.provision.done.notification",
+            "false",
+            "Enable provision done notification through virtual router",
+            null),
     BaremetalPeerHypervisorType(
             "Advanced",
             ManagementServer.class,

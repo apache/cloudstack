@@ -65,7 +65,7 @@ public class BaremetalRct {
     public static class HostEntry {
         private String uuid;
         private String mac;
-        private int port;
+        private String port;
 
         public String getUuid() {
             return uuid;
@@ -83,11 +83,11 @@ public class BaremetalRct {
             this.mac = mac;
         }
 
-        public int getPort() {
+        public String getPort() {
             return port;
         }
 
-        public void setPort(int port) {
+        public void setPort(String port) {
             this.port = port;
         }
     }

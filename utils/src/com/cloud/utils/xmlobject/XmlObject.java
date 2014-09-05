@@ -66,6 +66,10 @@ public class XmlObject {
         return this;
     }
 
+    public void removeElement(String key) {
+        elements.remove(key);
+    }
+
     private Object recurGet(XmlObject obj, Iterator<String> it) {
         String key = it.next();
         Object e = obj.elements.get(key);
