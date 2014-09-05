@@ -51,30 +51,30 @@ public class PrivateGatewayRules extends RuleApplier {
             _network = _networkModel.getNetwork(_privateGateway.getNetworkId());
             NicProfile requested = _nicProfileHelper.createPrivateNicProfileForGateway(_privateGateway);
 
-            if (!_networkHelper.checkRouterVersion(router)) {
-                s_logger.warn("Router requires upgrade. Unable to send command to router: " + router.getId());
+            if (!_networkHelper.checkRouterVersion(_router)) {
+                s_logger.warn("Router requires upgrade. Unable to send command to router: " + _router.getId());
                 return false;
             }
-            _nicProfile = _itMgr.addVmToNetwork(router, _network, requested);
+            _nicProfile = _itMgr.addVmToNetwork(_router, _network, requested);
 
-            //setup source nat
+            // setup source nat
             if (_nicProfile != null) {
                 _isAddOperation = true;
-                //result = setupVpcPrivateNetwork(router, true, guestNic);
+                // result = setupVpcPrivateNetwork(router, true, guestNic);
                 result = visitor.visit(this);
             }
         } catch (Exception ex) {
-            s_logger.warn("Failed to create private gateway " + _privateGateway + " on router " + router + " due to ", ex);
+            s_logger.warn("Failed to create private gateway " + _privateGateway + " on router " + _router + " due to ", ex);
         } finally {
             if (!result) {
-                s_logger.debug("Failed to setup gateway " + _privateGateway + " on router " + router + " with the source nat. Will now remove the gateway.");
+                s_logger.debug("Failed to setup gateway " + _privateGateway + " on router " + _router + " with the source nat. Will now remove the gateway.");
                 _isAddOperation = false;
                 boolean isRemoved = destroyPrivateGateway(visitor);
 
                 if (isRemoved) {
-                    s_logger.debug("Removed the gateway " + _privateGateway + " from router " + router + " as a part of cleanup");
+                    s_logger.debug("Removed the gateway " + _privateGateway + " from router " + _router + " as a part of cleanup");
                 } else {
-                    s_logger.warn("Failed to remove the gateway " + _privateGateway + " from router " + router + " as a part of cleanup");
+                    s_logger.warn("Failed to remove the gateway " + _privateGateway + " from router " + _router + " as a part of cleanup");
                 }
             }
         }
@@ -95,8 +95,10 @@ public class PrivateGatewayRules extends RuleApplier {
     }
 
     public Network retrievePrivateNetwork() {
-        // This network might be the same we have already as an instance in the RuleApplier super class.
-        // Just doing this here, but will double check is remove if it's not needed.
+        // This network might be the same we have already as an instance in the
+        // RuleApplier super class.
+        // Just doing this here, but will double check is remove if it's not
+        // needed.
         Network network = _networkDao.findById(_nicProfile.getNetworkId());
         return network;
     }
@@ -119,7 +121,7 @@ public class PrivateGatewayRules extends RuleApplier {
             return false;
         }
 
-        //revoke network acl on the private gateway.
+        // revoke network acl on the private gateway.
         if (!_networkACLMgr.revokeACLItemsForPrivateGw(_privateGateway)) {
             s_logger.debug("Failed to delete network acl items on " + _privateGateway + " from router " + _router);
             return false;
