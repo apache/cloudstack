@@ -8,7 +8,8 @@ Version 4.3.1
 -------------
 
 This is a bug fix release. The following issues were fixed:
- 
+
+    CLOUDSTACK-7404: Failed to start an instance when originating template has been deleted 
     CLOUDSTACK-6531: Stopping the router in case of command failures
     CLOUDSTACK-6115: TravisCI configuration
     CLOUDSTACK-7405: allowing VR meta-data to be accessed without trailing slash
