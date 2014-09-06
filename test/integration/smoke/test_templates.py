@@ -252,7 +252,6 @@ class TestTemplates(cloudstackTestCase):
                             admin=True,
                             domainid=cls.domain.id
                             )
-        print "After:",cls.services
         cls.user = Account.create(
                             cls.apiclient,
                             cls.services["account"],
