@@ -111,10 +111,12 @@ class MarvinInit:
             if not self.__hypervisorType:
                 if self.__parsedConfig and self.__parsedConfig.zones is not None:
                     for zone in self.__parsedConfig.zones:
-                        for pod in zone.pods and pod is not None:
-                            for cluster in pod.clusters and cluster is not None:
-                                self.__hypervisorType = cluster.hypervisor
-                                break
+                        for pod in zone.pods:
+                            if pod is not None:
+                                for cluster in pod.clusters:
+                                    if cluster is not None and cluster.hypervisor is not None:
+                                        self.__hypervisorType = cluster.hypervisor
+                                        break
             if not self.__zoneForTests:
                 if self.__parsedConfig and self.__parsedConfig.zones is not None:
                     for zone in self.__parsedConfig.zones:
