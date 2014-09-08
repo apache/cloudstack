@@ -273,6 +273,7 @@ public class VirtualNetworkApplianceFactory {
         AdvancedVpnRules vpnRules = new AdvancedVpnRules(remoteAccessVpn, users);
 
         initBeans(vpnRules);
+        vpnRules._vpcDao = _vpcDao;
 
         return vpnRules;
     }
