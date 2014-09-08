@@ -1085,7 +1085,10 @@ class Template:
         cmd.displaytext = services["displaytext"]
         cmd.name = "-".join([services["name"], random_gen()])
         cmd.format = services["format"]
-        cmd.hypervisor = hypervisor
+        if hypervisor:
+            cmd.hypervisor = hypervisor
+        elif "hypervisor" in services:
+            cmd.hypervisor = services["hypervisor"]
 
         if "ostypeid" in services:
             cmd.ostypeid = services["ostypeid"]
