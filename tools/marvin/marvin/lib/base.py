@@ -1252,6 +1252,16 @@ class Template:
 
         return apiclient.copyTemplate(cmd)
 
+    def copy(self, apiclient, sourcezoneid, destzoneid):
+        "Copy Template from source Zone to Destination Zone"
+
+        cmd = copyTemplate.copyTemplateCmd()
+        cmd.id = self.id
+        cmd.sourcezoneid = sourcezoneid
+        cmd.destzoneid = destzoneid
+
+        return apiclient.copyTemplate(cmd)
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """List all templates matching criteria"""
