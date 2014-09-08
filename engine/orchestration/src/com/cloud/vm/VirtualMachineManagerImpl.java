@@ -1843,7 +1843,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             vmSrc.addNic(nic);
         }
 
-        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, _offeringDao.findById(vm.getId(), vm.getServiceOfferingId()), null, null);
         _networkMgr.prepareNicForMigration(profile, dest);
         volumeMgr.prepareForMigration(profile, dest);
 
