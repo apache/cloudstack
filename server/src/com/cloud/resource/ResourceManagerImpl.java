@@ -30,6 +30,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -1195,9 +1196,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (hosts == null || hosts.isEmpty() || !answer.getMigrate()) {
                     // for the last host in this cluster, stop all the VMs
                     _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
-                } else if (HypervisorType.LXC.equals(host.getHypervisorType())){
-                    //Stop LXC Vms. LXC doesn't support migration
-                    _haMgr.scheduleStop(vm, hostId, WorkType.Stop);
+                } else if (HypervisorType.LXC.equals(host.getHypervisorType()) && VirtualMachine.Type.User.equals(vm.getType())){
+                    //Migration is not supported for LXC Vms. Schedule restart instead.
+                    _haMgr.scheduleRestart(vm, false);
                 } else {
                     _haMgr.scheduleMigration(vm);
                 }
