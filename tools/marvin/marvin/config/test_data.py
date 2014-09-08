@@ -572,7 +572,7 @@ test_data = {
         "supportedservices": "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat,NetworkACL",
         "traffictype": "GUEST",
         "availability": "Optional",
-        "ispersistent": "False",
+        "ispersistent": "True",
         "useVpc": "on",
         "serviceProviderList": {
             "Dhcp": "VpcVirtualRouter",
@@ -593,7 +593,7 @@ test_data = {
         "supportedservices": "Dhcp,Dns,SourceNat,PortForwarding,Vpn,UserData,StaticNat,NetworkACL",
         "traffictype": "GUEST",
         "availability": "Optional",
-        "ispersistent": "False",
+        "ispersistent": "True",
         "useVpc": "on",
         "serviceProviderList": {
             "Dhcp": "VpcVirtualRouter",
@@ -651,28 +651,6 @@ test_data = {
             "Lb": 'Netscaler',
             "UserData": 'VirtualRouter',
             "StaticNat": 'VirtualRouter',
-        },
-
-    },
-    "nw_off_persistent_VPCVR_NoLB": {
-        "name": 'VPC Network offering',
-        "displaytext": 'VPC Network off',
-        "guestiptype": 'Isolated',
-        "supportedservices":
-        'Vpn,Dhcp,Dns,SourceNat,PortForwarding,UserData,StaticNat,NetworkACL',
-        "traffictype": 'GUEST',
-        "availability": 'Optional',
-        "ispersistent": 'True',
-        "useVpc": 'on',
-        "serviceProviderList": {
-                "Vpn": 'VpcVirtualRouter',
-            "Dhcp": 'VpcVirtualRouter',
-            "Dns": 'VpcVirtualRouter',
-            "SourceNat": 'VpcVirtualRouter',
-            "PortForwarding": 'VpcVirtualRouter',
-            "UserData": 'VpcVirtualRouter',
-            "StaticNat": 'VpcVirtualRouter',
-            "NetworkACL": 'VpcVirtualRouter'
         },
 
     },
