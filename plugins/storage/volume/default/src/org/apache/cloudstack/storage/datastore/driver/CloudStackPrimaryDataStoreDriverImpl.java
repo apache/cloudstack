@@ -204,7 +204,12 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
         CommandResult result = new CommandResult();
         try {
-            EndPoint ep = epSelector.select(data);
+            EndPoint ep = null;
+            if (data.getType() == DataObjectType.VOLUME) {
+                ep = epSelector.select(data, StorageAction.DELETEVOLUME);
+            } else {
+                ep = epSelector.select(data);
+            }
             if (ep == null) {
                 String errMsg = "No remote endpoint to send DeleteCommand, check if host or ssvm is down?";
                 s_logger.error(errMsg);

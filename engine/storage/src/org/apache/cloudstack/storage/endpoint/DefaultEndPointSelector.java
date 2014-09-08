@@ -302,6 +302,17 @@ public class DefaultEndPointSelector implements EndPointSelector {
                     return getEndPointFromHostId(hostId);
                 }
             }
+        } else if (action == StorageAction.DELETEVOLUME) {
+            VolumeInfo volume = (VolumeInfo)object;
+            if (volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+                VirtualMachine vm = volume.getAttachedVM();
+                if (vm != null) {
+                    Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+                    if (hostId != null) {
+                        return getEndPointFromHostId(hostId);
+                    }
+                }
+            }
         }
         return select(object);
     }
