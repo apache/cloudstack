@@ -26,7 +26,14 @@ else
 fi
 
 build_date=`date +%Y-%m-%d`
-branch="master"
+
+# set fixed or leave empty to use git to determine
+branch=
+
+if [ -z "$branch" ] ; then
+  branch=`(git name-rev --no-undefined --name-only HEAD 2>/dev/null || echo unknown) | sed -e 's/remotes\/.*\///g'`
+fi
+
 rootdir=$PWD
 
 # Initialize veewee and dependencies
@@ -95,8 +102,8 @@ echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware
 vboxmanage export $machine_uuid --output $appliance-$build_date-$branch-vmware.ovf
 mv $appliance-$build_date-$branch-vmware.ovf $appliance-$build_date-$branch-vmware.ovf-orig
 java -cp convert Convert convert_ovf_vbox_to_esx.xslt $appliance-$build_date-$branch-vmware.ovf-orig $appliance-$build_date-$branch-vmware.ovf
-tar -cf $appliance-$build_date-$branch-vmware.ova $appliance-$build_date-$branch-vmware.ovf $appliance-$build_date-$branch-vmware-disk1.vmdk
-rm -f $appliance-$build_date-$branch-vmware.ovf $appliance-$build_date-$branch-vmware.ovf-orig $appliance-$build_date-$branch-vmware-disk1.vmdk
+tar -cf $appliance-$build_date-$branch-vmware.ova $appliance-$build_date-$branch-vmware.ovf $appliance-$build_date-$branch-vmware-disk[0-9].vmdk
+rm -f $appliance-$build_date-$branch-vmware.ovf $appliance-$build_date-$branch-vmware.ovf-orig $appliance-$build_date-$branch-vmware-disk[0-9].vmdk
 echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware.ova"
 
 # Export for HyperV
