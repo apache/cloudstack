@@ -576,8 +576,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return null;
         }
 
-        Network network = _networkDao.findById(vpn.getNetworkId());
-        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        Vpc vpc = _entityMgr.findById(Vpc.class, vpn.getVpcId());
+        DataCenterVO dcVO = _dcDao.findById(vpc.getZoneId());
         NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
         return networkTopology.applyVpnUsers(vpn, users, routers.get(0));

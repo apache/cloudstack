@@ -657,8 +657,17 @@ public class CommandSetupHelper {
 
         final IpAddress ip = _networkModel.getIp(vpn.getServerAddressId());
 
+        // This block is needed due to the line 206 of the
+        // RemoteAccessVpnManagenerImpl:
+        // TODO: assumes one virtual network / domr per account per zone
+        final String cidr;
         final Network network = _networkDao.findById(vpn.getNetworkId());
-        final String cidr = network.getCidr();
+        if (network == null) {
+            Vpc vpc = _vpcDao.findById(vpn.getVpcId());
+            cidr = vpc.getCidr();
+        } else {
+            cidr = network.getCidr();
+        }
 
         final RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(isCreate, ip.getAddress().addr(), vpn.getLocalIp(), vpn.getIpRange(),
                 vpn.getIpsecPresharedKey(), vpn.getVpcId() != null);
