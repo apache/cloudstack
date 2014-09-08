@@ -3081,6 +3081,7 @@
 
                                     if (inputData['specifyVlan'] == 'on') { //specifyVlan checkbox is checked
                                         inputData['specifyVlan'] = true;
+                                        inputData['specifyIpRanges'] = true;
                                     } else { //specifyVlan checkbox is unchecked
                                         delete inputData.specifyVlan; //if specifyVlan checkbox is unchecked, do not pass specifyVlan parameter to API call since we need to keep API call's size as small as possible (p.s. specifyVlan is defaulted as false at server-side)                                        
                                     }
