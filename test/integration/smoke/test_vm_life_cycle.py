@@ -215,6 +215,7 @@ class TestDeployVM(cloudstackTestCase):
             domainid=self.domain.id
         )
         self.cleanup.append(account)
+
         virtual_machine1 = VirtualMachine.create(
             self.apiclient,
             self.services["small"],
@@ -222,7 +223,6 @@ class TestDeployVM(cloudstackTestCase):
             domainid=account.domainid,
             serviceofferingid=self.service_offering.id
         )
-
         virtual_machine2 = VirtualMachine.create(
             self.apiclient,
             self.services["small"],
@@ -360,7 +360,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         return
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false", BugId="6984")
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false", BugId="CLOUDSTACK-6984")
     def test_01_stop_vm(self):
         """Test Stop Virtual Machine
         """
@@ -604,7 +604,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @attr(configuration = "expunge.interval")
     @attr(configuration = "expunge.delay")
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"],BugId="CLOUDSTACK-6708", required_hardware="false")
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_09_expunge_vm(self):
         """Test destroy(expunge) Virtual Machine
         """
@@ -649,7 +649,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.assertEqual(list_vm_response,None,"Check Expunged virtual machine is in listVirtualMachines response")
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true", BugId="CLOUDSTACK-6985")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_10_attachAndDetach_iso(self):
         """Test for attach and detach ISO to virtual machine"""
 
