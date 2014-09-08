@@ -15,6 +15,199 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
+    var assignVMAction = function() {
+        return {
+            label: 'Assign VMs',
+            messages: {
+                notification: function(args) {
+                    return 'Assign VMs';
+                }
+            },
+            needsRefresh: true,
+            listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
+                type: 'checkbox',
+                filters: false,
+                multiSelect: false,
+                subselect: {
+                    isMultiple: true,
+                    label: 'label.use.vm.ip',
+                    dataProvider: function(args) {        
+                        var instance = args.context.instances[0];
+                        var network = args.context.networks[0];
+
+                        $.ajax({
+                            url: createURL('listNics'),
+                            data: {
+                                virtualmachineid: instance.id,
+                                nicId: instance.nic[0].id
+                            },
+                            success: function(json) {                	
+                                var nic = json.listnicsresponse.nic[0];
+                                var primaryIp = nic.ipaddress;
+                                var secondaryIps = nic.secondaryip ? nic.secondaryip : [];
+                                var ipSelection = [];
+                                var existingIps = $(args.context.subItemData).map(
+                                    function(index, item) { return item.itemIp; }
+                                );
+
+                                // Add primary IP as default
+                                if ($.inArray(primaryIp, existingIps) == -1) {
+                                    ipSelection.push({
+                                        id: primaryIp,
+                                        description: primaryIp + ' (Primary)'
+                                    });
+                                }
+
+                                // Add secondary IPs
+                                $(secondaryIps).map(function(index, secondaryIp) {
+                                    if ($.inArray(secondaryIp.ipaddress, existingIps) == -1) {
+                                        ipSelection.push({
+                                            id: secondaryIp.ipaddress,
+                                            description: secondaryIp.ipaddress
+                                        });
+                                    }
+                                });
+
+                                args.response.success({
+                                    data: ipSelection
+                                });
+                            }
+                        });
+                    }
+                },
+                dataProvider: function(args) {
+                    var assignedInstances;
+                    $.ajax({
+                        url: createURL('listLoadBalancers'),
+                        data: {
+                            id: args.context.internalLoadBalancers[0].id
+                        },
+                        async: false,
+                        success: function(json) {
+                            assignedInstances = json.listloadbalancerssresponse.loadbalancer[0].loadbalancerinstance;
+                            if (assignedInstances == null)
+                                assignedInstances = [];
+                        }
+                    });
+
+                    $.ajax({
+                        url: createURL('listVirtualMachines'),
+                        data: {
+                            networkid: args.context.networks[0].id,
+                            listAll: true
+                        },
+                        success: function(json) {
+                            var instances = json.listvirtualmachinesresponse.virtualmachine;
+
+                            // Pre-select existing instances in LB rule
+                            $(instances).map(function(index, instance) {
+                                instance._isSelected = $.grep(assignedInstances,
+                                                              function(assignedInstance) {
+                                                                  return assignedInstance.id == instance.id;
+                                                              }
+                                                             ).length ? true : false;
+                            });
+
+                            //remove assigned VMs (i.e. instance._isSelected == true)
+                            var items = [];
+                            if (instances != null) {
+                                for (var i = 0; i < instances.length; i++) {
+                                    if (instances[i]._isSelected == true)
+                                        continue;
+                                    else
+                                        items.push(instances[i]);
+                                }
+                            }
+
+                            args.response.success({
+                                data: items
+                            });
+                        }
+                    });
+                }
+            }),
+            action: function(args) {  //UI > Network menu > VPC section > select and configure a VPC from listing > select an internal LB tier > click Internal LB > select an internal LB rule from listing > Details tab > click Assigned VMs tab > click Assign VMs button > Select VM dailog 
+                var $rows = $(':ui-dialog .list-view tbody tr');
+                var vms = args.context.instances;
+                
+                // Assign subselect values
+                $(vms).each(function() {
+                    var vm = this;
+                    var $vmRow = $rows.filter(function() {
+                        return $(this).data('json-obj') === vm;
+                    });
+                    $.extend(vm, { _subselect: $vmRow.find('.subselect select').val() });
+                });
+
+                /*
+                 var array1 = [];
+                 for (var i = 0; i < vms.length; i++) {
+                 array1.push(vms[i].id);
+                 }
+                 var virtualmachineids = array1.join(',');
+                 var inputData = {
+                 id: args.context.internalLoadBalancers[0].id,
+                 virtualmachineids: virtualmachineids
+                 };
+                 */
+                //virtualmachineids parameter has been replaced with vmidipmap parameter, so comment out the lines above.
+                
+                
+                var inputData = {
+                    id: args.context.internalLoadBalancers[0].id
+                };   
+                /* 
+                 * e.g. first VM(xxx) has two IPs(10.1.1.~), second VM(yyy) has three IPs(10.2.2.~):
+                 * vmidipmap[0].vmid=xxx  vmidipmap[0].vmip=10.1.1.11 
+                 * vmidipmap[1].vmid=xxx  vmidipmap[1].vmip=10.1.1.12 
+                 * vmidipmap[2].vmid=yyy  vmidipmap[2].vmip=10.2.2.77 
+                 * vmidipmap[3].vmid=yyy  vmidipmap[3].vmip=10.2.2.78 
+                 * vmidipmap[4].vmid=yyy  vmidipmap[4].vmip=10.2.2.79 
+                 */
+                var selectedVMs = vms;
+                if (selectedVMs != null) {
+                    var vmidipmapIndex = 0;
+                    for (var vmIndex = 0; vmIndex < selectedVMs.length; vmIndex++) {      
+                        var selectedIPs = selectedVMs[vmIndex]._subselect;
+                        for (var ipIndex = 0; ipIndex < selectedIPs.length; ipIndex++) {
+                            inputData['vmidipmap[' + vmidipmapIndex + '].vmid'] = selectedVMs[vmIndex].id;
+                            
+                            //"ipAddresses" is not in args.context since this LB rule is under a VPC, not an address. 
+                            /*
+                             if (args.context.ipAddresses[0].isportable) {
+                             inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex].split(',')[1];  
+                             } else {
+                             inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
+                             }
+                             */
+                            inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
+                            
+                            vmidipmapIndex++;
+                        }                                                			
+                    }
+                }   
+
+                $.ajax({
+                    url: createURL('assignToLoadBalancerRule'),
+                    data: inputData,
+                    dataType: 'json',
+                    async: true,
+                    success: function(data) {
+                        var jid = data.assigntoloadbalancerruleresponse.jobid;
+                        args.response.success({
+                            _custom: {
+                                jobId: jid
+                            }
+                        });
+                    }
+                });
+            },
+            notification: {
+                poll: pollAsyncJobResult
+            }
+        };
+    };
+    
     var aclMultiEdit = {
         noSelect: true,
        
@@ -700,98 +893,7 @@
                         isMaximized: true,
                         name: 'Internal LB details',
                         actions: {
-                            assignVMs: {
-                                label: 'Assign VMs',
-                                messages: {
-                                    notification: function(args) {
-                                        return 'Assign VMs';
-                                    }
-                                },
-                                needsRefresh: true,
-                                listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
-                                    type: 'checkbox',
-                                    filters: false,
-                                    dataProvider: function(args) {
-                                        var assignedInstances;
-                                        $.ajax({
-                                            url: createURL('listLoadBalancers'),
-                                            data: {
-                                                id: args.context.internalLoadBalancers[0].id
-                                            },
-                                            async: false,
-                                            success: function(json) {
-                                                assignedInstances = json.listloadbalancerssresponse.loadbalancer[0].loadbalancerinstance;
-                                                if (assignedInstances == null)
-                                                    assignedInstances = [];
-                                            }
-                                        });
-
-                                        $.ajax({
-                                            url: createURL('listVirtualMachines'),
-                                            data: {
-                                                networkid: args.context.networks[0].id,
-                                                listAll: true
-                                            },
-                                            success: function(json) {
-                                                var instances = json.listvirtualmachinesresponse.virtualmachine;
-
-                                                // Pre-select existing instances in LB rule
-                                                $(instances).map(function(index, instance) {
-                                                    instance._isSelected = $.grep(assignedInstances,
-                                                        function(assignedInstance) {
-                                                            return assignedInstance.id == instance.id;
-                                                        }
-                                                    ).length ? true : false;
-                                                });
-
-                                                //remove assigned VMs (i.e. instance._isSelected == true)
-                                                var items = [];
-                                                if (instances != null) {
-                                                    for (var i = 0; i < instances.length; i++) {
-                                                        if (instances[i]._isSelected == true)
-                                                            continue;
-                                                        else
-                                                            items.push(instances[i]);
-                                                    }
-                                                }
-
-                                                args.response.success({
-                                                    data: items
-                                                });
-                                            }
-                                        });
-                                    }
-                                }),
-                                action: function(args) {  //UI > Network menu > VPC section > select and configure a VPC from listing > select an internal LB tier > click Internal LB > Quickview on an internal LB rule from listing > click Assign VMs button > Select VM dailog
-                                    var vms = args.context.instances;
-                                    var array1 = [];
-                                    for (var i = 0; i < vms.length; i++) {
-                                        array1.push(vms[i].id);
-                                    }
-                                    var virtualmachineids = array1.join(',');
-
-                                    $.ajax({
-                                        url: createURL('assignToLoadBalancerRule'),
-                                        data: {
-                                            id: args.context.internalLoadBalancers[0].id,
-                                            virtualmachineids: virtualmachineids
-                                        },
-                                        dataType: 'json',
-                                        async: true,
-                                        success: function(data) {
-                                            var jid = data.assigntoloadbalancerruleresponse.jobid;
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jid
-                                                }
-                                            });
-                                        }
-                                    });
-                                },
-                                notification: {
-                                    poll: pollAsyncJobResult
-                                }
-                            },
+                            assignVMs: assignVMAction(),
 
                             remove: {
                                 label: 'Delete Internal LB',
@@ -944,196 +1046,7 @@
                                         });
                                     },
                                     actions: {
-                                        add: {
-                                            label: 'Assign VMs',
-                                            messages: {
-                                                notification: function(args) {
-                                                    return 'Assign VMs';
-                                                }
-                                            },
-                                            needsRefresh: true,
-                                            listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
-                                                type: 'checkbox',
-                                                filters: false,
-                                                multiSelect: false,
-                                                subselect: {
-                                                    isMultiple: true,
-                                                    label: 'label.use.vm.ip',
-                                                    dataProvider: function(args) {        
-                                                        var instance = args.context.instances[0];
-                                                        var network = args.context.networks[0];
-
-                                                        $.ajax({
-                                                            url: createURL('listNics'),
-                                                            data: {
-                                                                virtualmachineid: instance.id,
-                                                                nicId: instance.nic[0].id
-                                                            },
-                                                            success: function(json) {                	
-                                                                var nic = json.listnicsresponse.nic[0];
-                                                                var primaryIp = nic.ipaddress;
-                                                                var secondaryIps = nic.secondaryip ? nic.secondaryip : [];
-                                                                var ipSelection = [];
-                                                                var existingIps = $(args.context.subItemData).map(
-                                                                    function(index, item) { return item.itemIp; }
-                                                                );
-
-                                                                // Add primary IP as default
-                                                                if ($.inArray(primaryIp, existingIps) == -1) {
-                                                                    ipSelection.push({
-                                                                        id: primaryIp,
-                                                                        description: primaryIp + ' (Primary)'
-                                                                    });
-                                                                }
-
-                                                                // Add secondary IPs
-                                                                $(secondaryIps).map(function(index, secondaryIp) {
-                                                                    if ($.inArray(secondaryIp.ipaddress, existingIps) == -1) {
-                                                                        ipSelection.push({
-                                                                            id: secondaryIp.ipaddress,
-                                                                            description: secondaryIp.ipaddress
-                                                                        });
-                                                                    }
-                                                                });
-
-                                                                args.response.success({
-                                                                    data: ipSelection
-                                                                });
-                                                            }
-                                                        });
-                                                    }
-                                                },
-                                                dataProvider: function(args) {
-                                                    var assignedInstances;
-                                                    $.ajax({
-                                                        url: createURL('listLoadBalancers'),
-                                                        data: {
-                                                            id: args.context.internalLoadBalancers[0].id
-                                                        },
-                                                        async: false,
-                                                        success: function(json) {
-                                                            assignedInstances = json.listloadbalancerssresponse.loadbalancer[0].loadbalancerinstance;
-                                                            if (assignedInstances == null)
-                                                                assignedInstances = [];
-                                                        }
-                                                    });
-
-                                                    $.ajax({
-                                                        url: createURL('listVirtualMachines'),
-                                                        data: {
-                                                            networkid: args.context.networks[0].id,
-                                                            listAll: true
-                                                        },
-                                                        success: function(json) {
-                                                            var instances = json.listvirtualmachinesresponse.virtualmachine;
-
-                                                            // Pre-select existing instances in LB rule
-                                                            $(instances).map(function(index, instance) {
-                                                                instance._isSelected = $.grep(assignedInstances,
-                                                                    function(assignedInstance) {
-                                                                        return assignedInstance.id == instance.id;
-                                                                    }
-                                                                ).length ? true : false;
-                                                            });
-
-                                                            //remove assigned VMs (i.e. instance._isSelected == true)
-                                                            var items = [];
-                                                            if (instances != null) {
-                                                                for (var i = 0; i < instances.length; i++) {
-                                                                    if (instances[i]._isSelected == true)
-                                                                        continue;
-                                                                    else
-                                                                        items.push(instances[i]);
-                                                                }
-                                                            }
-
-                                                            args.response.success({
-                                                                data: items
-                                                            });
-                                                        }
-                                                    });
-                                                }
-                                            }),
-                                            action: function(args) {  //UI > Network menu > VPC section > select and configure a VPC from listing > select an internal LB tier > click Internal LB > select an internal LB rule from listing > Details tab > click Assigned VMs tab > click Assign VMs button > Select VM dailog 
-                                                var $rows = $(':ui-dialog .list-view tbody tr');
-                                                var vms = args.context.instances;
-                                                
-                                                // Assign subselect values
-                                                $(vms).each(function() {
-                                                    var vm = this;
-                                                    var $vmRow = $rows.filter(function() {
-                                                        return $(this).data('json-obj') === vm;
-                                                    });
-                                                    $.extend(vm, { _subselect: $vmRow.find('.subselect select').val() });
-                                                });
-
-                                                /*
-                                                var array1 = [];
-                                                for (var i = 0; i < vms.length; i++) {
-                                                    array1.push(vms[i].id);
-                                                }
-                                                var virtualmachineids = array1.join(',');
-                                                var inputData = {
-                                                    id: args.context.internalLoadBalancers[0].id,
-                                                    virtualmachineids: virtualmachineids
-                                                };
-                                                */
-                                                //virtualmachineids parameter has been replaced with vmidipmap parameter, so comment out the lines above.
-                                                
-                                                                                                
-                                                var inputData = {
-                                                	id: args.context.internalLoadBalancers[0].id
-                                                };   
-                                                /* 
-                                                 * e.g. first VM(xxx) has two IPs(10.1.1.~), second VM(yyy) has three IPs(10.2.2.~):
-                                                 * vmidipmap[0].vmid=xxx  vmidipmap[0].vmip=10.1.1.11 
-                                                 * vmidipmap[1].vmid=xxx  vmidipmap[1].vmip=10.1.1.12 
-                                                 * vmidipmap[2].vmid=yyy  vmidipmap[2].vmip=10.2.2.77 
-                                                 * vmidipmap[3].vmid=yyy  vmidipmap[3].vmip=10.2.2.78 
-                                                 * vmidipmap[4].vmid=yyy  vmidipmap[4].vmip=10.2.2.79 
-                                                 */
-                                                var selectedVMs = vms;
-                                                if (selectedVMs != null) {
-                                                	var vmidipmapIndex = 0;
-                                            		for (var vmIndex = 0; vmIndex < selectedVMs.length; vmIndex++) {      
-                                            			var selectedIPs = selectedVMs[vmIndex]._subselect;
-                                            			for (var ipIndex = 0; ipIndex < selectedIPs.length; ipIndex++) {
-                                            				inputData['vmidipmap[' + vmidipmapIndex + '].vmid'] = selectedVMs[vmIndex].id;
-                                                			
-                                            				//"ipAddresses" is not in args.context since this LB rule is under a VPC, not an address. 
-                                            				/*
-                                            				if (args.context.ipAddresses[0].isportable) {
-                                                			    inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex].split(',')[1];  
-                                                			} else {
-                                                				inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
-                                                			}
-                                                			*/
-                                            				inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
-                                            				
-                                            				vmidipmapIndex++;
-                                            			}                                                			
-                                            		}
-                                            	}   
-
-                                                $.ajax({
-                                                    url: createURL('assignToLoadBalancerRule'),
-                                                    data: inputData,
-                                                    dataType: 'json',
-                                                    async: true,
-                                                    success: function(data) {
-                                                        var jid = data.assigntoloadbalancerruleresponse.jobid;
-                                                        args.response.success({
-                                                            _custom: {
-                                                                jobId: jid
-                                                            }
-                                                        });
-                                                    }
-                                                });
-                                            },
-                                            notification: {
-                                                poll: pollAsyncJobResult
-                                            }
-                                        }
+                                        add: assignVMAction()
                                     },
                                     detailView: {
                                         actions: {
