@@ -126,7 +126,11 @@
                     });
                 }
             }),
-            action: function(args) {  //UI > Network menu > VPC section > select and configure a VPC from listing > select an internal LB tier > click Internal LB > select an internal LB rule from listing > Details tab > click Assigned VMs tab > click Assign VMs button > Select VM dailog 
+            action: function(args) {  
+            	/*
+            	 * path 1: Network > VPC (list) > click "Configure" > pick an internal LB tier > click "Internal LB" (list) > click on a grid row (Details tab) > click "Assign VMs" tab > click Assign VMs" button on top of list 
+            	 * path 2: Network > VPC (list) > click "Configure" > pick an internal LB tier > click "Internal LB" (list) > "QuickView" on a grid row > click "Assign VMs" button in QuickView 
+            	 */            	
                 var $rows = $(':ui-dialog .list-view tbody tr');
                 var vms = args.context.instances;
                 
