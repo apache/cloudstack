@@ -3509,60 +3509,11 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         self.debug("Delete virtual machines in account: %s" %
                                                 self.account.name)
         try:
-            self.vm_1.delete(self.apiclient, expunge=False)
-
-            list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.vm_1.id
-                                                 )
-
-            vm_response = list_vm_response[0]
-
-            self.assertEqual(
-                    vm_response.state,
-                    'Destroyed',
-                    "VM state should be destroyed"
-                    )
-
-            self.vm_2.delete(self.apiclient, expunge=False)
-
-            list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.vm_2.id
-                                                 )
-
-            vm_response = list_vm_response[0]
-
-            self.assertEqual(
-                    vm_response.state,
-                    'Destroyed',
-                    "VM state should be destroyed"
-                    )
-
-            self.vm_3.delete(self.apiclient, expunge=False)
-
-            list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.vm_3.id
-                                                 )
-
-            vm_response = list_vm_response[0]
-
-            self.assertEqual(
-                    vm_response.state,
-                    'Destroyed',
-                    "VM state should be destroyed"
-                    )
+            self.vm_1.delete(self.apiclient)
+            self.vm_2.delete(self.apiclient)
+            self.vm_3.delete(self.apiclient)
         except Exception as e:
             self.fail("Failed to destroy the virtual instances, %s" % e)
-
-        self.debug(
-            "Waiting for expunge interval to cleanup the network and VMs")
-
-        wait_for_cleanup(
-                         self.apiclient,
-                         ["expunge.interval", "expunge.delay"]
-                        )
 
         # Check if the network rules still exists after Vm stop
         self.debug("Checking if NAT rules existed")
