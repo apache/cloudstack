@@ -18,7 +18,7 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import             attr
-from marvin.cloudstackTestCase import       cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import       cloudstackTestCase
 
 from marvin.lib.base import     (Snapshot,
                                              Template,
@@ -734,6 +734,10 @@ class TestSnapshots(cloudstackTestCase):
         #5. Login to newly created virtual machine
         #6. Compare data in the root disk with the one that was written on the volume, it should match
 
+        userapiclient = self.testClient.getUserApiClient(
+                                    UserName=self.account.name,
+                                    DomainName=self.account.domain)
+
         random_data_0 = random_gen(size=100)
         random_data_1 = random_gen(size=100)
 
@@ -788,7 +792,7 @@ class TestSnapshots(cloudstackTestCase):
             ssh_client.execute(c)
 
         volumes = list_volumes(
-                        self.apiclient,
+                        userapiclient,
                         virtualmachineid=self.virtual_machine.id,
                         type='ROOT',
                         listall=True
@@ -803,7 +807,7 @@ class TestSnapshots(cloudstackTestCase):
 
         #Create a snapshot of volume
         snapshot = Snapshot.create(
-                                   self.apiclient,
+                                   userapiclient,
                                    volume.id,
                                    account=self.account.name,
                                    domainid=self.account.domainid
@@ -812,7 +816,7 @@ class TestSnapshots(cloudstackTestCase):
         self.debug("Snapshot created from volume ID: %s" % volume.id)
         # Generate template from the snapshot
         template = Template.create_from_snapshot(
-                                    self.apiclient,
+                                    userapiclient,
                                     snapshot,
                                     self.services["templates"]
                                     )
@@ -821,7 +825,7 @@ class TestSnapshots(cloudstackTestCase):
 
         # Verify created template
         templates = list_templates(
-                                self.apiclient,
+                                userapiclient,
                                 templatefilter=\
                                 self.services["templates"]["templatefilter"],
                                 id=template.id
@@ -841,7 +845,7 @@ class TestSnapshots(cloudstackTestCase):
 
         # Deploy new virtual machine using template
         new_virtual_machine = VirtualMachine.create(
-                                    self.apiclient,
+                                    userapiclient,
                                     self.services["server_without_disk"],
                                     templateid=template.id,
                                     accountid=self.account.name,
@@ -995,8 +999,13 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         #    State of this VM should be Running.
 
         #Create Virtual Machine
+
+        userapiclient = self.testClient.getUserApiClient(
+                                    UserName=self.account.name,
+                                    DomainName=self.account.domain)
+
         self.virtual_machine = VirtualMachine.create(
-                                self.apiclient,
+                                userapiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account.name,
@@ -1006,7 +1015,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         self.debug("Created VM with ID: %s" % self.virtual_machine.id)
         # Get the Root disk of VM
         volumes = list_volumes(
-                            self.apiclient,
+                            userapiclient,
                             virtualmachineid=self.virtual_machine.id,
                             type='ROOT',
                             listall=True
@@ -1014,12 +1023,12 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         volume = volumes[0]
 
         # Create a snapshot from the ROOTDISK
-        snapshot = Snapshot.create(self.apiclient, volume.id)
+        snapshot = Snapshot.create(userapiclient, volume.id)
         self.debug("Snapshot created: ID - %s" % snapshot.id)
         self.cleanup.append(snapshot)
 
         snapshots = list_snapshots(
-                                   self.apiclient,
+                                   userapiclient,
                                    id=snapshot.id
                                    )
         self.assertEqual(
@@ -1043,7 +1052,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
 
         # Generate template from the snapshot
         template = Template.create_from_snapshot(
-                                    self.apiclient,
+                                    userapiclient,
                                     snapshot,
                                     self.services["templates"]
                                     )
@@ -1051,7 +1060,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         self.cleanup.append(template)
 
         templates = list_templates(
-                                self.apiclient,
+                                userapiclient,
                                 templatefilter=\
                                 self.services["templates"]["templatefilter"],
                                 id=template.id
@@ -1071,7 +1080,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
 
         # Deploy new virtual machine using template
         new_virtual_machine = VirtualMachine.create(
-                                    self.apiclient,
+                                    userapiclient,
                                     self.services["server"],
                                     templateid=template.id,
                                     accountid=self.account.name,
@@ -1086,7 +1095,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
 
         # Newly deployed VM should be 'Running'
         virtual_machines = list_virtual_machines(
-                                self.apiclient,
+                                userapiclient,
                                 id=new_virtual_machine.id,
                                 account=self.account.name,
                                 domainid=self.account.domainid
