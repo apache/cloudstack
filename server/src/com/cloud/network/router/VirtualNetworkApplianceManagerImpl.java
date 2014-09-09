@@ -241,7 +241,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  */
 @Local(value = { VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class })
 public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, VirtualMachineGuru, Listener,
-        Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
+Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
     @Inject
@@ -521,7 +521,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROUTER_REBOOT, eventDescription = "rebooting router Vm", async = true)
     public VirtualRouter rebootRouter(final long routerId, final boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
+    InsufficientCapacityException {
         final Account caller = CallContext.current().getCallingAccount();
 
         // verify parameters
@@ -698,7 +698,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             s_logger.debug("router.check.interval - " + _routerCheckInterval + " so not scheduling the redundant router checking thread");
         }
 
-        final int _routerAlertsCheckInterval = RouterAlertsCheckInterval.value();
+        int _routerAlertsCheckInterval = RouterAlertsCheckInterval.value();
         if (_routerAlertsCheckInterval > 0) {
             _checkExecutor.scheduleAtFixedRate(new CheckRouterAlertsTask(), _routerAlertsCheckInterval, _routerAlertsCheckInterval, TimeUnit.SECONDS);
         } else {
@@ -777,7 +777,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
                                                 if ((previousStats != null)
                                                         && ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) || (previousStats.getCurrentBytesSent() != stats
-                                                                .getCurrentBytesSent()))) {
+                                                        .getCurrentBytesSent()))) {
                                                     s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " + "Ignoring current answer. Router: "
                                                             + answerFinal.getRouterName() + " Rcvd: " + answerFinal.getBytesReceived() + "Sent: " + answerFinal.getBytesSent());
                                                     return;
@@ -2120,7 +2120,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Override
     public DomainRouterVO stop(final VirtualRouter router, final boolean forced, final User user, final Account caller) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
         s_logger.debug("Stopping router " + router);
         try {
             _itMgr.advanceStop(router.getUuid(), forced);
@@ -2183,7 +2183,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Override
     public VirtualRouter startRouter(final long routerId, final boolean reprogramNetwork) throws ResourceUnavailableException, InsufficientCapacityException,
-            ConcurrentOperationException {
+    ConcurrentOperationException {
         final Account caller = CallContext.current().getCallingAccount();
         final User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
 
@@ -2393,7 +2393,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
                                     if ((previousStats != null)
                                             && ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) || (previousStats.getCurrentBytesSent() != stats
-                                                    .getCurrentBytesSent()))) {
+                                            .getCurrentBytesSent()))) {
                                         s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " + "Ignoring current answer. Router: "
                                                 + answerFinal.getRouterName() + " Rcvd: " + answerFinal.getBytesReceived() + "Sent: " + answerFinal.getBytesSent());
                                         return;
