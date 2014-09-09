@@ -19,19 +19,14 @@
 #Import Local Modules
 from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.cloudstackAPI import (updateTemplate,
-                                  extractTemplate,
-                                  listZones,
-                                  updateTemplatePermissions,
-                                  deleteTemplate,
-                                  copyTemplate)
 from marvin.lib.utils import random_gen, cleanup_resources
 from marvin.lib.base import (Account,
                              ServiceOffering,
                              VirtualMachine,
                              DiskOffering,
                              Template,
-                             Volume)
+                             Volume,
+                             Zone)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template)
@@ -62,7 +57,6 @@ class TestCreateTemplate(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        
         testClient = super(TestCreateTemplate, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
@@ -220,8 +214,7 @@ class TestTemplates(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         #populate second zone id for iso copy
-        cmd = listZones.listZonesCmd()
-        cls.zones = cls.apiclient.listZones(cmd)
+        cls.zones = Zone.list(cls.apiclient)
         if not isinstance(cls.zones, list):
             raise Exception("Failed to find zones.")
 
@@ -350,21 +343,17 @@ class TestTemplates(cloudstackTestCase):
         new_displayText = random_gen()
         new_name = random_gen()
 
-        cmd = updateTemplate.updateTemplateCmd()
-        # Update template attributes
-        cmd.id = self.template_1.id
-        cmd.displaytext = new_displayText
-        cmd.name = new_name
-        cmd.bootable = self.services["bootable"]
-        cmd.passwordenabled = self.services["passwordenabled"]
-
-        self.apiclient.updateTemplate(cmd)
+        self.template_1.update(self.apiclient,
+                               displaytext = new_displayText,
+                               name = new_name,
+                               bootable = self.services["bootable"],
+                               passwordenabled = self.services["passwordenabled"])
 
         self.debug("Edited template with new name: %s" % new_name)
-        
+
         # Sleep to ensure update reflected across all the calls
         time.sleep(self.services["sleep"])
-        
+
         timeout = self.services["timeout"]
         while True:
             # Verify template response for updated attributes
@@ -383,7 +372,7 @@ class TestTemplates(cloudstackTestCase):
 
             time.sleep(10)
             timeout = timeout -1
-            
+
         self.assertEqual(
                             isinstance(list_template_response, list),
                             True,
@@ -395,7 +384,7 @@ class TestTemplates(cloudstackTestCase):
                             "Check template available in List Templates"
                         )
         template_response = list_template_response[0]
-        
+
         self.debug("New Name: %s" % new_displayText)
         self.debug("Name in Template response: %s"
                                 % template_response.displaytext)
@@ -461,19 +450,17 @@ class TestTemplates(cloudstackTestCase):
         # 3 .ListTemplates should not display the system templates
 
         self.debug("Extracting template with ID: %s" % self.template_2.id)
-
-        cmd = extractTemplate.extractTemplateCmd()
-        cmd.id = self.template_2.id
-        cmd.mode = self.services["template_2"]["mode"]
-        cmd.zoneid = self.zone.id
-        list_extract_response = self.apiclient.extractTemplate(cmd)
+        list_extract_response = Template.extract(self.apiclient,
+                                                 id=self.template_2.id,
+                                                 mode= self.services["template_2"]["mode"],
+                                                 zoneid=self.zone.id)
 
         try:
             # Format URL to ASCII to retrieve response code
             formatted_url = urllib.unquote_plus(list_extract_response.url)
             url_response = urllib.urlopen(formatted_url)
             response_code = url_response.getcode()
-        
+
         except Exception:
             self.fail(
                 "Extract Template Failed with invalid URL %s (template id: %s)" \
@@ -513,13 +500,10 @@ class TestTemplates(cloudstackTestCase):
 
         self.debug("Updating Template permissions ID:%s" % self.template_2.id)
 
-        cmd = updateTemplatePermissions.updateTemplatePermissionsCmd()
-        # Update template permissions
-        cmd.id = self.template_2.id
-        cmd.isfeatured = self.services["isfeatured"]
-        cmd.ispublic = self.services["ispublic"]
-        cmd.isextractable = self.services["isextractable"]
-        self.apiclient.updateTemplatePermissions(cmd)
+        self.template_2.updatePermissions(self.apiclient,
+                                          isfeatured = self.services["isfeatured"],
+                                          ispublic = self.services["ispublic"],
+                                          isextractable = self.services["isextractable"])
 
         list_template_response = Template.list(
                                     self.apiclient,
@@ -571,11 +555,10 @@ class TestTemplates(cloudstackTestCase):
                                             self.services["sourcezoneid"],
                                             self.services["destzoneid"]
                                             ))
-        cmd = copyTemplate.copyTemplateCmd()
-        cmd.id = self.template_2.id
-        cmd.destzoneid = self.services["destzoneid"]
-        cmd.sourcezoneid = self.services["sourcezoneid"]
-        self.apiclient.copyTemplate(cmd)
+
+        self.template_2.copy(self.apiclient,
+                             sourcezoneid=self.services["sourcezoneid"],
+                             destzoneid=self.services["destzoneid"])
 
         # Verify template is copied to another zone using ListTemplates
         list_template_response = Template.list(
@@ -629,7 +612,7 @@ class TestTemplates(cloudstackTestCase):
                                 0,
                                 "Check template extracted in List Templates"
                             )
-    
+
             template_response = list_template_response[0]
             if template_response.isready == True:
                 break
@@ -639,10 +622,7 @@ class TestTemplates(cloudstackTestCase):
                         "Failed to download copied template(ID: %s)" % template_response.id)
 
             timeout = timeout - 1
-        cmd = deleteTemplate.deleteTemplateCmd()
-        cmd.id = template_response.id
-        cmd.zoneid = self.services["destzoneid"]
-        self.apiclient.deleteTemplate(cmd)
+        self.template_2.delete(self.apiclient, zoneid=self.services["destzoneid"])
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")

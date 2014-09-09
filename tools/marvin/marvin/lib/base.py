@@ -1183,11 +1183,13 @@ class Template:
         cmd.snapshotid = snapshot.id
         return Template(apiclient.createTemplate(cmd).__dict__)
 
-    def delete(self, apiclient):
+    def delete(self, apiclient, zoneid=None):
         """Delete Template"""
 
         cmd = deleteTemplate.deleteTemplateCmd()
         cmd.id = self.id
+        if zoneid:
+            cmd.zoneid = zoneid
         apiclient.deleteTemplate(cmd)
 
     def download(self, apiclient, timeout=5, interval=60):
