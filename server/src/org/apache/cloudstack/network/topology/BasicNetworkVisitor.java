@@ -54,6 +54,7 @@ import com.cloud.network.rules.StaticNatRules;
 import com.cloud.network.rules.StaticRoutesRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
+import com.cloud.network.rules.VirtualNetworkApplianceFactory;
 import com.cloud.network.rules.VpcIpAssociationRules;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -75,7 +76,15 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     protected NetworkHelper _networkGeneralHelper;
 
     @Inject
+    protected VirtualNetworkApplianceFactory _virtualNetworkApplianceFactory;
+
+    @Inject
     protected CommandSetupHelper _commandSetupHelper;
+
+    @Override
+    public VirtualNetworkApplianceFactory getVirtualNetworkApplianceFactory() {
+        return _virtualNetworkApplianceFactory;
+    }
 
     @Override
     public boolean visit(final StaticNatRules nat) throws ResourceUnavailableException {

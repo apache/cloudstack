@@ -23,10 +23,13 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDao;
 
 public class SshKeyToRouterRules extends RuleApplier {
 
@@ -49,12 +52,17 @@ public class SshKeyToRouterRules extends RuleApplier {
     @Override
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
         _router = router;
-        _userVM = _userVmDao.findById(_profile.getVirtualMachine().getId());
-        _userVmDao.loadDetails(_userVM);
 
-        _nicVo = _nicDao.findById(_nic.getId());
+        UserVmDao userVmDao = visitor.getVirtualNetworkApplianceFactory().getUserVmDao();
+        _userVM = userVmDao.findById(_profile.getVirtualMachine().getId());
+
+        userVmDao.loadDetails(_userVM);
+
+        NicDao nicDao = visitor.getVirtualNetworkApplianceFactory().getNicDao();
+        _nicVo = nicDao.findById(_nic.getId());
         // for basic zone, send vm data/password information only to the router in the same pod
-        _template = _templateDao.findByIdIncludingRemoved(_profile.getTemplateId());
+        VMTemplateDao templateDao = visitor.getVirtualNetworkApplianceFactory().getTemplateDao();
+        _template = templateDao.findByIdIncludingRemoved(_profile.getTemplateId());
 
         return visitor.visit(this);
     }

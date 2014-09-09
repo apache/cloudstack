@@ -33,6 +33,7 @@ import com.cloud.network.PublicIpAddress;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
+import com.cloud.vm.dao.NicDao;
 
 public class VpcIpAssociationRules extends RuleApplier {
 
@@ -56,9 +57,10 @@ public class VpcIpAssociationRules extends RuleApplier {
         _vlanMacAddress = new HashMap<String, String>();
         _ipsToSend = new ArrayList<PublicIpAddress>();
 
+        NicDao nicDao = visitor.getVirtualNetworkApplianceFactory().getNicDao();
         for (PublicIpAddress ipAddr : _ipAddresses) {
             String broadcastURI = BroadcastDomainType.Vlan.toUri(ipAddr.getVlanTag()).toString();
-            Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(ipAddr.getNetworkId(), _router.getId(), broadcastURI);
+            Nic nic = nicDao.findByNetworkIdInstanceIdAndBroadcastUri(ipAddr.getNetworkId(), _router.getId(), broadcastURI);
 
             String macAddress = null;
             if (nic == null) {

@@ -32,16 +32,13 @@ import com.cloud.network.rules.StaticNatRules;
 import com.cloud.network.rules.StaticRoutesRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
+import com.cloud.network.rules.VirtualNetworkApplianceFactory;
 import com.cloud.network.rules.VpcIpAssociationRules;
 import com.cloud.network.rules.VpnRules;
 
 public abstract class NetworkTopologyVisitor {
 
-    protected final NetworkTopology networkTopology;
-
-    public NetworkTopologyVisitor(final NetworkTopology networkTopology) {
-        this.networkTopology = networkTopology;
-    }
+    public abstract VirtualNetworkApplianceFactory getVirtualNetworkApplianceFactory();
 
     public abstract boolean visit(StaticNatRules nat) throws ResourceUnavailableException;
 
@@ -74,5 +71,6 @@ public abstract class NetworkTopologyVisitor {
     public abstract boolean visit(DhcpSubNetRules subnet) throws ResourceUnavailableException;
 
     public abstract boolean visit(NicPlugInOutRules nicPlugInOutRules) throws ResourceUnavailableException;
+
     public abstract boolean visit(StaticRoutesRules staticRoutesRules) throws ResourceUnavailableException;
 }

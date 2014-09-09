@@ -22,6 +22,8 @@ import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.vm.NicProfile;
 
@@ -48,8 +50,11 @@ public class DhcpRules extends RuleApplier {
             op = "delete";
         }
 
-        final Network network = _networkDao.findById(_nic.getNetworkId());
-        final String networkTag = _networkModel.getNetworkTag(_router.getHypervisorType(), network);
+        NetworkDao networkDao = visitor.getVirtualNetworkApplianceFactory().getNetworkDao();
+        final Network network = networkDao.findById(_nic.getNetworkId());
+
+        NetworkModel networkModel = visitor.getVirtualNetworkApplianceFactory().getNetworkModel();
+        final String networkTag = networkModel.getNetworkTag(_router.getHypervisorType(), network);
 
         _setupCommand = PvlanSetupCommand.createDhcpSetup(op, _nic.getBroadCastUri(), networkTag, _router.getInstanceName(), _nic.getMacAddress(), _nic.getIp4Address());
 
