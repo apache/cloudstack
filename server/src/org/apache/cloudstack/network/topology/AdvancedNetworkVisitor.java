@@ -139,8 +139,8 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
         if (router.getState() == State.Running) {
 
-            PrivateIpVO ipVO = privateGW.retrivePrivateIP();
-            Network network = privateGW.retrievePrivateNetwork();
+            PrivateIpVO ipVO = privateGW.retrivePrivateIP(this);
+            Network network = privateGW.retrievePrivateNetwork(this);
 
             String netmask = NetUtils.getCidrNetmask(network.getCidr());
             PrivateIpAddress ip = new PrivateIpAddress(ipVO, network.getBroadcastUri().toString(), network.getGateway(), netmask, nicProfile.getMacAddress());
