@@ -81,6 +81,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     'config/opt'  => '/opt',
     'config/root' => '/root',
     'config/var'  => '/var',
+    'config/etc/iptables'  => '/etc/iptables',
     # cannot have two rsyncs pointing to the same dir
     # 'vpn/etc'     => '/etc',
     # 'vpn/opt'     => '/opt',

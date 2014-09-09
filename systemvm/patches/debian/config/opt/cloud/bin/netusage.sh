@@ -123,7 +123,7 @@ done
 
 if [ "$cflag" == "1" ] 
 then
-  create_usage_rules  
+  #create_usage_rules  
   unlock_exit $? $lock $locked
 fi
 
@@ -141,13 +141,13 @@ fi
 
 if [ "$aflag" == "1" ] 
 then
-  add_public_interface $publicIf 
+  #add_public_interface $publicIf 
   unlock_exit $? $lock $locked
 fi
 
 if [ "$dflag" == "1" ] 
 then
-  delete_public_interface $publicIf 
+  #delete_public_interface $publicIf 
   unlock_exit $? $lock $locked
 fi
 

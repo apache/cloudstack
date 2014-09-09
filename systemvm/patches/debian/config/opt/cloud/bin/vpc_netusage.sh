@@ -138,13 +138,13 @@ fi
 
 if [ "$nflag" == "1" ] 
 then
-  get_vpn_usage 
+  #get_vpn_usage 
   unlock_exit $? $lock $locked
 fi
 
 if [ "$dflag" == "1" ] 
 then
-  remove_usage_rules
+  #remove_usage_rules
   unlock_exit 0 $lock $locked
 fi
 
