@@ -2,7 +2,7 @@ cloudstack (4.3.1) unstable; urgency=low
 
   * Update the version to 4.3.1
 
- -- Sebastien Goasguen <runseb@gmail.com>  Thu, 04 Sep 2014 16:47:57 2014 +0200
+ -- Sebastien Goasguen <runseb@gmail.com>  Thu, 04 Sep 2014 16:47:57 +0200
 
 cloudstack (4.3.1-snapshot) unstable; urgency=low
 
