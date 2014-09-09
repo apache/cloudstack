@@ -489,8 +489,6 @@ class CsIP:
             self.post_config_change("delete")
 
 
-
-
 class CsPassword(CsDataBag):
     """
       Update the password cache
@@ -761,6 +759,7 @@ class CsAddress(CsDataBag):
             if dev == "id":
                 continue
             ip = CsIP(dev)
+            addcnt = 0
             for address in self.dbag[dev]:
                 if not address["nw_type"] == "control":
                     CsRoute(dev).add(address)
@@ -772,6 +771,36 @@ class CsAddress(CsDataBag):
                     logging.info("Address %s on device %s not configured", ip.ip(), dev)
                     if CsDevice(dev).waitfordevice():
                         ip.configure()
+                # This could go one level up but the ip type is stored in the 
+                # ip address object and not in the device object
+                # Call only once
+                if addcnt == 0:
+                    self.add_netstats(address)
+                addcnt += 1
+
+    def add_netstats(self, address):
+        # add in the network stats iptables rules
+        dev = "eth%s" % address['nic_dev_id']
+        if address["nw_type"] == "public_ip":
+            fw.append(["", "front", "-A FORWARD -j NETWORK_STATS"])
+            fw.append(["", "front", "-A INPUT -j NETWORK_STATS"])
+            fw.append(["", "front", "-A OUTPUT -j NETWORK_STATS"])
+            # it is not possible to calculate these devices
+            # When the vrouter and the vpc router are combined this silliness can go
+            fw.append(["", "", "-A NETWORK_STATS -i %s -o eth0 -p tcp" % dev])
+            fw.append(["", "", "-A NETWORK_STATS -o %s -i eth0 -p tcp" % dev])
+            fw.append(["", "", "-A NETWORK_STATS -o %s ! -i eth0 -p tcp" % dev])
+            fw.append(["", "", "-A NETWORK_STATS -i %s ! -o eth0 -p tcp" % dev])
+
+        if address["nw_type"] == "guest":
+            fw.append(["", "front", "-A FORWARD -j NETWORK_STATS_%s" % dev])
+            fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -s %s" % (dev, dev, address['network'])])
+            fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -d %s" % (dev, dev, address['network'])])
+            # Only relevant if there is a VPN configured so will have to move
+            # at some stage
+            fw.append(["mangle", "", "-A FORWARD -j VPN_STATS_%s" % dev])
+            fw.append(["mangle", "", "-A VPN_STATS_%s -o %s -m mark --mark 0x525" % (dev, dev)])
+            fw.append(["mangle", "", "-A VPN_STATS_%s -i %s -m mark --mark 0x524" % (dev, dev)])
 
 class CsForwardingRules(CsDataBag):
     def __init__(self, key):
