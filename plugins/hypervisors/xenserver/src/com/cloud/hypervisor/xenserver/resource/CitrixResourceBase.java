@@ -285,6 +285,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected IAgentControl _agentControl;
 
     final int _maxWeight = 256;
+    protected int _heartbeatTimeout = 120;
     protected int _heartbeatInterval = 60;
     protected final XsHost _host = new XsHost();
 
@@ -4494,8 +4495,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected boolean launchHeartBeat(Connection conn) {
-        String result = callHostPluginPremium(conn, "heartbeat", "host", _host.uuid, "interval", Integer
-                .toString(_heartbeatInterval));
+        String result = callHostPluginPremium(conn, "heartbeat",
+                "host", _host.uuid,
+                "timeout", Integer.toString(_heartbeatTimeout),
+                "interval", Integer.toString(_heartbeatInterval));
         if (result == null || !result.contains("> DONE <")) {
             s_logger.warn("Unable to launch the heartbeat process on " + _host.ip);
             return false;
@@ -5573,6 +5576,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         _storageNetworkName1 = (String)params.get("storage.network.device1");
         _storageNetworkName2 = (String)params.get("storage.network.device2");
 
+        _heartbeatTimeout = NumbersUtil.parseInt((String)params.get("xenserver.heartbeat.timeout"), 120);
         _heartbeatInterval = NumbersUtil.parseInt((String)params.get("xenserver.heartbeat.interval"), 60);
 
         String value = (String)params.get("wait");

@@ -363,6 +363,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("storage.cleanup.interval");
         configValuesForValidation.add("wait");
         configValuesForValidation.add("xenserver.heartbeat.interval");
+        configValuesForValidation.add("xenserver.heartbeat.timeout");
         configValuesForValidation.add("incorrect.login.attempts.allowed");
     }
 
