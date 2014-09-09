@@ -41,7 +41,7 @@ canonical_readlink ()
 thisdir=$(canonical_readlink $0)
 
 PATHSEP=':'
-if [[ $OSTYPE == "cygwin" ]] ; then
+if [[ ($OSTYPE == "cygwin")  || ($OSTYPE == "msys") ]] ; then
   PATHSEP=';'
 fi
 
