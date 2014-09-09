@@ -92,7 +92,7 @@ class CsNetfilters(object):
         for r in del_list:
             cmd = "iptables -t %s %s" % (r.get_table(), r.to_str(True))
             CsHelper.execute(cmd)
-            print "Delete rule %s from table %s" % (r.to_str(True), r.get_table())
+            #print "Delete rule %s from table %s" % (r.to_str(True), r.get_table())
             logging.info("Delete rule %s from table %s", r.to_str(True), r.get_table())
 
     def compare(self, list):
@@ -109,6 +109,7 @@ class CsNetfilters(object):
             if self.has_rule(new_rule):
                 logging.debug("rule %s exists in table %s", fw[2], new_rule.get_table())
             else:
+                #print "Add rule %s in table %s" % ( fw[2], new_rule.get_table())
                 logging.info("Add rule %s in table %s", fw[2], new_rule.get_table())
                 # front means insert instead of append
                 cpy = fw[2]
@@ -177,6 +178,8 @@ class CsNetfilter(object):
         rule = rule.replace('-p all', '')
         rule = rule.replace('  ', ' ')
         rule = rule.replace('bootpc', '68')
+        # Ugly hack no.23 split this or else I will have an odd number of parameters
+        rule = rule.replace('--checksum-fill', '--checksum fill')
         # -m can appear twice in a string
         rule = rule.replace('-m state', '-m2 state')
         rule = rule.replace('ESTABLISHED,RELATED', 'RELATED,ESTABLISHED')
@@ -206,8 +209,8 @@ class CsNetfilter(object):
     def to_str(self, delete = False):
         """ Convert the rule back into aynactically correct iptables command """
         # Order is important 
-        order = ['-A', '-s', '-d', '!_-d', '-i', '-p', '-m', '-m2', '--icmp-type', '--state', 
-                '--dport', '--destination-port', '-o', '-j', '--set-xmark',
+        order = ['-A', '-s', '-d', '!_-d', '-i', '!_-i', '-p', '-m', '-m2', '--icmp-type', '--state', 
+                '--dport', '--destination-port', '-o', '!_-o', '-j', '--set-xmark', '--checksum',
                  '--to-source', '--to-destination']
         str = ''
         for k in order:
@@ -220,6 +223,7 @@ class CsNetfilter(object):
                     str = "%s %s" % (printable, self.rule[k])
                 else:
                     str = "%s %s %s" % (str, printable, self.rule[k])
+        str = str.replace("--checksum fill", "--checksum-fill")
         return str
 
     def __eq__(self, rule):
@@ -229,6 +233,8 @@ class CsNetfilter(object):
             return False
         if len(rule.get_rule().items()) != len(self.get_rule().items()):
             return False
+        #if '--checksum' in self.get_rule().keys() and self.get_rule()['--checksum'] == "fill":
+            #pprint(self.get_rule())
         common = set(rule.get_rule().items()) & set(self.get_rule().items())
         if len(common) != len(rule.get_rule()):
             return False
