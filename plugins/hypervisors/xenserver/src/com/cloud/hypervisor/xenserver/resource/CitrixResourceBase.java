@@ -1459,11 +1459,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     vm.setPlatform(conn, platform);
                 }
             }
-            String xenservertoolsversion = details.get("hypervisortoolsversion");
-            if ((xenservertoolsversion == null || !xenservertoolsversion.equalsIgnoreCase("xenserver61")) && vmSpec.getGpuDevice() == null) {
-                Map<String, String> platform = vm.getPlatform(conn);
-                platform.remove("device_id");
-                vm.setPlatform(conn, platform);
+            if ( !BootloaderType.CD.equals(vmSpec.getBootloader())) {
+                String xenservertoolsversion = details.get("hypervisortoolsversion");
+                if ((xenservertoolsversion == null || !xenservertoolsversion.equalsIgnoreCase("xenserver61")) && vmSpec.getGpuDevice() == null) {
+                    Map<String, String> platform = vm.getPlatform(conn);
+                    platform.remove("device_id");
+                    vm.setPlatform(conn, platform);
+                }
             }
         }
     }
