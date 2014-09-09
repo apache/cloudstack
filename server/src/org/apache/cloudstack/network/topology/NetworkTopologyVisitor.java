@@ -35,9 +35,12 @@ import com.cloud.network.rules.StaticNatRules;
 import com.cloud.network.rules.StaticRoutesRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
+import com.cloud.network.rules.VirtualNetworkApplianceFactory;
 import com.cloud.network.rules.VpcIpAssociationRules;
 
 public abstract class NetworkTopologyVisitor {
+
+    public abstract VirtualNetworkApplianceFactory getVirtualNetworkApplianceFactory();
 
     public abstract boolean visit(StaticNatRules nat) throws ResourceUnavailableException;
     public abstract boolean visit(LoadBalancingRules loadbalancing) throws ResourceUnavailableException;

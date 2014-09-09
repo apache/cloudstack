@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.network.rules;
 
-import java.util.List;
-
 import javax.inject.Inject;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,32 +24,21 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
-import com.cloud.deploy.DeployDestination;
 import com.cloud.network.IpAddressManager;
-import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
-import com.cloud.network.PublicIpAddress;
-import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.VpnUser;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.NicProfileHelper;
-import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.NetworkACLManager;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -104,200 +91,87 @@ public class VirtualNetworkApplianceFactory {
     @Inject
     private NicProfileHelper _nicProfileHelper;
 
-    public LoadBalancingRules createLoadBalancingRules(final Network network,
-            final List<LoadBalancingRule> rules) {
-        LoadBalancingRules lbRules = new LoadBalancingRules(network, rules);
-
-        initBeans(lbRules);
-
-        return lbRules;
+    public NetworkModel getNetworkModel() {
+        return _networkModel;
     }
 
-    public FirewallRules createFirewallRules(final Network network,
-            final List<? extends FirewallRule> rules) {
-        FirewallRules fwRules = new FirewallRules(network, rules);
-
-        initBeans(fwRules);
-
-        fwRules._networkDao = _networkDao;
-
-        return fwRules;
+    public LoadBalancingRulesManager getLbMgr() {
+        return _lbMgr;
     }
 
-    public StaticNatRules createStaticNatRules(final Network network,
-            final List<? extends StaticNat> rules) {
-        StaticNatRules natRules = new StaticNatRules(network, rules);
-
-        initBeans(natRules);
-
-        return natRules;
+    public LoadBalancerDao getLoadBalancerDao() {
+        return _loadBalancerDao;
     }
 
-    private void initBeans(final RuleApplier applier) {
-        applier._networkModel = _networkModel;
-        applier._dcDao = _dcDao;
-        applier._lbMgr = _lbMgr;
-        applier._loadBalancerDao = _loadBalancerDao;
-        applier._nicDao = _nicDao;
-        applier._itMgr = _itMgr;
-        applier._networkHelper = _networkHelper;
+    public NicDao getNicDao() {
+        return _nicDao;
     }
 
-    public IpAssociationRules createIpAssociationRules(final Network network, final List<? extends PublicIpAddress> ipAddresses) {
-        IpAssociationRules ipAssociationRules = new IpAssociationRules(network, ipAddresses);
-
-        initBeans(ipAssociationRules);
-
-        ipAssociationRules._networkDao = _networkDao;
-
-        return ipAssociationRules;
+    public VirtualMachineManager getItMgr() {
+        return _itMgr;
     }
 
-    public VpcIpAssociationRules createVpcIpAssociationRules(final Network network, final List<? extends PublicIpAddress> ipAddresses) {
-        VpcIpAssociationRules ipAssociationRules = new VpcIpAssociationRules(network, ipAddresses);
-
-        initBeans(ipAssociationRules);
-
-        ipAssociationRules._networkDao = _networkDao;
-
-        return ipAssociationRules;
+    public DataCenterDao getDcDao() {
+        return _dcDao;
     }
 
-    public BasicVpnRules createBasicVpnRules(final Network network, final List<? extends VpnUser> users) {
-        BasicVpnRules vpnRules = new BasicVpnRules(network, users);
-
-        initBeans(vpnRules);
-
-        return vpnRules;
+    public UserVmDao getUserVmDao() {
+        return _userVmDao;
     }
 
-    public PasswordToRouterRules createPasswordToRouterRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile) {
-        PasswordToRouterRules routerRules = new PasswordToRouterRules(network, nic, profile);
-
-        initBeans(routerRules);
-
-        routerRules._userVmDao = _userVmDao;
-
-        return routerRules;
+    public UserStatisticsDao getUserStatsDao() {
+        return _userStatsDao;
     }
 
-    public SshKeyToRouterRules createSshKeyToRouterRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final String sshKey) {
-        SshKeyToRouterRules sshKeyToRouterRules = new SshKeyToRouterRules(network, nic, profile, sshKey);
-
-        initBeans(sshKeyToRouterRules);
-
-        sshKeyToRouterRules._userVmDao = _userVmDao;
-        sshKeyToRouterRules._templateDao = _templateDao;
-
-        return sshKeyToRouterRules;
+    public VpcDao getVpcDao() {
+        return _vpcDao;
     }
 
-    public UserdataToRouterRules createUserdataToRouterRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile) {
-        UserdataToRouterRules userdataRules = new UserdataToRouterRules(network, nic, profile);
-
-        initBeans(userdataRules);
-
-        userdataRules._userVmDao = _userVmDao;
-        userdataRules._templateDao = _templateDao;
-
-        return userdataRules;
+    public VpcManager getVpcMgr() {
+        return _vpcMgr;
     }
 
-    public UserdataPwdRules createUserdataPwdRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination destination) {
-        UserdataPwdRules userdataRules = new UserdataPwdRules(network, nic, profile, destination);
-
-        initBeans(userdataRules);
-
-        userdataRules._userVmDao = _userVmDao;
-        userdataRules._templateDao = _templateDao;
-
-        return userdataRules;
+    public VMTemplateDao getTemplateDao() {
+        return _templateDao;
     }
 
-    public DhcpEntryRules createDhcpEntryRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination destination) {
-        DhcpEntryRules dhcpRules = new DhcpEntryRules(network, nic, profile, destination);
-
-        initBeans(dhcpRules);
-
-        dhcpRules._userVmDao = _userVmDao;
-        dhcpRules._networkDao = _networkDao;
-
-        return dhcpRules;
+    public NetworkDao getNetworkDao() {
+        return _networkDao;
     }
 
-    public NicPlugInOutRules createNicPluInOutRules(final Network network, final List<? extends PublicIpAddress> ipAddresses) {
-        NicPlugInOutRules nicPlug = new NicPlugInOutRules(network, ipAddresses);
-
-        initBeans(nicPlug);
-
-        nicPlug._vpcDao = _vpcDao;
-        nicPlug._userStatsDao = _userStatsDao;
-        nicPlug._vpcMgr = _vpcMgr;
-
-        return nicPlug;
+    public NicIpAliasDao getNicIpAliasDao() {
+        return _nicIpAliasDao;
     }
 
-    public NetworkAclsRules createNetworkAclRules(final Network network, final List<? extends NetworkACLItem> rules, final boolean isPrivateGateway) {
-        NetworkAclsRules networkAclsRules = new NetworkAclsRules(network, rules, isPrivateGateway);
-
-        initBeans(networkAclsRules);
-
-        return networkAclsRules;
+    public HostPodDao getPodDao() {
+        return _podDao;
     }
 
-    public DhcpSubNetRules createDhcpSubNetRules(final Network network, final NicProfile nic, final VirtualMachineProfile profile) {
-        DhcpSubNetRules subNetRules = new DhcpSubNetRules(network, nic, profile);
-
-        initBeans(subNetRules);
-
-        subNetRules._vpcDao = _vpcDao;
-        subNetRules._userVmDao = _userVmDao;
-        subNetRules._podDao = _podDao;
-        subNetRules._vlanDao = _vlanDao;
-        subNetRules._nicIpAliasDao = _nicIpAliasDao;
-        subNetRules._ipAddrMgr = _ipAddrMgr;
-        subNetRules._ipAddressDao = _ipAddressDao;
-
-        return subNetRules;
+    public VlanDao getVlanDao() {
+        return _vlanDao;
     }
 
-    public DhcpPvlanRules createDhcpPvlanRules(final boolean isAddPvlan, final NicProfile nic) {
-        DhcpPvlanRules pvlanRules = new DhcpPvlanRules(isAddPvlan, nic);
-
-        initBeans(pvlanRules);
-
-        pvlanRules._networkDao = _networkDao;
-
-        return pvlanRules;
+    public IPAddressDao getIpAddressDao() {
+        return _ipAddressDao;
     }
 
-    public StaticRoutesRules createStaticRoutesRules(final List<StaticRouteProfile> staticRoutes) {
-        StaticRoutesRules routesRules = new StaticRoutesRules(staticRoutes);
-
-        initBeans(routesRules);
-
-        return routesRules;
+    public PrivateIpDao getPrivateIpDao() {
+        return _privateIpDao;
     }
 
-    public AdvancedVpnRules createAdvancedVpnRules(final RemoteAccessVpn remoteAccessVpn, final List<? extends VpnUser> users) {
-        AdvancedVpnRules vpnRules = new AdvancedVpnRules(remoteAccessVpn, users);
-
-        initBeans(vpnRules);
-        vpnRules._vpcDao = _vpcDao;
-
-        return vpnRules;
+    public IpAddressManager getIpAddrMgr() {
+        return _ipAddrMgr;
     }
 
-    public PrivateGatewayRules createPrivateGatewayRules(final PrivateGateway gateway) {
-        PrivateGatewayRules gwRules = new PrivateGatewayRules(gateway);
+    public NetworkACLManager getNetworkACLMgr() {
+        return _networkACLMgr;
+    }
 
-        initBeans(gwRules);
+    public NetworkHelper getNetworkHelper() {
+        return _networkHelper;
+    }
 
-        gwRules._privateIpDao = _privateIpDao;
-        gwRules._networkACLMgr = _networkACLMgr;
-        gwRules._nicProfileHelper = _nicProfileHelper;
-        gwRules._networkDao = _networkDao;
-
-        return gwRules;
+    public NicProfileHelper getNicProfileHelper() {
+        return _nicProfileHelper;
     }
 }

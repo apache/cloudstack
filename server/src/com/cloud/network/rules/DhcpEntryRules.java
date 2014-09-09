@@ -27,6 +27,8 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDao;
 
 public class DhcpEntryRules extends RuleApplier {
 
@@ -49,9 +51,13 @@ public class DhcpEntryRules extends RuleApplier {
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
         _router = router;
 
-        _userVM = _userVmDao.findById(_profile.getId());
-        _userVmDao.loadDetails(_userVM);
-        _nicVo = _nicDao.findById(_nic.getId());
+        UserVmDao userVmDao = visitor.getVirtualNetworkApplianceFactory().getUserVmDao();
+        _userVM = userVmDao.findById(_profile.getId());
+
+        userVmDao.loadDetails(_userVM);
+
+        NicDao nicDao = visitor.getVirtualNetworkApplianceFactory().getNicDao();
+        _nicVo = nicDao.findById(_nic.getId());
 
         return visitor.visit(this);
     }

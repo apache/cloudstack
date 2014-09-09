@@ -59,7 +59,6 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
-import com.cloud.network.rules.VirtualNetworkApplianceFactory;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
@@ -74,8 +73,7 @@ public class BasicNetworkTopology implements NetworkTopology {
 
     private static final Logger s_logger = Logger.getLogger(BasicNetworkTopology.class);
 
-    @Inject
-    protected VirtualNetworkApplianceFactory _virtualNetworkApplianceFactory;
+
 
     @Autowired
     @Qualifier("basicNetworkVisitor")
@@ -148,7 +146,7 @@ public class BasicNetworkTopology implements NetworkTopology {
 
         final boolean failWhenDisconnect = false;
 
-        DhcpEntryRules dhcpRules = _virtualNetworkApplianceFactory.createDhcpEntryRules(network, nic, profile, dest);
+        DhcpEntryRules dhcpRules = new DhcpEntryRules(network, nic, profile, dest);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(dhcpRules));
     }
@@ -170,7 +168,7 @@ public class BasicNetworkTopology implements NetworkTopology {
 
         final boolean failWhenDisconnect = false;
 
-        UserdataPwdRules pwdRules = _virtualNetworkApplianceFactory.createUserdataPwdRules(network, nic, profile, dest);
+        UserdataPwdRules pwdRules = new UserdataPwdRules(network, nic, profile, dest);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(pwdRules));
     }
@@ -191,7 +189,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        LoadBalancingRules loadBalancingRules = _virtualNetworkApplianceFactory.createLoadBalancingRules(network, rules);
+        LoadBalancingRules loadBalancingRules = new LoadBalancingRules(network, rules);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(loadBalancingRules));
     }
@@ -210,7 +208,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        FirewallRules firewallRules = _virtualNetworkApplianceFactory.createFirewallRules(network, rules);
+        FirewallRules firewallRules = new FirewallRules(network, rules);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(firewallRules));
     }
@@ -229,7 +227,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        StaticNatRules natRules = _virtualNetworkApplianceFactory.createStaticNatRules(network, rules);
+        StaticNatRules natRules = new StaticNatRules(network, rules);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(natRules));
     }
@@ -248,7 +246,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        IpAssociationRules ipAddresses= _virtualNetworkApplianceFactory.createIpAssociationRules(network, ipAddress);
+        IpAssociationRules ipAddresses = new IpAssociationRules(network, ipAddress);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(ipAddresses));
     }
@@ -263,7 +261,7 @@ public class BasicNetworkTopology implements NetworkTopology {
 
         s_logger.debug("APPLYING BASIC VPN RULES");
 
-        BasicVpnRules vpnRules = _virtualNetworkApplianceFactory.createBasicVpnRules(network, users);
+        BasicVpnRules vpnRules = new BasicVpnRules(network, users);
         boolean agentResults = true;
 
         for (final DomainRouterVO router : routers) {
@@ -301,7 +299,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        PasswordToRouterRules routerRules = _virtualNetworkApplianceFactory.createPasswordToRouterRules(network, nic, profile);
+        PasswordToRouterRules routerRules = new PasswordToRouterRules(network, nic, profile);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(routerRules));
     }
@@ -315,7 +313,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        SshKeyToRouterRules keyToRouterRules = _virtualNetworkApplianceFactory.createSshKeyToRouterRules(network, nic, profile, sshPublicKey);
+        SshKeyToRouterRules keyToRouterRules = new SshKeyToRouterRules(network, nic, profile, sshPublicKey);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(keyToRouterRules));
     }
@@ -329,7 +327,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        UserdataToRouterRules userdataToRouterRules = _virtualNetworkApplianceFactory.createUserdataToRouterRules(network, nic, profile);
+        UserdataToRouterRules userdataToRouterRules = new UserdataToRouterRules(network, nic, profile);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(userdataToRouterRules));
     }
@@ -347,10 +345,10 @@ public class BasicNetworkTopology implements NetworkTopology {
         RuleApplier ruleApplier =  ruleApplierWrapper.getRuleType();
 
         final DataCenter dc = _dcDao.findById(network.getDataCenterId());
-        final boolean isZoneBasic = (dc.getNetworkType() == NetworkType.Basic);
+        final boolean isZoneBasic = dc.getNetworkType() == NetworkType.Basic;
 
         // isPodLevelException and podId is only used for basic zone
-        assert !((!isZoneBasic && isPodLevelException) || (isZoneBasic && isPodLevelException && podId == null));
+        assert !(!isZoneBasic && isPodLevelException || isZoneBasic && isPodLevelException && podId == null);
 
         final List<VirtualRouter> connectedRouters = new ArrayList<VirtualRouter>();
         final List<VirtualRouter> disconnectedRouters = new ArrayList<VirtualRouter>();
