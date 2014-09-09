@@ -45,8 +45,8 @@ then
         [RROUTER_BIN_PATH]/primary-backup.sh fault >> [RROUTER_LOG] 2>&1
         service keepalived stop >> [RROUTER_LOG] 2>&1
         service conntrackd stop >> [RROUTER_LOG] 2>&1
-	pkill -9 keepalived >> [RROUTER_LOG] 2>&1
-	pkill -9 conntrackd >> [RROUTER_LOG] 2>&1
+        pkill -9 keepalived >> [RROUTER_LOG] 2>&1
+        pkill -9 conntrackd >> [RROUTER_LOG] 2>&1
         echo Status: FAULT \(keepalived process is dead\) >> [RROUTER_LOG]
         exit
     fi

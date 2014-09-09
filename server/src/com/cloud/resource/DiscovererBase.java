@@ -137,6 +137,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
         params.put(Config.XenMaxNics.toString().toLowerCase(), _configDao.getValue(Config.XenMaxNics.toString()));
         params.put(Config.XenHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenHeartBeatInterval.toString()));
+        params.put(Config.XenHeartBeatTimeout.toString().toLowerCase(), _configDao.getValue(Config.XenHeartBeatTimeout.toString()));
         params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
 
         return params;

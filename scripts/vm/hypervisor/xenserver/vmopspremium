@@ -127,9 +127,10 @@ def setup_heartbeat_file(session, args):
 @echo
 def heartbeat(session, args):
     host = args['host']
+    timeout = args['timeout']
     interval = args['interval']
     try: 
-       cmd = ["/bin/bash", "/opt/cloud/bin/launch_hb.sh", host, interval]
+       cmd = ["/bin/bash", "/opt/cloud/bin/launch_hb.sh", host, timeout, interval]
        txt = util.pread2(cmd)
     except:
        txt='fail'
