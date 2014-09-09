@@ -27,6 +27,8 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDao;
 
 public class UserdataPwdRules extends RuleApplier {
 
@@ -49,11 +51,13 @@ public class UserdataPwdRules extends RuleApplier {
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
         _router = router;
 
-        _userVM = _userVmDao.findById(_profile.getId());
-        _userVmDao.loadDetails(_userVM);
+        UserVmDao userVmDao = visitor.getVirtualNetworkApplianceFactory().getUserVmDao();
+        _userVM = userVmDao.findById(_profile.getId());
+        userVmDao.loadDetails(_userVM);
 
         //for basic zone, send vm data/password information only to the router in the same pod
-        _nicVo = _nicDao.findById(_nic.getId());
+        NicDao nicDao = visitor.getVirtualNetworkApplianceFactory().getNicDao();
+        _nicVo = nicDao.findById(_nic.getId());
 
         return visitor.visit(this);
     }
