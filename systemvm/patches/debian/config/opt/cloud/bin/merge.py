@@ -12,6 +12,7 @@ import cs_network_acl
 import cs_vmdata
 import cs_dhcp
 import cs_forwardingrules
+import cs_site2sitevpn
 
 from pprint import pprint
 
@@ -90,6 +91,8 @@ class updateDataBag:
           dbag = self.process_dhcp_entry(self.db.getDataBag())
        elif self.qFile.type == 'staticnatrules' or self.qFile.type == 'forwardrules':
           dbag = self.processForwardingRules(self.db.getDataBag())
+       elif self.qFile.type == 'site2sitevpn':
+          dbag = self.process_site2sitevpn(self.db.getDataBag())
        else:
           logging.error("Error I do not know what to do with file of type %s", self.qFile.type)
           return
@@ -114,6 +117,9 @@ class updateDataBag:
 
     def process_dhcp_entry(self, dbag):
         return cs_dhcp.merge(dbag, self.qFile.data)
+
+    def process_site2sitevpn(self, dbag):
+        return cs_site2sitevpn.merge(dbag, self.qFile.data)
 
     def process_network_acl(self, dbag):
         return cs_network_acl.merge(dbag, self.qFile.data)
