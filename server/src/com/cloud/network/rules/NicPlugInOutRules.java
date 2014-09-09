@@ -34,16 +34,22 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.NicDao;
 
 public class NicPlugInOutRules extends RuleApplier {
 
@@ -62,17 +68,20 @@ public class NicPlugInOutRules extends RuleApplier {
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
         _router = router;
 
-        Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> nicsToChange = getNicsToChangeOnRouter(_ipAddresses);
+        Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> nicsToChange = getNicsToChangeOnRouter(visitor);
+
         Map<String, PublicIpAddress> nicsToPlug = nicsToChange.first();
         Map<String, PublicIpAddress> nicsToUnplug = nicsToChange.second();
 
+        NetworkModel networkModel = visitor.getVirtualNetworkApplianceFactory().getNetworkModel();
+        VirtualMachineManager itMgr = visitor.getVirtualNetworkApplianceFactory().getItMgr();
         // 1) Unplug the nics
         for (Entry<String, PublicIpAddress> entry : nicsToUnplug.entrySet()) {
             Network publicNtwk = null;
             try {
-                publicNtwk = _networkModel.getNetwork(entry.getValue().getNetworkId());
+                publicNtwk = networkModel.getNetwork(entry.getValue().getNetworkId());
                 URI broadcastUri = BroadcastDomainType.Vlan.toUri(entry.getKey());
-                _itMgr.removeVmFromNetwork(_router, publicNtwk, broadcastUri);
+                itMgr.removeVmFromNetwork(_router, publicNtwk, broadcastUri);
             } catch (ConcurrentOperationException e) {
                 s_logger.warn("Failed to remove router " + _router + " from vlan " + entry.getKey() + " in public network " + publicNtwk + " due to ", e);
                 return false;
@@ -80,7 +89,8 @@ public class NicPlugInOutRules extends RuleApplier {
         }
 
         _netUsageCommands = new Commands(Command.OnError.Continue);
-        VpcVO vpc = _vpcDao.findById(_router.getVpcId());
+        VpcDao vpcDao = visitor.getVirtualNetworkApplianceFactory().getVpcDao();
+        VpcVO vpc = vpcDao.findById(_router.getVpcId());
 
         // 2) Plug the nics
         for (String vlanTag : nicsToPlug.keySet()) {
@@ -101,8 +111,8 @@ public class NicPlugInOutRules extends RuleApplier {
             NicProfile publicNic = null;
             Network publicNtwk = null;
             try {
-                publicNtwk = _networkModel.getNetwork(ip.getNetworkId());
-                publicNic = _itMgr.addVmToNetwork(_router, publicNtwk, defaultNic);
+                publicNtwk = networkModel.getNetwork(ip.getNetworkId());
+                publicNic = itMgr.addVmToNetwork(_router, publicNtwk, defaultNic);
             } catch (ConcurrentOperationException e) {
                 s_logger.warn("Failed to add router " + _router + " to vlan " + vlanTag + " in public network " + publicNtwk + " due to ", e);
             } catch (InsufficientCapacityException e) {
@@ -117,12 +127,14 @@ public class NicPlugInOutRules extends RuleApplier {
             // IPAssoc
             NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(_router.getPrivateIpAddress(), _router.getInstanceName(), true, defaultNic.getIp4Address(), vpc.getCidr());
             _netUsageCommands.addCommand(netUsageCmd);
-            UserStatisticsVO stats = _userStatsDao.findBy(_router.getAccountId(), _router.getDataCenterId(), publicNtwk.getId(), publicNic.getIp4Address(), _router.getId(),
+
+            UserStatisticsDao userStatsDao = visitor.getVirtualNetworkApplianceFactory().getUserStatsDao();
+            UserStatisticsVO stats = userStatsDao.findBy(_router.getAccountId(), _router.getDataCenterId(), publicNtwk.getId(), publicNic.getIp4Address(), _router.getId(),
                     _router.getType().toString());
             if (stats == null) {
                 stats = new UserStatisticsVO(_router.getAccountId(), _router.getDataCenterId(), publicNic.getIp4Address(), _router.getId(), _router.getType().toString(),
                         publicNtwk.getId());
-                _userStatsDao.persist(stats);
+                userStatsDao.persist(stats);
             }
         }
 
@@ -139,24 +151,26 @@ public class NicPlugInOutRules extends RuleApplier {
         return _netUsageCommands;
     }
 
-    private Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> getNicsToChangeOnRouter(final List<? extends PublicIpAddress> publicIps) {
+    private Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> getNicsToChangeOnRouter(final NetworkTopologyVisitor visitor) {
         // 1) check which nics need to be plugged/unplugged and plug/unplug them
 
         final Map<String, PublicIpAddress> nicsToPlug = new HashMap<String, PublicIpAddress>();
         final Map<String, PublicIpAddress> nicsToUnplug = new HashMap<String, PublicIpAddress>();
 
+        VpcManager vpcMgr = visitor.getVirtualNetworkApplianceFactory().getVpcMgr();
+        NicDao nicDao = visitor.getVirtualNetworkApplianceFactory().getNicDao();
         // find out nics to unplug
-        for (PublicIpAddress ip : publicIps) {
+        for (PublicIpAddress ip : _ipAddresses) {
             long publicNtwkId = ip.getNetworkId();
 
             // if ip is not associated to any network, and there are no firewall
             // rules, release it on the backend
-            if (!_vpcMgr.isIpAllocatedToVpc(ip)) {
+            if (!vpcMgr.isIpAllocatedToVpc(ip)) {
                 ip.setState(IpAddress.State.Releasing);
             }
 
             if (ip.getState() == IpAddress.State.Releasing) {
-                Nic nic = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, _router.getId(), ip.getAddress().addr());
+                Nic nic = nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, _router.getId(), ip.getAddress().addr());
                 if (nic != null) {
                     nicsToUnplug.put(ip.getVlanTag(), ip);
                     s_logger.debug("Need to unplug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
@@ -165,20 +179,20 @@ public class NicPlugInOutRules extends RuleApplier {
         }
 
         // find out nics to plug
-        for (PublicIpAddress ip : publicIps) {
+        for (PublicIpAddress ip : _ipAddresses) {
             URI broadcastUri = BroadcastDomainType.Vlan.toUri(ip.getVlanTag());
             long publicNtwkId = ip.getNetworkId();
 
             // if ip is not associated to any network, and there are no firewall
             // rules, release it on the backend
-            if (!_vpcMgr.isIpAllocatedToVpc(ip)) {
+            if (!vpcMgr.isIpAllocatedToVpc(ip)) {
                 ip.setState(IpAddress.State.Releasing);
             }
 
             if (ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) {
                 // nic has to be plugged only when there are no nics for this
                 // vlan tag exist on VR
-                Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(publicNtwkId, _router.getId(), broadcastUri.toString());
+                Nic nic = nicDao.findByNetworkIdInstanceIdAndBroadcastUri(publicNtwkId, _router.getId(), broadcastUri.toString());
 
                 if (nic == null && nicsToPlug.get(ip.getVlanTag()) == null) {
                     nicsToPlug.put(ip.getVlanTag(), ip);
@@ -186,9 +200,9 @@ public class NicPlugInOutRules extends RuleApplier {
                 } else {
                     final PublicIpAddress nicToUnplug = nicsToUnplug.get(ip.getVlanTag());
                     if (nicToUnplug != null) {
-                        NicVO nicVO = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, _router.getId(), nicToUnplug.getAddress().addr());
+                        NicVO nicVO = nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, _router.getId(), nicToUnplug.getAddress().addr());
                         nicVO.setIp4Address(ip.getAddress().addr());
-                        _nicDao.update(nicVO.getId(), nicVO);
+                        nicDao.update(nicVO.getId(), nicVO);
                         s_logger.debug("Updated the nic " + nicVO + " with the new ip address " + ip.getAddress().addr());
                         nicsToUnplug.remove(ip.getVlanTag());
                     }

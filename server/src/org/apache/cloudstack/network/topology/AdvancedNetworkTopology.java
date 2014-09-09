@@ -71,7 +71,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
         s_logger.debug("APPLYING ADVANCED VPN USERS RULES");
 
-        AdvancedVpnRules routesRules = _virtualNetworkApplianceFactory.createAdvancedVpnRules(remoteAccessVpn, users);
+        AdvancedVpnRules routesRules = new AdvancedVpnRules(remoteAccessVpn, users);
 
         boolean agentResult = routesRules.accept(_advancedVisitor, router);
 
@@ -95,7 +95,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
             return true;
         }
 
-        StaticRoutesRules routesRules = _virtualNetworkApplianceFactory.createStaticRoutesRules(staticRoutes);
+        StaticRoutesRules routesRules = new StaticRoutesRules(staticRoutes);
 
         boolean result = true;
         for (VirtualRouter router : routers) {
@@ -124,7 +124,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
             return false;
         }
 
-        DhcpPvlanRules pvlanRules = _virtualNetworkApplianceFactory.createDhcpPvlanRules(isAddPvlan, nic);
+        DhcpPvlanRules pvlanRules = new DhcpPvlanRules(isAddPvlan, nic);
 
         return pvlanRules.accept(_advancedVisitor, router);
     }
@@ -142,7 +142,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
             throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
         }
 
-        DhcpSubNetRules subNetRules = _virtualNetworkApplianceFactory.createDhcpSubNetRules(network, nic, profile);
+        DhcpSubNetRules subNetRules = new DhcpSubNetRules(network, nic, profile);
 
         return subNetRules.accept(_advancedVisitor, router);
     }
@@ -151,7 +151,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     public boolean setupPrivateGateway(final PrivateGateway gateway, final VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("SETUP PRIVATE GATEWAY RULES");
 
-        PrivateGatewayRules routesRules = _virtualNetworkApplianceFactory.createPrivateGatewayRules(gateway);
+        PrivateGatewayRules routesRules = new PrivateGatewayRules(gateway);
 
         return routesRules.accept(_advancedVisitor, router);
     }
@@ -167,7 +167,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        UserdataPwdRules pwdRules = _virtualNetworkApplianceFactory.createUserdataPwdRules(network, nic, profile, dest);
+        UserdataPwdRules pwdRules = new UserdataPwdRules(network, nic, profile, dest);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(pwdRules));
     }
@@ -183,7 +183,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         final boolean isPodLevelException = false;
         final boolean failWhenDisconnect = false;
 
-        DhcpEntryRules dhcpRules = _virtualNetworkApplianceFactory.createDhcpEntryRules(network, nic, profile, dest);
+        DhcpEntryRules dhcpRules = new DhcpEntryRules(network, nic, profile, dest);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(dhcpRules));
     }
@@ -211,10 +211,10 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        NicPlugInOutRules nicPlugInOutRules = _virtualNetworkApplianceFactory.createNicPluInOutRules(network, ipAddresses);
+        NicPlugInOutRules nicPlugInOutRules = new NicPlugInOutRules(network, ipAddresses);
         nicPlugInOutRules.accept(_advancedVisitor, router);
 
-        VpcIpAssociationRules ipAssociationRules = _virtualNetworkApplianceFactory.createVpcIpAssociationRules(network, ipAddresses);
+        VpcIpAssociationRules ipAssociationRules = new VpcIpAssociationRules(network, ipAddresses);
         boolean result = applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(ipAssociationRules));
 
         if (result) {
@@ -240,7 +240,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        NetworkAclsRules aclsRules = _virtualNetworkApplianceFactory.createNetworkAclRules(network, rules, isPrivateGateway);
+        NetworkAclsRules aclsRules = new NetworkAclsRules(network, rules, isPrivateGateway);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(aclsRules));
     }
