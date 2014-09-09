@@ -28,6 +28,7 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.vm.VirtualMachine.State;
 
 public class AdvancedVpnRules extends BasicVpnRules {
@@ -45,7 +46,8 @@ public class AdvancedVpnRules extends BasicVpnRules {
     public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
         _router = router;
 
-        Vpc vpc = _vpcDao.findById(_remoteAccessVpn.getVpcId());
+        VpcDao vpcDao = visitor.getVirtualNetworkApplianceFactory().getVpcDao();
+        Vpc vpc = vpcDao.findById(_remoteAccessVpn.getVpcId());
 
         if (_router.getState() != State.Running) {
             s_logger.warn("Failed to add/remove Remote Access VPN users: router not in running state");
