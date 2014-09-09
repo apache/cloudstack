@@ -73,6 +73,9 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.TYPE, type = CommandType.LONG, description = "List usage records for the specified usage type")
     private Long usageType;
 
+    @Parameter(name = ApiConstants.USAGE_ID, type = CommandType.STRING, description = "List usage records for the specified usage UUID. Can be used only together with TYPE parameter.")
+    private String usageId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -103,6 +106,10 @@ public class GetUsageRecordsCmd extends BaseListCmd {
 
     public Long getProjectId() {
         return projectId;
+    }
+
+    public String getUsageId() {
+        return usageId;
     }
 
     /////////////////////////////////////////////////////
