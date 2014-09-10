@@ -252,7 +252,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 _emailAlert.sendAlert(alertType, dataCenterId, podId, null, subject, body);
             } else {
                 s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " + podId +
-                    " // message:: " + subject);
+                    " // message:: " + subject + " // body:: " + body);
             }
         } catch (Exception ex) {
             s_logger.error("Problem sending email alert", ex);
