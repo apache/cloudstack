@@ -765,6 +765,14 @@ test_data = {
         "format": "OVA",
         "ostype": "Windows 8 (64-bit)",
     },
+    "rhel60template": {
+        "displaytext": "Rhel60",
+        "name": "Rhel60",
+        "passwordenabled": False,
+        "url": "http://10.147.28.7/templates/Rhel/Rhel6-64bit.ova",
+        "format": "OVA",
+        "ostype": "Red Hat Enterprise Linux 6.0 (64-bit)"
+    },
     "templateregister": {
         "displaytext": "xs",
         "name": "xs",
