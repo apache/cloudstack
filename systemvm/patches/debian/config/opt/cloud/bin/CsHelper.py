@@ -22,6 +22,11 @@ def updatefile(filename, val, mode):
     handle.write(val)
     handle.close()
 
+def bool_to_yn(val):
+    if val:
+        return "yes"
+    return "no"
+
 def get_device_info():
     """ Returns all devices on system with their ipv4 ip netmask """
     list = []
@@ -42,6 +47,17 @@ def get_domain():
         if vals[0] == "domain":
             return vals[1]
     return "cloudnine.internal"
+
+def get_device(ip):
+    """ Returns the device which has a specific ip 
+    If the ip is not found returns an empty string
+    """
+    for i in execute("ip addr show"):
+        vals = i.strip().lstrip().rstrip().split()
+        if vals[0] == "inet":
+            if vals[1].split('/')[0] == ip:
+                return vals[-1]
+    return ""
 
 def get_ip(device):
     """ Return first ip on an interface """
@@ -82,9 +98,20 @@ def execute(command):
     result = p.communicate()[0]
     return result.splitlines()
 
+def execute2(command):
+    """ Execute command """
+    logging.debug("Executing %s" % command)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    return p
+
 def service(name, op):
     execute("service %s %s" % (name, op))
     logging.info("Service %s %s" % (name, op))
+
+def start_if_stopped(name):
+    ret = execute2("service %s status" % name)
+    if ret.returncode:
+        execute2("service %s start" % name)
 
 def hup_dnsmasq(name, user):
     pid = ""
