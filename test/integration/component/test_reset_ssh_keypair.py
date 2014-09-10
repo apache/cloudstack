@@ -93,7 +93,7 @@ class Services:
             "SSHPasswordEnabledTemplate": "SSHKeyPassword",
             "sleep": 60,
             "timeout": 20,
-            "mode": 'advanced',
+            "mode": '',
         }
 
 def wait_vm_start(apiclient, vmid, timeout, sleep):
@@ -232,7 +232,6 @@ class TestResetSSHKeypair(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        self.services = Services().services
 
         self.keypair = SSHKeyPair.create(
                                     self.apiclient,
@@ -1047,7 +1046,6 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        self.services = Services().services
 
         # Set Zones and disk offerings
         self.services["virtual_machine"]["zoneid"] = self.zone.id
@@ -1089,8 +1087,6 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
                                       )
         self.cleanup.append(self.user_account)
         self.debug("Account created: %s" % self.user_account.name)
-
-        self.services = Services().services
 
         # Spawn an instance
         virtual_machine = VirtualMachine.create(
