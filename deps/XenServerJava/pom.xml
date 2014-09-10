@@ -25,7 +25,7 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <artifactId>xapi</artifactId>
-  <version>5.6.100-1-SNAPSHOT</version>
+  <version>5.6.100-1</version>
   <name>Apache XenSource XAPI</name>
   <description>XenSource XAPI Java Bindings</description>
   <dependencies>
