@@ -9,6 +9,8 @@ Version 4.3.1
 
 This is a bug fix release. The following issues were fixed:
 
+    CLOUDSTACK-6099: live migration is failing for vm deployed using dynaic compute offerings with NPE
+    CLOUDSTACK-7528: More verbose logging when sending alert fails
     CLOUDSTACK-6624: set specifyIpRanges to true if specifyVlan is set to true
     CLOUDSTACK-7404: Failed to start an instance when originating template has been deleted 
     CLOUDSTACK-6531: Stopping the router in case of command failures
