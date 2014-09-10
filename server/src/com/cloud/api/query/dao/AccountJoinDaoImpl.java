@@ -141,7 +141,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
 
         long volumeLimit = ApiDBUtils.findCorrectResourceLimit(account.getVolumeLimit(), account.getId(), ResourceType.volume);
         String volumeLimitDisplay = (fullView || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit);
-        long volumeTotal = (account.getVolumeTotal() == 0) ? 0 : account.getVolumeTotal();
+        long volumeTotal = (account.getVolumeTotal() == null) ? 0 : account.getVolumeTotal();
         String volumeAvail = (fullView || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit - volumeTotal);
         response.setVolumeLimit(volumeLimitDisplay);
         response.setVolumeTotal(volumeTotal);
