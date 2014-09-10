@@ -889,6 +889,7 @@ setup_redundant_router() {
     then
         (crontab -l; echo -e "SHELL=/bin/bash\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n*/1 * * * * $rrouter_bin_path/check_heartbeat.sh 2>&1 > /dev/null") | crontab
     fi
+    load_modules
 }
 
 setup_aesni() {
@@ -896,6 +897,13 @@ setup_aesni() {
   then
     modprobe aesni_intel
   fi
+}
+
+load_modules() {
+
+ #load nf modules for ftp
+ modprobe nf_nat_ftp
+ modprobe nf_conntrack_ftp
 }
 
 setup_router() {
@@ -972,6 +980,7 @@ setup_router() {
 #for old templates
   cp /etc/iptables/iptables-router /etc/iptables/rules
   setup_sshd $ETH1_IP "eth1"
+  load_modules
 }
 
 
@@ -1071,6 +1080,7 @@ EOF
   else
       echo 0 > /var/cache/cloud/dnsmasq_managed_lease
   fi
+  load_modules
 }
 
 
