@@ -211,7 +211,7 @@ class CsNetfilter(object):
         # Order is important 
         order = ['-A', '-s', '-d', '!_-d', '-i', '!_-i', '-p', '-m', '-m2', '--icmp-type', '--state', 
                 '--dport', '--destination-port', '-o', '!_-o', '-j', '--set-xmark', '--checksum',
-                 '--to-source', '--to-destination']
+                 '--to-source', '--to-destination', '--mark' ]
         str = ''
         for k in order:
             if k in self.rule.keys():
@@ -229,13 +229,21 @@ class CsNetfilter(object):
     def __eq__(self, rule):
         if rule.get_table() != self.get_table():
             return False
+        #if '-j' in self.get_rule().keys() and self.get_rule()['-j'] == "MARK" and self.get_rule()['--set-xmark'] == '0x524/0xffffffff' and \
+                #'-j' in rule.get_rule().keys() and rule.get_rule()['-j'] == "MARK" and rule.get_rule()['--set-xmark'] == '0x524/0xffffffff':
+            #pprint(self.get_rule())
+            #pprint(rule.get_rule())
+            #pprint(self.get_chain())
+            #pprint(rule.get_chain())
         if rule.get_chain() != self.get_chain():
             return False
         if len(rule.get_rule().items()) != len(self.get_rule().items()):
             return False
-        #if '--checksum' in self.get_rule().keys() and self.get_rule()['--checksum'] == "fill":
-            #pprint(self.get_rule())
         common = set(rule.get_rule().items()) & set(self.get_rule().items())
+        #if '-j' in self.get_rule().keys() and self.get_rule()['-j'] == "MARK" and self.get_rule()['--set-xmark'] == '0x524/0xffffffff':
+            #pprint(self.get_rule())
+            #pprint(rule.get_rule())
+            #pprint(common)
         if len(common) != len(rule.get_rule()):
             return False
         return True
