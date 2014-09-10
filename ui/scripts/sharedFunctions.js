@@ -2173,42 +2173,42 @@ cloudStack.api = {
                 }
             },
             dataProvider: function(args) {
-            	args.response.success({
-                    data: args.jsonObj.tags
-                });
-            	
-            	/*
-                var resourceId = args.context[contextId][0].id;
-                var data = {
-                    resourceId: resourceId,
-                    resourceType: resourceType
-                };
+            	if (args.jsonObj != undefined) {
+	            	args.response.success({
+	                    data: args.jsonObj.tags
+	                });
+            	} else {
+            		var resourceId = args.context[contextId][0].id;
+                    var data = {
+                        resourceId: resourceId,
+                        resourceType: resourceType
+                    };
 
-                if (isAdmin() || isDomainAdmin()) {
-                    data.listAll = true;
-                }
-
-                if (args.context.projects) {
-                    data.projectid = args.context.projects[0].id;
-                }
-
-                if (args.jsonObj != null && args.jsonObj.projectid != null && data.projectid == null) {
-                    data.projectid = args.jsonObj.projectid;
-                }
-
-                $.ajax({
-                    url: createURL('listTags'),
-                    data: data,
-                    success: function(json) {
-                        args.response.success({
-                            data: json.listtagsresponse ? json.listtagsresponse.tag : []
-                        });
-                    },
-                    error: function(json) {
-                        args.response.error(parseXMLHttpResponse(json));
+                    if (isAdmin() || isDomainAdmin()) {
+                        data.listAll = true;
                     }
-                });
-                */
+
+                    if (args.context.projects) {
+                        data.projectid = args.context.projects[0].id;
+                    }
+
+                    if (args.jsonObj != null && args.jsonObj.projectid != null && data.projectid == null) {
+                        data.projectid = args.jsonObj.projectid;
+                    }
+
+                    $.ajax({
+                        url: createURL('listTags'),
+                        data: data,
+                        success: function(json) {
+                            args.response.success({
+                                data: json.listtagsresponse ? json.listtagsresponse.tag : []
+                            });
+                        },
+                        error: function(json) {
+                            args.response.error(parseXMLHttpResponse(json));
+                        }
+                    });
+            	}            	
             }
         };
     }
