@@ -770,6 +770,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
 
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.services = Services().services
         self.services["virtual_machine"]["zoneid"] = self.zone.id
         self.services["virtual_machine"]["template"] = self.template.id
@@ -851,7 +852,8 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                                     templateid=self.iso.id,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id,
-                                    startvm=True
+                                    startvm=True,
+                                    hypervisor=self.hypervisor
                                 )
 
         response = self.virtual_machine.getState(self.apiclient, VirtualMachine.RUNNING)
