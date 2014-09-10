@@ -802,8 +802,8 @@ class CsAddress(CsDataBag):
             # Only relevant if there is a VPN configured so will have to move
             # at some stage
             fw.append(["mangle", "", "-A FORWARD -j VPN_STATS_%s" % dev])
-            fw.append(["mangle", "", "-A VPN_STATS_%s -o %s -m mark --mark 0x525/0xffffffff" % (dev, dev)])
-            fw.append(["mangle", "", "-A VPN_STATS_%s -i %s -m mark --mark 0x524/0xffffffff" % (dev, dev)])
+            fw.append(["mangle", "", "-A VPN_STATS_%s -o %s -m mark --set-xmark 0x525/0xffffffff" % (dev, dev)])
+            fw.append(["mangle", "", "-A VPN_STATS_%s -i %s -m mark --set-xmark 0x524/0xffffffff" % (dev, dev)])
 
 class CsSite2SiteVpn(CsDataBag):
     """
@@ -850,13 +850,13 @@ class CsSite2SiteVpn(CsDataBag):
     def configure_iptables(self, dev, obj):
         fw.append([ "", "front", "-A INPUT -i %s -p udp -m udp --dport 500 -j ACCEPT" % dev ])
         fw.append([ "", "front", "-A INPUT -i %s -p udp -m udp --dport 4500 -j ACCEPT" % dev ])
-        fw.append([ "", "front", "-A INPUT -i %s -p 50 -j ACCEPT" % dev ])
-        fw.append([ "", "front", "-t nat -I POSTROUTING -t nat -o %s-m mark --mark 0x525/0xffffffff -j ACCEPT" % dev ])
+        fw.append([ "", "front", "-A INPUT -i %s -p esp -j ACCEPT" % dev ])
+        fw.append([ "nat", "front", "-A POSTROUTING -t nat -o %s-m mark --set-xmark 0x525/0xffffffff -j ACCEPT" % dev ])
         for net in obj['peer_guest_cidr_list'].lstrip().rstrip().split(','):
-            fw.append([ "mangle", "front", "-I FORWARD -t mangle -s %s -d %s -j MARK --set-mark 0x525/0xffffffff" % (obj['local_guest_cidr'], net)])
-            fw.append([ "mangle", "", "-A OUTPUT -s %s -d %s -j MARK --set-mark 0x525/0xffffffff" % (obj['local_guest_cidr'], net)])
-            fw.append([ "mangle", "front", "-I FORWARD -s %s -d %s -j MARK --set-mark 0x524/0xffffffff" % (net, obj['local_guest_cidr'])])
-            fw.append([ "mangle", "", "-A INPUT -s %s -d %s -j MARK --set-mark 0x524/0xffffffff"  % (net, obj['local_guest_cidr']) ])
+            fw.append([ "mangle", "front", "-A FORWARD -s %s -d %s -j MARK --set-xmark 0x525/0xffffffff" % (obj['local_guest_cidr'], net)])
+            fw.append([ "mangle", "", "-A OUTPUT -s %s -d %s -j MARK --set-xmark 0x525/0xffffffff" % (obj['local_guest_cidr'], net)])
+            fw.append([ "mangle", "front", "-A FORWARD -s %s -d %s -j MARK --set-xmark 0x524/0xffffffff" % (net, obj['local_guest_cidr'])])
+            fw.append([ "mangle", "", "-A INPUT -s %s -d %s -j MARK --set-xmark 0x524/0xffffffff"  % (net, obj['local_guest_cidr']) ])
 
     def configure_ipsec(self, obj):
         leftpeer  = obj['local_public_ip']
