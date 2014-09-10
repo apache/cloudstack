@@ -109,4 +109,4 @@ do
 done
 
 /usr/bin/logger -t heartbeat "Problem with $hb: not reachable for $(($(date +%s) - $lastdate)) seconds, rebooting system!"
-reboot -f
+echo b > /proc/sysrq-trigger
