@@ -105,7 +105,7 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
                 _emailAlert.sendAlert(alertType, dataCenterId, podId, subject, body);
             } else {
                 s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " + podId + " // clusterId:: " + null +
-                    " // message:: " + subject);
+                    " // message:: " + subject + " // body:: " + body);
             }
         } catch (Exception ex) {
             s_logger.error("Problem sending email alert", ex);
