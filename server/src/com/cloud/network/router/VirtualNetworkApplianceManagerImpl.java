@@ -1761,6 +1761,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
                     templateName = RouterTemplateLxc.valueIn(dest.getDataCenter().getId());
                     break;
                 case BareMetal:
+                    /*
                     String peerHvType = _configDao.getValue(Config.BaremetalPeerHypervisorType.key());
                     if (peerHvType == null) {
                         throw new CloudRuntimeException(String.format("To use baremetal in advanced networking, you must set %s to type of hypervisor(e.g XenServer)" +
@@ -1777,6 +1778,9 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
                     } else {
                         throw new CloudRuntimeException(String.format("Baremetal only supports peer hypervisor(XenServer/KVM/VMWare) right now, you specified %s", peerHvType));
                     }
+                    */
+                    hType = HypervisorType.VMware;
+                    templateName = RouterTemplateVmware.valueIn(dest.getDataCenter().getId());
                     break;
                 default:
                     break;
