@@ -20751,12 +20751,7 @@
             id: 'BaremetalPxeProvider',
             name: 'Baremetal PXE',
             state: nspMap.BaremetalPxeProvider ? nspMap.BaremetalPxeProvider.state: 'Disabled'
-        },
-        {
-            id: 'Ovs',
-            name: 'Ovs',
-            state: nspMap.Ovs ? nspMap.Ovs.state: 'Disabled'
-        },
+        },       
         {
             id: 'Opendaylight',
             name: 'OpenDaylight (Experimental)',
@@ -20819,16 +20814,16 @@
                 name: 'GloboDNS',
                 state: nspMap.GloboDns ? nspMap.GloboDns.state : 'Disabled'
             });
-        }
-        
-        if ($.grep(nspHardcodingArray, function(e) { return e.id == 'Ovs'; }).length == 0 ) {
-        nspHardcodingArray.push({
+            
+            //CLOUDSTACK-6840: OVS refers to SDN provider. However, we are not supporting SDN in this release.
+            /*
+            nspHardcodingArray.push({
                 id: 'Ovs',
                 name: 'Ovs',
-            state: nspMap.Ovs ? nspMap.Ovs.state : 'Disabled'
-        });        
-        }
-
+                state: nspMap.Ovs ? nspMap.Ovs.state: 'Disabled'	            
+	        });  	        
+	        */     
+        }       
     };
     
     cloudStack.actionFilter.physicalNetwork = function (args) {
