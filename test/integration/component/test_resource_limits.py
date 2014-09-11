@@ -1270,6 +1270,10 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         #    appropriate error and an alert should be generated.
 
         try:
+            userapiclient = self.testClient.getUserApiClient(
+                                      UserName=self.account.name,
+                                      DomainName=self.account.domain)
+
             # Set usage_vm=1 for Account 1
             update_resource_limit(
                               self.apiclient,
@@ -1286,7 +1290,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                               max=2
                               )
             virtual_machine_1 = VirtualMachine.create(
-                                self.apiclient,
+                                userapiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account.name,
@@ -1300,10 +1304,10 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             'Running',
                             "Check VM state is Running or not"
                         )
-            virtual_machine_1.stop(self.apiclient)
+            virtual_machine_1.stop(userapiclient)
             # Get the Root disk of VM
             volumes = list_volumes(
-                            self.apiclient,
+                            userapiclient,
                             virtualmachineid=virtual_machine_1.id,
                             type='ROOT',
                             listall=True
@@ -1318,7 +1322,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
             self.debug("Creating template from volume: %s" % volume.id)
             # Create a template from the ROOTDISK
             template_1 = Template.create(
-                            self.apiclient,
+                            userapiclient,
                             self.services["template"],
                             volumeid=volume.id,
                             account=self.account.name,
@@ -1335,7 +1339,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
             self.debug("Creating template from volume: %s" % volume.id)
             # Create a template from the ROOTDISK
             template_2 = Template.create(
-                            self.apiclient,
+                            userapiclient,
                             self.services["template"],
                             volumeid=volume.id,
                             account=self.account.name,
@@ -1355,7 +1359,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         # Exception should be raised for second template
         with self.assertRaises(Exception):
             Template.create(
-                            self.apiclient,
+                            userapiclient,
                             self.services["template"],
                             volumeid=volume.id,
                             account=self.account.name,
