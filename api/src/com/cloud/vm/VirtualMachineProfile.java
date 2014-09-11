@@ -41,6 +41,7 @@ public interface VirtualMachineProfile {
         public static final Param ReProgramGuestNetworks = new Param("RestartNetwork");
         public static final Param PxeSeverType = new Param("PxeSeverType");
         public static final Param HaTag = new Param("HaTag");
+        public static final Param HaOperation = new Param("HaOperation");
 
         private String name;
 

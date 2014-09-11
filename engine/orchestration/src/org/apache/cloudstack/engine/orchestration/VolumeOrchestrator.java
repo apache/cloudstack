@@ -1078,7 +1078,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
     }
 
-    private List<VolumeTask> getTasks(List<VolumeVO> vols, Map<Volume, StoragePool> destVols) throws StorageUnavailableException {
+    private List<VolumeTask> getTasks(List<VolumeVO> vols, Map<Volume, StoragePool> destVols, VirtualMachineProfile vm) throws StorageUnavailableException {
         boolean recreate = RecreatableSystemVmEnabled.value();
         List<VolumeTask> tasks = new ArrayList<VolumeTask>();
         for (VolumeVO vol : vols) {
@@ -1118,7 +1118,14 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                                 throw new CloudRuntimeException("Local volume " + vol + " cannot be recreated on storagepool " + assignedPool + " assigned by deploymentPlanner");
                             } else {
                                 //Check if storage migration is enabled in config
-                                if (StorageHAMigrationEnabled.value()) {
+                                Boolean isHAOperation = (Boolean)vm.getParameter(VirtualMachineProfile.Param.HaOperation);
+                                Boolean storageMigrationEnabled = true;
+                                if (isHAOperation != null && isHAOperation) {
+                                    storageMigrationEnabled = StorageHAMigrationEnabled.value();
+                                } else {
+                                    storageMigrationEnabled = StorageMigrationEnabled.value();
+                                }
+                                if(storageMigrationEnabled){
                                     if (s_logger.isDebugEnabled()) {
                                         s_logger.debug("Shared volume " + vol + " will be migrated on storage pool " + assignedPool + " assigned by deploymentPlanner");
                                     }
@@ -1276,7 +1283,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             s_logger.debug("Checking if we need to prepare " + vols.size() + " volumes for " + vm);
         }
 
-        List<VolumeTask> tasks = getTasks(vols, dest.getStorageForDisks());
+        List<VolumeTask> tasks = getTasks(vols, dest.getStorageForDisks(), vm);
         Volume vol = null;
         StoragePool pool = null;
         for (VolumeTask task : tasks) {
@@ -1326,6 +1333,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     public static final ConfigKey<Boolean> StorageHAMigrationEnabled = new ConfigKey<Boolean>(Boolean.class, "enable.ha.storage.migration", "Storage", "true",
             "Enable/disable storage migration across primary storage during HA", true);
+
+    public static final ConfigKey<Boolean> StorageMigrationEnabled = new ConfigKey<Boolean>(Boolean.class, "enable.storage.migration", "Storage", "true",
+            "Enable/disable storage migration across primary storage", true);
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
