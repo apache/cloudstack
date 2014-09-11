@@ -56,5 +56,5 @@ service apache2 restart
 releaseLockFile $lock $locked
 
 #recreating the active ip aliases
-/root/createIpAlias.sh $2
+/opt/cloud/bin/createIpAlias.sh $2
 unlock_exit $? $lock $locked
