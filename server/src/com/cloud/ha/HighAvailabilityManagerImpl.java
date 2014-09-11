@@ -577,6 +577,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             if (_haTag != null) {
                 params.put(VirtualMachineProfile.Param.HaTag, _haTag);
             }
+            WorkType wt = work.getWorkType();
+            if (wt.equals(WorkType.HA)) {
+                params.put(VirtualMachineProfile.Param.HaOperation, true);
+            }
 
             try{
                 // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
