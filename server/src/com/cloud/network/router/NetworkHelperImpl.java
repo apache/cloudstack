@@ -372,14 +372,6 @@ public class NetworkHelperImpl implements NetworkHelper {
         return null;
     }
 
-    // @Override
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * com.cloud.network.router.NetworkHelper#startRouters(org.cloud.network
-     * .router.deployment.RouterDeploymentDefinition)
-     */
     @Override
     public List<DomainRouterVO> startRouters(final RouterDeploymentDefinition routerDeploymentDefinition) throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
@@ -407,15 +399,6 @@ public class NetworkHelperImpl implements NetworkHelper {
         return runningRouters;
     }
 
-    // @Override
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * com.cloud.network.router.NetworkHelper#startVirtualRouter(com.cloud.vm
-     * .DomainRouterVO, com.cloud.user.User, com.cloud.user.Account,
-     * java.util.Map)
-     */
     @Override
     public DomainRouterVO startVirtualRouter(final DomainRouterVO router, final User user, final Account caller, final Map<Param, Object> params)
             throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
@@ -513,7 +496,16 @@ public class NetworkHelperImpl implements NetworkHelper {
             }
         }
 
-        return hypervisorsMap.get(hType).valueIn(datacenterId);
+        // Returning NULL is fine because the simulator will need it when being
+        // used instead of a real hypervisor.
+        // The hypervisorsMap contains only real hypervisors.
+        String templateName = null;
+        ConfigKey<String> hypervisorConfigKey = hypervisorsMap.get(hType);
+
+        if (hypervisorConfigKey != null) {
+            templateName = hypervisorConfigKey.valueIn(datacenterId);
+        }
+        return templateName;
     }
 
     @Override
