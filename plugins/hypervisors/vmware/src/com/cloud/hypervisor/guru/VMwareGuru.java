@@ -48,7 +48,6 @@ import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.UnregisterNicCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.CreateVolumeOVACommand;
 import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.agent.api.to.DataObjectType;
@@ -394,20 +393,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             } else {
                 needDelegation = true;
             }
-        } else if (cmd instanceof CreateEntityDownloadURLCommand) {
-            DataTO srcData = ((CreateEntityDownloadURLCommand)cmd).getData();
-            if ((HypervisorType.VMware == srcData.getHypervisorType())) {
-                needDelegation = true;
-            }
-            if (srcData.getObjectType() == DataObjectType.VOLUME) {
-                VolumeObjectTO volumeObjectTO = (VolumeObjectTO)srcData;
-                if (Storage.ImageFormat.OVA == volumeObjectTO.getFormat()) {
-                    needDelegation = true;
-                }
-            }
         }
-
-        if (!needDelegation) {
+        if(!needDelegation) {
             return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
         }
         HostVO host = _hostDao.findById(hostId);
