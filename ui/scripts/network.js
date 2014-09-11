@@ -22,7 +22,8 @@
             protocol: elem.protocol,
             startport: elem.startport,
             endport: elem.endport,
-            cidr: elem.cidr ? elem.cidr : ''.concat(elem.account, ' - ', elem.securitygroupname)
+            cidr: elem.cidr ? elem.cidr : ''.concat(elem.account, ' - ', elem.securitygroupname),
+            tags: elem.tags
         };
 
         if (elemData.startport == 0 && elemData.endport) {
@@ -4837,6 +4838,10 @@
                                         }
                                     },
                                     ignoreEmptyFields: true,
+                                    tags: cloudStack.api.tags({
+                                        resourceType: 'SecurityGroupRule',
+                                        contextId: 'multiRule'
+                                    }),
                                     dataProvider: function(args) {
                                         $.ajax({
                                             url: createURL('listSecurityGroups'),
@@ -5032,6 +5037,10 @@
                                         }
                                     },
                                     ignoreEmptyFields: true,
+                                    tags: cloudStack.api.tags({
+                                        resourceType: 'SecurityGroupRule',
+                                        contextId: 'multiRule'
+                                    }),
                                     dataProvider: function(args) {
                                         $.ajax({
                                             url: createURL('listSecurityGroups'),
