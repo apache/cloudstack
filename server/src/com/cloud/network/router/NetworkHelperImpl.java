@@ -30,7 +30,6 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 
@@ -41,7 +40,6 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -147,8 +145,6 @@ public class NetworkHelperImpl implements NetworkHelper {
     private UserIpv6AddressDao _ipv6Dao;
     @Inject
     private RouterControlHelper _routerControlHelper;
-    @Inject
-    private ConfigurationDao _configDao;
     @Inject
     protected NetworkOrchestrationService _networkMgr;
 
@@ -345,7 +341,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
     @Override
     public List<DomainRouterVO> startRouters(final RouterDeploymentDefinition routerDeploymentDefinition) throws StorageUnavailableException, InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException {
+    ConcurrentOperationException, ResourceUnavailableException {
 
         List<DomainRouterVO> runningRouters = new ArrayList<DomainRouterVO>();
 
@@ -452,36 +448,29 @@ public class NetworkHelperImpl implements NetworkHelper {
         return result;
     }
 
-    protected String retrieveTemplateName(HypervisorType hType, final long datacenterId) {
-        if (hType == HypervisorType.BareMetal) {
-            String peerHvType = _configDao.getValue(Config.BaremetalPeerHypervisorType.key());
-            if (peerHvType == null) {
-                throw new CloudRuntimeException(String.format("To use baremetal in advanced networking, you must set %s to type of hypervisor(e.g XenServer)"
-                        + " that exists in the same zone with baremetal host. That hyperivsor is used to spring up virtual router for baremetal instance",
-                        Config.BaremetalPeerHypervisorType.key()));
-            }
-
-            hType = HypervisorType.getType(peerHvType);
-            if ((HypervisorType.XenServer != hType) && (HypervisorType.KVM != hType) && (HypervisorType.VMware != hType)) {
-                throw new CloudRuntimeException(String.format("Baremetal only supports peer hypervisor(XenServer/KVM/VMWare) right now, you specified %s", peerHvType));
-            }
-        }
-
-        // Returning NULL is fine because the simulator will need it when being
-        // used instead of a real hypervisor.
-        // The hypervisorsMap contains only real hypervisors.
+    protected String retrieveTemplateName(final HypervisorType hType, final long datacenterId) {
         String templateName = null;
-        ConfigKey<String> hypervisorConfigKey = hypervisorsMap.get(hType);
 
-        if (hypervisorConfigKey != null) {
+        if (hType == HypervisorType.BareMetal) {
+            ConfigKey<String> hypervisorConfigKey = hypervisorsMap.get(HypervisorType.VMware);
             templateName = hypervisorConfigKey.valueIn(datacenterId);
+        } else {
+            // Returning NULL is fine because the simulator will need it when
+            // being used instead of a real hypervisor.
+            // The hypervisorsMap contains only real hypervisors.
+            ConfigKey<String> hypervisorConfigKey = hypervisorsMap.get(hType);
+
+            if (hypervisorConfigKey != null) {
+                templateName = hypervisorConfigKey.valueIn(datacenterId);
+            }
         }
+
         return templateName;
     }
 
     @Override
     public DomainRouterVO deployRouter(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean startRouter) throws InsufficientAddressCapacityException,
-            InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
+    InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
 
         final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(routerDeploymentDefinition.getOfferingId());
         final Account owner = routerDeploymentDefinition.getOwner();
