@@ -55,8 +55,6 @@ import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.io.MarshallingException;
 import org.opensaml.xml.io.UnmarshallingException;
 import org.opensaml.xml.security.x509.BasicX509Credential;
-import org.opensaml.xml.signature.SignatureConstants;
-import org.opensaml.xml.signature.SignatureException;
 import org.opensaml.xml.signature.SignatureValidator;
 import org.opensaml.xml.validation.ValidationException;
 import org.xml.sax.SAXException;
@@ -72,7 +70,6 @@ import java.net.URLEncoder;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.Signature;
 import java.util.List;
 import java.util.Map;
 
@@ -139,9 +136,12 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         try {
             DefaultBootstrap.bootstrap();
             AuthnRequest authnRequest = SAMLUtils.buildAuthnRequestObject(spId, identityProviderUrl, consumerUrl);
-            redirectUrl = "SAMLRequest=" + SAMLUtils.encodeSAMLRequest(authnRequest);
-            redirectUrl = identityProviderUrl + "?" + SAMLUtils.generateSAMLRequestSignature(redirectUrl, privateKey);
-        } catch (ConfigurationException | FactoryConfigurationError | MarshallingException | IOException | SignatureException | NoSuchAlgorithmException | InvalidKeyException | java.security.SignatureException e) {
+            PrivateKey privateKey = null;
+            if (_samlAuthManager.getSpKeyPair() != null) {
+                privateKey = _samlAuthManager.getSpKeyPair().getPrivate();
+            }
+            redirectUrl = identityProviderUrl + "?" + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(authnRequest), privateKey);
+        } catch (ConfigurationException | FactoryConfigurationError | MarshallingException | IOException | NoSuchAlgorithmException | InvalidKeyException | java.security.SignatureException e) {
             s_logger.error("SAML AuthnRequest message building error: " + e.getMessage());
         }
         return redirectUrl;
