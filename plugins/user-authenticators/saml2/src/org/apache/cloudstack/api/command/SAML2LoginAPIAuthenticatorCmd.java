@@ -162,7 +162,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     @Override
     public String authenticate(final String command, final Map<String, Object[]> params, final HttpSession session, final String remoteAddress, final String responseType, final StringBuilder auditTrailSb, final HttpServletResponse resp) throws ServerApiException {
         try {
-            if (!params.containsKey("SAMLResponse")) {
+            if (!params.containsKey("SAMLResponse") && !params.containsKey("SAMLart")) {
                 String idpUrl = null;
                 final String[] idps = (String[])params.get(ApiConstants.IDP_URL);
                 if (idps != null && idps.length > 0) {
@@ -171,6 +171,10 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 String redirectUrl = this.buildAuthnRequestUrl(idpUrl);
                 resp.sendRedirect(redirectUrl);
                 return "";
+            } if (params.containsKey("SAMLart")) {
+                throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, _apiServer.getSerializedApiError(ApiErrorCode.UNSUPPORTED_ACTION_ERROR.getHttpCode(),
+                        "SAML2 HTTP Artifact Binding is not supported",
+                        params, responseType));
             } else {
                 final String samlResponse = ((String[])params.get(SAMLUtils.SAML_RESPONSE))[0];
                 Response processedSAMLResponse = this.processSAMLResponse(samlResponse);
