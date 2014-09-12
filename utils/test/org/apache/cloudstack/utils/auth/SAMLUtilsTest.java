@@ -26,6 +26,10 @@ import org.opensaml.saml2.core.LogoutRequest;
 import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.impl.NameIDBuilder;
 
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
 public class SAMLUtilsTest extends TestCase {
 
     @Test
@@ -63,5 +67,19 @@ public class SAMLUtilsTest extends TestCase {
         assertEquals(req.getIssuer().getValue(), spId);
         assertEquals(req.getNameID().getValue(), nameIdString);
         assertEquals(req.getSessionIndexes().get(0).getSessionIndex(), sessionIndex);
+    }
+
+    @Test
+    public void testX509Helpers() throws Exception {
+        KeyPair keyPair = SAMLUtils.generateRandomKeyPair();
+
+        String privateKeyString = SAMLUtils.savePrivateKey(keyPair.getPrivate());
+        String publicKeyString = SAMLUtils.savePublicKey(keyPair.getPublic());
+
+        PrivateKey privateKey = SAMLUtils.loadPrivateKey(privateKeyString);
+        PublicKey publicKey = SAMLUtils.loadPublicKey(publicKeyString);
+
+        assertTrue(privateKey.equals(keyPair.getPrivate()));
+        assertTrue(publicKey.equals(keyPair.getPublic()));
     }
 }

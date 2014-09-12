@@ -72,17 +72,22 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -218,6 +223,70 @@ public class SAMLUtils {
         signature.initSign(signingKey);
         signature.update(url.getBytes());
         return URLEncoder.encode(Base64.encodeBytes(signature.sign(), Base64.DONT_BREAK_LINES), HttpUtils.UTF_8);
+    }
+
+    public static KeyFactory getKeyFactory() {
+        KeyFactory keyFactory = null;
+        try {
+            Security.addProvider(new BouncyCastleProvider());
+            keyFactory = KeyFactory.getInstance("RSA", "BC");
+        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
+            s_logger.error("Unable to create KeyFactory:" + e.getMessage());
+        }
+        return keyFactory;
+    }
+
+    public static String savePublicKey(PublicKey key) {
+        try {
+            KeyFactory keyFactory = SAMLUtils.getKeyFactory();
+            if (keyFactory == null) return null;
+            X509EncodedKeySpec spec = keyFactory.getKeySpec(key, X509EncodedKeySpec.class);
+            return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()));
+        } catch (InvalidKeySpecException e) {
+            s_logger.error("Unable to create KeyFactory:" + e.getMessage());
+        }
+        return null;
+    }
+
+    public static String savePrivateKey(PrivateKey key) {
+        try {
+            KeyFactory keyFactory = SAMLUtils.getKeyFactory();
+            if (keyFactory == null) return null;
+            PKCS8EncodedKeySpec spec = keyFactory.getKeySpec(key,
+                    PKCS8EncodedKeySpec.class);
+            return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()));
+        } catch (InvalidKeySpecException e) {
+            s_logger.error("Unable to create KeyFactory:" + e.getMessage());
+        }
+        return null;
+    }
+
+    public static PublicKey loadPublicKey(String publicKey) {
+        byte[] sigBytes = org.bouncycastle.util.encoders.Base64.decode(publicKey);
+        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(sigBytes);
+        KeyFactory keyFact = SAMLUtils.getKeyFactory();
+        if (keyFact == null)
+            return null;
+        try {
+            return keyFact.generatePublic(x509KeySpec);
+        } catch (InvalidKeySpecException e) {
+            s_logger.error("Unable to create PrivateKey from privateKey string:" + e.getMessage());
+        }
+        return null;
+    }
+
+    public static PrivateKey loadPrivateKey(String privateKey) {
+        byte[] sigBytes = org.bouncycastle.util.encoders.Base64.decode(privateKey);
+        PKCS8EncodedKeySpec pkscs8KeySpec = new PKCS8EncodedKeySpec(sigBytes);
+        KeyFactory keyFact = SAMLUtils.getKeyFactory();
+        if (keyFact == null)
+            return null;
+        try {
+            return keyFact.generatePrivate(pkscs8KeySpec);
+        } catch (InvalidKeySpecException e) {
+            s_logger.error("Unable to create PrivateKey from privateKey string:" + e.getMessage());
+        }
+        return null;
     }
 
     public static KeyPair generateRandomKeyPair() throws NoSuchProviderException, NoSuchAlgorithmException {
