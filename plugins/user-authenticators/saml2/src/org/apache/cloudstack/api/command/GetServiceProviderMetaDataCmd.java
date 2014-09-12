@@ -134,14 +134,14 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
         signKeyDescriptor.setUse(UsageType.SIGNING);
 
         BasicX509Credential credential = new BasicX509Credential();
-        credential.setEntityCertificate(_samlAuthManager.getIdpSigningKey());
+        credential.setEntityCertificate(_samlAuthManager.getSpX509Key());
         try {
             encKeyDescriptor.setKeyInfo(keyInfoGenerator.generate(credential));
             signKeyDescriptor.setKeyInfo(keyInfoGenerator.generate(credential));
-            //TODO: generate own pub/priv keys
-            //spSSODescriptor.getKeyDescriptors().add(encKeyDescriptor);
-            //spSSODescriptor.getKeyDescriptors().add(signKeyDescriptor);
-        } catch (SecurityException ignored) {
+            spSSODescriptor.getKeyDescriptors().add(encKeyDescriptor);
+            spSSODescriptor.getKeyDescriptors().add(signKeyDescriptor);
+        } catch (SecurityException e) {
+            s_logger.warn("Unable to add SP X509 descriptors:" + e.getMessage());
         }
 
         NameIDFormat nameIDFormat = new NameIDFormatBuilder().buildObject();
