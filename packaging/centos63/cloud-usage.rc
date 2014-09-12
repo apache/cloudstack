@@ -52,12 +52,12 @@ setJavaHome() {
     return
   fi
 
-  # try javac first
-  java=$(which javac 2>/dev/null || :)
+  # try java first
+  java=$(which java 2>/dev/null || :)
 
-  # try java if javac is not found
+  # try javac if java is not found
   if [ -z "$java" ] ; then
-    java=$(which java 2>/dev/null || :)
+    java=$(which javac 2>/dev/null || :)
   fi
 
   if [ -n "$java" ] ; then
