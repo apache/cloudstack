@@ -154,8 +154,8 @@ public class SAMLUtils {
         authnRequest.setIssueInstant(new DateTime());
         authnRequest.setProtocolBinding(SAMLConstants.SAML2_REDIRECT_BINDING_URI);
         authnRequest.setAssertionConsumerServiceURL(consumerUrl);
-        //authnRequest.setProviderName(spId);
-        //authnRequest.setNameIDPolicy(nameIdPolicy);
+        authnRequest.setProviderName(spId);
+        authnRequest.setNameIDPolicy(nameIdPolicy);
         //authnRequest.setRequestedAuthnContext(requestedAuthnContext);
 
         return authnRequest;
