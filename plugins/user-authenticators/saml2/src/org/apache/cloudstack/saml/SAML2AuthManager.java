@@ -19,6 +19,7 @@ package org.apache.cloudstack.saml;
 
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 
+import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 
 public interface SAML2AuthManager extends PluggableAPIAuthenticator {
@@ -27,6 +28,8 @@ public interface SAML2AuthManager extends PluggableAPIAuthenticator {
 
     public X509Certificate getIdpSigningKey();
     public X509Certificate getIdpEncryptionKey();
+    public X509Certificate getSpX509Key();
+    public KeyPair getSpKeyPair();
 
     public String getSpSingleSignOnUrl();
     public String getIdpSingleSignOnUrl();
