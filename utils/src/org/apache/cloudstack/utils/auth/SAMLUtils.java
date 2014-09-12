@@ -218,6 +218,9 @@ public class SAMLUtils {
 
     public static String generateSAMLRequestSignature(String urlEncodedString, PrivateKey signingKey)
             throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, UnsupportedEncodingException {
+        if (signingKey == null || urlEncodedString == null) {
+            return null;
+        }
         String url = urlEncodedString + "&SigAlg=" + URLEncoder.encode(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1, HttpUtils.UTF_8);
         Signature signature = Signature.getInstance("SHA1withRSA");
         signature.initSign(signingKey);
