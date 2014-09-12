@@ -93,9 +93,6 @@ public class CreateNetworkCmd extends BaseCmd {
         + " range. If not specified, will be defaulted to startIP")
     private String endIp;
 
-    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "the ID or VID of the network")
-    private String vlan;
-
     @Parameter(name = ApiConstants.ISOLATED_PVLAN, type = CommandType.STRING, description = "the isolated private vlan for this network")
     private String isolatedPvlan;
 
