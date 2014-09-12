@@ -218,7 +218,7 @@
                                                         if (index ==  certificates.length - 1) // last one, report success
                                                         {
                                                             cloudStack.dialog.notice({
-                                                                message: 'Update SSL Certificates succeeded'
+                                                                message: 'message.update.ssl.succeeded'
                                                             });
                                                             $loading.remove();
                                                         }
@@ -228,7 +228,7 @@
                                                         }
                                                     } else if (result.jobstatus == 2) {
                                                         cloudStack.dialog.notice({
-                                                            message: 'Failed to update SSL Certificate. ' + _s(result.jobresult.errortext)
+                                                            message: 'message.update.ssl.failed' + ' ' + _s(result.jobresult.errortext)
                                                         });
                                                         $loading.remove();
                                                     }
@@ -236,7 +236,7 @@
                                             },
                                             error: function(XMLHttpResponse) {
                                                 cloudStack.dialog.notice({
-                                                    message: 'Failed to update SSL Certificate. ' + parseXMLHttpResponse(XMLHttpResponse)
+                                                    message: 'message.update.ssl.failed' + ' ' + parseXMLHttpResponse(XMLHttpResponse)
                                                 });
                                                 $loading.remove();
                                             }
@@ -245,7 +245,7 @@
                                 },
                                 error: function(XMLHttpResponse) {
                                     cloudStack.dialog.notice({
-                                        message: 'Failed to update SSL Certificate. ' + parseXMLHttpResponse(XMLHttpResponse)
+                                        message: 'message.update.ssl.failed' + ' ' + parseXMLHttpResponse(XMLHttpResponse)
                                     });
                                     $loading.remove();
                                 }

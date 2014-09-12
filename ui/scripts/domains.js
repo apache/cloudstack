@@ -355,7 +355,7 @@
                             }
                         }, {
                             id: {
-                                label: 'ID'
+                                label: 'label.id'
                             },
 
                             path: {

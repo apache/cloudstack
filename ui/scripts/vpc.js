@@ -442,7 +442,7 @@
             },
 
             'protocolnumber': {
-                label: 'Protocol Number',
+                label: 'label.protocol.number',
                 edit: true,
                 isEditable: true
             },
@@ -459,7 +459,7 @@
                 isEditable: true
             },
             'networkid': {
-                label: 'Select Tier',
+                label: 'label.select.tier',
                 select: function(args) {
                     var data = {
                         listAll: true,
@@ -634,7 +634,7 @@
                                     jobId: json.createnetworkaclresponse.jobid
                                 }, // API response obj name needs to be fixed
                                 notification: {
-                                    label: 'Edit ACL rule',
+                                    label: 'label.edit.acl.rule',
                                     poll: pollAsyncJobResult
                                 }
                             });
@@ -754,13 +754,13 @@
                             label: 'label.name'
                         },
                         sourceipaddress: {
-                            label: 'Source IP Address'
+                            label: 'label.source.ip.address'
                         },
                         sourceport: {
-                            label: 'Source Port'
+                            label: 'label.source.port'
                         },
                         instanceport: {
-                            label: 'Instance Port'
+                            label: 'label.instance.port'
                         },
                         algorithm: {
                             label: 'label.algorithm'
@@ -790,9 +790,9 @@
                     },
                     actions: {
                         add: {
-                            label: 'Add Internal LB',
+                            label: 'label.add.internal.lb',
                             createForm: {
-                                title: 'Add Internal LB',
+                                title: 'label.add.internal.lb',
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -807,19 +807,19 @@
                                         }
                                     },
                                     sourceipaddress: {
-                                        label: 'Source IP Address',
+                                        label: 'label.source.ip.address',
                                         validation: {
                                             required: false
                                         }
                                     },
                                     sourceport: {
-                                        label: 'Source Port',
+                                        label: 'label.source.port',
                                         validation: {
                                             required: true
                                         }
                                     },
                                     instanceport: {
-                                        label: 'Instance Port',
+                                        label: 'label.instance.port',
                                         validation: {
                                             required: true
                                         }
@@ -848,7 +848,7 @@
                             },
                             messages: {
                                 notification: function(args) {
-                                    return 'Add Internal LB';
+                                    return 'label.add.internal.lb';
                                 }
                             },
                             action: function(args) {
@@ -895,18 +895,18 @@
 
                     detailView: {
                         isMaximized: true,
-                        name: 'Internal LB details',
+                        name: 'label.internal.lb.details',
                         actions: {
                             assignVMs: assignVMAction(),
 
                             remove: {
-                                label: 'Delete Internal LB',
+                                label: 'label.delete.internal.lb',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Please confirm you want to delete Internal LB';
+                                        return 'message.confirm.delete.internal.lb';
                                     },
                                     notification: function(args) {
-                                        return 'Delete Internal LB';
+                                        return 'label.delete.internal.lb';
                                     }
                                 },
                                 action: function(args) {
@@ -950,19 +950,19 @@
                                         label: 'label.description'
                                     },
                                     sourceipaddress: {
-                                        label: 'Source IP Address'
+                                        label: 'label.source.ip.address'
                                     },
                                     sourceport: {
-                                        label: 'Source Port'
+                                        label: 'label.source.port'
                                     },
                                     instanceport: {
-                                        label: 'Instance Port'
+                                        label: 'label.instance.port'
                                     },
                                     algorithm: {
                                         label: 'label.algorithm'
                                     },
                                     loadbalancerinstance: {
-                                        label: 'Assigned VMs',
+                                        label: 'label.assigned.vms',
                                         converter: function(objArray) {
                                             var s = '';
                                             if (objArray != null) {
@@ -1055,14 +1055,14 @@
                                     detailView: {
                                         actions: {
                                             remove: {
-                                                label: 'remove VM from load balancer',
+                                                label: 'label.remove.vm.load.balancer',
                                                 addRow: 'false',
                                                 messages: {
                                                     confirm: function(args) {
-                                                        return 'Please confirm you want to remove VM from load balancer';
+                                                        return 'message.confirm.remove.load.balancer';
                                                     },
                                                     notification: function(args) {
-                                                        return 'remove VM from load balancer';
+                                                        return 'label.remove.vm.load.balancer';
                                                     }
                                                 },
                                                 action: function(args) {
@@ -1186,10 +1186,10 @@
                             label: 'label.name'
                         },
                         description: {
-                            label: 'Description'
+                            label: 'label.description'
                         },
                         id: {
-                            label: 'id'
+                            label: 'label.id'
                         }
                     },
                     dataProvider: function(args) {                    	                  	
@@ -1213,18 +1213,18 @@
 
                     actions: {
                         add: {
-                            label: 'Add ACL List',
+                            label: 'label.add.acl.list',
                             createForm: {
-                                label: 'Add ACL List',
+                                label: 'label.add.acl.list',
                                 fields: {
                                     name: {
-                                        label: 'ACL List Name',
+                                        label: 'label.add.list.name',
                                         validation: {
                                             required: true
                                         }
                                     },
                                     description: {
-                                        label: 'Description',
+                                        label: 'label.description',
                                         validation: {
                                             required: true
                                         }
@@ -1233,7 +1233,7 @@
                             },
                             messages: {
                                 notification: function(args) {
-                                    return 'Add Network ACL List';
+                                    return 'label.add.network.acl.list';
                                 }
                             },
                             action: function(args) {
@@ -1261,13 +1261,13 @@
                         isMaximized: true,
                         actions: {
                             remove: {
-                                label: 'Delete ACL List',
+                                label: 'label.delete.acl.list',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Are you sure you want to delete this ACL list ?';
+                                        return 'message.confirm.delete.acl.list';
                                     },
                                     notification: function(args) {
-                                        return 'Delete ACL list';
+                                        return 'label.delete.acl.list';
                                     }
                                 },
                                 action: function(args) {
@@ -1301,10 +1301,10 @@
                                         isEditable: true
                                     },
                                     description: {
-                                        label: 'Description'
+                                        label: 'label.description'
                                     },
                                     id: {
-                                        label: 'id'
+                                        label: 'label.id'
                                     }
                                 }],
                                 dataProvider: function(args) {
@@ -2054,7 +2054,7 @@
 
                         actions: {
                             add: {
-                                label: 'Add Private Gateway',
+                                label: 'label.add.private.gateway',
                                 preFilter: function(args) {
                                     if (isAdmin() || isDomainAdmin())
                                         return true;
@@ -2120,14 +2120,14 @@
                                         },
 
                                         sourceNat: {
-                                            label: 'Source NAT',
+                                            label: 'label.source.nat',
                                             isBoolean: true,
                                             isChecked: false
 
                                         },
 
                                         aclid: {
-                                            label: 'ACL',
+                                            label: 'label.acl',
                                             select: function(args) {
                                                 $.ajax({
                                                     url: createURL('listNetworkACLLists'),
@@ -2258,13 +2258,13 @@
                                 },
 
                                 replaceACL: {
-                                    label: 'Replace ACL',
+                                    label: 'label.replace.acl',
                                     createForm: {
-                                        title: 'Replace ACL',
-                                        label: 'Replace ACL',
+                                        title: 'label.replace.acl',
+                                        label: 'label.replace.acl',
                                         fields: {
                                             aclid: {
-                                                label: 'ACL',
+                                                label: 'label.acl',
                                                 select: function(args) {
                                                     $.ajax({
                                                         url: createURL('listNetworkACLLists'),
@@ -2336,10 +2336,10 @@
 
                                     messages: {
                                         confirm: function(args) {
-                                            return 'Do you want to replace the ACL with a new one ?';
+                                            return 'message.confirm.replace.acl.new.one';
                                         },
                                         notification: function(args) {
-                                            return 'ACL replaced';
+                                            return 'label.acl.replaced';
                                         }
                                     }
                                 }
@@ -2377,16 +2377,16 @@
                                             label: 'label.account'
                                         },
                                         sourcenatsupported: {
-                                            label: 'SourceNAT Supported',
+                                            label: 'label.source.nat.supported',
                                             converter: function(str) {
                                                 return str ? 'Yes' : 'No';
                                             }
                                         },
                                         aclName: {
-                                            label: 'ACL Name'
+                                            label: 'label.acl.name'
                                         },
                                         aclid: {
-                                            label: 'ACL ID'
+                                            label: 'label.acl.id'
                                         }
 
 
@@ -2815,7 +2815,7 @@
                                             }
                                         },                                        
                                         passive: {
-                                            label: 'Passive',                                            
+                                            label: 'label.passive',
                                             isBoolean: true,
                                             isChecked: false
                                         }                                        
@@ -2880,7 +2880,7 @@
                                             label: 'label.id'
                                         },
                                         passive: {
-                                            label: 'Passive',
+                                            label: 'label.passive',
                                             converter: cloudStack.converters.toBooleanText
                                         },                                                                                
                                         publicip: {
@@ -3098,7 +3098,7 @@
 
                                 if (args.context.networks[0].type == "Isolated") { //Isolated network
                                     cloudStack.dialog.confirm({
-                                        message: 'Do you want to keep the current guest network CIDR unchanged?',
+                                        message: 'message.confirm.current.guest.CIDR.unchanged',
                                         action: function() { //"Yes"	button is clicked
                                             array1.push("&changecidr=false");
                                             $.ajax({
@@ -3270,13 +3270,13 @@
                     },
 
                     replaceacllist: {
-                        label: 'Replace ACL List',
+                        label: 'label.replace.acl.list',
                         createForm: {
-                            title: 'Replace ACL List',
-                            label: 'Replace ACL List',
+                            title: 'label.replace.acl.list',
+                            label: 'label.replace.acl.list',
                             fields: {
                                 aclid: {
-                                    label: 'ACL',
+                                    label: 'label.acl',
                                     select: function(args) {
                                         $.ajax({
                                             url: createURL('listNetworkACLLists&vpcid=' + args.context.vpc[0].id),
@@ -3342,10 +3342,10 @@
 
                         messages: {
                             confirm: function(args) {
-                                return 'Do you want to replace the ACL with a new one ?';
+                                return 'message.confirm.replace.acl.new.one';
                             },
                             notification: function(args) {
-                                return 'ACL replaced';
+                                return 'label.acl.replaced';
                             }
                         }
                     }
@@ -3442,7 +3442,7 @@
                             },
 
                             ispersistent: {
-                                label: 'Persistent ',
+                                label: 'label.persistent',
                                 converter: cloudStack.converters.toBooleanText
 
                             },
@@ -3521,7 +3521,7 @@
                             },
 
                             aclname: {
-                                label: 'ACL name'
+                                label: 'label.acl.name'
                             },
                             //aclid:{label:'ACL id'},
 
@@ -3922,7 +3922,7 @@
                                 }
                             },
                             vlan: {
-                                label: 'VLAN',
+                                label: 'label.vlan',
                                 validation: {
                                     required: true
                                 },
@@ -3944,7 +3944,7 @@
                             },
 
                             aclid: {
-                                label: 'ACL',
+                                label: 'label.acl',
                                 select: function(args) {
                                     $.ajax({
                                         url: createURL('listNetworkACLLists&vpcid=' + args.context.vpc[0].id),
@@ -4062,7 +4062,7 @@
                     },
                     messages: {
                         notification: function() {
-                            return 'Add new tier';
+                            return 'label.add.new.tier';
                         }
                     }
                 },

@@ -560,7 +560,7 @@
                                     },
 
                                     vlan: {
-                                        label: 'VLAN',
+                                        label: 'label.vlan',
                                         validation: {
                                             required: true
                                         },
@@ -753,7 +753,7 @@
                             },
                             messages: {
                                 notification: function() {
-                                    return 'Add Isolated Guest Network';
+                                    return 'label.add.isolated.guest.network';
                                 }
                             }
                         },
@@ -946,7 +946,7 @@
 
                                         if (args.context.networks[0].type == "Isolated") { //Isolated network
                                             cloudStack.dialog.confirm({
-                                                message: 'Do you want to keep the current guest network CIDR unchanged?',
+                                                message: 'message.confirm.current.guest.CIDR.unchanged',
                                                 action: function() { //"Yes"	button is clicked
                                                     $.extend(data, {
                                                         changecidr: false
@@ -1253,7 +1253,7 @@
                                             if (args != null)
                                                 return args;
                                             else
-                                                return 'N/A';
+                                                return 'label.na';
                                         }
                                     },
                                     
@@ -5843,7 +5843,7 @@
                                             var items = [];
                                             items.push({
                                                 id: '',
-                                                description: 'None'
+                                                description: 'label.none'
                                             });
                                             items.push({
                                                 id: 'modp1024',
@@ -5911,7 +5911,7 @@
                                             var items = [];
                                             items.push({
                                                 id: '',
-                                                description: 'None'
+                                                description: 'label.none'
                                             });
                                             items.push({
                                                 id: 'modp1024',
@@ -6179,7 +6179,7 @@
                                             var items = [];
                                             items.push({
                                                 id: '',
-                                                description: 'None'
+                                                description: 'label.none'
                                             });
                                             items.push({
                                                 id: 'modp1024',
@@ -6247,7 +6247,7 @@
                                             var items = [];
                                             items.push({
                                                 id: '',
-                                                description: 'None'
+                                                description: 'label.none'
                                             });
                                             items.push({
                                                 id: 'modp1024',

@@ -494,6 +494,10 @@
                 return dictionary[str];
             };
         }
+        
+        //added for dictionary split up
+        
+        $.extend(dictionary,dictionary2);
 
         // Localize validation messages
         cloudStack.localizeValidatorMessages();

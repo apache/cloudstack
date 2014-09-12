@@ -1763,5 +1763,6 @@
 
         <!-- localized messages -->
         <jsp:include page="dictionary.jsp" />
+	<jsp:include page="dictionary2.jsp" />
     </body>
 </html>

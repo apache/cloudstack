@@ -861,7 +861,7 @@
                     closeOnEscape: false,
                     zIndex: 5000,
                     buttons: [{
-                        text: _l('Close'),
+                        text: _l('label.close'),
                         'class': 'close',
                         click: function() {
                             $(this).dialog('destroy');

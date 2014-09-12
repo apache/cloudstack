@@ -1631,7 +1631,7 @@
                                                         if (args.context.networks[0].type == "Isolated") {
                                                             //Isolated network
                                                             cloudStack.dialog.confirm({
-                                                                message: 'Do you want to keep the current guest network CIDR unchanged?',
+                                                                message: 'message.confirm.current.guest.CIDR.unchanged',
                                                                 action: function () {
                                                                     //"Yes"	button is clicked
                                                                     array1.push("&changecidr=false");
@@ -2854,7 +2854,7 @@
                     
                     InternalLbVm: {
                         id: 'InternalLbVm',
-                        label: 'InternalLbVm',
+                        label: 'label.internallbvm',
                         isMaximized: true,
                         type: 'detailView',
                         fields: {
@@ -4998,7 +4998,7 @@
                                             docID: 'helpSRXPrivateInterface'
                                         },
                                         usageinterface: {
-                                            label: 'Usage interface',
+                                            label: 'label.usage.interface',
                                             docID: 'helpSRXUsageInterface'
                                         },
                                         numretries: {
@@ -10129,9 +10129,9 @@
                                                 label: 'label.upgrade.required',
                                                 converter: function (args) {
                                                     if (args > 0) {
-                                                        return 'Yes';
+                                                        return 'label.yes';
                                                     } else {
-                                                        return 'No';
+                                                        return 'label.no';
                                                     }
                                                 }
                                             },                                            
@@ -10711,7 +10711,7 @@
                         },
                         
                         agentstate: {
-                            label: 'Agent State',
+                            label: 'label.agent.state',
                             indicator: {
                                 'Up': 'on',
                                 'Down': 'off'
@@ -11374,7 +11374,7 @@
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     gslbprovider: {
-                                        label: 'GSLB service',
+                                        label: 'label.gslb.service',
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     gslbproviderpublicip: {
@@ -13015,7 +13015,7 @@
                                 title: 'label.add.pod',
                                 fields: {
                                     zoneid: {
-                                        label: 'Zone',
+                                        label: 'label.zone',
                                         docID: 'helpPodZone',
                                         validation: {
                                             required: true
@@ -15032,7 +15032,7 @@
                                 fields: {
                                     zoneid: {
                                         docID: 'helpHostZone',
-                                        label: 'Zone',
+                                        label: 'label.zone',
                                         validation: {
                                             required: true
                                         },
@@ -15790,7 +15790,7 @@
                             },
                             
                             enable: {
-                                label: 'Enable Host',
+                                label: 'label.enable.host',
                                 action: function (args) {
                                 	var data = {
                                      	id: args.context.hosts[0].id,
@@ -15810,10 +15810,10 @@
                                 },
                                 messages: {
                                     confirm: function (args) {
-                                        return 'Please confirm that you want to enable the host';
+                                        return 'message.confirm.enable.host';
                                     },
                                     notification: function (args) {
-                                        return 'Enable Host';
+                                        return 'label.enable.host';
                                     }
                                 },
                                 notification: {
@@ -15824,7 +15824,7 @@
                             },
 
                             disable: {
-                                label: 'Disable Host',
+                                label: 'label.disable.host',
                                 action: function (args) {
                                 	var data = {
                                      	id: args.context.hosts[0].id,
@@ -15844,10 +15844,10 @@
                                 },
                                 messages: {
                                     confirm: function (args) {
-                                        return 'Please confirm that you want to disable the host';
+                                        return 'message.confirm.disable.host';
                                     },
                                     notification: function (args) {
-                                        return 'Disable Host';
+                                        return 'label.disable.host';
                                     }
                                 },
                                 notification: {

@@ -469,7 +469,7 @@
                                         data: [
                                             $.extend(args.data, {
                                                 state: 'Creating',
-                                                status: 'Creating',
+                                                status: 'state.Creating',
                                                 allocationstate: 'Creating'
                                             })
                                         ]
@@ -516,7 +516,7 @@
                                     data: [
                                         $.extend(args.data, {
                                             state: 'Creating',
-                                            status: 'Creating',
+                                            status: 'state.Creating',
                                             allocationstate: 'Creating'
                                         })
                                     ]

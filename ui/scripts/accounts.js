@@ -22,7 +22,7 @@
         title: 'label.accounts',
         id: 'accounts',
         sectionSelect: {
-            label: 'Select View',
+            label: 'label.select-view',
             preFilter: function() {
                 return ['accounts'];
             }
@@ -93,7 +93,7 @@
                         },
                                                 
                         addLdapAccount: {
-                            label: 'Add LDAP Account',
+                            label: 'label.add.LDAP.account',
                             isHeader: true,
                             preFilter: function(args) {
                                 //if (isAdmin() && true) { //for testing only
@@ -105,7 +105,7 @@
                             },
                             messages: {
                                 notification: function(args) {
-                                    return 'Add LDAP Account';
+                                    return 'label.add.LDAP.account';
                                 }
                             },
                             notification: {
@@ -659,7 +659,7 @@
                                     }
                                 }, {
                                     id: {
-                                        label: 'ID'
+                                        label: 'label.id'
                                     },
                                     accounttype: {
                                         label: 'label.role',
@@ -1369,7 +1369,7 @@
                                     }
                                 }, {
                                     id: {
-                                        label: 'ID'
+                                        label: 'label.id'
                                     },
                                     state: {
                                         label: 'label.state'

@@ -962,7 +962,7 @@
                             title: 'label.action.attach.iso',
                             fields: {
                                 iso: {
-                                    label: 'ISO',
+                                    label: 'label.iso',
                                     select: function(args) {
                                         var items = [];
                                         var map = {};
@@ -1836,7 +1836,7 @@
                             	label: 'label.memory.mb'
                             },
                             vgpu: {
-                                label: 'VGPU'
+                                label: 'label.vgpu'
                             },
                             haenable: {
                                 label: 'label.ha.enabled',
@@ -2143,7 +2143,7 @@
                         multiple: true,
                         fields: [{
                             id: {
-                                label: 'ID'
+                                label: 'label.id'
                             },
                             name: {
                                 label: 'label.name'
