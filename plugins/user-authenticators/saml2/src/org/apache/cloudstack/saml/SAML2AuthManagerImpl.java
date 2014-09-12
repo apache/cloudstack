@@ -50,12 +50,11 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.spec.RSAPrivateKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,6 +68,8 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
 
     private X509Certificate idpSigningKey;
     private X509Certificate idpEncryptionKey;
+    private X509Certificate spX509Key;
+    private KeyPair spKeyPair;
 
     private String spSingleSignOnUrl;
     private String idpSingleSignOnUrl;
@@ -93,13 +94,11 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
     }
 
     private boolean setup() {
-        // TODO: In future if need added logic to get SP X509 cert for Idps that need signed requests
-
         KeystoreVO keyStoreVO = _ksDao.findByName(SAMLUtils.CERTIFICATE_NAME);
         if (keyStoreVO == null) {
             try {
                 KeyPair keyPair = SAMLUtils.generateRandomKeyPair();
-                _ksDao.save(SAMLUtils.CERTIFICATE_NAME, keyPair.getPrivate().getEncoded().toString(), keyPair.getPublic().getEncoded().toString(), "saml-sp");
+                _ksDao.save(SAMLUtils.CERTIFICATE_NAME, SAMLUtils.savePrivateKey(keyPair.getPrivate()), SAMLUtils.savePublicKey(keyPair.getPublic()), "saml-sp");
                 keyStoreVO = _ksDao.findByName(SAMLUtils.CERTIFICATE_NAME);
             } catch (NoSuchProviderException | NoSuchAlgorithmException e) {
                 s_logger.error("Unable to create and save SAML keypair");
@@ -107,15 +106,16 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
         }
 
         if (keyStoreVO != null) {
-            PrivateKey privateKey = new RSAPrivateKeySpec();
-            KeyPair keyPair = new KeyPair();
-        }
-
-        try {
-
-            X509Certificate spCert = SAMLUtils.generateRandomX509Certificate();
-        } catch (NoSuchAlgorithmException | NoSuchProviderException | CertificateEncodingException | SignatureException | InvalidKeyException e) {
-            e.printStackTrace();
+            PrivateKey privateKey = SAMLUtils.loadPrivateKey(keyStoreVO.getCertificate());
+            PublicKey publicKey = SAMLUtils.loadPublicKey(keyStoreVO.getKey());
+            if (privateKey != null && publicKey != null) {
+                spKeyPair = new KeyPair(publicKey, privateKey);
+                try {
+                    spX509Key = SAMLUtils.generateRandomX509Certificate(spKeyPair);
+                } catch (NoSuchAlgorithmException | NoSuchProviderException | CertificateEncodingException | SignatureException | InvalidKeyException e) {
+                    s_logger.error("SAML Plugin won't be able to use X509 signed authentication");
+                }
+            }
         }
 
         this.serviceProviderId = _configDao.getValue(Config.SAMLServiceProviderID.key());
@@ -232,5 +232,14 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
 
     public Boolean isSAMLPluginEnabled() {
         return Boolean.valueOf(_configDao.getValue(Config.SAMLIsPluginEnabled.key()));
+    }
+
+    public X509Certificate getSpX509Key() {
+        return spX509Key;
+    }
+
+    @Override
+    public KeyPair getSpKeyPair() {
+        return spKeyPair;
     }
 }
