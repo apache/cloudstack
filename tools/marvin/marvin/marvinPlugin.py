@@ -20,7 +20,6 @@ import logging
 import time
 import os
 import nose.core
-from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.marvinInit import MarvinInit
 from nose.plugins.base import Plugin
 from marvin.codes import (SUCCESS,
@@ -128,8 +127,7 @@ class MarvinPlugin(Plugin):
     def wantClass(self, cls):
         if cls.__name__ == 'cloudstackTestCase':
             return False
-        if issubclass(cls, cloudstackTestCase):
-            return True
+
         return None
 
     def __checkImport(self, filename):

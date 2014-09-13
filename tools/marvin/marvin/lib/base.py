@@ -500,6 +500,17 @@ class VirtualMachine:
 
         return VirtualMachine(virtual_machine.__dict__, services)
 
+    @classmethod
+    def createSmallVm(cls, testClient, ):
+        virtual_machine = VirtualMachine.create(
+            testClient.getApiclient(),
+            testClient.getCSConfig.getDefaultSmallDiskOffering(),
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.service_offering.id,
+            mode=cls.services['mode']
+        )
+
     def start(self, apiclient):
         """Start the instance"""
         cmd = startVirtualMachine.startVirtualMachineCmd()

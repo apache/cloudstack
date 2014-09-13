@@ -14,4 +14,4 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-pytest_plugins = "marvin.pytest_marvin_plugin"
+pytest_plugins = "marvin.pytest.pytest_marvin_plugin"

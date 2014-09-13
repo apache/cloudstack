@@ -206,9 +206,8 @@ class MarvinInit:
                 test_data_filepath=self.__testDataFilePath,
                 zone=self.__zoneForTests,
                 hypervisor_type=self.__hypervisorType)
-            if self.__testClient:
-                return self.__testClient.createTestClient()
-            return FAILED
+            self.__testClient.initConfig()
+            return SUCCESS
         except Exception as e:
             print "\n Exception Occurred Under __createTestClient : %s" % \
                   GetDetailExceptionInfo(e)

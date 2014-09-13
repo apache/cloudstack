@@ -27,6 +27,7 @@ from marvin.lib.utils import (random_gen, validateList)
 from marvin.cloudstackAPI.cloudstackAPIClient import CloudStackAPIClient
 import copy
 
+
 class CSTestClient(object):
 
     '''
@@ -68,6 +69,7 @@ class CSTestClient(object):
         self.__zone = zone
         self.__setHypervisorInfo()
 
+
     @property
     def identifier(self):
         return self.__id
@@ -75,6 +77,17 @@ class CSTestClient(object):
     @identifier.setter
     def identifier(self, id):
         self.__id = id
+
+
+    def initConfig(self):
+        self.createTestClient()
+
+        '''
+        self._testConfig = CSConfig.createConfig(self)
+        '''
+
+    def getCSConfig(self):
+        return self._testConfig
 
     def getParsedTestDataConfig(self):
         '''

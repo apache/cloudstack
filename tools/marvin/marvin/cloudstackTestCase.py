@@ -16,8 +16,10 @@
 # under the License.
 
 import unittest
+
 from marvin.lib.utils import verifyElementInList
 from marvin.codes import PASS
+from marvin.utils import initTestClass
 
 
 def user(Name, DomainName, AcctType):
@@ -51,4 +53,8 @@ class cloudstackTestCase(unittest.case.TestCase):
 
     @classmethod
     def getClsTestClient(cls):
+        if cls.clstestclient is not None:
+            return cls.clstestclient
+
+        initTestClass(cls, cls.__name__)
         return cls.clstestclient
