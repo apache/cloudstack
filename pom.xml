@@ -702,7 +702,7 @@
             <numUnapprovedLicenses>0</numUnapprovedLicenses>
             <excludeSubProjects>false</excludeSubProjects>
             <excludes>
-              <exclude>CHANGES</exclude>
+              <exclude>CHANGES.md</exclude>
               <exclude>README.md</exclude>
               <exclude>INSTALL.md</exclude>
               <exclude>.idea/</exclude>
@@ -818,6 +818,7 @@
               <exclude>systemvm/patches/debian/config/var/www/html/latest/.htaccess</exclude>
               <exclude>systemvm/patches/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
               <exclude>tools/transifex/.tx/config</exclude>
+              <exclude>tools/logo/apache_cloudstack.png</exclude>
               <exclude>tools/marvin/marvin/sandbox/advanced/sandbox.cfg</exclude>
               <exclude>tools/ngui/static/bootstrap/*</exclude>
               <exclude>tools/ngui/static/js/lib/*</exclude>
