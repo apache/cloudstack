@@ -42,7 +42,7 @@
             var $valueField = $('<div>').addClass('field value');
             var $valueLabel = $('<label>').attr('for', 'value').html(_l('label.value') + ':');
             var $value = $('<input>').addClass('value disallowSpecialCharacters').attr('name', 'value');
-            var $submit = $('<input>').attr('type', 'submit').val('label.add');
+            var $submit = $('<input>').attr('type', 'submit').val(_l('label.add'));
 
             $keyField.append($keyLabel, $key);
             $valueField.append($valueLabel, $value);
