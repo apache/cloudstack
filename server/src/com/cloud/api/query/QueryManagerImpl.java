@@ -26,6 +26,7 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -2507,9 +2508,25 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         return _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
     }
 
+    private List<ServiceOfferingJoinVO> filterOfferingsOnCurrentTags(List<ServiceOfferingJoinVO> offerings, ServiceOfferingVO currentVmOffering){
+        if(currentVmOffering == null) return offerings;
+        List<String> currentTagsList = StringUtils.csvTagsToList(currentVmOffering.getTags());
+
+        // New offerings should be a subset of existing storage tags. Discard offerings who are not.
+        List<ServiceOfferingJoinVO> filteredOfferings = new ArrayList<>();
+        for (ServiceOfferingJoinVO offering : offerings){
+            List<String> tags = StringUtils.csvTagsToList(offering.getTags());
+            if(currentTagsList.containsAll(tags)){
+                filteredOfferings.add(offering);
+            }
+        }
+        return filteredOfferings;
+    }
+
     @Override
     public ListResponse<ServiceOfferingResponse> searchForServiceOfferings(ListServiceOfferingsCmd cmd) {
         Pair<List<ServiceOfferingJoinVO>, Integer> result = searchForServiceOfferingsInternal(cmd);
+         result.first();
         ListResponse<ServiceOfferingResponse> response = new ListResponse<ServiceOfferingResponse>();
         List<ServiceOfferingResponse> offeringResponses =
             ViewResponseHelper.createServiceOfferingResponse(result.first().toArray(new ServiceOfferingJoinVO[result.first().size()]));
@@ -2519,11 +2536,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     private Pair<List<ServiceOfferingJoinVO>, Integer> searchForServiceOfferingsInternal(ListServiceOfferingsCmd cmd) {
         // Note
-        // The list method for offerings is being modified in accordance with
+        // The filteredOfferings method for offerings is being modified in accordance with
         // discussion with Will/Kevin
         // For now, we will be listing the following based on the usertype
-        // 1. For root, we will list all offerings
-        // 2. For domainAdmin and regular users, we will list everything in
+        // 1. For root, we will filteredOfferings all offerings
+        // 2. For domainAdmin and regular users, we will filteredOfferings everything in
         // their domains+parent domains ... all the way
         // till
         // root
@@ -2539,6 +2556,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Long domainId = cmd.getDomainId();
         Boolean isSystem = cmd.getIsSystem();
         String vmTypeStr = cmd.getSystemVmType();
+        ServiceOfferingVO currentVmOffering = null;
 
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
         if (!_accountMgr.isRootAdmin(caller.getId()) && isSystem) {
@@ -2566,14 +2584,18 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
             _accountMgr.checkAccess(caller, null, true, vmInstance);
 
-            ServiceOfferingVO offering = _srvOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
-            sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
+            currentVmOffering = _srvOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
+            sc.addAnd("id", SearchCriteria.Op.NEQ, currentVmOffering.getId());
 
-            // Only return offerings with the same Guest IP type and storage
-            // pool preference
-            // sc.addAnd("guestIpType", SearchCriteria.Op.EQ,
-            // offering.getGuestIpType());
-            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
+            // 1. Only return offerings with the same storage type
+            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, currentVmOffering.getUseLocalStorage());
+
+            // 2.In case vm is running return only offerings greater than equal to current offering compute.
+            if(vmInstance.getState() == VirtualMachine.State.Running){
+                sc.addAnd("cpu", Op.GTEQ, currentVmOffering.getCpu());
+                sc.addAnd("speed", Op.GTEQ, currentVmOffering.getSpeed());
+                sc.addAnd("ramSize", Op.GTEQ, currentVmOffering.getRamSize());
+            }
         }
 
         // boolean includePublicOfferings = false;
@@ -2648,7 +2670,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.addAnd("vmType", SearchCriteria.Op.EQ, vmTypeStr);
         }
 
-        return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
+        Pair<List<ServiceOfferingJoinVO>, Integer> result = _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
+
+        //Couldn't figure out a smart way to filter offerings based on tags in sql so doing it in Java.
+        List<ServiceOfferingJoinVO> filteredOfferings = filterOfferingsOnCurrentTags(result.first(), currentVmOffering);
+        return new Pair<>(filteredOfferings, result.second());
     }
 
     @Override

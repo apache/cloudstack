@@ -2764,12 +2764,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     newServiceOffering.getCpu() + " cpu(s) at " + newServiceOffering.getSpeed() + " Mhz, and " + newServiceOffering.getRamSize() + " MB of memory");
         }
 
-        // Check that the service offering being upgraded to has all the tags of the current service offering
+        // Check that the service offering being upgraded to has storage tags subset of the current service offering storage tags, since volume is not migrated.
         List<String> currentTags = StringUtils.csvTagsToList(currentServiceOffering.getTags());
         List<String> newTags = StringUtils.csvTagsToList(newServiceOffering.getTags());
-        if (!newTags.containsAll(currentTags)) {
-            throw new InvalidParameterValueException("Unable to upgrade virtual machine; the new service offering " + "does not have all the tags of the " +
-                    "current service offering. Current service offering tags: " + currentTags + "; " + "new service " + "offering tags: " + newTags);
+        if (!currentTags.containsAll(newTags)) {
+            throw new InvalidParameterValueException("Unable to upgrade virtual machine; the new service offering " + " should have tags as subset of " +
+                    "current service offering tags. Current service offering tags: " + currentTags + "; " + "new service " + "offering tags: " + newTags);
         }
     }
 
