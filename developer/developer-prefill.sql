@@ -56,6 +56,14 @@ INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'expunge.delay', '60');
+
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'expunge.interval', '60');
+
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
             'system.vm.use.local.storage', 'true');
 
 -- Add developer configuration entry; allows management server to be run as a user other than "cloud"
