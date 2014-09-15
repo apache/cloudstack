@@ -19,27 +19,24 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import (cleanup_resources,
-                              random_gen, validateList)
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import (listPhysicalNetworks,
+                                  listNetworkServiceProviders,
+                                  addNetworkServiceProvider,
+                                  addBrocadeVcsDevice,
+                                  updateNetworkServiceProvider,
+                                  deleteBrocadeVcsDevice)
+from marvin.lib.utils import (cleanup_resources)
 from marvin.lib.base import (Account,
                              VirtualMachine,
-                             PublicIPAddress,
-                             LoadBalancerRule,
                              ServiceOffering,
                              NetworkOffering,
-                             Host,
-                             Network,
-                             NATRule,
-                             Configurations)
+                             Configurations,
+                             Network)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template)
-from marvin.sshClient import SshClient
-from marvin.codes import PASS
 import time
-
 
 class Services:
     """Test brocade plugin
@@ -73,11 +70,6 @@ class Services:
                                     "publicport": 22,
                                     "protocol": 'TCP',
                                 },
-                         "brocade": {
-                                "ipaddress": '10.24.51.45',
-                                "username": 'admin',
-                                "password": 'password123'
-                         },
                          "network_offering": {
                                     "name": 'Brocade',
                                     "displaytext": 'Brocade',
@@ -118,7 +110,15 @@ class TestBrocadeVcs(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostype"]
                            )
-        cls.brocade_services = cls.services["brocade"]
+        try:
+            cls.brocadeDeviceData = cls.config.__dict__["brocadeDeviceData"].__dict__
+            assert cls.brocadeDeviceData["ipaddress"], "ipaddress of brocade device\
+                    not present in config file"
+            assert cls.brocadeDeviceData["username"], "username of brocade device\
+                    not present in config file"
+        except Exception as e:
+            raise unittest.SkipTest("Exception occured while reading\
+                    brocade device data from config file: %s" % e)
         try:
 
            """ Adds Brocade device and enables NS provider"""
@@ -142,9 +142,9 @@ class TestBrocadeVcs(cloudstackTestCase):
 
            cmd2 = addBrocadeVcsDevice.addBrocadeVcsDeviceCmd()
            cmd2.physicalnetworkid = physical_network.id
-           cmd2.username = cls.brocade_services["username"]
-           cmd2.password = cls.brocade_services["password"]
-           cmd2.hostname = cls.brocade_services["ipaddress"]
+           cmd2.username = cls.brocadeDeviceData["username"]
+           cmd2.password = cls.brocadeDeviceData["password"]
+           cmd2.hostname = cls.brocadeDeviceData["ipaddress"]
            cls.brocade = cls.api_client.addBrocadeVcsDevice(cmd2)
 
            if brocade_provider.state != 'Enabled':
