@@ -3982,16 +3982,29 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        // For LXC, find and add the root filesystem
+        // For LXC, find and add the root filesystem, rbd data disks
         if (HypervisorType.LXC.toString().toLowerCase().equals(vm.getHvsType())) {
             for (DiskTO volume : disks) {
+                DataTO data = volume.getData();
+                PrimaryDataStoreTO store = (PrimaryDataStoreTO)data.getDataStore();
                 if (volume.getType() == Volume.Type.ROOT) {
-                    DataTO data = volume.getData();
-                    PrimaryDataStoreTO store = (PrimaryDataStoreTO)data.getDataStore();
                     KVMPhysicalDisk physicalDisk = _storagePoolMgr.getPhysicalDisk(store.getPoolType(), store.getUuid(), data.getPath());
                     FilesystemDef rootFs = new FilesystemDef(physicalDisk.getPath(), "/");
                     vm.getDevices().addDevice(rootFs);
-                    break;
+                } else if (volume.getType() == Volume.Type.DATADISK) {
+                    KVMPhysicalDisk physicalDisk = _storagePoolMgr.getPhysicalDisk(store.getPoolType(), store.getUuid(), data.getPath());
+                    KVMStoragePool pool = physicalDisk.getPool();
+                    if(StoragePoolType.RBD.equals(pool.getType())) {
+                        int devId = volume.getDiskSeq().intValue();
+                        String device = mapRbdDevice(physicalDisk);
+                        if (device != null) {
+                            s_logger.debug("RBD device on host is: " + device);
+                            DiskDef diskdef = new DiskDef();
+                            diskdef.defBlockBasedDisk(device, devId, DiskDef.diskBus.VIRTIO);
+                            diskdef.setQemuDriver(false);
+                            vm.getDevices().addDevice(diskdef);
+                        }
+                    }
                 }
             }
         }
@@ -5241,4 +5254,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
+    public String mapRbdDevice(KVMPhysicalDisk disk){
+        KVMStoragePool pool = disk.getPool();
+        //Check if rbd image is already mapped
+        String[] splitPoolImage = disk.getPath().split("/");
+        String device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"[ ]*"+splitPoolImage[1]+"\" | grep -o \"[^ ]*[ ]*$\"");
+        if(device == null) {
+            //If not mapped, map and return mapped device
+            String mapRbd = Script.runSimpleBashScript("rbd map " + disk.getPath() + " --id "+pool.getAuthUserName());
+            device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"[ ]*"+splitPoolImage[1]+"\" | grep -o \"[^ ]*[ ]*$\"");
+        }
+        return device;
+    }
 }

@@ -336,8 +336,14 @@ public class LibvirtVMDef {
             for (List<?> devs : devices.values()) {
                 for (Object dev : devs) {
                     if (_guestType == GuestDef.guestType.LXC) {
-                        if (dev instanceof GraphicDef || dev instanceof InputDef || dev instanceof DiskDef) {
+                        if (dev instanceof GraphicDef || dev instanceof InputDef) {
                             continue;
+                        }
+                        if(dev instanceof DiskDef){
+                            DiskDef disk = (DiskDef)dev;
+                            if(!disk.getDiskType().toString().equals("block")){
+                                continue;
+                            }
                         }
                     }
                     devicesBuilder.append(dev.toString());
@@ -466,6 +472,7 @@ public class LibvirtVMDef {
         private Long _iopsReadRate;
         private Long _iopsWriteRate;
         private diskCacheMode _diskCacheMode;
+        private boolean qemuDriver = true;
 
         public void setDeviceType(deviceType deviceType) {
             _deviceType = deviceType;
@@ -645,6 +652,10 @@ public class LibvirtVMDef {
             return _diskCacheMode;
         }
 
+        public void setQemuDriver(boolean qemuDriver){
+            this.qemuDriver = qemuDriver;
+        }
+
         @Override
         public String toString() {
             StringBuilder diskBuilder = new StringBuilder();
@@ -654,8 +665,11 @@ public class LibvirtVMDef {
             }
             diskBuilder.append(" type='" + _diskType + "'");
             diskBuilder.append(">\n");
-            diskBuilder.append("<driver name='qemu'" + " type='" + _diskFmtType
-                + "' cache='" + _diskCacheMode + "' " + "/>\n");
+            if(qemuDriver) {
+                diskBuilder.append("<driver name='qemu'" + " type='" + _diskFmtType
+                        + "' cache='" + _diskCacheMode + "' " + "/>\n");
+            }
+
             if (_diskType == diskType.FILE) {
                 diskBuilder.append("<source ");
                 if (_sourcePath != null) {
