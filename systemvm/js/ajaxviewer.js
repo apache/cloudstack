@@ -161,7 +161,7 @@ KeyboardMapper.prototype = {
 			}
 			
 			var X11Keysym = code;
-			if(this.jsX11KeysymMap[code] != undefined && (guestos == 'windows' || modifiers != AjaxViewer.SHIFT_KEY_MASK)) {
+			if(this.jsX11KeysymMap[code] != undefined && (guestos == 'windows' || modifiers != AjaxViewer.SHIFT_KEY_MASK || code == AjaxViewer.JS_KEY_CAPSLOCK)) {
 				X11Keysym = this.jsX11KeysymMap[code];
 				if(typeof this.jsX11KeysymMap[code] == "boolean") {
 					return;
@@ -184,6 +184,10 @@ KeyboardMapper.prototype = {
 				this.mappedInput.push({type : eventType, code: this.jsX11KeysymMap[code], modifiers: modifiers});
 			
 		} else if(eventType == AjaxViewer.KEY_PRESS && guestos == 'null') {
+			// ENTER/BACKSPACE key should already have been sent through KEY DOWN/KEY UP event
+			if(code == AjaxViewer.JS_KEY_ENTER || code == AjaxViewer.JS_KEY_BACKSPACE)
+				return;
+
 			var X11Keysym = code;
 			X11Keysym = this.jsKeyPressX11KeysymMap[code];
 			if(X11Keysym) {

@@ -275,76 +275,15 @@ var	keyboardTables = [
                   {keycode: 244,	entry : 0x7e,	browser: "IE"},
                   //Caps Lock = 240
                   {keycode: 240,			entry : 0xffe5},
-                  /*
-                  {keycode: JS_KEY_MULTIPLY,    entry : [
-                                                         {type: KEY_DOWN, code: X11_KEY_SHIFT, modifiers: 0 },
-                                                         {type: KEY_DOWN, code: X11_KEY_ASTERISK, modifiers: 0 },
-                                                         {type: KEY_UP, code: X11_KEY_ASTERISK, modifiers: 0 },
-                                                         {type: KEY_UP, code: X11_KEY_SHIFT, modifiers: 0 }
-                                                         ]},
-                  {keycode: JS_KEY_ADD,         entry : false}
-                   */
                   //[186 / 58 = "~^"]
                   {keycode: 186,		entry : 0x22, browser: "IE"},
                   {keycode: 58,		entry : 0x22, guestos: "windows",	browser: "Firefox"},
                   ],
                   keyPress: [
- 							// 34 : " " "
- 							{keycode: 34,      entry:  [{type: KEY_DOWN, code: 0x22, modifiers: 64, shift: true }]},
- 							{keycode: 42,      entry:  0xffaa },
- 							// 39 : " ' " (shift+7)
-                             {keycode: 39, 		entry: [
- 														 {type: KEY_DOWN, code: X11_KEY_SHIFT, modifiers: 0, shift: false },
- 														 {type: KEY_DOWN, code: 0x22, modifiers: 0, shift: false },
- 														 {type: KEY_UP, code: 0x22, modifiers: 0, shift: false },
- 														 {type: KEY_UP, code: X11_KEY_SHIFT, modifiers: 0, shift: false },
- 														 {type: KEY_DOWN, code: 0x22, modifiers: 0, shift: true },
- 														 {type: KEY_UP, code: 0x22, modifiers: 0, shift: true },
- 														 ]},							//58 : " : "
- 							 {keycode: 58, 		entry: [
- 														 {type: KEY_DOWN, code: X11_KEY_SHIFT, modifiers: 0, shift: false },
- 														 {type: KEY_DOWN, code: 0x3a, modifiers: 0, shift: false },
- 														 {type: KEY_UP, code: 0x3a, modifiers: 0, shift: false },
- 														 {type: KEY_UP, code: X11_KEY_SHIFT, modifiers: 0, shift: false },
- 														 {type: KEY_DOWN, code: 0x3a, modifiers: 0, shift: true },
- 														 {type: KEY_UP, code: 0x3a, modifiers: 0, shift: true },
- 														 ]},							 
- 							// 94 : "^"	
-                              {keycode: 94, 		entry: [
- 														 {type: KEY_DOWN, code: X11_KEY_SHIFT, modifiers: 0, shift: false },
- 														 {type: KEY_DOWN, code: 0x36, modifiers: 0, shift: false },
- 														 {type: KEY_UP, code: 0x36, modifiers: 0, shift: false },
- 														 {type: KEY_UP, code: X11_KEY_SHIFT, modifiers: 0, shift: false },
- 														 {type: KEY_DOWN, code: 0x36, modifiers: 0, shift: true },
- 														 {type: KEY_UP, code: 0x36, modifiers: 0, shift: true },
- 														 ]},														 														 
- 							// 64 : "@"	
-                              {keycode: 64, 		entry: [
- 														 {type: KEY_DOWN, code: X11_KEY_SHIFT, modifiers: 0, shift: false },
- 														 {type: KEY_DOWN, code: 0x32, modifiers: 0, shift: false },
- 														 {type: KEY_UP, code: 0x32, modifiers: 0, shift: false },
- 														 {type: KEY_UP, code: X11_KEY_SHIFT, modifiers: 0, shift: false },
- 														 {type: KEY_DOWN, code: 0x32, modifiers: 0, shift: true },
- 														 {type: KEY_UP, code: 0x32, modifiers: 0, shift: true },
- 														 ]},							 
- 							 // 96 : "'"	
-                              {keycode: 96, 		entry: [
- 														 {type: KEY_DOWN, code: X11_KEY_SHIFT, modifiers: 0, shift: false },
- 														 {type: KEY_DOWN, code: 0x7e, modifiers: 0, shift: false },
- 														 {type: KEY_UP, code: 0x7e, modifiers: 0, shift: false },
- 														 {type: KEY_UP, code: X11_KEY_SHIFT, modifiers: 0, shift: false },
- 														 {type: KEY_DOWN, code: 0x7e, modifiers: 0, shift: true },
- 														 {type: KEY_UP, code: 0x7e, modifiers: 0, shift: true },
- 														 ]},
-                             // 61 : "="	
- 							 {keycode: 61, 		entry: [
- 														 {type: KEY_DOWN, code: X11_KEY_SHIFT, modifiers: 0, shift: false },
- 														 {type: KEY_DOWN, code: 0x3d, modifiers: 0, shift: false },
- 														 {type: KEY_UP, code: 0x3d, modifiers: 0, shift: false },
- 														 {type: KEY_UP, code: X11_KEY_SHIFT, modifiers: 0, shift: false },
- 														 {type: KEY_DOWN, code: 0x3d, modifiers: 0, shift: true },
- 														 {type: KEY_UP, code: 0x3d, modifiers: 0, shift: true },
- 														 ]},
+                             // These mappings are for japanese guestOS. it is recommended that admin should deploy
+                             // the VM with "keyboard=jp" paramenter or change the VM properties in hypervisor to use jp mapping.
+                             {keycode: 42,       entry:  0xffaa}, // *
+                             {keycode: 43,       entry:  0xffab}, // +
                             ]
            }
            }, {tindex: 2, keyboardType: KEYBOARD_TYPE_UK, mappingTable:
