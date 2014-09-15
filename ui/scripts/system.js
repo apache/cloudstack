@@ -16074,12 +16074,12 @@
                                                         var hostItem = json.listdedicatedhostsresponse.dedicatedhost[0];
                                                         if (hostItem.domainid != null) {
                                                             $.extend(item, hostItem, {
-                                                                isdedicated: 'label.yes'
+                                                                isdedicated: _l('label.yes')
                                                             });
                                                         }
                                                     } else
                                                     $.extend(item, {
-                                                        isdedicated: 'label.no'
+                                                        isdedicated: _l('label.no')
                                                     })
                                                 },
                                                 error: function (json) {
