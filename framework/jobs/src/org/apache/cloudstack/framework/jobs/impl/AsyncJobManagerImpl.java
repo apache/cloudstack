@@ -236,10 +236,20 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             job.setResult(resultObject);
         }
 
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Publish async job-" + jobId + " complete on message bus");
+        }
         publishOnEventBus(job, "complete"); // publish before the instance type and ID are wiped out
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Wake up jobs related to job- " + jobId);
+        }
         List<Long> wakeupList = Transaction.execute(new TransactionCallback<List<Long>>() {
             @Override
             public List<Long> doInTransaction(TransactionStatus status) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Update db status for job- " + jobId);
+                }
                 job.setCompleteMsid(getMsid());
                 job.setStatus(jobStatus);
                 job.setResultCode(resultCode);
@@ -253,6 +263,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 job.setLastUpdated(DateUtil.currentGMTTime());
                 _jobDao.update(jobId, job);
 
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Wake up jobs joined with job- " + jobId + " and disjoin all subjobs created from job- " + jobId);
+                }
                 List<Long> wakeupList = wakeupByJoinedJobCompletion(jobId);
                 _joinMapDao.disjoinAllJobs(jobId);
 
