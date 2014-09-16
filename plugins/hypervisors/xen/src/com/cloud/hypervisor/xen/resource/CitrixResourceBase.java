@@ -4276,7 +4276,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (!pingXAPI()) {
                 Thread.sleep(1000);
                 if (!pingXAPI()) {
-                    s_logger.warn(" can not ping xenserver " + _host.uuid);
+                    s_logger.warn("can not ping xenserver " + _host.uuid);
                     return null;
                 }
             }
