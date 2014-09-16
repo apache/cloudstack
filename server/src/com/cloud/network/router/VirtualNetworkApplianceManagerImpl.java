@@ -180,6 +180,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -3656,10 +3657,12 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         final DhcpEntryCommand dhcpCommand =
                 new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName(), nic.getIp6Address(), _networkModel.getExecuteInSeqNtwkElmtCmd());
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-        final Nic defaultNic = findGatewayIp(vm.getId());
-        String gatewayIp = defaultNic.getGateway();
-        if (gatewayIp != null && !gatewayIp.equals(nic.getGateway())) {
-            gatewayIp = "0.0.0.0";
+        String gatewayIp = nic.getGateway();
+        if (!nic.isDefaultNic() ) {
+            GuestOSVO guestOS = _guestOSDao.findById(vm.getGuestOSId());
+            if ( guestOS == null || !guestOS.getDisplayName().toLowerCase().contains("windows")) {
+                gatewayIp = "0.0.0.0";
+            }
         }
         dhcpCommand.setDefaultRouter(gatewayIp);
         dhcpCommand.setIp6Gateway(nic.getIp6Gateway());
