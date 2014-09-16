@@ -17,7 +17,7 @@
 
 # Import Local Modules
 from marvin.codes import FAILED, KVM
-from nose.plugins.attrib import attr
+import pytest
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import startVirtualMachine
 from marvin.lib.utils import random_gen, cleanup_resources
@@ -112,7 +112,7 @@ class TestVmSnapshot(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @pytest.mark.tags(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_01_create_vm_snapshots(self):
         """Test to create VM snapshots
         """
@@ -156,7 +156,7 @@ class TestVmSnapshot(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @pytest.mark.tags(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_02_revert_vm_snapshots(self):
         """Test to revert VM snapshots
         """
@@ -243,7 +243,7 @@ class TestVmSnapshot(cloudstackTestCase):
             "Check the random data is equal with the ramdom file!"
         )
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @pytest.mark.tags(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_03_delete_vm_snapshots(self):
         """Test to delete vm snapshots
         """

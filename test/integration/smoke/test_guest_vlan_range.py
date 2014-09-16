@@ -18,7 +18,7 @@
 """
 #Import Local Modules
 import marvin
-from nose.plugins.attrib import attr
+import pytest
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
@@ -78,7 +78,7 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "guestvlanrange", "dedicate", "release"], required_hardware="false")
+    @pytest.mark.tags(tags=["advanced", "guestvlanrange", "dedicate", "release"], required_hardware="false")
     def test_dedicateGuestVlanRange(self):
         """Test guest vlan range dedication
         """

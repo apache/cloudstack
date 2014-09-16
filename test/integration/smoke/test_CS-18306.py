@@ -17,6 +17,6 @@
 # under the License.
 import pytest
 
-@pytest.mark.attr(tags=["advanced"], required_hardware=True)
+@pytest.mark.tags(tags=["advanced"], required_hardware="false")
 def test_01_create_disk_offering(vm):
     assert vm is not None

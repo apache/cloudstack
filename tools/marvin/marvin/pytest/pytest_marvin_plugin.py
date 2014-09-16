@@ -15,24 +15,56 @@
 # specific language governing permissions and limitations
 # under the License.
 import pytest
+import os
+import distutils
 
 from marvin.utils import initTestClass,getMarvin
 from .VM import (vm,tiny_service_offering,template,test_client,account,domain,zone)
 
 def pytest_configure(config):
     config.addinivalue_line("markers",
-        "attr(name): tag tests")
+        "tags(name): tag tests")
 
     result = getMarvin()
     if result is None:
         pytest.fail("failed to init marvin plugin")
+    marvin_init_tags()
 
+g_marvin_filter = {
+    "tags":[],
+}
 
+def tobool(str):
+    if str in ["True", "true"]:
+        return True
+    else:
+        return False
+def marvin_init_tags():
+    tags = os.environ.get("MARVIN_TAGS", "advanced,required_hardware=false").split(",")
+    global g_marvin_filter
+    for t in tags:
+        if t.startswith("required_hardware"):
+            g_marvin_filter["required_hardware"] = t.split("=")[1]
+        else:
+            g_marvin_filter["tags"].append(t)
 
 def pytest_runtest_setup(item):
-    attrmarker = item.get_marker("attr")
-    if attrmarker.kwargs["required_hardware"]:
-        pytest.skip("doesnt have hardware")
+    global g_marvin_filter
+    attrmarker = item.get_marker("tags")
+    if attrmarker is None:
+        return
+
+    if "required_hardware" in attrmarker.kwargs:
+        if attrmarker.kwargs["required_hardware"] != g_marvin_filter["required_hardware"]:
+            pytest.skip("doesnt match hardware")
+    elif "tags" in attrmarker.kwargs:
+        found = False
+        for t in attrmarker.kwargs["tags"]:
+            if t in g_marvin_filter["tags"]:
+                found = True
+
+        if found is not True:
+            pytest.skip("doesn't match tags")
 
 @pytest.fixture(scope="class", autouse=True)
 def marvin_inject_testclass(request):

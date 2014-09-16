@@ -24,7 +24,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 
 _multiprocess_shared_ = True
 
@@ -95,8 +95,8 @@ class TestResetVmOnReboot(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(hypervisor="xenserver")
-    @attr(tags=["advanced", "basic"], required_hardware="false")
+
+    @pytest.mark.tags(tags=["advanced", "basic"], required_hardware="false", hypervisors=["xenserver"])
     def test_01_reset_vm_on_reboot(self):
     #TODO: SIMENH: add new test to check volume contents
         """Test reset virtual machine on reboot

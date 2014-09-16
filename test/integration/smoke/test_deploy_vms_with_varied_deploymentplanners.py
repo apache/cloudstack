@@ -20,7 +20,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import Account, VirtualMachine, ServiceOffering, Host, Cluster
 from marvin.lib.common import get_zone, get_domain, get_template
 from marvin.lib.utils import cleanup_resources
-from nose.plugins.attrib import attr
+import pytest
 
 class TestDeployVmWithVariedPlanners(cloudstackTestCase):
     """ Test to create services offerings for deployment planners
@@ -60,7 +60,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             cls.account
         ]
 
-    @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
+    @pytest.mark.tags(tags=["advanced", "basic", "sg"], required_hardware="false")
     def test_deployvm_firstfit(self):
         """Test to deploy vm with a first fit offering
         """
@@ -104,7 +104,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             msg="VM is not in Running state"
         )
 
-    @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
+    @pytest.mark.tags(tags=["advanced", "basic", "sg"], required_hardware="false")
     def test_deployvm_userdispersing(self):
         """Test deploy VMs using user dispersion planner
         """
@@ -163,7 +163,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             self.debug("VMs (%s, %s) meant to be dispersed are deployed in the same cluster %s" % (
             vm1.id, vm2.id, vm1clusterid))
 
-    @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
+    @pytest.mark.tags(tags=["advanced", "basic", "sg"], required_hardware="false")
     def test_deployvm_userconcentrated(self):
         """Test deploy VMs using user concentrated planner
         """

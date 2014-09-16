@@ -788,7 +788,7 @@ test_data = {
             "dpd": "false"
     },
     "ostype": "CentOS 5.6 (64-bit)",
-    "sleep": 90,
+    "sleep": 5,
     "timeout": 10,
     "page": 1,
     "pagesize": 2,

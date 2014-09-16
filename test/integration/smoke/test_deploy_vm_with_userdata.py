@@ -21,10 +21,11 @@ from marvin.lib.base import (ServiceOffering,
                                          Account)
 from marvin.lib.common import get_template, get_zone, list_virtual_machines
 from marvin.lib.utils import cleanup_resources
-from nose.plugins.attrib import attr
+
 from marvin.codes import FAILED
 import random
 import string
+import pytest
 
 class TestDeployVmWithUserData(cloudstackTestCase):
     """Tests for UserData
@@ -70,7 +71,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
     def setup(self):
             self.hypervisor = self.testClient.getHypervisorInfo()
 
-    @attr(tags=["devcloud", "basic", "advanced", "post"], required_hardware="true")
+    @pytest.mark.tags(tags=["devcloud", "basic", "advanced", "post"], required_hardware="true")
     def test_deployvm_userdata_post(self):
         """Test userdata as POST, size > 2k
         """
@@ -95,7 +96,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         self.assert_(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
         self.assert_(vm.state == "Running", "VM is not in Running state")
 
-    @attr(tags=["devcloud", "basic", "advanced"], required_hardware="true")
+    @pytest.mark.tags(tags=["devcloud", "basic", "advanced"], required_hardware="true")
     def test_deployvm_userdata(self):
         """Test userdata as GET, size > 2k
         """

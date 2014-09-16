@@ -20,7 +20,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 
 class TestRegions(cloudstackTestCase):
     """Test Regions - basic region creation
@@ -35,7 +35,7 @@ class TestRegions(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.cleanup = []
 
-    @attr(tags=["basic", "advanced"], required_hardware="false")
+    @pytest.mark.tags(tags=["basic", "advanced"], required_hardware="false")
     def test_createRegion(self):
         """ Test for create region
         """

@@ -18,7 +18,7 @@
 """
 #Import Local Modules
 import marvin
-from nose.plugins.attrib import attr
+import pytest
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
@@ -72,7 +72,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "publiciprange", "dedicate", "release"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced", "publiciprange", "dedicate", "release"], required_hardware="false")
     def test_dedicatePublicIpRange(self):
         """Test public IP range dedication
         """

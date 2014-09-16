@@ -26,7 +26,7 @@ from marvin.sshClient import SshClient
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 #Import System modules
 import time
 
@@ -116,7 +116,7 @@ class TestPublicIP(cloudstackTestCase):
         return
 
 
-    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_public_ip_admin_account(self):
         """Test for Associate/Disassociate public IP address for admin account"""
 
@@ -152,7 +152,8 @@ class TestPublicIP(cloudstackTestCase):
                     )
 
         ip_address.delete(self.apiclient)
-        time.sleep(30)
+        time.sleep(self.services["sleep"])
+
 
         # Validate the following:
         # 1.listPublicIpAddresses should no more return the released address
@@ -166,7 +167,7 @@ class TestPublicIP(cloudstackTestCase):
             self.fail("list public ip response is not empty")
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_public_ip_user_account(self):
         """Test for Associate/Disassociate public IP address for user account"""
 
@@ -279,7 +280,7 @@ class TestPortForwarding(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
+    @pytest.mark.tags(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_01_port_fwd_on_src_nat(self):
         """Test for port forwarding on source NAT"""
 
@@ -406,7 +407,7 @@ class TestPortForwarding(cloudstackTestCase):
                                             )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
+    @pytest.mark.tags(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_02_port_fwd_on_non_src_nat(self):
         """Test for port forwarding on non source NAT"""
 
@@ -567,7 +568,8 @@ class TestRebootRouter(cloudstackTestCase):
                                     )
 
         # Wait for VM to come up
-        time.sleep(120)
+        time.sleep(self.services["sleep"])
+
 
         src_nat_ip_addrs = list_publicIP(
                                     self.apiclient,
@@ -617,7 +619,7 @@ class TestRebootRouter(cloudstackTestCase):
                         ]
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
+    @pytest.mark.tags(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_reboot_router(self):
         """Test for reboot router"""
 
@@ -773,7 +775,7 @@ class TestReleaseIP(cloudstackTestCase):
     def tearDown(self):
         cleanup_resources(self.apiclient, self.cleanup)
 
-    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_releaseIP(self):
         """Test for release public IP address"""
 
@@ -792,7 +794,8 @@ class TestReleaseIP(cloudstackTestCase):
                 isIpAddressDisassociated = True
                 break
             retriesCount -= 1
-            time.sleep(60)
+            time.sleep(self.services["sleep"])
+
         # End while
 
         self.assertTrue(isIpAddressDisassociated, "Failed to disassociate IP address")
@@ -898,7 +901,7 @@ class TestDeleteAccount(cloudstackTestCase):
         self.cleanup = []
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_delete_account(self):
         """Test for delete account"""
 

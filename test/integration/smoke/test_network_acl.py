@@ -23,7 +23,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 
 class TestNetworkACL(cloudstackTestCase):
 
@@ -54,7 +54,7 @@ class TestNetworkACL(cloudstackTestCase):
                           cls.account.id))
         cls.cleanup = [cls.account]
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @pytest.mark.tags(tags=["advanced"], required_hardware="true")
     def test_network_acl(self):
         #TODO: SIMENH: add actual verification Logic for rules.
         """Test network ACL lists and items in VPC"""

@@ -23,7 +23,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 
 _multiprocess_shared_ = True
 
@@ -45,7 +45,7 @@ class TestCreateDiskOffering(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
     def test_01_create_disk_offering(self):
         """Test to create disk offering
 
@@ -89,8 +89,7 @@ class TestCreateDiskOffering(cloudstackTestCase):
                         )
         return
 
-    @attr(hypervisor="kvm")
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke"])
+    @pytest.mark.tags(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke"], hypervisors=["kvm"])
     def test_02_create_sparse_type_disk_offering(self):
         """Test to create  a sparse type disk offering"""
 
@@ -130,8 +129,8 @@ class TestCreateDiskOffering(cloudstackTestCase):
         return
 
 
-    @attr(hypervisor="kvm")
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke"])
+
+    @pytest.mark.tags(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke"], hypervisors=["kvm"])
     def test_04_create_fat_type_disk_offering(self):
         """Test to create  a sparse type disk offering"""
 
@@ -213,7 +212,7 @@ class TestDiskOfferings(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "sg", "advancedns",  "smoke"], required_hardware="false")
+    @pytest.mark.tags(tags=["advanced", "basic", "eip", "sg", "advancedns",  "smoke"], required_hardware="false")
     def test_02_edit_disk_offering(self):
         """Test to update existing disk offering
 
@@ -265,7 +264,7 @@ class TestDiskOfferings(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
+    @pytest.mark.tags(tags=["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
     def test_03_delete_disk_offering(self):
         """Test to delete disk offering
 

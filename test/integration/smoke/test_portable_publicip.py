@@ -21,7 +21,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 
 class TestPortablePublicIPRange(cloudstackTestCase):
 
@@ -75,7 +75,7 @@ class TestPortablePublicIPRange(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["basic", "advanced",  "portablepublicip"], required_hardware="false")
+    @pytest.mark.tags(tags = ["basic", "advanced",  "portablepublicip"], required_hardware="false")
     def test_createPortablePublicIPRange(self):
         """ Test to create a portable public ip range
         """
@@ -161,7 +161,7 @@ class TestPortablePublicIPAcquire(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced",  "portablepublicip"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced",  "portablepublicip"], required_hardware="false")
     def test_createPortablePublicIPAcquire(self):
         """ Test to acquire a provisioned public ip range
         """

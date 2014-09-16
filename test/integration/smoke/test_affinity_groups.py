@@ -24,6 +24,7 @@ from marvin.lib.base import *
 from marvin.lib.common import *
 from marvin.sshClient import SshClient
 from nose.plugins.attrib import attr
+import pytest
 
 class TestDeployVmWithAffinityGroup(cloudstackTestCase):
     """
@@ -75,7 +76,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         ]
         return
 
-    @attr(tags=["basic", "advanced", "multihost"], required_hardware="false")
+    @pytest.mark.tags(tags=["basic", "advanced", "multihost"], required_hardware="false")
     def test_DeployVmAntiAffinityGroup(self):
         """
         test DeployVM in anti-affinity groups

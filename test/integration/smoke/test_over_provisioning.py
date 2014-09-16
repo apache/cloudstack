@@ -22,7 +22,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 #Import System modules
 
 class TestUpdateOverProvision(cloudstackTestCase):
@@ -32,7 +32,7 @@ class TestUpdateOverProvision(cloudstackTestCase):
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
 
-    @attr(tags=["devcloud", "basic", "advanced"], required_hardware="false")
+    @pytest.mark.tags(tags=["devcloud", "basic", "advanced"], required_hardware="false")
     def test_UpdateStorageOverProvisioningFactor(self):
         """
         test update configuration setting at storage scope

@@ -24,7 +24,7 @@ from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
 from marvin.lib.utils import (random_gen)
-from nose.plugins.attrib import attr
+import pytest
 
 #Import System modules
 import time
@@ -53,7 +53,7 @@ class TestHosts(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    #@attr(tags=["selfservice"])
+    @pytest.mark.skipif(True,reason="you can't just write test case like this")
     def test_01_clusters(self):
         """Test Add clusters & hosts - simulator
 

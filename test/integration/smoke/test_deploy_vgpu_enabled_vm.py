@@ -35,8 +35,7 @@ from marvin.sshClient import SshClient
 
 from marvin.codes import FAILED, XEN_SERVER
 
-from nose.plugins.attrib import attr
-
+import pytest
 class TestDeployvGPUenabledVM(cloudstackTestCase):
     """
     Test deploy a vGPU enabled VM into a user account
@@ -119,7 +118,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             self.account
         ]
 
-    @attr(tags = ['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @pytest.mark.tags(tags = ['advanced', 'basic', 'vgpu'], required_hardware="true")
     def test_deploy_vgpu_enabled_vm(self):
         """Test Deploy Virtual Machine
 

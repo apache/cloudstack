@@ -23,7 +23,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 
 #Import System modules
 import time
@@ -81,7 +81,7 @@ class TestSecStorageServices(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")
     def test_01_sys_vm_start(self):
         """Test system VM start
         """
@@ -160,7 +160,7 @@ class TestSecStorageServices(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")
     def test_02_sys_template_ready(self):
         """Test system templates are ready
         """

@@ -33,8 +33,7 @@ from marvin.lib.common import get_zone, get_domain, get_template, list_volumes
 
 from marvin.codes import FAILED
 
-from nose.plugins.attrib import attr
-
+import pytest
 import re
 
 class TestData(object):
@@ -105,7 +104,7 @@ class TestDeployVM(cloudstackTestCase):
             self.account
         ]
 
-    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true")
+    @pytest.mark.tags(tags = ['advanced', 'basic', 'sg'], required_hardware="true")
     def test_00_deploy_vm_root_resize(self):
         """Test deploy virtual machine with root resize
 
@@ -204,7 +203,7 @@ class TestDeployVM(cloudstackTestCase):
 
             self.assertEqual(success, True, "Check if unsupported hypervisor %s fails appropriately" % self.hypervisor)
 
-    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true")
+    @pytest.mark.tags(tags = ['advanced', 'basic', 'sg'], required_hardware="true")
     def test_01_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize of 0
         """
@@ -232,7 +231,7 @@ class TestDeployVM(cloudstackTestCase):
         else:
             self.debug("test 01 does not support hypervisor type " + self.hypervisor);
 
-    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true", BugId="CLOUDSTACK-6984")
+    @pytest.mark.tags(tags = ['advanced', 'basic', 'sg'], required_hardware="true", BugId="CLOUDSTACK-6984")
     def test_02_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize less than template size
         """

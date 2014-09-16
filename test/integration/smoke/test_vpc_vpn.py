@@ -23,7 +23,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 
 import time
 
@@ -53,7 +53,7 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
         cls.cleanup = [cls.account]
 
    
-    @attr(tags=["advanced"], required_hardware="false")
+    @pytest.mark.tags(tags=["advanced"], required_hardware="false")
     def test_vpc_remote_access_vpn(self):
         """Test VPN in VPC"""
 
@@ -160,7 +160,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         cls.cleanup = [cls.account]
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @pytest.mark.tags(tags=["advanced"], required_hardware="false")
     def test_vpc_site2site_vpn(self):
         """Test VPN in VPC"""
 

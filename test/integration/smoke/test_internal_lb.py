@@ -23,7 +23,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 
 class TestInternalLb(cloudstackTestCase):
     """Test Internal LB
@@ -56,7 +56,7 @@ class TestInternalLb(cloudstackTestCase):
                           cls.account.id))
         cls.cleanup = [cls.account]
 
-    @attr(tags=["smoke", "advanced"], required_hardware="true")
+    @pytest.mark.tags(tags=["smoke", "advanced"], required_hardware="true")
     def test_internallb(self):
         """Test create, delete, assign, remove of internal loadbalancer
         """   

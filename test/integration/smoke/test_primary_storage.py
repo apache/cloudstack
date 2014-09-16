@@ -23,7 +23,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 
 #Import System modules
 import time
@@ -52,7 +52,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_01_primary_storage_nfs(self):
         """Test primary storage pools - XEN, KVM, VMWare. Not Supported for hyperv
         """
@@ -149,7 +149,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             return
 
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    @pytest.mark.tags(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_01_primary_storage_iscsi(self):
         """Test primary storage pools - XEN. Not Supported for kvm,hyperv,vmware
         """

@@ -23,7 +23,7 @@ from marvin.sshClient import SshClient
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 
 import signal
 import sys
@@ -123,7 +123,7 @@ class TestNic(cloudstackTestCase):
         except Exception as ex:
             self.debug("Exception during NIC test SETUP!: " + str(ex))
 
-    @attr(tags = ["devcloud",  "smoke", "advanced", "advancedns"], required_hardware="true")
+    @pytest.mark.tags(tags = ["devcloud",  "smoke", "advanced", "advancedns"], required_hardware="true")
     def test_01_nic(self):
         #TODO: SIMENH: add validation
         """Test to add and update added nic to a virtual machine"""

@@ -18,13 +18,13 @@
 """
 #Import Local Modules
 import marvin
+import pytest
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
 #Import System modules
 import time
 
@@ -34,6 +34,7 @@ class TestResourceDetail(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+
         testClient = super(TestResourceDetail, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
@@ -89,7 +90,7 @@ class TestResourceDetail(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "xenserver"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced", "xenserver"], required_hardware="false")
     def test_01_updatevolumedetail(self):
         """Test volume detail 
         """

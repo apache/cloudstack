@@ -16,7 +16,7 @@
 # under the License.
 
 from marvin.codes import FAILED
-from nose.plugins.attrib import attr
+import pytest
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
@@ -102,7 +102,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
+    @pytest.mark.tags(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_01_snapshot_root_disk(self):
         """Test Snapshot Root Disk
         """

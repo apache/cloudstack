@@ -23,7 +23,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 import urllib
 from random import random
 #Import System modules
@@ -75,7 +75,7 @@ class TestCreateIso(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced", "basic", "eip", "sg", "advancedns"], required_hardware="false")
     def test_01_create_iso(self):
         """Test create public & private ISO
         """
@@ -229,7 +229,7 @@ class TestISO(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
     def test_02_edit_iso(self):
         """Test Edit ISO
         """
@@ -294,7 +294,7 @@ class TestISO(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced", "basic", "eip", "sg", "advancedns"], required_hardware="false")
     def test_03_delete_iso(self):
         """Test delete ISO
         """
@@ -322,7 +322,7 @@ class TestISO(cloudstackTestCase):
                          )
         return
     
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns"], required_hardware="true")
+    @pytest.mark.tags(tags = ["advanced", "basic", "eip", "sg", "advancedns"], required_hardware="true")
     def test_04_extract_Iso(self):
         "Test for extract ISO"
 
@@ -373,7 +373,7 @@ class TestISO(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"])
+    @pytest.mark.tags(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"])
     def test_05_iso_permissions(self):
         """Update & Test for ISO permissions"""
 
@@ -425,7 +425,7 @@ class TestISO(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "multizone", "provisioning"])
+    @pytest.mark.tags(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "multizone", "provisioning"])
     def test_06_copy_iso(self):
         """Test for copy ISO from one zone to another"""
 
@@ -482,7 +482,7 @@ class TestISO(cloudstackTestCase):
         # Cleanup- Delete the copied ISO
         timeout = self.services["timeout"]
         while True:
-            time.sleep(self.services["sleep"])
+            time.sleep(5)
             list_iso_response = list_isos(
                                           self.apiclient,
                                           id=self.iso_2.id,

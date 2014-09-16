@@ -22,7 +22,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 
 
 class TestPrivateGwACL(cloudstackTestCase):
@@ -39,7 +39,7 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.privateGwId = None
 
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @pytest.mark.tags(tags=["advanced"], required_hardware="false")
     def test_privategw_acl(self):
         #TODO: SIMENH: add a new test to verification of ACL rules
 

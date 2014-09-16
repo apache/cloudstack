@@ -24,7 +24,7 @@ from marvin.sshClient import SshClient
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 import telnetlib
 
 #Import System modules
@@ -41,7 +41,7 @@ class TestPVLAN(cloudstackTestCase):
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
 
-    @attr(tags = ["advanced"], required_hardware="false")
+    @pytest.mark.tags(tags = ["advanced"], required_hardware="false")
     def test_create_pvlan_network(self):
         self.debug("Test create pvlan network")
         createNetworkCmd = createNetwork.createNetworkCmd()

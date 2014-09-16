@@ -37,7 +37,7 @@ from marvin.cloudstackAPI.removeIpFromNic import removeIpFromNicCmd
 from marvin.cloudstackAPI.listNics import listNicsCmd
 
 
-from nose.plugins.attrib import attr
+import pytest
 
 class TestDeployVM(cloudstackTestCase):
     """Test deploy a VM into a user account
@@ -122,7 +122,7 @@ class TestDeployVM(cloudstackTestCase):
             msg="VM is not in Running state"
         )
 
-    @attr(tags = ['advanced',  'basic'], required_hardware="false")
+    @pytest.mark.tags(tags = ['advanced',  'basic'], required_hardware="false")
     def test_nic_secondaryip_add_remove(self):
     #TODO: SIMENH: add verification
         list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)

@@ -24,7 +24,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from nose.plugins.attrib import attr
+import pytest
 
 _multiprocess_shared_ = True
 
@@ -102,8 +102,7 @@ class TestScaleVm(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(hypervisor="xenserver")
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    @pytest.mark.tags(tags=["advanced", "basic"], required_hardware="true", hypervisors=["xenserver"])
     def test_01_scale_vm(self):
         """Test scale virtual machine 
         """
