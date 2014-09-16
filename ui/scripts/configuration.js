@@ -1463,13 +1463,13 @@
                                         label: 'label.network.rate'
                                     },
                                     diskBytesReadRate: {
-                                        label: 'label.disk.bytes.write.rate'
+                                        label: 'label.disk.bytes.read.rate'
                                     },
                                     diskBytesWriteRate: {
                                         label: 'label.disk.bytes.write.rate'
                                     },
                                     diskIopsReadRate: {
-                                        label: 'label.disk.iops.write.rate'
+                                        label: 'label.disk.iops.read.rate'
                                     },
                                     diskIopsWriteRate: {
                                         label: 'label.disk.iops.write.rate'
@@ -2120,13 +2120,13 @@
                                         }
                                     },
                                     diskBytesReadRate: {
-                                        label: 'label.disk.bytes.write.rate'
+                                        label: 'label.disk.bytes.read.rate'
                                     },
                                     diskBytesWriteRate: {
                                         label: 'label.disk.bytes.write.rate'
                                     },
                                     diskIopsReadRate: {
-                                        label: 'label.disk.iops.write.rate'
+                                        label: 'label.disk.iops.read.rate'
                                     },
                                     diskIopsWriteRate: {
                                         label: 'label.disk.iops.write.rate'
