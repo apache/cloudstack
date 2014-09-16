@@ -477,7 +477,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         Boolean.parseBoolean(value);
 
         value = _params.get("xenserver.check.hvm");
-        _checkHvm = false;
+        _checkHvm = Boolean.parseBoolean(value);
         _connPool = XenServerConnectionPool.getInstance();
 
         _agentMgr.registerForHostEvents(this, true, false, true);
