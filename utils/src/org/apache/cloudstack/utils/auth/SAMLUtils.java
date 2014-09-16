@@ -225,7 +225,11 @@ public class SAMLUtils {
         Signature signature = Signature.getInstance("SHA1withRSA");
         signature.initSign(signingKey);
         signature.update(url.getBytes());
-        return url + "&Signature=" + URLEncoder.encode(Base64.encodeBytes(signature.sign(), Base64.DONT_BREAK_LINES), HttpUtils.UTF_8);
+        String signatureString = Base64.encodeBytes(signature.sign(), Base64.DONT_BREAK_LINES);
+        if (signatureString != null) {
+            return url + "&Signature=" + URLEncoder.encode(signatureString, HttpUtils.UTF_8);
+        }
+        return url;
     }
 
     public static KeyFactory getKeyFactory() {
