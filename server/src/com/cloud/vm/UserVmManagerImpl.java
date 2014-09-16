@@ -4669,161 +4669,170 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
-
+        if (rootVols.size() > 1) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("There are " + rootVols.size() + " root volumes for VM " + vm.getUuid());
+            ex.addProxyObject(vm.getUuid(), "vmId");
+            throw ex;
+        }
         VolumeVO root = rootVols.get(0);
-        Long templateId = root.getTemplateId();
-        boolean isISO = false;
-        if (templateId == null) {
-        // Assuming that for a vm deployed using ISO, template ID is set to NULL
-            isISO = true;
-            templateId = vm.getIsoId();
-        }
+        if ( !Volume.State.Allocated.equals(root.getState()) || newTemplateId != null ){
+            Long templateId = root.getTemplateId();
+            boolean isISO = false;
+            if (templateId == null) {
+                // Assuming that for a vm deployed using ISO, template ID is set to NULL
+                isISO = true;
+               templateId = vm.getIsoId();
+            }
 
-        // If target VM has associated VM snapshots then don't allow restore of VM
-        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
-        if (vmSnapshots.size() > 0 && vm.getHypervisorType() == HypervisorType.VMware) {
-            throw new InvalidParameterValueException("Unable to restore VM, please specify a VM that does not have VM snapshots");
-        }
+            // If target VM has associated VM snapshots then don't allow restore of VM
+            List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+            if (vmSnapshots.size() > 0 && vm.getHypervisorType() == HypervisorType.VMware) {
+                throw new InvalidParameterValueException("Unable to restore VM, please specify a VM that does not have VM snapshots");
+            }
 
-        VMTemplateVO template = null;
-        //newTemplateId can be either template or ISO id. In the following snippet based on the vm deployment (from template or ISO) it is handled accordingly
-        if (newTemplateId != null) {
-            template = _templateDao.findById(newTemplateId);
-            _accountMgr.checkAccess(caller, null, true, template);
-            if (isISO) {
-                if (!template.getFormat().equals(ImageFormat.ISO)) {
-                    throw new InvalidParameterValueException("Invalid ISO id provided to restore the VM ");
+            VMTemplateVO template = null;
+            //newTemplateId can be either template or ISO id. In the following snippet based on the vm deployment (from template or ISO) it is handled accordingly
+            if (newTemplateId != null) {
+                template = _templateDao.findById(newTemplateId);
+                _accountMgr.checkAccess(caller, null, true, template);
+                if (isISO) {
+                    if (!template.getFormat().equals(ImageFormat.ISO)) {
+                        throw new InvalidParameterValueException("Invalid ISO id provided to restore the VM ");
+                    }
+                } else {
+                    if (template.getFormat().equals(ImageFormat.ISO)) {
+                        throw new InvalidParameterValueException("Invalid template id provided to restore the VM ");
+                    }
                 }
             } else {
-                if (template.getFormat().equals(ImageFormat.ISO)) {
-                    throw new InvalidParameterValueException("Invalid template id provided to restore the VM ");
+                if (isISO && templateId == null) {
+                    throw new CloudRuntimeException("Cannot restore the VM since there is no ISO attached to VM");
+                }
+                template = _templateDao.findById(templateId);
+                if (template == null) {
+                    InvalidParameterValueException ex = new InvalidParameterValueException("Cannot find template/ISO for specified volumeid and vmId");
+                    ex.addProxyObject(vm.getUuid(), "vmId");
+                    ex.addProxyObject(root.getUuid(), "volumeId");
+                    throw ex;
                 }
             }
-        } else {
-            if (isISO && templateId == null) {
-                throw new CloudRuntimeException("Cannot restore the VM since there is no ISO attached to VM");
-            }
-            template = _templateDao.findById(templateId);
-            if (template == null) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("Cannot find template/ISO for specified volumeid and vmId");
-                ex.addProxyObject(vm.getUuid(), "vmId");
-                ex.addProxyObject(root.getUuid(), "volumeId");
-                throw ex;
-            }
-        }
 
-        if (needRestart) {
-            try {
-                _itMgr.stop(vm.getUuid());
-            } catch (ResourceUnavailableException e) {
-                s_logger.debug("Stop vm " + vm.getUuid() + " failed", e);
-                CloudRuntimeException ex = new CloudRuntimeException("Stop vm failed for specified vmId");
-                ex.addProxyObject(vm.getUuid(), "vmId");
-                throw ex;
+            if (needRestart) {
+                try {
+                    _itMgr.stop(vm.getUuid());
+                } catch (ResourceUnavailableException e) {
+                    s_logger.debug("Stop vm " + vm.getUuid() + " failed", e);
+                    CloudRuntimeException ex = new CloudRuntimeException("Stop vm failed for specified vmId");
+                    ex.addProxyObject(vm.getUuid(), "vmId");
+                    throw ex;
+                }
             }
-        }
 
-        /* If new template/ISO is provided allocate a new volume from new template/ISO otherwise allocate new volume from original template/ISO */
-        Volume newVol = null;
-        if (newTemplateId != null) {
-            if (isISO) {
-                newVol = volumeMgr.allocateDuplicateVolume(root, null);
-                vm.setIsoId(newTemplateId);
+            /* If new template/ISO is provided allocate a new volume from new template/ISO otherwise allocate new volume from original template/ISO */
+            Volume newVol = null;
+            if (newTemplateId != null) {
+                if (isISO) {
+                    newVol = volumeMgr.allocateDuplicateVolume(root, null);
+                    vm.setIsoId(newTemplateId);
+                    vm.setGuestOSId(template.getGuestOSId());
+                    vm.setTemplateId(newTemplateId);
+                    _vmDao.update(vmId, vm);
+                } else {
+                newVol = volumeMgr.allocateDuplicateVolume(root, newTemplateId);
                 vm.setGuestOSId(template.getGuestOSId());
                 vm.setTemplateId(newTemplateId);
                 _vmDao.update(vmId, vm);
-            } else {
-            newVol = volumeMgr.allocateDuplicateVolume(root, newTemplateId);
-            vm.setGuestOSId(template.getGuestOSId());
-            vm.setTemplateId(newTemplateId);
-            _vmDao.update(vmId, vm);
-            }
-        } else {
-            newVol = volumeMgr.allocateDuplicateVolume(root, null);
-        }
-
-        // Create Usage event for the newly created volume
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, newVol.getAccountId(), newVol.getDataCenterId(), newVol.getId(), newVol.getName(), newVol.getDiskOfferingId(), templateId, newVol.getSize());
-        _usageEventDao.persist(usageEvent);
-
-        handleManagedStorage(vm, root);
-
-        _volsDao.attachVolume(newVol.getId(), vmId, newVol.getDeviceId());
-
-        // Detach, destroy and create the usage event for the old root volume.
-        _volsDao.detachVolume(root.getId());
-        volumeMgr.destroyVolume(root);
-
-        // For VMware hypervisor since the old root volume is replaced by the new root volume, force expunge old root volume if it has been created in storage
-        if (vm.getHypervisorType() == HypervisorType.VMware) {
-            VolumeInfo volumeInStorage = volFactory.getVolume(root.getId());
-            if (volumeInStorage != null) {
-            s_logger.info("Expunging volume " + root.getId() + " from primary data store");
-            AsyncCallFuture<VolumeApiResult> future = _volService.expungeVolumeAsync(volFactory.getVolume(root.getId()));
-            try {
-                future.get();
-            } catch (Exception e) {
-                s_logger.debug("Failed to expunge volume:" + root.getId(), e);
-            }
-        }
-        }
-
-        Map<VirtualMachineProfile.Param, Object> params = null;
-        String password = null;
-
-        if (template.getEnablePassword()) {
-            password = _mgr.generateRandomPassword();
-            boolean result = resetVMPasswordInternal(vmId, password);
-            if (result) {
-                vm.setPassword(password);
-                _vmDao.loadDetails(vm);
-                // update the password in vm_details table too
-                // Check if an SSH key pair was selected for the instance and if so
-                // use it to encrypt & save the vm password
-                encryptAndStorePassword(vm, password);
-            } else {
-                throw new CloudRuntimeException("VM reset is completed but failed to reset password for the virtual machine ");
-            }
-        }
-
-        if (needRestart) {
-            try {
-                if (vm.getDetail("password") != null) {
-                    params = new HashMap<VirtualMachineProfile.Param, Object>();
-                    params.put(VirtualMachineProfile.Param.VmPassword, password);
                 }
-                _itMgr.start(vm.getUuid(), params);
-                vm = _vmDao.findById(vmId);
-                if (template.getEnablePassword()) {
-                    // this value is not being sent to the backend; need only for api
-                    // display purposes
-                    vm.setPassword(password);
-                    if (vm.isUpdateParameters()) {
-                        vm.setUpdateParameters(false);
-                        _vmDao.loadDetails(vm);
-                        if (vm.getDetail("password") != null) {
-                            _vmDetailsDao.remove(_vmDetailsDao.findDetail(vm.getId(), "password").getId());
-                        }
-                        _vmDao.update(vm.getId(), vm);
+            } else {
+                newVol = volumeMgr.allocateDuplicateVolume(root, null);
+            }
+
+            // Create Usage event for the newly created volume
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, newVol.getAccountId(), newVol.getDataCenterId(), newVol.getId(), newVol.getName(), newVol.getDiskOfferingId(), templateId, newVol.getSize());
+            _usageEventDao.persist(usageEvent);
+
+            handleManagedStorage(vm, root);
+
+            _volsDao.attachVolume(newVol.getId(), vmId, newVol.getDeviceId());
+
+            // Detach, destroy and create the usage event for the old root volume.
+            _volsDao.detachVolume(root.getId());
+            volumeMgr.destroyVolume(root);
+
+            // For VMware hypervisor since the old root volume is replaced by the new root volume, force expunge old root volume if it has been created in storage
+            if (vm.getHypervisorType() == HypervisorType.VMware) {
+                VolumeInfo volumeInStorage = volFactory.getVolume(root.getId());
+                if (volumeInStorage != null) {
+                    s_logger.info("Expunging volume " + root.getId() + " from primary data store");
+                    AsyncCallFuture<VolumeApiResult> future = _volService.expungeVolumeAsync(volFactory.getVolume(root.getId()));
+                    try {
+                    future.get();
+                    } catch (Exception e) {
+                        s_logger.debug("Failed to expunge volume:" + root.getId(), e);
                     }
                 }
-            } catch (Exception e) {
-                s_logger.debug("Unable to start VM " + vm.getUuid(), e);
-                CloudRuntimeException ex = new CloudRuntimeException("Unable to start VM with specified id" + e.getMessage());
-                ex.addProxyObject(vm.getUuid(), "vmId");
-                throw ex;
+            }
+
+            Map<VirtualMachineProfile.Param, Object> params = null;
+            String password = null;
+
+            if (template.getEnablePassword()) {
+                password = _mgr.generateRandomPassword();
+                boolean result = resetVMPasswordInternal(vmId, password);
+                if (result) {
+                    vm.setPassword(password);
+                    _vmDao.loadDetails(vm);
+                    // update the password in vm_details table too
+                    // Check if an SSH key pair was selected for the instance and if so
+                    // use it to encrypt & save the vm password
+                    encryptAndStorePassword(vm, password);
+                } else {
+                    throw new CloudRuntimeException("VM reset is completed but failed to reset password for the virtual machine ");
+                }
+            }
+
+            if (needRestart) {
+                try {
+                    if (vm.getDetail("password") != null) {
+                        params = new HashMap<VirtualMachineProfile.Param, Object>();
+                        params.put(VirtualMachineProfile.Param.VmPassword, password);
+                    }
+                    _itMgr.start(vm.getUuid(), params);
+                    vm = _vmDao.findById(vmId);
+                    if (template.getEnablePassword()) {
+                        // this value is not being sent to the backend; need only for api
+                        // display purposes
+                        vm.setPassword(password);
+                        if (vm.isUpdateParameters()) {
+                            vm.setUpdateParameters(false);
+                            _vmDao.loadDetails(vm);
+                            if (vm.getDetail("password") != null) {
+                                _vmDetailsDao.remove(_vmDetailsDao.findDetail(vm.getId(), "password").getId());
+                            }
+                            _vmDao.update(vm.getId(), vm);
+                        }
+                    }
+                } catch (Exception e) {
+                    s_logger.debug("Unable to start VM " + vm.getUuid(), e);
+                    CloudRuntimeException ex = new CloudRuntimeException("Unable to start VM with specified id" + e.getMessage());
+                    ex.addProxyObject(vm.getUuid(), "vmId");
+                    throw ex;
+                }
             }
         }
 
-        s_logger.debug("Restore VM " + vmId + " with template " + template.getUuid() + " done successfully");
+        s_logger.debug("Restore VM " + vmId + " with template " + newTemplateId + " done successfully");
         return vm;
 
     }
 
     private void handleManagedStorage(UserVmVO vm, VolumeVO root) {
+        if ( Volume.State.Allocated.equals(root.getState()) ){
+            return;
+        }
         StoragePoolVO storagePool = _storagePoolDao.findById(root.getPoolId());
 
-        if (storagePool.isManaged()) {
+        if (storagePool != null && storagePool.isManaged()) {
             Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
 
             if (hostId != null) {
