@@ -222,12 +222,6 @@
                         dataType: "json",
                         type: "POST",
                         async: false,
-                        success: function(json) {
-                            var count = json.ldapuserresponse.count;
-                            args.response.success({
-                                data: count
-                            });
-                        },
                         error: function(XMLHttpResponse) {
                             args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                         }
@@ -238,12 +232,6 @@
                         dataType: "json",
                         type: "POST",
                         async: false,
-                        success: function(json) {
-                            var item = json.createaccountresponse.account;
-                            args.response.success({
-                                data: item
-                            });
-                        },
                         error: function(XMLHttpResponse) {
                             args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                         }
@@ -255,12 +243,6 @@
                     dataType: "json",
                     type: "POST",
                     async: false,
-                    success: function(json) {
-                        var item = json.createaccountresponse.account;
-                        args.response.success({
-                            data: item
-                        });
-                    },
                     error: function(XMLHttpResponse) {
                         args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                     }
