@@ -1,0 +1,62 @@
+
+
+If your testing involves C or C++ libraries you might have to deal
+with crashing processes.  The xdist-plugin provides the ``--boxed`` option
+to run each test in a controled subprocess.  Here is a basic example::
+
+    # content of test_module.py
+
+    import pytest
+    import os
+    import time
+
+    # run test function 50 times with different argument
+    @pytest.mark.parametrize("arg", range(50))
+    def test_func(arg):
+        time.sleep(0.05) # each tests takes a while
+        if arg % 19 == 0: 
+            os.kill(os.getpid(), 15)
+
+If you run this with::
+
+    $ py.test --boxed
+    =========================== test session starts ============================
+    platform linux2 -- Python 2.7.3 -- pytest-2.3.0.dev8
+    plugins: xdist, bugzilla, cache, oejskit, cli, pep8, cov
+    collecting ... collected 50 items
+    
+    test_module.py f..................f..................f...........
+    
+    ================================= FAILURES =================================
+    _______________________________ test_func[0] _______________________________
+    /home/hpk/tmp/doc-exec-420/test_module.py:6: running the test CRASHED with signal 15
+    ______________________________ test_func[19] _______________________________
+    /home/hpk/tmp/doc-exec-420/test_module.py:6: running the test CRASHED with signal 15
+    ______________________________ test_func[38] _______________________________
+    /home/hpk/tmp/doc-exec-420/test_module.py:6: running the test CRASHED with signal 15
+    =================== 3 failed, 47 passed in 3.41 seconds ====================
+
+You'll see that a couple of tests are reported as crashing, indicated
+by lower-case ``f`` and the respective failure summary. You can also use
+the xdist-provided parallelization feature to speed up your testing::
+
+    $ py.test --boxed -n3
+    =========================== test session starts ============================
+    platform linux2 -- Python 2.7.3 -- pytest-2.3.0.dev8
+    plugins: xdist, bugzilla, cache, oejskit, cli, pep8, cov
+    gw0 I / gw1 I / gw2 I
+    gw0 [50] / gw1 [50] / gw2 [50]
+    
+    scheduling tests via LoadScheduling
+    ..f...............f..................f............
+    ================================= FAILURES =================================
+    _______________________________ test_func[0] _______________________________
+    [gw0] linux2 -- Python 2.7.3 /home/hpk/venv/1/bin/python
+    /home/hpk/tmp/doc-exec-420/test_module.py:6: running the test CRASHED with signal 15
+    ______________________________ test_func[19] _______________________________
+    [gw2] linux2 -- Python 2.7.3 /home/hpk/venv/1/bin/python
+    /home/hpk/tmp/doc-exec-420/test_module.py:6: running the test CRASHED with signal 15
+    ______________________________ test_func[38] _______________________________
+    [gw2] linux2 -- Python 2.7.3 /home/hpk/venv/1/bin/python
+    /home/hpk/tmp/doc-exec-420/test_module.py:6: running the test CRASHED with signal 15
+    =================== 3 failed, 47 passed in 2.03 seconds ====================

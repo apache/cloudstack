@@ -1,0 +1,31 @@
+next release critical
+-----------------------------------------------
+tag: bug
+
+miserably fails: --dist=each --tx popen --tx socket=...
+
+
+rename / hooks
+-----------------------------------------------
+tag: bug
+
+node -> slave
+transition for hooks?
+configure_node -> configure_slave
+
+allow to remotely run xdist tests with xdist
+-----------------------------------------------
+tag: feature
+
+allow to run xdist own tests using its own mechanism.
+currently this doesn't work because the remote side
+has no py.test plugin.   How to configure/do
+register "xdist.plugin" on the remote side?
+
+see to avoid any "from _pytest" internal imports
+-----------------------------------------------
+tag: feature
+
+currently tests and even xdist core code imports
+names from the internal _pytest namespace.
+See to avoid it.

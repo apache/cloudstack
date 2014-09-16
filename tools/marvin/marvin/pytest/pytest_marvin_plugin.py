@@ -16,7 +16,6 @@
 # under the License.
 import pytest
 import os
-import distutils
 
 from marvin.utils import initTestClass,getMarvin
 from .VM import (vm,tiny_service_offering,template,test_client,account,domain,zone)
@@ -25,9 +24,6 @@ def pytest_configure(config):
     config.addinivalue_line("markers",
         "tags(name): tag tests")
 
-    result = getMarvin()
-    if result is None:
-        pytest.fail("failed to init marvin plugin")
     marvin_init_tags()
 
 g_marvin_filter = {
@@ -65,6 +61,12 @@ def pytest_runtest_setup(item):
 
         if found is not True:
             pytest.skip("doesn't match tags")
+
+@pytest.fixture(scope="session", autouse=True)
+def marvin_init_session():
+    result = getMarvin()
+    if result is None:
+        pytest.fail("failed to init marvin plugin")
 
 @pytest.fixture(scope="class", autouse=True)
 def marvin_inject_testclass(request):

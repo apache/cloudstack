@@ -1,0 +1,134 @@
+1.11
+-------------------------
+
+- fix pytest/xdist issue485 (also depends on py-1.4.22):
+  attach stdout/stderr on --boxed processes that die.
+
+- fix pytest/xdist issue503: make sure that a node has usually
+  two items to execute to avoid scoped fixtures to be torn down
+  pre-maturely (fixture teardown/setup is "nextitem" sensitive).
+  Thanks to Andreas Pelme for bug analysis and failing test.
+
+1.10
+-------------------------
+
+- add glob support for rsyncignores, add command line option to pass
+  additional rsyncignores. Thanks Anatoly Bubenkov.
+
+- fix pytest issue382 - produce "pytest_runtest_logstart" event again
+  in master. Thanks Aron Curzon.
+
+- fix pytest issue419 by sending/receiving indices into the test 
+  collection instead of node ids (which are not neccessarily unique
+  for functions parametrized with duplicate values)
+
+- send multiple "to test" indices in one network message to a slave
+  and improve heuristics for sending chunks where the chunksize
+  depends on the number of remaining tests rather than fixed numbers.
+  This reduces the number of master -> node messages (but not the
+  reverse direction)
+
+
+1.9
+-------------------------
+
+- changed LICENSE to MIT
+
+- fix duplicate reported test ids with --looponfailing
+  (thanks Jeremy Thurgood)
+
+- fix pytest issue41: re-run tests on all file changes, not just
+  randomly select ones like .py/.c.
+
+- fix pytest issue347: slaves running on top of Python3.2
+  will set PYTHONDONTWRITEYBTECODE to 1 to avoid import concurrency
+  bugs.
+
+1.8
+-------------------------
+
+- fix pytest-issue93 - use the refined pytest-2.2.1 runtestprotocol
+  interface to perform eager teardowns for test items.
+
+1.7
+-------------------------
+
+- fix incompatibilities with pytest-2.2.0 (allow multiple
+  pytest_runtest_logreport reports for a test item)
+
+1.6
+-------------------------
+
+- terser collection reporting
+
+- fix issue34 - distributed testing with -p plugin now works correctly
+
+- fix race condition in looponfail mode where a concurrent file removal
+  could cause a crash
+
+1.5
+-------------------------
+
+- adapt to and require pytest-2.0 changes, rsyncdirs and rsyncignore can now
+  only be specified in [pytest] sections of ini files, see "py.test -h"
+  for details.
+- major internal refactoring to match the pytest-2.0 event refactoring
+  - perform test collection always at slave side instead of at the master
+  - make python2/python3 bridging work, remove usage of pickling
+- improve initial reporting by using line-rewriting
+- remove all trailing whitespace from source
+
+1.4
+-------------------------
+
+- perform distributed testing related reporting in the plugin
+  rather than having dist-related code in the generic py.test
+  distribution
+
+- depend on execnet-1.0.7 which adds "env1:NAME=value" keys to
+  gateway specification strings.
+
+- show detailed gateway setup and platform information only when
+  "-v" or "--verbose" is specified.
+
+1.3
+-------------------------
+
+- fix --looponfailing - it would not actually run against the fully changed
+  source tree when initial conftest files load application state.
+
+- adapt for py-1.3.1's new --maxfailure option
+
+1.2
+-------------------------
+
+- fix issue79: sessionfinish/teardown hooks are now called systematically
+  on the slave side
+- introduce a new data input/output mechanism to allow the master side
+  to send and receive data from a slave.
+- fix race condition in underlying pickling/unpickling handling
+- use and require new register hooks facility of py.test>=1.3.0
+- require improved execnet>=1.0.6 because of various race conditions
+  that can arise in xdist testing modes.
+- fix some python3 related pickling related race conditions
+- fix PyPI description
+
+1.1
+-------------------------
+
+- fix an indefinite hang which would wait for events although no events
+  are pending - this happened if items arrive very quickly while
+  the "reschedule-event" tried unconditionally avoiding a busy-loop
+  and not schedule new work.
+
+1.0
+-------------------------
+
+- moved code out of py-1.1.1 into its own plugin
+- use a new, faster and more sensible model to do load-balancing
+  of tests - now no magic "MAXITEMSPERHOST" is needed and load-testing
+  works effectively even with very few tests.
+- cleaned up termination handling
+- make -x cause hard killing of test nodes to decrease wait time
+  until the traceback shows up on first failure
+
