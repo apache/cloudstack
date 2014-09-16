@@ -31,6 +31,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -159,7 +160,7 @@ public class Link {
             pkgBuf.clear();
             engResult = sslEngine.wrap(buffers, pkgBuf);
             if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED && engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
-                engResult.getStatus() != SSLEngineResult.Status.OK) {
+                    engResult.getStatus() != SSLEngineResult.Status.OK) {
                 throw new IOException("SSL: SSLEngine return bad result! " + engResult);
             }
 
@@ -285,7 +286,7 @@ public class Link {
             appBuf = ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
             engResult = _sslEngine.unwrap(_readBuffer, appBuf);
             if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED && engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
-                engResult.getStatus() != SSLEngineResult.Status.OK) {
+                    engResult.getStatus() != SSLEngineResult.Status.OK) {
                 throw new IOException("SSL: SSLEngine return bad result! " + engResult);
             }
             if (remaining == _readBuffer.remaining()) {
@@ -405,7 +406,7 @@ public class Link {
         _connection.scheduleTask(task);
     }
 
-    public static SSLContext initSSLContext(boolean isClient) throws Exception {
+    public static SSLContext initSSLContext(boolean isClient) throws GeneralSecurityException, IOException {
         InputStream stream;
         SSLContext sslContext = null;
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
