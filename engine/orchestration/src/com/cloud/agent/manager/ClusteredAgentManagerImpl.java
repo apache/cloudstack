@@ -254,7 +254,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             _agents.put(id, attache);
         }
         if (old != null) {
-            old.disconnect(Status.Removed);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Remove stale agent attache from current management server");
+            }
+            removeAgent(old, Status.Removed);
         }
         return attache;
     }
@@ -547,8 +550,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
 
         AgentAttache agent = findAttache(hostId);
-        if (agent == null) {
-            if (host.getStatus() == Status.Up && (host.getManagementServerId() != null && host.getManagementServerId() != _nodeId)) {
+        if (agent == null || !agent.forForward()) {
+            if (isHostOwnerSwitched(host)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Host " + hostId + " has switched to another management server, need to update agent map with a forwarding agent attache");
+                }
                 agent = createAttache(hostId);
             }
         }

@@ -1387,6 +1387,22 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _executor.submit(new DisconnectTask(attache, event, true));
     }
 
+    protected boolean isHostOwnerSwitched(final long hostId) {
+        HostVO host = _hostDao.findById(hostId);
+        if (host == null) {
+            s_logger.warn("Can't find the host " + hostId);
+            return false;
+        }
+        return isHostOwnerSwitched(host);
+    }
+
+    protected boolean isHostOwnerSwitched(HostVO host) {
+        if (host.getStatus() == Status.Up && host.getManagementServerId() != null && host.getManagementServerId() != _nodeId) {
+            return true;
+        }
+        return false;
+    }
+
     private void disconnectInternal(final long hostId, final Status.Event event, boolean invstigate) {
         AgentAttache attache = findAttache(hostId);
 
