@@ -265,6 +265,7 @@
 
             // Step 3: Service offering
             function(args) {
+            	selectedTemplateObj = null; //reset            	
                 if (args.currentData["select-template"] == "select-template") {
                     if (featuredTemplateObjs != null && featuredTemplateObjs.length > 0) {
                         for (var i = 0; i < featuredTemplateObjs.length; i++) {
