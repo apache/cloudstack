@@ -79,12 +79,10 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.ClusterVMMetaDataSyncAnswer;
 import com.cloud.agent.api.ClusterVMMetaDataSyncCommand;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
-import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
@@ -1038,11 +1036,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             }
 
                             StopCommand cmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
-                            StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
-                            if ( answer != null ) {
-
+                            Answer answer = _agentMgr.easySend(destHostId, cmd);
+                            if (answer != null && answer instanceof StopAnswer) {
+                                StopAnswer stopAns = (StopAnswer)answer;
                                 if (vm.getType() == VirtualMachine.Type.User) {
-                                    String platform = answer.getPlatform();
+                                    String platform = stopAns.getPlatform();
                                     if (platform != null) {
                                         Map<String,String> vmmetadata = new HashMap<String,String>();
                                         vmmetadata.put(vm.getInstanceName(), platform);
@@ -1219,10 +1217,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VirtualMachine vm = profile.getVirtualMachine();
         StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
         try {
-            StopAnswer answer = (StopAnswer)_agentMgr.send(vm.getHostId(), stop);
-            if (answer != null) {
+            Answer answer = _agentMgr.send(vm.getHostId(), stop);
+            if (answer != null && answer instanceof StopAnswer) {
+                StopAnswer stopAns = (StopAnswer)answer;
                 if (vm.getType() == VirtualMachine.Type.User) {
-                    String platform = answer.getPlatform();
+                    String platform = stopAns.getPlatform();
                     if (platform != null) {
                         UserVmVO userVm = _userVmDao.findById(vm.getId());
                         _userVmDao.loadDetails(userVm);
@@ -1235,7 +1234,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (gpuDevice != null) {
                     _resourceMgr.updateGPUDetails(vm.getHostId(), gpuDevice.getGroupDetails());
                 }
-                if (!answer.getResult()) {
+                if (answer == null || !answer.getResult()) {
                     s_logger.debug("Unable to stop VM due to " + answer.getDetails());
                     return false;
                 }
@@ -1481,17 +1480,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
 
         boolean stopped = false;
-        StopAnswer answer = null;
+        Answer answer = null;
         try {
-            answer = (StopAnswer)_agentMgr.send(vm.getHostId(), stop);
+            answer = _agentMgr.send(vm.getHostId(), stop);
             if (answer != null) {
-                if (vm.getType() == VirtualMachine.Type.User) {
-                    String platform = answer.getPlatform();
-                    if (platform != null) {
-                        UserVmVO userVm = _userVmDao.findById(vm.getId());
-                        _userVmDao.loadDetails(userVm);
-                        userVm.setDetail("platform", platform);
-                        _userVmDao.saveDetails(userVm);
+                if (answer instanceof StopAnswer) {
+                    StopAnswer stopAns = (StopAnswer)answer;
+                    if (vm.getType() == VirtualMachine.Type.User) {
+                        String platform = stopAns.getPlatform();
+                        if (platform != null) {
+                            UserVmVO userVm = _userVmDao.findById(vm.getId());
+                            _userVmDao.loadDetails(userVm);
+                            userVm.setDetail("platform", platform);
+                            _userVmDao.saveDetails(userVm);
+                        }
                     }
                 }
                 stopped = answer.getResult();
@@ -1646,9 +1648,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     protected boolean checkVmOnHost(VirtualMachine vm, long hostId) throws AgentUnavailableException, OperationTimedoutException {
-        CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(hostId, new CheckVirtualMachineCommand(vm.getInstanceName()));
-        if (!answer.getResult() ||  answer.getState() == PowerState.PowerOff) {
+        Answer answer = _agentMgr.send(hostId, new CheckVirtualMachineCommand(vm.getInstanceName()));
+        if (answer == null || !answer.getResult()) {
             return false;
+        }
+        if (answer instanceof CheckVirtualMachineAnswer) {
+            CheckVirtualMachineAnswer vmAnswer = (CheckVirtualMachineAnswer)answer;
+            if (vmAnswer.getState() == PowerState.PowerOff) {
+                return false;
+            }
         }
 
         return true;
@@ -1856,10 +1864,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         work.setResourceId(dstHostId);
         work = _workDao.persist(work);
 
-        PrepareForMigrationAnswer pfma = null;
+        Answer pfma = null;
         try {
-            pfma = (PrepareForMigrationAnswer)_agentMgr.send(dstHostId, pfmc);
-            if (!pfma.getResult()) {
+            pfma = _agentMgr.send(dstHostId, pfmc);
+            if (pfma == null || !pfma.getResult()) {
                 String msg = "Unable to prepare for migration due to " + pfma.getDetails();
                 pfma = null;
                 throw new AgentUnavailableException(msg, dstHostId);
@@ -1894,8 +1902,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             mc.setHostGuid(dest.getHost().getGuid());
 
             try {
-                MigrateAnswer ma = (MigrateAnswer)_agentMgr.send(vm.getLastHostId(), mc);
-                if (!ma.getResult()) {
+                Answer ma = _agentMgr.send(vm.getLastHostId(), mc);
+                if (ma == null || !ma.getResult()) {
                     throw new CloudRuntimeException("Unable to migrate due to " + ma.getDetails());
                 }
             } catch (OperationTimedoutException e) {
@@ -3246,10 +3254,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         work.setResourceId(dstHostId);
         work = _workDao.persist(work);
 
-        PrepareForMigrationAnswer pfma = null;
+        Answer pfma = null;
         try {
-            pfma = (PrepareForMigrationAnswer)_agentMgr.send(dstHostId, pfmc);
-            if (!pfma.getResult()) {
+            pfma = _agentMgr.send(dstHostId, pfmc);
+            if (pfma == null || !pfma.getResult()) {
                 String msg = "Unable to prepare for migration due to " + pfma.getDetails();
                 pfma = null;
                 throw new AgentUnavailableException(msg, dstHostId);
@@ -3281,8 +3289,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             mc.setHostGuid(dest.getHost().getGuid());
 
             try {
-                MigrateAnswer ma = (MigrateAnswer)_agentMgr.send(vm.getLastHostId(), mc);
-                if (!ma.getResult()) {
+                Answer ma = _agentMgr.send(vm.getLastHostId(), mc);
+                if (ma == null || !ma.getResult()) {
                     s_logger.error("Unable to migrate due to " + ma.getDetails());
                     throw new CloudRuntimeException("Unable to migrate due to " + ma.getDetails());
                 }
