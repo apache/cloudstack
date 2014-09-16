@@ -95,6 +95,8 @@ class Services:
                                 "name": "Cent OS Template",
                                 "ostype": 'CentOS 5.3 (64-bit)',
                                 "templatefilter": 'self',
+                                "isfeatured": True,
+                                "ispublic": True,
                         },
                         "templatefilter": 'self',
                         "ostype": 'CentOS 5.3 (64-bit)',
