@@ -71,6 +71,7 @@ class CloudstackAclException():
     NO_PERMISSION_TO_OPERATE_ACCOUNT = "does not have permission to operate with resource Acct"
     UNABLE_TO_LIST_NETWORK_ACCOUNT = "Can't create/list resources for account"
     NO_PERMISSION_TO_ACCESS_ACCOUNT = "does not have permission to access resource Acct"
+    NOT_AVAILABLE_IN_DOMAIN = "not available in domain"
 
     @staticmethod
     def verifyMsginException(e,message):

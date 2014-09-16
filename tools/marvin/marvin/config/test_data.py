@@ -1215,9 +1215,17 @@ test_data = {
                     "name" : "d11b",
                     "displayname" : "d11b",
                 },
+                "vmD111" : {
+                    "name" : "d111",
+                    "displayname" : "d111",
+                },
                 "vmD111A" : {
                     "name" : "d111a",
                     "displayname" : "d111a",
+                },
+                "vmD111B" : {
+                    "name" : "d111b",
+                    "displayname" : "d111b",
                 },
                 "vmD12A" : {
                     "name" : "d12a",
