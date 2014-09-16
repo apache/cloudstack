@@ -1944,7 +1944,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
             if retriesCount == 0:
                 self.fail("Network state should change to Allocated, it is %s" % networks[0].state)
             retriesCount -= 1
-            time.sleep(6)
+            time.sleep(60)
 
         self.debug("Upgrading network offering to support PF services")
         try:
