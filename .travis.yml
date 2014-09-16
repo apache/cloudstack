@@ -24,9 +24,11 @@ jdk:
 notifications:
   email: false
 env:
-- TESTS="test_affinity_groups test_deploy_vms_with_varied_deploymentplanners test_disk_offerings test_global_settings test_guest_vlan_range test_iso test_multipleips_per_nic test_network test_non_contigiousvlan test_over_provisioning"
+- TESTS="test_affinity_groups test_deploy_vms_with_varied_deploymentplanners test_disk_offerings test_global_settings test_guest_vlan_range test_iso"
 - TESTS="test_portable_publicip test_primary_storage test_privategw_acl test_public_ip_range test_pvlan test_regions test_reset_vm_on_reboot test_resource_detail test_routers"
-- TESTS="test_secondary_storage test_service_offerings test_ssvm test_templates misc/test_deploy_vm test_vm_life_cycle test_volumes test_vpc_vpn"
+- TESTS="test_secondary_storage test_service_offerings test_ssvm test_templates"
+- TESTS="test_multipleips_per_nic test_network test_non_contigiousvlan test_over_provisioning"
+- TESTS="test_volumes test_vpc_vpn misc/test_deploy_vm test_vm_life_cycle"
 before_install: travis_wait 30 ./tools/travis/before_install.sh
 install: ./tools/travis/install.sh
 before_script: travis_wait 30 ./tools/travis/before_script.sh
