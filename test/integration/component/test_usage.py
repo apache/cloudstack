@@ -744,7 +744,9 @@ class TestTemplateUsage(cloudstackTestCase):
         self.template = Template.create(
                                 self.apiclient,
                                 self.services["templates"],
-                                self.volume.id
+                                self.volume.id,
+                                TestTemplateUsage.account.name,
+                                TestTemplateUsage.account.domainid
                                 )
         self.debug("Created template with ID: %s" % self.template.id)
         # Delete template
