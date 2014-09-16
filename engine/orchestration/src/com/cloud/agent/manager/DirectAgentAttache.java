@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.agent.api.Answer;
@@ -41,6 +41,10 @@ import com.cloud.resource.ServerResource;
 public class DirectAgentAttache extends AgentAttache {
     private final static Logger s_logger = Logger.getLogger(DirectAgentAttache.class);
 
+    protected final ConfigKey<Integer> _HostPingRetryCount = new ConfigKey<Integer>("Advanced", Integer.class, "host.ping.retry.count", "0",
+            "Number of times retrying a host ping while waiting for check results", true);
+    protected final ConfigKey<Integer> _HostPingRetryTimer = new ConfigKey<Integer>("Advanced", Integer.class, "host.ping.retry.timer", "5",
+            "Interval to wait before retrying a host ping while waiting for check results", true);
     ServerResource _resource;
     List<ScheduledFuture<?>> _futures = new ArrayList<ScheduledFuture<?>>();
     AgentManagerImpl _mgr;
@@ -162,7 +166,13 @@ public class DirectAgentAttache extends AgentAttache {
                 ServerResource resource = _resource;
 
                 if (resource != null) {
-                    PingCommand cmd = resource.getCurrentStatus(_id);
+                    PingCommand cmd = null;
+                    int retried = 0;
+                    while ( cmd == null && ++retried < _HostPingRetryCount.value())
+                    {
+                        cmd = resource.getCurrentStatus(_id);
+                        Thread.sleep(1000*_HostPingRetryTimer.value());
+                    }
                     if (cmd == null) {
                         s_logger.warn("Unable to get current status on " + _id + "(" + _name + ")");
                         return;
