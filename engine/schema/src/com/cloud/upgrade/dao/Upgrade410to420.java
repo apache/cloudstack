@@ -265,8 +265,8 @@ public class Upgrade410to420 implements DbUpgrade {
             while (clusterIt.hasNext()) {
                 clusterId = clusterIt.next();
                 keyValues = detailsMap.get(clusterId);
+                clusterDetailsInsert = conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value) VALUES (?, ?, ?)");
                 for (Pair<String, String> keyValuePair : keyValues) {
-                    clusterDetailsInsert = conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value) VALUES (?, ?, ?)");
                     key = keyValuePair.first();
                     val = keyValuePair.second();
                     clusterDetailsInsert.setLong(1, clusterId);
