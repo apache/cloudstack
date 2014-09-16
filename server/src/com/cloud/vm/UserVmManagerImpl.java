@@ -2530,6 +2530,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                 // get Virtual networks
                 List<? extends Network> virtualNetworks = _networkModel.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
+                if (virtualNetworks == null) {
+                    throw new InvalidParameterValueException("No (virtual) networks are found for account " + owner);
+                }
                 if (virtualNetworks.isEmpty()) {
                     long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                     // Validate physical network
