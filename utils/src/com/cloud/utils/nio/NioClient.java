@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.security.GeneralSecurityException;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -48,30 +49,23 @@ public class NioClient extends NioConnection {
     @Override
     protected void init() throws IOException {
         _selector = Selector.open();
-        SocketChannel sch = null;
-        InetSocketAddress addr = null;
+        Task task = null;
 
-        try {
-            sch = SocketChannel.open();
+        try (SocketChannel sch = SocketChannel.open()) {
             sch.configureBlocking(true);
             s_logger.info("Connecting to " + _host + ":" + _port);
 
             if (_bindAddress != null) {
                 s_logger.info("Binding outbound interface at " + _bindAddress);
 
-                addr = new InetSocketAddress(_bindAddress, 0);
-                sch.socket().bind(addr);
+                InetSocketAddress bindAddr = new InetSocketAddress(_bindAddress, 0);
+                sch.socket().bind(bindAddr);
             }
 
-            addr = new InetSocketAddress(_host, _port);
-            sch.connect(addr);
-        } catch (IOException e) {
-            _selector.close();
-            throw e;
-        }
+            InetSocketAddress peerAddr = new InetSocketAddress(_host, _port);
+            sch.connect(peerAddr);
 
-        SSLEngine sslEngine = null;
-        try {
+            SSLEngine sslEngine = null;
             // Begin SSL handshake in BLOCKING mode
             sch.configureBlocking(true);
 
@@ -82,15 +76,10 @@ public class NioClient extends NioConnection {
             Link.doHandshake(sch, sslEngine, true);
             s_logger.info("SSL: Handshake done");
             s_logger.info("Connected to " + _host + ":" + _port);
-        } catch (Exception e) {
-            _selector.close();
-            throw new IOException("SSL: Fail to init SSL! " + e);
-        }
 
-        Task task = null;
-        try {
+
             sch.configureBlocking(false);
-            Link link = new Link(addr, this);
+            Link link = new Link(peerAddr, this);
             link.setSSLEngine(sslEngine);
             SelectionKey key = sch.register(_selector, SelectionKey.OP_READ);
             link.setKey(key);
@@ -98,9 +87,10 @@ public class NioClient extends NioConnection {
             // Notice we've already connected due to the handshake, so let's get the
             // remaining task done
             task = _factory.create(Task.Type.CONNECT, link, null);
-        } catch (Exception e) {
+        } catch (GeneralSecurityException e) {
+            throw new IOException("Failed to initialise security", e);
+        } finally {
             _selector.close();
-            throw new IOException("Fail to init NioClient! " + e);
         }
         _executor.execute(task);
     }
