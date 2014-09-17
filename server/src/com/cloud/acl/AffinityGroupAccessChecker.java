@@ -28,9 +28,11 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 
+import com.cloud.domain.DomainVO;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value = SecurityChecker.class)
@@ -58,7 +60,12 @@ public class AffinityGroupAccessChecker extends DomainChecker {
 
             if (group.getAclType() == ACLType.Domain) {
                 if (!_affinityGroupService.isAffinityGroupAvailableInDomain(group.getId(), caller.getDomainId())) {
-                    throw new PermissionDeniedException("Affinity group is not available in domain id=" + caller.getDomainId());
+                    DomainVO callerDomain = _domainDao.findById(caller.getDomainId());
+                    if (callerDomain == null) {
+                        throw new CloudRuntimeException("cannot check permission on account " + caller.getAccountName() + " whose domain does not exist");
+                    }
+
+                    throw new PermissionDeniedException("Affinity group is not available in domain id=" + callerDomain.getUuid());
                 } else {
                     return true;
                 }

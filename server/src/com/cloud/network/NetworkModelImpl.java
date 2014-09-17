@@ -1592,8 +1592,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
         } else {
             if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
+                DomainVO ownerDomain = _domainDao.findById(owner.getDomainId());
+                if (ownerDomain == null) {
+                    throw new CloudRuntimeException("cannot check permission on account " + owner.getAccountName() + " whose domain does not exist");
+                }
                 throw new PermissionDeniedException("Shared network id=" + ((NetworkVO)network).getUuid() + " is not available in domain id=" +
-                    owner.getDomainId());
+                        ownerDomain.getUuid());
             }
         }
     }
