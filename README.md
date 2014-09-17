@@ -1,4 +1,4 @@
-# Apache CloudStack
+# Apache CloudStack [![Build Status](https://travis-ci.org/apache/cloudstack.svg?branch=master)](https://travis-ci.org/apache/cloudstack) [![Coverity Scan Build Status](https://scan.coverity.com/projects/943/badge.svg)](https://scan.coverity.com/projects/943)
 
 ![Apache CloudStack](tools/logo/apache_cloudstack.png)
 
