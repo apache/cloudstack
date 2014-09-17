@@ -708,7 +708,7 @@ test_data = {
             "url": "http://people.apache.org/~tsp/dummy.iso",
             "bootable": False,
             "ispublic": False,
-            "ostype": "CentOS 5.6 (64-bit)",
+            "ostype": "Other (64-bit)",
     },
     "iso1": {
         "displaytext": "Test ISO 1",
