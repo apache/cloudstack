@@ -95,8 +95,7 @@ public class OvsNetworkTopologyGuruImpl extends ManagerBase implements OvsNetwor
         List<? extends Network> vpcNetworks =  _vpcMgr.getVpcNetworks(vpcId);
         List<Long> vpcHostIds = new ArrayList<>();
         for (Network vpcNetwork : vpcNetworks) {
-            List<Long> networkHostIds = new ArrayList<Long>();
-            networkHostIds = getNetworkSpanedHosts(vpcNetwork.getId());
+            List<Long> networkHostIds = getNetworkSpanedHosts(vpcNetwork.getId());
             if (networkHostIds != null && !networkHostIds.isEmpty()) {
                 for (Long hostId : networkHostIds) {
                     if (!vpcHostIds.contains(hostId)) {
