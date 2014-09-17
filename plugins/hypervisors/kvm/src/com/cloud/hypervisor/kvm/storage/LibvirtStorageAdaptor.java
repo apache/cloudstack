@@ -707,7 +707,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     private KVMPhysicalDisk createPhysicalDiskOnRBD(String name, KVMStoragePool pool,
                                                PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
-        LibvirtStoragePool libvirtPool = (LibvirtStoragePool) pool;
         String volPath = null;
 
         /**
