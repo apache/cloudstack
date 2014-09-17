@@ -214,7 +214,7 @@ public class DiskOfferingVO implements DiskOffering {
     }
 
     public DiskOfferingVO(long id, String name, String displayText, Storage.ProvisioningType provisioningType, boolean mirrored, String tags, boolean recreatable,
-            boolean useLocalStorage, boolean systemUse, boolean customized, boolean customizedIops, Long domainId) {
+            boolean useLocalStorage, boolean systemUse, boolean customized, boolean customizedIops, Long domainId, Long minIops, Long maxIops) {
         this.id = id;
         type = Type.Service;
         this.name = name;
@@ -229,6 +229,8 @@ public class DiskOfferingVO implements DiskOffering {
         this.domainId = domainId;
         uuid = UUID.randomUUID().toString();
         state = State.Active;
+        this.minIops = minIops;
+        this.maxIops = maxIops;
     }
 
     @Override
