@@ -2544,7 +2544,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of deployVM process");
                     Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network",
                             null, null, null, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null, true, null);
-                    defaultNetwork = _networkDao.findById(newNetwork.getId());
+                    if (newNetwork != null) {
+                        defaultNetwork = _networkDao.findById(newNetwork.getId());
+                    }
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException("More than 1 default Isolated networks are found for account " + owner + "; please specify networkIds");
                 } else {
@@ -2554,7 +2556,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled);
             }
 
-            networkList.add(defaultNetwork);
+            if (defaultNetwork != null) {
+                networkList.add(defaultNetwork);
+            }
 
         } else {
             for (Long networkId : networkIdList) {
