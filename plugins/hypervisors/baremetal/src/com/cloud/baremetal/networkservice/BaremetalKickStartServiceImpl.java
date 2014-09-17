@@ -219,19 +219,19 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
         }
 
         List<String> tuple =  parseKickstartUrl(profile);
-        Pair<Boolean, String> ret = SshHelper.sshExecute(mgmtNic.getIp4Address(), 3922, "root", getSystemVMKeyFile(), null,
-                String.format("/usr/bin/prepare_pxe.sh %s %s %s %s %s", tuple.get(1), tuple.get(2), profile.getTemplate().getUuid(),
-                        String.format("01-%s", nic.getMacAddress().replaceAll(":", "-")), tuple.get(0))
-                );
+        String cmd =  String.format("/usr/bin/prepare_pxe.sh %s %s %s %s %s %s", tuple.get(1), tuple.get(2), profile.getTemplate().getUuid(),
+                String.format("01-%s", nic.getMacAddress().replaceAll(":", "-")).toLowerCase(), tuple.get(0), nic.getMacAddress().toLowerCase());
+        s_logger.debug(String.format("prepare pxe on virtual router[ip:%s], cmd: %s", mgmtNic.getIp4Address(), cmd));
+        Pair<Boolean, String> ret = SshHelper.sshExecute(mgmtNic.getIp4Address(), 3922, "root", getSystemVMKeyFile(), null, cmd);
         if (!ret.first()) {
             throw new CloudRuntimeException(String.format("failed preparing PXE in virtual router[id:%s], because %s", vr.getId(), ret.second()));
         }
 
         //String internalServerIp = _configDao.getValue(Config.BaremetalInternalStorageServer.key());
         String internalServerIp = "10.223.110.231";
-        ret = SshHelper.sshExecute(mgmtNic.getIp4Address(), 3922, "root", getSystemVMKeyFile(), null,
-                String.format("/usr/bin/baremetal_snat.sh %s %s", mgmtNic.getIp4Address(), internalServerIp)
-                );
+        cmd = String.format("/usr/bin/baremetal_snat.sh %s %s %s", mgmtNic.getIp4Address(), internalServerIp, mgmtNic.getGateway());
+        s_logger.debug(String.format("prepare SNAT on virtual router[ip:%s], cmd: %s", mgmtNic.getIp4Address(), cmd));
+        ret = SshHelper.sshExecute(mgmtNic.getIp4Address(), 3922, "root", getSystemVMKeyFile(), null, cmd);
         if (!ret.first()) {
             throw new CloudRuntimeException(String.format("failed preparing PXE in virtual router[id:%s], because %s", vr.getId(), ret.second()));
         }

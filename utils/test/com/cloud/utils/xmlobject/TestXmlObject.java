@@ -43,6 +43,11 @@ public class TestXmlObject {
                 }
             }
             */
+
+        XmlObject xml = new XmlObject("vlan").putElement("vlan-id", String.valueOf(19)).putElement("tagged",
+                new XmlObject("teng").putElement("name", "0/0")
+        ).putElement("shutdown", "false");
+        System.out.println(xml.toString());
     }
 
 }
