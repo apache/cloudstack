@@ -845,10 +845,13 @@ var addGuestNetworkDialog = {
             var property;
             for (property in json) {
                 var errorObj = json[property];
-                if (errorObj.errorcode == 401 && errorObj.errortext == "unable to verify user credentials and/or request signature")
+                if (errorObj.errorcode == 401 && errorObj.errortext == "unable to verify user credentials and/or request signature") {
+                    $('#container').hide();
+
                     return _l('label.session.expired');
-                else
+                } else {
                     return _s(errorObj.errortext);
+                }
             }
         } else {
             return "";
