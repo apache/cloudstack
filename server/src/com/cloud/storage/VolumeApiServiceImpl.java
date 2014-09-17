@@ -343,8 +343,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
 
                 if (diskOfferingId == null) {
-                    long defaultDiskOfferingId = _diskOfferingDao.findByUniqueName("Cloud.com-Custom").getId();
-                    volume.setDiskOfferingId(defaultDiskOfferingId);
+                    DiskOfferingVO diskOfferingVO = _diskOfferingDao.findByUniqueName("Cloud.com-Custom");
+                    if (diskOfferingVO != null) {
+                        long defaultDiskOfferingId = diskOfferingVO.getId();
+                        volume.setDiskOfferingId(defaultDiskOfferingId);
+                    }
                 } else {
                     volume.setDiskOfferingId(diskOfferingId);
                 }
