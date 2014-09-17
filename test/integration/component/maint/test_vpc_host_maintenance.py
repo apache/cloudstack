@@ -18,24 +18,13 @@
 """ Component tests VM life cycle in VPC network functionality
 """
 #Import Local Modules
+import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.cloudstackAPI import migrateSystemVm
-from marvin.lib.utils import cleanup_resources
-from marvin.lib.base import (Host,
-                             VirtualMachine,
-                             ServiceOffering,
-                             VPC,
-                             VpcOffering,
-                             Router,
-                             Network,
-                             NetworkOffering,
-                             Cluster,
-                             Account)
-from marvin.lib.common import (get_domain,
-                               get_zone,
-                               get_template,
-                               wait_for_cleanup)
+from marvin.cloudstackTestCase import *
+from marvin.cloudstackAPI import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 
 
 class Services:
@@ -66,7 +55,7 @@ class Services:
                                     "cpunumber": 1,
                                     "cpuspeed": 100,
                                     "memory": 64,
-                                    "hosttags": "hosttag1"
+                                    "tags": "HOST_TAGS_HERE"
                                     },
                          "service_offering_2": {
                                     "name": "Tiny Instance- tagged host 2",
@@ -74,7 +63,7 @@ class Services:
                                     "cpunumber": 1,
                                     "cpuspeed": 100,
                                     "memory": 64,
-                                    "hosttags": "hosttag2"
+                                    "tags": "HOST_TAGS_HERE"
                                     },
                          "network_offering": {
                                     "name": 'VPC Network offering',
@@ -214,19 +203,6 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
-        clusterWithSufficientHosts = None
-        clusters = Cluster.list(cls.api_client, zoneid=cls.zone.id)
-        for cluster in clusters:
-            cls.hosts = Host.list(cls.api_client, clusterid=cluster.id)
-            if len(cls.hosts) >= 2:
-                clusterWithSufficientHosts = cluster
-
-        if clusterWithSufficientHosts is None:
-            raise unittest.SkipTest("No Cluster with 2 hosts found")
-
-        Host.update(cls.api_client, id=cls.hosts[0].id, hosttags="hosttag1")
-        Host.update(cls.api_client, id=cls.hosts[1].id, hosttags="hosttag2")
-
         cls.service_offering_1 = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering_1"]
@@ -349,9 +325,6 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            #Delete the host tags
-            Host.update(cls.api_client, id=cls.hosts[0].id, hosttags="hosttag1")
-            Host.update(cls.api_client, id=cls.hosts[1].id, hosttags="hosttag2")
             cls.account.delete(cls.api_client)
             wait_for_cleanup(cls.api_client, ["account.cleanup.interval"])
             #Cleanup resources used
