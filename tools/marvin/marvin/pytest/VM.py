@@ -81,7 +81,7 @@ def template(test_client, zone):
 @pytest.fixture()
 def vm(test_client, account, template, tiny_service_offering, zone):
     params = {
-        "displayname": "testserver",
+        "displayname": "!#@#@fjdkjf",
         "username": "root",
         "password": "password",
         "ssh_port": 22,

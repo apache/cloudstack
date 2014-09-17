@@ -61,6 +61,7 @@ class EachScheduling:
 class LoadScheduling:
     def __init__(self, numnodes, log=None):
         self.numnodes = numnodes
+        self.nodetestmap = {}
         self.node2pending = {}
         self.node2collection = {}
         self.nodes = []
@@ -98,24 +99,8 @@ class LoadScheduling:
         self.check_schedule(node, duration=duration)
 
     def check_schedule(self, node, duration=0):
-        if self.pending:
-            # how many nodes do we have?
-            num_nodes = len(self.node2pending)
-            # if our node goes below a heuristic minimum, fill it out to
-            # heuristic maximum
-            items_per_node_min = max(
-                    2, len(self.pending) // num_nodes // 4)
-            items_per_node_max = max(
-                    2, len(self.pending) // num_nodes // 2)
-            node_pending = self.node2pending[node]
-            if len(node_pending) < items_per_node_min:
-                if duration >= 0.1 and len(node_pending) >= 2:
-                    # seems the node is doing long-running tests
-                    # and has enough items to continue
-                    # so let's rather wait with sending new items
-                    return
-                num_send = items_per_node_max - len(node_pending)
-                self._send_tests(node, num_send)
+        if self.pending or len(self.node2collection[node] > 0):
+            self._send_tests(node)
 
         self.log("num items waiting for node:", len(self.pending))
         #self.log("node2pending:", self.node2pending)
@@ -150,22 +135,28 @@ class LoadScheduling:
         if not self.collection:
             return
 
-        # how many items per node do we have about?
-        items_per_node = len(self.collection) // len(self.node2pending)
-        # take a fraction of tests for initial distribution
-        node_chunksize = max(items_per_node // 4, 2)
-        # and initialize each node with a chunk of tests
         for node in self.nodes:
-            self._send_tests(node, node_chunksize)
+            self._send_tests(node)
 
     #f = open("/tmp/sent", "w")
-    def _send_tests(self, node, num):
-        tests_per_node = self.pending[:num]
+    def _send_tests(self, node):
+        if len(self.node2collection[node]) > 0:
+            index = self.node2collection[node].pop(0)
+            print index
+            node.send_runtest_some([index])
         #print >>self.f, "sent", node, tests_per_node
-        if tests_per_node:
-            del self.pending[:num]
-            self.node2pending[node].extend(tests_per_node)
-            node.send_runtest_some(tests_per_node)
+        else:
+            index = self.pending.pop(0)
+            item = self.collection[index]
+            #how many items
+            indexs = [index]
+            for pos,name in enumerate(self.collection):
+                if name == item and pos != index:
+                    idx = self.pending.pop(0)
+                    indexs.append(idx)
+            self.node2collection[node] = indexs
+            print index
+            node.send_runtest_some([index])
 
     def _check_nodes_have_same_collection(self):
         """

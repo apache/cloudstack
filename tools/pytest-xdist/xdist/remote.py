@@ -72,9 +72,18 @@ class SlaveInteractor:
             nextitem=nextitem)
 
     def pytest_collection_finish(self, session):
+        units = []
+        for item in session.items:
+            if item.instance is None:
+                units.append(item.nodeid)
+            else:
+                instance = item.instance
+                name = instance.__module__ + ":" + instance.__class__.__name__
+                units.append(name)
+
         self.sendevent("collectionfinish",
             topdir=str(session.fspath),
-            ids=[item.nodeid for item in session.items])
+            ids=units)
 
     def pytest_runtest_logstart(self, nodeid, location):
         self.sendevent("logstart", nodeid=nodeid, location=location)
