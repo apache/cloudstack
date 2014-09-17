@@ -97,6 +97,9 @@ if [[ "${VEEWEE_ARGS}" == "" && "${TRACE}" == "1" ]]; then
 fi
 VEEWEE_BUILD_ARGS="${VEEWEE_BUILD_ARGS:-${VEEWEE_ARGS} --nogui --auto}"
 
+# any arguments to pass along to the 'bundle install' command
+BUNDLE_ARGS="${BUNDLE_ARGS:-}"
+
 # which veewee definition to use
 appliance="${1:-${appliance:-systemvmtemplate}}"
 
@@ -263,17 +266,7 @@ function create_definition() {
 }
 
 function setup_ruby() {
-  local bundle_args=
-  if [[ ! -z "${JENKINS_HOME}" ]]; then
-    # inspired by https://github.com/CloudBees-community/rubyci-clickstart/blob/master/bin/run-ci
-    # also see https://rvm.io/integration/jenkins
-    # .rvmrc won't get trusted/auto-loaded by jenkins by default
-    export VAGRANT_HOME=$HOME/.vagrant.d-release-cloudstack
-    rvm use ruby-1.9.3@vagrant-release-cloudstack --create
-    # do not use --deployment since that requires Gemfile.lock...and we prefer an up-to-date veewee
-    bundle_args="--path vendor/bundle"
-  fi
-  bundle check || bundle install ${bundle_args}
+  bundle check || bundle install ${BUNDLE_ARGS}
 }
 
 function stop_vbox() {
