@@ -66,6 +66,7 @@ class LoadScheduling:
         self.node2collection = {}
         self.nodes = []
         self.pending = []
+        self.cnt = 1
         if log is None:
             self.log = py.log.Producer("loadsched")
         else:
@@ -83,6 +84,7 @@ class LoadScheduling:
         if not self.collection_is_completed:
             return False
         for pending in self.node2pending.values():
+            self.log("pending " + str(pending))
             if len(pending) >= 2:
                 return False
         return True
@@ -95,18 +97,16 @@ class LoadScheduling:
             self.collection_is_completed = True
 
     def remove_item(self, node, item_index, duration=0):
+        self.log("remove item" + str(item_index))
         self.node2pending[node].remove(item_index)
         self.check_schedule(node, duration=duration)
 
     def check_schedule(self, node, duration=0):
-        if self.pending or len(self.node2collection[node] > 0):
-            self._send_tests(node)
-
-        self.log("num items waiting for node:", len(self.pending))
-        #self.log("node2pending:", self.node2pending)
+        self._send_tests(node)
 
     def remove_node(self, node):
         self.nodes.remove(node)
+        self.log("remove node, pop up")
         pending = self.node2pending.pop(node)
         if not pending:
             return
@@ -140,23 +140,22 @@ class LoadScheduling:
 
     #f = open("/tmp/sent", "w")
     def _send_tests(self, node):
-        if len(self.node2collection[node]) > 0:
-            index = self.node2collection[node].pop(0)
-            print index
-            node.send_runtest_some([index])
-        #print >>self.f, "sent", node, tests_per_node
-        else:
-            index = self.pending.pop(0)
-            item = self.collection[index]
-            #how many items
-            indexs = [index]
-            for pos,name in enumerate(self.collection):
-                if name == item and pos != index:
-                    idx = self.pending.pop(0)
-                    indexs.append(idx)
-            self.node2collection[node] = indexs
-            print index
-            node.send_runtest_some([index])
+        if self.pending:
+            indexs = []
+            while (len(indexs) + len(self.node2pending[node])) < 2 and len(self.pending) > 0:
+                index = self.pending.pop(0)
+                indexs.append(index)
+                item = self.collection[index]
+                for pos,i in enumerate(self.collection):
+                    if len(self.pending) == 0:
+                        break
+                    elif pos != index and item == i:
+                        pos = self.pending.pop(0)
+                        indexs.append(pos)
+
+            if indexs:
+                self.node2pending[node].extend(indexs)
+                node.send_runtest_some(indexs)
 
     def _check_nodes_have_same_collection(self):
         """
@@ -211,8 +210,8 @@ class DSession:
     def __init__(self, config):
         self.config = config
         self.log = py.log.Producer("dsession")
-        if not config.option.debug:
-            py.log.setconsumer(self.log._keywords, None)
+        #if not config.option.debug:
+        #    py.log.setconsumer(self.log._keywords, None)
         self.shuttingdown = False
         self.countfailures = 0
         self.maxfail = config.getvalue("maxfail")
@@ -293,6 +292,7 @@ class DSession:
             node.shutdown()
 
     def slave_slavefinished(self, node):
+        self.log("slave finished")
         self.config.hook.pytest_testnodedown(node=node, error=None)
         if node.slaveoutput['exitstatus'] == 2: # keyboard-interrupt
             self.shouldstop = "%s received keyboard-interrupt" % (node,)

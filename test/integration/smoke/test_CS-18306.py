@@ -23,16 +23,30 @@ def test_01_create_disk_offering(vm):
     assert vm is not None
 '''
 
-class TestA:
+import time
+
+class TestP:
     def test_a(self):
         assert True == True
-
     def test_b(self):
         assert True == True
-
+    def test_aaa(self):
+        assert True == True
 
 def test_aa():
     assert True == True
 
 def test_bb():
+    assert True == True
+
+class TestA:
+    def test_aaa(self):
+        assert True == True
+    def test_bbb(self):
+        assert True == True
+    def test_ccc(self):
+        assert True == True
+
+
+def test_cc():
     assert True == True

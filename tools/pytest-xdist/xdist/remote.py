@@ -13,8 +13,8 @@ class SlaveInteractor:
         self.config = config
         self.slaveid = config.slaveinput.get('slaveid', "?")
         self.log = py.log.Producer("slave-%s" % self.slaveid)
-        if not config.option.debug:
-            py.log.setconsumer(self.log._keywords, None)
+        #if not config.option.debug:
+        #    py.log.setconsumer(self.log._keywords, None)
         self.channel = channel
         config.pluginmanager.register(self)
 

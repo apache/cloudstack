@@ -65,6 +65,8 @@ def pytest_runtest_setup(item):
 @pytest.fixture(scope="session", autouse=True)
 def marvin_init_session():
     result = getMarvin()
+    logger = result.getLogger()
+    logger.debug("in session")
     if result is None:
         pytest.fail("failed to init marvin plugin")
 
@@ -82,6 +84,9 @@ def marvin_init_function(request):
     if request.cls is not None:
         return
     marvinObj = getMarvin()
+    logger = marvinObj.getLogger()
+    #logger.debug("in function")
+
     setattr(request.node, "testClient", marvinObj.getTestClient())
 
     marvinObj.getTestClient().identifier = request.node.name
