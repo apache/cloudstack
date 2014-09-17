@@ -1421,7 +1421,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     public List<? extends Vpc> getVpcsForAccount(long accountId) {
-        return _vpcDao.listByAccountId(accountId);
+        List<Vpc> vpcs = new ArrayList<Vpc>();
+        vpcs.addAll(_vpcDao.listByAccountId(accountId));
+        return vpcs;
     }
 
     public boolean cleanupVpcResources(long vpcId, Account caller, long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
