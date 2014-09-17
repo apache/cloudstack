@@ -403,6 +403,15 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                             s_logger.debug("The last host of this VM is UP and has enough capacity");
                             s_logger.debug("Now checking for suitable pools under zone: " + host.getDataCenterId()
                                     + ", pod: " + host.getPodId() + ", cluster: " + host.getClusterId());
+
+                            Pod pod = _podDao.findById(host.getPodId());
+                            Cluster cluster = _clusterDao.findById(host.getClusterId());
+                            if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+                                DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<Volume, StoragePool>());
+                                s_logger.debug("Returning Deployment Destination: " + dest);
+                                return dest;
+                            }
+
                             // search for storage under the zone, pod, cluster
                             // of
                             // the last host.
@@ -422,8 +431,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                                         suitableHosts, suitableVolumeStoragePools, avoids,
                                         getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes);
                                 if (potentialResources != null) {
-                                    Pod pod = _podDao.findById(host.getPodId());
-                                    Cluster cluster = _clusterDao.findById(host.getClusterId());
                                     Map<Volume, StoragePool> storageVolMap = potentialResources.second();
                                     // remove the reused vol<->pool from
                                     // destination, since we don't have to
