@@ -937,12 +937,15 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         response.setTimeout(session.getMaxInactiveInterval());
 
         final String user_UUID = (String)session.getAttribute("user_UUID");
-        session.removeAttribute("user_UUID");
         response.setUserId(user_UUID);
 
         final String domain_UUID = (String)session.getAttribute("domain_UUID");
-        session.removeAttribute("domain_UUID");
         response.setDomainId(domain_UUID);
+
+        synchronized (session) {
+            session.removeAttribute("user_UUID");
+            session.removeAttribute("domain_UUID");
+        }
 
         final Enumeration attrNames = session.getAttributeNames();
         if (attrNames != null) {
