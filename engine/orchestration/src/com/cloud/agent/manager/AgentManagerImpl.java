@@ -191,12 +191,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected final ConfigKey<Float> DirectAgentThreadCap = new ConfigKey<Float>("Advanced", Float.class, "direct.agent.thread.cap", "1",
             "Percentage (as a value between 0 and 1) of direct.agent.pool.size to be used as upper thread cap for a single direct agent to process requests", false);
     protected final ConfigKey<Boolean> CheckTxnBeforeSending = new ConfigKey<Boolean>(
-        "Developer",
-        Boolean.class,
-        "check.txn.before.sending.agent.commands",
-        "false",
-        "This parameter allows developers to enable a check to see if a transaction wraps commands that are sent to the resource.  This is not to be enabled on production systems.",
-        true);
+            "Developer",
+            Boolean.class,
+            "check.txn.before.sending.agent.commands",
+            "false",
+            "This parameter allows developers to enable a check to see if a transaction wraps commands that are sent to the resource.  This is not to be enabled on production systems.",
+            true);
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -405,8 +405,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (CheckTxnBeforeSending.value()) {
             if (!noDbTxn()) {
                 throw new CloudRuntimeException("We do not allow transactions to be wrapped around commands sent to be executed on remote agents.  "
-                                                + "We cannot predict how long it takes a command to complete.  "
-                                                + "The transaction may be rolled back because the connection took too long.");
+                        + "We cannot predict how long it takes a command to complete.  "
+                        + "The transaction may be rolled back because the connection took too long.");
             }
         } else {
             assert noDbTxn() : "I know, I know.  Why are we so strict as to not allow txn across an agent call?  ...  Why are we so cruel ... Why are we such a dictator .... Too bad... Sorry...but NO AGENT COMMANDS WRAPPED WITHIN DB TRANSACTIONS!";
@@ -707,12 +707,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     protected AgentAttache createAttacheForDirectConnect(Host host, ServerResource resource) throws ConnectionException {
-//        if (resource instanceof DummySecondaryStorageResource || resource instanceof KvmDummyResourceBase) {
-//            return new DummyAttache(this, host.getId(), false);
-//        }
-
         s_logger.debug("create DirectAgentAttache for " + host.getId());
-        DirectAgentAttache attache = new DirectAgentAttache(this, host.getId(), host.getName(), resource, host.isInMaintenanceStates(), this);
+        DirectAgentAttache attache = new DirectAgentAttache(this, host.getId(), host.getName(), resource, host.isInMaintenanceStates());
 
         AgentAttache old = null;
         synchronized (_agents) {
@@ -1166,7 +1162,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
             if (s_logger.isDebugEnabled()) {
                 if (cmd instanceof PingRoutingCommand) {
-                    final PingRoutingCommand ping = (PingRoutingCommand)cmd;
                     logD = false;
                     s_logger.debug("Ping from " + hostId);
                     s_logger.trace("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request);

@@ -47,16 +47,14 @@ public class DirectAgentAttache extends AgentAttache {
             "Interval to wait before retrying a host ping while waiting for check results", true);
     ServerResource _resource;
     List<ScheduledFuture<?>> _futures = new ArrayList<ScheduledFuture<?>>();
-    AgentManagerImpl _mgr;
     long _seq = 0;
     LinkedList<Task> tasks = new LinkedList<Task>();
     AtomicInteger _outstandingTaskCount;
     AtomicInteger _outstandingCronTaskCount;
 
-    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String name, ServerResource resource, boolean maintenance, AgentManagerImpl mgr) {
+    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String name, ServerResource resource, boolean maintenance) {
         super(agentMgr, id, name, maintenance);
         _resource = resource;
-        _mgr = mgr;
         _outstandingTaskCount = new AtomicInteger(0);
         _outstandingCronTaskCount = new AtomicInteger(0);
     }
@@ -186,7 +184,7 @@ public class DirectAgentAttache extends AgentAttache {
                         s_logger.trace("SeqA " + _id + "-" + seq + ": " + new Request(_id, -1, cmd, false).toString());
                     }
 
-                    _mgr.handleCommands(DirectAgentAttache.this, seq, new Command[] {cmd});
+                    _agentMgr.handleCommands(DirectAgentAttache.this, seq, new Command[] {cmd});
                 } else {
                     s_logger.debug("Unable to send ping because agent is disconnected " + _id + "(" + _name + ")");
                 }
