@@ -329,8 +329,6 @@ public class ParamProcessWorker implements DispatchWorker {
                     field.set(cmdObj, listParam);
                     break;
                 case UUID:
-                    if (paramObj.toString().isEmpty())
-                        break;
                     final Long internalId = translateUuidToInternalId(paramObj.toString(), annotation);
                     field.set(cmdObj, internalId);
                     break;
