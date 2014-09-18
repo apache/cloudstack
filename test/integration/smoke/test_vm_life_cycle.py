@@ -359,17 +359,9 @@ class TestVMLifeCycle(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @pytest.mark.tags(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true", BugId="CLOUDSTACK-6984")
-    def test_vm_life_cycle(self):
-        self.stop_vm()
-        self.start_vm()
-        self.reboot_vm()
-        self.destroy_vm()
-        self.restore_vm()
-        self.migrate_vm()
-        self.attachAndDetach_iso()
 
-    def stop_vm(self):
+    @pytest.mark.tags(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_stop_vm(self):
         """Test Stop Virtual Machine
         """
 
@@ -382,8 +374,8 @@ class TestVMLifeCycle(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop VM: %s" % e)
         return
-
-    def start_vm(self):
+    @pytest.mark.tags(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_start_vm(self):
         """Test Start Virtual Machine
         """
         # Validate the following
@@ -419,7 +411,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                             "Check virtual machine is in running state"
                         )
         return
-
+    @pytest.mark.tags(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def reboot_vm(self):
         """Test Reboot Virtual Machine
         """
@@ -455,8 +447,8 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-
-    def destroy_vm(self):
+    @pytest.mark.tags(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_destroy_vm(self):
         """Test destroy Virtual Machine
         """
 
@@ -490,8 +482,8 @@ class TestVMLifeCycle(cloudstackTestCase):
                             "Check virtual machine is in destroyed state"
                         )
         return
-
-    def restore_vm(self):
+    @pytest.mark.tags(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_restore_vm(self):
         #TODO: SIMENH: add another test the data on the restored VM.
         """Test recover Virtual Machine
         """
@@ -530,8 +522,8 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
 
         return
-
-    def migrate_vm(self):
+    @pytest.mark.tags(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_migrate_vm(self):
         """Test migrate VM
         """
         # Validate the following
@@ -652,8 +644,8 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         self.assertEqual(list_vm_response,None,"Check Expunged virtual machine is in listVirtualMachines response")
         return
-
-    def attachAndDetach_iso(self):
+    @pytest.mark.tags(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    def test_attachAndDetach_iso(self):
         """Test for attach and detach ISO to virtual machine"""
 
         # Validate the following
