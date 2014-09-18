@@ -300,7 +300,9 @@ public class KVMStoragePoolManager {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         _haMonitor.removeStoragePool(uuid);
         adaptor.deleteStoragePool(uuid);
-        _storagePools.remove(uuid);
+        synchronized (_storagePools) {
+            _storagePools.remove(uuid);
+        }
         return true;
     }
 
