@@ -359,7 +359,7 @@ class TestVMLifeCycle(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @pytest.mark.tags(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false", BugId="CLOUDSTACK-6984")
+    @pytest.mark.tags(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true", BugId="CLOUDSTACK-6984")
     def test_vm_life_cycle(self):
         self.stop_vm()
         self.start_vm()

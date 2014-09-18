@@ -1,6 +1,6 @@
 __author__ = 'edison'
 import os
-from marvin.marvinPlugin import MarvinInit
+from marvin.marvinInit import MarvinInit
 from marvin.codes import FAILED
 
 def getMarvin():

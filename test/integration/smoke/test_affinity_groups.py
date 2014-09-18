@@ -23,7 +23,6 @@ from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
 from marvin.sshClient import SshClient
-from nose.plugins.attrib import attr
 import pytest
 
 class TestDeployVmWithAffinityGroup(cloudstackTestCase):
