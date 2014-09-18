@@ -1,0 +1,57 @@
+! Licensed to the Apache Software Foundation (ASF) under one
+! or more contributor license agreements.  See the NOTICE file
+! distributed with this work for additional information
+! regarding copyright ownership.  The ASF licenses this file
+! to you under the Apache License, Version 2.0 (the
+! "License"); you may not use this file except in compliance
+! with the License.  You may obtain a copy of the License at
+!
+!   http://www.apache.org/licenses/LICENSE-2.0
+!
+! Unless required by applicable law or agreed to in writing,
+! software distributed under the License is distributed on an
+! "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+! KIND, either express or implied.  See the License for the
+! specific language governing permissions and limitations
+! under the License.
+
+global_defs {
+   router_id [ROUTER_ID]
+}
+
+vrrp_script check_bumpup {
+    script "[RROUTER_BIN_PATH]/check_bumpup.sh"
+    interval 5
+    weight [DELTA]
+}
+
+vrrp_script heartbeat {
+    script "[RROUTER_BIN_PATH]/heartbeat.sh"
+    interval 10
+}
+
+vrrp_instance inside_network {
+    state BACKUP
+    interface eth0
+    virtual_router_id 51
+    priority [PRIORITY]
+
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass WORD
+    }
+
+    virtual_ipaddress {
+        [ROUTER_IP] brd [BOARDCAST] dev eth0
+    }
+
+    track_script {
+        check_bumpup
+        heartbeat
+    }
+
+    notify_master "[RROUTER_BIN_PATH]/master.sh"
+    notify_backup "[RROUTER_BIN_PATH]/backup.sh"
+    notify_fault "[RROUTER_BIN_PATH]/fault.sh"
+}

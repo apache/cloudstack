@@ -1,0 +1,60 @@
+#!/bin/bash
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+source /root/func.sh
+
+lock="biglock"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
+
+echo To master called >> [RROUTER_LOG]
+[RROUTER_BIN_PATH]/enable_pubip.sh >> [RROUTER_LOG] 2>&1
+ret=$?
+if [ $ret -eq 0 ]
+then
+    [RROUTER_BIN_PATH]/services.sh restart >> [RROUTER_LOG] 2>&1
+    ret=$?
+fi
+last_msg=`tail -n 1 [RROUTER_LOG]`
+echo Enable public ip returned $ret >> [RROUTER_LOG]
+if [ $ret -ne 0 ]
+then
+    echo Fail to enable public ip! >> [RROUTER_LOG]
+    [RROUTER_BIN_PATH]/disable_pubip.sh >> [RROUTER_LOG] 2>&1
+    [RROUTER_BIN_PATH]/services.sh stop >> [RROUTER_LOG] 2>&1
+    service keepalived stop >> [RROUTER_LOG] 2>&1
+    service conntrackd stop >> [RROUTER_LOG] 2>&1
+    echo Status: FAULT \($last_msg\) >> [RROUTER_LOG]
+    releaseLockFile $lock $locked
+    exit
+fi
+[RROUTER_BIN_PATH]/primary-backup.sh primary >> [RROUTER_LOG] 2>&1
+ret=$?
+echo Switch conntrackd mode primary returned $ret >> [RROUTER_LOG]
+if [ $ret -ne 0 ]
+then
+    echo Fail to switch conntrackd mode, but try to continue working >> [RROUTER_LOG]
+fi
+[RROUTER_BIN_PATH]/arping_gateways.sh
+echo Status: MASTER >> [RROUTER_LOG]
+
+releaseLockFile $lock $locked
+exit 0

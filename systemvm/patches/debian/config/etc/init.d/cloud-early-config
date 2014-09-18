@@ -869,6 +869,7 @@ setup_redundant_router() {
     sed -i "s/\[ETH2MASK\]/$ETH2_MASK/g" $rrouter_bin_path/enable_pubip.sh
     sed -i "s/\[GATEWAY\]/$GW/g" $rrouter_bin_path/enable_pubip.sh
     sed -i "s/\[GATEWAY\]/$GW/g" $rrouter_bin_path/master.sh
+
     sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/master.sh
     sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/backup.sh
     sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/fault.sh

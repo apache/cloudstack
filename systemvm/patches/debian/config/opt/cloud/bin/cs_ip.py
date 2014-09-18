@@ -29,6 +29,7 @@ def merge(dbag, ip):
     if ip['add']:
        ipo = IPNetwork(ip['public_ip'] + '/' + ip['netmask'])
        ip['device'] = 'eth' + str(ip['nic_dev_id'])
+       ip['broadcast'] = str(ipo.broadcast)
        ip['cidr'] = str(ipo.ip) + '/' + str(ipo.prefixlen)
        ip['network'] = str(ipo.network) + '/' + str(ipo.prefixlen)
        if 'nw_type' not in ip.keys():

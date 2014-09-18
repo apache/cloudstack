@@ -1,0 +1,50 @@
+#!/bin/bash
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+ip link|grep BROADCAST|grep -v eth0|grep -v eth1|cut -d ":" -f 2 > /tmp/iflist
+ip addr show eth2 | grep "inet" 2>&1 > /dev/null
+is_init=$?
+
+set -e
+
+while read i
+do
+    # if eth2'ip has already been configured, we would use ifconfig rather than ifdown/ifup
+    if [ "$i" == "eth2" -a "$is_init" != "0" ]
+    then
+        ifdown $i
+        ifup $i
+    else
+        ifconfig $i down
+        ifconfig $i up
+    fi
+done < /tmp/iflist
+ip route add default via [GATEWAY] dev eth2
+
+while read line
+do
+dev=$(echo $line | awk '{print $1'})
+gw=$(echo $line | awk '{print $2'})
+
+if [ "$dev" == "eth2" ]
+then
+    continue;
+fi
+ip route add default via $gw table Table_$dev proto static
+
+done < /var/cache/cloud/ifaceGwIp
