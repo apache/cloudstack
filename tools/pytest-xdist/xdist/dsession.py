@@ -209,8 +209,8 @@ class DSession:
     def __init__(self, config):
         self.config = config
         self.log = py.log.Producer("dsession")
-        #if not config.option.debug:
-        #    py.log.setconsumer(self.log._keywords, None)
+        if not config.option.debug:
+            py.log.setconsumer(self.log._keywords, None)
         self.shuttingdown = False
         self.countfailures = 0
         self.maxfail = config.getvalue("maxfail")
