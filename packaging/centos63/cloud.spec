@@ -206,12 +206,23 @@ touch build/gitrev.txt
 echo $(git rev-parse HEAD) > build/gitrev.txt
 
 if [ "%{_ossnoss}" == "NOREDIST" -o "%{_ossnoss}" == "noredist" ] ; then
-   echo "Executing mvn packaging with non-redistributable libraries ..."
-   mvn -Pawsapi,systemvm -Dnoredist clean package
+   echo "Executing mvn packaging with non-redistributable libraries"
+   if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
+      echo "Executing mvn noredist packaging with simulator ..."
+      mvn -Pawsapi,systemvm -Dnoredist -Dsimulator clean package 
+   else
+      echo "Executing mvn noredist packaging without simulator..."
+      mvn -Pawsapi,systemvm -Dnoredist clean package
+   fi
 else
-   echo "Executing mvn packaging ..."
-   mvn -Pawsapi,systemvm clean package
-fi
+   if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
+      echo "Executing mvn default packaging simulator ..."
+      mvn -Pawsapi,systemvm -Dsimulator clean package 
+   else
+      echo "Executing mvn default packaging without simulator ..."
+      mvn -Pawsapi,systemvm clean package
+   fi
+fi 
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}

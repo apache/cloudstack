@@ -25,6 +25,7 @@ function usage() {
     echo "-p|--pack noredist|NOREDIST   To package with non-redistributable libraries"
     echo "-o default|DEFAULT            To build in default Operating System mode"
     echo "-o rhel7|RHEL7                To build for rhel7"
+    echo "-s simulator|SIMULATOR        To build for Simulator"
     echo ""
     echo "Examples: ./package.sh -p|--pack oss|OSS"
     echo "          ./package.sh -p|--pack noredist|NOREDIST"
@@ -43,6 +44,10 @@ function packaging() {
     if [ -n "$2" ] ; then
         DEFOSSNOSS="-D_ossnoss $2"
         echo "$DEFOSSNOSS"
+    fi
+    if [ -n "$3" ] ; then
+        DEFSIM="-D_sim $3"
+        echo "$DEFSIM"
     fi
 
     VERSION=`(cd ../../; mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep --color=none '^[0-9]\.'`
@@ -90,7 +95,7 @@ if [ $# -lt 1 ] ; then
     packaging "default"
 elif [ $# -gt 0 ] ; then
     SHORTOPTS="hp:o:"
-    LONGOPTS="help,pack:,operating-system:"
+    LONGOPTS="help,pack:,operating-system:,simulator:"
     ARGS=$(getopt -s bash -u -a --options $SHORTOPTS  --longoptions $LONGOPTS --name $0 -- "$@")
     eval set -- "$ARGS"
     echo "$ARGS"
@@ -127,6 +132,19 @@ elif [ $# -gt 0 ] ; then
             fi
             shift
             ;;
+        -s | --simulator)
+            sim=$2
+            echo "$sim"
+            if [ "$sim" == "default" -o "$sim" == "DEFAULT" ] ; then
+                sim = "false"
+            elif [ "$sim" == "simulator" -o "$sim" == "SIMULATOR" ] ; then
+                sim="simulator"
+            else
+                echo "Error: Incorrect value provided in package.sh script for -o, Please see help ./package.sh --help|-h for more details."
+		exit 1
+            fi
+            shift
+            ;;
         -)
             echo "Unrecognized option..."
             usage
@@ -142,8 +160,8 @@ elif [ $# -gt 0 ] ; then
         echo "Setting os to default"
         os="default"
     fi
-    echo "Passed OS = $os and packageval = $packageval"
-    packaging $os $packageval
+    echo "Passed OS = $os, packageval = $packageval and Simulator build = $sim"
+    packaging $os $packageval $sim
 else
     echo "Incorrect choice.  Nothing to do." >&2
     echo "Please, execute ./package.sh --help for more help"
