@@ -48,7 +48,7 @@ public class SynchronousListener implements Listener {
         return _peer;
     }
 
-    public Answer[] getAnswers() {
+    public synchronized Answer[] getAnswers() {
         return _answers;
     }
 
