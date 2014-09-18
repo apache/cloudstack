@@ -10,6 +10,38 @@ import shutil
 from netaddr import *
 from pprint import pprint
 
+def is_mounted(name):
+    for i in execute("mount"):
+        vals = i.lstrip().split()
+        if vals[0] == "tmpfs" and vals[2] == name:
+            return True
+    return False
+
+def mount_tmpfs(name):
+    if not is_mounted(name):
+        print "Mounting it"
+        execute("mount tmpfs %s -t tmpfs" % name)
+
+def umount_tmpfs(name):
+    if is_mounted(name):
+        execute("umount %s" % name)
+
+def rm(name):
+    os.remove(name) if os.path.isfile(name) else None
+
+def rmdir(name):
+    if name:
+        shutil.rmtree(name, True)
+
+def mkdir(name, mode, fatal):
+    try:
+        os.makedirs(name, mode)
+    except OSError as e:
+        if e.errno != 17:
+            print "failed to make directories " + name + " due to :" +e.strerror
+            if(fatal):
+                sys.exit(1)
+
 def updatefile(filename, val, mode):
     """ add val to file """
     handle = open(filename, 'r')
@@ -102,6 +134,7 @@ def execute2(command):
     """ Execute command """
     logging.debug("Executing %s" % command)
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    p.wait()
     return p
 
 def service(name, op):

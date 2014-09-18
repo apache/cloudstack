@@ -227,13 +227,16 @@ class UpdateConfigTestCase(SystemVMTestCase):
                    "domain_name":"devcloud.local",
                    "type":"guestnetwork"
                    }
+        config['add'] = False
+        # Clear up from any failed test runs
+        self.update_config(config)
+        config['add'] = True
         self.guest_network(config)
         passw = { "172.16.1.20" : "20",
                   "172.16.1.21" : "21",
                   "172.16.1.22" : "22"
                   }
         self.check_password(passw)
-        #self.check_acl(self.basic_acl)
 
         passw = { "172.16.1.20" : "120",
                   "172.16.1.21" : "121",
@@ -318,14 +321,41 @@ class UpdateConfigTestCase(SystemVMTestCase):
         assert file.has_line("/var/cache/cloud/passwords", "%s=%s" % (ip, password))
 
     def guest_network(self,config):
+        vpn_config = {
+            "local_public_ip": config['router_guest_ip'],
+            "local_guest_cidr":"%s/%s" % (config['router_guest_gateway'], config['cidr']),
+            "local_public_gateway":"172.16.1.1",
+            "peer_gateway_ip":"10.200.200.1",
+            "peer_guest_cidr_list":"10.0.0.0/24",
+            "esp_policy":"3des-md5",
+            "ike_policy":"3des-md5",
+            "ipsec_psk":"vpnblabla",
+            "ike_lifetime":86400,
+            "esp_lifetime":3600,
+            "create":True,
+            "dpd":False,
+            "passive":False,
+            "type":"site2sitevpn"
+        }
+        octets = config['router_guest_ip'].split('.')
+        configs = []
+
+        # This should fail because the network does not yet exist
+        self.update_config(vpn_config)
+        assert not file.exists("/etc/ipsec.d/ipsec.vpn-%s.conf" % vpn_config['peer_gateway_ip'])
+
         self.update_config(config)
+        self.update_config(vpn_config)
         assert ip.has_ip("%s/%s" % (config['router_guest_ip'], config['cidr']), config['device'])
         assert process.is_up("apache2"), "Apache2 should be running after adding a guest network"
         assert process.is_up("dnsmasq"), "Dnsmasq should be running after adding a guest network"
+
+        assert file.exists("/etc/ipsec.d/ipsec.vpn-%s.conf" % vpn_config['peer_gateway_ip'])
+        assert file.mode_is("/etc/ipsec.d/ipsec.vpn-%s.secrets" % vpn_config['peer_gateway_ip'], "400")
+        result = run("/usr/sbin/ipsec setup status", timeout=600, warn_only=True)
+        assert result.succeeded, 'ipsec returned non zero status %s' % config['router_guest_ip']
 		# Add a host to the dhcp server
 		# This must happen in order for dnsmasq to be listening
-        octets = config['router_guest_ip'].split('.')
-        configs = []
         for n in range(3,13):
             ipb = ".".join(octets[0:3])
             ipa = "%s.%s" % (ipb, n)
@@ -351,6 +381,8 @@ class UpdateConfigTestCase(SystemVMTestCase):
         for o in configs:
             line = "%s,%s,%s,infinite" % (o['mac_address'], o['ipv4_adress'], o['host_name'])
             assert file.has_line("/etc/dhcphosts.txt", line) is False
+        # If the network gets deleted so should the vpn
+        assert not file.exists("/etc/ipsec.d/ipsec.vpn-%s.conf" % vpn_config['peer_gateway_ip'])
 
 if __name__ == '__main__':
     unittest.main()

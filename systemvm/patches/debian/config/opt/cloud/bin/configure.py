@@ -31,57 +31,10 @@ import CsHelper
 from CsNetfilter import CsNetfilters
 from fcntl import flock, LOCK_EX, LOCK_UN
 from CsDhcp import CsDhcp
+from CsRedundant import *
+from CsFile import CsFile
 
 fw = []
-
-class CsFile:
-    """ File editors """
-
-    def __init__(self, filename):
-        self.filename = filename
-        self.changed  = False
-        self.load()
-
-    def load(self):
-        self.new_config = []
-        try:
-            for line in open(self.filename):
-                self.new_config.append(line)
-        except IOError:
-            logging.debug("File %s does not exist" % self.filename)
-            return
-        else:
-            logging.debug("Reading file %s" % self.filename)
-
-    def is_changed(self):
-        return self.changed
-
-    def commit(self):
-        if not self.changed:
-            return
-        handle = open(self.filename, "w+")
-        for line in self.new_config:
-            handle.write(line)
-        handle.close()
-        logging.info("Wrote edited file %s" % self.filename)
-
-    def add(self, string):
-        self.search(string, string)
-
-    def search(self, search, replace):
-        found   = False
-        logging.debug("Searching for %s and replacing with %s" % (search, replace))
-        for index, line in enumerate(self.new_config):
-            if line.lstrip().startswith("#"):
-                continue
-            if re.search(search, line):
-                found = True
-                if not replace in line:
-                    self.changed = True
-                    self.new_config[index] = replace + "\n"
-        if not found:
-           self.new_config.append(replace + "\n")
-           self.changed = True
 
 class CsRule:
     """ Manage iprules
@@ -675,13 +628,7 @@ class CsVmMetadata(CsDataBag):
         htaccessFolder = "/var/www/html/latest"
         htaccessFile = htaccessFolder + "/.htaccess"
 
-        try:
-            os.mkdir(htaccessFolder,0755)
-        except OSError as e:
-            # error 17 is already exists, we do it this way for concurrency
-            if e.errno != 17:
-                print "failed to make directories " + htaccessFolder + " due to :" +e.strerror
-                sys.exit(1)
+        CsHelper.mkdir(htaccessFolder, 0755, True)
 
         if os.path.exists(htaccessFile):
             fh = open(htaccessFile, "r+a")
@@ -757,6 +704,32 @@ class CsAddress(CsDataBag):
             ip = CsIP(dev)
             ip.compare(self.dbag)
 
+    def get_ips(self):
+        ret = []
+        for dev in self.dbag:
+            if dev == "id":
+                continue
+            for ip in self.dbag[dev]:
+                ret.append(CsInterface(ip))
+        return ret
+
+    def needs_vrrp(self,o):
+        """
+        Returns if the ip needs to be managed by keepalived or not
+        """
+        if "nw_type" in o and o['nw_type'] in [ 'guest' ]:
+            return True
+        return False
+
+    def get_control_if(self):
+        """
+        Return the address object that has the control interface
+        """
+        for ip in self.get_ips():
+            if ip.is_control():
+                return ip
+        return None
+
     def process(self):
         for dev in self.dbag:
             if dev == "id":
@@ -805,6 +778,45 @@ class CsAddress(CsDataBag):
             fw.append(["mangle", "", "-A VPN_STATS_%s -o %s -m mark --set-xmark 0x525/0xffffffff" % (dev, dev)])
             fw.append(["mangle", "", "-A VPN_STATS_%s -i %s -m mark --set-xmark 0x524/0xffffffff" % (dev, dev)])
 
+class CsInterface:
+    """ Hold one single ip """
+    def __init__(self, o):
+        self.address = o
+
+    def get_ip(self):
+        return self.get_attr("public_ip")
+
+    def get_device(self):
+        return self.get_attr("device")
+
+    def get_cidr(self):
+        return self.get_attr("cidr")
+
+    def get_broadcast(self):
+        return self.get_attr("broadcast")
+
+    def get_attr(self, attr):
+        if attr in self.address:
+            return self.address[attr]
+        else:
+            return "ERROR"
+
+    def needs_vrrp(self):
+        """
+        Returns if the ip needs to be managed by keepalived or not
+        """
+        if "nw_type" in self.address and self.address['nw_type'] in [ 'guest' ]:
+            return True
+        return False
+
+    def is_control(self):
+        if "nw_type" in self.address and self.address['nw_type'] in [ 'control' ]:
+            return True
+        return False
+
+    def to_str(self):
+        pprint(self.address)
+
 class CsSite2SiteVpn(CsDataBag):
     """
     Setup any configured vpns (using swan)
@@ -818,7 +830,7 @@ class CsSite2SiteVpn(CsDataBag):
         self.confips = []
         # collect a list of configured vpns
         for file in os.listdir(self.VPNCONFDIR):
-            m = re.search("ipsec.vpn-(.*).conf", file)
+            m = re.search("^ipsec.vpn-(.*).conf", file)
             if m:
                 self.confips.append(m.group(1))
 
@@ -867,36 +879,42 @@ class CsSite2SiteVpn(CsDataBag):
         if rightpeer in self.confips:
             self.confips.remove(rightpeer)
         file = CsFile(vpnconffile)
-        file.add("conn vpn-%s" % rightpeer)
-        file.add(" left=%s" % leftpeer)
-        file.add(" leftsubnet=%s" % obj['local_guest_cidr'])
-        file.add(" leftnexthop=%s" % obj['local_public_gateway'])
-        file.add(" right=%s" % rightpeer)
-        file.add(" rightsubnets=%s" % peerlist)
-        file.add(" type=tunnel")
-        file.add(" authby=secret")
-        file.add(" keyexchange=ike")
-        file.add(" ike=%s" % obj['ike_policy'])
-        file.add(" ikelifetime=%s" % obj['ike_lifetime'])
-        file.add(" esp=%s" % obj['esp_lifetime'])
-        file.add(" salifetime=%s" % obj['esp_lifetime'])
-        file.add(" pfs=%s" % CsHelper.bool_to_yn(obj['dpd']))
-        file.add(" keyingtries=2")
-        file.add(" auto=add")
+        file.search("conn ", "conn vpn-%s" % rightpeer)
+        file.addeq(" left=%s" % leftpeer)
+        file.addeq(" leftsubnet=%s" % obj['local_guest_cidr'])
+        file.addeq(" leftnexthop=%s" % obj['local_public_gateway'])
+        file.addeq(" right=%s" % rightpeer)
+        file.addeq(" rightsubnets=%s" % peerlist)
+        file.addeq(" type=tunnel")
+        file.addeq(" authby=secret")
+        file.addeq(" keyexchange=ike")
+        file.addeq(" ike=%s" % obj['ike_policy'])
+        file.addeq(" ikelifetime=%s" % self.convert_sec_to_h(obj['ike_lifetime']))
+        file.addeq(" esp=%s" % self.convert_sec_to_h(obj['esp_lifetime']))
+        file.addeq(" salifetime=%s" % self.convert_sec_to_h(obj['esp_lifetime']))
+        file.addeq(" pfs=%s" % CsHelper.bool_to_yn(obj['dpd']))
+        file.addeq(" keyingtries=2")
+        file.addeq(" auto=add")
         if obj['dpd']:
-            file.add("  dpddelay=30")
-            file.add("  dpdtimeout=120")
-            file.add("  dpdaction=restart")
+            file.addeq("  dpddelay=30")
+            file.addeq("  dpdtimeout=120")
+            file.addeq("  dpdaction=restart")
         file.commit()
         secret = CsFile(vpnsecretsfile)
-        secret.add("%s %s: PSK \"%s\"" % (leftpeer, rightpeer, obj['ipsec_psk']))
+        secret.search("%s " % leftpeer, "%s %s: PSK \"%s\"" % (leftpeer, rightpeer, obj['ipsec_psk']))
         secret.commit()
         if secret.is_changed() or file.is_changed():
-            logging.info("Configured vpn %s %s", leftpeer, rightpeeer)
+            logging.info("Configured vpn %s %s", leftpeer, rightpeer)
             CsHelper.execute("ipsec auto --rereadall")
             CsHelper.execute("ipsec --add vpn-%s" % rightpeer)
             if not obj['passive']:
                 CsHelper.execute("ipsec --up vpn-%s" % rightpeer)
+        os.chmod(vpnsecretsfile, 0o400)
+
+    def convert_sec_to_h(self, val):
+        hrs = int(val) / 3600
+        return "%sh" % hrs
+
                 
 class CsForwardingRules(CsDataBag):
     def __init__(self, key):
@@ -979,6 +997,10 @@ def main(argv):
 
     vpns = CsSite2SiteVpn("site2sitevpn")
     vpns.process()
+
+    red = CsRedundant()
+# Move to init and make a single call?
+    red.set(cl, address)
 
     nf = CsNetfilters()
     nf.compare(fw)
