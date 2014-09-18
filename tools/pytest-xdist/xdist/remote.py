@@ -74,13 +74,15 @@ class SlaveInteractor:
     def pytest_collection_finish(self, session):
         units = []
         for item in session.items:
-            if item.instance is None:
+            if item.instance is None and item.cls is None:
                 units.append(item.nodeid)
-            else:
+            elif item.instance is not None:
                 instance = item.instance
                 name = instance.__module__ + ":" + instance.__class__.__name__
                 units.append(name)
-
+            else:
+                name = str(item.cls)
+                units.append(name)
         self.sendevent("collectionfinish",
             topdir=str(session.fspath),
             ids=units)

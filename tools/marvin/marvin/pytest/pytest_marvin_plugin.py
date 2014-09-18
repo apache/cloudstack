@@ -26,6 +26,21 @@ def pytest_configure(config):
 
     marvin_init_tags()
 
+def pytest_collection_finish(session):
+    units = []
+    for item in session.items:
+        if item.instance is None and item.cls is None:
+            units.append(item.nodeid)
+        elif item.instance is not None:
+            instance = item.instance
+            name = instance.__module__ + ":" + instance.__class__.__name__
+            units.append(name)
+        else:
+            name = item.cls
+            units.append(name)
+
+    print units
+
 g_marvin_filter = {
     "tags":[],
 }

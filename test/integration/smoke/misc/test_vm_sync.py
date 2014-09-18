@@ -33,7 +33,7 @@ from marvin.lib.utils import cleanup_resources
 #common - commonly used methods for all tests are listed here
 from marvin.lib.common import get_zone, get_domain, get_template
 
-from nose.plugins.attrib import attr
+import pytest
 
 class TestDeployVMSync(cloudstackTestCase):
     """Test VM Sync
@@ -122,7 +122,7 @@ class TestDeployVMSync(cloudstackTestCase):
             self.mock_ping
         ]
 
-    @attr(tags = ['advanced'], required_hardware="simulator only")
+    @pytest.mark.tags(tags = ['advanced'], required_hardware="simulator only")
     def test_vm_sync(self):
         """Test VM Sync
 

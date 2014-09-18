@@ -7,7 +7,7 @@ def pytest_addoption(parser):
            action="store_true", dest="looponfail", default=False,
            help="run tests in subprocess, wait for modified files "
                 "and re-run failing test set until all pass.")
-    group._addoption('-n', dest="numprocesses", metavar="numprocesses",
+    group._addoption('-n', dest="numprocesses", metavar="numprocesses", default=2,
            action="store", type="int",
            help="shortcut for '--dist=load --tx=NUM*popen'")
     group.addoption('--boxed',

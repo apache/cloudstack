@@ -44,8 +44,3 @@ def initTestClass(cls, idenifier):
         cls.clstestclient = marvinObj.getTestClient()
 
     marvinObj.getTestClient().identifier = idenifier
-    if hasattr(cls, "user"):
-        # when the class-level attr applied. all test runs as 'user'
-        cls.testClient.getUserApiClient(cls.UserName,
-                                           cls.DomainName,
-                                           cls.AcctType)

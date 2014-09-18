@@ -34,7 +34,7 @@ from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.common import get_zone, get_domain, get_template
 from marvin.codes import PASS
 
-from nose.plugins.attrib import attr
+import pytest
 
 class TestDeployVMHA(cloudstackTestCase):
     """Test VM HA
@@ -148,7 +148,7 @@ class TestDeployVMHA(cloudstackTestCase):
         ]
         self.cleanup = self.cleanup + self.mock_checkonhost_list
 
-    @attr(tags = ['advanced'], required_hardware="simulator only")
+    @pytest.mark.tags(tags = ['advanced'], required_hardware="simulator only")
     def test_vm_ha(self):
         """Test VM HA
 

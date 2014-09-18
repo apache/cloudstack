@@ -84,7 +84,8 @@ class LoadScheduling:
         if not self.collection_is_completed:
             return False
         for pending in self.node2pending.values():
-            self.log("pending " + str(pending))
+            for p in pending:
+                self.log("pending item: " + self.collection[p])
             if len(pending) >= 2:
                 return False
         return True
@@ -97,7 +98,6 @@ class LoadScheduling:
             self.collection_is_completed = True
 
     def remove_item(self, node, item_index, duration=0):
-        self.log("remove item" + str(item_index))
         self.node2pending[node].remove(item_index)
         self.check_schedule(node, duration=duration)
 
@@ -106,7 +106,6 @@ class LoadScheduling:
 
     def remove_node(self, node):
         self.nodes.remove(node)
-        self.log("remove node, pop up")
         pending = self.node2pending.pop(node)
         if not pending:
             return
