@@ -57,7 +57,7 @@ public class SynchronousListener implements Listener {
         return false;
     }
 
-    public boolean isDisconnected() {
+    public synchronized boolean isDisconnected() {
         return _disconnected;
     }
 
