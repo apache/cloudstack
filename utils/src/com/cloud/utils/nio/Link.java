@@ -92,7 +92,9 @@ public class Link {
     }
 
     public void setKey(SelectionKey key) {
-        _key = key;
+        synchronized (this) {
+            _key = key;
+        }
     }
 
     public void setSSLEngine(SSLEngine sslEngine) {
