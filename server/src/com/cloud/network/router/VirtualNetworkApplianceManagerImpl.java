@@ -2323,7 +2323,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
             }
         }
 
-        if (Boolean.valueOf(_configDao.getValue("baremetal.provision.done.notification"))) {
+        if (Boolean.valueOf(_configDao.getValue(Config.BaremetalProvisionDoneNotificationEnabled.key()))) {
             QueryBuilder<UserVO> acntq = QueryBuilder.create(UserVO.class);
             acntq.and(acntq.entity().getUsername(), SearchCriteria.Op.EQ, "baremetal-system-account");
             UserVO user = acntq.find();
@@ -2332,6 +2332,8 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
             } else {
                 buf.append(String.format(" baremetalnotificationsecuritykey=%s", user.getSecretKey()));
                 buf.append(String.format(" baremetalnotificationapikey=%s", user.getApiKey()));
+                buf.append(" host=").append(ApiServiceConfiguration.ManagementHostIPAdr.value());
+                buf.append(" port=").append(_configDao.getValue(Config.BaremetalProvisionDoneNotificationPort.key()));
             }
         }
 

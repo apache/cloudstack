@@ -1849,22 +1849,6 @@ public enum Config {
             "The maximum number of retrying times to search for an available IPv6 address in the table",
             null),
 
-    BaremetalEnableCompleteNotification(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "baremetal.provision.done.notification",
-            "false",
-            "Enable provision done notification through virtual router",
-            null),
-    BaremetalPeerHypervisorType(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "baremetal.peer.hypervisor.type",
-            "Vmware",
-            "Hypervisor[Xenserver/KVM/VMWare] used to spring up virtual router for baremetal instances. The cluster having this hypervisor type must be in the same zone with baremetal cluster",
-            null),
     BaremetalInternalStorageServer(
             "Advanced",
             ManagementServer.class,
@@ -1872,6 +1856,30 @@ public enum Config {
             "baremetal.internal.storage.server.ip",
             null,
             "the ip address of server that stores kickstart file, kernel, initrd, ISO for advanced networking baremetal provisioning",
+            null),
+    BaremetalProvisionDoneNotificationEnabled(
+            "Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "baremetal.provision.done.notification.enabled",
+            "true",
+            "whether to enable baremetal provison done notification",
+            null),
+    BaremetalProvisionDoneNotificationTimeout(
+            "Advanced",
+            ManagementServer.class,
+            Integer.class,
+            "baremetal.provision.done.notification.timeout",
+            "1800",
+            "the max time to wait before treating a baremetal provision as failure if no provision done notification is not received, in secs",
+            null),
+    BaremetalProvisionDoneNotificationPort(
+            "Advanced",
+            ManagementServer.class,
+            Integer.class,
+            "baremetal.provision.done.notification.port",
+            "8080",
+            "the port that listens baremetal provision done notification. Should be the same to port management server listening on for now. Please change it to management server port if it's not default 8080",
             null),
     ExternalBaremetalSystemUrl(
             "Advanced",
