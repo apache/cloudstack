@@ -40,6 +40,12 @@ class CsCmdLine(CsDataBag):
             return self.dbag['config']['redundant'] == "true"
         return False
 
+    def get_name(self):
+        if "name" in self.dbag['config']:
+            return self.dbag['config']['name']
+        else:
+            return "unloved-router"
+
     def get_type(self):
         if "type" in self.dbag['config']:
             return self.dbag['config']['type']
