@@ -1209,3 +1209,141 @@ class TestDeployVmWithCustomDisk(cloudstackTestCase):
         except Exception as e:
             self.fail("Create volume failed with exception: %s" % e)
         return
+
+class TestMigrateVolume(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(TestMigrateVolume, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
+        cls.disk_offering = DiskOffering.create(
+            cls.api_client,
+            cls.services["disk_offering"]
+        )
+        template = get_template(
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
+        cls.services["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = template.id
+        cls.services["virtual_machine"]["diskofferingid"] = cls.disk_offering.id
+
+        # Create VMs, VMs etc
+        cls.account = Account.create(
+            cls.api_client,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
+        cls.small_offering = ServiceOffering.create(
+            cls.api_client,
+            cls.services["service_offering"]
+        )
+        cls.virtual_machine = VirtualMachine.create(
+            cls.api_client,
+            cls.services["virtual_machine"],
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.small_offering.id,
+            mode=cls.services["mode"]
+        )
+        cls._cleanup = [
+                        cls.small_offering,
+                        cls.account
+                       ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        cleanup_resources(self.apiclient, self.cleanup)
+        return
+
+    @attr(tags=["advanced","sg","advancedsg"], required_hardware='true')
+    def test_01_migrateVolume(self):
+        """
+        @Desc:Volume is not retaining same uuid when migrating from one storage to another.
+        Step1:Create a volume/data disk
+        Step2:Verify UUID of the volume
+        Step3:Migrate the volume to another primary storage within the cluster
+        Step4:Migrating volume to new primary storage should succeed
+        Step5:volume UUID should not change even after migration
+        """
+        vol = Volume.create(
+            self.apiclient,
+            self.services["volume"],
+            diskofferingid=self.disk_offering.id,
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            )
+        self.assertIsNotNone(vol,"Failed to create volume")
+        vol_res = Volume.list(
+            self.apiclient,
+            id=vol.id
+        )
+        self.assertEqual(validateList(vol_res)[0],PASS,"Invalid response returned for list volumes")
+        vol_uuid=vol_res[0].id
+        try:
+            self.virtual_machine.attach_volume(
+                self.apiclient,
+                vol
+            )
+        except Exception as e:
+            self.fail("Attaching data disk to vm failed with error %s" % e)
+        pools = StoragePool.listForMigration(
+            self.apiclient,
+            id=vol.id
+        )
+        if not pools:
+            self.skipTest("No suitable storage pools found for volume migration. Skipping")
+        self.assertEqual(validateList(pools)[0],PASS,"invalid pool response from findStoragePoolsForMigration")
+        pool=pools[0]
+        self.debug("Migrating Volume-ID: %s to Pool: %s" % (vol.id,pool.id))
+        try:
+            Volume.migrate(
+                self.apiclient,
+                volumeid=vol.id,
+                storageid=pool.id,
+                livemigrate='true'
+            )
+        except Exception as e:
+            self.fail("Volume migration failed with error %s" % e)
+        migrated_vols = Volume.list(
+            self.apiclient,
+            virtualmachineid=self.virtual_machine.id,
+            listall='true',
+            type='DATADISK'
+        )
+        self.assertEqual(validateList(migrated_vols)[0],PASS,"invalid volumes response after migration")
+        migrated_vol_uuid=migrated_vols[0].id
+        self.assertEqual(
+            vol_uuid,
+            migrated_vol_uuid,
+            "Volume is not retaining same uuid when migrating from one storage to another"
+        )
+        self.virtual_machine.detach_volume(
+            self.apiclient,
+            vol
+        )
+        self.cleanup.append(vol)
+        return
