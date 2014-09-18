@@ -380,7 +380,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     private static void tagCommand(Command cmd) {
-        AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrentExecutionContext();
+        AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrent();
         if (context != null && context.getJob() != null) {
             AsyncJob job = context.getJob();
 
