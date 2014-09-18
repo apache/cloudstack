@@ -19,9 +19,11 @@ under the License.
 
 # Setting up Tools and Environment
 
-    - Install VirtualBox 4.2 or latest
-    - Tool for exporting appliances: qemu-img, vboxmanage, vhd-util
+    - Install latest VirtualBox (at least 4.2)
+    - Install tools for exporting appliances: qemu-img, vboxmanage, vhd-util
     - Install [RVM](https://rvm.io/rvm/install)
+    - Install shar
+          yum install sharutils
     - Setup paths:
           export PATH=~/.rvm/bin:$PATH
     - Install Ruby 1.9.3, if it installed some other version:
