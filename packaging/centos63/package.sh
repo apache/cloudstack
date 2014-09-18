@@ -76,8 +76,14 @@ function packaging() {
 
     (cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "${DEFVER}" "${DEFREL}" ${DEFPRE+"${DEFPRE}"} ${DEFOSSNOSS+"$DEFOSSNOSS"} "${DOS}" -bb SPECS/cloud.spec)
 
-    echo "Done"
+    if [ $? -ne 0 ]; then
+        echo "RPM Build Failed "
+        exit 1
+    else
+        echo "RPM Build Done"
+    fi
     exit
+
 }
 
 if [ $# -lt 1 ] ; then
