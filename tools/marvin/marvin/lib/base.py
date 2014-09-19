@@ -2571,6 +2571,13 @@ class StoragePool:
             cmd.listall = True
         return(apiclient.findStoragePoolsForMigration(cmd))
 
+    @classmethod
+    def update(cls,apiclient, **kwargs):
+        """Update storage pool"""
+        cmd=updateStoragePool.updateStoragePoolCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateStoragePool(cmd)
+
 class Network:
     """Manage Network pools"""
 
