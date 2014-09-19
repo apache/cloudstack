@@ -40,6 +40,7 @@
     <module>api/rate-limit</module>
     <module>api/solidfire-intg-test</module>
     <module>api/discovery</module>
+    <module>api/thrift</module>
     <module>acl/static-role-based</module>
     <module>affinity-group-processors/host-anti-affinity</module>
     <module>affinity-group-processors/explicit-dedication</module>
