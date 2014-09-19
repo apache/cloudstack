@@ -79,13 +79,25 @@ public class VhdProcessor extends AdapterBase implements Processor {
         byte[] creatorApp = new byte[4];
         try {
             strm = new FileInputStream(vhdFile);
-            strm.skip(info.size - vhdFooterSize + vhdFooterCreatorAppOffset);
-            strm.read(creatorApp);
-            strm.skip(vhdFooterCurrentSizeOffset - vhdFooterCreatorVerOffset);
-            strm.read(currentSize);
-        } catch (Exception e) {
+            long skipped = strm.skip(info.size - vhdFooterSize + vhdFooterCreatorAppOffset);
+            if (skipped == -1) {
+                throw new InternalErrorException("Unexpected end-of-file");
+            }
+            long read = strm.read(creatorApp);
+            if (read == -1) {
+                throw new InternalErrorException("Unexpected end-of-file");
+            }
+            skipped = strm.skip(vhdFooterCurrentSizeOffset - vhdFooterCreatorVerOffset);
+            if (skipped == -1) {
+                throw new InternalErrorException("Unexpected end-of-file");
+            }
+            read = strm.read(currentSize);
+            if (read == -1) {
+                throw new InternalErrorException("Unexpected end-of-file");
+            }
+        } catch (IOException e) {
             s_logger.warn("Unable to read vhd file " + vhdPath, e);
-            throw new InternalErrorException("Unable to read vhd file " + vhdPath + ": " + e);
+            throw new InternalErrorException("Unable to read vhd file " + vhdPath + ": " + e, e);
         } finally {
             if (strm != null) {
                 try {
