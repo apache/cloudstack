@@ -1549,7 +1549,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (vol.getType() == Volume.Type.ISO)
                     continue;
 
-                VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol);
+                VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
                 controllerKey = getDiskController(matchingExistingDisk, vol, vmSpec, ideControllerKey, scsiControllerKey);
 
                 if (!hasSnapshot) {
@@ -1682,7 +1682,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             Map<String, String> iqnToPath = new HashMap<String, String>();
 
-            postDiskConfigBeforeStart(vmMo, vmSpec, sortedDisks, ideControllerKey, scsiControllerKey, iqnToPath);
+            postDiskConfigBeforeStart(vmMo, vmSpec, sortedDisks, ideControllerKey, scsiControllerKey, iqnToPath, hyperHost, context);
 
             //
             // Power-on VM
@@ -1996,10 +1996,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private VirtualMachineDiskInfo getMatchingExistingDisk(VirtualMachineDiskInfoBuilder diskInfoBuilder, DiskTO vol) {
+    private VirtualMachineDiskInfo getMatchingExistingDisk(VirtualMachineDiskInfoBuilder diskInfoBuilder, DiskTO vol,
+            VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception {
         if (diskInfoBuilder != null) {
             VolumeObjectTO volume = (VolumeObjectTO)vol.getData();
-            String dsName = volume.getDataStore().getUuid().replace("-", "");
+
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, volume.getDataStore().getUuid());
+            DatastoreMO dsMo = new DatastoreMO(context, morDs);
+            String dsName = dsMo.getName();
 
             Map<String, String> details = vol.getDetails();
             boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
@@ -2079,7 +2083,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private void postDiskConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, DiskTO[] sortedDisks, int ideControllerKey,
-            int scsiControllerKey, Map<String, String> iqnToPath) throws Exception {
+            int scsiControllerKey, Map<String, String> iqnToPath, VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception {
         VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
 
         for (DiskTO vol : sortedDisks) {
@@ -2088,7 +2092,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
 
-            VirtualMachineDiskInfo diskInfo = getMatchingExistingDisk(diskInfoBuilder, vol);
+            VirtualMachineDiskInfo diskInfo = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
             assert (diskInfo != null);
 
             String[] diskChain = diskInfo.getDiskChain();
