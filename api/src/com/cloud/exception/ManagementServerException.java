@@ -30,4 +30,8 @@ public class ManagementServerException extends CloudException {
         super(message);
     }
 
+    public ManagementServerException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }
