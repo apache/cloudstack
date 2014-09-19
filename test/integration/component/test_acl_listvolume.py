@@ -374,7 +374,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## Domain Admin - Test cases  with listall =true 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_listall_true(self):
 	"""
 	# Test listing of Volumes by passing listall="true" parameter as domain admin
@@ -407,7 +407,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_listall_true_rec_true(self):
 	"""
 	# Test listing of Volumes by passing listall="true"i and isrecusriv="true" parameter as domain admin
@@ -440,7 +440,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_listall_true_rec_false(self):
 	"""
 	# Test listing of Volumes by passing listall="true" and isrecusriv="false" parameter as domain admin
@@ -475,7 +475,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## Domain Admin - Test cases  with listall=false
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_listall_false(self):
 	"""
 	# Test listing of Volumes by passing listall="false" parameter as domain admin
@@ -500,7 +500,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_listall_false_rec_true(self):
 	"""
 	# Test listing of Volumes by passing listall="false" and isrecusrive="true" parameter as domain admin
@@ -525,7 +525,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_listall_false_rec_false(self):
 	"""
 	# Test listing of Volumes by passing listall="false" and isrecusrive="false" parameter as domain admin
@@ -551,7 +551,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## Domain Admin - Test cases  without passing listall paramter 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin(self):
 	"""
 	# Test listing of Volumes by passing no parameter as domain admin
@@ -576,7 +576,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_rec_true(self):
 	"""
 	# Test listing of Volumes by passing isrecusrive="true" parameter as domain admin
@@ -601,7 +601,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_true_rec_false(self):
 	"""
 	# Test listing of Volumes by passing isrecusrive="false" parameter as domain admin
@@ -628,7 +628,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## Domain Admin - Test cases when domainId is passed with listall =true 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_listall_true(self):
 	"""
 	# Test listing of Volumes by passing domainId and listall="true" parameter as domain admin
@@ -655,7 +655,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_listall_true_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainId ,listall="true" and isrecursive="true" parameter as domain admin
@@ -683,7 +683,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_listall_true_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainId ,listall="true" and isrecursive="false" parameter as domain admin
@@ -713,7 +713,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## Domain Admin - Test cases  when domainId is passed with listall=false
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_listall_false(self):
 	# Test listing of Volumes by passing domainId ,listall="false" parameter as domain admin
 	# Validate that it returns all the Volumes in the domain passed
@@ -738,7 +738,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_listall_false_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainId ,listall="false" and isrecursive="true" parameter as domain admin
@@ -766,7 +766,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_listall_false_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainId ,listall="false" and isrecursive="false" parameter as domain admin
@@ -796,7 +796,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## Domain Admin - Test cases  when domainId is passed with no listall parameter
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid(self):
 	"""
 	# Test listing of Volumes by passing domainId parameter as domain admin
@@ -822,7 +822,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainId and isrecursive="true" parameter as domain admin
@@ -850,7 +850,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainId and isrecursive="false" parameter as domain admin
@@ -880,7 +880,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## Domain Admin - Test cases  when account and domainId is passed with listall =true 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_accountid_listall_true(self):
 	"""
 	# Test listing of Volumes by passing account ,domainId and listall="true" parameter as domain admin
@@ -905,7 +905,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_accountid_listall_true_rec_true(self):
 	"""
 	# Test listing of Volumes by passing account ,domainId and listall="true" and isrecursive="true" parameter as domain admin
@@ -930,7 +930,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_accountid_listall_true_rec_false(self):
 	"""
 	# Test listing of Volumes by passing account ,domainId , listall="true" and isrecursive="false" parameter as domain admin
@@ -958,7 +958,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## Domain Admin - Test cases  when account and domainId is passed with listall=false
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_accountid_listall_false(self):
 	"""
 	# Test listing of Volumes by passing account ,domainId and listall="false" parameter as domain admin
@@ -983,7 +983,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_accountid_listall_false_rec_true(self):
 	"""
 	# Test listing of Volumes by passing account ,domainId and listall="false" and isrecursive="true" parameter as domain admin
@@ -1008,7 +1008,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_accountid_listall_false_rec_false(self):
 	"""
 	# Test listing of Volumes by passing account ,domainId , listall="false" and isrecursive="false" parameter as domain admin
@@ -1035,7 +1035,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## Domain Admin - Test cases  when account and domainId is passed with listall not passed
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_accountid(self):
 	"""
 	# Test listing of Volumes by passing account ,domainId parameter as domain admin
@@ -1059,7 +1059,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_accountid_rec_true(self):
 	"""
 	# Test listing of Volumes by passing account ,domainId and isrecursive="true" parameter as domain admin
@@ -1084,7 +1084,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_accountid_rec_false(self):
 	"""
 	# Test listing of Volumes by passing account ,domainId and isrecursive="false" parameter as domain admin
@@ -1111,7 +1111,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## ROOT Admin - Test cases  with listall =true 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_listall_true(self):
 	"""
 	# Test listing of Volumes by passing listall="true" parameter as admin
@@ -1147,7 +1147,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_listall_true_rec_true(self):
 	"""
 	# Test listing of Volumes by passing listall="true" and isrecusrive="true" parameter as admin
@@ -1183,7 +1183,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_listall_true_rec_false(self):
 	"""
 	# Test listing of Volumes by passing listall="true" and isrecusrive="false" parameter as admin
@@ -1220,7 +1220,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## ROOT Admin - Test cases  with listall=false
  
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_listall_false(self):
 	"""
 	# Test listing of Volumes by passing listall="false" parameter as admin
@@ -1245,7 +1245,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_listall_false_rec_true(self):
 	"""
 	# Test listing of Volumes by passing listall="false" and isrecusrive="true" parameter as admin
@@ -1271,7 +1271,7 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_listall_false_rec_false(self):
 	"""
 	# Test listing of Volumes by passing listall="false" and isrecusrive="false" parameter as admin
@@ -1300,7 +1300,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## ROOT Admin - Test cases  without passing listall paramter 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin(self):
 	"""
 	# Test listing of Volumes by passing no parameter as admin
@@ -1326,7 +1326,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_rec_true(self):
 	"""
 	# Test listing of Volumes by passing isrecusrive="true" parameter as admin
@@ -1351,7 +1351,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_rec_false(self):
 	"""
 	# Test listing of Volumes by passing isrecusrive="false" parameter as admin
@@ -1378,7 +1378,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## ROOT Admin - Test cases when domainId is passed with listall =true 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_listall_true(self):
 	"""
 	# Test listing of Volumes by passing domainid and listall="true" parameter as admin
@@ -1405,7 +1405,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_listall_true_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid , listall="true" and isrecusrive="true" parameter as admin
@@ -1433,7 +1433,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_listall_true_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid, listall="true" and isrecusrive="false" parameter as admin
@@ -1463,7 +1463,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## ROOT Admin - Test cases  when domainId is passed with listall=false
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_listall_false(self):
 	"""
 	# Test listing of Volumes by passing domainid, listall="false" parameter as admin
@@ -1490,7 +1490,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_listall_false_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid, listall="false" and isrecusrive="true" parameter as admin
@@ -1518,7 +1518,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_listall_false_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid, listall="false" and isrecusrive="false" parameter as admin
@@ -1548,7 +1548,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## ROOT Admin - Test cases  when domainId is passed with no listall parameter
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid(self):
 	"""
 	# Test listing of Volumes by passing domainid parameter as admin
@@ -1575,7 +1575,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid and isrecusrive="true" parameter as admin
@@ -1603,7 +1603,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid and isrecusrive="false" parameter as admin
@@ -1633,7 +1633,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## ROOT Admin - Test cases  when account and domainId is passed with listall =true 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_accountid_listall_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,account ,listall = "true" parameter as admin
@@ -1658,7 +1658,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_accountid_listall_true_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,account ,listall = "true" and isrecusrive="true" parameter as admin
@@ -1683,7 +1683,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_accountid_listall_true_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,account ,listall = "true" and isrecusrive="false" parameter as admin
@@ -1711,7 +1711,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## ROOT Admin - Test cases  when account and domainId is passed with listall=false
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_accountid_listall_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,account ,listall = "false" parameter as admin
@@ -1736,7 +1736,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_accountid_listall_false_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,account ,listall = "false" and isrecusrive="false" parameter as admin
@@ -1761,7 +1761,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_accountid_listall_false_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,account ,listall = "false" and isrecusrive="false" parameter as admin
@@ -1789,7 +1789,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## ROOT Admin - Test cases  when account and domainId is passed with listall not passed
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_accountid(self):
 	"""
 	# Test listing of Volumes by passing domainid,account parameter as admin
@@ -1814,7 +1814,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_accountid_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,account and isrecusrive="true" parameter as admin
@@ -1839,7 +1839,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_accountid_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,account and isrecusrive="false" parameter as admin
@@ -1867,7 +1867,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## Regular User - Test cases  with listall =true 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_listall_true(self):
 	"""
 	# Test listing of Volumes by passing listall="true"  parameter as regular user
@@ -1892,7 +1892,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_listall_true_rec_true(self):
 	"""
 	# Test listing of Volumes by passing listall="true" and isrecusrive="true" parameter as regular user
@@ -1917,7 +1917,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_listall_true_rec_false(self):
 	"""
 	# Test listing of Volumes by passing listall="true" and isrecusrive="false" parameter as regular user
@@ -1944,7 +1944,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ##  Regular User  - Test cases  with listall=false
  
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_listall_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,account,listall="false" parameter as regular user
@@ -1969,7 +1969,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_listall_false_rec_true(self):
 	"""
 	# Test listing of Volumes by passing listall="false" and isrecusrive="true" parameter as regular user
@@ -1995,7 +1995,7 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_listall_false_rec_false(self):
 	"""
 	# Test listing of Volumes by passing listall="false" and isrecusrive="false" parameter as regular user
@@ -2024,7 +2024,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ##  Regular User  - Test cases  without passing listall paramter 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser(self):
 	"""
 	# Test listing of Volumes by passing no parameter as regular user
@@ -2050,7 +2050,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_rec_true(self):
 	"""
 	# Test listing of Volumes by passing isrecusrive="true" parameter as regular user
@@ -2075,7 +2075,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_rec_false(self):
 	"""
 	# Test listing of Volumes by passing isrecusrive="false" parameter as regular user
@@ -2102,7 +2102,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ##  Regular User  - Test cases when domainId is passed with listall =true 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_listall_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,listall="true" parameter as regular user
@@ -2127,7 +2127,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_listall_true_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,listall="true" and isrecusrive="true" parameter as regular user
@@ -2152,7 +2152,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_listall_true_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,listall="true" and isrecusrive="false" parameter as regular user
@@ -2180,7 +2180,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ##  Regular User  - Test cases  when domainId is passed with listall=false
  
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_listall_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,listall="false" parameter as regular user
@@ -2206,7 +2206,7 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_listall_false_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,listall="false" and isrecusrive="true" parameter as regular user
@@ -2233,7 +2233,7 @@ class TestVolumeList(cloudstackTestCase):
 
 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_listall_false_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,listall="false" and isrecusrive="false" parameter as regular user
@@ -2261,7 +2261,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ##  Regular User  - Test cases  when domainId is passed with no listall parameter
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid(self):
 	"""
 	# Test listing of Volumes by passing domainid parameter as regular user
@@ -2287,7 +2287,7 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_true_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid and isrecusrive="true" parameter as regular user
@@ -2314,7 +2314,7 @@ class TestVolumeList(cloudstackTestCase):
 
 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid__rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,isrecusrive="false" parameter as regular user
@@ -2342,7 +2342,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ##  Regular User  - Test cases  when account and domainId is passed with listall =true 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_accountid_listall_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,account,listall="true" parameter as regular user
@@ -2367,7 +2367,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_accountid_listall_true_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,account,listall="true" and isrecusrive="true" parameter as regular user
@@ -2392,7 +2392,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_accountid_listall_true_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,account,listall="true" and isrecusrive="false" parameter as regular user
@@ -2420,7 +2420,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ##  Regular User - Test cases  when account and domainId is passed with listall=false
  
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_accountid_listall_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,account,listall="false" parameter as regular user
@@ -2446,7 +2446,7 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_accountid_listall_false_rec_true(self):
 	# Test listing of Volumes by passing domainid,account,listall="false" and isrecusrive="true" parameter as regular user
 	# Validate that it returns all the Volumes of the account the user belongs to 
@@ -2469,7 +2469,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_accountid_listall_false_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,account,listall="false" and isrecusrive="false" parameter as regular user
@@ -2497,7 +2497,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ##  Regular User  - Test cases  when account and domainId is passed with listall not passed
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_accountid(self):
 	"""
 	# Test listing of Volumes by passing domainid,account parameter as regular user
@@ -2523,7 +2523,7 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_accountid_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,account and isrecusrive="true" parameter as regular user
@@ -2549,7 +2549,7 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_accountid_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,account isrecusrive="false" parameter as regular user
@@ -2576,7 +2576,7 @@ class TestVolumeList(cloudstackTestCase):
 
 ## Cross Domain access check
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_cross_domainid_accountid(self):
 	"""
 	# Regular User should not be allowed to list Volumes of other accounts in the same domain
@@ -2590,7 +2590,7 @@ class TestVolumeList(cloudstackTestCase):
 	except Exception as e:
 		self.debug ("List as Regular User passing domainId and accountId of another account %s" %e)
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_cross_domainid(self):
 	"""
 	# Regular User should not be allowed to list Volumes of other accounts in other domains
@@ -2605,7 +2605,7 @@ class TestVolumeList(cloudstackTestCase):
 		self.debug ("List as Regular User passing domainId of a domain that user does not belong to %s" %e)
 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_cross_domainid_accountid(self):
 	"""
 	# Domain admin should not be allowed to list Volumes of accounts in other domains
@@ -2620,7 +2620,7 @@ class TestVolumeList(cloudstackTestCase):
 		self.debug ("List as domain admin passing domainId and accountId of another account %s" %e)
 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_cross_domainid(self):
 	"""
 	# Domain admin should not be allowed to list Volumes from other domains
@@ -2636,7 +2636,7 @@ class TestVolumeList(cloudstackTestCase):
 
 
 ## List test cases relating to filter - id
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_by_id_as_domainadmin_owns(self):
 	"""
 	# Domain admin should be able to list Volumes that he owns by passing uuid in "id" parameter
@@ -2654,7 +2654,7 @@ class TestVolumeList(cloudstackTestCase):
                          1,
                         "Domain Admin is not able to list Volumes that belongs to him")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_by_id_as_domainadmin_ownedbyusersindomain(self):
 	"""
 	# Domain admin should be able to list Volumes that is  owned by any account in his domain by passing uuid in "id" parameter
@@ -2672,7 +2672,7 @@ class TestVolumeList(cloudstackTestCase):
                          1,
                         "Domain Admin is not able to list Volumes from his domain")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_by_id_as_domainadmin_ownedbyusersinsubdomain(self):
 	"""
 	# Domain admin should be able to list Volumes that is  owned by any account in his sub-domain by passing uuid in "id" parameter
@@ -2690,7 +2690,7 @@ class TestVolumeList(cloudstackTestCase):
                          1,
                         "Domain Admin is not able to list Volumes from his sub domain")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_by_id_as_domainadmin_ownedbyusersnotindomain(self):
 	"""
 	# Domain admin should not be able to list Volumes that is owned by account that is not in his domain by passing uuid in "id" parameter
@@ -2704,7 +2704,7 @@ class TestVolumeList(cloudstackTestCase):
                          None,
                         "Domain Admin is able to list Volumes from  other domains!!!")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_by_id_as_domainadmin_ownedbyusersinsubdomain2(self):
 	"""
 	# Domain admin should be able to list Volumes that is owned by account that is in his sub domains by passing uuid in "id" parameter
@@ -2723,7 +2723,7 @@ class TestVolumeList(cloudstackTestCase):
                         "Domain Admin is not able to list Volumes from his sub domains")
 
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_by_id_as_rootadmin_owns(self):
 	"""
 	# ROOT admin should be able to list Volumes that is owned by accounts  in his domain by passing uuid in "id" parameter
@@ -2739,7 +2739,7 @@ class TestVolumeList(cloudstackTestCase):
                          1,
                         "ROOT Admin not able to list Volumes that he owns")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_by_id_as_rootadmin_Volumesownedbyothers(self):
 	"""
 	# ROOT admin should be able to list Volumes that is owned by any account by passing uuid in "id" parameter
@@ -2763,7 +2763,7 @@ class TestVolumeList(cloudstackTestCase):
                          1,
                         "ROOT Admin not able to list Volumes from other domains")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_by_id_as_user_own(self):
 	"""
 	# Regular user should be able to list Volumes that is owned by him by passing uuid in "id" parameter
@@ -2782,7 +2782,7 @@ class TestVolumeList(cloudstackTestCase):
                          1,
                         "Regular User is not able to list Volumes that he owns")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_by_id_as_user_volumefromsamedomaindifferentaccount(self):
 	"""
 	# Regular user should not be able to list Volumes that is owned by different account in the same domain by passing uuid in "id" parameter
@@ -2796,7 +2796,7 @@ class TestVolumeList(cloudstackTestCase):
                          None,
                         "Regular User  is able to list Volumes from  other accounts")
 
-    @attr(tags=["advanced"],required_hardware="false")
+    @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_by_id_as_user_volumefromotherdomain(self):
 	"""
 	# Regular user should not be able to list Volumes that is owned by different account in the different domain by passing uuid in "id" parameter
