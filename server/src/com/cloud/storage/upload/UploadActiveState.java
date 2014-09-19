@@ -45,26 +45,26 @@ public abstract class UploadActiveState extends UploadState {
             s_logger.debug("handleAnswer, answer status=" + answer.getUploadStatus() + ", curr state=" + getName());
         }
         switch (answer.getUploadStatus()) {
-            case UPLOAD_IN_PROGRESS:
-                getUploadListener().scheduleStatusCheck(RequestType.GET_STATUS);
-                return Status.UPLOAD_IN_PROGRESS.toString();
-            case UPLOADED:
-                getUploadListener().scheduleImmediateStatusCheck(RequestType.PURGE);
-                getUploadListener().cancelTimeoutTask();
-                return Status.UPLOADED.toString();
-            case NOT_UPLOADED:
-                getUploadListener().scheduleStatusCheck(RequestType.GET_STATUS);
-                return Status.NOT_UPLOADED.toString();
-            case UPLOAD_ERROR:
-                getUploadListener().cancelStatusTask();
-                getUploadListener().cancelTimeoutTask();
-                return Status.UPLOAD_ERROR.toString();
-            case UNKNOWN:
-                getUploadListener().cancelStatusTask();
-                getUploadListener().cancelTimeoutTask();
-                return Status.UPLOAD_ERROR.toString();
-            default:
-                return null;
+        case UPLOAD_IN_PROGRESS:
+            getUploadListener().scheduleStatusCheck(RequestType.GET_STATUS);
+            return Status.UPLOAD_IN_PROGRESS.toString();
+        case UPLOADED:
+            getUploadListener().scheduleImmediateStatusCheck(RequestType.PURGE);
+            getUploadListener().cancelTimeoutTask();
+            return Status.UPLOADED.toString();
+        case NOT_UPLOADED:
+            getUploadListener().scheduleStatusCheck(RequestType.GET_STATUS);
+            return Status.NOT_UPLOADED.toString();
+        case UPLOAD_ERROR:
+            getUploadListener().cancelStatusTask();
+            getUploadListener().cancelTimeoutTask();
+            return Status.UPLOAD_ERROR.toString();
+        case UNKNOWN:
+            getUploadListener().cancelStatusTask();
+            getUploadListener().cancelTimeoutTask();
+            return Status.UPLOAD_ERROR.toString();
+        default:
+            return null;
         }
     }
 
@@ -73,7 +73,7 @@ public abstract class UploadActiveState extends UploadState {
         if (s_logger.isTraceEnabled()) {
             getUploadListener().log("handleTimeout, updateMs=" + updateMs + ", curr state= " + getName(), Level.TRACE);
         }
-        String newState = this.getName();
+        String newState = getName();
         if (updateMs > 5 * UploadListener.STATUS_POLL_INTERVAL) {
             newState = Status.UPLOAD_ERROR.toString();
             getUploadListener().log("timeout: transitioning to upload error state, currstate=" + getName(), Level.DEBUG);
@@ -90,12 +90,9 @@ public abstract class UploadActiveState extends UploadState {
 
     @Override
     public void onEntry(String prevState, UploadEvent event, Object evtObj) {
-        if (s_logger.isTraceEnabled()) {
-            getUploadListener().log("onEntry, prev state= " + prevState + ", curr state=" + getName() + ", event=" + event, Level.TRACE);
-        }
+        super.onEntry(prevState, event, evtObj);
 
         if (event == UploadEvent.UPLOAD_ANSWER) {
-            getUploadListener().updateDatabase((UploadAnswer)evtObj);
             getUploadListener().setLastUpdated();
         }
 
