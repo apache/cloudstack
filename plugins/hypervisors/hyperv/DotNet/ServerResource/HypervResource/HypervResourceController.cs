@@ -873,7 +873,7 @@ namespace HypervResource
                 string details = null;
                 bool result = false;
                 string vmName = cmd.vmName;
-                string state = null;
+                string powerState = null;
 
                 // TODO: Look up the VM, convert Hyper-V state to CloudStack version.
                 var sys = wmiCallsV2.GetComputerSystem(vmName);
@@ -884,7 +884,7 @@ namespace HypervResource
                 }
                 else
                 {
-                    state = EnabledState.ToCloudStackState(sys.EnabledState); // TODO: V2 changes?
+                    powerState = EnabledState.ToCloudStackPowerState(sys.EnabledState);
                     result = true;
                 }
 
@@ -892,7 +892,7 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    state = state,
+                    powerstate = powerState,
                     contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckVirtualMachineAnswer);
