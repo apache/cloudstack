@@ -357,7 +357,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
 ## Test cases relating to createNetwork as admin user
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_01_createNetwork_admin(self):
 
 	"""
@@ -380,7 +380,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     "Admin User is not able to create a network for himself")
 
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_02_createNetwork_admin_foruserinsamedomain(self):
 
 	"""
@@ -404,7 +404,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     True,
                     "Admin User is not able to create a network for other users in his domain")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_03_createNetwork_admin_foruserinotherdomain(self):
 
 	"""
@@ -430,7 +430,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
 ## Test cases relating to createNetwork as domain admin user
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_04_createNetwork_domaindmin(self):
 
 	"""
@@ -453,7 +453,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     "Domain admin User is not able to create a network for himself")
 
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_05_createNetwork_domaindmin_foruserinsamedomain(self):
 
 	"""
@@ -477,7 +477,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     True,
                     "Domain admin User is not able to create a network for other users in his domain")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_06_createNetwork_domaindmin_foruserinsubdomain(self):
 
 	"""
@@ -501,7 +501,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     True,
                     "Domain admin User is not able to create a network for other users in his sub domain")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_07_createNetwork_domaindmin_forcrossdomainuser(self):
 
 	"""
@@ -528,7 +528,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
 ## Test cases relating to createNetwork as regular user
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_08_createNetwork_user(self):
 
 	"""
@@ -551,7 +551,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     "User is not able to create a network for himself")
 
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_09_createNetwork_user_foruserinsamedomain(self):
 
 	"""
@@ -577,7 +577,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.UNABLE_TO_LIST_NETWORK_ACCOUNT):
         	    self.fail("Error message validation failed when when User tries to create network for other users in his domain ")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_10_createNetwork_user_foruserinotherdomain(self):
 
 	"""
@@ -606,7 +606,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
 ## Test cases relating to Deploying VM in a network as admin user
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_11_deployvm_admin(self):
 
 	"""
@@ -630,7 +630,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     "Admin User is not able to deploy VM in his own network")
 
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_12_deployvm_admin_foruserinsamedomain(self):
 
 	"""
@@ -655,7 +655,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     True,
                     "Admin User is not able to deploy VM for users in his domain")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_13_deployvm_admin_foruserinotherdomain(self):
 
 	"""
@@ -680,7 +680,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     True,
                     "Admin User is not able to deploy VM for users users in other domain")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_13_1_deployvm_admin_foruserinotherdomain_crossnetwork(self):
 
 	"""
@@ -708,7 +708,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
 ## Test cases relating to deploying VM as domain admin user
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_14_deployvm_domaindmin(self):
 
 	"""
@@ -732,7 +732,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     "Domain admin User is not able to deploy VM for himself")
 
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_15_deployvm_domaindmin_foruserinsamedomain(self):
 
 	"""
@@ -756,7 +756,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     True,
                     "Domain admin User is not able to deploy VM for other users in his domain")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_16_deployvm_domaindmin_foruserinsubdomain(self):
 
 	"""
@@ -780,7 +780,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     True,
                     "Domain admin User is not able to deploy vm for himself")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_17_deployvm_domaindmin_forcrossdomainuser(self):
 
 	"""
@@ -807,7 +807,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
         	    self.fail("Error message validation failed when Domain admin tries to deploy vm for users not in hos domain ")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_17_1_deployvm_domainadmin_foruserinotherdomain_crossnetwork(self):
 
 	"""
@@ -835,7 +835,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
 ## Test cases relating to deploying VM as regular user
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_18_deployvm_user(self):
 
 	"""
@@ -858,7 +858,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     "User is not able to deploy vm for himself")
 
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_19_deployvm_user_foruserinsamedomain(self):
 
 	"""
@@ -885,7 +885,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
         	    self.fail("Error message validation failed when Regular user tries to deploy vm for other users in his domain ")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_20_deployvm_user_foruserincrossdomain(self):
 
 	"""
@@ -912,7 +912,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
         	    self.fail("Error message validation failed when Regular user tries to deploy vm for users not in his domain ")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_20_1_deployvm_user_incrossnetwork(self):
 
 	"""
@@ -938,7 +938,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
 ## Test cases relating to restart Network as admin user
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_21_restartNetwork_admin(self):
 
 	"""
@@ -954,7 +954,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     "Admin User is not able to restart network he owns")
 
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_22_restartNetwork_admin_foruserinsamedomain(self):
 
 	"""
@@ -969,7 +969,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     True,
                     "Admin User is not able to restart network owned by users his domain")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_23_restartNetwork_admin_foruserinotherdomain(self):
 
 	"""
@@ -986,7 +986,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
 ## Test cases relating to restart Network as domain admin user
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_24_restartNetwork_domaindmin(self):
 
 	"""
@@ -1002,7 +1002,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     "Domain admin User is not able to restart network for himself")
 
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_25_restartNetwork_domaindmin_foruserinsamedomain(self):
 
 	"""
@@ -1016,7 +1016,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     True,
                     "Domain admin User is not able to restart network for other users in his domain")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_26_restartNetwork_domaindmin_foruserinsubdomain(self):
 
 	"""
@@ -1030,7 +1030,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     True,
                     "Domain admin User is not able to restart network he owns")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_27_restartNetwork_domaindmin_forcrossdomainuser(self):
 
 	"""
@@ -1049,7 +1049,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
 ## Test cases relating restart network as regular user
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_28_restartNetwork_user(self):
 
 	"""
@@ -1064,7 +1064,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                     "User is not able to restart network he owns")
 
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_29_restartNetwork_user_foruserinsamedomain(self):
 
 	"""
@@ -1081,7 +1081,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
         	    self.fail("Error message validation failed when Regular user tries to restart network for users in his domain ")
 
-    @attr(tags=[ "advanced"],required_hardware="false")
+    @attr("simulator_only",tags=[ "advanced"],required_hardware="false")
     def test_30_restartNetwork_user_foruserinotherdomain(self):
 
 	"""
