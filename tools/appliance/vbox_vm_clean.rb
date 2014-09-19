@@ -31,8 +31,11 @@ vms.each do |vmline|
   ProcTable.ps { |p|
     next unless p.cmdline.include? "VBoxHeadless"
     next unless p.cmdline.include? vm_name
-    # VBoxManage should only list _our_ vms, but just to be safe...
-    next unless p.ruid == Process.uid
+    # not all rubies / proctables expose ruid
+    if defined? p.ruid
+      # VBoxManage should only list _our_ vms, but just to be safe...
+      next unless p.ruid == Process.uid
+    end
 
     puts "kill -SIGKILL #{p.pid}"
     begin
