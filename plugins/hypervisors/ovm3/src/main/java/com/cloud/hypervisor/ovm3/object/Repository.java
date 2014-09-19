@@ -15,8 +15,13 @@ package com.cloud.hypervisor.ovm3.object;
 
 import java.util.Map;
 
-public class Repository extends OvmObject {
+import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
 
+public class Repository extends OvmObject {
+    private Object postDiscovery = null;
+    private static final Logger LOGGER = Logger
+            .getLogger(Repository.class);
     public Repository(Connection c) {
         setClient(c);
     }
@@ -75,6 +80,11 @@ public class Repository extends OvmObject {
 
     public Boolean discoverRepo(String id) throws Ovm3ResourceException {
         Object x = callWrapper("discover_repositories", id);
+        if (postDiscovery == null) {
+            return false;
+        }
+        Document xmlDocument = prepParse((String) postDiscovery);
+        String path = "//Discover_Repositories_Result/RepositoryList/";
         return true;
     }
 

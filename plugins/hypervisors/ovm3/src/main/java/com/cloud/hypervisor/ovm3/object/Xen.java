@@ -278,9 +278,15 @@ public class Xen extends OvmObject {
             return this.vmVifsPrep;
         }
 
+        /* TODO: The id is not consistent with the order the vmspec provides the devices.
+         * So the deviceid has nothing to do with the ordering!!!
+         */
         public Boolean addVif(Integer id, String bridge, String mac) {
             String vif = "mac=" + mac + ",bridge=" + bridge;
-            vmVifs[id] = vif;
+            vmVifs[vmVifs.length] = vif;
+            /* if someone ever fixes the fact that vmspec bootargs ordering of NICs should make sense
+             * with regard to the device id instead of the order of the devices in the array.
+             * vmVifs[id] = vif; */
             vmVifsPrep.add(vif);
             return true;
         }

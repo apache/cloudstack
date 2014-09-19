@@ -1336,9 +1336,9 @@ public class XenTest {
     public void testControlDomain() throws Ovm3ResourceException {
         con.setResult(this.VMSLISTXML);
         Xen.Vm dom0 = xEn.getRunningVmConfig(DOM0VMNAME);
-        dom0.isControlDomain();
+        results.basicBooleanTest(dom0.isControlDomain(), true);
         Xen.Vm domU = xEn.getRunningVmConfig(VMNAME);
-        domU.isControlDomain();
+        results.basicBooleanTest(domU.isControlDomain(), false);
         con.setResult(results.getNil());
     }
 

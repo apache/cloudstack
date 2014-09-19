@@ -750,7 +750,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                         StoragePlugin sp = new StoragePlugin(c);
                         FileProperties fp = sp.storagePluginGetFileInfo(poolUuid,
                                 host,
-                                destPath + File.separator + getSystemVMIsoFileNameOnDatastore());
+                                destPath + File.separator + srcIso.getName());
                         if (fp.getSize() != srcIso.getTotalSpace()) {
                             LOGGER.info(" System VM patch ISO file already exists: "
                                     + srcIso.getAbsolutePath().toString()
@@ -1303,7 +1303,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                 String svmPath = agentOvmRepoPath + "/"
                         + ovmObject.deDash(vm.getPrimaryPoolUuid()) + "/ISOs";
                 String svmIso = svmPath + "/"
-                        + getSystemVMIsoFileNameOnDatastore();
+                        + getSystemVMPatchIsoFile().getName();
                 vm.addIso(svmIso);
             }
             /* TODO: OVS should go here! */
