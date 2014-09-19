@@ -159,10 +159,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         uuid = UUID.randomUUID().toString();
     }
 
-    /**
-     * Proper constructor for a new vm template.
-     */
-    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url,
+    //FIXME - Remove unwanted constructors.
+    private VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url,
             boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
             HypervisorType hyperType, Map<String, String> details) {
         this(id,
@@ -250,8 +248,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         state = State.Active;
     }
 
-    // Has an extra attribute - isExtractable
-    public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type,
+    //FIXME - Remove unwanted constructors. Made them private for now
+    private VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type,
             String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId,
             boolean bootable, HypervisorType hyperType, Map<String, String> details) {
         this(id,
@@ -275,34 +273,6 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         extractable = isExtractable;
         uuid = UUID.randomUUID().toString();
         this.details = details;
-        state = State.Active;
-    }
-
-    public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type,
-            String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId,
-            boolean bootable, HypervisorType hyperType, String templateTag, Map<String, String> details) {
-        this(id,
-            uniqueName,
-            name,
-            format,
-            isPublic,
-            featured,
-            isExtractable,
-            type,
-            url,
-            created,
-            requiresHvm,
-            bits,
-            accountId,
-            cksum,
-            displayText,
-            enablePassword,
-            guestOSId,
-            bootable,
-            hyperType,
-            details);
-        this.templateTag = templateTag;
-        uuid = UUID.randomUUID().toString();
         state = State.Active;
     }
 
