@@ -122,6 +122,10 @@ public abstract class ServerResourceBase implements ServerResource {
             }
         }
         String infos[] = NetUtils.getNetworkParams(_privateNic);
+        if (infos == null) {
+            s_logger.warn("Incorrect details for private Nic during initialization of ServerResourceBase");
+            return false;
+        }
         params.put("host.ip", infos[0]);
         params.put("host.mac.address", infos[1]);
 
