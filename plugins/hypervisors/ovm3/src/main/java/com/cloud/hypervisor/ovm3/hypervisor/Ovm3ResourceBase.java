@@ -1152,6 +1152,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                 throw new CloudRuntimeException(msg);
             }
         }
+        vm.setupVifs();
         return true;
     }
 

@@ -68,8 +68,18 @@ public class Xen extends OvmObject {
         };
 
         /* 'vif': [ 'mac=00:21:f6:00:00:00,bridge=c0a80100'] */
-        private String[] vmVifs = new String[6];
-        private  List<String> vmVifsPrep = new ArrayList<String>();
+        String[] _xvmVifs = new String[6];
+        public ArrayList<String> _vmVifs = new ArrayList<String>();
+        public Map<String, String> vmVifs = new HashMap<String, String>() {
+            {
+                put(new String("id"), "");
+                put(new String("dev"), "");
+                put(new String("mac"), "");
+                put(new String("rate"), "");
+            }
+        };
+        // private String[] vmVifs = new String[6];
+        // private  List<String> vmVifsPrep = new ArrayList<String>();
         private String vmSimpleName = "";
         private String vmName = "";
         private String vmUuid = "";
@@ -107,7 +117,8 @@ public class Xen extends OvmObject {
 
         private Map<String, Object> vmParams = new HashMap<String, Object>() {
             {
-                put("vif", vmVifsPrep);
+                // put("vif", vmVifsPrep);
+                put("vif", _vmVifs);
                 put("OVM_simple_name", vmSimpleName);
                 put("disk", vmDisks);
                 put("bootargs", vmBootArgs);
@@ -271,35 +282,40 @@ public class Xen extends OvmObject {
         }
 
         public void setVmVifs(List<String> vifs) {
-            this.vmVifsPrep.addAll(vifs);
+            this._vmVifs.addAll(vifs);
         }
-
         public List<String> getVmVifs() {
-            return this.vmVifsPrep;
+            return this._vmVifs;
+        }
+        public boolean addVif() {
+            ArrayList<String> vif = new ArrayList<String>();
+            for (final String entry : _vmVifs.get(0).split(",")) {
+                final String[] parts = entry.split("=");
+                assert (parts.length == 2) : "Invalid entry: " + entry;
+                vif.add(parts[0] + "=" + parts[1]);
+            }
+            _vmVifs.add(StringUtils.join(vif, ","));
+            return true;
         }
 
-        /* TODO: The id is not consistent with the order the vmspec provides the devices.
-         * So the deviceid has nothing to do with the ordering!!!
-         */
         public Boolean addVif(Integer id, String bridge, String mac) {
             String vif = "mac=" + mac + ",bridge=" + bridge;
-            vmVifs[vmVifs.length] = vif;
-            /* if someone ever fixes the fact that vmspec bootargs ordering of NICs should make sense
-             * with regard to the device id instead of the order of the devices in the array.
-             * vmVifs[id] = vif; */
-            vmVifsPrep.add(vif);
+            _xvmVifs[id] = vif;
+            // _vmVifs.add("mac=" + mac + ",bridge=" + bridge);
+            return true;
+        }
+
+        public boolean setupVifs() {
+            for (String vif : _xvmVifs) {
+                if (vif != null)
+                    _vmVifs.add(vif);
+            }
             return true;
         }
 
         public Boolean removeVif(String bridge, String mac) {
-            String vifLine = "mac="+mac+",bridge="+bridge;
-            for (String vif : vmVifsPrep) {
-                if (vifLine.equals(vif)) {
-                    return vmVifsPrep.remove(vif);
-                }
-            }
-            LOGGER.debug("No vif found corresponding to mac: " + mac + ", bridge " + bridge);
-            return false;
+            // vmVfbs.remove("mac="+mac+",bridge="+bridge);
+            return true;
         }
 
         /* 'file:/OVS/Repositories/d5f5a4480515467ca1638554f085b278/ISOs/e14c811ebbf84f0b8221e5b7404a554e.iso,hdc:cdrom,r' */
