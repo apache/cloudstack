@@ -769,4 +769,3 @@ ALTER TABLE `cloud_usage`.`usage_vpn_user` CHANGE `user_name` `user_name` VARCHA
 
 --Increase key value size generated from RSA-8192 to be stored.
 ALTER TABLE `cloud`.`user_vm_details` MODIFY `value` VARCHAR(5120);
-

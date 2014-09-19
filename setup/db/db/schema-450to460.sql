@@ -18,3 +18,5 @@
 --
 -- Schema upgrade from 4.5.0 to 4.6.0
 --
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'management-server', "stats.output.uri", "", "URI to additionally send StatsCollector statistics to", "", NULL, NULL, 0);

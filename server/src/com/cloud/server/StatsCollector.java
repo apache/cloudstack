@@ -29,6 +29,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -43,6 +46,8 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.graphite.GraphiteClient;
+import org.apache.cloudstack.graphite.GraphiteException;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -120,6 +125,20 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Component
 public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable {
 
+    public static enum externalStatsProtocol {
+        NONE("none"), GRAPHITE("graphite");
+        String _type;
+
+        externalStatsProtocol(String type) {
+            _type = type;
+        }
+
+        @Override
+        public String toString() {
+            return _type;
+        }
+    }
+
     public static final Logger s_logger = Logger.getLogger(StatsCollector.class.getName());
 
     private static StatsCollector s_instance = null;
@@ -194,6 +213,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     int vmDiskStatsInterval = 0;
     List<Long> hostIds = null;
 
+    String externalStatsPrefix = "";
+    String externalStatsHost = null;
+    int externalStatsPort = -1;
+    boolean externalStatsEnabled = false;
+    externalStatsProtocol externalStatsType = externalStatsProtocol.NONE;
+
     private ScheduledExecutorService _diskStatsUpdateExecutor;
     private int _usageAggregationRange = 1440;
     private String _usageTimeZone = "GMT";
@@ -232,6 +257,36 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), -1L);
         autoScaleStatsInterval = NumbersUtil.parseLong(configs.get("autoscale.stats.interval"), 60000L);
         vmDiskStatsInterval = NumbersUtil.parseInt(configs.get("vm.disk.stats.interval"), 0);
+
+        /* URI to send statistics to. Currently only Graphite is supported */
+        String externalStatsUri = configs.get("stats.output.uri");
+        if (externalStatsUri != null) {
+            try {
+                URI uri = new URI(externalStatsUri);
+                String scheme = uri.getScheme();
+
+                try {
+                    externalStatsType = externalStatsProtocol.valueOf(scheme.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    s_logger.info(scheme + " is not a valid protocol for external statistics. No statistics will be send.");
+                }
+
+                externalStatsHost = uri.getHost();
+                externalStatsPort = uri.getPort();
+                externalStatsPrefix = uri.getPath().substring(1);
+
+                /* Append a dot (.) to the prefix if it is set */
+                if (externalStatsPrefix != null && !externalStatsPrefix.equals("")) {
+                    externalStatsPrefix += ".";
+                } else {
+                    externalStatsPrefix = "";
+                }
+
+                externalStatsEnabled = true;
+            } catch (URISyntaxException e) {
+                s_logger.debug("Failed to parse external statistics URI: " + e.getMessage());
+            }
+        }
 
         if (hostStatsInterval > 0) {
             _executor.scheduleWithFixedDelay(new HostCollector(), 15000L, hostStatsInterval, TimeUnit.MILLISECONDS);
@@ -372,6 +427,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.SecondaryStorageVM.toString());
                 List<HostVO> hosts = _hostDao.search(sc, null);
 
+                /* HashMap for metrics to be send to Graphite */
+                HashMap metrics = new HashMap<String, Integer>();
+
                 for (HostVO host : hosts) {
                     List<UserVmVO> vms = _userVmDao.listRunningByHostId(host.getId());
                     List<Long> vmIds = new ArrayList<Long>();
@@ -406,6 +464,50 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     statsInMemory.setDiskReadKBs(statsInMemory.getDiskReadKBs() + statsForCurrentIteration.getDiskReadKBs());
 
                                     _VmStats.put(vmId, statsInMemory);
+                                }
+
+                                /**
+                                 * Add statistics to HashMap only when they should be send to a external stats collector
+                                 * Performance wise it seems best to only append to the HashMap when needed
+                                */
+                                if (externalStatsEnabled) {
+                                    VMInstanceVO vmVO = _vmInstance.findById(vmId);
+                                    String vmName = vmVO.getUuid();
+
+                                    metrics.put(externalStatsPrefix + "cloudstack.stats.instances." + vmName + ".cpu.num", statsForCurrentIteration.getNumCPUs());
+                                    metrics.put(externalStatsPrefix + "cloudstack.stats.instances." + vmName + ".cpu.utilization", statsForCurrentIteration.getCPUUtilization());
+                                    metrics.put(externalStatsPrefix + "cloudstack.stats.instances." + vmName + ".network.read_kbs", statsForCurrentIteration.getNetworkReadKBs());
+                                    metrics.put(externalStatsPrefix + "cloudstack.stats.instances." + vmName + ".network.write_kbs", statsForCurrentIteration.getNetworkWriteKBs());
+                                    metrics.put(externalStatsPrefix + "cloudstack.stats.instances." + vmName + ".disk.write_kbs", statsForCurrentIteration.getDiskWriteKBs());
+                                    metrics.put(externalStatsPrefix + "cloudstack.stats.instances." + vmName + ".disk.read_kbs", statsForCurrentIteration.getDiskReadKBs());
+                                    metrics.put(externalStatsPrefix + "cloudstack.stats.instances." + vmName + ".disk.write_iops", statsForCurrentIteration.getDiskWriteIOs());
+                                    metrics.put(externalStatsPrefix + "cloudstack.stats.instances." + vmName + ".disk.read_iops", statsForCurrentIteration.getDiskReadIOs());
+                                }
+
+                            }
+
+                            /**
+                             * Send the metrics to a external stats collector
+                             * We send it on a per-host basis to prevent that we flood the host
+                             * Currently only Graphite is supported
+                             */
+                            if (!metrics.isEmpty()) {
+                                if (externalStatsType != null && externalStatsType == externalStatsProtocol.GRAPHITE) {
+
+                                    if (externalStatsPort == -1) {
+                                        externalStatsPort = 2003;
+                                    }
+
+                                    s_logger.debug("Sending VmStats of host " + host.getId() + " to Graphite host " + externalStatsHost + ":" + externalStatsPort);
+
+                                    try {
+                                        GraphiteClient g = new GraphiteClient(externalStatsHost, externalStatsPort);
+                                        g.sendMetrics(metrics);
+                                    } catch (GraphiteException e) {
+                                        s_logger.debug("Failed sending VmStats to Graphite host " + externalStatsHost + ":" + externalStatsPort + ": " + e.getMessage());
+                                    }
+
+                                    metrics.clear();
                                 }
                             }
                         }
