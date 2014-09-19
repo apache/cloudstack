@@ -261,8 +261,15 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     
             list_shared_network_offerings_response = NetworkOffering.list(
                                                              cls.apiclient,
-                                                             name="DefaultSharedNetworkOffering"
+							     name="DefaultSharedNetworkOffering",
+                                                             displayText="Offering for Shared networks"
                                                              )
+            #Override name parameter so that there is no overlap with names being used in other shared network test suites
+            cls.acldata["network_all"]["name"]=cls.acldata["network_all"]["name"]+"-impersonation"
+            cls.acldata["network_domain_with_no_subdomain_access"]["name"]=cls.acldata["network_domain_with_no_subdomain_access"]["name"]+"-impersonation"
+            cls.acldata["network_domain_with_subdomain_access"]["name"]=cls.acldata["network_domain_with_subdomain_access"]["name"]+"-impersonation"
+            cls.acldata["network_account"]["name"]=cls.acldata["network_account"]["name"]+"-impersonation"
+
     	    cls.shared_network_offering_id = list_shared_network_offerings_response[0].id
             cls.shared_network_all = Network.create(
                              cls.apiclient,

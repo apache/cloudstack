@@ -261,7 +261,8 @@ class TestSharedNetwork(cloudstackTestCase):
     
             list_shared_network_offerings_response = NetworkOffering.list(
                                                              cls.apiclient,
-                                                             name="DefaultSharedNetworkOffering"
+                                                             name="DefaultSharedNetworkOffering",
+							     displayText="Offering for Shared networks"
                                                              )
 
     	    cls.shared_network_offering_id = list_shared_network_offerings_response[0].id
