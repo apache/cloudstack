@@ -17,13 +17,6 @@
 
 arch = ENV['VM_ARCH'] || 'i386'
 
-#
-# NOTE: Before changing the version of the debian image make
-# sure it is added to the userContent of jenkins.buildacloud.org
-# and the copy task is updated on the systemvm builds
-# This will prevent the inevitable build failure once the iso is
-# removed from the debian mirrors
-#
 architectures = {
     :i386 => {
         :os_type_id => 'Debian',
@@ -75,20 +68,7 @@ config = {
     :shutdown_cmd => 'halt -p',
     :postinstall_files => [
         # basic minimal vm creation
-        'build_time.sh',
-        'apt_upgrade.sh',
-        'configure_grub.sh',
-        'configure_locale.sh',
         'configure_login.sh',
-        'configure_networking.sh',
-        'configure_acpid.sh',
-        # turning it into a systemvm
-        'install_systemvm_packages.sh',
-        'configure_conntrack.sh',
-        '../../cloud_scripts_shar_archive.sh',
-        'configure_systemvm_services.sh',
-        'authorized_keys.sh',
-        # cleanup & space-saving
         'cleanup.sh',
         'zerodisk.sh'
     ],
