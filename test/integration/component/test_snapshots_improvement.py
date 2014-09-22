@@ -20,10 +20,10 @@
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.utils import (random_gen,
+from marvin.lib.utils import (random_gen,
                                           is_snapshot_on_nfs,
                                           cleanup_resources)
-from marvin.integration.lib.base import (
+from marvin.lib.base import (
                                         Account,
                                         ServiceOffering,
                                         VirtualMachine,
@@ -32,7 +32,7 @@ from marvin.integration.lib.base import (
                                         Volume,
                                         DiskOffering
                                         )
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         list_snapshots
@@ -126,11 +126,13 @@ class TestSnapshotOnRootVolume(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestSnapshotOnRootVolume,
-                               cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestSnapshotOnRootVolume, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                                     cls.api_client,
                                     cls.zone.id,
@@ -183,7 +185,7 @@ class TestSnapshotOnRootVolume(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_snapshot_on_rootVolume(self):
         """Test create VM with default cent os template and create snapshot
             on root disk of the vm
@@ -299,13 +301,13 @@ class TestCreateSnapshot(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestCreateSnapshot,
-                               cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestCreateSnapshot, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.template = get_template(
                             cls.api_client,
@@ -613,8 +615,13 @@ class TestCreateSnapshot(cloudstackTestCase):
             self.debug("Create a template from snapshot: %s" % snapshot.name)
             jobs.append(self.create_Template_from_Snapshot(snapshot))
 
+
+        userapiclient = self.testClient.getUserApiClient(
+                                UserName=self.account.name,
+                                DomainName=self.account.domain)
+
         # Verify IO usage by submitting the concurrent jobs
-        self.testClient.submitCmdsAndWait(jobs)
+        self.testClient.submitCmdsAndWait(jobs, apiclient=userapiclient)
 
         self.debug("Verifying if templates are created properly or not?")
         templates = Template.list(

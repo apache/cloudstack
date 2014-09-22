@@ -30,6 +30,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.Network;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
@@ -132,10 +133,10 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
     }
 
     @Override
-    public boolean prepare(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context) {
+    public boolean prepare(VirtualMachineProfile profile, NicProfile nic, Network network, DeployDestination dest, ReservationContext context) {
         //TODO: select type from template
         BaremetalPxeType type = BaremetalPxeType.KICK_START;
-        return getServiceByType(type.toString()).prepare(profile, nic, dest, context);
+        return getServiceByType(type.toString()).prepare(profile, nic, network, dest, context);
     }
 
     @Override
@@ -193,13 +194,14 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
 
     @Override
     public boolean addUserData(NicProfile nic, VirtualMachineProfile profile) {
-        UserVmVO vm = (UserVmVO)profile.getVirtualMachine();
+        UserVmVO vm = _vmDao.findById(profile.getVirtualMachine().getId());
         _vmDao.loadDetails(vm);
 
         String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
         String zoneName = _dcDao.findById(vm.getDataCenterId()).getName();
         NicVO nvo = _nicDao.findById(nic.getId());
         VmDataCommand cmd = new VmDataCommand(nvo.getIp4Address(), vm.getInstanceName(), _ntwkModel.getExecuteInSeqNtwkElmtCmd());
+        // if you add new metadata files, also edit systemvm/patches/debian/config/var/www/html/latest/.htaccess
         cmd.addVmData("userdata", "user-data", vm.getUserData());
         cmd.addVmData("metadata", "service-offering", StringUtils.unicodeEscape(serviceOffering));
         cmd.addVmData("metadata", "availability-zone", StringUtils.unicodeEscape(zoneName));

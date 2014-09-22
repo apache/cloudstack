@@ -18,9 +18,8 @@ package com.cloud.storage.resource;
 
 import java.util.List;
 
-import javax.naming.OperationNotSupportedException;
-
 import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 
 import com.google.gson.Gson;
 import com.vmware.vim25.ManagedObjectReference;
@@ -79,11 +78,27 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         storageSubsystemHandler = vmwareStorageSubsystemCommandHandler;
     }
 
+    private static String getCommandLogTitle(Command cmd) {
+        StringBuffer sb = new StringBuffer();
+        if (cmd.getContextParam("job") != null) {
+            sb.append(cmd.getContextParam("job"));
+        }
+
+        sb.append(", cmd: ").append(cmd.getClass().getSimpleName());
+
+        return sb.toString();
+    }
+
     @Override
     public Answer executeRequest(Command cmd) {
 
         try {
             Answer answer;
+            NDC.push(getCommandLogTitle(cmd));
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Executing " + _gson.toJson(cmd));
+
             if (cmd instanceof PrimaryStorageDownloadCommand) {
                 answer = execute((PrimaryStorageDownloadCommand)cmd);
             } else if (cmd instanceof BackupSnapshotCommand) {
@@ -117,9 +132,15 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
                 answer.setContextParam("checkpoint2", cmd.getContextParam("checkpoint2"));
             }
 
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Command execution answer: " + _gson.toJson(answer));
+
             return answer;
         } finally {
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Done executing " + _gson.toJson(cmd));
             recycleServiceContext();
+            NDC.pop();
         }
     }
 
@@ -129,50 +150,26 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     }
 
     private Answer execute(PrimaryStorageDownloadCommand cmd) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Executing resource PrimaryStorageDownloadCommand: " + _gson.toJson(cmd));
-        }
-
         return _storageMgr.execute(this, cmd);
     }
 
     private Answer execute(BackupSnapshotCommand cmd) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Executing resource BackupSnapshotCommand: " + _gson.toJson(cmd));
-        }
-
         return _storageMgr.execute(this, cmd);
     }
 
     private Answer execute(CreatePrivateTemplateFromVolumeCommand cmd) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Executing resource CreatePrivateTemplateFromVolumeCommand: " + _gson.toJson(cmd));
-        }
-
         return _storageMgr.execute(this, cmd);
     }
 
     private Answer execute(CreatePrivateTemplateFromSnapshotCommand cmd) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Executing resource CreatePrivateTemplateFromVolumeCommand: " + _gson.toJson(cmd));
-        }
-
         return _storageMgr.execute(this, cmd);
     }
 
     private Answer execute(CopyVolumeCommand cmd) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Executing resource CopyVolumeCommand: " + _gson.toJson(cmd));
-        }
-
         return _storageMgr.execute(this, cmd);
     }
 
     private Answer execute(CreateVolumeFromSnapshotCommand cmd) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Executing resource CreateVolumeFromSnapshotCommand: " + _gson.toJson(cmd));
-        }
-
         return _storageMgr.execute(this, cmd);
     }
 
@@ -312,29 +309,5 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     @Override
     public String getMountPoint(String storageUrl) {
         return _resource.getRootDir(storageUrl);
-    }
-
-    @Override
-    public ManagedObjectReference prepareManagedDatastore(VmwareHypervisorHost hyperHost, String iScsiName,
-            String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
-            String chapTargetUsername, String chapTargetSecret) throws Exception {
-        throw new OperationNotSupportedException();
-    }
-
-    @Override
-    public ManagedObjectReference prepareManagedStorage(VmwareHypervisorHost hyperHost, String iScsiName,
-            String storageHost, int storagePort, String volumeName, String chapInitiatorUsername, String chapInitiatorSecret,
-            String chapTargetUsername, String chapTargetSecret, long size, Command cmd) throws Exception {
-        throw new OperationNotSupportedException();
-    }
-
-    @Override
-    public void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception {
-        throw new OperationNotSupportedException();
-    }
-
-    @Override
-    public void removeManagedTargetsFromCluster(List<String> managedIqns) throws Exception {
-        throw new OperationNotSupportedException();
     }
 }

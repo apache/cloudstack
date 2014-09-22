@@ -97,6 +97,7 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
@@ -136,6 +137,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     AccountDao _accountDao = null;
     @Inject
     DomainDao _domainDao = null;
+    @Inject
+    AccountManager _accountMgr;
     @Inject
     ConfigurationDao _configDao;
 
@@ -587,6 +590,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                 hasFreeIps = isIP6AddressAvailableInNetwork(network.getId());
             }
         } else {
+            if (network.getCidr() == null) {
+                s_logger.debug("Network - " + network.getId() +  " has NULL CIDR.");
+                return false;
+            }
             hasFreeIps = (getAvailableIps(network, null)).size() > 0;
         }
 
@@ -734,6 +741,31 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             throw new InvalidParameterValueException("Unable to find network with traffic type " + trafficType + " in zone " + zoneId);
         }
         return networks.get(0);
+    }
+
+    @Override
+    public NetworkVO getNetworkWithSGWithFreeIPs(Long zoneId) {
+        List<NetworkVO> networks = _networksDao.listByZoneSecurityGroup(zoneId);
+        if (networks == null || networks.isEmpty()) {
+            return null;
+        }
+        NetworkVO ret_network = null;
+        for (NetworkVO nw : networks) {
+            List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(nw.getId());
+            for (VlanVO vlan : vlans) {
+                if (_ipAddressDao.countFreeIpsInVlan(vlan.getId()) > 0) {
+                    ret_network = nw;
+                    break;
+                }
+            }
+            if (ret_network != null) {
+                break;
+            }
+        }
+        if (ret_network == null) {
+            s_logger.debug("Can not find network with security group enabled with free IPs");
+        }
+        return ret_network;
     }
 
     @Override

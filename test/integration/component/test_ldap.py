@@ -29,40 +29,11 @@ import hashlib
 import random
 from marvin.cloudstackAPI import *
 from marvin.cloudstackAPI import login
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 import urllib
-
-
-
-class Services:
-    """Test LDAP Configuration
-    """
-
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "rmurphy@cloudstack.org",
-                "firstname": "Ryan",
-                "lastname": "Murphy",
-                "username": "rmurphy",
-                "password": "internalcloudstackpassword",
-                },
-            "ldapConfiguration_1":
-                {
-                "basedn": "dc=cloudstack,dc=org",
-                "emailAttribute": "mail",
-                "userObject": "inetOrgPerson",
-                "usernameAttribute": "uid",
-                "hostname": "localhost",
-                "port": "10389",
-                "ldapUsername": "rmurphy",
-                "ldapPassword": "password"
-                }
-        }
-
 
 class TestLdap(cloudstackTestCase):
     """
@@ -72,12 +43,10 @@ class TestLdap(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-            TestLdap,
-            cls
-        ).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        cls.account = cls.services["account"]
+        testClient = super(TestLdap, cls).getClsTestClient()
+        cls.api_client = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.account = cls.services["ldap_account"]
         cls._cleanup = []
 
 
@@ -97,12 +66,12 @@ class TestLdap(cloudstackTestCase):
 
         self.acct = createAccount.createAccountCmd()
         self.acct.accounttype = 0
-        self.acct.firstname = self.services["account"]["firstname"]
-        self.acct.lastname = self.services["account"]["lastname"]
-        self.acct.password = self.services["account"]["password"]
-        self.acct.username = self.services["account"]["username"]
-        self.acct.email = self.services["account"]["email"]
-        self.acct.account = self.services["account"]["username"]
+        self.acct.firstname = self.services["ldap_account"]["firstname"]
+        self.acct.lastname = self.services["ldap_account"]["lastname"]
+        self.acct.password = self.services["ldap_account"]["password"]
+        self.acct.username = self.services["ldap_account"]["username"]
+        self.acct.email = self.services["ldap_account"]["email"]
+        self.acct.account = self.services["ldap_account"]["username"]
         self.acct.domainid = 1
 
         self.acctRes = self.apiClient.createAccount(self.acct)
@@ -128,7 +97,7 @@ class TestLdap(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_01_addLdapConfiguration(self):
         """
         This test configures LDAP and attempts to authenticate as a user.

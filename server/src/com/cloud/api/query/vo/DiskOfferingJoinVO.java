@@ -23,6 +23,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -45,6 +46,9 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     @Column(name = "display_text")
     private String displayText;
+
+    @Column(name = "provisioning_type")
+    Storage.ProvisioningType provisioningType;
 
     @Column(name = "disk_size")
     long diskSize;
@@ -134,6 +138,10 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     public String getDisplayText() {
         return displayText;
+    }
+
+    public Storage.ProvisioningType getProvisioningType(){
+        return provisioningType;
     }
 
     public long getDiskSize() {

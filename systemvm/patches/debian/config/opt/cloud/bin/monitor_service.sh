@@ -45,7 +45,7 @@ processname=$(echo $s | cut -d: -f2);
 service_name=$(echo $s | cut -d: -f3);
 pidfile=$(echo $s | cut -d: -f4);
 
-echo $service >> $configFile;
+echo "$service" >> $configFile;
 echo $processname >> $configFile
 echo $service_name >> $configFile
 echo $pidfile >> $configFile

@@ -29,24 +29,63 @@ public class VgpuResponse extends BaseResponse {
     @Param(description = "Model Name of vGPU")
     private String name;
 
-    @SerializedName(ApiConstants.REMAININGCAPACITY)
-    @Param(description = "No. of more VMs can be deployped with this vGPU type")
-    private Long capacity;
+    @SerializedName(ApiConstants.VIDEORAM)
+    @Param(description = "Video RAM for this vGPU type")
+    private Long videoRam;
 
-    public String getName() {
-        return name;
-    }
+    @SerializedName(ApiConstants.MAXHEADS)
+    @Param(description = "Maximum displays per user")
+    private Long maxHeads;
+
+    @SerializedName(ApiConstants.MAXRESOLUTIONX)
+    @Param(description = "Maximum X resolution per display")
+    private Long maxResolutionX;
+
+    @SerializedName(ApiConstants.MAXRESOLUTIONY)
+    @Param(description = "Maximum Y resolution per display")
+    private Long maxResolutionY;
+
+    @SerializedName(ApiConstants.MAXVGPUPERPGPU)
+    @Param(description = "Maximum no. of vgpu per gpu card (pgpu)")
+    private Long maxVgpuPerPgpu;
+
+    @SerializedName(ApiConstants.REMAININGCAPACITY)
+    @Param(description = "Remaining capacity in terms of no. of more VMs that can be deployped with this vGPU type")
+    private Long remainingCapacity;
+
+    @SerializedName(ApiConstants.MAXCAPACITY)
+    @Param(description = "Maximum vgpu can be created with this vgpu type on the given gpu group")
+    private Long maxCapacity;
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public Long getCapacity() {
-        return capacity;
+    public void setVideoRam(Long videoRam) {
+        this.videoRam = videoRam;
     }
 
-    public void setCapacity(Long capacity) {
-        this.capacity = capacity;
+    public void setMaxHeads(Long maxHeads) {
+        this.maxHeads = maxHeads;
     }
 
+    public void setMaxResolutionX(Long maxResolutionX) {
+        this.maxResolutionX = maxResolutionX;
+    }
+
+    public void setMaxResolutionY(Long maxResolutionY) {
+        this.maxResolutionY = maxResolutionY;
+    }
+
+    public void setMaxVgpuPerPgpu(Long maxVgpuPerPgpu) {
+        this.maxVgpuPerPgpu = maxVgpuPerPgpu;
+    }
+
+    public void setRemainingCapacity(Long remainingCapacity) {
+        this.remainingCapacity = remainingCapacity;
+    }
+
+    public void setmaxCapacity(Long maxCapacity) {
+        this.maxCapacity = maxCapacity;
+    }
 }

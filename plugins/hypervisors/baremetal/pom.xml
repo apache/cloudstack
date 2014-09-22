@@ -27,11 +27,11 @@
   <artifactId>cloud-plugin-hypervisor-baremetal</artifactId>
   <name>Apache CloudStack Plugin - Hypervisor Baremetal</name>
   <dependencies>
-  	<dependency>
-		<groupId>commons-lang</groupId>
-		<artifactId>commons-lang</artifactId>
-		<version>2.6</version>
-	</dependency>
+      <dependency>
+        <groupId>commons-lang</groupId>
+        <artifactId>commons-lang</artifactId>
+        <version>2.6</version>
+    </dependency>
    </dependencies>
             
 </project>

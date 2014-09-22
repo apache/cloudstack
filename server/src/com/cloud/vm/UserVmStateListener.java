@@ -29,8 +29,10 @@ import com.cloud.vm.dao.UserVmDao;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBus;
 
+import com.cloud.configuration.Config;
 import com.cloud.event.EventCategory;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
@@ -52,17 +54,20 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
     @Inject protected ServiceOfferingDao _offeringDao;
     @Inject protected UserVmDao _userVmDao;
     @Inject protected UserVmManager _userVmMgr;
+    @Inject protected ConfigurationDao _configDao;
     private static final Logger s_logger = Logger.getLogger(UserVmStateListener.class);
 
     protected static EventBus s_eventBus = null;
 
-    public UserVmStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, NicDao nicDao, ServiceOfferingDao offeringDao, UserVmDao userVmDao, UserVmManager userVmMgr) {
+    public UserVmStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, NicDao nicDao, ServiceOfferingDao offeringDao, UserVmDao userVmDao, UserVmManager userVmMgr,
+            ConfigurationDao configDao) {
         this._usageEventDao = usageEventDao;
         this._networkDao = networkDao;
         this._nicDao = nicDao;
         this._offeringDao = offeringDao;
         this._userVmDao = userVmDao;
         this._userVmMgr = userVmMgr;
+        this._configDao = configDao;
     }
 
     @Override
@@ -77,11 +82,11 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
             return false;
         }
 
+        pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
+
         if (vo.getType() != VirtualMachine.Type.User) {
             return true;
         }
-
-        pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
 
         if (VirtualMachine.State.isVmCreated(oldState, event, newState)) {
             generateUsageEvent(vo.getServiceOfferingId(), vo, EventTypes.EVENT_VM_CREATE);
@@ -113,6 +118,11 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
 
     private void pubishOnEventBus(String event, String status, VirtualMachine vo, VirtualMachine.State oldState, VirtualMachine.State newState) {
 
+        String configKey = Config.PublishResourceStateEvent.key();
+        String value = _configDao.getValue(configKey);
+        boolean configValue = Boolean.parseBoolean(value);
+        if(!configValue)
+            return;
         try {
             s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {
@@ -128,6 +138,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         eventDescription.put("id", vo.getUuid());
         eventDescription.put("old-state", oldState.name());
         eventDescription.put("new-state", newState.name());
+        eventDescription.put("status", status);
 
         String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").format(new Date());
         eventDescription.put("eventDateTime", eventDate);

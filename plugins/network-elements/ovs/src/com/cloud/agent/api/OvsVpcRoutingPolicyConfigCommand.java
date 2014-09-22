@@ -27,6 +27,8 @@ public class OvsVpcRoutingPolicyConfigCommand extends Command {
     VpcConfig vpcConfig =null;
     long hostId;
     String bridgeName;
+    long sequenceNumber;
+    String schemaVersion;
 
     public static class AclItem {
         int number;
@@ -119,5 +121,13 @@ public class OvsVpcRoutingPolicyConfigCommand extends Command {
     @Override
     public boolean executeInSequence() {
         return false;
+    }
+
+    public long getSequenceNumber() {
+        return sequenceNumber;
+    }
+
+    public void setSequenceNumber(long sequenceNumber) {
+        this.sequenceNumber = sequenceNumber;
     }
 }

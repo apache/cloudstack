@@ -60,6 +60,18 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     private static String username;
     private static String password;
 
+    public synchronized static void setVirtualHost(String virtualHost) {
+        RabbitMQEventBus.virtualHost = virtualHost;
+    }
+
+    private static String virtualHost;
+
+    public static void setUseSsl(String useSsl) {
+        RabbitMQEventBus.useSsl = useSsl;
+    }
+
+    private static String useSsl;
+
     // AMQP exchange name where all CloudStack events will be published
     private static String amqpExchangeName;
 
@@ -102,6 +114,12 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
             if (port == null) {
                 throw new ConfigurationException("Unable to get the port details of AMQP server");
+            }
+
+            if (useSsl != null && !useSsl.isEmpty()) {
+                if (!useSsl.equalsIgnoreCase("true") && !useSsl.equalsIgnoreCase("false")) {
+                    throw new ConfigurationException("Invalid configuration parameter for 'ssl'.");
+                }
             }
 
             if (retryInterval == null) {
@@ -345,9 +363,18 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             ConnectionFactory factory = new ConnectionFactory();
             factory.setUsername(username);
             factory.setPassword(password);
-            factory.setVirtualHost("/");
             factory.setHost(amqpHost);
             factory.setPort(port);
+
+            if (virtualHost != null && !virtualHost.isEmpty()) {
+                factory.setVirtualHost(virtualHost);
+            } else {
+                factory.setVirtualHost("/");
+            }
+
+            if (useSsl != null && !useSsl.isEmpty() && useSsl.equalsIgnoreCase("true")) {
+                factory.useSslProtocol();
+            }
             Connection connection = factory.newConnection();
             connection.addShutdownListener(disconnectHandler);
             s_connection = connection;
@@ -454,8 +481,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     }
 
     @Override
-    public boolean stop() {
-
+    public synchronized boolean stop() {
         if (s_connection.isOpen()) {
             for (String subscriberId : s_subscribers.keySet()) {
                 Ternary<String, Channel, EventSubscriber> subscriberDetails = s_subscribers.get(subscriberId);

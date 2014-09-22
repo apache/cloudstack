@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 
@@ -22,6 +25,9 @@ public class ModifyVmNicConfigCommand extends Command {
     int vlan;
     String macAddress;
     int index;
+    boolean enable;
+    String switchLableName;
+
     protected ModifyVmNicConfigCommand() {
     }
 
@@ -37,10 +43,24 @@ public class ModifyVmNicConfigCommand extends Command {
         this.index = position;
     }
 
+    public ModifyVmNicConfigCommand(String vmName, int vlan, int position, boolean enable) {
+        this.vmName = vmName;
+        this.vlan = vlan;
+        this.index = position;
+        this.enable = enable;
+    }
+
     public String getVmName() {
         return vmName;
     }
 
+    public String getSwitchLableName() {
+        return switchLableName;
+    }
+
+    public void setSwitchLableName(String switchlableName) {
+        this.switchLableName = switchlableName;
+    }
 
     @Override
     public boolean executeInSequence() {

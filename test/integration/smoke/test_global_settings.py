@@ -19,9 +19,9 @@
 #Import Local Modules
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 #Import System modules
 
@@ -32,7 +32,7 @@ class TestUpdateConfigWithScope(cloudstackTestCase):
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
 
-    @attr(tags=["simulator", "devcloud", "basic", "advanced", "selfservice"])
+    @attr(tags=["devcloud", "basic", "advanced"], required_hardware="false")
     def test_UpdateConfigParamWithScope(self):
         """
         test update configuration setting at zone level scope

@@ -71,7 +71,7 @@ import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -397,7 +397,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         AssignIpAddressFromPodVlanSearch.join("vlan", podVlanSearch, podVlanSearch.entity().getId(), AssignIpAddressFromPodVlanSearch.entity().getVlanId(), JoinType.INNER);
         AssignIpAddressFromPodVlanSearch.done();
 
-        Network.State.getStateMachine().registerListener(new NetworkStateListener(_usageEventDao, _networksDao));
+        Network.State.getStateMachine().registerListener(new NetworkStateListener(_usageEventDao, _networksDao, _configDao));
 
         s_logger.info("Network Manager is configured.");
 
@@ -420,6 +420,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     //  1.there is at least one public IP associated with the network on which first rule (PF/static NAT/LB) is being applied.
     //  2.last rule (PF/static NAT/LB) on the public IP has been revoked. So the public IP should not be associated with any provider
     boolean checkIfIpAssocRequired(Network network, boolean postApplyRules, List<PublicIp> publicIps) {
+
+        if (network.getState() == Network.State.Implementing) {
+            return true;
+        }
+
         for (PublicIp ip : publicIps) {
             if (ip.isSourceNat()) {
                 continue;
@@ -1592,10 +1597,12 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             s_logger.debug("Implementing network " + guestNetwork + " as a part of network provision for persistent network");
             try {
                 Pair<? extends NetworkGuru, ? extends Network> implementedNetwork = _networkMgr.implementNetwork(guestNetwork.getId(), dest, context);
-                if (implementedNetwork.first() == null) {
+                if (implementedNetwork == null || implementedNetwork.first() == null) {
                     s_logger.warn("Failed to implement the network " + guestNetwork);
                 }
-                guestNetwork = implementedNetwork.second();
+                if (implementedNetwork != null) {
+                    guestNetwork = implementedNetwork.second();
+                }
             } catch (Exception ex) {
                 s_logger.warn("Failed to implement network " + guestNetwork + " elements and resources as a part of" + " network provision due to ", ex);
                 CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id)"
@@ -1828,7 +1835,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     @DB
     public void allocateDirectIp(final NicProfile nic, final DataCenter dc, final VirtualMachineProfile vm, final Network network, final String requestedIpv4,
-            final String requestedIpv6) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+            final String requestedIpv6) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientAddressCapacityException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientAddressCapacityException {

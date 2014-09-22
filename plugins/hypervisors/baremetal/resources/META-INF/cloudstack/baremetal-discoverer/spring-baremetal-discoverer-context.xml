@@ -30,5 +30,5 @@
     <bean id="BareMetalDiscoverer" class="com.cloud.baremetal.manager.BareMetalDiscoverer">
         <property name="name" value="Bare Metal Agent" />
     </bean>
-    
+
 </beans>

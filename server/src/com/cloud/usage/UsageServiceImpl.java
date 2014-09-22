@@ -27,6 +27,26 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.network.VpnUserVO;
+import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -81,6 +101,26 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     private TimeZone _usageTimezone;
     @Inject
     private AccountService _accountService;
+    @Inject
+    private VMInstanceDao _vmDao;
+    @Inject
+    private SnapshotDao _snapshotDao;
+    @Inject
+    private SecurityGroupDao _sgDao;
+    @Inject
+    private VpnUserDao _vpnUserDao;
+    @Inject
+    private PortForwardingRulesDao _pfDao;
+    @Inject
+    private LoadBalancerDao _lbDao;
+    @Inject
+    private VMTemplateDao _vmTemplateDao;
+    @Inject
+    private VolumeDao _volumeDao;
+    @Inject
+    private IPAddressDao _ipDao;
+    @Inject
+    private HostDao _hostDao;
 
     public UsageServiceImpl() {
     }
@@ -131,6 +171,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         Account caller = CallContext.current().getCallingAccount();
         Long usageType = cmd.getUsageType();
         Long projectId = cmd.getProjectId();
+        String usageId = cmd.getUsageId();
 
         if (projectId != null) {
             if (accountId != null) {
@@ -215,6 +256,96 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
 
         if (usageType != null) {
             sc.addAnd("usageType", SearchCriteria.Op.EQ, usageType);
+        }
+
+        if (usageId != null) {
+            if (usageType == null) {
+                throw new InvalidParameterValueException("Usageid must be specified together with usageType");
+            }
+
+            Long usageDbId = null;
+
+            switch (usageType.intValue()) {
+                case UsageTypes.NETWORK_BYTES_RECEIVED:
+                case UsageTypes.NETWORK_BYTES_SENT:
+                case UsageTypes.RUNNING_VM:
+                case UsageTypes.ALLOCATED_VM:
+                case UsageTypes.VM_SNAPSHOT:
+                    VMInstanceVO vm = _vmDao.findByUuidIncludingRemoved(usageId);
+                    if (vm != null) {
+                        usageDbId = vm.getId();
+                    }
+
+                    if (vm == null && (usageType == UsageTypes.NETWORK_BYTES_RECEIVED || usageType == UsageTypes.NETWORK_BYTES_SENT)) {
+                        HostVO host = _hostDao.findByUuidIncludingRemoved(usageId);
+                        if (host != null) {
+                            usageDbId = host.getId();
+                        }
+                    }
+                    break;
+                case UsageTypes.SNAPSHOT:
+                    SnapshotVO snap = _snapshotDao.findByUuidIncludingRemoved(usageId);
+                    if (snap != null) {
+                        usageDbId = snap.getId();
+                    }
+                    break;
+                case UsageTypes.TEMPLATE:
+                case UsageTypes.ISO:
+                    VMTemplateVO tmpl = _vmTemplateDao.findByUuidIncludingRemoved(usageId);
+                    if (tmpl != null) {
+                        usageDbId = tmpl.getId();
+                    }
+                    break;
+                case UsageTypes.LOAD_BALANCER_POLICY:
+                    LoadBalancerVO lb = _lbDao.findByUuidIncludingRemoved(usageId);
+                    if (lb != null) {
+                        usageDbId = lb.getId();
+                    }
+                    break;
+                case UsageTypes.PORT_FORWARDING_RULE:
+                    PortForwardingRuleVO pf = _pfDao.findByUuidIncludingRemoved(usageId);
+                    if (pf != null) {
+                        usageDbId = pf.getId();
+                    }
+                    break;
+                case UsageTypes.VOLUME:
+                case UsageTypes.VM_DISK_IO_READ:
+                case UsageTypes.VM_DISK_IO_WRITE:
+                case UsageTypes.VM_DISK_BYTES_READ:
+                case UsageTypes.VM_DISK_BYTES_WRITE:
+                    VolumeVO volume = _volumeDao.findByUuidIncludingRemoved(usageId);
+                    if (volume != null) {
+                        usageDbId = volume.getId();
+                    }
+                    break;
+                case UsageTypes.VPN_USERS:
+                    VpnUserVO vpnUser = _vpnUserDao.findByUuidIncludingRemoved(usageId);
+                    if (vpnUser != null) {
+                        usageDbId = vpnUser.getId();
+                    }
+                    break;
+                case UsageTypes.SECURITY_GROUP:
+                    SecurityGroupVO sg = _sgDao.findByUuidIncludingRemoved(usageId);
+                    if (sg != null) {
+                        usageDbId = sg.getId();
+                    }
+                    break;
+                case UsageTypes.IP_ADDRESS:
+                    IPAddressVO ip = _ipDao.findByUuidIncludingRemoved(usageId);
+                    if (ip != null) {
+                        usageDbId = ip.getId();
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            if (usageDbId != null) {
+                sc.addAnd("usageId", SearchCriteria.Op.EQ, usageDbId);
+            } else {
+                // return an empty list if usageId was not found
+                return new Pair<List<? extends Usage>, Integer>(new ArrayList<Usage>(), new Integer(0));
+            }
         }
 
         if ((adjustedStartDate != null) && (adjustedEndDate != null) && adjustedStartDate.before(adjustedEndDate)) {

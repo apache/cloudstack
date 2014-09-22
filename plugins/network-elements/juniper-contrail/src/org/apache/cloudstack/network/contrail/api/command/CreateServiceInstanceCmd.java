@@ -106,7 +106,8 @@ public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
                description = "The service offering ID that defines the resources consumed by the service appliance")
     private Long serviceOfferingId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING)
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING,
+               required = true, description = "The name of the service instance")
     private String name;
 
     /// Implementation
@@ -142,6 +143,10 @@ public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
             Network right = _networkService.getNetwork(rightNetworkId);
             if (right == null) {
                 throw new InvalidParameterValueException("Invalid ID for right network " + rightNetworkId);
+            }
+
+            if (name.isEmpty()) {
+                throw new InvalidParameterValueException("service instance name is empty");
             }
 
             ServiceVirtualMachine svm = _vrouterService.createServiceInstance(zone, owner, template, serviceOffering, name, left, right);

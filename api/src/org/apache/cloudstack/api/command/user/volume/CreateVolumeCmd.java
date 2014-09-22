@@ -41,8 +41,10 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "createVolume", responseObject = VolumeResponse.class, description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.", responseView = ResponseView.Restricted, entityType = {Volume.class},
+@APICommand(name = "createVolume", responseObject = VolumeResponse.class, description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.", responseView = ResponseView.Restricted, entityType = {
+        Volume.class, VirtualMachine.class},
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
@@ -155,6 +157,14 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
         return displayVolume;
     }
 
+    @Override
+    public boolean isDisplay() {
+        if(displayVolume == null)
+            return true;
+        else
+            return displayVolume;
+    }
+
     public Long getVirtualMachineId() {
         return virtualMachineId;
     }
@@ -189,16 +199,6 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_VOLUME_CREATE;
-    }
-
-    @Override
-    public boolean isDisplayResourceEnabled(){
-        Boolean display = getDisplayVolume();
-        if(display == null){
-            return true;
-        } else {
-            return display;
-        }
     }
 
     @Override

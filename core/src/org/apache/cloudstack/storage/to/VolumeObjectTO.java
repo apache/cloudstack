@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package org.apache.cloudstack.storage.to;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -38,6 +41,7 @@ public class VolumeObjectTO implements DataTO {
     private long accountId;
     private String chainInfo;
     private Storage.ImageFormat format;
+    private Storage.ProvisioningType provisioningType;
     private long id;
 
     private Long deviceId;
@@ -69,6 +73,7 @@ public class VolumeObjectTO implements DataTO {
         name = volume.getName();
         setId(volume.getId());
         format = volume.getFormat();
+        provisioningType = volume.getProvisioningType();
         bytesReadRate = volume.getBytesReadRate();
         bytesWriteRate = volume.getBytesWriteRate();
         iopsReadRate = volume.getIopsReadRate();
@@ -185,6 +190,14 @@ public class VolumeObjectTO implements DataTO {
 
     public void setFormat(Storage.ImageFormat format) {
         this.format = format;
+    }
+
+    public Storage.ProvisioningType getProvisioningType(){
+        return provisioningType;
+    }
+
+    public void setProvisioningType(Storage.ProvisioningType provisioningType){
+        this.provisioningType = provisioningType;
     }
 
     @Override

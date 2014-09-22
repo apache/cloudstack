@@ -87,6 +87,9 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "new host name of the vm. The VM has to be stopped/started for this update to take affect", since = "4.4")
     private String name;
 
+    @Parameter(name = ApiConstants.INSTANCE_NAME, type = CommandType.STRING, description = "instance name of the user vm", since = "4.4", authorized = {RoleType.Admin})
+    private String instanceName;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -123,7 +126,10 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
         return name;
     }
 
-    /////////////////////////////////////////////////////
+    public String getInstanceName() {
+        return instanceName;
+    }
+/////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
@@ -148,16 +154,6 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
-    }
-
-    @Override
-    public boolean isDisplayResourceEnabled(){
-        UserVm userVm = _entityMgr.findById(UserVm.class, getId());
-        if (userVm != null) {
-            return userVm.isDisplayVm();
-        }
-
-        return true; // no info means true
     }
 
     @Override

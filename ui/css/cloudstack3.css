@@ -48,7 +48,6 @@ div.toolbar,
 body {
   min-width: 1024px;
   font-family: sans-serif;
-  height: 769px !important;
   overflow: auto;
   background: #EDE8E8;
 }
@@ -125,6 +124,7 @@ table thead th {
   -o-text-shadow: 0px 1px 1px #FFFFFF;
   text-shadow: 0px 1px 1px #FFFFFF;
   font-weight: bold;
+  white-space: nowrap;
 }
 
 table thead th.sorted {
@@ -164,13 +164,20 @@ table tbody td.loading {
 
 table tbody td.truncated {
   overflow: visible;
-  max-width: 88px;
+  max-width: 120px;
 }
 
 table tbody td.truncated > span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.list-view-select table th.name,
+.list-view-select table td.name {
+  width: 170px;
+  min-width: 170px;
+  max-width: 170px;
 }
 
 /** Multiselect*/
@@ -208,6 +215,23 @@ table tbody td.actions input {
   left: 10px;
   top: -6px;
   margin: 11px 0 0px;
+}
+
+.list-view-select table tbody td.actions {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+}
+
+.list-view-select table tbody td.actions input {
+  margin: 0 0 0 -7px;
+}
+
+.list-view-select table thead th.actions {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  text-indent: 5px;
 }
 
 /** Quick view table cell*/
@@ -1293,6 +1317,10 @@ div.panel div.list-view div.fixed-header {
   background: #FFFFFF;
 }
 
+.detail-view div#details-tab-zones div.fixed-header {
+  left: 25px !important;
+}
+
 .detail-view div.list-view div.fixed-header table {
   width: 100% !important;
 }
@@ -1333,7 +1361,7 @@ div.list-view td.first {
   cursor: pointer;
 }
 
-div.list-view td.first:hover {
+div.list-view tr:not(.multi-edit-selected) td.first:hover {
   color: #3A82CD;
 }
 
@@ -1367,14 +1395,14 @@ div.list-view td.state.off span {
 .quick-view-tooltip {
   width: 470px;
   display: inline-block;
-  padding-top: 50px;
-  margin-left: 8px;
+  padding-top: 0;
+  margin-left: 0px;
 }
 
 .quick-view-tooltip > div.title {
   width: 444px;
   position: absolute;
-  top: 71px;
+  top: 20px;
   left: 10px;
   color: #808080;
   font-weight: 100;
@@ -1835,31 +1863,6 @@ div.list-view td.state.off span {
   float: left;
   width: 245px;
 }
-.detail-group .main-groups table td.value > span.copypasteenabledvalue {
-  text-overflow: ellipsis;
-  -o-text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.detail-group .main-groups table td.value > .copypasteactive {
-  display: auto;
-  white-space: nowrap;
-  overflow: none;
-}
-
-div.copypasteicon {
-  background: url("../images/sprites.png") no-repeat scroll -271px -65px;
-  float: left;
-  height: 21px;
-  margin-left: 6px;
-  margin-top: 0px;
-  width: 18px;
-}
-
-div.copypasteicon:hover {
-  background: url("../images/sprites.png") no-repeat scroll -271px -646px;
-}
 
 .detail-group .main-groups table td.value > span.copypasteenabledvalue {
   text-overflow: ellipsis;
@@ -1875,7 +1878,7 @@ div.copypasteicon:hover {
 }
 
 div.copypasteicon {
-  background: url("../images/sprites.png") no-repeat scroll -271px -65px;
+  background: url("../images/sprites.png") no-repeat -271px -65px;
   float: left;
   height: 21px;
   margin-left: 6px;
@@ -1884,9 +1887,34 @@ div.copypasteicon {
 }
 
 div.copypasteicon:hover {
-  background: url("../images/sprites.png") no-repeat scroll -271px -646px;
+  background: url("../images/sprites.png") no-repeat -271px -646px;
 }
 
+.detail-group .main-groups table td.value > span.copypasteenabledvalue {
+  text-overflow: ellipsis;
+  -o-text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.detail-group .main-groups table td.value > .copypasteactive {
+  display: auto;
+  white-space: nowrap;
+  overflow: none;
+}
+
+div.copypasteicon {
+  background: url("../images/sprites.png") no-repeat -271px -65px;
+  float: left;
+  height: 21px;
+  margin-left: 6px;
+  margin-top: 0px;
+  width: 18px;
+}
+
+div.copypasteicon:hover {
+  background: url("../images/sprites.png") no-repeat -271px -646px;
+}
 
 .detail-group .main-groups table td.value > span select {
   width: 100% !important;
@@ -1976,6 +2004,11 @@ div.copypasteicon:hover {
 
 .list-view .subselect span {
   margin: 4px 0 0 12px;
+}
+
+.list-view .subselect span.info {
+  font-size: 10px;
+  white-space: nowrap;
 }
 
 .list-view .subselect select {
@@ -3952,6 +3985,10 @@ Dialogs*/
   background: url(../images/icons.png) no-repeat 0px -255px;
 }
 
+.ui-dialog.warning .ui-dialog-title {
+  background: url(../images/icons.png) no-repeat 0px -286px;
+}
+
 .ui-dialog.confirm .ui-button {
   /*+placement:shift 0px -8px;*/
   position: relative;
@@ -4019,7 +4056,8 @@ Dialogs*/
   display: inline-block;
 }
 
-.ui-dialog div.form-container div.value input {
+.ui-dialog div.form-container div.value input,
+textarea {
   width: 98%;
   font-size: 14px;
   padding: 4px;
@@ -4360,13 +4398,13 @@ Dialogs*/
 /**** Charts / stats*/
 .dashboard.admin .zone-stats {
   width: 774px;
-  height: 348px;
+  height: 316px;
   overflow: auto;
   overflow-x: hidden;
-  /*+placement:shift 0px -11px;*/
+  /*+placement:shift 0px 0px;*/
   position: relative;
   left: 0px;
-  top: -11px;
+  top: 0px;
 }
 
 .dashboard.admin .zone-stats ul {
@@ -6050,6 +6088,94 @@ label.error {
   border-radius: 6px 6px 6px 6px;
 }
 
+.multi-wizard.instance-wizard .data-disk-offering .disk-select-group {
+  float: left;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.multi-wizard.instance-wizard .data-disk-offering .disk-select-header {
+  border-bottom: 1px solid #D4D4D4;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  background: #C2C2C2 0px 4px;
+  padding: 6px;
+  height: 17px;
+}
+
+.multi-wizard.instance-wizard .disk-select-group.selected .disk-select-header {
+  background: #505050;
+  /*+border-radius:4px 4px 0 0;*/
+  -moz-border-radius: 4px 4px 0 0;
+  -webkit-border-radius: 4px 4px 0 0;
+  -khtml-border-radius: 4px 4px 0 0;
+  border-radius: 4px 4px 0 0;
+}
+
+.multi-wizard.instance-wizard .data-disk-offering .disk-select-header input {
+  float: left;
+}
+
+.multi-wizard.instance-wizard .data-disk-offering .disk-select-header .title {
+  float: left;
+  font-size: 14px;
+  padding: 2px;
+}
+
+.multi-wizard.instance-wizard .disk-select-group.selected .disk-select-header .title {
+  color: #FFFFFF;
+  /*+text-shadow:0px -1px #000000;*/
+  -moz-text-shadow: 0px -1px #000000;
+  -webkit-text-shadow: 0px -1px #000000;
+  -o-text-shadow: 0px -1px #000000;
+  text-shadow: 0px -1px #000000;
+}
+
+.multi-wizard.instance-wizard .data-disk-offering .multi-disk-select-container {
+  max-height: 257px;
+  overflow: auto;
+  border: 1px solid #DDDBDB;
+  padding: 13px;
+  background: #E4E4E4;
+}
+
+.multi-wizard.instance-wizard .data-disk-offering .disk-select-group .select-container {
+  max-height: 114px;
+  float: left;
+  margin: 0;
+  border: none;
+  /*+border-radius:0;*/
+  -moz-border-radius: 0;
+  -webkit-border-radius: 0;
+  -khtml-border-radius: 0;
+  border-radius: 0;
+  display: none;
+}
+
+.multi-wizard.instance-wizard .data-disk-offering .disk-select-group.selected .select-container {
+  display: block;
+}
+
+.multi-wizard.instance-wizard .data-disk-offering .disk-select-group .select {
+  padding: 0 0 17px;
+  height: 0;
+}
+
+.multi-wizard.instance-wizard .data-disk-offering .disk-select-group.custom-size .section.custom-size {
+  display: block !important;
+}
+
+.multi-wizard.instance-wizard .data-disk-offering .disk-select-group .select input {
+  margin: 13px 12px 12px;
+}
+
+.multi-wizard.instance-wizard .data-disk-offering .disk-select-group .select-desc {
+  margin: 13px 0 0;
+}
+
 .multi-wizard.instance-wizard .data-disk-offering.required .select-container {
   height: 344px;
   position: relative;
@@ -7554,7 +7680,7 @@ label.error {
 .multi-wizard.zone-wizard .select-container .field .value input,
 .multi-wizard.zone-wizard .select-container .field .value select {
   width: 316px;
-  height: 12px;
+  height: 20px;
   margin: 13px 13px 0 18px;
   float: left;
 }
@@ -7851,28 +7977,42 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 /*List-view: subselect dropdown*/
 .list-view .subselect {
-  width: 116px;
+  width: 173px;
+  cursor: default;
   display: block;
   float: left;
-  background: url(../images/bg-gradients.png) 0px -42px;
+  background: #E8E8E8;
   padding: 0;
-  margin: 8px 0 1px 7px;
+  margin: 0 0 0 -3px;
   clear: both;
   border: 1px solid #A8A7A7;
-  /*+border-radius:4px;*/
-  -moz-border-radius: 4px;
-  -webkit-border-radius: 4px;
-  -khtml-border-radius: 4px;
-  border-radius: 4px;
+  /*+border-radius:2px;*/
+  -moz-border-radius: 2px;
+  -webkit-border-radius: 2px;
+  -khtml-border-radius: 2px;
+  border-radius: 2px;
+}
+
+.list-view .subselect:hover span {
+  color: initial;
 }
 
 .list-view .subselect span {
   margin: 4px 0 0 12px;
+  cursor: default;
+}
+
+.list-view .subselect span.info {
+  background: none;
+}
+
+.list-view .subselect span:hover {
+  color: initial;
 }
 
 .list-view .subselect select {
-  width: 85%;
-  margin: 5px 0 4px;
+  width: 175px;
+  margin: 0 0 0 -11px;
   font-size: 10px;
 }
 
@@ -12491,7 +12631,8 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -168px -31px;
 }
 
-.reset .icon, .reinstall .icon {
+.reset .icon,
+.reinstall .icon {
   background-position: -168px -31px;
 }
 
@@ -12798,5 +12939,71 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .manual-account-details .value {
   display: inline-block;
+}
+
+/*GPU*/
+div.gpugroups div.list-view div.fixed-header {
+  position: relative;
+  left: 12px !important;
+  top: 0px !important;
+}
+
+div.gpugroups div.list-view div.fixed-header table {
+  width: auto;
+}
+
+div.gpugroups div.list-view div.data-table table {
+  margin-top: 0;
+}
+
+div.gpugroups div.list-view {
+  position: relative;
+  height: auto !important;
+  margin-top: 0 !important;
+  border: none !important;
+}
+
+.gpugroups {
+  float: left;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.gpugroups .gpugroup-container {
+  border: 1px solid #C8C2C2;
+  border-radius: 3px;
+  height: auto !important;
+  margin: 12px;
+  padding: 0;
+  position: relative;
+  float: left;
+  width: auto;
+}
+
+.gpugroups .gpugroup-container .title {
+  font-size: 13px;
+  font-weight: 100;
+  padding: 12px 12px 5px;
+}
+
+.ui-dialog .ui-button.add {
+  background: transparent linear-gradient(to bottom, #f7f7f7 1%, #eaeaea 100%) repeat 0px 0px;
+  font-size: 12px;
+  height: 12px;
+  width: auto;
+  margin: 0px 0px 12px;
+  padding: 5px 7px 5px 6px;
+}
+
+.ui-dialog .ui-button.add:hover {
+  background: #E5E5E5 repeat 0px 0px;
+  box-shadow: inset 0px 0px 5px #C3C3C3;
+}
+
+.ui-dialog .ui-button.add span {
+  background: transparent url("../images/icons.png") no-repeat -626px -209px;
+  padding: 0 0 3px 18px;
 }
 

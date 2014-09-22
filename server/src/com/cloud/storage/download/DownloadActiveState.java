@@ -35,39 +35,35 @@ public abstract class DownloadActiveState extends DownloadState {
             s_logger.trace("handleAnswer, answer status=" + answer.getDownloadStatus() + ", curr state=" + getName());
         }
         switch (answer.getDownloadStatus()) {
-            case DOWNLOAD_IN_PROGRESS:
-                getDownloadListener().scheduleStatusCheck(RequestType.GET_STATUS);
-                return Status.DOWNLOAD_IN_PROGRESS.toString();
-            case DOWNLOADED:
-                getDownloadListener().cancelTimeoutTask();
-                return Status.DOWNLOADED.toString();
-            case NOT_DOWNLOADED:
-                getDownloadListener().scheduleStatusCheck(RequestType.GET_STATUS);
-                return Status.NOT_DOWNLOADED.toString();
-            case DOWNLOAD_ERROR:
-                getDownloadListener().cancelStatusTask();
-                getDownloadListener().cancelTimeoutTask();
-                return Status.DOWNLOAD_ERROR.toString();
-            case UNKNOWN:
-                getDownloadListener().cancelStatusTask();
-                getDownloadListener().cancelTimeoutTask();
-                return Status.DOWNLOAD_ERROR.toString();
-            default:
-                return null;
+        case DOWNLOAD_IN_PROGRESS:
+            getDownloadListener().scheduleStatusCheck(RequestType.GET_STATUS);
+            return Status.DOWNLOAD_IN_PROGRESS.toString();
+        case DOWNLOADED:
+            getDownloadListener().cancelTimeoutTask();
+            return Status.DOWNLOADED.toString();
+        case NOT_DOWNLOADED:
+            getDownloadListener().scheduleStatusCheck(RequestType.GET_STATUS);
+            return Status.NOT_DOWNLOADED.toString();
+        case DOWNLOAD_ERROR:
+            getDownloadListener().cancelStatusTask();
+            getDownloadListener().cancelTimeoutTask();
+            return Status.DOWNLOAD_ERROR.toString();
+        case UNKNOWN:
+            getDownloadListener().cancelStatusTask();
+            getDownloadListener().cancelTimeoutTask();
+            return Status.DOWNLOAD_ERROR.toString();
+        default:
+            return null;
         }
     }
 
     @Override
     public void onEntry(String prevState, DownloadEvent event, Object evtObj) {
-        if (s_logger.isTraceEnabled()) {
-            getDownloadListener().log("onEntry, prev state= " + prevState + ", curr state=" + getName() + ", event=" + event, Level.TRACE);
-        }
+        super.onEntry(prevState, event, evtObj);
 
         if (event == DownloadEvent.DOWNLOAD_ANSWER) {
-            getDownloadListener().callback((DownloadAnswer)evtObj);
             getDownloadListener().setLastUpdated();
         }
-
     }
 
     @Override
@@ -79,7 +75,7 @@ public abstract class DownloadActiveState extends DownloadState {
         if (s_logger.isTraceEnabled()) {
             getDownloadListener().log("handleTimeout, updateMs=" + updateMs + ", curr state= " + getName(), Level.TRACE);
         }
-        String newState = this.getName();
+        String newState = getName();
         if (updateMs > 5 * DownloadListener.STATUS_POLL_INTERVAL) {
             newState = Status.DOWNLOAD_ERROR.toString();
             getDownloadListener().log("timeout: transitioning to download error state, currstate=" + getName(), Level.DEBUG);

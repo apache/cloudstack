@@ -35,8 +35,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
@@ -45,6 +43,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -114,6 +113,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -129,7 +129,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
-import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
@@ -209,7 +208,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
     private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter,
             Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler, Provider.JuniperContrailVpcRouter,
-            Provider.Ovs);
+            Provider.Ovs, Provider.NuageVsp);
 
     int _cleanupInterval;
     int _maxNetworks;
@@ -322,6 +321,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Set<Network.Provider> sdnProviders = new HashSet<Network.Provider>();
         sdnProviders.add(Provider.NiciraNvp);
         sdnProviders.add(Provider.JuniperContrailVpcRouter);
+        sdnProviders.add(Provider.NuageVsp);
 
         boolean sourceNatSvc = false;
         boolean firewallSvs = false;
@@ -609,9 +609,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Override
-    public List<? extends VpcOffering> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, Boolean isDefault, String keyword,
+    public Pair<List<? extends VpcOffering>,Integer> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, Boolean isDefault, String keyword,
         String state, Long startIndex, Long pageSizeVal) {
-        Filter searchFilter = new Filter(VpcOfferingVO.class, "created", false, startIndex, pageSizeVal);
+        Filter searchFilter = new Filter(VpcOfferingVO.class, "created", false, null, null);
         SearchCriteria<VpcOfferingVO> sc = _vpcOffDao.createSearchCriteria();
 
         if (keyword != null) {
@@ -671,9 +671,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
 
-            return supportedOfferings;
+            List<? extends VpcOffering> wPagination = StringUtils.applyPagination(supportedOfferings, startIndex, pageSizeVal);
+            if (wPagination != null) {
+                Pair<List<? extends VpcOffering>, Integer> listWPagination = new Pair<List<? extends VpcOffering>, Integer>(wPagination, supportedOfferings.size());
+                return listWPagination;
+            }
+            return new Pair<List<? extends VpcOffering>, Integer>(supportedOfferings, supportedOfferings.size());
         } else {
-            return offerings;
+            List<? extends VpcOffering> wPagination = StringUtils.applyPagination(offerings, startIndex, pageSizeVal);
+            if (wPagination != null) {
+                Pair<List<? extends VpcOffering>, Integer> listWPagination = new Pair<List<? extends VpcOffering>, Integer>(wPagination, offerings.size());
+                return listWPagination;
+            }
+            return new Pair<List<? extends VpcOffering>, Integer>(offerings, offerings.size());
         }
     }
 
@@ -991,24 +1001,22 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Override
-    public List<? extends Vpc> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, String cidr, Long vpcOffId, String state,
+    public Pair<List<? extends Vpc>, Integer> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, String cidr, Long vpcOffId, String state,
         String accountName, Long domainId, String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired,
         Map<String, String> tags, Long projectId, Boolean display) {
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        List<Long> permittedResources = new ArrayList<Long>();
-
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
                 ListProjectResourcesCriteria>(domainId, isRecursive, null);
-        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedDomains, permittedAccounts, permittedResources, domainIdRecursiveListProject, listAll,
-                false, "listVPCs");
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
+                listAll, false);
+        domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        Filter searchFilter = new Filter(VpcVO.class, "created", false, startIndex, pageSizeVal);
+        Filter searchFilter = new Filter(VpcVO.class, "created", false, null, null);
 
         SearchBuilder<VpcVO> sb = _vpcDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -1034,7 +1042,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // now set the SC criteria...
         SearchCriteria<VpcVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (keyword != null) {
             SearchCriteria<VpcVO> ssc = _vpcDao.createSearchCriteria();
@@ -1054,9 +1062,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
             sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.Vpc.toString());
-            for (String key : tags.keySet()) {
-                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
-                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+            for (Map.Entry<String,String>entry : tags.entrySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), entry.getKey());
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), entry.getValue());
                 count++;
             }
        }
@@ -1118,9 +1126,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
 
-            return supportedVpcs;
+            List<? extends Vpc> wPagination = StringUtils.applyPagination(supportedVpcs, startIndex, pageSizeVal);
+            if (wPagination != null) {
+                Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<List<? extends Vpc>, Integer>(wPagination, supportedVpcs.size());
+                return listWPagination;
+            }
+            return new Pair<List<? extends Vpc>, Integer>(supportedVpcs, supportedVpcs.size());
         } else {
-            return vpcs;
+            List<? extends Vpc> wPagination = StringUtils.applyPagination(vpcs, startIndex, pageSizeVal);
+            if (wPagination != null) {
+                Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<List<? extends Vpc>, Integer>(wPagination, vpcs.size());
+                return listWPagination;
+            }
+            return new Pair<List<? extends Vpc>, Integer>(vpcs, vpcs.size());
         }
     }
 
@@ -1277,7 +1295,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     continue;
                 } else {
                     NetworkOffering otherOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
-                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.getPublicLb()) {
+                    //throw only if networks have different offerings with public lb support
+                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.getPublicLb() &&
+                                   guestNtwkOff.getId() != otherOff.getId()) {
                         throw new InvalidParameterValueException("Public LB service is already supported " + "by network " + network + " in VPC " + vpc);
                     }
                 }
@@ -1401,7 +1421,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     public List<? extends Vpc> getVpcsForAccount(long accountId) {
-        return _vpcDao.listByAccountId(accountId);
+        List<Vpc> vpcs = new ArrayList<Vpc>();
+        vpcs.addAll(_vpcDao.listByAccountId(accountId));
+        return vpcs;
     }
 
     public boolean cleanupVpcResources(long vpcId, Account caller, long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
@@ -1538,7 +1560,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "creating vpc private gateway", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "creating VPC private gateway", create = true)
     public PrivateGateway createVpcPrivateGateway(final long vpcId, Long physicalNetworkId, final String broadcastUri, final String ipAddress, final String gateway,
         final String netmask, final long gatewayOwnerId, final Long networkOfferingId, final Boolean isSourceNat, final Long aclId) throws ResourceAllocationException,
             ConcurrentOperationException, InsufficientCapacityException {
@@ -1624,6 +1646,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             networkAclId = aclId;
         }
 
+        {   // experimental block, this is a hack
+            // set vpc id in network to null
+            // might be needed for all types of broadcast domains
+            // the ugly hack is that vpc gateway nets are created as guest network
+            // while they are not.
+            // A more permanent solution would be to define a type of 'gatewaynetwork'
+            // so that handling code is not mixed between the two
+            NetworkVO gatewaynet = _ntwkDao.findById(privateNtwk.getId());
+            gatewaynet.setVpcId(vpcId);
+            _ntwkDao.persist(gatewaynet);
+        }
+
         //2) create gateway entry
                     VpcGatewayVO gatewayVO =
                         new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(), privateNtwk.getId(), broadcastUri, gateway, netmask,
@@ -1642,19 +1676,25 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new IllegalStateException(e);
         }
 
+        CallContext.current().setEventDetails("Private Gateway Id: " + gatewayVO.getId());
         return getVpcPrivateGateway(gatewayVO.getId());
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "Applying VPC private gateway", async = true)
     public PrivateGateway applyVpcPrivateGateway(long gatewayId, boolean destroyOnFailure) throws ConcurrentOperationException, ResourceUnavailableException {
         VpcGatewayVO vo = _vpcGatewayDao.findById(gatewayId);
 
         boolean success = true;
         try {
+            List<Provider> providersToImplement = getVpcProviders(vo.getVpcId());
+
             PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
             for (VpcProvider provider : getVpcElements()) {
-                if (!provider.createPrivateGateway(gateway)) {
-                    success = false;
+                if (providersToImplement.contains(provider.getProvider())) {
+                    if (!provider.createPrivateGateway(gateway)) {
+                        success = false;
+                    }
                 }
             }
             if (success) {
@@ -1664,6 +1704,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     _vpcGatewayDao.update(vo.getId(), vo);
                     s_logger.debug("Marke gateway " + gateway + " with state " + VpcGateway.State.Ready);
                 }
+                CallContext.current().setEventDetails("Private Gateway Id: " + gatewayId);
                 return getVpcPrivateGateway(gatewayId);
             } else {
                 s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
@@ -1713,17 +1754,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             });
 
             //1) delete the gateway on the backend
+            List<Provider> providersToImplement = getVpcProviders(gatewayVO.getVpcId());
             PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
             for (VpcProvider provider : getVpcElements()) {
-                if (provider.deletePrivateGateway(gateway)) {
-                    s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
-                } else {
-                    s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
-                    gatewayVO.setState(VpcGateway.State.Ready);
-                    _vpcGatewayDao.update(gatewayVO.getId(), gatewayVO);
-                    s_logger.debug("Marked gateway " + gatewayVO + " with state " + VpcGateway.State.Ready);
+                if (providersToImplement.contains(provider.getProvider())) {
+                    if (provider.deletePrivateGateway(gateway)) {
+                        s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
+                    } else {
+                        s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
+                        gatewayVO.setState(VpcGateway.State.Ready);
+                        _vpcGatewayDao.update(gatewayVO.getId(), gatewayVO);
+                        s_logger.debug("Marked gateway " + gatewayVO + " with state " + VpcGateway.State.Ready);
 
-                    return false;
+                        return false;
+                    }
                 }
             }
 
@@ -1788,23 +1832,21 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        List<Long> permittedResources = new ArrayList<Long>();
         String state = cmd.getState();
         Long projectId = cmd.getProjectId();
 
         Filter searchFilter = new Filter(VpcGatewayVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
                 ListProjectResourcesCriteria>(domainId, isRecursive, null);
-        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedDomains, permittedAccounts, permittedResources, domainIdRecursiveListProject, listAll,
-                false, "listPrivateGateways");
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
+                listAll, false);
+        domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         SearchBuilder<VpcGatewayVO> sb = _vpcGatewayDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
-
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         if (vlan != null) {
             SearchBuilder<NetworkVO> ntwkSearch = _ntwkDao.createSearchBuilder();
             ntwkSearch.and("vlan", ntwkSearch.entity().getBroadcastUri(), SearchCriteria.Op.EQ);
@@ -1812,8 +1854,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         SearchCriteria<VpcGatewayVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
-
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         if (id != null) {
             sc.addAnd("id", Op.EQ, id);
         }
@@ -1849,7 +1890,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Override
-    public boolean applyStaticRoutes(long vpcId) throws ResourceUnavailableException {
+    public boolean applyStaticRoutesForVpc(long vpcId) throws ResourceUnavailableException {
         Account caller = CallContext.current().getCallingAccount();
         List<? extends StaticRoute> routes = _staticRouteDao.listByVpcId(vpcId);
         return applyStaticRoutes(routes, caller, true);
@@ -1929,7 +1970,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         markStaticRouteForRevoke(route, caller);
 
-        return applyStaticRoutes(route.getVpcId());
+        return applyStaticRoutesForVpc(route.getVpcId());
     }
 
     @DB
@@ -1947,7 +1988,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
                 }
             });
-            return applyStaticRoutes(vpcId);
+            return applyStaticRoutesForVpc(vpcId);
         }
 
         return true;
@@ -2041,23 +2082,21 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Boolean listAll = cmd.listAll();
         String accountName = cmd.getAccountName();
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        List<Long> permittedResources = new ArrayList<Long>();
-
         Map<String, String> tags = cmd.getTags();
         Long projectId = cmd.getProjectId();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
                 ListProjectResourcesCriteria>(domainId, isRecursive, null);
-        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedDomains, permittedAccounts, permittedResources, domainIdRecursiveListProject, listAll,
-                false, "listStaticRoutes");
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
+                listAll, false);
+        domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         Filter searchFilter = new Filter(StaticRouteVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
         SearchBuilder<StaticRouteVO> sb = _staticRouteDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
@@ -2076,8 +2115,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         SearchCriteria<StaticRouteVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
-
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         if (id != null) {
             sc.addAnd("id", Op.EQ, id);
         }
@@ -2156,18 +2194,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
 
                 try {
-                    Transaction.execute(new TransactionCallbackWithExceptionNoReturn<Exception>() {
-                        @Override
-                        public void doInTransactionWithoutResult(TransactionStatus status) throws Exception {
                     // Cleanup inactive VPCs
                     List<VpcVO> inactiveVpcs = _vpcDao.listInactiveVpcs();
-                    s_logger.info("Found " + inactiveVpcs.size() + " removed VPCs to cleanup");
-                    for (VpcVO vpc : inactiveVpcs) {
-                        s_logger.debug("Cleaning up " + vpc);
-                        destroyVpc(vpc, _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
-                    }
+                    if (inactiveVpcs != null) {
+                        s_logger.info("Found " + inactiveVpcs.size() + " removed VPCs to cleanup");
+                        for (VpcVO vpc : inactiveVpcs) {
+                            s_logger.debug("Cleaning up " + vpc);
+                            destroyVpc(vpc, _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
                         }
-                    });
+                    }
                 } catch (Exception e) {
                     s_logger.error("Exception ", e);
                 } finally {
@@ -2386,5 +2421,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     public void setVpcElements(List<VpcProvider> vpcElements) {
         this.vpcElements = vpcElements;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_STATIC_ROUTE_CREATE, eventDescription = "Applying static route", async = true)
+    public boolean applyStaticRoute(long routeId) throws ResourceUnavailableException {
+        StaticRoute route = _staticRouteDao.findById(routeId);
+        return applyStaticRoutesForVpc(route.getVpcId());
     }
 }

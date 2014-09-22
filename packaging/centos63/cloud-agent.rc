@@ -26,7 +26,7 @@
 
 # set environment variables
 
-SHORTNAME=`basename $0`
+SHORTNAME=$(basename $0 | sed -e 's/^[SK][0-9][0-9]//')
 PIDFILE=/var/run/"$SHORTNAME".pid
 LOCKFILE=/var/lock/subsys/"$SHORTNAME"
 LOGDIR=/var/log/cloudstack/agent

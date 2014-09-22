@@ -85,6 +85,29 @@ cloudStack.docs = {
         externalLink: ''
     },
 
+    helpManaged: {
+
+        desc: 'True if CloudStack manages the storage; else, false (check with storage provider if unknown)',
+        externalLink: ''
+    },
+
+    helpCapacityBytes: {
+
+        desc: 'Number of bytes for the primary storage to have',
+        externalLink: ''
+    },
+
+    helpCapacityIops: {
+
+        desc: 'Number of IOPS for the primary storage to have',
+        externalLink: ''
+    },
+
+    helpUrl: {
+
+        desc: 'Arbitrary data to be sent to the storage provider for configuration purposes',
+        externalLink: ''
+    },
 
     //Ldap
     helpLdapQueryFilter: {
@@ -218,6 +241,10 @@ cloudStack.docs = {
         desc: 'Type of disk for the VM. Local storage is attached to the hypervisor host where the VM is running. Shared storage is accessible via NFS.',
         externalLink: ''
     },
+    helpComputeOfferingProvisioningType: {
+        desc: 'Provisioning type to create a volume. Thin and sparse is lazy allocation. fat is eager allocation.',
+        externalLink: ''
+    },
     helpComputeOfferingCPUCores: {
         desc: 'The number of cores which should be allocated to a VM with this offering',
         externalLink: ''
@@ -282,6 +309,10 @@ cloudStack.docs = {
         desc: 'A short description of the offering that can be displayed to users',
         externalLink: ''
     },
+    helpDiskOfferingProvisioningType: {
+        desc: 'Provisioning type to create a volume. Thin and sparse is lazy allocation. fat is eager allocation.',
+        externalLink: ''
+    },
     helpDiskOfferingStorageType: {
         desc: 'Type of disk for the VM. Local is attached to the hypervisor host where the VM is running. Shared is storage accessible via NFS.',
         externalLink: ''
@@ -327,7 +358,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpDiskOfferingHypervisorSnapshotReserve: {
-        desc: 'Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware) (Ex. The value 25 means 25%.)).',
+        desc: 'Hypervisor snapshot reserve space as a percent of a volume (for managed storage using XenServer or VMware) (Ex. The value 25 means 25%.)).',
     },
     helpDiskOfferingCacheMode: {
         desc: 'The write caching mode to use for disks created with this disk offering. This can improve write performance.',
@@ -627,7 +658,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpPrimaryStorageProtocol: {
-        desc: 'For XenServer, choose NFS, iSCSI, or PreSetup. For KVM, choose NFS or SharedMountPoint. For vSphere, choose VMFS (iSCSI or FiberChannel) or NFS. For Hyper-V, choose SMB/CIFS',
+        desc: 'For XenServer, choose NFS, iSCSI, or PreSetup. For KVM, choose NFS, SharedMountPoint, RDB, CLVM or Gluster. For vSphere, choose VMFS (iSCSI or FiberChannel) or NFS. For Hyper-V, choose SMB/CIFS. For LXC, choose NFS or SharedMountPoint. For OVM, choose NFS or ocfs2.',
         externalLink: ''
     },
     helpPrimaryStorageServer: {
@@ -1187,6 +1218,10 @@ cloudStack.docs = {
         desc: 'Check this if the template is used for deploying router.',
         externalLink: ''
     },
+    helpRegisterTemplateHvm: {
+        desc: 'Check this if the template requires hvm.',
+        externalLink: ''
+    },
     // Upload volume
     helpUploadVolumeName: {
         desc: 'A unique name for the volume. This will be visible to users, so choose something descriptive.',
@@ -1197,7 +1232,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpUploadVolumeFormat: {
-        desc: 'The disk image format of the volume. XenServer is VHD, VMware is OVA, and KVM is QCOW2. Hyper-V is VHD.',
+        desc: 'The disk image format of the volume. XenServer is VHD, VMware is OVA, and KVM is QCOW2. Hyper-V is VHD or VHDX. OVM is RAW.',
         externalLink: ''
     },
     helpUploadVolumeURL: {
@@ -1210,6 +1245,43 @@ cloudStack.docs = {
     },
     helpLdapGroupName: {
         desc: 'The group name from which you want to import LDAP users',
+        externalLink: ''
+    },
+    helpVpcOfferingName: {
+        desc: 'Any desired name for the VPC offering',
+        externalLink: ''
+    },
+    helpVpcOfferingDescription: {
+        desc: 'A short description of the offering that can be displayed to users',
+        externalLink: ''
+    },
+    // Add Nuage VSP
+    helpVspHostname: {
+        desc: 'The hostname/IP address of Nuage VSD',
+        externalLink: ''
+    },
+    helpVspUsername: {
+        desc: 'A name of the CMS user in Nuage VSD.',
+        externalLink: ''
+    },
+    helpVspPassword: {
+        desc: 'The password for the CMS user in Nuage VSD.',
+        externalLink: ''
+    },
+    helpVspPort: {
+        desc: 'The port to communicate with Nuage VSD. e.g. Unspecified/0 if using HAProxy for load balancing or 8443 if connecting directly to a VSD server.',
+        externalLink: ''
+    },
+    helpVspApiVersion: {
+        desc: 'The API version of Nuage VSD',
+        externalLink: ''
+    },
+    helpVspRetries: {
+        desc: 'Number of times to attempt a command on Nuage VSD before considering the operation failed.  Valid values [1 - 10].',
+        externalLink: ''
+    },
+    helpVspRetryInterval: {
+        desc: 'The interval of time in milliseconds to wait on failure before attempting to resend the command to Nuage VSD.  Valid values [0 - 10000].',
         externalLink: ''
     }
 };

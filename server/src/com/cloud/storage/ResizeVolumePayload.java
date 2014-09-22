@@ -19,12 +19,16 @@ package com.cloud.storage;
 
 public class ResizeVolumePayload {
     public final Long newSize;
+    public final Long newMinIops;
+    public final Long newMaxIops;
     public final boolean shrinkOk;
     public final String instanceName;
     public final long[] hosts;
 
-    public ResizeVolumePayload(Long newSize, boolean shrinkOk, String instanceName, long[] hosts) {
+    public ResizeVolumePayload(Long newSize, Long newMinIops, Long newMaxIops, boolean shrinkOk, String instanceName, long[] hosts) {
         this.newSize = newSize;
+        this.newMinIops = newMinIops;
+        this.newMaxIops = newMaxIops;
         this.shrinkOk = shrinkOk;
         this.instanceName = instanceName;
         this.hosts = hosts;

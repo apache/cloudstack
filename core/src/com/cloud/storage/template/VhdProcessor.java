@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,12 +15,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.storage.template;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -77,13 +79,25 @@ public class VhdProcessor extends AdapterBase implements Processor {
         byte[] creatorApp = new byte[4];
         try {
             strm = new FileInputStream(vhdFile);
-            strm.skip(info.size - vhdFooterSize + vhdFooterCreatorAppOffset);
-            strm.read(creatorApp);
-            strm.skip(vhdFooterCurrentSizeOffset - vhdFooterCreatorVerOffset);
-            strm.read(currentSize);
-        } catch (Exception e) {
+            long skipped = strm.skip(info.size - vhdFooterSize + vhdFooterCreatorAppOffset);
+            if (skipped == -1) {
+                throw new InternalErrorException("Unexpected end-of-file");
+            }
+            long read = strm.read(creatorApp);
+            if (read == -1) {
+                throw new InternalErrorException("Unexpected end-of-file");
+            }
+            skipped = strm.skip(vhdFooterCurrentSizeOffset - vhdFooterCreatorVerOffset);
+            if (skipped == -1) {
+                throw new InternalErrorException("Unexpected end-of-file");
+            }
+            read = strm.read(currentSize);
+            if (read == -1) {
+                throw new InternalErrorException("Unexpected end-of-file");
+            }
+        } catch (IOException e) {
             s_logger.warn("Unable to read vhd file " + vhdPath, e);
-            throw new InternalErrorException("Unable to read vhd file " + vhdPath + ": " + e);
+            throw new InternalErrorException("Unable to read vhd file " + vhdPath + ": " + e, e);
         } finally {
             if (strm != null) {
                 try {
@@ -102,7 +116,7 @@ public class VhdProcessor extends AdapterBase implements Processor {
     }
 
     @Override
-    public Long getVirtualSize(File file) {
+    public long getVirtualSize(File file) {
         FileInputStream strm = null;
         byte[] currentSize = new byte[8];
         byte[] creatorApp = new byte[4];
@@ -139,21 +153,4 @@ public class VhdProcessor extends AdapterBase implements Processor {
         return true;
     }
 
-    private void imageSignatureCheck(byte[] creatorApp) throws InternalErrorException {
-        boolean findKnownCreator = false;
-        for (int i = 0; i < citrixCreatorApp.length; i++) {
-            if (Arrays.equals(creatorApp, citrixCreatorApp[i])) {
-                findKnownCreator = true;
-                break;
-            }
-        }
-        if (!findKnownCreator) {
-            /*Only support VHD image created by citrix xenserver, and xenconverter*/
-            String readableCreator = "";
-            for (int j = 0; j < creatorApp.length; j++) {
-                readableCreator += (char)creatorApp[j];
-            }
-            throw new InternalErrorException("Image creator is:" + readableCreator + ", is not supported");
-        }
-    }
 }

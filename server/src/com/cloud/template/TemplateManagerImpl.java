@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -159,6 +158,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
@@ -380,8 +380,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isISO) {
             desc = Upload.Type.ISO.toString();
         }
-        eventId = eventId == null ? 0 : eventId;
-
         if (!_accountMgr.isRootAdmin(caller.getId()) && _disableExtraction) {
             throw new PermissionDeniedException("Extraction has been disabled by admin");
         }
@@ -437,12 +435,20 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
         }
 
+        // Check if the url already exists
+        if(tmpltStoreRef.getExtractUrl() != null){
+            return tmpltStoreRef.getExtractUrl();
+        }
+
         // Handle NFS to S3 object store migration case, we trigger template sync from NFS to S3 during extract template or copy template
         _tmpltSvr.syncTemplateToRegionStore(templateId, tmpltStore);
 
         TemplateInfo templateObject = _tmplFactory.getTemplate(templateId, tmpltStore);
-
-        return tmpltStore.createEntityExtractUrl(templateObject.getInstallPath(), template.getFormat(), templateObject);
+        String extractUrl = tmpltStore.createEntityExtractUrl(tmpltStoreRef.getInstallPath(), template.getFormat(), templateObject);
+        tmpltStoreRef.setExtractUrl(extractUrl);
+        tmpltStoreRef.setExtractUrlCreated(DateUtil.now());
+        _tmplStoreDao.update(tmpltStoreRef.getId(), tmpltStoreRef);
+        return extractUrl;
     }
 
     @Override
@@ -619,7 +625,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         TemplateDataStoreVO srcTmpltStore = _tmplStoreDao.findByStoreTemplate(srcSecStore.getId(), tmpltId);
 
         _resourceLimitMgr.checkResourceLimit(account, ResourceType.template);
-        _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, new Long(srcTmpltStore.getSize()));
+        _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, new Long(srcTmpltStore.getSize()).longValue());
 
         // Event details
         String copyEventType;
@@ -640,6 +646,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             TemplateDataStoreVO dstTmpltStore = _tmplStoreDao.findByStoreTemplate(dstSecStore.getId(), tmpltId);
             if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOADED) {
                 return true; // already downloaded on this image store
+            }
+            if (dstTmpltStore != null && dstTmpltStore.getDownloadState() != Status.DOWNLOAD_IN_PROGRESS) {
+                _tmplStoreDao.removeByTemplateStore(tmpltId, dstSecStore.getId());
             }
 
             AsyncCallFuture<TemplateApiResult> future = _tmpltSvr.copyTemplate(srcTemplate, dstSecStore);
@@ -1220,7 +1229,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("unable to update permissions for " + mediaType + " with id " + id);
         }
 
-        boolean isAdmin = _accountMgr.isAdmin(caller.getType());
+        boolean isAdmin = _accountMgr.isAdmin(caller.getId());
         // check configuration parameter(allow.public.user.templates) value for
         // the template owner
         boolean allowPublicUserTemplates = AllowPublicUserTemplates.valueIn(template.getAccountId());
@@ -1256,8 +1265,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (isExtractable != null) {
             // Only Root admins allowed to change it for templates
-            if (!template.getFormat().equals(ImageFormat.ISO) && _accountMgr.isRootAdmin(caller.getId())) {
-             throw new InvalidParameterValueException("Only ROOT admins are allowed to modify this attribute.");
+            if (!template.getFormat().equals(ImageFormat.ISO) && !_accountMgr.isRootAdmin(caller.getId())) {
+                throw new InvalidParameterValueException("Only ROOT admins are allowed to modify isExtractable attribute.");
             } else {
                 // For Isos normal user can change it, as their are no derivatives.
                 updatedTemplate.setExtractable(isExtractable.booleanValue());
@@ -1351,7 +1360,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Long volumeId = command.getVolumeId();
         Long snapshotId = command.getSnapshotId();
         VMTemplateVO privateTemplate = null;
-        final Long accountId = null;
+        final Long accountId = CallContext.current().getCallingAccountId();
         SnapshotVO snapshot = null;
         VolumeVO volume = null;
 
@@ -1487,7 +1496,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Long userId = CallContext.current().getCallingUserId();
 
         Account caller = CallContext.current().getCallingAccount();
-        boolean isAdmin = (_accountMgr.isAdmin(caller.getType()));
+        boolean isAdmin = (_accountMgr.isAdmin(caller.getId()));
 
         _accountMgr.checkAccess(caller, null, true, templateOwner);
 
@@ -1584,7 +1593,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);
-        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.secondary_storage, new Long(volume != null ? volume.getSize() : snapshot.getSize()));
+        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.secondary_storage, new Long(volume != null ? volume.getSize() : snapshot.getSize()).longValue());
 
         if (!isAdmin || featured == null) {
             featured = Boolean.FALSE;
@@ -1595,7 +1604,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("GuestOS with ID: " + guestOSId + " does not exist.");
         }
 
-        String uniqueName = Long.valueOf((userId == null) ? 1 : userId).toString() + UUID.nameUUIDFromBytes(name.getBytes()).toString();
         Long nextTemplateId = _tmpltDao.getNextInSequence(Long.class, "id");
         String description = cmd.getDisplayText();
         boolean isExtractable = false;
@@ -1620,10 +1628,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 s_logger.debug("Adding template tag: " + templateTag);
             }
         }
-        privateTemplate =
-                new VMTemplateVO(nextTemplateId, uniqueName, name, ImageFormat.RAW, isPublic, featured, isExtractable, TemplateType.USER, null, null, requiresHvmValue,
-                        bitsValue, templateOwner.getId(), null, description, passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails());
-        privateTemplate.setDynamicallyScalable(isDynamicScalingEnabled);
+        privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
+                TemplateType.USER, null, requiresHvmValue, bitsValue, templateOwner.getId(), null, description,
+                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), false, isDynamicScalingEnabled);
 
         if (sourceTemplateId != null) {
             if (s_logger.isDebugEnabled()) {
@@ -1647,6 +1654,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 }
             }
             if (cmd.getDetails() != null) {
+                details.remove("Encrypted.Password"); // new password will be generated during vm deployment from password enabled template
                 details.putAll(cmd.getDetails());
             }
             if (!details.isEmpty()) {

@@ -18,6 +18,8 @@ package org.apache.cloudstack.acl;
 
 import java.util.List;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+
 import com.cloud.user.Account;
 import com.cloud.utils.component.Adapter;
 
@@ -33,7 +35,7 @@ public interface QuerySelector extends Adapter {
     * @param action action
     * @return list of domain Ids granted to the caller account.
     */
-    List<Long> getAuthorizedDomains(Account caller, String action);
+    List<Long> getAuthorizedDomains(Account caller, String action, AccessType accessType);
 
     /**
     * List granted accounts for the caller, given a specific action.
@@ -42,7 +44,7 @@ public interface QuerySelector extends Adapter {
     * @param action action.
     * @return list of domain Ids granted to the caller account.
     */
-    List<Long> getAuthorizedAccounts(Account caller, String action);
+    List<Long> getAuthorizedAccounts(Account caller, String action, AccessType accessType);
 
 
     /**
@@ -52,7 +54,7 @@ public interface QuerySelector extends Adapter {
     * @param action action.
     * @return list of domain Ids granted to the caller account.
     */
-    List<Long> getAuthorizedResources(Account caller, String action);
+    List<Long> getAuthorizedResources(Account caller, String action, AccessType accessType);
 
     /**
      * Check if this account is associated with a policy with scope of ALL
@@ -60,7 +62,7 @@ public interface QuerySelector extends Adapter {
      * @param action action.
      * @return true if this account is attached with a policy for the given action of ALL scope.
      */
-    boolean isGrantedAll(Account caller, String action);
+    boolean isGrantedAll(Account caller, String action, AccessType accessType);
 
     /**
      * List of ACL group the given account belongs to

@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -66,52 +66,6 @@ namespace HypervResource
                     uncPath = @"\\" + uri.Host + uri.LocalPath;
                 }
                 return uncPath;
-            }
-        }
-
-        public string User
-        {
-            get
-            {
-                string user = null;
-                if (uri != null)
-                {
-                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                    user = System.Web.HttpUtility.UrlDecode(queryDictionary["user"]);
-                }
-                return user;
-            }
-        }
-
-        public string Password
-        {
-            get
-            {
-                string password = null;
-                if (uri != null)
-                {
-                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                    password = System.Web.HttpUtility.UrlDecode(queryDictionary["password"]);
-                }
-                return password;
-            }
-        }
-
-        public string Domain
-        {
-            get
-            {
-                string domain = null;
-                if (uri != null)
-                {
-                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                    if (queryDictionary["domain"] != null)
-                    {
-                        domain = System.Web.HttpUtility.UrlDecode(queryDictionary["domain"]);
-                    }
-                    else domain = uri.Host;
-                }
-                return domain;
             }
         }
 
@@ -302,7 +256,7 @@ namespace HypervResource
                 path = Utils.NormalizePath(path);
                 if (Directory.Exists(path))
                 {
-                    string[] choices = choices = Directory.GetFiles(path, volInfo.uuid + ".vhd*");
+                    string[] choices = Directory.GetFiles(path, volInfo.uuid + ".vhd*");
                     if (choices.Length != 1)
                     {
                         String errMsg = "Tried to guess file extension, but cannot find file corresponding to " +
@@ -457,36 +411,7 @@ namespace HypervResource
                 return uncPath;
             }
         }
-        public string User
-        {
-            get
-            {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                return System.Web.HttpUtility.UrlDecode(queryDictionary["user"]);
-            }
-        }
 
-        public string Password
-        {
-            get
-            {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                return System.Web.HttpUtility.UrlDecode(queryDictionary["password"]);
-            }
-        }
-
-        public string Domain
-        {
-            get
-            {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                if (queryDictionary["domain"] != null)
-                {
-                    return System.Web.HttpUtility.UrlDecode(queryDictionary["domain"]);
-                }
-                else return uri.Host;
-            }
-        }
         public static NFSTO ParseJson(dynamic json)
         {
             NFSTO result = null;
@@ -609,6 +534,7 @@ namespace HypervResource
 
     public struct VolumeInfo
     {
+#pragma warning disable 0414
         public long id;
         public string type;
         public string storagePoolType;
@@ -618,6 +544,7 @@ namespace HypervResource
         public string path;
         long size;
         string chainInfo;
+#pragma warning restore 0414
 
         public VolumeInfo(long id, string type, string poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo)
         {
@@ -635,10 +562,12 @@ namespace HypervResource
 
     public class VmState
     {
+#pragma warning disable 0414
         [JsonProperty("state")]
         public String state;
         [JsonProperty("host")]
         String host;
+#pragma warning restore 0414
         public VmState() { }
         public VmState(String vmState, String host)
         {
@@ -649,6 +578,7 @@ namespace HypervResource
 
     public struct StoragePoolInfo
     {
+#pragma warning disable 0414
         [JsonProperty("uuid")]
         public String uuid;
         [JsonProperty("host")]
@@ -667,6 +597,7 @@ namespace HypervResource
         long availableBytes;
         [JsonProperty("details")]
         Dictionary<String, String> details;
+#pragma warning restore 0414
 
         public StoragePoolInfo(String uuid, String host, String hostPath,
                 String localPath, string poolType, long capacityBytes,
@@ -711,11 +642,22 @@ namespace HypervResource
         public string macaddress;
         [JsonProperty("vlanid")]
         public int vlanid;
+        [JsonProperty("state")]
+        public bool state;
         public NicDetails() { }
-        public NicDetails(String macaddress, int vlanid)
+        public NicDetails(String macaddress, int vlanid, int enabledState)
         {
             this.macaddress = macaddress;
             this.vlanid = vlanid;
+            if (enabledState == 2)
+            {
+                this.state = true;
+            }
+            else
+            {
+                this.state = false;
+            }
+
         }
     }
 

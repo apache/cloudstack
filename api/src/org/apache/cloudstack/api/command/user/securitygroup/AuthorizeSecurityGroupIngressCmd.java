@@ -95,8 +95,9 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.UUID, description="The ID of the security group. Mutually exclusive with securityGroupName parameter", entityType=SecurityGroupResponse.class)
     private Long securityGroupId;
 
-    @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, description="The name of the security group. Mutually exclusive with securityGroupName parameter")
+    // This @ACL will not work, since we don't have a way to convert this parameter to the entity like securityGroupId.
+    //@ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, description="The name of the security group. Mutually exclusive with securityGroupId parameter")
     private String securityGroupName;
 
     /////////////////////////////////////////////////////

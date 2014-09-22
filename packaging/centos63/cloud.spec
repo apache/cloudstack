@@ -5,7 +5,7 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 # 
 # Unless required by applicable law or agreed to in writing,
@@ -43,8 +43,10 @@ Group:     System Environment/Libraries
 Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
+%include SPECS/%{_os}/macros.spec
+
 BuildRequires: java-1.7.0-openjdk-devel
-BuildRequires: tomcat6
+BuildRequires: %{_tomcatversion}
 BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
@@ -59,8 +61,8 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: tomcat6
-Requires: java >= 1.7.0
+Requires: %{_tomcatversion}
+Requires: %{_javaversion}
 Requires: python
 Requires: bash
 Requires: bzip2
@@ -70,6 +72,7 @@ Requires: /sbin/mount.nfs
 Requires: openssh-clients
 Requires: nfs-utils
 Requires: wget
+Requires: mysql
 Requires: mysql-connector-java
 Requires: ws-commons-util
 Requires: jpackage-utils
@@ -79,14 +82,15 @@ Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
 Requires: mkisofs
 Requires: MySQL-python
-Requires: python-paramiko
+%{_pythonparamiko}
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
-Requires: %{name}-awsapi = %{_ver} 
+Requires: %{name}-awsapi = %{_ver}
+%{_iptablesservice}
 Obsoletes: cloud-client < 4.1.0
 Obsoletes: cloud-client-ui < 4.1.0
 Obsoletes: cloud-server < 4.1.0
-Obsoletes: cloud-test < 4.1.0 
+Obsoletes: cloud-test < 4.1.0
 Provides:  cloud-client
 Group:     System Environment/Libraries
 %description management
@@ -112,14 +116,14 @@ The Apache CloudStack files shared between agent and management server
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
-Requires: java >= 1.7.0
+Requires: %{_javaversion}
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
 Requires: ebtables
 Requires: iptables
 Requires: ethtool
-Requires: vconfig
+Requires: %{_vlanconfigtool}
 Requires: ipset
 Requires: jsvc
 Requires: jakarta-commons-daemon
@@ -136,9 +140,21 @@ Group: System Environment/Libraries
 %description agent
 The CloudStack agent for KVM hypervisors
 
+%package baremetal-agent
+Summary: CloudStack baremetal agent
+Requires: tftp-server
+Requires: xinetd
+Requires: syslinux
+Requires: chkconfig
+Requires: dhcp
+Requires: httpd
+Group:     System Environment/Libraries
+%description baremetal-agent
+The CloudStack baremetal agent
+
 %package usage
 Summary: CloudStack Usage calculation server
-Requires: java >= 1.7.0
+Requires: %{_javaversion}
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
@@ -164,6 +180,17 @@ Provides: cloud-aws-api
 Group: System Environment/Libraries
 %description awsapi
 Apache Cloudstack AWS API compatibility wrapper
+
+%if "%{_ossnoss}" == "NOREDIST"
+%package mysql-ha
+Summary: Apache CloudStack Balancing Strategy for MySQL
+Requires: mysql-connector-java
+Requires: %{_tomcatversion}
+Group: System Environmnet/Libraries
+%description mysql-ha
+Apache CloudStack Balancing Strategy for MySQL
+
+%endif
 
 %prep
 echo Doing CloudStack build
@@ -225,13 +252,12 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/awsapi
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
-mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}-management
 
 # Specific for tomcat
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
-ln -sf /usr/share/tomcat6/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
+ln -sf /usr/share/%{_tomcatpathname}/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
 ln -sf /etc/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/conf
-ln -sf /usr/share/tomcat6/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
+ln -sf /usr/share/%{_tomcatpathname}/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
 ln -sf /var/log/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/logs
 ln -sf /var/cache/%{name}/management/temp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/temp
 ln -sf /var/cache/%{name}/management/work ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/work
@@ -244,6 +270,7 @@ install -D client/target/utilities/bin/cloud-set-guest-sshkey ${RPM_BUILD_ROOT}%
 install -D client/target/utilities/bin/cloud-setup-databases ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-databases
 install -D client/target/utilities/bin/cloud-setup-encryption ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-encryption
 install -D client/target/utilities/bin/cloud-setup-management ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-management
+install -D client/target/utilities/bin/cloud-setup-baremetal ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-baremetal
 install -D client/target/utilities/bin/cloud-sysvmadm ${RPM_BUILD_ROOT}%{_bindir}/%{name}-sysvmadm
 install -D client/target/utilities/bin/cloud-update-xenserver-licenses ${RPM_BUILD_ROOT}%{_bindir}/%{name}-update-xenserver-licenses
 
@@ -254,11 +281,18 @@ cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
-for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf server-ssl.xml server-nonssl.xml \
+for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf %{_serverxmlname}-ssl.xml %{_serverxmlname}-nonssl.xml \
             catalina.policy catalina.properties classpath.conf tomcat-users.xml web.xml environment.properties ; do
   mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
+
+if [ -f "${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server7-nonssl.xml" ]; then
+    mv ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server7-nonssl.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server-nonssl.xml
+fi
+if [ -f "${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server7-ssl.xml" ]; then
+    mv ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server7-ssl.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server-ssl.xml
+fi
 
 ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
     ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
@@ -270,8 +304,10 @@ install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/
 install -D client/target/pythonlibs/jasypt-1.9.0.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.0.jar
 
 install -D packaging/centos63/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
-install -D packaging/centos63/cloud-management.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-management
+install -D packaging/centos63/cloud-management.rc ${RPM_BUILD_ROOT}%{_managementstartscriptpath}/%{name}-management
 install -D packaging/centos63/cloud-management.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/%{name}-management
+install -D packaging/centos63/%{_os}/tomcat.sh ${RPM_BUILD_ROOT}%{_managementstartscriptpath}/tomcat.sh
+%{_managementservice}
 
 chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina
 chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost
@@ -282,7 +318,6 @@ chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/work
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/temp
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
-chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}-management
 
 # KVM Agent
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent
@@ -330,6 +365,12 @@ for name in cloud-bridge.properties commons-logging.properties ec2-service.prope
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
 
+# MYSQL HA
+if [ "x%{_ossnoss}" == "xNOREDIST" ] ; then
+  mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
+  cp -r plugins/database/mysql-ha/target/cloud-plugin-database-mysqlha-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
+fi
+
 #Don't package the below for AWS API
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/db.properties
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/LICENSE.txt
@@ -349,9 +390,13 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-agen
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/NOTICE
-install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
-install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
+if [ "x%{_ossnoss}" == "xNOREDIST" ] ; then
+  install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-mysql-ha-%{version}/LICENSE
+  install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-mysql-ha-%{version}/NOTICE
+fi
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -511,6 +556,12 @@ if [ -f "%{_sysconfdir}/%{name}/management/db.properties" ]; then
     /sbin/chkconfig --level 345 cloudstack-usage on > /dev/null 2>&1 || true
 fi
 
+if [ -f "%{_sysconfdir}/%{name}/management/key" ]; then
+    echo Replacing key with management server key
+    rm -f %{_sysconfdir}/%{name}/usage/key
+    ln -s %{_sysconfdir}/%{name}/management/key %{_sysconfdir}/%{name}/usage/key
+fi
+
 #%post awsapi
 #if [ -d "%{_datadir}/%{name}-management" ] ; then
 #   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
@@ -548,16 +599,19 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/cloud-bridge.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/ec2-service.properties
-%attr(0755,root,root) %{_initrddir}/%{name}-management
+%attr(0755,root,root) %{_managementstartscriptpath}/%{name}-management
+%attr(0755,root,root) %{_managementstartscriptpath}/tomcat.sh
+%{_managementserviceattribute}
+
 %attr(0755,root,root) %{_bindir}/%{name}-setup-management
 %attr(0755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
 %{_datadir}/%{name}-management/webapps
-%dir %{_datadir}/%{name}-management/bin
-%dir %{_datadir}/%{name}-management/conf
-%dir %{_datadir}/%{name}-management/lib
-%dir %{_datadir}/%{name}-management/logs
-%dir %{_datadir}/%{name}-management/temp
-%dir %{_datadir}/%{name}-management/work
+%{_datadir}/%{name}-management/bin
+%{_datadir}/%{name}-management/conf
+%{_datadir}/%{name}-management/lib
+%{_datadir}/%{name}-management/logs
+%{_datadir}/%{name}-management/temp
+%{_datadir}/%{name}-management/work
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-password
@@ -571,7 +625,6 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/%{name}-ipallocator
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
-%dir %attr(0770,root,root) %{_localstatedir}/log/%{name}-management
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 %attr(0644,cloud,cloud) %{_localstatedir}/log/%{name}/management/catalina.out
@@ -633,8 +686,20 @@ fi
 %{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-awsapi-%{version}/NOTICE
 
+%if "%{_ossnoss}" == "NOREDIST"
+%files mysql-ha
+%defattr(0644,cloud,cloud,0755)
+%attr(0644,root,root) %{_datadir}/%{name}-mysql-ha/lib/*
+%{_defaultdocdir}/%{name}-mysql-ha-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-mysql-ha-%{version}/NOTICE
+%endif
+
+%files baremetal-agent
+%attr(0755,root,root) %{_bindir}/cloudstack-setup-baremetal
 
 %changelog
+* Fri Jul 04 2014 Hugo Trippaers <hugo@apache.org> 4.5.0
+- Add a package for the mysql ha module
+
 * Fri Oct 03 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
 - new style spec file
-

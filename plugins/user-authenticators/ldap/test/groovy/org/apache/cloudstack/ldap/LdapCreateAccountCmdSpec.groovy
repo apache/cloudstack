@@ -29,7 +29,8 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.AccountService;
 import com.cloud.user.UserAccount;
-import com.cloud.user.UserAccountVO;
+import com.cloud.user.UserAccountVO
+import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
 
 import javax.naming.NamingException
 
@@ -38,7 +39,7 @@ class LdapCreateAccountCmdSpec extends spock.lang.Specification {
     def "Test failure to retrive LDAP user"() {
 		given: "We have an LdapManager, AccountService and LdapCreateAccountCmd and LDAP user that doesn't exist"
 		LdapManager ldapManager = Mock(LdapManager)
-		ldapManager.getUser(_) >> { throw new NamingException() }
+		ldapManager.getUser(_) >> { throw new NoLdapUserMatchingQueryException() }
 		AccountService accountService = Mock(AccountService)
 		def ldapCreateAccountCmd = Spy(LdapCreateAccountCmd, constructorArgs: [ldapManager, accountService])
 		ldapCreateAccountCmd.getCurrentContext() >> Mock(CallContext)

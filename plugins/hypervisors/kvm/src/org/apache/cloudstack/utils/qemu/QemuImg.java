@@ -17,10 +17,13 @@
 package org.apache.cloudstack.utils.qemu;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import com.cloud.storage.Storage;
 
-import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.script.OutputInterpreter;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class QemuImg {
 
@@ -40,6 +43,35 @@ public class QemuImg {
         @Override
         public String toString() {
             return this.format;
+        }
+    }
+
+    public static enum PreallocationType {
+        Off("off"),
+        Metadata("metadata"),
+        Full("full");
+
+        private final String preallocationType;
+
+        private PreallocationType(String preallocationType){
+            this.preallocationType = preallocationType;
+        }
+
+        public String toString(){
+            return this.preallocationType;
+        }
+
+        public static PreallocationType getPreallocationType(Storage.ProvisioningType provisioningType){
+            switch (provisioningType){
+                case THIN:
+                    return PreallocationType.Off;
+                case SPARSE:
+                    return PreallocationType.Metadata;
+                case FAT:
+                    return PreallocationType.Full;
+                default:
+                    throw new NotImplementedException();
+            }
         }
     }
 
@@ -91,8 +123,14 @@ public class QemuImg {
         if (options != null && !options.isEmpty()) {
             s.add("-o");
             final StringBuilder optionsStr = new StringBuilder();
-            for (Map.Entry<String, String> option : options.entrySet()) {
-                optionsStr.append(option.getKey()).append('=').append(option.getValue()).append(',');
+            Iterator<Map.Entry<String, String>> optionsIter = options.entrySet().iterator();
+            while(optionsIter.hasNext()){
+                Map.Entry option = optionsIter.next();
+                optionsStr.append(option.getKey()).append('=').append(option.getValue());
+                if(optionsIter.hasNext()){
+                    //Add "," only if there are more options
+                    optionsStr.append(',');
+                }
             }
             s.add(optionsStr.toString());
         }

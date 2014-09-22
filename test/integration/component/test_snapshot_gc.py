@@ -16,13 +16,22 @@
 # under the License.
 
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-from marvin.integration.lib.utils import is_snapshot_on_nfs
-
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import (
+                              is_snapshot_on_nfs,
+                              cleanup_resources)
+from marvin.lib.base import (Account,
+                             Snapshot,
+                             ServiceOffering,
+                             VirtualMachine)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               list_volumes,
+                               list_accounts,
+                               list_snapshots,
+                               wait_for_cleanup)
 
 class Services:
     """Test Snapshots Services
@@ -122,11 +131,13 @@ class TestAccountSnapshotClean(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestAccountSnapshotClean, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAccountSnapshotClean, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -175,7 +186,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
             volume = volumes[0]
 
             # Create a snapshot from the ROOTDISK
-            cls.snapshot = Snapshot.create(cls.api_client, volumes[0].id)
+            cls.snapshot = Snapshot.create(cls.api_client, volume.id)
         except Exception, e:
             cls.tearDownClass()
             unittest.SkipTest("setupClass fails for %s" % cls.__name__)
@@ -206,7 +217,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "basic", "sg", "provisioning"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg"], required_hardware="true")
     def test_02_accountSnapshotClean(self):
         """Test snapshot cleanup after account deletion
         """
@@ -221,70 +232,48 @@ class TestAccountSnapshotClean(cloudstackTestCase):
         #    b) snapshot image($snapshot_id) should be deleted from the
         #       /secondary/snapshots/$accountid/$volumeid/
 
-        accounts = list_accounts(
+        try:
+            accounts = list_accounts(
                                  self.apiclient,
                                  id=self.account.id
                                  )
-        self.assertEqual(
+            self.assertEqual(
                             isinstance(accounts, list),
                             True,
                             "Check list response returns a valid list"
                         )
-        self.assertNotEqual(
+            self.assertNotEqual(
                              len(accounts),
                              0,
                              "Check list Accounts response"
                              )
 
-        # VM should be in 'Running' state
-        virtual_machines = list_virtual_machines(
-                                self.apiclient,
-                                id=self.virtual_machine.id
-                                )
-        self.assertEqual(
-                            isinstance(virtual_machines, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        self.assertNotEqual(
-                             len(virtual_machines),
-                             0,
-                             "Check list virtual machines response"
-                             )
-        for virtual_machine in virtual_machines:
-            self.debug("VM ID: %s, VM state: %s" % (
-                                            virtual_machine.id,
-                                            virtual_machine.state
-                                            ))
-            self.assertEqual(
-                        virtual_machine.state,
-                        'Running',
-                        "Check list VM response for Running state"
-                    )
-
-        # Verify the snapshot was created or not
-        snapshots = list_snapshots(
+            # Verify the snapshot was created or not
+            snapshots = list_snapshots(
                                    self.apiclient,
                                    id=self.snapshot.id
                                    )
-        self.assertEqual(
+            self.assertEqual(
                             isinstance(snapshots, list),
                             True,
                             "Check list response returns a valid list"
                         )
-        self.assertNotEqual(
+            self.assertNotEqual(
                             snapshots,
                             None,
                             "No such snapshot %s found" % self.snapshot.id
                             )
-        self.assertEqual(
+            self.assertEqual(
                             snapshots[0].id,
                             self.snapshot.id,
                             "Check snapshot id in list resources call"
                         )
 
-        self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, self.snapshot.id),
-            "Snapshot was not found on NFS")
+            self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, self.snapshot.id),
+                "Snapshot was not found on NFS")
+        except Exception as e:
+            self._cleanup.append(self.account)
+            self.fail("Exception occured: %s" % e)
 
         self.debug("Deleting account: %s" % self.account.name)
         # Delete account

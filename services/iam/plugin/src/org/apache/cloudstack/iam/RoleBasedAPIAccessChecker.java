@@ -33,7 +33,6 @@ import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.iam.api.IAMPolicy;
@@ -133,6 +132,8 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
         // add permissions for public templates
         List<VMTemplateVO> pTmplts = _templateDao.listByPublic();
         for (VMTemplateVO tmpl : pTmplts){
+            _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_ADMIN + 1), VirtualMachineTemplate.class.getSimpleName(),
+                    PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
             _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), VirtualMachineTemplate.class.getSimpleName(),
                     PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
             _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), VirtualMachineTemplate.class.getSimpleName(),
@@ -216,26 +217,8 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
      }
 
     private void addDefaultAclPolicyPermission(String apiName, Class<?> cmdClass, RoleType role) {
-
         AccessType accessType = null;
         Class<?>[] entityTypes = null;
-        if (cmdClass != null) {
-            BaseCmd cmdObj;
-            try {
-                cmdObj = (BaseCmd) cmdClass.newInstance();
-                if (cmdObj instanceof BaseListCmd) {
-                    accessType = AccessType.UseEntry;
-                } else if (!(cmdObj instanceof BaseAsyncCreateCmd)) {
-                    accessType = AccessType.OperateEntry;
-                }
-            } catch (Exception e) {
-                throw new CloudRuntimeException(String.format(
-                        "%s is claimed as an API command, but it cannot be instantiated", cmdClass.getName()));
-             }
-
-            APICommand at = cmdClass.getAnnotation(APICommand.class);
-            entityTypes = at.entityType();
-        }
 
         PermissionScope permissionScope = PermissionScope.ACCOUNT;
         Long policyId = getDefaultPolicyId(role);
@@ -257,15 +240,47 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
             break;
          }
 
+        boolean addAccountScopedUseEntry = false;
+
+        if (cmdClass != null) {
+            BaseCmd cmdObj;
+            try {
+                cmdObj = (BaseCmd) cmdClass.newInstance();
+                if (cmdObj instanceof BaseListCmd) {
+                    if (permissionScope == PermissionScope.ACCOUNT) {
+                        accessType = AccessType.UseEntry;
+                    } else {
+                        accessType = AccessType.ListEntry;
+                        addAccountScopedUseEntry = true;
+                    }
+                } else {
+                    accessType = AccessType.OperateEntry;
+                }
+            } catch (Exception e) {
+                throw new CloudRuntimeException(String.format(
+                        "%s is claimed as an API command, but it cannot be instantiated", cmdClass.getName()));
+            }
+
+            APICommand at = cmdClass.getAnnotation(APICommand.class);
+            entityTypes = at.entityType();
+        }
 
         if (entityTypes == null || entityTypes.length == 0) {
             _iamSrv.addIAMPermissionToIAMPolicy(policyId, null, permissionScope.toString(), new Long(IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
                     apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow, false);
+            if (addAccountScopedUseEntry) {
+                _iamSrv.addIAMPermissionToIAMPolicy(policyId, null, PermissionScope.ACCOUNT.toString(), new Long(
+                        IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER), apiName, AccessType.UseEntry.toString(), Permission.Allow, false);
+            }
         } else {
             for (Class<?> entityType : entityTypes) {
                 _iamSrv.addIAMPermissionToIAMPolicy(policyId, entityType.getSimpleName(), permissionScope.toString(), new Long(
                         IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
                         apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow, false);
+                if (addAccountScopedUseEntry) {
+                    _iamSrv.addIAMPermissionToIAMPolicy(policyId, entityType.getSimpleName(), PermissionScope.ACCOUNT.toString(), new Long(
+                            IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER), apiName, AccessType.UseEntry.toString(), Permission.Allow, false);
+                }
             }
          }
 

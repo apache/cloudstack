@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
 package com.cloud.agent.api;
 
@@ -22,7 +24,6 @@ import com.cloud.agent.api.routing.GetRouterAlertsCommand;
 
 public class GetRouterAlertsAnswer extends Answer {
 
-    String routerName;
     String[] alerts;
     String timeStamp;
 
@@ -36,8 +37,8 @@ public class GetRouterAlertsAnswer extends Answer {
     }
 
 
-    public GetRouterAlertsAnswer(GetRouterAlertsCommand cmd, Exception ex) {
-        super(cmd, ex);
+    public GetRouterAlertsAnswer(GetRouterAlertsCommand cmd, String details) {
+        super(cmd, false, details);
     }
 
     public void setAlerts(String[] alerts) {
@@ -56,7 +57,4 @@ public class GetRouterAlertsAnswer extends Answer {
         return timeStamp;
     }
 
-    public String getRouterName() {
-        return routerName;
-    }
 }

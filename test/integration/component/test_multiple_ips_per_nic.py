@@ -23,30 +23,9 @@
     Design Document: https://cwiki.apache.org/confluence/display/CLOUDSTACK/Multiple+IP+address+per+NIC
 """
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.utils import (cleanup_resources,
-                                          validateList,
-                                          random_gen)
-from marvin.integration.lib.base import (Account,
-                                         ServiceOffering,
-                                         Network,
-                                         VirtualMachine,
-                                         VpcOffering,
-                                         VPC,
-                                         NIC,
-                                         Domain,
-                                         PublicIPAddress,
-                                         StaticNATRule,
-                                         FireWallRule,
-                                         NATRule,
-                                         Router)
-from marvin.integration.lib.common import (get_domain,
-                                           get_zone,
-                                           get_template,
-                                           get_free_vlan,
-                                           setSharedNetworkParams,
-                                           createEnabledNetworkOffering,
-                                           shouldTestBeSkipped,
-                                           wait_for_cleanup)
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, ISOLATED_NETWORK, VPC_NETWORK, SHARED_NETWORK, FAIL
@@ -140,21 +119,23 @@ class TestBasicOperations(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestBasicOperations,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestBasicOperations, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.mode = str(cls.zone.networktype).lower()
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -162,23 +143,22 @@ class TestBasicOperations(cloudstackTestCase):
                                             cls.services["service_offering"]
                                             )
         cls._cleanup = [cls.service_offering]
-        cls.services["shared_network_offering"]["specifyVlan"] = "True"
-        cls.services["shared_network_offering"]["specifyIpRanges"] = "True"
+        cls.services["shared_network_offering_all_services"]["specifyVlan"] = "True"
+        cls.services["shared_network_offering_all_services"]["specifyIpRanges"] = "True"
 
         cls.shared_network_offering = CreateEnabledNetworkOffering(cls.api_client,
-                                                                      cls.services["shared_network_offering"])
+                                                                      cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
-
-        if cls.mode == "advanced":
-            cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client,
+        cls.mode = cls.zone.networktype
+        cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client,
                                                                       cls.services["isolated_network_offering"])
-            cls._cleanup.append(cls.isolated_network_offering)
-            cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client,
+        cls._cleanup.append(cls.isolated_network_offering)
+        cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client,
                                                     cls.services["nw_offering_isolated_vpc"])
-            cls._cleanup.append(cls.isolated_network_offering_vpc)
-            cls.vpc_off = VpcOffering.create(cls.api_client, cls.services["vpc_offering"])
-            cls.vpc_off.update(cls.api_client, state='Enabled')
-            cls._cleanup.append(cls.vpc_off)
+        cls._cleanup.append(cls.isolated_network_offering_vpc)
+        cls.vpc_off = VpcOffering.create(cls.api_client, cls.services["vpc_offering"])
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+        cls._cleanup.append(cls.vpc_off)
         return
 
     @classmethod
@@ -216,7 +196,7 @@ class TestBasicOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["advanced"])
     def test_add_ip_to_nic(self, value):
         """ Add secondary IP to NIC of a VM"""
 
@@ -236,9 +216,6 @@ class TestBasicOperations(cloudstackTestCase):
 
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id)
         self.cleanup.append(self.account)
-
-        if(shouldTestBeSkipped(networkType=value, zoneType=self.mode)):
-            self.skipTest("Skipping test as %s network is not supported in basic zone" % value)
 
         network = createNetwork(self, value)
 
@@ -275,7 +252,7 @@ class TestBasicOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["advanced"])
     def test_remove_ip_from_nic(self, value):
         """ Remove secondary IP from NIC of a VM"""
 
@@ -292,9 +269,6 @@ class TestBasicOperations(cloudstackTestCase):
 
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id)
         self.cleanup.append(self.account)
-
-        if(shouldTestBeSkipped(networkType=value, zoneType=self.mode)):
-            self.skipTest("Skipping test as %s network is not supported in basic zone" % value)
 
         network = createNetwork(self, value)
 
@@ -322,7 +296,7 @@ class TestBasicOperations(cloudstackTestCase):
             self.debug("Removing invalid IP failed as expected with Exception %s" % e)
         return
 
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["advanced"])
     def test_remove_invalid_ip(self):
         """ Remove invalid ip"""
 
@@ -340,7 +314,7 @@ class TestBasicOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["advanced"])
     def test_list_nics(self, value):
         """Test listing nics associated with the ip address"""
 
@@ -366,9 +340,6 @@ class TestBasicOperations(cloudstackTestCase):
 
         self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id)
         self.cleanup.append(self.account)
-
-        if(shouldTestBeSkipped(networkType=value, zoneType=self.mode)):
-            self.skipTest("Skipping test as %s network is not supported in basic zone" % value)
 
         network = createNetwork(self, value)
 
@@ -422,7 +393,7 @@ class TestBasicOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["advanced"])
     def test_operations_non_root_admin_api_client(self, value):
         """Test basic operations using non root admin apii client"""
 
@@ -445,10 +416,7 @@ class TestBasicOperations(cloudstackTestCase):
         self.cleanup.append(self.account)
         self.cleanup.append(child_domain)
 
-        apiclient = self.testClient.createUserApiClient(UserName=self.account.name, DomainName=self.account.domain)
-
-        if(shouldTestBeSkipped(networkType=value, zoneType=self.mode)):
-            self.skipTest("Skipping test as %s network is not supported in basic zone" % value)
+        apiclient = self.testClient.getUserApiClient(UserName=self.account.name, DomainName=self.account.domain)
 
         network = createNetwork(self, value)
 
@@ -462,7 +430,7 @@ class TestBasicOperations(cloudstackTestCase):
         try:
             ipaddress_1 = NIC.addIp(apiclient, id=virtual_machine.nic[0].id)
         except Exception as e:
-            self.fail("Failed while adding secondary IP to NIC of vm %s" % virtual_machine.id)
+            self.fail("Failed while adding secondary IP to NIC of vm %s: %s" % (virtual_machine.id, e))
 
         try:
             NIC.list(apiclient, virtualmachineid=virtual_machine.id)
@@ -489,21 +457,23 @@ class TestNetworkRules(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestNetworkRules,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestNetworkRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.mode = str(cls.zone.networktype).lower()
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -511,20 +481,20 @@ class TestNetworkRules(cloudstackTestCase):
                                             cls.services["service_offering"]
                                             )
         cls._cleanup = [cls.service_offering]
-        cls.services["shared_network_offering"]["specifyVlan"] = "True"
-        cls.services["shared_network_offering"]["specifyIpRanges"] = "True"
+        cls.services["shared_network_offering_all_services"]["specifyVlan"] = "True"
+        cls.services["shared_network_offering_all_services"]["specifyIpRanges"] = "True"
 
-        cls.shared_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["shared_network_offering"])
+        cls.shared_network_offering = CreateEnabledNetworkOffering(cls.api_client,
+                                        cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
-
-        if cls.mode == "advanced":
-            cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
-            cls._cleanup.append(cls.isolated_network_offering)
-            cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client, cls.services["nw_offering_isolated_vpc"])
-            cls._cleanup.append(cls.isolated_network_offering_vpc)
-            cls.vpc_off = VpcOffering.create(cls.api_client, cls.services["vpc_offering"])
-            cls.vpc_off.update(cls.api_client, state='Enabled')
-            cls._cleanup.append(cls.vpc_off)
+        cls.mode = cls.zone.networktype
+        cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
+        cls._cleanup.append(cls.isolated_network_offering)
+        cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client, cls.services["nw_offering_isolated_vpc"])
+        cls._cleanup.append(cls.isolated_network_offering_vpc)
+        cls.vpc_off = VpcOffering.create(cls.api_client, cls.services["vpc_offering"])
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+        cls._cleanup.append(cls.vpc_off)
         return
 
     @classmethod
@@ -862,21 +832,22 @@ class TestVmNetworkOperations(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestVmNetworkOperations,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestVmNetworkOperations, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.mode = str(cls.zone.networktype).lower()
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -884,20 +855,20 @@ class TestVmNetworkOperations(cloudstackTestCase):
                                             cls.services["service_offering"]
                                             )
         cls._cleanup = [cls.service_offering]
-        cls.services["shared_network_offering"]["specifyVlan"] = "True"
-        cls.services["shared_network_offering"]["specifyIpRanges"] = "True"
+        cls.services["shared_network_offering_all_services"]["specifyVlan"] = "True"
+        cls.services["shared_network_offering_all_services"]["specifyIpRanges"] = "True"
 
-        cls.shared_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["shared_network_offering"])
+        cls.shared_network_offering = CreateEnabledNetworkOffering(cls.api_client,
+                                        cls.services["shared_network_offering_all_services"])
         cls._cleanup.append(cls.shared_network_offering)
-
-        if cls.mode == "advanced":
-            cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
-            cls._cleanup.append(cls.isolated_network_offering)
-            cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client, cls.services["nw_offering_isolated_vpc"])
-            cls._cleanup.append(cls.isolated_network_offering_vpc)
-            cls.vpc_off = VpcOffering.create(cls.api_client, cls.services["vpc_offering"])
-            cls.vpc_off.update(cls.api_client, state='Enabled')
-            cls._cleanup.append(cls.vpc_off)
+        cls.mode = cls.zone.networktype
+        cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
+        cls._cleanup.append(cls.isolated_network_offering)
+        cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client, cls.services["nw_offering_isolated_vpc"])
+        cls._cleanup.append(cls.isolated_network_offering_vpc)
+        cls.vpc_off = VpcOffering.create(cls.api_client, cls.services["vpc_offering"])
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+        cls._cleanup.append(cls.vpc_off)
         return
 
     @classmethod
@@ -994,10 +965,7 @@ class TestVmNetworkOperations(cloudstackTestCase):
                     network.id, vmguestip=ipaddress_2.ipaddress)
 
         # Delete VM
-        virtual_machine.delete(self.apiclient)
-
-        # Wait for VMs to expunge
-        wait_for_cleanup(self.api_client, ["expunge.delay", "expunge.interval"])
+        virtual_machine.delete(self.apiclient, expunge=True)
 
         # Make sure the VM is expunged
         retriesCount = 20
@@ -1074,7 +1042,7 @@ class TestVmNetworkOperations(cloudstackTestCase):
         StaticNATRule.enable(self.apiclient, public_ip_2.ipaddress.id, virtual_machine.id,
                     network.id, vmguestip=ipaddress_2.ipaddress)
 
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=False)
         virtual_machine.recover(self.apiclient)
 
         retriesCount = 10

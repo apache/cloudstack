@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.vmware.manager;
 
-import java.util.List;
-
-import com.vmware.vim25.ManagedObjectReference;
-
 import com.cloud.agent.api.Command;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -32,16 +28,4 @@ public interface VmwareHostService {
     VmwareHypervisorHost getHyperHost(VmwareContext context, Command cmd);
 
     String getWorkerName(VmwareContext context, Command cmd, int workerSequence);
-
-    ManagedObjectReference prepareManagedDatastore(VmwareHypervisorHost hyperHost, String iScsiName,
-            String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
-            String chapTargetUsername, String chapTargetSecret) throws Exception;
-
-    ManagedObjectReference prepareManagedStorage(VmwareHypervisorHost hyperHost, String iScsiName,
-            String storageHost, int storagePort, String volumeName, String chapInitiatorUsername, String chapInitiatorSecret,
-            String chapTargetUsername, String chapTargetSecret, long size, Command cmd) throws Exception;
-
-    void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception;
-
-    void removeManagedTargetsFromCluster(List<String> managedIqns) throws Exception;
 }

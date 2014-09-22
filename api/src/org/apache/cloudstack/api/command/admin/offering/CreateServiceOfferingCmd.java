@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -52,6 +53,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of the service offering")
     private String displayText;
+
+    @Parameter(name = ApiConstants.PROVISIONINGTYPE, type = CommandType.STRING, description = "provisioning type used to create volumes. Valid values are thin, sparse, fat.")
+    private String provisioningType = Storage.ProvisioningType.THIN.toString();
 
     @Parameter(name = ApiConstants.MEMORY, type = CommandType.INTEGER, required = false, description = "the total memory of the service offering in MB")
     private Integer memory;
@@ -148,6 +152,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public String getDisplayText() {
         return displayText;
+    }
+
+    public String getProvisioningType(){
+        return provisioningType;
     }
 
     public Integer getMemory() {

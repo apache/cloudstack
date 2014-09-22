@@ -18,53 +18,38 @@
 
 # getRouterAlerts.sh  --- Send the alerts from routerServiceMonitor.log to Management Server
 
-source /root/func.sh
-
-lock="biglock"
-locked=$(getLockFile $lock)
-if [ "$locked" != "1" ]
-then
-    exit 1
-fi
-
 #set -x
 
 filename=/var/log/routerServiceMonitor.log #Monitor service log file
 if [ -n "$1" -a -n "$2" ]
 then
-        reqdateval=$(date -d $1 +"%Y%m%d");
-        reqtimeval=$(date -d $2 +"%H%M%S");
+        reqDateVal=$(date -d "$1 $2" "+%s");
 else
-        reqdateval=0
-        reqtimeval=0
+        reqDateVal=0
 fi
 if [ -f $filename ]
 then
         while read line
         do
-        if [ -n "$line" ]; then
-            dateval=`echo $line |awk '{print $1}'`
-            timeval=`echo $line |awk '{print $2}'`
-
-            todate=$(date -d "$dateval" +"%Y%m%d") > /dev/null
-            totime=$(date -d "$timeval" +"%H%M%S") > /dev/null
-            if [ "$todate" -gt "$reqdateval" ] > /dev/null
+            if [ -n "$line" ]
             then
-                if [ -n "$alerts" ]; then  alerts="$alerts\n$line"; else alerts="$line"; fi #>> $outputfile
-                elif [ "$todate" -eq "$reqdateval" ] > /dev/null
+                dateval=`echo $line |awk '{print $1, $2}'`
+                IFS=',' read -a array <<< "$dateval"
+                dateval=${array[0]}
+
+                toDateVal=$(date -d "$dateval" "+%s")
+
+                if [ "$toDateVal" -gt "$reqDateVal" ]
                 then
-                    if [ "$totime" -gt "$reqtimeval" ] > /dev/null
-                    then
-                        if [ -n "$alerts" ]; then  alerts="$alerts\n$line"; else alerts="$line"; fi #>> $outputfile
-                    fi
+                    alerts="$line\n$alerts"
+                else
+                    break
                 fi
             fi
-        done < $filename
+        done < <(tac $filename)
 fi
 if [ -n "$alerts" ]; then
        echo $alerts
 else
        echo "No Alerts"
 fi
-
-unlock_exit 0 $lock $locked

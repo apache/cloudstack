@@ -72,7 +72,7 @@ public interface IAMService {
 
     List<IAMPolicyPermission> listPolicyPermissions(long policyId);
 
-    List<IAMPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope);
+    List<IAMPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope, String accessType);
 
     List<IAMPolicyPermission> listPolicyPermissionByActionAndEntity(long policyId, String action, String entityType);
 
@@ -88,5 +88,12 @@ public interface IAMService {
     List<IAMGroup> listParentIAMGroups(long groupId);
 
     List<IAMPolicy> listRecursiveIAMPoliciesByGroup(long groupId);
+
+    /* Interface used for cache IAM checkAccess result */
+    void addToIAMCache(Object accessKey, Object allowDeny);
+
+    Object getFromIAMCache(Object accessKey);
+
+    void invalidateIAMCache();
 
 }

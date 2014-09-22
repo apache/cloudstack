@@ -33,7 +33,6 @@ public class IAMPolicyPermissionDaoImpl extends GenericDaoBase<IAMPolicyPermissi
 
     private SearchBuilder<IAMPolicyPermissionVO> policyIdSearch;
     private SearchBuilder<IAMPolicyPermissionVO> fullSearch;
-    private SearchBuilder<IAMPolicyPermissionVO> actionScopeSearch;
     private SearchBuilder<IAMPolicyPermissionVO> entitySearch;
 
     @Override
@@ -54,13 +53,6 @@ public class IAMPolicyPermissionDaoImpl extends GenericDaoBase<IAMPolicyPermissi
         fullSearch.and("accessType", fullSearch.entity().getAccessType(), SearchCriteria.Op.EQ);
         fullSearch.done();
 
-        actionScopeSearch = createSearchBuilder();
-        actionScopeSearch.and("policyId", actionScopeSearch.entity().getAclPolicyId(), SearchCriteria.Op.EQ);
-        actionScopeSearch.and("scope", actionScopeSearch.entity().getScope(), SearchCriteria.Op.EQ);
-        actionScopeSearch.and("action", actionScopeSearch.entity().getAction(), SearchCriteria.Op.EQ);
-        actionScopeSearch.and("permission", actionScopeSearch.entity().getPermission(), SearchCriteria.Op.EQ);
-        actionScopeSearch.done();
-
         entitySearch = createSearchBuilder();
         entitySearch.and("entityType", entitySearch.entity().getEntityType(), SearchCriteria.Op.EQ);
         entitySearch.and("scopeId", entitySearch.entity().getScopeId(), SearchCriteria.Op.EQ);
@@ -78,7 +70,7 @@ public class IAMPolicyPermissionDaoImpl extends GenericDaoBase<IAMPolicyPermissi
 
     @Override
     public IAMPolicyPermissionVO findByPolicyAndEntity(long policyId, String entityType, String scope, Long scopeId,
-            String action, Permission perm) {
+            String action, Permission perm, String accessType) {
         SearchCriteria<IAMPolicyPermissionVO> sc = fullSearch.create();
         sc.setParameters("policyId", policyId);
         sc.setParameters("entityType", entityType);
@@ -86,16 +78,25 @@ public class IAMPolicyPermissionDaoImpl extends GenericDaoBase<IAMPolicyPermissi
         sc.setParameters("scopeId", scopeId);
         sc.setParameters("action", action);
         sc.setParameters("permission", perm);
+        if (accessType != null) {
+            // accessType can be optional, used mainly in list apis with
+            // ListEntry and UseEntry distinction
+            sc.setParameters("accessType", accessType);
+        }
         return findOneBy(sc);
     }
 
     @Override
-    public List<IAMPolicyPermissionVO> listGrantedByActionAndScope(long policyId, String action, String scope) {
-        SearchCriteria<IAMPolicyPermissionVO> sc = actionScopeSearch.create();
+    public List<IAMPolicyPermissionVO> listByPolicyActionAndScope(long policyId, String action, String scope, String accessType) {
+        SearchCriteria<IAMPolicyPermissionVO> sc = fullSearch.create();
         sc.setParameters("policyId", policyId);
         sc.setParameters("action", action);
         sc.setParameters("scope", scope);
         sc.setParameters("permission", Permission.Allow);
+        if ( accessType != null ){
+            // accessType can be optional, used mainly in list apis with ListEntry and UseEntry distinction
+            sc.setParameters("accessType", accessType);
+        }
         return listBy(sc);
     }
 
@@ -120,7 +121,7 @@ public class IAMPolicyPermissionDaoImpl extends GenericDaoBase<IAMPolicyPermissi
 
     @Override
     public List<IAMPolicyPermissionVO> listByEntity(String entityType, Long entityId) {
-        SearchCriteria<IAMPolicyPermissionVO> sc = fullSearch.create();
+        SearchCriteria<IAMPolicyPermissionVO> sc = entitySearch.create();
         sc.setParameters("entityType", entityType);
         sc.setParameters("scopeId", entityId);
         return listBy(sc);

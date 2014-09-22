@@ -21,9 +21,9 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from marvin.codes import PASS
 import datetime
 
@@ -124,13 +124,11 @@ class TestProjectLimits(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestProjectLimits,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestProjectLimits, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         # Create domains, account etc.
@@ -185,7 +183,7 @@ class TestProjectLimits(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_project_limits(self):
         """ Test project limits for domain admin
         """
@@ -352,7 +350,7 @@ class TestProjectLimits(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_02_project_limits_normal_user(self):
         """ Test project limits for normal user
         """
@@ -502,10 +500,11 @@ class TestResourceLimitsProject(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestResourceLimitsProject, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestResourceLimitsProject, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
@@ -576,7 +575,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_03_vm_per_project(self):
         """Test VM limit per project
         """
@@ -638,7 +637,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                                 )
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_04_publicip_per_project(self):
         """Test Public IP limit per project
         """
@@ -723,7 +722,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                                            )
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_05_snapshots_per_project(self):
         """Test Snapshot limit per project
         """
@@ -799,7 +798,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             )
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_06_volumes_per_project(self):
         """Test Volumes limit per project
         """
@@ -855,7 +854,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
     def test_07_templates_per_project(self):
         """Test Templates limit per project
         """
@@ -945,14 +944,12 @@ class TestMaxProjectNetworks(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestMaxProjectNetworks,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestMaxProjectNetworks, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,

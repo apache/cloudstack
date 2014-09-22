@@ -52,7 +52,9 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
@@ -84,6 +86,8 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     protected ConfigurationDao _configDao;
     @Inject
     protected ApiDispatcher _dispatcher;
+    @Inject
+    protected AccountDao _acctDao;
 
     protected AsyncJobDispatcher _asyncDispatcher;
 
@@ -235,6 +239,14 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                     // this volume is not attached
                     continue;
                 }
+                Account volAcct = _acctDao.findById(volume.getAccountId());
+                if (volAcct == null || volAcct.getState() == Account.State.disabled) {
+                    // this account has been removed, so don't trigger recurring snapshot
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Skip snapshot for volume " + volume.getUuid() + " since its account has been removed or disabled");
+                    }
+                    continue;
+                }
                 if (_snapshotPolicyDao.findById(policyId) == null) {
                     _snapshotScheduleDao.remove(snapshotToBeExecuted.getId());
                 }
@@ -264,7 +276,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
                 AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(),
                         ApiGsonHelper.getBuilder().create().toJson(params), cmd.getEntityId(),
-                        cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null);
+                        cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null, null);
                 job.setDispatcher(_asyncDispatcher.getName());
 
                 final long jobId = _asyncMgr.submitAsyncJob(job);
@@ -304,6 +316,13 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         if (policy == null) {
             return null;
         }
+
+        // If display attribute is false then remove schedules if any and return.
+        if(!policy.isDisplay()){
+            removeSchedule(policy.getVolumeId(), policy.getId());
+            return null;
+        }
+
         final long policyId = policy.getId();
         if (policyId == Snapshot.MANUAL_POLICY_ID) {
             return null;
@@ -329,6 +348,20 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         }
         return nextSnapshotTimestamp;
     }
+
+    @Override
+    public void scheduleOrCancelNextSnapshotJobOnDisplayChange(final SnapshotPolicyVO policy, boolean previousDisplay) {
+
+        // Take action only if display changed
+        if(policy.isDisplay() != previousDisplay ){
+            if(policy.isDisplay()){
+                scheduleNextSnapshotJob(policy);
+            }else{
+                removeSchedule(policy.getVolumeId(), policy.getId());
+            }
+        }
+    }
+
 
     @Override
     @DB

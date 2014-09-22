@@ -18,9 +18,9 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 
 class Services:
     """Test Snapshots Services
@@ -126,11 +126,13 @@ class TestRecurringSnapshots(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestRecurringSnapshots, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRecurringSnapshots, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -216,7 +218,7 @@ class TestRecurringSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "smoke", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_recurring_snapshot_root_disk(self):
         """Test Recurring Snapshot Root Disk
         """
@@ -309,7 +311,7 @@ class TestRecurringSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "smoke", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_recurring_snapshot_data_disk(self):
         """Test Recurring Snapshot data Disk
         """

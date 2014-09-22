@@ -21,14 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = DataCenter.class)
@@ -68,10 +67,6 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.INTERNAL_DNS2)
     @Param(description = "the second internal DNS for the Zone")
     private String internalDns2;
-
-    @SerializedName(ApiConstants.VLAN)
-    @Param(description = "the vlan range of the zone")
-    private String vlan;
 
     @SerializedName(ApiConstants.GUEST_CIDR_ADDRESS)
     @Param(description = "the guest CIDR address for the Zone")
@@ -163,10 +158,6 @@ public class ZoneResponse extends BaseResponse {
 
     public void setInternalDns2(String internalDns2) {
         this.internalDns2 = internalDns2;
-    }
-
-    public void setVlan(String vlan) {
-        this.vlan = vlan;
     }
 
     public void setGuestCidrAddress(String guestCidrAddress) {

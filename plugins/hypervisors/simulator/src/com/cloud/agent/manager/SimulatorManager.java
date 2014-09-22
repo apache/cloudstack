@@ -22,10 +22,12 @@ import java.util.Map;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockVMVO;
+import com.cloud.simulator.dao.MockConfigurationDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 public interface SimulatorManager extends Manager {
     public static final String Name = "simulator manager";
@@ -56,11 +58,17 @@ public interface SimulatorManager extends Manager {
 
     StoragePoolInfo getLocalStorage(String hostGuid);
 
-    boolean configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command, String values);
+    Long configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command, String values, Integer count, String jsonResponse);
 
     public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid);
 
-    Map<String, State> getVmStates(String hostGuid);
+    Map<String, PowerState> getVmStates(String hostGuid);
 
     Map<String, MockVMVO> getVms(String hostGuid);
+
+    MockConfigurationVO querySimulatorMock(Long id);
+
+    boolean clearSimulatorMock(Long id);
+
+    MockConfigurationDao getMockConfigurationDao();
 }

@@ -19,8 +19,8 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.base import (
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.base import (
                                         Account,
                                         ServiceOffering,
                                         VirtualMachine,
@@ -28,11 +28,11 @@ from marvin.integration.lib.base import (
                                         Domain,
                                         Project
                                         )
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template
                                         )
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 
 class Services:
     """Test resource limit services
@@ -89,12 +89,13 @@ class TestMaxCPULimits(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestMaxCPULimits,
-                               cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestMaxCPULimits, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -227,7 +228,7 @@ class TestMaxCPULimits(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_01_deploy_vm_domain_limit_reached(self):
         """Test Try to deploy VM with admin account where account has not used
             the resources but @ domain they are not available"""
@@ -251,7 +252,7 @@ class TestMaxCPULimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=4, domain_limit=2)
 
-        api_client_admin = self.testClient.createUserApiClient(
+        api_client_admin = self.testClient.getUserApiClient(
             UserName=self.child_do_admin.name,
             DomainName=self.child_do_admin.domain)
 
@@ -260,7 +261,7 @@ class TestMaxCPULimits(cloudstackTestCase):
                 service_off=self.service_offering, api_client=api_client_admin)
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_02_deploy_vm_account_limit_reached(self):
         """Test Try to deploy VM with admin account where account has used
             the resources but @ domain they are available"""
@@ -284,7 +285,7 @@ class TestMaxCPULimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=6, domain_limit=8)
 
-        api_client_admin = self.testClient.createUserApiClient(
+        api_client_admin = self.testClient.getUserApiClient(
             UserName=self.child_do_admin.name,
             DomainName=self.child_do_admin.domain)
 
@@ -301,7 +302,7 @@ class TestMaxCPULimits(cloudstackTestCase):
                 service_off=self.service_offering, api_client=api_client_admin)
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_03_deploy_vm_project_limit_reached(self):
         """Test TTry to deploy VM with admin account where account has not used
         the resources but @ project they are not available"""
@@ -325,7 +326,7 @@ class TestMaxCPULimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=4, domain_limit=4, project_limit=2)
 
-        api_client_admin = self.testClient.createUserApiClient(
+        api_client_admin = self.testClient.getUserApiClient(
             UserName=self.child_do_admin.name,
             DomainName=self.child_do_admin.domain)
 
@@ -336,7 +337,7 @@ class TestMaxCPULimits(cloudstackTestCase):
                 service_off=self.service_offering, api_client=api_client_admin)
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_04_deployVm__account_limit_reached(self):
         """Test Try to deploy VM with admin account where account has used
             the resources but @ project they are available"""
@@ -360,7 +361,7 @@ class TestMaxCPULimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=6, domain_limit=6, project_limit=6)
 
-        api_client_admin = self.testClient.createUserApiClient(
+        api_client_admin = self.testClient.getUserApiClient(
             UserName=self.child_do_admin.name,
             DomainName=self.child_do_admin.domain)
 

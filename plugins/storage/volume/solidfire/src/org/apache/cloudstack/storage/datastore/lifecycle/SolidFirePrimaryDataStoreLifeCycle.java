@@ -21,7 +21,6 @@ package org.apache.cloudstack.storage.datastore.lifecycle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 
 import javax.inject.Inject;
 
@@ -34,16 +33,18 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCy
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolAutomation;
@@ -52,23 +53,13 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(SolidFirePrimaryDataStoreLifeCycle.class);
 
-    @Inject
-    private DataCenterDao zoneDao;
-    @Inject
-    private PrimaryDataStoreDao storagePoolDao;
-    @Inject
-    private PrimaryDataStoreHelper dataStoreHelper;
-    @Inject
-    private ResourceManager _resourceMgr;
-    @Inject
-    StorageManager _storageMgr;
-    @Inject
-    private StoragePoolAutomation storagePoolAutomation;
-    @Inject
-    private StoragePoolDetailsDao storagePoolDetailsDao;
-
-    private static final int DEFAULT_MANAGEMENT_PORT = 443;
-    private static final int DEFAULT_STORAGE_PORT = 3260;
+    @Inject private CapacityManager _capacityMgr;
+    @Inject private DataCenterDao zoneDao;
+    @Inject private PrimaryDataStoreDao storagePoolDao;
+    @Inject private PrimaryDataStoreHelper dataStoreHelper;
+    @Inject private ResourceManager _resourceMgr;
+    @Inject private StorageManager _storageMgr;
+    @Inject private StoragePoolAutomation storagePoolAutomation;
 
     // invoked to add primary storage that is based on the SolidFire plug-in
     @Override
@@ -80,10 +71,11 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         Long capacityBytes = (Long)dsInfos.get("capacityBytes");
         Long capacityIops = (Long)dsInfos.get("capacityIops");
         String tags = (String)dsInfos.get("tags");
+        @SuppressWarnings("unchecked")
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
-        String storageVip = getStorageVip(url);
-        int storagePort = getStoragePort(url);
+        String storageVip = SolidFireUtil.getStorageVip(url);
+        int storagePort = SolidFireUtil.getStoragePort(url);
 
         DataCenterVO zone = zoneDao.findById(zoneId);
 
@@ -101,7 +93,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
 
         parameters.setHost(storageVip);
         parameters.setPort(storagePort);
-        parameters.setPath(getModifiedUrl(url));
+        parameters.setPath(SolidFireUtil.getModifiedUrl(url));
         parameters.setType(StoragePoolType.Iscsi);
         parameters.setUuid(uuid);
         parameters.setZoneId(zoneId);
@@ -115,14 +107,14 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         parameters.setTags(tags);
         parameters.setDetails(details);
 
-        String managementVip = getManagementVip(url);
-        int managementPort = getManagementPort(url);
+        String managementVip = SolidFireUtil.getManagementVip(url);
+        int managementPort = SolidFireUtil.getManagementPort(url);
 
         details.put(SolidFireUtil.MANAGEMENT_VIP, managementVip);
         details.put(SolidFireUtil.MANAGEMENT_PORT, String.valueOf(managementPort));
 
-        String clusterAdminUsername = getValue(SolidFireUtil.CLUSTER_ADMIN_USERNAME, url);
-        String clusterAdminPassword = getValue(SolidFireUtil.CLUSTER_ADMIN_PASSWORD, url);
+        String clusterAdminUsername = SolidFireUtil.getValue(SolidFireUtil.CLUSTER_ADMIN_USERNAME, url);
+        String clusterAdminPassword = SolidFireUtil.getValue(SolidFireUtil.CLUSTER_ADMIN_PASSWORD, url);
 
         details.put(SolidFireUtil.CLUSTER_ADMIN_USERNAME, clusterAdminUsername);
         details.put(SolidFireUtil.CLUSTER_ADMIN_PASSWORD, clusterAdminPassword);
@@ -132,34 +124,43 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         float fClusterDefaultBurstIopsPercentOfMaxIops = 1.5f;
 
         try {
-            String clusterDefaultMinIops = getValue(SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS, url);
+            String clusterDefaultMinIops = SolidFireUtil.getValue(SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS, url);
 
             if (clusterDefaultMinIops != null && clusterDefaultMinIops.trim().length() > 0) {
                 lClusterDefaultMinIops = Long.parseLong(clusterDefaultMinIops);
             }
-        } catch (Exception ex) {
+        } catch (NumberFormatException ex) {
+            s_logger.warn("Cannot parse the setting of " + SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS +
+                          ", using default value: " + lClusterDefaultMinIops +
+                          ". Exception: " + ex);
         }
 
         try {
-            String clusterDefaultMaxIops = getValue(SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS, url);
+            String clusterDefaultMaxIops = SolidFireUtil.getValue(SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS, url);
 
             if (clusterDefaultMaxIops != null && clusterDefaultMaxIops.trim().length() > 0) {
                 lClusterDefaultMaxIops = Long.parseLong(clusterDefaultMaxIops);
             }
-        } catch (Exception ex) {
+        } catch (NumberFormatException ex) {
+            s_logger.warn("Cannot parse the setting of " + SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS +
+                          ", using default value: " + lClusterDefaultMaxIops +
+                          ". Exception: " + ex);
         }
 
         try {
-            String clusterDefaultBurstIopsPercentOfMaxIops = getValue(SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS, url);
+            String clusterDefaultBurstIopsPercentOfMaxIops = SolidFireUtil.getValue(SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS, url);
 
             if (clusterDefaultBurstIopsPercentOfMaxIops != null && clusterDefaultBurstIopsPercentOfMaxIops.trim().length() > 0) {
                 fClusterDefaultBurstIopsPercentOfMaxIops = Float.parseFloat(clusterDefaultBurstIopsPercentOfMaxIops);
             }
-        } catch (Exception ex) {
+        } catch (NumberFormatException ex) {
+            s_logger.warn("Cannot parse the setting of " + SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS +
+                          ", using default value: " + fClusterDefaultBurstIopsPercentOfMaxIops +
+                          ". Exception: " + ex);
         }
 
         if (lClusterDefaultMinIops > lClusterDefaultMaxIops) {
-            throw new CloudRuntimeException("The parameter '" + SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS + "' must be less than " + "or equal to the parameter '" +
+            throw new CloudRuntimeException("The parameter '" + SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS + "' must be less than or equal to the parameter '" +
                 SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS + "'.");
         }
 
@@ -173,111 +174,6 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
 
         // this adds a row in the cloud.storage_pool table for this SolidFire cluster
         return dataStoreHelper.createPrimaryDataStore(parameters);
-    }
-
-    // remove the clusterAdmin and password key/value pairs
-    private String getModifiedUrl(String originalUrl) {
-        StringBuilder sb = new StringBuilder();
-
-        String delimiter = ";";
-
-        StringTokenizer st = new StringTokenizer(originalUrl, delimiter);
-
-        while (st.hasMoreElements()) {
-            String token = st.nextElement().toString().toUpperCase();
-
-            if (token.startsWith(SolidFireUtil.MANAGEMENT_VIP.toUpperCase()) || token.startsWith(SolidFireUtil.STORAGE_VIP.toUpperCase())) {
-                sb.append(token).append(delimiter);
-            }
-        }
-
-        String modifiedUrl = sb.toString();
-        int lastIndexOf = modifiedUrl.lastIndexOf(delimiter);
-
-        if (lastIndexOf == (modifiedUrl.length() - delimiter.length())) {
-            return modifiedUrl.substring(0, lastIndexOf);
-        }
-
-        return modifiedUrl;
-    }
-
-    private String getManagementVip(String url) {
-        return getVip(SolidFireUtil.MANAGEMENT_VIP, url);
-    }
-
-    private String getStorageVip(String url) {
-        return getVip(SolidFireUtil.STORAGE_VIP, url);
-    }
-
-    private int getManagementPort(String url) {
-        return getPort(SolidFireUtil.MANAGEMENT_VIP, url, DEFAULT_MANAGEMENT_PORT);
-    }
-
-    private int getStoragePort(String url) {
-        return getPort(SolidFireUtil.STORAGE_VIP, url, DEFAULT_STORAGE_PORT);
-    }
-
-    private String getVip(String keyToMatch, String url) {
-        String delimiter = ":";
-
-        String storageVip = getValue(keyToMatch, url);
-
-        int index = storageVip.indexOf(delimiter);
-
-        if (index != -1) {
-            return storageVip.substring(0, index);
-        }
-
-        return storageVip;
-    }
-
-    private int getPort(String keyToMatch, String url, int defaultPortNumber) {
-        String delimiter = ":";
-
-        String storageVip = getValue(keyToMatch, url);
-
-        int index = storageVip.indexOf(delimiter);
-
-        int portNumber = defaultPortNumber;
-
-        if (index != -1) {
-            String port = storageVip.substring(index + delimiter.length());
-
-            try {
-                portNumber = Integer.parseInt(port);
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException("Invalid URL format (port is not an integer)");
-            }
-        }
-
-        return portNumber;
-    }
-
-    private String getValue(String keyToMatch, String url) {
-        String delimiter1 = ";";
-        String delimiter2 = "=";
-
-        StringTokenizer st = new StringTokenizer(url, delimiter1);
-
-        while (st.hasMoreElements()) {
-            String token = st.nextElement().toString();
-
-            int index = token.indexOf(delimiter2);
-
-            if (index == -1) {
-                throw new RuntimeException("Invalid URL format");
-            }
-
-            String key = token.substring(0, index);
-
-            if (key.equalsIgnoreCase(keyToMatch)) {
-                String valueToReturn = token.substring(index + delimiter2.length());
-
-                return valueToReturn;
-            }
-        }
-
-        throw new RuntimeException("Key not found in URL");
     }
 
     // do not implement this method for SolidFire's plug-in
@@ -346,4 +242,30 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         return false;
     }
 
+    @Override
+    public void updateStoragePool(StoragePool storagePool, Map<String, String> details) {
+        StoragePoolVO storagePoolVo = storagePoolDao.findById(storagePool.getId());
+
+        String strCapacityBytes = details.get(PrimaryDataStoreLifeCycle.CAPACITY_BYTES);
+        Long capacityBytes = strCapacityBytes != null ? Long.parseLong(strCapacityBytes) : null;
+
+        if (capacityBytes != null) {
+            long usedBytes = _capacityMgr.getUsedBytes(storagePoolVo);
+
+            if (capacityBytes < usedBytes) {
+                throw new CloudRuntimeException("Cannot reduce the number of bytes for this storage pool as it would lead to an insufficient number of bytes");
+            }
+        }
+
+        String strCapacityIops = details.get(PrimaryDataStoreLifeCycle.CAPACITY_IOPS);
+        Long capacityIops = strCapacityIops != null ? Long.parseLong(strCapacityIops) : null;
+
+        if (capacityIops != null) {
+            long usedIops = _capacityMgr.getUsedIops(storagePoolVo);
+
+            if (capacityIops < usedIops) {
+                throw new CloudRuntimeException("Cannot reduce the number of IOPS for this storage pool as it would lead to an insufficient number of IOPS");
+            }
+        }
+    }
 }

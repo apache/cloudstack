@@ -21,7 +21,6 @@ package com.cloud.hypervisor.kvm.storage;
 import static com.cloud.utils.S3Utils.mputFile;
 import static com.cloud.utils.S3Utils.putFile;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -49,9 +48,7 @@ import org.libvirt.LibvirtException;
 
 import com.ceph.rados.IoCTX;
 import com.ceph.rados.Rados;
-import com.ceph.rados.RadosException;
 import com.ceph.rbd.Rbd;
-import com.ceph.rbd.RbdException;
 import com.ceph.rbd.RbdImage;
 
 import org.apache.cloudstack.storage.command.AttachAnswer;
@@ -335,7 +332,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     templatePath = templatePath.substring(templatePath.lastIndexOf(File.separator) + 1);
                 }
                 BaseVol = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), templatePath);
-                vol = storagePoolMgr.createDiskFromTemplate(BaseVol, volume.getUuid(), BaseVol.getPool(), volume.getSize(), cmd.getWaitInMillSeconds());
+                vol = storagePoolMgr.createDiskFromTemplate(BaseVol, volume.getUuid(), volume.getProvisioningType(),
+                        BaseVol.getPool(), volume.getSize(), cmd.getWaitInMillSeconds());
             }
             if (vol == null) {
                 return new CopyCmdAnswer(" Can't create storage volume on storage pool");
@@ -349,11 +347,13 @@ public class KVMStorageProcessor implements StorageProcessor {
                 newVol.setFormat(ImageFormat.RAW);
             } else if (vol.getFormat() == PhysicalDiskFormat.QCOW2) {
                 newVol.setFormat(ImageFormat.QCOW2);
+            } else if (vol.getFormat() == PhysicalDiskFormat.DIR) {
+                newVol.setFormat(ImageFormat.DIR);
             }
 
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
-            s_logger.debug("Failed to create volume: " + e.toString());
+            s_logger.debug("Failed to create volume: ", e);
             return new CopyCmdAnswer(e.toString());
         }
     }
@@ -405,6 +405,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             newVol.setPath(volumeName);
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
+            s_logger.debug("Failed to ccopyVolumeFromImageCacheToPrimary: ", e);
             return new CopyCmdAnswer(e.toString());
         } finally {
             if (secondaryStoragePool != null) {
@@ -450,6 +451,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             newVol.setFormat(destFormat);
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
+            s_logger.debug("Failed to copyVolumeFromPrimaryToSecondary: ", e);
             return new CopyCmdAnswer(e.toString());
         } finally {
             if (secondaryStoragePool != null) {
@@ -556,7 +558,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             newTemplate.setName(templateName);
             return new CopyCmdAnswer(newTemplate);
         } catch (Exception e) {
-            s_logger.debug("Failed to create template from volume: " + e.toString());
+            s_logger.debug("Failed to createTemplateFromVolume: ", e);
             return new CopyCmdAnswer(e.toString());
         } finally {
             if (secondaryStorage != null) {
@@ -688,66 +690,50 @@ public class KVMStorageProcessor implements StorageProcessor {
             snapshotDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volumePath);
             primaryPool = snapshotDisk.getPool();
 
+            long size = 0;
             /**
-             * RBD snapshots can't be copied using qemu-img, so we have to use
-             * the Java bindings for librbd here.
+             * Since Ceph version Dumpling (0.67.X) librbd / Qemu supports converting RBD
+             * snapshots to RAW/QCOW2 files directly.
              *
-             * These bindings will read the snapshot and write the contents to
-             * the secondary storage directly
-             *
-             * It will stop doing so if the amount of time spend is longer then
-             * cmds.timeout
+             * This reduces the amount of time and storage it takes to back up a snapshot dramatically
              */
             if (primaryPool.getType() == StoragePoolType.RBD) {
+                String rbdSnapshot = snapshotDisk.getPath() +  "@" + snapshotName;
+                String snapshotFile = snapshotDestPath + "/" + snapshotName;
                 try {
-                    Rados r = new Rados(primaryPool.getAuthUserName());
-                    r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
-                    r.confSet("key", primaryPool.getAuthSecret());
-                    r.confSet("client_mount_timeout", "30");
-                    r.connect();
-                    s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
-
-                    IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
-                    Rbd rbd = new Rbd(io);
-                    RbdImage image = rbd.open(snapshotDisk.getName(), snapshotName);
+                    s_logger.debug("Attempting to backup RBD snapshot " + rbdSnapshot);
 
                     File snapDir = new File(snapshotDestPath);
-                    s_logger.debug("Attempting to create " + snapDir.getAbsolutePath() + " recursively");
+                    s_logger.debug("Attempting to create " + snapDir.getAbsolutePath() + " recursively for snapshot storage");
                     FileUtils.forceMkdir(snapDir);
 
-                    File snapFile = new File(snapshotDestPath + "/" + snapshotName);
-                    s_logger.debug("Backing up RBD snapshot to " + snapFile.getAbsolutePath());
-                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(snapFile));
-                    int chunkSize = 4194304;
-                    long offset = 0;
-                    while (true) {
-                        byte[] buf = new byte[chunkSize];
+                    QemuImgFile srcFile =
+                        new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primaryPool.getSourceHost(), primaryPool.getSourcePort(), primaryPool.getAuthUserName(),
+                                                                         primaryPool.getAuthSecret(), rbdSnapshot));
+                    srcFile.setFormat(PhysicalDiskFormat.RAW);
 
-                        int bytes = image.read(offset, buf, chunkSize);
-                        if (bytes <= 0) {
-                            break;
-                        }
-                        bos.write(buf, 0, bytes);
-                        offset += bytes;
+                    QemuImgFile destFile = new QemuImgFile(snapshotFile);
+                    destFile.setFormat(snapshotDisk.getFormat());
+
+                    s_logger.debug("Backing up RBD snapshot " + rbdSnapshot + " to " + snapshotFile);
+                    QemuImg q = new QemuImg(cmd.getWaitInMillSeconds());
+                    q.convert(srcFile, destFile);
+
+                    File snapFile = new File(snapshotFile);
+                    if(snapFile.exists()) {
+                        size = snapFile.length();
                     }
-                    s_logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapFile.getAbsolutePath() + ". Bytes written: " + offset);
-                    bos.close();
 
-                    s_logger.debug("Attempting to remove snapshot RBD " + snapshotName + " from image " + snapshotDisk.getName());
-                    image.snapRemove(snapshotName);
-
-                    r.ioCtxDestroy(io);
-                } catch (RadosException e) {
-                    s_logger.error("A RADOS operation failed. The error was: " + e.getMessage());
-                    return new CopyCmdAnswer(e.toString());
-                } catch (RbdException e) {
-                    s_logger.error("A RBD operation on " + snapshotDisk.getName() + " failed. The error was: " + e.getMessage());
-                    return new CopyCmdAnswer(e.toString());
+                    s_logger.debug("Finished backing up RBD snapshot " + rbdSnapshot + " to " + snapshotFile + " Snapshot size: " + size);
                 } catch (FileNotFoundException e) {
                     s_logger.error("Failed to open " + snapshotDestPath + ". The error was: " + e.getMessage());
                     return new CopyCmdAnswer(e.toString());
                 } catch (IOException e) {
-                    s_logger.debug("An I/O error occured during a snapshot operation on " + snapshotDestPath);
+                    s_logger.error("Failed to create " + snapshotDestPath + ". The error was: " + e.getMessage());
+                    return new CopyCmdAnswer(e.toString());
+                }  catch (QemuImgException e) {
+                    s_logger.error("Failed to backup the RBD snapshot from " + rbdSnapshot +
+                                   " to " + snapshotFile + " the error was: " + e.getMessage());
                     return new CopyCmdAnswer(e.toString());
                 }
             } else {
@@ -761,16 +747,21 @@ public class KVMStorageProcessor implements StorageProcessor {
                     s_logger.debug("Failed to backup snaptshot: " + result);
                     return new CopyCmdAnswer(result);
                 }
+                File snapFile = new File(snapshotDestPath + "/" + snapshotName);
+                if(snapFile.exists()){
+                    size = snapFile.length();
+                }
             }
 
             SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
             newSnapshot.setPath(snapshotRelPath + File.separator + snapshotName);
+            newSnapshot.setPhysicalSize(size);
             return new CopyCmdAnswer(newSnapshot);
         } catch (LibvirtException e) {
-            s_logger.debug("Failed to backup snapshot: " + e.toString());
+            s_logger.debug("Failed to backup snapshot: ", e);
             return new CopyCmdAnswer(e.toString());
         } catch (CloudRuntimeException e) {
-            s_logger.debug("Failed to backup snapshot: " + e.toString());
+            s_logger.debug("Failed to backup snapshot: ", e);
             return new CopyCmdAnswer(e.toString());
         } finally {
             try {
@@ -952,6 +943,16 @@ public class KVMStorageProcessor implements StorageProcessor {
                 parser.parseDomainXML(xml);
                 disks = parser.getDisks();
 
+                if (attachingPool.getType() == StoragePoolType.RBD) {
+                    if (resource.getHypervisorType() == Hypervisor.HypervisorType.LXC) {
+                        String device = resource.mapRbdDevice(attachingDisk);
+                        if (device != null) {
+                            s_logger.debug("RBD device on host is: "+device);
+                            attachingDisk.setPath(device);
+                        }
+                    }
+                }
+
                 for (DiskDef disk : disks) {
                     String file = disk.getDiskPath();
                     if (file != null && file.equalsIgnoreCase(attachingDisk.getPath())) {
@@ -967,11 +968,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if (attachingPool.getType() == StoragePoolType.RBD) {
                     if(resource.getHypervisorType() == Hypervisor.HypervisorType.LXC){
                         // For LXC, map image to host and then attach to Vm
-                        String mapRbd = Script.runSimpleBashScript("rbd map " + attachingDisk.getPath() + " --id "+attachingPool.getAuthUserName());
-                        //Split pool and image details from disk path
-                        String[] splitPoolImage = attachingDisk.getPath().split("/");
-                        //ToDo: rbd showmapped supports json and xml output. Use json/xml to get device
-                        String device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"  "+splitPoolImage[1]+"\" | cut -d \" \" -f10");
+                        String device = resource.mapRbdDevice(attachingDisk);
                         if (device != null) {
                             s_logger.debug("RBD device on host is: "+device);
                             diskdef.defBlockBasedDisk(device, devId, DiskDef.diskBus.VIRTIO);
@@ -1021,11 +1018,11 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             return new AttachAnswer(disk);
         } catch (LibvirtException e) {
-            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to " + e.toString());
+            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to ", e);
             storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
             return new AttachAnswer(e.toString());
         } catch (InternalErrorException e) {
-            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to " + e.toString());
+            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to ", e);
             return new AttachAnswer(e.toString());
         }
     }
@@ -1047,10 +1044,10 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             return new DettachAnswer(disk);
         } catch (LibvirtException e) {
-            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to " + e.toString());
+            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to ", e);
             return new DettachAnswer(e.toString());
         } catch (InternalErrorException e) {
-            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to " + e.toString());
+            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to ", e);
             return new DettachAnswer(e.toString());
         }
     }
@@ -1066,24 +1063,23 @@ public class KVMStorageProcessor implements StorageProcessor {
         try {
             primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
             disksize = volume.getSize();
-
-            vol = primaryPool.createPhysicalDisk(volume.getUuid(), disksize);
+            PhysicalDiskFormat format;
+            if (volume.getFormat() == null) {
+                format = primaryPool.getDefaultFormat();
+            } else {
+                format = PhysicalDiskFormat.valueOf(volume.getFormat().toString().toUpperCase());
+            }
+            vol = primaryPool.createPhysicalDisk(volume.getUuid(), format,
+                                                 volume.getProvisioningType(), disksize);
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(vol.getName());
             newVol.setSize(volume.getSize());
-
-            /**
-             * Volumes on RBD are always in RAW format
-             * Hardcode this to RAW since there is no other way right now
-             */
-            if (primaryPool.getType() == StoragePoolType.RBD) {
-                newVol.setFormat(ImageFormat.RAW);
-            }
+            newVol.setFormat(ImageFormat.valueOf(format.toString().toUpperCase()));
 
             return new CreateObjectAnswer(newVol);
         } catch (Exception e) {
-            s_logger.debug("Failed to create volume: " + e.toString());
+            s_logger.debug("Failed to create volume: ", e);
             return new CreateObjectAnswer(e.toString());
         }
     }
@@ -1118,9 +1114,12 @@ public class KVMStorageProcessor implements StorageProcessor {
                 String vmUuid = vm.getUUIDString();
                 Object[] args = new Object[] {snapshotName, vmUuid};
                 String snapshot = SnapshotXML.format(args);
-                s_logger.debug(snapshot);
 
+                long start = System.currentTimeMillis();
                 vm.snapshotCreateXML(snapshot);
+                long total = (System.currentTimeMillis() - start)/1000;
+                s_logger.debug("snapshot takes " + total + " seconds to finish");
+
                 /*
                  * libvirt on RHEL6 doesn't handle resume event emitted from
                  * qemu
@@ -1183,7 +1182,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             newSnapshot.setPath(disk.getPath() + File.separator + snapshotName);
             return new CreateObjectAnswer(newSnapshot);
         } catch (LibvirtException e) {
-            s_logger.debug("Failed to manage snapshot: " + e.toString());
+            s_logger.debug("Failed to manage snapshot: ", e);
             return new CreateObjectAnswer("Failed to manage snapshot: " + e.toString());
         }
     }
@@ -1200,10 +1199,10 @@ public class KVMStorageProcessor implements StorageProcessor {
                 s_logger.debug("can't find volume: " + vol.getPath() + ", return true");
                 return new Answer(null);
             }
-            pool.deletePhysicalDisk(vol.getPath());
+            pool.deletePhysicalDisk(vol.getPath(), vol.getFormat());
             return new Answer(null);
         } catch (CloudRuntimeException e) {
-            s_logger.debug("Failed to delete volume: " + e.toString());
+            s_logger.debug("Failed to delete volume: ", e);
             return new Answer(null, false, e.toString());
         }
     }
@@ -1244,16 +1243,11 @@ public class KVMStorageProcessor implements StorageProcessor {
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(disk.getName());
             newVol.setSize(disk.getVirtualSize());
-
-            /**
-             * We have to force the format of RBD volumes to RAW
-             */
-            if (primaryPool.getType() == StoragePoolType.RBD) {
-                newVol.setFormat(ImageFormat.RAW);
-            }
+            newVol.setFormat(ImageFormat.valueOf(disk.getFormat().toString().toUpperCase()));
 
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
+            s_logger.debug("Failed to createVolumeFromSnapshot: ", e);
             return new CopyCmdAnswer(e.toString());
         }
     }
@@ -1272,4 +1266,5 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer forgetObject(ForgetObjectCmd cmd) {
         return new Answer(cmd, false, "not implememented yet");
     }
+
 }

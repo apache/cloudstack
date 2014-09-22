@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,18 +15,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import java.util.Map;
 
 import com.cloud.host.Host;
-import com.cloud.vm.VirtualMachine.State;
 
 public class PingRoutingCommand extends PingCommand {
-
-    // TODO vmsync {
-    Map<String, State> newStates;
-    // TODO vmsync }
 
     Map<String, HostVmStateReportEntry> _hostVmStateReport;
 
@@ -35,14 +33,9 @@ public class PingRoutingCommand extends PingCommand {
     protected PingRoutingCommand() {
     }
 
-    public PingRoutingCommand(Host.Type type, long id, Map<String, State> states, Map<String, HostVmStateReportEntry> hostVmStateReport) {
+    public PingRoutingCommand(Host.Type type, long id, Map<String, HostVmStateReportEntry> hostVmStateReport) {
         super(type, id);
-        this.newStates = states;
         this._hostVmStateReport = hostVmStateReport;
-    }
-
-    public Map<String, State> getNewStates() {
-        return newStates;
     }
 
     public Map<String, HostVmStateReportEntry> getHostVmStateReport() {

@@ -26,6 +26,7 @@ public class ApiConstants {
     public static final String API_KEY = "apikey";
     public static final String USER_API_KEY = "userapikey";
     public static final String APPLIED = "applied";
+    public static final String LIST_LB_VMIPS = "lbvmips";
     public static final String AVAILABLE = "available";
     public static final String BITS = "bits";
     public static final String BOOTABLE = "bootable";
@@ -57,12 +58,14 @@ public class ApiConstants {
     public static final String CPU_SPEED = "cpuspeed";
     public static final String CREATED = "created";
     public static final String CTX_ACCOUNT_ID = "ctxaccountid";
+    public static final String CTX_DETAILS = "ctxDetails";
     public static final String CTX_USER_ID = "ctxuserid";
     public static final String CTXSTARTEVENTID = "ctxstarteventid";
     public static final String CTX_START_EVENT_ID = "ctxStartEventId";
     public static final String CUSTOMIZED = "customized";
     public static final String CUSTOMIZED_IOPS = "customizediops";
     public static final String CUSTOM_ID = "customid";
+    public static final String CUSTOM_JOB_ID = "customjobid";
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
@@ -194,6 +197,7 @@ public class ApiConstants {
     public static final String PRIVATE_END_PORT = "privateendport";
     public static final String PRIVATE_ZONE = "privatezone";
     public static final String PROTOCOL = "protocol";
+    public static final String PROVISIONINGTYPE = "provisioningtype";
     public static final String PUBLIC_INTERFACE = "publicinterface";
     public static final String PUBLIC_IP_ID = "publicipid";
     public static final String PUBLIC_IP = "publicip";
@@ -206,6 +210,7 @@ public class ApiConstants {
     public static final String RESOURCE_TYPE = "resourcetype";
     public static final String RESPONSE = "response";
     public static final String REVERTABLE = "revertable";
+    public static final String REGISTERED = "registered";
     public static final String QUERY_FILTER = "queryfilter";
     public static final String SCHEDULE = "schedule";
     public static final String SCOPE = "scope";
@@ -263,6 +268,7 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
     public static final String VIRTUAL_MACHINE_ID_IP = "vmidipmap";
+    public static final String USAGE_ID = "usageid";
 
     public static final String VLAN = "vlan";
     public static final String VLAN_RANGE = "vlanrange";
@@ -289,6 +295,7 @@ public class ApiConstants {
     public static final String SPECIFY_VLAN = "specifyvlan";
     public static final String IS_DEFAULT = "isdefault";
     public static final String IS_SYSTEM = "issystem";
+    public static final String IS_USER_DEFINED = "isuserdefined";
     public static final String AVAILABILITY = "availability";
     public static final String NETWORKRATE = "networkrate";
     public static final String HOST_TAGS = "hosttags";
@@ -373,7 +380,7 @@ public class ApiConstants {
     public static final String SECURITY_GROUP_EANBLED = "securitygroupenabled";
     public static final String LOCAL_STORAGE_ENABLED = "localstorageenabled";
     public static final String GUEST_IP_TYPE = "guestiptype";
-    public static final String XEN_NETWORK_LABEL = "xennetworklabel";
+    public static final String XENSERVER_NETWORK_LABEL = "xenservernetworklabel";
     public static final String KVM_NETWORK_LABEL = "kvmnetworklabel";
     public static final String VMWARE_NETWORK_LABEL = "vmwarenetworklabel";
     public static final String HYPERV_NETWORK_LABEL = "hypervnetworklabel";
@@ -508,6 +515,7 @@ public class ApiConstants {
     public static final String VMPROFILE_ID = "vmprofileid";
     public static final String VMGROUP_ID = "vmgroupid";
     public static final String CS_URL = "csurl";
+    public static final String IDP_URL = "idpurl";
     public static final String SCALEUP_POLICY_IDS = "scaleuppolicyids";
     public static final String SCALEDOWN_POLICY_IDS = "scaledownpolicyids";
     public static final String SCALEUP_POLICIES = "scaleuppolicies";
@@ -520,6 +528,7 @@ public class ApiConstants {
     public static final String COUNTERPARAM_LIST = "counterparam";
     public static final String AUTOSCALE_USER_ID = "autoscaleuserid";
     public static final String BAREMETAL_DISCOVER_NAME = "baremetaldiscovername";
+    public static final String BAREMETAL_RCT_URL = "baremetalrcturl";
     public static final String UCS_DN = "ucsdn";
     public static final String GSLB_PROVIDER = "gslbprovider";
     public static final String EXCLUSIVE_GSLB_PROVIDER = "isexclusivegslbprovider";
@@ -590,7 +599,13 @@ public class ApiConstants {
     public static final String GPUGROUPNAME = "gpugroupname";
     public static final String VGPU = "vgpu";
     public static final String VGPUTYPE = "vgputype";
+    public static final String VIDEORAM = "videoram";
+    public static final String MAXHEADS = "maxheads";
+    public static final String MAXRESOLUTIONX = "maxresolutionx";
+    public static final String MAXRESOLUTIONY = "maxresolutiony";
+    public static final String MAXVGPUPERPGPU = "maxvgpuperpgpu";
     public static final String REMAININGCAPACITY = "remainingcapacity";
+    public static final String MAXCAPACITY = "maxcapacity";
     public static final String DISTRIBUTED_VPC_ROUTER = "distributedvpcrouter";
     public static final String READ_ONLY = "readonly";
     public static final String SUPPORTS_REGION_LEVEL_VPC = "supportsregionLevelvpc";

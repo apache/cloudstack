@@ -115,33 +115,21 @@ public class DefaultEndPointSelector implements EndPointSelector {
         // TODO: order by rand() is slow if there are lot of hosts
         sbuilder.append(" ORDER by rand() limit 1");
         String sql = sbuilder.toString();
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
         HostVO host = null;
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-
-        try {
-            pstmt = txn.prepareStatement(sql);
+        try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
             pstmt.setLong(1, poolId);
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long id = rs.getLong(1);
-                host = hostDao.findById(id);
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    long id = rs.getLong(1);
+                    host = hostDao.findById(id);
+                }
+            }catch (SQLException e) {
+                s_logger.warn("can't find endpoint", e);
             }
         } catch (SQLException e) {
             s_logger.warn("can't find endpoint", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
-
         if (host == null) {
             return null;
         }
@@ -150,7 +138,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     protected EndPoint findEndPointForImageMove(DataStore srcStore, DataStore destStore) {
-        // find any xen/kvm host in the scope
+        // find any xenserver/kvm host in the scope
         Scope srcScope = srcStore.getScope();
         Scope destScope = destStore.getScope();
         Scope selectedScope = null;

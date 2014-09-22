@@ -45,7 +45,7 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TrafficTypeResponse.class, required = true, description = "traffic type id")
     private Long id;
 
-    @Parameter(name = ApiConstants.XEN_NETWORK_LABEL,
+    @Parameter(name = ApiConstants.XENSERVER_NETWORK_LABEL,
                type = CommandType.STRING,
                description = "The network name label of the physical device dedicated to this traffic on a XenServer host")
     private String xenLabel;

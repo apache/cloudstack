@@ -193,9 +193,8 @@ public class RpcClientCallImpl implements RpcClientCall {
 
     @SuppressWarnings("unchecked")
     public void complete(String result) {
-        _responseResult = result;
-
         synchronized (_responseLock) {
+            _responseResult = result;
             _responseDone = true;
             _responseLock.notifyAll();
         }
@@ -213,11 +212,10 @@ public class RpcClientCallImpl implements RpcClientCall {
     }
 
     public void complete(RpcException e) {
-        _responseResult = e;
 
         synchronized (_responseLock) {
+            _responseResult = e;
             _responseDone = true;
-
             _responseLock.notifyAll();
         }
 

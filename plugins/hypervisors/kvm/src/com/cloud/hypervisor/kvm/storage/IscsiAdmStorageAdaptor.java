@@ -20,11 +20,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.storage.Storage;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -63,7 +65,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     // called from LibvirtComputingResource.execute(CreateCommand)
     // does not apply for iScsiAdmStorageAdaptor
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, KVMStoragePool pool, PhysicalDiskFormat format, long size) {
+    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, KVMStoragePool pool, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
         throw new UnsupportedOperationException("Creating a physical disk is not supported.");
     }
 
@@ -325,7 +327,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean deletePhysicalDisk(String volumeUuid, KVMStoragePool pool) {
+    public boolean deletePhysicalDisk(String volumeUuid, KVMStoragePool pool, Storage.ImageFormat format) {
         throw new UnsupportedOperationException("Deleting a physical disk is not supported.");
     }
 
@@ -336,7 +338,9 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout) {
+    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, PhysicalDiskFormat format,
+            ProvisioningType provisioningType, long size,
+            KVMStoragePool destPool, int timeout) {
         throw new UnsupportedOperationException("Creating a disk from a template is not yet supported for this configuration.");
     }
 

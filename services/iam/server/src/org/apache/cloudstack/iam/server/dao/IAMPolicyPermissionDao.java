@@ -27,9 +27,9 @@ public interface IAMPolicyPermissionDao extends GenericDao<IAMPolicyPermissionVO
     List<IAMPolicyPermissionVO> listByPolicy(long policyId);
 
     IAMPolicyPermissionVO findByPolicyAndEntity(long policyId, String entityType, String scope, Long scopeId,
-            String action, Permission perm);
+            String action, Permission perm, String accessType);
 
-    List<IAMPolicyPermissionVO> listGrantedByActionAndScope(long policyId, String action, String scope);
+    List<IAMPolicyPermissionVO> listByPolicyActionAndScope(long policyId, String action, String scope, String accessType);
 
     List<IAMPolicyPermissionVO> listByPolicyActionAndEntity(long policyId, String action, String entityType);
 

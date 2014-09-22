@@ -23,15 +23,13 @@ public class GPU {
         pciDevice,
         vgpuType
     }
-    public enum Type {
-        GPU_Passthrough,
-        VGPU
-    }
 
     public enum vGPUType {
         GRID_K100("GRID K100"),
+        GRID_K120Q("GRID K120Q"),
         GRID_K140Q("GRID K140Q"),
         GRID_K200("GRID K200"),
+        GRID_K220Q("GRID K220Q"),
         GRID_K240Q("GRID K240Q"),
         GRID_K260("GRID K260Q"),
         passthrough("passthrough");

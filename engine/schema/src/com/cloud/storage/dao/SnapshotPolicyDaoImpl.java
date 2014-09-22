@@ -36,6 +36,7 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
     private final SearchBuilder<SnapshotPolicyVO> VolumeIdSearch;
     private final SearchBuilder<SnapshotPolicyVO> VolumeIdIntervalSearch;
     private final SearchBuilder<SnapshotPolicyVO> ActivePolicySearch;
+    private final SearchBuilder<SnapshotPolicyVO> SnapshotPolicySearch;
 
     @Override
     public SnapshotPolicyVO findOneByVolumeInterval(long volumeId, IntervalType intvType) {
@@ -66,15 +67,24 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
     }
 
     @Override
-    public Pair<List<SnapshotPolicyVO>, Integer> listAndCountByVolumeId(long volumeId) {
-        return listAndCountByVolumeId(volumeId, null);
+    public Pair<List<SnapshotPolicyVO>, Integer> listAndCountByVolumeId(long volumeId, boolean display) {
+        return listAndCountByVolumeId(volumeId, display, null);
     }
 
     @Override
-    public Pair<List<SnapshotPolicyVO>, Integer> listAndCountByVolumeId(long volumeId, Filter filter) {
+    public Pair<List<SnapshotPolicyVO>, Integer> listAndCountByVolumeId(long volumeId, boolean display, Filter filter) {
         SearchCriteria<SnapshotPolicyVO> sc = VolumeIdSearch.create();
         sc.setParameters("volumeId", volumeId);
+        sc.setParameters("display", display);
         sc.setParameters("active", true);
+        return searchAndCount(sc, filter);
+    }
+
+    @Override
+    public Pair<List<SnapshotPolicyVO>, Integer> listAndCountById(long id, boolean display, Filter filter){
+        SearchCriteria<SnapshotPolicyVO> sc = SnapshotPolicySearch.create();
+        sc.setParameters("id", id);
+        sc.setParameters("display", display);
         return searchAndCount(sc, filter);
     }
 
@@ -82,6 +92,7 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
         VolumeIdSearch = createSearchBuilder();
         VolumeIdSearch.and("volumeId", VolumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdSearch.and("active", VolumeIdSearch.entity().isActive(), SearchCriteria.Op.EQ);
+        VolumeIdSearch.and("display", VolumeIdSearch.entity().isDisplay(), SearchCriteria.Op.EQ);
         VolumeIdSearch.done();
 
         VolumeIdIntervalSearch = createSearchBuilder();
@@ -92,6 +103,11 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
         ActivePolicySearch = createSearchBuilder();
         ActivePolicySearch.and("active", ActivePolicySearch.entity().isActive(), SearchCriteria.Op.EQ);
         ActivePolicySearch.done();
+
+        SnapshotPolicySearch = createSearchBuilder();
+        SnapshotPolicySearch.and("id", SnapshotPolicySearch.entity().getId(), SearchCriteria.Op.EQ);
+        SnapshotPolicySearch.and("display", SnapshotPolicySearch.entity().isDisplay(), SearchCriteria.Op.EQ);
+        SnapshotPolicySearch.done();
     }
 
     @Override

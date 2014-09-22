@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.storage.template;
 
 import java.io.BufferedInputStream;
@@ -21,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
 
@@ -42,6 +46,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
+import org.apache.cloudstack.utils.template.TemplateUtils;
 
 import com.cloud.agent.api.storage.Proxy;
 import com.cloud.storage.StorageLayer;
@@ -238,6 +243,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             byte[] block = new byte[CHUNK_SIZE];
             long offset = 0;
             boolean done = false;
+            boolean verifiedFormat=false;
             status = TemplateDownloader.Status.IN_PROGRESS;
             while (!done && status != Status.ABORTED && offset <= remoteSize) {
                 if ((bytes = in.read(block, 0, CHUNK_SIZE)) > -1) {
@@ -245,6 +251,30 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                     offset += bytes;
                     out.seek(offset);
                     totalBytes += bytes;
+                        if (!verifiedFormat && (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
+                        String uripath = null;
+                        try {
+                            URI str = new URI(getDownloadUrl());
+                            uripath = str.getPath();
+                        } catch (URISyntaxException e) {
+                            s_logger.warn("Invalid download url: " + getDownloadUrl() + ", This should not happen since we have validated the url before!!");
+                        }
+                        String unsupportedFormat = TemplateUtils.checkTemplateFormat(file.getAbsolutePath(), uripath);
+                            if (unsupportedFormat == null || !unsupportedFormat.isEmpty()) {
+                                 try {
+                                     request.abort();
+                                     out.close();
+                                     in.close();
+                                 } catch (Exception ex) {
+                                     s_logger.debug("Error on http connection : " + ex.getMessage());
+                                 }
+                                 status = Status.UNRECOVERABLE_ERROR;
+                                 errorString = "Template content is unsupported, or mismatch between selected format and template content. Found  : " + unsupportedFormat;
+                                 return 0;
+                            }
+                            s_logger.debug("Verified format of downloading file " + file.getAbsolutePath() + " is supported");
+                            verifiedFormat = true;
+                        }
                 } else {
                     done = true;
                 }

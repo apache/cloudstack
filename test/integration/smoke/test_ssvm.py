@@ -21,9 +21,9 @@ import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 import telnetlib
 
@@ -31,24 +31,14 @@ import telnetlib
 import time
 _multiprocess_shared_ = True
 
-class Services:
-    """Test SSVM Services
-    """
-
-    def __init__(self):
-        self.services = {
-                       "sleep": 60,
-                       "timeout": 10,
-                      }
-
 class TestSSVMs(cloudstackTestCase):
 
     def setUp(self):
-
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.cleanup = []
-        self.services = Services().services
-        self.zone = get_zone(self.apiclient, self.services)
+        self.services = self.testClient.getParsedTestDataConfig()
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         return
 
     def tearDown(self):
@@ -60,7 +50,26 @@ class TestSSVMs(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    def waitForSystemVMAgent(self, vmname):
+        timeout = self.services["timeout"]
+
+        while True:
+            list_host_response = list_hosts(
+                                                 self.apiclient,
+                                                 name=vmname
+                                                )
+
+            if list_host_response and list_host_response[0].state == 'Up':
+                break
+
+            if timeout == 0:
+                raise Exception("Timed out waiting for SSVM agent to be Up")
+
+            time.sleep(self.services["sleep"])
+            timeout = timeout - 1
+
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_01_list_sec_storage_vm(self):
         """Test List secondary storage VMs
         """
@@ -178,7 +187,7 @@ class TestSSVMs(cloudstackTestCase):
                             )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_02_list_cpvm_vm(self):
         """Test List console proxy VMs
         """
@@ -290,7 +299,7 @@ class TestSSVMs(cloudstackTestCase):
                             )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_03_ssvm_internals(self):
         """Test SSVM Internals"""
 
@@ -329,8 +338,8 @@ class TestSSVMs(cloudstackTestCase):
 
         self.debug("Running SSVM check script")
 
-        if self.apiclient.hypervisor.lower() == 'vmware':
-            #SSH into SSVMs is done via management server for Vmware
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
+            #SSH into SSVMs is done via management server for Vmware and Hyper-V
             result = get_process_status(
                                 self.apiclient.connection.mgtSvr,
                                 22,
@@ -338,7 +347,7 @@ class TestSSVMs(cloudstackTestCase):
                                 self.apiclient.connection.passwd,
                                 ssvm.privateip,
                                 "/usr/local/cloud/systemvm/ssvm-check.sh |grep -e ERROR -e WARNING -e FAIL",
-                                hypervisor=self.apiclient.hypervisor
+                                hypervisor=self.hypervisor
                                 )
         else:
             try:
@@ -369,8 +378,8 @@ class TestSSVMs(cloudstackTestCase):
                         )
 
         #Check status of cloud service
-        if self.apiclient.hypervisor.lower() == 'vmware':
-            #SSH into SSVMs is done via management server for Vmware
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
+            #SSH into SSVMs is done via management server for Vmware and Hyper-V
             result = get_process_status(
                                 self.apiclient.connection.mgtSvr,
                                 22,
@@ -378,7 +387,7 @@ class TestSSVMs(cloudstackTestCase):
                                 self.apiclient.connection.passwd,
                                 ssvm.privateip,
                                 "service cloud status",
-                                hypervisor=self.apiclient.hypervisor
+                                hypervisor=self.hypervisor
                                 )
         else:
             try:
@@ -403,7 +412,7 @@ class TestSSVMs(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_04_cpvm_internals(self):
         """Test CPVM Internals"""
 
@@ -453,8 +462,8 @@ class TestSSVMs(cloudstackTestCase):
 
         self.debug("Checking cloud process status")
 
-        if self.apiclient.hypervisor.lower() == 'vmware':
-            #SSH into SSVMs is done via management server for vmware
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
+            #SSH into SSVMs is done via management server for Vmware and Hyper-V
             result = get_process_status(
                                 self.apiclient.connection.mgtSvr,
                                 22,
@@ -462,7 +471,7 @@ class TestSSVMs(cloudstackTestCase):
                                 self.apiclient.connection.passwd,
                                 cpvm.privateip,
                                 "service cloud status",
-                                hypervisor=self.apiclient.hypervisor
+                                hypervisor=self.hypervisor
                                 )
         else:
             try:
@@ -486,7 +495,7 @@ class TestSSVMs(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_05_stop_ssvm(self):
         """Test stop SSVM
         """
@@ -527,9 +536,6 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = ssvm.id
         self.apiclient.stopSystemVm(cmd)
         
-        # Sleep to ensure that VM is in proper state
-        time.sleep(self.services["sleep"])
-        
         timeout = self.services["timeout"]
         while True:
             list_ssvm_response = list_ssvms(
@@ -539,7 +545,7 @@ class TestSSVMs(cloudstackTestCase):
             if isinstance(list_ssvm_response, list):
                 if list_ssvm_response[0].state == 'Running':
                     break
-            elif timeout == 0:
+            if timeout == 0:
                 raise Exception("List SSVM call failed!")
             
             time.sleep(self.services["sleep"])
@@ -557,12 +563,15 @@ class TestSSVMs(cloudstackTestCase):
                         'Running',
                         "Check whether SSVM is running or not"
                         )
+        # Wait for the agent to be up
+        self.waitForSystemVMAgent(ssvm_response.name)
+
         # Call above tests to ensure SSVM is properly running
         self.test_01_list_sec_storage_vm()
         self.test_03_ssvm_internals()
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_06_stop_cpvm(self):
         """Test stop CPVM
         """
@@ -603,9 +612,6 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = cpvm.id
         self.apiclient.stopSystemVm(cmd)
 
-        # Sleep to ensure that VM is in proper state
-        time.sleep(self.services["sleep"])
-        
         timeout = self.services["timeout"]
         while True:
             list_cpvm_response = list_ssvms(
@@ -615,7 +621,7 @@ class TestSSVMs(cloudstackTestCase):
             if isinstance(list_cpvm_response, list):
                 if list_cpvm_response[0].state == 'Running':
                     break
-            elif timeout == 0:
+            if timeout == 0:
                 raise Exception("List CPVM call failed!")
             
             time.sleep(self.services["sleep"])
@@ -630,12 +636,16 @@ class TestSSVMs(cloudstackTestCase):
                         'Running',
                         "Check whether CPVM is running or not"
                         )
+
+        # Wait for the agent to be up
+        self.waitForSystemVMAgent(cpvm_response.name)
+
         # Call above tests to ensure CPVM is properly running
         self.test_02_list_cpvm_vm()
         self.test_04_cpvm_internals()
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_07_reboot_ssvm(self):
         """Test reboot SSVM
         """
@@ -680,9 +690,6 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = ssvm_response.id
         self.apiclient.rebootSystemVm(cmd)
 
-        # Sleep to ensure that VM is in proper state
-        time.sleep(self.services["sleep"])
-        
         timeout = self.services["timeout"]
         while True:
             list_ssvm_response = list_ssvms(
@@ -692,7 +699,7 @@ class TestSSVMs(cloudstackTestCase):
             if isinstance(list_ssvm_response, list):
                 if list_ssvm_response[0].state == 'Running':
                     break
-            elif timeout == 0:
+            if timeout == 0:
                 raise Exception("List SSVM call failed!")
             
             time.sleep(self.services["sleep"])
@@ -717,11 +724,15 @@ class TestSSVMs(cloudstackTestCase):
                     old_private_ip,
                     "Check Private IP after reboot with that of before reboot"
                     )
+
+        # Wait for the agent to be up
+        self.waitForSystemVMAgent(ssvm_response.name)
+
         #Call to verify cloud process is running
         self.test_03_ssvm_internals()
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_08_reboot_cpvm(self):
         """Test reboot CPVM
         """
@@ -766,9 +777,6 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = cpvm_response.id
         self.apiclient.rebootSystemVm(cmd)
 
-        # Sleep to ensure that VM is in proper state
-        time.sleep(self.services["sleep"])
-
         timeout = self.services["timeout"]
         while True:
             list_cpvm_response = list_ssvms(
@@ -778,7 +786,7 @@ class TestSSVMs(cloudstackTestCase):
             if isinstance(list_cpvm_response, list):
                 if list_cpvm_response[0].state == 'Running':
                     break
-            elif timeout == 0:
+            if timeout == 0:
                 raise Exception("List CPVM call failed!")
             
             time.sleep(self.services["sleep"])
@@ -804,11 +812,14 @@ class TestSSVMs(cloudstackTestCase):
                     old_private_ip,
                     "Check Private IP after reboot with that of before reboot"
                     )
+        # Wait for the agent to be up
+        self.waitForSystemVMAgent(cpvm_response.name)
+
         #Call to verify cloud process is running
         self.test_04_cpvm_internals()
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_09_destroy_ssvm(self):
         """Test destroy SSVM
         """
@@ -840,9 +851,6 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = ssvm_response.id
         self.apiclient.destroySystemVm(cmd)
 
-        # Sleep to ensure that VM is in proper state
-        time.sleep(self.services["sleep"])
-        
         timeout = self.services["timeout"]
         while True:
             list_ssvm_response = list_ssvms(
@@ -853,7 +861,7 @@ class TestSSVMs(cloudstackTestCase):
             if isinstance(list_ssvm_response, list):
                 if list_ssvm_response[0].state == 'Running':
                     break
-            elif timeout == 0:
+            if timeout == 0:
                 raise Exception("List SSVM call failed!")
             
             time.sleep(self.services["sleep"])
@@ -886,11 +894,14 @@ class TestSSVMs(cloudstackTestCase):
                         "Check whether SSVM has public IP field"
                         )
         
+        # Wait for the agent to be up
+        self.waitForSystemVMAgent(ssvm_response.name)
+
         #Call to verify cloud process is running
         self.test_03_ssvm_internals()
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_10_destroy_cpvm(self):
         """Test destroy CPVM
         """
@@ -921,9 +932,6 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = cpvm_response.id
         self.apiclient.destroySystemVm(cmd)
 
-        # Sleep to ensure that VM is in proper state
-        time.sleep(self.services["sleep"])
-        
         timeout = self.services["timeout"]
         while True:
             list_cpvm_response = list_ssvms(
@@ -934,7 +942,7 @@ class TestSSVMs(cloudstackTestCase):
             if isinstance(list_cpvm_response, list):
                 if list_cpvm_response[0].state == 'Running':
                     break
-            elif timeout == 0:
+            if timeout == 0:
                 raise Exception("List CPVM call failed!")
             
             time.sleep(self.services["sleep"])
@@ -967,6 +975,9 @@ class TestSSVMs(cloudstackTestCase):
                         "Check whether CPVM has public IP field"
                         )
                 
+        # Wait for the agent to be up
+        self.waitForSystemVMAgent(cpvm_response.name)
+
         #Call to verify cloud process is running
         self.test_04_cpvm_internals()
         return

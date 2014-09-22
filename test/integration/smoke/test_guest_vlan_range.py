@@ -21,43 +21,22 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 import datetime
-
-
-class Services:
-    """Test Dedicating Guest Vlan Ranges
-    """
-
-    def __init__(self):
-        self.services = {
-                        "domain": {
-                                   "name": "Domain",
-                                   },
-                        "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    "password": "password",
-                         },
-                        "name": "testphysicalnetwork",
-
-                        "vlan": "2118-2120",
-                    }
-
 
 class TestDedicateGuestVlanRange(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apiclient = super(TestDedicateGuestVlanRange, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        testClient = super(TestDedicateGuestVlanRange, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain
-        cls.domain = get_domain(cls.apiclient, cls.services)
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
 
         # Create Account
         cls.account = Account.create(
@@ -99,7 +78,7 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["simulator", "advanced", "guestvlanrange", "dedicate", "release", "selfservice"])
+    @attr(tags=["advanced", "guestvlanrange", "dedicate", "release"], required_hardware="false")
     def test_dedicateGuestVlanRange(self):
         """Test guest vlan range dedication
         """
@@ -118,11 +97,7 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
         """
         self.debug("Adding guest vlan range")
 
-
-        print "existing vlna = %s" %self.physical_network.vlan
-        print "free vlan = %s" %self.free_vlan
         new_vlan = self.physical_network.vlan + "," + self.free_vlan["partial_range"][0]
-        print "new vlan = %s" % new_vlan
         #new_vlan = self.free_vlan["partial_range"][0]
         addGuestVlanRangeResponse = self.physical_network.update(self.apiclient,
                 id=self.physical_network.id, vlan=new_vlan)

@@ -29,9 +29,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
-import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
-import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageStats;
 import com.cloud.utils.StringUtils;
@@ -152,8 +150,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
             poolResponse.setHypervisor(pool.getHypervisor().toString());
         }
 
-        short capacityType = pool.getScope() == ScopeType.HOST ? Capacity.CAPACITY_TYPE_LOCAL_STORAGE : Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED;
-        long allocatedSize = ApiDBUtils.getStorageCapacitybyPool(pool.getId(), capacityType);
+        long allocatedSize = pool.getUsedCapacity();
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
         poolResponse.setCapacityIops(pool.getCapacityIops());

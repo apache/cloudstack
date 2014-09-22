@@ -182,21 +182,23 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
     @Override
     public void downloadTemplateToStorage(DataObject template, AsyncCompletionCallback<DownloadAnswer> callback) {
-        long templateId = template.getId();
-        DataStore store = template.getDataStore();
-        if (isTemplateUpdateable(templateId, store.getId())) {
-            if (template != null && template.getUri() != null) {
-                initiateTemplateDownload(template, callback);
+        if(template != null) {
+            long templateId = template.getId();
+            DataStore store = template.getDataStore();
+            if (isTemplateUpdateable(templateId, store.getId())) {
+                if (template.getUri() != null) {
+                    initiateTemplateDownload(template, callback);
+                } else {
+                    s_logger.info("Template url is null, cannot download");
+                    DownloadAnswer ans = new DownloadAnswer("Template url is null", Status.UNKNOWN);
+                    callback.complete(ans);
+                }
             } else {
-                s_logger.info("Template url is null, cannot download");
-                DownloadAnswer ans = new DownloadAnswer("Template url is null", Status.UNKNOWN);
+                s_logger.info("Template download is already in progress or already downloaded");
+                DownloadAnswer ans =
+                        new DownloadAnswer("Template download is already in progress or already downloaded", Status.UNKNOWN);
                 callback.complete(ans);
             }
-        } else {
-            s_logger.info("Template download is already in progress or already downloaded");
-            DownloadAnswer ans =
-                new DownloadAnswer("Template download is already in progress or already downloaded", Status.UNKNOWN);
-            callback.complete(ans);
         }
     }
 

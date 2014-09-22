@@ -271,7 +271,6 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_DELETE, eventDescription = "revoking network acl", async = true)
     public boolean revokeNetworkACLItem(long ruleId) {
 
         NetworkACLItemVO rule = _networkACLItemDao.findById(ruleId);
@@ -491,8 +490,12 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             foundProvider = true;
             s_logger.debug("Applying NetworkACL for network: " + network.getId() + " with Network ACL service provider");
             handled = element.applyNetworkACLs(network, rules);
-            if (handled)
+            if (handled) {
+                // publish message on message bus, so that network elements implementing distributed routing
+                // capability can act on the event
+                _messageBus.publish(_name, "Network_ACL_Replaced", PublishScope.LOCAL, network);
                 break;
+            }
         }
         if (!foundProvider) {
             s_logger.debug("Unable to find NetworkACL service provider for network: " + network.getId());

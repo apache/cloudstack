@@ -306,6 +306,10 @@
                                                 description: 'VHD'
                                             });
                                             items.push({
+                                                id: 'VHDX',
+                                                description: 'VHDX'
+                                            });
+                                            items.push({
                                                 id: 'OVA',
                                                 description: 'OVA'
                                             });
@@ -327,7 +331,7 @@
                                     },
                                     checksum: {
                                         docID: 'helpUploadVolumeChecksum',
-                                        label: 'label.checksum'
+                                        label: 'label.md5.checksum'
                                     }
                                 }
                             },
@@ -377,10 +381,10 @@
 
                     advSearchFields: {
                         name: {
-                            label: 'Name'
+                            label: 'label.name'
                         },
                         zoneid: {
-                            label: 'Zone',
+                            label: 'label.zone',
                             select: function(args) {
                                 $.ajax({
                                     url: createURL('listZones'),
@@ -404,7 +408,7 @@
                         },
 
                         domainid: {
-                            label: 'Domain',
+                            label: 'label.domain',
                             select: function(args) {
                                 if (isAdmin() || isDomainAdmin()) {
                                     $.ajax({
@@ -447,7 +451,7 @@
                         },
 
                         account: {
-                            label: 'Account',
+                            label: 'label.account',
                             isHidden: function(args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
@@ -457,10 +461,10 @@
                         },
 
                         tagKey: {
-                            label: 'Tag Key'
+                            label: 'label.tag.key'
                         },
                         tagValue: {
-                            label: 'Tag Value'
+                            label: 'label.tag.value'
                         }
                     },
 
@@ -490,7 +494,7 @@
                     },
 
                     detailView: {
-                        name: 'Volume details',
+                        name: 'label.volume.details',
                         viewAll: {
                             path: 'storage.snapshots',
                             label: 'label.snapshots'
@@ -498,22 +502,22 @@
                         actions: {
 
                             migrateVolume: {
-                                label: 'Migrate Volume',
+                                label: 'label.migrate.volume',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Do you want to migrate this volume ?';
+                                        return 'message.confirm.migrate.volume';
                                     },
                                     notification: function(args) {
-                                        return 'Volume migrated';
+                                        return 'label.volume.migrated';
                                     }
                                 },
 
                                 createForm: {
-                                    title: 'Migrate Volume',
+                                    title: 'label.migrate.volume',
                                     desc: '',
                                     fields: {
                                         storagePool: {
-                                            label: 'Storage Pool',
+                                            label: 'label.storage.pool',
                                             validation: {
                                                 required: true
                                             },
@@ -865,7 +869,7 @@
                                 label: 'label.action.attach.disk',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Are you sure you want to attach disk?';
+                                        return 'message.confirm.attach.disk';
                                     },
                                     notification: function(args) {
                                         return 'label.action.attach.disk';
@@ -901,6 +905,11 @@
                                                     });
                                                 }
 
+                                                var volumeDrEnabled = false;                                               
+                                                if (isModuleIncluded("dr")) {
+                                                    volumeDrEnabled = cloudStack.dr.sharedFunctions.isVolumeDrEnabled(args.context.volumes[0]);                                                    
+                                                }    
+                                                
                                                 $(['Running', 'Stopped']).each(function() {
                                                     $.ajax({
                                                         url: createURL('listVirtualMachines'),
@@ -911,10 +920,20 @@
                                                         success: function(json) {
                                                             var instanceObjs = json.listvirtualmachinesresponse.virtualmachine;
                                                             $(instanceObjs).each(function() {
+                                                                if (isModuleIncluded("dr")) {
+                                                                    var vmDrEnabled = cloudStack.dr.sharedFunctions.isVmDrEnabled(this);
+                                                                    if (vmDrEnabled == volumeDrEnabled) {
                                                                 items.push({
                                                                     id: this.id,
                                                                     description: this.displayname ? this.displayname : this.name
                                                                 });
+                                                                    } 
+                                                                } else {
+                                                                    items.push({
+                                                                        id: this.id,
+                                                                        description: this.displayname ? this.displayname : this.name
+                                                                    });
+                                                                }                                                                
                                                             });
                                                         }
                                                     });
@@ -975,7 +994,7 @@
                                                     getUpdatedItem: function(json) {
                                                         return {
                                                             virtualmachineid: null,
-                                                            vmname: null
+                                                            vmdisplayname: null
                                                         };
                                                     },
                                                     getActionFilter: function() {
@@ -1145,17 +1164,17 @@
                             },
 
                             migrateToAnotherStorage: {
-                                label: 'label.migrate.volume',
+                                label: 'label.migrate.volume.to.primary.storage',
                                 messages: {
                                     confirm: function(args) {
                                         return 'message.migrate.volume';
                                     },
                                     notification: function(args) {
-                                        return 'label.migrate.volume';
+                                        return 'label.migrate.volume.to.primary.storage';
                                     }
                                 },
                                 createForm: {
-                                    title: 'label.migrate.volume',
+                                    title: 'label.migrate.volume.to.primary.storage',
                                     desc: '',
                                     fields: {
                                         storageId: {
@@ -1289,6 +1308,16 @@
                                                     } else {
                                                         $newsize.hide();
                                                     }
+
+                                                    var $minIops = $form.find('.form-item[rel=minIops]');
+                                                    var $maxIops = $form.find('.form-item[rel=maxIops]');
+                                                    if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                                        $minIops.css('display', 'inline-block');
+                                                        $maxIops.css('display', 'inline-block');
+                                                    } else {
+                                                        $minIops.hide();
+                                                        $maxIops.hide();
+                                                    }
                                                 });
                                             }
                                         },
@@ -1304,6 +1333,22 @@
                                             label: 'label.resize.shrink.ok',
                                             isBoolean: true,
                                             isChecked: false
+                                        },
+                                        minIops: {
+                                            label: 'label.disk.iops.min',
+                                            validation: {
+                                                required: false,
+                                                number: true
+                                            },
+                                            isHidden: true
+                                        },
+                                        maxIops: {
+                                            label: 'label.disk.iops.max',
+                                            validation: {
+                                                required: false,
+                                                number: true
+                                            },
+                                            isHidden: true
                                         }
                                     }
                                 },
@@ -1321,6 +1366,23 @@
                                     if (newSize != null && newSize.length > 0) {
                                         array1.push("&size=" + todb(newSize));
                                     }
+
+                                    var minIops;
+                                    var maxIops
+
+                                    if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                        minIops = args.data.minIops;
+                                        maxIops = args.data.maxIops;
+                                    }
+
+                                    if (minIops != null && minIops.length > 0) {
+                                        array1.push("&miniops=" + todb(minIops));
+                                    }
+
+                                    if (maxIops != null && maxIops.length > 0) {
+                                        array1.push("&maxiops=" + todb(maxIops));
+                                    }
+
                                     $.ajax({
                                         url: createURL("resizeVolume&id=" + args.context.volumes[0].id + array1.join("")),
                                         dataType: "json",
@@ -1367,7 +1429,7 @@
                                     }
                                 }, {
                                     id: {
-                                        label: 'ID'
+                                        label: 'label.id'
                                     },
                                     zonename: {
                                         label: 'label.zone'
@@ -1402,11 +1464,14 @@
                                     storagetype: {
                                         label: 'label.storage.type'
                                     },
+                                    provisioningtype: {
+                                        label: 'label.disk.provisioningtype'
+                                    },
                                     hypervisor: {
                                         label: 'label.hypervisor'
                                     },
                                     size: {
-                                        label: 'Size ',
+                                        label: 'label.size',
                                         converter: function(args) {
                                             if (args == null || args == 0)
                                                 return "";
@@ -1433,10 +1498,10 @@
                                         }
                                     },
                                     virtualmachineid: {
-                                        label: 'VM ID',
+                                        label: 'label.vm.id',
                                         converter: function(args) {
                                             if (args == null)
-                                                return "detached";
+                                                return 'state.detached';
                                             else
                                                 return args;
                                         }
@@ -1479,6 +1544,11 @@
                                         async: true,
                                         success: function(json) {
                                             var jsonObj = json.listvolumesresponse.volume[0];
+                                            
+                                            if (isModuleIncluded("dr")) {
+                                                cloudStack.dr.sharedFunctions.addExtraProperties(jsonObj, "Volume");
+                                            }                                            
+                                            
                                             args.response.success({
                                                 actionFilter: volumeActionfilter,
                                                 data: jsonObj
@@ -1523,11 +1593,11 @@
 
                     advSearchFields: {
                         name: {
-                            label: 'Name'
+                            label: 'label.name'
                         },
 
                         domainid: {
-                            label: 'Domain',
+                            label: 'label.domain',
                             select: function(args) {
                                 if (isAdmin() || isDomainAdmin()) {
                                     $.ajax({
@@ -1570,7 +1640,7 @@
                         },
 
                         account: {
-                            label: 'Account',
+                            label: 'label.account',
                             isHidden: function(args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
@@ -1579,10 +1649,10 @@
                             }
                         },
                         tagKey: {
-                            label: 'Tag Key'
+                            label: 'label.tag.key'
                         },
                         tagValue: {
-                            label: 'Tag Value'
+                            label: 'label.tag.value'
                         }
                     },
 
@@ -1732,7 +1802,7 @@
                                 label: 'label.action.create.volume',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Are you sure you want to create volume?';
+                                        return 'message.confirm.create.volume';
                                     },
                                     notification: function(args) {
                                         return 'label.action.create.volume';

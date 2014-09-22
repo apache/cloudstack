@@ -25,20 +25,17 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.vm.DiskProfile;
@@ -75,10 +72,9 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
         // data disk and host identified from deploying vm (attach volume case)
-        if (dskCh.getType() == Volume.Type.DATADISK && plan.getHostId() != null) {
-            List<StoragePoolHostVO> hostPools = _poolHostDao.listByHostId(plan.getHostId());
-            for (StoragePoolHostVO hostPool : hostPools) {
-                StoragePoolVO pool = _storagePoolDao.findById(hostPool.getPoolId());
+        if (plan.getHostId() != null) {
+            List<StoragePoolVO> hostTagsPools = _storagePoolDao.findLocalStoragePoolsByHostAndTags(plan.getHostId(), dskCh.getTags());
+            for (StoragePoolVO pool : hostTagsPools) {
                 if (pool != null && pool.isLocal()) {
                     StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
                     if (filter(avoid, storagePool, dskCh, plan)) {

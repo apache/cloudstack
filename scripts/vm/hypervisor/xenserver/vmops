@@ -37,14 +37,14 @@ import cloudstack_pluginlib as lib
 import logging
 from util import CommandException
 
-lib.setup_logging("/var/log/cloud/vmops.log")
+lib.setup_logging("/var/log/cloud/cloud.log")
 
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        logging.debug("#### VMOPS enter  %s ####" % name )
+        logging.debug("#### CLOUD enter  %s ####" % name )
         res = fn(*v, **k)
-        logging.debug("#### VMOPS exit  %s ####" % name )
+        logging.debug("#### CLOUD exit  %s ####" % name )
         return res
     return wrapped
 
@@ -198,20 +198,6 @@ def setLinkLocalIP(session, args):
     return txt
 
 @echo
-def routerProxy(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/router_proxy.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'succ#' + txt
-    except:
-        logging.debug("routerProxy command " + sargs + " failed "  )
-        txt = 'fail#' + txt
-    return txt
-
-@echo
 def createFile(session, args):
     file_path = args['filepath']
     file_contents = args['filecontents']
@@ -264,6 +250,8 @@ def chain_name(vm_name):
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
         if vm_name.endswith('untagged'):
             return '-'.join(vm_name.split('-')[:-1])
+    if len(vm_name) > 28:
+        vm_name = vm_name[0:27]
     return vm_name
 
 def chain_name_def(vm_name):
@@ -271,11 +259,17 @@ def chain_name_def(vm_name):
         if vm_name.endswith('untagged'):
             return '-'.join(vm_name.split('-')[:-2]) + "-def"
         return '-'.join(vm_name.split('-')[:-1]) + "-def"
+
+    if len(vm_name) > 28:
+        vm_name = vm_name[0:27]
     return vm_name
   
 def egress_chain_name(vm_name):
-    return chain_name(vm_name) + "-eg"
-      
+    name = chain_name(vm_name) + "-eg"
+    if len(name) > 28:
+        name = name[0:27]
+    return name
+
 @echo
 def can_bridge_firewall(session, args):
     try:
@@ -379,7 +373,7 @@ def allow_egress_traffic(session):
 
 def ipset(ipsetname, proto, start, end, ips):
     try:
-        util.pread2(['ipset', '-N', ipsetname, 'iptreemap'])
+        util.pread2(['ipset', '-N', ipsetname, 'iphash'])
     except:
         logging.debug("ipset chain already exists" + ipsetname)
 
@@ -387,7 +381,7 @@ def ipset(ipsetname, proto, start, end, ips):
     ipsettmp = ''.join(''.join(ipsetname.split('-')).split('_')) + str(int(time.time()) % 1000)
 
     try: 
-        util.pread2(['ipset', '-N', ipsettmp, 'iptreemap']) 
+        util.pread2(['ipset', '-N', ipsettmp, 'iphash']) 
     except:
         logging.debug("Failed to create temp ipset, reusing old name= " + ipsettmp)
         try: 
@@ -1278,7 +1272,7 @@ def inflate_rules (zipped):
 def cache_ipset_keyword():
     tmpname = 'ipsetqzvxtmp'
     try:
-        util.pread2(['/bin/bash', '-c', 'ipset -N ' + tmpname + ' iptreemap'])
+        util.pread2(['/bin/bash', '-c', 'ipset -N ' + tmpname + ' iphash'])
     except:
         util.pread2(['/bin/bash', '-c', 'ipset -F ' + tmpname])
 
@@ -1495,7 +1489,6 @@ if __name__ == "__main__":
      XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi,
                             "getgateway": getgateway, "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
-                            "routerProxy": routerProxy, 
                             "createFile": createFile, "deleteFile": deleteFile,
                             "network_rules":network_rules, 
                             "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules,

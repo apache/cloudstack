@@ -25,7 +25,6 @@ under the License.
         <checker name="ManagementServerNode" class="com.cloud.cluster.ManagementServerNode"/>
         <checker name="EncryptionSecretKeyChecker" class="com.cloud.utils.crypt.EncryptionSecretKeyChecker"/>
         <checker name="DatabaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker"/>
-        <checker name="DatabaseUpgradeChecker" class="com.cloud.upgrade.PremiumDatabaseUpgradeChecker"/>
     </system-integrity-checker>
 
     <interceptor library="com.cloud.configuration.DefaultInterceptorLibrary"/>
@@ -109,7 +108,7 @@ under the License.
             <adapter name="KVMGuru" class="com.cloud.hypervisor.KVMGuru"/>
         </adapters>
         <adapters key="com.cloud.resource.Discoverer">
-            <adapter name="XCP Agent" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>
+            <adapter name="XCP Agent" class="com.cloud.hypervisor.xenserver.discoverer.XcpServerDiscoverer"/>
             <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
             <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
             <adapter name="Bare Metal Agent" class="com.cloud.baremetal.BareMetalDiscoverer"/>

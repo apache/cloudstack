@@ -16,7 +16,7 @@
 # under the License.
 
 import threading
-import cloudstackException
+from marvin import cloudstackException
 import time
 import Queue
 import copy
@@ -26,12 +26,14 @@ import datetime
 
 
 class job(object):
+
     def __init__(self):
         self.id = None
         self.cmd = None
 
 
 class jobStatus(object):
+
     def __init__(self):
         self.result = None
         self.status = None
@@ -47,6 +49,7 @@ class jobStatus(object):
 
 
 class workThread(threading.Thread):
+
     def __init__(self, in_queue, outqueue, apiClient, db=None, lock=None):
         threading.Thread.__init__(self)
         self.inqueue = in_queue
@@ -62,7 +65,7 @@ class workThread(threading.Thread):
         try:
             self.lock.acquire()
             result = self.connection.poll(job.jobId, job.responsecls).jobresult
-        except cloudstackException.cloudstackAPIException, e:
+        except cloudstackException.CloudstackAPIException as e:
             result = str(e)
         finally:
             self.lock.release()
@@ -102,7 +105,7 @@ class workThread(threading.Thread):
                     except:
                         pass
                     jobstatus.status = True
-        except cloudstackException.cloudstackAPIException, e:
+        except cloudstackException.CloudstackAPIException as e:
             jobstatus.result = str(e)
             jobstatus.status = False
         except:
@@ -124,11 +127,9 @@ class workThread(threading.Thread):
             self.output.put(jobstatus)
             self.inqueue.task_done()
 
-        '''release the resource'''
-        self.connection.close()
-
 
 class jobThread(threading.Thread):
+
     def __init__(self, inqueue, interval):
         threading.Thread.__init__(self)
         self.inqueue = inqueue
@@ -139,8 +140,6 @@ class jobThread(threading.Thread):
             job = self.inqueue.get()
             try:
                 job.run()
-                '''release the api connection'''
-                job.apiClient.connection.close()
             except:
                 pass
 
@@ -149,12 +148,14 @@ class jobThread(threading.Thread):
 
 
 class outputDict(object):
+
     def __init__(self):
         self.lock = threading.Condition()
         self.dict = {}
 
 
 class asyncJobMgr(object):
+
     def __init__(self, apiClient, db):
         self.inqueue = Queue.Queue()
         self.output = outputDict()

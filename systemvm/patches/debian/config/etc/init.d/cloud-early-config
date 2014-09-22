@@ -30,13 +30,13 @@ PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 #set -x
 #exec 3>&0 4>&1 > /var/log/test.log 2>&1
 #start hv_kvp daemon
-/usr/sbin/hv_kvp_daemon
+[ -f /usr/sbin/hv_kvp_daemon ] && /usr/sbin/hv_kvp_daemon
 
 # Fix haproxy directory issue
 mkdir -p /var/lib/haproxy
 
 # Clear boot up flag, it would be created by rc.local after boot up done
-rm /var/cache/cloud/boot_up_done
+rm -f /var/cache/cloud/boot_up_done
 
 [ -x /sbin/ifup ] || exit 0
 
@@ -44,7 +44,7 @@ rm /var/cache/cloud/boot_up_done
 
 log_it() {
   echo "$(date) $@" >> /var/log/cloud.log
-  log_action_begin_msg "$@"
+  log_action_msg "$@"
 }
 
 init_interfaces_orderby_macs() {
@@ -139,6 +139,15 @@ get_boot_params() {
           sleep 5
           cp -f /var/opt/hyperv/.kvp_pool_0 /var/cache/cloud/cmdline
           cat /dev/null > /var/opt/hyperv/.kvp_pool_0
+          ;;
+     virtualbox)
+          # Virtualbox is used to test the virtual router
+          # get the commandline from a dmistring  (yes, hacky!)
+          dmidecode | grep cmdline | sed 's/^.*cmdline://' > /var/cache/cloud/cmdline
+          RV=$?
+          if [ $RV -ne 0 ] ; then
+            log_it "Failed to get cmdline from a virtualbox dmi property"
+          fi
           ;;
   esac
 
@@ -387,6 +396,7 @@ setup_interface() {
 
 setup_interface_ipv6() {
   sysctl net.ipv6.conf.all.disable_ipv6=0
+  sysctl net.ipv6.conf.all.forwarding=1
   sysctl net.ipv6.conf.all.accept_ra=1
   
   local intfnum=$1
@@ -865,6 +875,12 @@ setup_redundant_router() {
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/check_heartbeat.sh
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/arping_gateways.sh
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" /opt/cloud/bin/checkrouter.sh
+
+    if [ $ADVERT_INT ]
+    then
+        sed -i "s/advert_int 1/advert_int $ADVERT_INT/g" /etc/keepalived/keepalived.conf
+    fi
+
     chmod a+x $rrouter_bin_path/*.sh
 
     sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived
@@ -873,6 +889,7 @@ setup_redundant_router() {
     then
         (crontab -l; echo -e "SHELL=/bin/bash\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n*/1 * * * * $rrouter_bin_path/check_heartbeat.sh 2>&1 > /dev/null") | crontab
     fi
+    load_modules
 }
 
 setup_aesni() {
@@ -882,8 +899,18 @@ setup_aesni() {
   fi
 }
 
+load_modules() {
+
+ #load nf modules for ftp
+ modprobe nf_nat_ftp
+ modprobe nf_conntrack_ftp
+}
+
 setup_router() {
   log_it "Setting up virtual router system vm"
+
+   #To save router public interface and gw ip information
+   touch /var/cache/cloud/ifaceGwIp
 
   oldmd5=
   [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldmd5=$(md5sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
@@ -953,6 +980,7 @@ setup_router() {
 #for old templates
   cp /etc/iptables/iptables-router /etc/iptables/rules
   setup_sshd $ETH1_IP "eth1"
+  load_modules
 }
 
 
@@ -1052,6 +1080,7 @@ EOF
   else
       echo 0 > /var/cache/cloud/dnsmasq_managed_lease
   fi
+  load_modules
 }
 
 
@@ -1073,8 +1102,16 @@ setup_dhcpsrvr() {
   enable_svc cloud 0
   enable_fwding 0
   chkconfig nfs-common off
+
   cp /etc/iptables/iptables-router /etc/iptables/rules.v4
   cp /etc/iptables/iptables-router /etc/iptables/rules
+
+  #Only allow DNS service for current network
+  sed -i "s/-A INPUT -i eth0 -p udp -m udp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p udp -m udp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules.v4
+  sed -i "s/-A INPUT -i eth0 -p udp -m udp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p udp -m udp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules
+  sed -i "s/-A INPUT -i eth0 -p tcp -m tcp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p tcp -m tcp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules.v4
+  sed -i "s/-A INPUT -i eth0 -p tcp -m tcp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p tcp -m tcp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules
+
   if [ "$SSHONGUEST" == "true" ]
   then
     setup_sshd $ETH0_IP "eth0"
@@ -1100,6 +1137,7 @@ setup_storage_network() {
 
 setup_secstorage() {
   log_it "Setting up secondary storage system vm"
+  sysctl vm.min_free_kbytes=8192
   local hyp=$1
   setup_common eth0 eth1 eth2
   setup_storage_network
@@ -1418,6 +1456,12 @@ for i in $CMDLINE
         ;;
       vpccidr)
         VPCCIDR=$VALUE
+        ;;
+      cidrsize)
+        CIDR_SIZE=$VALUE
+        ;;
+      advert_int)
+        ADVERT_INT=$VALUE
         ;;
     esac
 done

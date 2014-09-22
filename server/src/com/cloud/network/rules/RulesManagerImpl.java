@@ -25,10 +25,11 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.domain.dao.DomainDao;
@@ -193,6 +194,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             throw new InvalidParameterValueException("Invalid user vm: " + userVm.getId());
         }
 
+        // This same owner check is actually not needed, since multiple entities OperateEntry trick guarantee that
         if (rule.getAccountId() != userVm.getAccountId()) {
             throw new InvalidParameterValueException("New rule " + rule + " and vm id=" + userVm.getId() + " belong to different accounts");
         }
@@ -265,8 +267,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             if (vm == null) {
                 throw new InvalidParameterValueException("Unable to create port forwarding rule on address " + ipAddress + ", invalid virtual machine id specified (" +
                     vmId + ").");
-            } else {
-                checkRuleAndUserVm(rule, vm, caller);
+            } else if (vm.getState() == VirtualMachine.State.Destroyed || vm.getState() == VirtualMachine.State.Expunging) {
+                throw new InvalidParameterValueException("Invalid user vm: " + vm.getId());
             }
 
             // Verify that vm has nic in the network
@@ -782,9 +784,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         Boolean display = cmd.getDisplay();
 
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        List<Long> permittedResources = new ArrayList<Long>();
 
         if (ipId != null) {
             IPAddressVO ipAddressVO = _ipAddressDao.findById(ipId);
@@ -795,14 +795,14 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
-                domainIdRecursiveListProject, cmd.listAll(), false, "listPortForwardingRules");
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter filter = new Filter(PortForwardingRuleVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<PortForwardingRuleVO> sb = _portForwardingDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
@@ -823,7 +823,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         SearchCriteria<PortForwardingRuleVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -1000,9 +1000,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     public Pair<List<? extends FirewallRule>, Integer> searchStaticNatRules(Long ipId, Long id, Long vmId, Long start, Long size, String accountName, Long domainId,
         Long projectId, boolean isRecursive, boolean listAll) {
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        List<Long> permittedResources = new ArrayList<Long>();
 
         if (ipId != null) {
             IPAddressVO ipAddressVO = _ipAddressDao.findById(ipId);
@@ -1013,14 +1011,14 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
-        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedDomains, permittedAccounts, permittedResources, domainIdRecursiveListProject, listAll,
-                false, "listIpForwardingRules");
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject, listAll, false);
+        domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter filter = new Filter(PortForwardingRuleVO.class, "id", false, start, size);
         SearchBuilder<FirewallRuleVO> sb = _firewallDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
@@ -1033,7 +1031,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         SearchCriteria<FirewallRuleVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         sc.setParameters("purpose", Purpose.StaticNat);
 
         if (id != null) {
@@ -1465,14 +1463,20 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
     @Override
     public List<FirewallRuleVO> listAssociatedRulesForGuestNic(Nic nic) {
+        s_logger.debug("Checking if PF/StaticNat/LoadBalancer rules are configured for nic " + nic.getId());
         List<FirewallRuleVO> result = new ArrayList<FirewallRuleVO>();
         // add PF rules
-        result.addAll(_portForwardingDao.listByDestIpAddr(nic.getIp4Address()));
+        result.addAll(_portForwardingDao.listByNetworkAndDestIpAddr(nic.getIp4Address(), nic.getNetworkId()));
+        if(result.size() > 0) {
+            s_logger.debug("Found " + result.size() + " portforwarding rule configured for the nic in the network " + nic.getNetworkId());
+        }
         // add static NAT rules
         List<FirewallRuleVO> staticNatRules = _firewallDao.listStaticNatByVmId(nic.getInstanceId());
         for (FirewallRuleVO rule : staticNatRules) {
-            if (rule.getNetworkId() == nic.getNetworkId())
+            if (rule.getNetworkId() == nic.getNetworkId()) {
                 result.add(rule);
+                s_logger.debug("Found rule " + rule.getId() + " " + rule.getPurpose() + " configured");
+            }
         }
         List<? extends IpAddress> staticNatIps = _ipAddressDao.listStaticNatPublicIps(nic.getNetworkId());
         for (IpAddress ip : staticNatIps) {
@@ -1481,17 +1485,20 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 // generate a static Nat rule on the fly because staticNATrule does not persist into db anymore
                 // FIX ME
                 FirewallRuleVO staticNatRule =
-                    new FirewallRuleVO(null, ip.getId(), 0, 65535, NetUtils.ALL_PROTO.toString(), nic.getNetworkId(), vm.getAccountId(), vm.getDomainId(),
-                        Purpose.StaticNat, null, null, null, null, null);
+                        new FirewallRuleVO(null, ip.getId(), 0, 65535, NetUtils.ALL_PROTO.toString(), nic.getNetworkId(), vm.getAccountId(), vm.getDomainId(),
+                                Purpose.StaticNat, null, null, null, null, null);
                 result.add(staticNatRule);
+                s_logger.debug("Found rule " + staticNatRule.getId() + " " + staticNatRule.getPurpose() + " configured");
             }
         }
         // add LB rules
         List<LoadBalancerVMMapVO> lbMapList = _loadBalancerVMMapDao.listByInstanceId(nic.getInstanceId());
         for (LoadBalancerVMMapVO lb : lbMapList) {
             FirewallRuleVO lbRule = _firewallDao.findById(lb.getLoadBalancerId());
-            if (lbRule.getNetworkId() == nic.getNetworkId())
+            if (lbRule.getNetworkId() == nic.getNetworkId()) {
                 result.add(lbRule);
+                s_logger.debug("Found rule " + lbRule.getId() + " " + lbRule.getPurpose() + " configured");
+            }
         }
         return result;
     }

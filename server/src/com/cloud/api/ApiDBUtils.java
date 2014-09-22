@@ -18,7 +18,9 @@ package com.cloud.api;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,6 +41,7 @@ import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
@@ -48,6 +51,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -63,6 +67,7 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
@@ -70,6 +75,7 @@ import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
+import com.cloud.api.query.dao.HostTagDao;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
@@ -79,6 +85,7 @@ import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.api.query.dao.StorageTagDao;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
@@ -91,6 +98,7 @@ import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.api.query.vo.HostTagVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
@@ -100,6 +108,7 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
+import com.cloud.api.query.vo.StorageTagVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -236,6 +245,7 @@ import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageStats;
@@ -382,6 +392,8 @@ public class ApiDBUtils {
     static HostJoinDao s_hostJoinDao;
     static VolumeJoinDao s_volJoinDao;
     static StoragePoolJoinDao s_poolJoinDao;
+    static StorageTagDao s_tagDao;
+    static HostTagDao s_hostTagDao;
     static ImageStoreJoinDao s_imageStoreJoinDao;
     static AccountJoinDao s_accountJoinDao;
     static AsyncJobJoinDao s_jobJoinDao;
@@ -577,6 +589,10 @@ public class ApiDBUtils {
     @Inject
     private StoragePoolJoinDao poolJoinDao;
     @Inject
+    private StorageTagDao tagDao;
+    @Inject
+    private HostTagDao hosttagDao;
+    @Inject
     private ImageStoreJoinDao imageStoreJoinDao;
     @Inject
     private AccountJoinDao accountJoinDao;
@@ -714,6 +730,8 @@ public class ApiDBUtils {
         s_hostJoinDao = hostJoinDao;
         s_volJoinDao = volJoinDao;
         s_poolJoinDao = poolJoinDao;
+        s_tagDao = tagDao;
+        s_hostTagDao = hosttagDao;
         s_imageStoreJoinDao = imageStoreJoinDao;
         s_accountJoinDao = accountJoinDao;
         s_jobJoinDao = jobJoinDao;
@@ -896,7 +914,11 @@ public class ApiDBUtils {
     }
 
     public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
-        return s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
+        DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
+        if (off.getType() == DiskOfferingVO.Type.Disk) {
+            return off;
+        }
+        return null;
     }
 
     public static DomainVO findDomainById(Long domainId) {
@@ -1071,12 +1093,40 @@ public class ApiDBUtils {
             if (xenClusters.isEmpty()) {
                 type = HypervisorType.Hyperv;
             }
+        } if (format == ImageFormat.RAW) {
+            // Currently, KVM only suppoorts RBD images of type RAW.
+            // This results in a weird collision with OVM volumes which
+            // can only be raw, thus making KVM RBD volumes show up as OVM
+            // rather than RBD. This block of code can (hopefuly) by checking to
+            // see if the pool is using either RBD or NFS. However, it isn't
+            // quite clear what to do if both storage types are used. If the image
+            // format is RAW, it narrows the hypervisor choice down to OVM and KVM / RBD or KVM / CLVM
+            // This would be better implemented at a cluster level.
+            List<StoragePoolVO> pools = s_storagePoolDao.listByDataCenterId(dcId);
+            ListIterator<StoragePoolVO> itr = pools.listIterator();
+            while(itr.hasNext()) {
+                StoragePoolVO pool = itr.next();
+                if(pool.getPoolType() == StoragePoolType.RBD || pool.getPoolType() == StoragePoolType.CLVM) {
+                  // This case will note the presence of non-qcow2 primary stores, suggesting KVM without NFS. Otherwse,
+                  // If this check is not passed, the hypervisor type will remain OVM.
+                  type = HypervisorType.KVM;
+                  break;
+                }
+            }
         }
         return type;
     }
 
     public static List<HostGpuGroupsVO> getGpuGroups(long hostId) {
         return s_hostGpuGroupsDao.listByHostId(hostId);
+    }
+
+    public static List<VgpuTypesInfo> getGpuCapacites(Long zoneId, Long podId, Long clusterId) {
+        return s_vgpuTypesDao.listGPUCapacities(zoneId, podId, clusterId);
+    }
+
+    public static HashMap<String, Long> getVgpuVmsCount(Long zoneId, Long podId, Long clusterId) {
+        return s_vmDao.countVgpuVMs(zoneId, podId, clusterId);
     }
 
     public static List<VGPUTypesVO> getVgpus(long groupId) {
@@ -1410,6 +1460,12 @@ public class ApiDBUtils {
         String jobInstanceId = null;
         ApiCommandJobType jobInstanceType = EnumUtils.fromString(ApiCommandJobType.class, job.getInstanceType(), ApiCommandJobType.None);
 
+        if (job.getInstanceId() == null) {
+            // when assert is hit, implement 'getInstanceId' of BaseAsyncCmd and return appropriate instance id
+            assert (false);
+            return null;
+        }
+
         if (jobInstanceType == ApiCommandJobType.Volume) {
             VolumeVO volume = ApiDBUtils.findVolumeById(job.getInstanceId());
             if (volume != null) {
@@ -1691,6 +1747,14 @@ public class ApiDBUtils {
         return s_poolJoinDao.newStoragePoolResponse(vr);
     }
 
+    public static StorageTagResponse newStorageTagResponse(StorageTagVO vr) {
+        return s_tagDao.newStorageTagResponse(vr);
+    }
+
+    public static HostTagResponse newHostTagResponse(HostTagVO vr) {
+        return s_hostTagDao.newHostTagResponse(vr);
+    }
+
     public static StoragePoolResponse fillStoragePoolDetails(StoragePoolResponse vrData, StoragePoolJoinVO vr) {
         return s_poolJoinDao.setStoragePoolResponse(vrData, vr);
     }
@@ -1829,7 +1893,7 @@ public class ApiDBUtils {
     }
 
     public static boolean isAdmin(Account account) {
-        return s_accountService.isAdmin(account.getType());
+        return s_accountService.isAdmin(account.getId());
     }
 
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {

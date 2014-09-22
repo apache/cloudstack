@@ -17,14 +17,26 @@
 """ BVT tests for Volumes
 """
 #Import Local Modules
-import marvin
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackException import *
-from marvin.cloudstackAPI import *
-from marvin.sshClient import SshClient
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackException import *
+from marvin.cloudstackAPI import (deleteVolume,
+                                  extractVolume,
+                                  resizeVolume)
+#from marvin.sshClient import SshClient
+from marvin.lib.utils import (cleanup_resources,
+                              format_volume_to_ext3)
+from marvin.lib.base import (ServiceOffering,
+                             VirtualMachine,
+                             Account,
+                             Volume,
+                             Host,
+                             DiskOffering,
+                             StoragePool,)
+from marvin.lib.common import (get_domain,
+                                get_zone,
+                                get_template)
+from marvin.lib.utils import checkVolumeSize
+from marvin.codes import SUCCESS, FAILED, XEN_SERVER
 from nose.plugins.attrib import attr
 #Import System modules
 import os
@@ -34,103 +46,55 @@ import tempfile
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test Volume Services
-    """
-
-    def __init__(self):
-        self.services = {
-                         "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                         },
-                         "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,    # in MHz
-                                    "memory": 260       # In MBs
-
-                        },
-                        "disk_offering": {
-                                    "displaytext": "Small",
-                                    "name": "Small",
-                                    "disksize": 1
-                        },
-                        'resized_disk_offering': {
-                                    "displaytext": "Resized",
-                                    "name": "Resized",
-                                    "disksize": 3
-                        },
-                        "volume_offerings": {
-                            0: {
-                                "diskname": "TestDiskServ",
-                            },
-                        },
-                        "customdisksize": 1,    # GBs
-                        "username": "root",     # Creds for SSH to VM
-                        "password": "password",
-                        "ssh_port": 22,
-                        "diskname": "TestDiskServ",
-                        "hypervisor": 'KVM',
-                        "privateport": 22,
-                        "publicport": 22,
-                        "protocol": 'TCP',
-                        "ostype": 'CentOS 5.5 (64-bit)',
-                        "sleep": 10,
-                        "timeout": 600,
-                    }
-
-
 class TestCreateVolume(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestCreateVolume, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
-
+        testClient = super(TestCreateVolume, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
+        cls.sparse_disk_offering = DiskOffering.create(
+                                    cls.apiclient,
+                                    cls.services["sparse_disk_offering"]
+                                    )
         cls.custom_disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["disk_offering"],
                                     custom=True
                                     )
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
         cls.services["template"] = template.id
         cls.services["customdiskofferingid"] = cls.custom_disk_offering.id
-
+        cls.services["diskname"] = cls.services["volume"]["diskname"]
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-
-        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.apiclient,
+                                            cls.services["service_offerings"]
                                             )
         cls.virtual_machine = VirtualMachine.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
@@ -150,7 +114,7 @@ class TestCreateVolume(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_01_create_volume(self):
         """Test Volume creation for all Disk Offerings (incl. custom)
         """
@@ -172,6 +136,18 @@ class TestCreateVolume(cloudstackTestCase):
             self.debug("Created a volume with ID: %s" % volume.id)
             self.volumes.append(volume)
 
+        if self.virtual_machine.hypervisor == "KVM":
+            sparse_volume = Volume.create(
+                                        self.apiClient,
+                                        self.services,
+                                        zoneid=self.zone.id,
+                                        account=self.account.name,
+                                        domainid=self.account.domainid,
+                                        diskofferingid=self.sparse_disk_offering.id
+                                        )
+            self.debug("Created a sparse volume: %s" % sparse_volume.id)
+            self.volumes.append(sparse_volume)
+
         volume = Volume.create_custom_disk(
                                     self.apiClient,
                                     self.services,
@@ -184,10 +160,9 @@ class TestCreateVolume(cloudstackTestCase):
         #Attach a volume with different disk offerings
         #and check the memory allocated to each of them
         for volume in self.volumes:
-            list_volume_response = list_volumes(
-                                                self.apiClient,
-                                                id=volume.id
-                                                )
+            list_volume_response = Volume.list(
+                                               self.apiClient,
+                                               id=volume.id)
             self.assertEqual(
                             isinstance(list_volume_response, list),
                             True,
@@ -221,13 +196,12 @@ class TestCreateVolume(cloudstackTestCase):
                 time.sleep(self.services["sleep"])
 
                 # Ensure that VM is in running state
-                list_vm_response = list_virtual_machines(
+                list_vm_response = VirtualMachine.list(
                                             self.apiClient,
                                             id=self.virtual_machine.id
                                             )
 
                 if isinstance(list_vm_response, list):
-
                     vm = list_vm_response[0]
                     if vm.state == 'Running':
                         self.debug("VM state: %s" % vm.state)
@@ -236,31 +210,32 @@ class TestCreateVolume(cloudstackTestCase):
                 if timeout == 0:
                     raise Exception(
                         "Failed to start VM (ID: %s) " % vm.id)
-
                 timeout = timeout - 1
 
-            try:
-                ssh = self.virtual_machine.get_ssh_client(
+            vol_sz = str(list_volume_response[0].size)
+            ssh = self.virtual_machine.get_ssh_client(
                                                       reconnect=True
                                                       )
-                c = "/sbin/fdisk -l"
-                res = ssh.execute(c)
-
-            except Exception as e:
-                self.fail("SSH access failed for VM: %s - %s" %
-                                (self.virtual_machine.ipaddress, e))
-
-            # Disk /dev/sda doesn't contain a valid partition table
-            # Disk /dev/sda: 21.5 GB, 21474836480 bytes
-            result = str(res)
-            self.debug("fdisk result: %s" % result)
-
-            self.assertEqual(
-                             str(list_volume_response[0].size) in result,
-                             True,
-                             "Check if promised disk size actually available"
-                             )
+            # Get the updated volume information
+            list_volume_response = Volume.list(
+                                               self.apiClient,
+                                               id=volume.id)
+            if list_volume_response[0].hypervisor.lower() == XEN_SERVER.lower():
+                volume_name = "/dev/xvd" + chr(ord('a') + int(list_volume_response[0].deviceid))
+                self.debug(" Using XenServer volume_name: %s" % (volume_name))
+                ret = checkVolumeSize(ssh_handle=ssh,volume_name=volume_name,size_to_verify=vol_sz)
+            elif list_volume_response[0].hypervisor.lower() == "kvm":
+                volume_name = "/dev/vd" + chr(ord('a') + int(list_volume_response[0].deviceid))
+                self.debug(" Using KVM volume_name: %s" % (volume_name))
+                ret = checkVolumeSize(ssh_handle=ssh,volume_name=volume_name,size_to_verify=vol_sz)
+            elif list_volume_response[0].hypervisor.lower() == "hyperv":
+                ret = checkVolumeSize(ssh_handle=ssh,volume_name="/dev/sdb",size_to_verify=vol_sz)
+            else:
+                ret = checkVolumeSize(ssh_handle=ssh,size_to_verify=vol_sz)
+            self.debug(" Volume Size Expected %s  Actual :%s" %(vol_sz,ret[1]))
             self.virtual_machine.detach_volume(self.apiClient, volume)
+            self.assertEqual(ret[0],SUCCESS,"Check if promised disk size actually available")
+            time.sleep(self.services["sleep"])
 
     def tearDown(self):
         #Clean up, terminate the created volumes
@@ -270,8 +245,8 @@ class TestCreateVolume(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestCreateVolume, cls).getClsTestClient().getApiClient()
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cls.apiclient = super(TestCreateVolume, cls).getClsTestClient().getApiClient()
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -280,31 +255,36 @@ class TestVolumes(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestVolumes, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        testClient = super(TestVolumes, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
         cls.resized_disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["resized_disk_offering"]
                                     )
         cls.custom_resized_disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["resized_disk_offering"],
                                     custom=True
                                     )
 
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
         cls.services["template"] = template.id
@@ -314,18 +294,16 @@ class TestVolumes(cloudstackTestCase):
 
         # Create VMs, VMs etc
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-
-        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.apiclient,
+                                            cls.services["service_offerings"]
                                         )
         cls.virtual_machine = VirtualMachine.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
@@ -334,7 +312,7 @@ class TestVolumes(cloudstackTestCase):
                                 )
 
         cls.volume = Volume.create(
-                                   cls.api_client,
+                                   cls.apiclient,
                                    cls.services,
                                    account=cls.account.name,
                                    domainid=cls.account.domainid
@@ -351,7 +329,7 @@ class TestVolumes(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -368,7 +346,7 @@ class TestVolumes(cloudstackTestCase):
         cleanup_resources(self.apiClient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_02_attach_volume(self):
         """Attach a created Volume to a Running VM
         """
@@ -384,7 +362,7 @@ class TestVolumes(cloudstackTestCase):
                                                     ))
         self.virtual_machine.attach_volume(self.apiClient, self.volume)
         self.attached = True
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                                 self.apiClient,
                                                 id=self.volume.id
                                                 )
@@ -414,7 +392,7 @@ class TestVolumes(cloudstackTestCase):
                                     (self.virtual_machine.ipaddress, e))
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_03_download_attached_volume(self):
         """Download a Volume attached to a VM
         """
@@ -436,7 +414,7 @@ class TestVolumes(cloudstackTestCase):
         with self.assertRaises(Exception):
             self.apiClient.extractVolume(cmd)
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_04_delete_attached_volume(self):
         """Delete a Volume attached to a VM
         """
@@ -457,7 +435,7 @@ class TestVolumes(cloudstackTestCase):
         with self.assertRaises(Exception):
             self.apiClient.deleteVolume(cmd)
         
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_05_detach_volume(self):
         """Detach a Volume attached to a VM
         """
@@ -476,7 +454,7 @@ class TestVolumes(cloudstackTestCase):
         self.attached = False
         #Sleep to ensure the current state will reflected in other calls
         time.sleep(self.services["sleep"])
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                                 self.apiClient,
                                                 id=self.volume.id
                                                 )
@@ -499,7 +477,7 @@ class TestVolumes(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_06_download_detached_volume(self):
         """Download a Volume unattached to an VM
         """
@@ -536,7 +514,7 @@ class TestVolumes(cloudstackTestCase):
                 % (extract_vol.url, self.volume.id)
             )
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_07_resize_fail(self):
         """Test resize (negative) non-existent volume"""
         # Verify the size is the new size is what we wanted it to be.
@@ -545,10 +523,10 @@ class TestVolumes(cloudstackTestCase):
         # first, an invalid id
         cmd                = resizeVolume.resizeVolumeCmd()
         cmd.id             = "invalid id"
-        cmd.diskofferingid = self.services['resizeddiskofferingid']
+        cmd.diskofferingid = self.services['customresizeddiskofferingid']
         success            = False
         try:
-            response = self.apiClient.resizeVolume(cmd)
+            self.apiClient.resizeVolume(cmd)
         except Exception as ex:
             #print str(ex)
             if "invalid" in str(ex):
@@ -563,7 +541,7 @@ class TestVolumes(cloudstackTestCase):
         cmd.diskofferingid = "invalid id"
         success            = False
         try:
-            response = self.apiClient.resizeVolume(cmd)
+            self.apiClient.resizeVolume(cmd)
         except Exception as ex:
             if "invalid" in str(ex):
                 success = True
@@ -574,7 +552,7 @@ class TestVolumes(cloudstackTestCase):
 
         # try to resize a root disk with a disk offering, root can only be resized by size=
         # get root vol from created vm
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                             self.apiClient,
                                             virtualmachineid=self.virtual_machine.id,
                                             type='ROOT',
@@ -585,17 +563,9 @@ class TestVolumes(cloudstackTestCase):
 
         cmd.id             = rootvolume.id
         cmd.diskofferingid = self.services['diskofferingid']
-        success            = False
-        try:
-            response = self.apiClient.resizeVolume(cmd)
-        except Exception as ex:
-            if "Can only resize Data volumes" in str(ex):
-                success = True
-        self.assertEqual(
-                success,
-                True,
-                "ResizeVolume - verify root disks cannot be resized by disk offering id")
-            
+        with self.assertRaises(Exception):
+            self.apiClient.resizeVolume(cmd)
+
         # Ok, now let's try and resize a volume that is not custom.
         cmd.id             = self.volume.id
         cmd.diskofferingid = self.services['diskofferingid']
@@ -618,39 +588,21 @@ class TestVolumes(cloudstackTestCase):
 
         if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.stop(self.apiClient)
-        elif hosts[0].hypervisor.lower() == "vmware":
-            self.skipTest("Resize Volume is unsupported on VmWare")
+        elif hosts[0].hypervisor.lower() in ("vmware", "hyperv"):
+            self.skipTest("Resize Volume is unsupported on VmWare and Hyper-V")
 
-        self.apiClient.resizeVolume(cmd)
-        count = 0
-        success = True
-        while count < 10:
-            list_volume_response = list_volumes(
-                                                self.apiClient,
-                                                id=self.volume.id,
-                                                type='DATADISK'
-                                                )
-            for vol in list_volume_response:
-                if vol.id == self.volume.id and vol.size != currentSize and vol.state != "Resizing":
-                    success = False
-            if success:
-                break
-            else:
-                time.sleep(1)
-                count += 1
+        # Attempting to resize it should throw an exception, as we're using a non
+        # customisable disk offering, therefore our size parameter should be ignored
+        with self.assertRaises(Exception):
+            self.apiClient.resizeVolume(cmd)
 
-        self.assertEqual(
-                         success,
-                         True,
-                         "Verify the volume did not resize"
-                         )
         if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.start(self.apiClient)
             time.sleep(30)
         return 
 
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "provisioning"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_08_resize_volume(self):
         """Test resize a volume"""
         # Verify the size is the new size is what we wanted it to be.
@@ -669,28 +621,35 @@ class TestVolumes(cloudstackTestCase):
 
         if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.stop(self.apiClient)
-        elif hosts[0].hypervisor.lower() == "vmware":
-            self.skipTest("Resize Volume is unsupported on VmWare")
+        elif hosts[0].hypervisor.lower() in ("vmware", "hyperv"):
+            self.skipTest("Resize Volume is unsupported on VmWare and Hyper-V")
 
         # resize the data disk
         self.debug("Resize Volume ID: %s" % self.volume.id)
 
+        self.services["disk_offering"]["disksize"] = 20
+        disk_offering_20_GB = DiskOffering.create(
+                                    self.apiclient,
+                                    self.services["disk_offering"]
+                                    )
+        self.cleanup.append(disk_offering_20_GB)
+
         cmd                = resizeVolume.resizeVolumeCmd()
         cmd.id             = self.volume.id
-        cmd.diskofferingid = self.services['resizeddiskofferingid']
+        cmd.diskofferingid = disk_offering_20_GB.id
 
         self.apiClient.resizeVolume(cmd)
 
         count = 0
         success = False
         while count < 3:
-            list_volume_response = list_volumes(
+            list_volume_response = Volume.list(
                                                 self.apiClient,
                                                 id=self.volume.id,
                                                 type='DATADISK'
                                                 )
             for vol in list_volume_response:
-                if vol.id == self.volume.id and vol.size == 3221225472L and vol.state == 'Ready':
+                if vol.id == self.volume.id and int(vol.size) == (int(disk_offering_20_GB.disksize) * (1024** 3)) and vol.state == 'Ready':
                     success = True
             if success:
                 break
@@ -704,46 +663,55 @@ class TestVolumes(cloudstackTestCase):
                          "Check if the data volume resized appropriately"
                          )
 
-        # resize the root disk
-        self.debug("Resize Root for : %s" % self.virtual_machine.id)
+        can_shrink = False
 
-        # get root vol from created vm
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                             self.apiClient,
-                                            virtualmachineid=self.virtual_machine.id,
-                                            type='ROOT',
-                                            listall=True
+                                            id=self.volume.id,
+                                            type='DATADISK'
                                             )
+        storage_pool_id = [x.storageid for x in list_volume_response if x.id == self.volume.id][0]
+        storage = StoragePool.list(self.apiclient, id=storage_pool_id)[0]
+        # At present only CLVM supports shrinking volumes
+        if storage.type.lower() == "clvm":
+            can_shrink = True
 
-        rootvolume = list_volume_response[0]
+        if can_shrink:
+            self.services["disk_offering"]["disksize"] = 10
+            disk_offering_10_GB = DiskOffering.create(
+                                        self.apiclient,
+                                        self.services["disk_offering"]
+                                        )
+            self.cleanup.append(disk_offering_10_GB)
 
-        cmd                = resizeVolume.resizeVolumeCmd()
-        cmd.id             = rootvolume.id
-        cmd.size           = 10
+            cmd                = resizeVolume.resizeVolumeCmd()
+            cmd.id             = self.volume.id
+            cmd.diskofferingid = disk_offering_10_GB.id
+            cmd.shrinkok       = "true"
 
-        self.apiClient.resizeVolume(cmd)
+            self.apiClient.resizeVolume(cmd)
 
-        count = 0
-        success = False
-        while count < 3:
-            list_volume_response = list_volumes(
-                                                self.apiClient,
-                                                id=rootvolume.id
-                                                )
-            for vol in list_volume_response:
-                if vol.id == rootvolume.id and vol.size == 10737418240L and vol.state == 'Ready':
-                    success = True
-            if success:
-                break
-            else:
-                time.sleep(10)
-                count += 1
+            count = 0
+            success = False
+            while count < 3:
+                list_volume_response = Volume.list(
+                                                    self.apiClient,
+                                                    id=self.volume.id
+                                                    )
+                for vol in list_volume_response:
+                    if vol.id == self.volume.id and int(vol.size) == (int(disk_offering_10_GB.disksize) * (1024 ** 3)) and vol.state == 'Ready':
+                        success = True
+                if success:
+                    break
+                else:
+                    time.sleep(10)
+                    count += 1
 
-        self.assertEqual(
-                         success,
-                         True,
-                         "Check if the root volume resized appropriately"
-                         )
+            self.assertEqual(
+                             success,
+                             True,
+                             "Check if the root volume resized appropriately"
+                             )
 
         #start the vm if it is on xenserver
 
@@ -752,7 +720,7 @@ class TestVolumes(cloudstackTestCase):
             time.sleep(30)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke","basic", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke","basic"], required_hardware="false")
     def test_09_delete_detached_volume(self):
         """Delete a Volume unattached to an VM
         """
@@ -766,7 +734,7 @@ class TestVolumes(cloudstackTestCase):
         self.debug("Delete Volume ID: %s" % self.volume.id)
 
         self.volume_1 = Volume.create(
-                                   self.api_client,
+                                   self.apiclient,
                                    self.services,
                                    account=self.account.name,
                                    domainid=self.account.domainid
@@ -779,7 +747,7 @@ class TestVolumes(cloudstackTestCase):
         cmd.id = self.volume_1.id
         self.apiClient.deleteVolume(cmd)
 
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                             self.apiClient,
                                             id=self.volume_1.id,
                                             type='DATADISK'

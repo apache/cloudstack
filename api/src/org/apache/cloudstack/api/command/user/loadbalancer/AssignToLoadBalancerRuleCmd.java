@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.ArrayList;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -41,6 +42,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "assignToLoadBalancerRule",
             description = "Assigns virtual machine or a list of virtual machines to a load balancer rule.",
@@ -131,7 +134,17 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
                 String vmId = idIpsMap.get("vmid");
                 String vmIp = idIpsMap.get("vmip");
 
-                Long longVmId = new Long(vmId);
+                VirtualMachine lbvm = _entityMgr.findByUuid(VirtualMachine.class, vmId);
+                if (lbvm == null) {
+                    throw new InvalidParameterValueException("Unable to find virtual machine ID: " + vmId);
+                }
+
+                //check wether the given ip is valid ip or not
+                if (vmIp == null || !NetUtils.isValidIp(vmIp)) {
+                    throw new InvalidParameterValueException("Invalid ip address "+ vmIp +" passed in vmidipmap for " +
+                            "vmid " + vmId);
+                }
+                Long longVmId = lbvm.getId();
 
                 List<String> ipsList = null;
                 if (vmIdIpsMap.containsKey(longVmId)) {
@@ -153,11 +166,17 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
         CallContext.current().setEventDetails("Load balancer Id: " + getLoadBalancerId() + " VmIds: " + StringUtils.join(getVirtualMachineIds(), ","));
 
         Map<Long, List<String>> vmIdIpsMap = getVmIdIpListMap();
+        boolean result = false;
 
-        boolean result = _lbService.assignToLoadBalancer(getLoadBalancerId(), virtualMachineIds, vmIdIpsMap);
+        try {
+            result = _lbService.assignToLoadBalancer(getLoadBalancerId(), virtualMachineIds, vmIdIpsMap);
+        }catch (CloudRuntimeException ex) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign load balancer rule");
+        }
+
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign load balancer rule");
         }

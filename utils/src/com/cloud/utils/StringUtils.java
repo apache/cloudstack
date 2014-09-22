@@ -20,11 +20,11 @@
 package com.cloud.utils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.HashMap;
 import java.util.Map;
-
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.owasp.esapi.StringUtilities;
@@ -159,19 +159,78 @@ public class StringUtils {
     }
 
     // removes a password request param and it's value, also considering password is in query parameter value which has been url encoded
-    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("(&|%26)?(password|accesskey|secretkey)(=|%3D).*?(?=(%26|[&'\"]))");
+    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("(&|%26)?[^(&|%26)]*((p|P)assword|accesskey|secretkey)(=|%3D).*?(?=(%26|[&'\"]))");
+
+    private static final Pattern REGEX_END_PASSWORD_QUERYSTRING = Pattern.compile("(&|%26)[^(&|%26)]*((p|P)assword|accesskey|secretkey)(=|%3D).*");
 
     // removes a password/accesskey/ property from a response json object
-    private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"(password|accesskey|secretkey)\":\".*?\",?");
+    private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"((p|P)assword|accesskey|secretkey)\":\\s?\".*?\",?");
+
+    private static final Pattern REGEX_PASSWORD_DETAILS = Pattern.compile("(&|%26)?details(\\[|%5B)\\d*(\\]|%5D)\\.key(=|%3D)((p|P)assword|accesskey|secretkey)(?=(%26|[&'\"]))");
+
+    private static final Pattern REGEX_PASSWORD_DETAILS_INDEX = Pattern.compile("details(\\[|%5B)\\d*(\\]|%5D)");
+
+    private static final Pattern REGEX_REDUNDANT_AND = Pattern.compile("(&|%26)(&|%26)+");
 
     // Responsible for stripping sensitive content from request and response strings
     public static String cleanString(String stringToClean) {
         String cleanResult = "";
         if (stringToClean != null) {
             cleanResult = REGEX_PASSWORD_QUERYSTRING.matcher(stringToClean).replaceAll("");
+            cleanResult = REGEX_END_PASSWORD_QUERYSTRING.matcher(cleanResult).replaceAll("");
             cleanResult = REGEX_PASSWORD_JSON.matcher(cleanResult).replaceAll("");
+            Matcher detailsMatcher = REGEX_PASSWORD_DETAILS.matcher(cleanResult);
+            while (detailsMatcher.find()) {
+                Matcher detailsIndexMatcher = REGEX_PASSWORD_DETAILS_INDEX.matcher(detailsMatcher.group());
+                if (detailsIndexMatcher.find()) {
+                    cleanResult = cleanDetails(cleanResult, detailsIndexMatcher.group());
+                }
+            }
         }
         return cleanResult;
+    }
+
+    public static String cleanDetails(String stringToClean, String detailsIndexSting) {
+        String cleanResult = stringToClean;
+        for (String log : stringToClean.split("&|%26")) {
+            if (log.contains(detailsIndexSting)) {
+                cleanResult = cleanResult.replace(log, "");
+            }
+        }
+        cleanResult = REGEX_REDUNDANT_AND.matcher(cleanResult).replaceAll("&");
+        return cleanResult;
+    }
+
+    public static boolean areTagsEqual(String tags1, String tags2) {
+        if (tags1 == null && tags2 == null) {
+            return true;
+        }
+
+        if (tags1 != null && tags2 == null) {
+            return false;
+        }
+
+        if (tags1 == null && tags2 != null) {
+            return false;
+        }
+
+        final String delimiter = ",";
+
+        List<String> lstTags1 = new ArrayList<String>();
+        String[] aTags1 = tags1.split(delimiter);
+
+        for (String tag1 : aTags1) {
+            lstTags1.add(tag1.toLowerCase());
+        }
+
+        List<String> lstTags2 = new ArrayList<String>();
+        String[] aTags2 = tags2.split(delimiter);
+
+        for (String tag2 : aTags2) {
+            lstTags2.add(tag2.toLowerCase());
+        }
+
+        return lstTags1.containsAll(lstTags2) && lstTags2.containsAll(lstTags1);
     }
 
     public static String stripControlCharacters(String s) {
@@ -211,5 +270,33 @@ public class StringUtils {
             s = s.substring(0, s.length() - 1);
         }
         return s;
+    }
+
+    public static <T> List<T> applyPagination(List<T> originalList, Long startIndex, Long pageSizeVal) {
+        // Most likely pageSize will never exceed int value, and we need integer to partition the listToReturn
+        boolean applyPagination = startIndex != null && pageSizeVal != null
+                && startIndex <= Integer.MAX_VALUE && startIndex >= Integer.MIN_VALUE && pageSizeVal <= Integer.MAX_VALUE
+                && pageSizeVal >= Integer.MIN_VALUE;
+        List<T> listWPagination = null;
+        if (applyPagination) {
+            listWPagination = new ArrayList<>();
+            int index = startIndex.intValue() == 0 ? 0 : startIndex.intValue() / pageSizeVal.intValue();
+            List<List<T>> partitions = StringUtils.partitionList(originalList, pageSizeVal.intValue());
+            if (index < partitions.size()) {
+                listWPagination = partitions.get(index);
+            }
+        }
+        return listWPagination;
+    }
+
+    private static <T> List<List<T>> partitionList(List<T> originalList, int chunkSize) {
+        List<List<T>> listOfChunks = new ArrayList<List<T>>();
+        for (int i = 0; i < originalList.size() / chunkSize; i++) {
+            listOfChunks.add(originalList.subList(i * chunkSize, i * chunkSize + chunkSize));
+        }
+        if (originalList.size() % chunkSize != 0) {
+            listOfChunks.add(originalList.subList(originalList.size() - originalList.size() % chunkSize, originalList.size()));
+        }
+        return listOfChunks;
     }
 }

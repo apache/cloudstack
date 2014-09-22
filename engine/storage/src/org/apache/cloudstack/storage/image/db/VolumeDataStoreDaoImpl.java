@@ -50,6 +50,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     private SearchBuilder<VolumeDataStoreVO> storeSearch;
     private SearchBuilder<VolumeDataStoreVO> cacheSearch;
     private SearchBuilder<VolumeDataStoreVO> storeVolumeSearch;
+    private SearchBuilder<VolumeDataStoreVO> downloadVolumeSearch;
 
     @Inject
     DataStoreManager storeMgr;
@@ -85,6 +86,12 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
         updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
         updateStateSearch.done();
+
+        downloadVolumeSearch = createSearchBuilder();
+        downloadVolumeSearch.and("download_url", downloadVolumeSearch.entity().getExtractUrl(), Op.NNULL);
+        downloadVolumeSearch.and("destroyed", downloadVolumeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        downloadVolumeSearch.done();
+
         return true;
     }
 
@@ -252,5 +259,12 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
             }
         }
 
+    }
+
+    @Override
+    public List<VolumeDataStoreVO> listVolumeDownloadUrls() {
+        SearchCriteria<VolumeDataStoreVO> sc = downloadVolumeSearch.create();
+        sc.setParameters("destroyed", false);
+        return listBy(sc);
     }
 }

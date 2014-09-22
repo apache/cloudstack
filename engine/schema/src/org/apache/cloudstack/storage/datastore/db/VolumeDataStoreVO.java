@@ -102,6 +102,10 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     @Column(name = "download_url")
     private String extractUrl;
 
+    @Column(name = "download_url_created")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date extractUrlCreated = null;
+
     @Column(name = "destroyed")
     boolean destroyed = false;
 
@@ -346,6 +350,14 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     }
 
     public void setRefCnt(Long refCnt) {
+        this.refCnt = refCnt;
+    }
+
+    public void incrRefCnt() {
+        refCnt++;
+    }
+
+    public void decrRefCnt() {
         if (refCnt > 0) {
             refCnt--;
         }
@@ -354,19 +366,19 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
         }
     }
 
-    public void incrRefCnt() {
-        refCnt++;
-    }
-
-    public void decrRefCnt() {
-        refCnt--;
-    }
-
     public String getExtractUrl() {
         return extractUrl;
     }
 
     public void setExtractUrl(String extractUrl) {
         this.extractUrl = extractUrl;
+    }
+
+    public Date getExtractUrlCreated() {
+        return extractUrlCreated;
+    }
+
+    public void setExtractUrlCreated(Date extractUrlCreated) {
+        this.extractUrlCreated = extractUrlCreated;
     }
 }

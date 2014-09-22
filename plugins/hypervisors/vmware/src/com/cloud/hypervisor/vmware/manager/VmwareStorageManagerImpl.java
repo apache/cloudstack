@@ -1169,21 +1169,30 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         if (input == null) {
             return null;
         }
+
         String result = input;
-        if (result.endsWith(".vmdk")) { // get rid of vmdk file extension
-            result = result.substring(0, result.length() - (".vmdk").length());
+
+        final String fileType = ".vmdk";
+
+        if (result.endsWith(fileType)) {
+            // get rid of fileType
+            result = result.substring(0, result.length() - (fileType).length());
         }
-        if (result.split("-").length == 1) {
+
+        final String token = "-";
+
+        String[] str = result.split(token);
+        int length = str.length;
+
+        if (length == 1 || length == 2) {
             return result;
         }
-        if (result.split("-").length > 2) {
-            return result.split("-")[0] + "-" + result.split("-")[1];
+
+        if (length > 2) {
+            return str[0] + token + str[1];
         }
-        if (result.split("-").length == 2) {
-            return result.split("-")[0];
-        } else {
-            return result;
-        }
+
+        return result;
     }
 
     @Override
@@ -1406,7 +1415,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String vmName = cmd.getVmName();
         Boolean snapshotMemory = cmd.getTarget().getType() == VMSnapshot.Type.DiskAndMemory;
         List<VolumeObjectTO> listVolumeTo = cmd.getVolumeTOs();
-        VirtualMachine.State vmState = VirtualMachine.State.Running;
+        VirtualMachine.PowerState vmState = VirtualMachine.PowerState.PowerOn;
         VirtualMachineMO vmMo = null;
         VmwareContext context = hostService.getServiceContext(cmd);
 
@@ -1459,7 +1468,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     setVolumeToPathAndSize(listVolumeTo, mapNewDisk, context, hyperHost, cmd.getVmName());
 
                     if (!snapshotMemory) {
-                        vmState = VirtualMachine.State.Stopped;
+                        vmState = VirtualMachine.PowerState.PowerOff;
                     }
 
                     return new RevertToVMSnapshotAnswer(cmd, listVolumeTo, vmState);

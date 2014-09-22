@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -23,7 +24,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncVolumeCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -42,7 +42,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "resizeVolume", description = "Resizes a volume", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {Volume.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ResizeVolumeCmd extends BaseAsyncVolumeCmd {
+public class ResizeVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ResizeVolumeCmd.class.getName());
 
     private static final String s_name = "resizevolumeresponse";
@@ -55,7 +55,13 @@ public class ResizeVolumeCmd extends BaseAsyncVolumeCmd {
     @Parameter(name = ApiConstants.ID, entityType = VolumeResponse.class, required = true, type = CommandType.UUID, description = "the ID of the disk volume")
     private Long id;
 
-    @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, required = false, description = "New volume size in G")
+    @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "New minimum number of IOPS")
+    private Long minIops;
+
+    @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, required = false, description = "New maximum number of IOPS")
+    private Long maxIops;
+
+    @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, required = false, description = "New volume size in GB")
     private Long size;
 
     @Parameter(name = ApiConstants.SHRINK_OK, type = CommandType.BOOLEAN, required = false, description = "Verify OK to Shrink")
@@ -77,9 +83,16 @@ public class ResizeVolumeCmd extends BaseAsyncVolumeCmd {
         return id;
     }
 
-    @Override
     public Long getId() {
         return getEntityId();
+    }
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
     }
 
     public Long getSize() {

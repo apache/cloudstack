@@ -285,15 +285,17 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @Override
     @DB
-    public void destroyRemoteAccessVpnForIp(long ipId, Account caller) throws ResourceUnavailableException {
+    @ActionEvent(eventType = EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY, eventDescription = "removing remote access vpn", async = true)
+    public boolean destroyRemoteAccessVpnForIp(long ipId, Account caller) throws ResourceUnavailableException {
         final RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findByPublicIpAddress(ipId);
         if (vpn == null) {
             s_logger.debug("there are no Remote access vpns for public ip address id=" + ipId);
-            return;
+            return true;
         }
 
         _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, vpn);
 
+        RemoteAccessVpn.State prevState = vpn.getState();
         vpn.setState(RemoteAccessVpn.State.Removed);
         _remoteAccessVpnDao.update(vpn.getId(), vpn);
 
@@ -305,6 +307,12 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                     break;
                 }
             }
+        }catch (ResourceUnavailableException ex) {
+            vpn.setState(prevState);
+            _remoteAccessVpnDao.update(vpn.getId(), vpn);
+            s_logger.debug("Failed to stop the vpn " + vpn.getId() + " , so reverted state to "+
+                    RemoteAccessVpn.State.Running);
+            success = false;
         } finally {
             if (success) {
                 //Cleanup corresponding ports
@@ -355,7 +363,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                                     for (FirewallRule vpnFwRule : vpnFwRules) {
                                         _rulesDao.remove(vpnFwRule.getId());
                                         s_logger.debug("Successfully removed firewall rule with ip id=" + vpnFwRule.getSourceIpAddressId() + " and port " +
-                                            vpnFwRule.getSourcePortStart() + " as a part of vpn cleanup");
+                                            vpnFwRule.getSourcePortStart().intValue() + " as a part of vpn cleanup");
                                     }
                                 }
                             }
@@ -366,6 +374,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                 }
             }
         }
+        return success;
     }
 
     @Override
@@ -441,6 +450,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_REMOTE_ACCESS_VPN_CREATE, eventDescription = "creating remote access vpn", async = true)
     public RemoteAccessVpnVO startRemoteAccessVpn(long ipAddressId, boolean openFirewall) throws ResourceUnavailableException {
         Account caller = CallContext.current().getCallingAccount();
 
@@ -578,26 +588,24 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         String username = cmd.getUsername();
         Long id = cmd.getId();
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        List<Long> permittedResources = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
-                domainIdRecursiveListProject, cmd.listAll(), false, "listVpnUsers");
-        //Long domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         Filter searchFilter = new Filter(VpnUserVO.class, "username", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<VpnUserVO> sb = _vpnUsersDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), Op.IN);
 
         SearchCriteria<VpnUserVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         //list only active users
         sc.setParameters("state", State.Active, State.Add);
@@ -619,9 +627,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         // do some parameter validation
         Account caller = CallContext.current().getCallingAccount();
         Long ipAddressId = cmd.getPublicIpId();
-        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        List<Long> permittedResources = new ArrayList<Long>();
 
         Long vpnId = cmd.getId();
         Long networkId = cmd.getNetworkId();
@@ -640,15 +646,14 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         }
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
-                domainIdRecursiveListProject, cmd.listAll(), false, "listRemoteAccessVpns");
-        //Long domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter filter = new Filter(RemoteAccessVpnVO.class, "serverAddressId", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<RemoteAccessVpnVO> sb = _remoteAccessVpnDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("serverAddressId", sb.entity().getServerAddressId(), Op.EQ);
         sb.and("id", sb.entity().getId(), Op.EQ);
@@ -657,7 +662,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         sb.and("display", sb.entity().isDisplay(), Op.EQ);
 
         SearchCriteria<RemoteAccessVpnVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
 
         sc.setParameters("state", RemoteAccessVpn.State.Running);
 

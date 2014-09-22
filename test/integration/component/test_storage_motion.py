@@ -20,9 +20,9 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 #Import System modules
 import time
@@ -89,12 +89,13 @@ class TestStorageMotion(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestStorageMotion, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cls.testClient = super(TestStorageMotion, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -148,7 +149,7 @@ class TestStorageMotion(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags=["advanced", "basic", "multicluster", "storagemotion", "xenserver", "provisioning"])
+    @attr(tags=["advanced", "basic", "multicluster", "storagemotion", "xenserver"], required_hardware="true")
     def test_01_migrate_vm_with_volume(self):
         """Test migrate virtual machine with its volumes
         """
@@ -226,7 +227,7 @@ class TestStorageMotion(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "basic", "multipool", "storagemotion", "xenserver", "selfservice"])
+    @attr(tags=["advanced", "basic", "multipool", "storagemotion", "xenserver"], required_hardware="false")
     def test_02_migrate_volume(self):
         """Test migrate volume of a running vm
         """

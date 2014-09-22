@@ -27,6 +27,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,6 +36,8 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.UUID;
 
+import com.cloud.storage.Storage;
+import com.cloud.event.dao.UsageEventDao;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -84,6 +87,8 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class UserVmManagerTest {
 
@@ -145,6 +150,10 @@ public class UserVmManagerTest {
     ResourceLimitService _resourceLimitMgr;
     @Mock
     PrimaryDataStoreDao _storagePoolDao;
+    @Mock
+    UsageEventDao _usageEventDao;
+    @Mock
+    VMSnapshotDao _vmSnapshotDao;
 
     @Before
     public void setup() {
@@ -154,6 +163,7 @@ public class UserVmManagerTest {
         _userVmMgr._vmInstanceDao = _vmInstanceDao;
         _userVmMgr._templateDao = _templateDao;
         _userVmMgr._volsDao = _volsDao;
+        _userVmMgr._usageEventDao = _usageEventDao;
         _userVmMgr._itMgr = _itMgr;
         _userVmMgr.volumeMgr = _storageMgr;
         _userVmMgr._accountDao = _accountDao;
@@ -167,6 +177,7 @@ public class UserVmManagerTest {
         _userVmMgr._scaleRetry = 2;
         _userVmMgr._entityMgr = _entityMgr;
         _userVmMgr._storagePoolDao = _storagePoolDao;
+        _userVmMgr._vmSnapshotDao = _vmSnapshotDao;
 
         doReturn(3L).when(_account).getId();
         doReturn(8L).when(_vmMock).getAccountId();
@@ -176,6 +187,9 @@ public class UserVmManagerTest {
         when(_vmMock.getId()).thenReturn(314L);
         when(_vmInstance.getId()).thenReturn(1L);
         when(_vmInstance.getServiceOfferingId()).thenReturn(2L);
+        List<VMSnapshotVO> mockList = mock(List.class);
+        when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(mockList);
+        when(mockList.size()).thenReturn(0);
 
     }
 
@@ -293,7 +307,9 @@ public class UserVmManagerTest {
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
         when(_volumeMock.getId()).thenReturn(3L);
         doNothing().when(_volsDao).detachVolume(anyLong());
-
+        List<VMSnapshotVO> mockList = mock(List.class);
+        when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(mockList);
+        when(mockList.size()).thenReturn(0);
         when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
@@ -338,7 +354,9 @@ public class UserVmManagerTest {
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
         when(_volumeMock.getId()).thenReturn(3L);
         doNothing().when(_volsDao).detachVolume(anyLong());
-
+        List<VMSnapshotVO> mockList = mock(List.class);
+        when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(mockList);
+        when(mockList.size()).thenReturn(0);
         when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
@@ -538,7 +556,8 @@ public class UserVmManagerTest {
         boolean useLocalStorage = false;
 
         ServiceOfferingVO serviceOffering =
-            new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
+            new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, Storage.ProvisioningType.THIN,
+                    useLocalStorage, false, null, false, null, false);
         return serviceOffering;
     }
 

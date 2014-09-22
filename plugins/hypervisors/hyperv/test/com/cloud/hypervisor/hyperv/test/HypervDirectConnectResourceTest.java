@@ -63,7 +63,6 @@ import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
@@ -252,8 +251,7 @@ public class HypervDirectConnectResourceTest {
 
     public final void testStartupCommand() {
         StartupRoutingCommand defaultStartRoutCmd =
-            new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.Hyperv, RouterPrivateIpStrategy.HostLocal, new HashMap<String, VmState>(),
-                new HashMap<String, HostVmStateReportEntry>());
+            new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.Hyperv, RouterPrivateIpStrategy.HostLocal);
 
         // Identity within the data centre is decided by CloudStack kernel,
         // and passed via ServerResource.configure()

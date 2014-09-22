@@ -148,17 +148,17 @@ public class VolumeServiceTest extends CloudStackTestNGBase {
         HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), this.getHostGateway(), this.getHostCidr(), 8, "test");
         pod = podDao.persist(pod);
         podId = pod.getId();
-        // create xen cluster
+        // create xenserver cluster
         ClusterVO cluster = new ClusterVO(dc.getId(), pod.getId(), "devcloud cluster");
         cluster.setHypervisorType(HypervisorType.XenServer.toString());
         cluster.setClusterType(ClusterType.CloudManaged);
         cluster.setManagedState(ManagedState.Managed);
         cluster = clusterDao.persist(cluster);
         clusterId = cluster.getId();
-        // create xen host
+        // create xenserver host
 
         host = new HostVO(this.getHostGuid());
-        host.setName("devcloud xen host");
+        host.setName("devcloud xenserver host");
         host.setType(Host.Type.Routing);
         host.setPrivateIpAddress(this.getHostIp());
         host.setDataCenterId(dc.getId());

@@ -316,10 +316,10 @@ public class SnapshotServiceImpl implements SnapshotService {
         }
 
         try {
-            CopyCmdAnswer answer = (CopyCmdAnswer)result.getAnswer();
-            destSnapshot.processEvent(Event.OperationSuccessed, result.getAnswer());
+            CopyCmdAnswer copyCmdAnswer = (CopyCmdAnswer)result.getAnswer();
+            destSnapshot.processEvent(Event.OperationSuccessed, copyCmdAnswer);
             srcSnapshot.processEvent(Snapshot.Event.OperationSucceeded);
-            snapResult = new SnapshotResult(_snapshotFactory.getSnapshot(destSnapshot.getId(), destSnapshot.getDataStore()), answer);
+            snapResult = new SnapshotResult(_snapshotFactory.getSnapshot(destSnapshot.getId(), destSnapshot.getDataStore()), copyCmdAnswer);
             future.complete(snapResult);
         } catch (Exception e) {
             s_logger.debug("Failed to update snapshot state", e);

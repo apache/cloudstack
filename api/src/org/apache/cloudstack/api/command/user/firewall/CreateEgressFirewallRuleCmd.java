@@ -154,7 +154,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
             fwResponse.setResponseName(getCommandName());
         } finally {
             if (!success || rule == null) {
-                _firewallService.revokeFirewallRule(getEntityId(), true);
+                _firewallService.revokeEgressFirewallRule(getEntityId(), true);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create firewall rule");
             }
         }
@@ -242,7 +242,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
                     continue;
                 }
                 if (!NetUtils.isNetworkAWithinNetworkB(cidr, guestCidr)) {
-                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, cidr + "is not within the guest cidr " + guestCidr);
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, cidr + " is not within the guest cidr " + guestCidr);
                 }
             }
         }
@@ -260,7 +260,10 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
         try {
             FirewallRule result = _firewallService.createEgressFirewallRule(this);
-            setEntityId(result.getId());
+            if (result != null) {
+                setEntityId(result.getId());
+                setEntityUuid(result.getUuid());
+            }
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " + ex.getMessage());
             s_logger.trace("Network Rule Conflict: ", ex);
@@ -270,7 +273,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_FIREWALL_OPEN;
+        return EventTypes.EVENT_FIREWALL_EGRESS_OPEN;
     }
 
     @Override

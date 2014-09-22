@@ -61,6 +61,14 @@ def getUserInputs():
     if clusterId == "":
         clusterId = oldCluster
 
+    oldHypervisor = cfo.getEntry("hypervisor")
+    if oldHypervisor == "":
+        oldHypervisor = "kvm"
+
+    hypervisor = raw_input("Please input the Hypervisor type kvm/lxc:[%s]"%oldCluster)
+    if hypervisor == "":
+        hypervisor = oldHypervisor
+
     try:
         defaultNic = networkConfig.getDefaultNetwork()
     except:
@@ -76,7 +84,7 @@ def getUserInputs():
         elif network == "":
             network = defNic
 
-    return [mgtSvr, zoneToken, network, podId, clusterId]
+    return [mgtSvr, zoneToken, network, podId, clusterId, hypervisor]
 
 if __name__ == '__main__':
     initLoging("@AGENTLOGDIR@/setup.log")
@@ -90,6 +98,7 @@ if __name__ == '__main__':
     parser.add_option("-z", "--zone", dest="zone", help="zone id")
     parser.add_option("-p", "--pod", dest="pod", help="pod id")
     parser.add_option("-c", "--cluster", dest="cluster", help="cluster id")
+    parser.add_option("-t", "--hypervisor", default="kvm", dest="hypervisor", help="hypervisor type")
     parser.add_option("-g", "--guid", dest="guid", help="guid")
     parser.add_option("--pubNic", dest="pubNic", help="Public traffic interface")
     parser.add_option("--prvNic", dest="prvNic", help="Private traffic interface")
@@ -108,6 +117,7 @@ if __name__ == '__main__':
         glbEnv.defaultNic = userInputs[2]
         glbEnv.pod = userInputs[3]
         glbEnv.cluster = userInputs[4]
+        glbEnv.hypervisor = userInputs[5]
         #generate UUID
         glbEnv.uuid = old_config.getEntry("guid")
         if glbEnv.uuid == "":
@@ -124,6 +134,7 @@ if __name__ == '__main__':
         glbEnv.zone = options.zone
         glbEnv.pod = options.pod
         glbEnv.cluster = options.cluster
+        glbEnv.hypervisor = options.hypervisor
         glbEnv.nics.append(options.prvNic)
         glbEnv.nics.append(options.pubNic)
         glbEnv.nics.append(options.guestNic)

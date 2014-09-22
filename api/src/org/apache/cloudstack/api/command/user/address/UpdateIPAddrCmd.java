@@ -38,8 +38,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 
-@APICommand(name = "updatePublicIpAddress", description = "Updates an ip address", responseObject = IPAddressResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "updateIpAddress", description = "Updates an ip address", responseObject = IPAddressResponse.class,
+ requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = { IpAddress.class })
 public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIPAddrCmd.class.getName());
     private static final String s_name = "updateipaddressresponse";
@@ -127,8 +127,10 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
             NetworkRuleConflictException {
 
         IpAddress result = _networkService.updateIP(getId(), getCustomId(), getDisplayIp());
-        IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ResponseView.Restricted, result);
-        ipResponse.setResponseName(getCommandName());
-        setResponseObject(ipResponse);
+        if(result != null) {
+            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ResponseView.Restricted, result);
+            ipResponse.setResponseName(getCommandName());
+            setResponseObject(ipResponse);
+        }
     }
 }

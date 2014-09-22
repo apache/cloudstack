@@ -29,6 +29,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
 
 public interface SnapshotApiService {
 
@@ -106,4 +107,6 @@ public interface SnapshotApiService {
     Long getHostIdForSnapshotOperation(Volume vol);
 
     boolean revertSnapshot(Long snapshotId);
+
+    SnapshotPolicy updateSnapshotPolicy(UpdateSnapshotPolicyCmd updateSnapshotPolicyCmd);
 }

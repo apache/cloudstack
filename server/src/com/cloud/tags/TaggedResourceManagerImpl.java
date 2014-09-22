@@ -25,23 +25,28 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.SnapshotPolicyVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.domain.Domain;
 import com.cloud.domain.PartOf;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.LBHealthCheckPolicyVO;
 import com.cloud.network.as.AutoScaleVmGroupVO;
 import com.cloud.network.as.AutoScaleVmProfileVO;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LBStickinessPolicyVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnVO;
@@ -51,6 +56,7 @@ import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.network.security.SecurityGroupRuleVO;
 import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLVO;
 import com.cloud.network.vpc.StaticRouteVO;
@@ -99,11 +105,12 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         s_typeMap.put(ResourceObjectType.PortForwardingRule, PortForwardingRuleVO.class);
         s_typeMap.put(ResourceObjectType.FirewallRule, FirewallRuleVO.class);
         s_typeMap.put(ResourceObjectType.SecurityGroup, SecurityGroupVO.class);
+        s_typeMap.put(ResourceObjectType.SecurityGroupRule, SecurityGroupRuleVO.class);
         s_typeMap.put(ResourceObjectType.PublicIpAddress, IPAddressVO.class);
         s_typeMap.put(ResourceObjectType.Project, ProjectVO.class);
         s_typeMap.put(ResourceObjectType.Vpc, VpcVO.class);
         s_typeMap.put(ResourceObjectType.Nic, NicVO.class);
-        s_typeMap.put(ResourceObjectType.NetworkACL, NetworkACLVO.class);
+        s_typeMap.put(ResourceObjectType.NetworkACL, NetworkACLItemVO.class);
         s_typeMap.put(ResourceObjectType.StaticRoute, StaticRouteVO.class);
         s_typeMap.put(ResourceObjectType.VMSnapshot, VMSnapshotVO.class);
         s_typeMap.put(ResourceObjectType.RemoteAccessVpn, RemoteAccessVpnVO.class);
@@ -111,7 +118,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         s_typeMap.put(ResourceObjectType.ServiceOffering, ServiceOfferingVO.class);
         s_typeMap.put(ResourceObjectType.Storage, StoragePoolVO.class);
         s_typeMap.put(ResourceObjectType.PrivateGateway, RemoteAccessVpnVO.class);
-        s_typeMap.put(ResourceObjectType.NetworkACLList, NetworkACLItemVO.class);
+        s_typeMap.put(ResourceObjectType.NetworkACLList, NetworkACLVO.class);
         s_typeMap.put(ResourceObjectType.VpnGateway, Site2SiteVpnGatewayVO.class);
         s_typeMap.put(ResourceObjectType.CustomerGateway, Site2SiteCustomerGatewayVO.class);
         s_typeMap.put(ResourceObjectType.VpnConnection, Site2SiteVpnConnectionVO.class);
@@ -119,6 +126,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         s_typeMap.put(ResourceObjectType.DiskOffering, DiskOfferingVO.class);
         s_typeMap.put(ResourceObjectType.AutoScaleVmProfile, AutoScaleVmProfileVO.class);
         s_typeMap.put(ResourceObjectType.AutoScaleVmGroup, AutoScaleVmGroupVO.class);
+        s_typeMap.put(ResourceObjectType.LBStickinessPolicy, LBStickinessPolicyVO.class);
+        s_typeMap.put(ResourceObjectType.LBHealthCheckPolicy, LBHealthCheckPolicyVO.class);
+        s_typeMap.put(ResourceObjectType.SnapshotPolicy, SnapshotPolicyVO.class);
+
     }
 
     @Inject
@@ -131,6 +142,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     ResourceTagJoinDao _resourceTagJoinDao;
     @Inject
     DomainManager _domainMgr;
+    @Inject
+    AccountDao _accountDao;
 
 
     @Override
@@ -155,12 +168,15 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         if (entity != null) {
             return ((InternalIdentity)entity).getId();
         }
+        if (!StringUtils.isNumeric(resourceId)) {
+            throw new InvalidParameterValueException("Unable to find resource by uuid " + resourceId + " and type " + resourceType);
+        }
         entity = _entityMgr.findById(clazz, resourceId);
         if (entity != null) {
             return ((InternalIdentity)entity).getId();
-                }
-            throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + " and type " + resourceType);
         }
+        throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + " and type " + resourceType);
+    }
 
     private Pair<Long, Long> getAccountDomain(long resourceId, ResourceObjectType resourceType) {
         Class<?> clazz = s_typeMap.get(resourceType);
@@ -168,6 +184,16 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         Object entity = _entityMgr.findById(clazz, resourceId);
         Long accountId = null;
         Long domainId = null;
+
+        // if the resource type is a security group rule, get the accountId and domainId from the security group itself
+        if (resourceType == ResourceObjectType.SecurityGroupRule) {
+            SecurityGroupRuleVO rule = (SecurityGroupRuleVO)entity;
+            Object SecurityGroup = _entityMgr.findById(s_typeMap.get(ResourceObjectType.SecurityGroup), rule.getSecurityGroupId());
+
+            accountId = ((SecurityGroupVO)SecurityGroup).getAccountId();
+            domainId = ((SecurityGroupVO)SecurityGroup).getDomainId();
+        }
+
         if (entity instanceof OwnedBy) {
             accountId = ((OwnedBy)entity).getAccountId();
         }
@@ -180,10 +206,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             accountId = Account.ACCOUNT_ID_SYSTEM;
         }
 
-        if (domainId == null) {
-            domainId = Domain.ROOT_DOMAIN;
+        if ((domainId == null) || ((accountId != null) && (domainId.longValue() == -1)))
+        {
+            domainId = _accountDao.getDomainIdForGivenAccountId(accountId);
         }
-
         return new Pair<Long, Long>(accountId, domainId);
     }
 
@@ -221,6 +247,11 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                         Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
                         Long domainId = accountDomainPair.second();
                         Long accountId = accountDomainPair.first();
+
+                        if ((domainId != null) && (domainId == -1))
+                        {
+                           throw new CloudRuntimeException("Invalid DomainId : -1");
+                        }
                         if (accountId != null) {
                             _accountMgr.checkAccess(caller, null, false, _accountMgr.getAccount(accountId));
                         } else if (domainId != null && !_accountMgr.isNormalUser(caller.getId())) {
@@ -249,6 +280,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
 
     @Override
     public String getUuid(String resourceId, ResourceObjectType resourceType) {
+        if (!StringUtils.isNumeric(resourceId)) {
+            return resourceId;
+        }
+
         Class<?> clazz = s_typeMap.get(resourceType);
 
         Object entity = _entityMgr.findById(clazz, resourceId);

@@ -116,25 +116,23 @@ public class StoragePoolWorkDaoImpl extends GenericDaoBase<StoragePoolWorkVO, Lo
     @Override
     @DB
     public List<Long> searchForPoolIdsForPendingWorkJobs(long msId) {
-
         StringBuilder sql = new StringBuilder(FindPoolIds);
-
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(sql.toString());
-            pstmt.setLong(1, msId);
-
-            ResultSet rs = pstmt.executeQuery();
-            List<Long> poolIds = new ArrayList<Long>();
-
-            while (rs.next()) {
-                poolIds.add(rs.getLong("pool_id"));
+        List<Long> poolIds = new ArrayList<Long>();
+        try (PreparedStatement  pstmt = txn.prepareStatement(sql.toString());){
+            if(pstmt != null) {
+                pstmt.setLong(1, msId);
+                try (ResultSet rs = pstmt.executeQuery();) {
+                    while (rs.next()) {
+                        poolIds.add(rs.getLong("pool_id"));
+                    }
+                } catch (SQLException e) {
+                    throw new CloudRuntimeException("searchForPoolIdsForPendingWorkJobs:Exception:" + e.getMessage(), e);
+                }
             }
             return poolIds;
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to execute " + pstmt.toString(), e);
+            throw new CloudRuntimeException("searchForPoolIdsForPendingWorkJobs:Exception:" + e.getMessage(), e);
         }
-
     }
 }

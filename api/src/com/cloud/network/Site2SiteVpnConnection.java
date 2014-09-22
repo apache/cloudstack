@@ -19,9 +19,10 @@ package com.cloud.network;
 import java.util.Date;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Site2SiteVpnConnection extends ControlledEntity, InternalIdentity {
+public interface Site2SiteVpnConnection extends ControlledEntity, InternalIdentity, Displayable {
     enum State {
         Pending, Connected, Disconnected, Error,
     }
@@ -43,5 +44,6 @@ public interface Site2SiteVpnConnection extends ControlledEntity, InternalIdenti
 
     public boolean isPassive();
 
+    @Override
     boolean isDisplay();
 }

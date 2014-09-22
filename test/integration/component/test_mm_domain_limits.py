@@ -19,14 +19,14 @@
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.base import (
+from marvin.lib.base import (
                                         Account,
                                         ServiceOffering,
                                         VirtualMachine,
                                         Resources,
                                         Domain
                                         )
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
 					                    wait_for_cleanup,
@@ -34,7 +34,7 @@ from marvin.integration.lib.common import (get_domain,
                                         get_resource_type,
                                         update_resource_count
                                         )
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 from marvin.codes import ERROR_NO_HOST_FOR_MIGRATION
 
 class Services:
@@ -92,12 +92,13 @@ class TestDomainMemoryLimits(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestDomainMemoryLimits,
-                               cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDomainMemoryLimits, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
 
         cls.template = get_template(
@@ -209,7 +210,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
                               domainid=self.child_do_admin_2.domainid)
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_01_change_service_offering(self):
         """Test Deploy VM with specified RAM & verify the usage"""
 
@@ -234,7 +235,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                             UserName=self.account.name,
                             DomainName=self.account.domain)
 
@@ -348,7 +349,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "provisioning"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="true")
     def test_02_migrate_vm(self):
         """Test Deploy VM with specified RAM & verify the usage"""
 
@@ -371,7 +372,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                             UserName=self.account.name,
                             DomainName=self.account.domain)
 
@@ -409,7 +410,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
                             "Resource count should be same after migrating the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_03_delete_vm(self):
         """Test Deploy VM with specified RAM & verify the usage"""
 
@@ -432,7 +433,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                             UserName=self.account.name,
                             DomainName=self.account.domain)
 
@@ -468,7 +469,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.assertEqual(resource_count_after_delete, 0 , "Resource count for %s should be 0" % get_resource_type(resource_id=9))#RAM
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_04_deploy_multiple_vm(self):
         """Test Deploy multiple VM with specified RAM & verify the usage"""
 
@@ -492,7 +493,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                             UserName=self.account.name,
                             DomainName=self.account.domain)
 
@@ -524,12 +525,13 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestMultipleChildDomainsMemory,
-                               cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestMultipleChildDomainsMemory, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
 
         cls.template = get_template(
@@ -682,7 +684,7 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
                  }
         return users
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_01_multiple_child_domains(self):
         """Test memory limits with multiple child domains"""
 
@@ -709,11 +711,11 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()
 
-        api_client_cadmin_1 = self.testClient.createUserApiClient(
+        api_client_cadmin_1 = self.testClient.getUserApiClient(
                             UserName=self.cadmin_1.name,
                             DomainName=self.cadmin_1.domain)
 
-        api_client_cadmin_2 = self.testClient.createUserApiClient(
+        api_client_cadmin_2 = self.testClient.getUserApiClient(
                             UserName=self.cadmin_2.name,
                             DomainName=self.cadmin_2.domain)
 

@@ -54,6 +54,7 @@ import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
+import com.cloud.network.NetworkMigrationResponder;
 import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
@@ -79,10 +80,10 @@ import com.cloud.vm.VirtualMachine;
 
 @Local(value = {NetworkElement.class, ConnectivityProvider.class,
         SourceNatServiceProvider.class, StaticNatServiceProvider.class,
-        PortForwardingServiceProvider.class, IpDeployer.class})
+        PortForwardingServiceProvider.class, IpDeployer.class, NetworkMigrationResponder.class})
 public class OvsElement extends AdapterBase implements NetworkElement,
 OvsElementService, ConnectivityProvider, ResourceStateAdapter,
-PortForwardingServiceProvider, LoadBalancingServiceProvider,
+PortForwardingServiceProvider, LoadBalancingServiceProvider, NetworkMigrationResponder,
 StaticNatServiceProvider, IpDeployer {
     @Inject
     OvsTunnelManager _ovsTunnelMgr;
@@ -657,5 +658,39 @@ StaticNatServiceProvider, IpDeployer {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean prepareMigration(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) {
+        if (!canHandle(network, Service.Connectivity)) {
+            return false;
+        }
+
+        if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vswitch) {
+            return false;
+        }
+
+        if (nic.getTrafficType() != Networks.TrafficType.Guest) {
+            return false;
+        }
+
+        if (vm.getType() != VirtualMachine.Type.User && vm.getType() != VirtualMachine.Type.DomainRouter) {
+            return false;
+        }
+
+        // prepare the tunnel network on the host, in order for VM to get launched
+        _ovsTunnelMgr.checkAndPrepareHostForTunnelNetwork(network, dest.getHost());
+
+        return true;
+    }
+
+    @Override
+    public void rollbackMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst) {
+        return;
+    }
+
+    @Override
+    public void commitMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst) {
+        return;
     }
 }

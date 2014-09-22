@@ -251,8 +251,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             if (_emailAlert != null) {
                 _emailAlert.sendAlert(alertType, dataCenterId, podId, null, subject, body);
             } else {
-                s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " + podId + " // clusterId:: " + null +
-                    " // message:: " + subject);
+                s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " + podId +
+                    " // message:: " + subject + " // body:: " + body);
             }
         } catch (Exception ex) {
             s_logger.error("Problem sending email alert", ex);
@@ -278,10 +278,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             // Calculate CPU and RAM capacities
             //     get all hosts...even if they are not in 'UP' state
             List<HostVO> hosts = _resourceMgr.listAllNotInMaintenanceHostsInOneZone(Host.Type.Routing, null);
-            for (HostVO host : hosts) {
-                _capacityMgr.updateCapacityForHost(host);
+            if (hosts != null) {
+                for (HostVO host : hosts) {
+                    _capacityMgr.updateCapacityForHost(host);
+                }
             }
-
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Done executing cpu/ram capacity update");
                 s_logger.debug("Executing storage capacity update");
@@ -750,7 +751,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content) throws MessagingException,
             UnsupportedEncodingException {
             s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " +
-                podId + " // clusterId:: " + null + " // message:: " + subject);
+                podId + " // clusterId:: " + clusterId + " // message:: " + subject);
             AlertVO alert = null;
             if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) &&
                 (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM) &&

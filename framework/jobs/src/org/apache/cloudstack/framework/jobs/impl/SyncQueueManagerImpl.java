@@ -26,7 +26,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueDao;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
-
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -260,4 +259,16 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
             purgeItem(itemId);
         }
     }
+
+    @Override
+    public void cleanupActiveQueueItems(Long msid, boolean exclusive) {
+        List<SyncQueueItemVO> l = getActiveQueueItems(msid, false);
+        for (SyncQueueItemVO item : l) {
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Discard left-over queue item: " + item.toString());
+            }
+            purgeItem(item.getId());
+        }
+    }
+
 }

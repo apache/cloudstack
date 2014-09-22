@@ -198,7 +198,7 @@
                         title: '',
                         fields: {
                             scaleUpDuration: {
-                                label: 'Duration(in sec)',
+                                label: 'label.duration.in.sec',
                                 validation: {
                                     required: true
                                 }
@@ -217,7 +217,7 @@
                         title: '',
                         fields: {
                             scaleDownDuration: {
-                                label: 'Duration(in sec)',
+                                label: 'label.duration.in.sec',
                                 validation: {
                                     required: true
                                 }

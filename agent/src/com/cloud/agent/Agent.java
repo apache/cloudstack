@@ -294,29 +294,32 @@ public class Agent implements HandlerFactory, IAgentControl {
             _watchList.clear();
         }
     }
+    public synchronized void lockStartupTask(Link link)
+    {
+        _startup = new StartupTask(link);
+        _timer.schedule(_startup, _startupWait);
+    }
 
     public void sendStartup(Link link) {
         final StartupCommand[] startup = _resource.initialize();
-        final Command[] commands = new Command[startup.length];
-        for (int i = 0; i < startup.length; i++) {
-            setupStartupCommand(startup[i]);
-            commands[i] = startup[i];
-        }
+        if (startup != null) {
+            final Command[] commands = new Command[startup.length];
+            for (int i = 0; i < startup.length; i++) {
+                setupStartupCommand(startup[i]);
+                commands[i] = startup[i];
+            }
+            final Request request = new Request(_id != null ? _id : -1, -1, commands, false, false);
+            request.setSequence(getNextSequence());
 
-        final Request request = new Request(_id != null ? _id : -1, -1, commands, false, false);
-        request.setSequence(getNextSequence());
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Sending Startup: " + request.toString());
-        }
-        synchronized (this) {
-            _startup = new StartupTask(link);
-            _timer.schedule(_startup, _startupWait);
-        }
-        try {
-            link.send(request.toBytes());
-        } catch (final ClosedChannelException e) {
-            s_logger.warn("Unable to send reques: " + request.toString());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Sending Startup: " + request.toString());
+            }
+            lockStartupTask(link);
+            try {
+                link.send(request.toBytes());
+            } catch (final ClosedChannelException e) {
+                s_logger.warn("Unable to send reques: " + request.toString());
+            }
         }
     }
 
@@ -410,7 +413,6 @@ public class Agent implements HandlerFactory, IAgentControl {
                 cancelled = true;
             }
         }
-
         final StartupAnswer startup = (StartupAnswer)answer;
         if (!startup.getResult()) {
             s_logger.error("Not allowed to connect to the server: " + answer.getDetails());

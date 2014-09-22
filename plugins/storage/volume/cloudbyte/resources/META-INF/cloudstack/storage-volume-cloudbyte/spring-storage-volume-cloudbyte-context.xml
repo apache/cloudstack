@@ -1,20 +1,22 @@
 <!--
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements. See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership. The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License. You may obtain a copy of the License at
 
-  http://www.apache.org/licenses/LICENSE-2.0
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied. See the License for the
-  specific language governing permissions and limitations
-  under the License.
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
 -->
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -28,13 +30,11 @@
                       >
 
     <bean id="elastistorDataStoreProvider"
-        class="org.apache.cloudstack.storage.datastore.provider.ElastistorPrimaryDataStoreProvider">
-        <property name="esmanagementip" value="10.10.171.180"/>
-        <property name="esapikey" value="PubSInZaCji8hrRfOsCxgbug2I2k_sRJ0i2a9qmAzZIiCTcFPmZelzx6uNK9TYgqkdohCmq1L2J9eYmUe9YO6A"/>
-        <property name="esaccountid" value="9e9f67d5-e06f-4d63-a0b8-e7255cba84b8"/>
-        <property name="espoolid" value="d2d15d11-0f06-3426-a097-3e6e8b36f85c"/>
-        <property name="esdefaultgateway" value="10.10.1.1"/>
-        <property name="essubnet" value="8"/>
-        <property name="estntinterface" value="em0"/>
-  </bean>
+		class="org.apache.cloudstack.storage.datastore.provider.ElastistorPrimaryDataStoreProvider">
+	</bean>
+
+	<bean id="elastistorVolumeApiService"
+		class="org.apache.cloudstack.storage.datastore.util.ElastistorVolumeApiServiceImpl">
+		<property name="name" value="elastistorVolumeApiService" />
+	</bean>
 </beans>

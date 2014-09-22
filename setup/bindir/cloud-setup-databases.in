@@ -25,8 +25,8 @@ from random import choice
 import string
 from optparse import OptionParser
 import commands
-import MySQLdb
 import shutil
+import socket
 
 # squelch mysqldb spurious warnings
 import warnings
@@ -71,6 +71,7 @@ class DBDeployer(object):
     success = False
     magicString = 'This_is_a_magic_string_i_think_no_one_will_duplicate'
     tmpMysqlFile = os.path.join(os.path.expanduser('~/'), 'cloudstackmysql.tmp.sql')
+    mysqlBinPath = None
 
     def preRun(self):
         def backUpDbDotProperties():
@@ -138,9 +139,12 @@ class DBDeployer(object):
 
         kwargs['port'] = self.port
         kwargs['host'] = self.host
-
+        if self.mysqlBinPath is not None:
+          mysqlPath = '"' + self.mysqlBinPath + os.sep + "mysql" + '"'
+        else:
+          mysqlPath = "mysql"
         try:
-            mysqlCmds = ['mysql', '--user=%s'%kwargs['user'], '--host=%s'%kwargs['host'], '--port=%s'%kwargs['port']]
+            mysqlCmds = [mysqlPath, '--user=%s'%kwargs['user'], '--host=%s'%kwargs['host'], '--port=%s'%kwargs['port']]
             if kwargs.has_key('passwd'):
                 mysqlCmds.append('--password=%s'%kwargs['passwd'])
             file(self.tmpMysqlFile, 'w').write(text)
@@ -162,6 +166,10 @@ Sql parameters:
 ----------------------------------------------------------------------
             '''%(table, e.__str__(), kwargs)
             self.errorAndExit(err)
+
+    def errorAndContinue(self, msg):
+        sys.stderr.write(msg)
+        sys.stderr.flush()
 
     def errorAndExit(self, msg):
         self.postRun()
@@ -336,14 +344,8 @@ for example:
     def grabSystemInfo(self):
         def getIpAddr():
             try:
-                stuff = runCmd(['ifconfig', '|', 'grep "inet addr"'])
-                for l in stuff.split("\n"):
-                    l = l.strip()
-                    secondSpace = l.find(' ', len('inet addr'))
-                    ipStr = l[:secondSpace]
-                    (x, ip) = ipStr.split(':')
-                    if ip != '127.0.0.1': return ip
-                return '127.0.0.1'
+                ip = socket.gethostbyname(socket.gethostname())
+                return ip
             except Exception, e:
                 return "127.0.0.1"
 
@@ -380,7 +382,7 @@ for example:
         def checkHostName():
             self.info("Checking local machine hostname ...", None)
             try:
-                output= runCmd(['hostname', '--fqdn'])
+                output= socket.getfqdn()
             except Exception, e:
                 err = "The host name of this computer does not resolve to an IP address.\nPlease use your operating system's network setup tools to fix this ('hostname --fqdn' %s).\n"%e.__str__()
                 self.errorAndExit(err)
@@ -391,10 +393,13 @@ for example:
             try:
                 check_selinux()
             except CheckFailed, e:
-                self.errorAndExit(e.__str__())
+                self.info("checkSelinux failed with error continuing...", None)
+                self.errorAndContinue(e.__str__())
             except OSError, e:
                 if e.errno == 2: pass
-                else: self.errorAndExit(e.__str__())
+                else:
+                    self.info("checkSelinux failed with error continuing...", None)
+                    self.errorAndContinue(e.__str__())
             self.info(None, True)
 
         checkCloudDbFiles()
@@ -403,8 +408,8 @@ for example:
 
     def processEncryptionStuff(self):
         def encrypt(input):
-            cmd = ['java','-classpath',self.encryptionJarPath,'org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=%s'%input, 'password=%s'%self.mgmtsecretkey,'verbose=false']
-            return runCmd(cmd).strip('\n')
+            cmd = ['java','-classpath','"' + self.encryptionJarPath + '"','org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=%s'%input, 'password=%s'%self.mgmtsecretkey,'verbose=false']
+            return runCmd(cmd).strip('\r\n')
 
         def saveMgmtServerSecretKey():
             if self.encryptiontype == 'file':
@@ -460,6 +465,16 @@ for example:
             self.mgmtsecretkey = self.options.mgmtsecretkey
             self.dbsecretkey = self.options.dbsecretkey
             self.isDebug = self.options.debug
+            if self.options.dbConfPath:
+              self.dbConfPath = self.options.dbConfPath
+            if self.options.dbFilesPath:
+              self.dbFilesPath = self.options.dbFilesPath
+            if self.options.encryptionKeyFile:
+              self.encryptionKeyFile = self.options.encryptionKeyFile
+            if self.options.encryptionJarPath:
+              self.encryptionJarPath = self.options.encryptionJarPath
+            if self.options.mysqlbinpath:
+              self.mysqlBinPath = self.options.mysqlbinpath
 
         def parseUserAndPassword(cred):
             stuff = cred.split(':')
@@ -576,6 +591,11 @@ for example:
                           help="Cluster management server host IP. A string, by default it will try to detect a local IP")
         self.parser.add_option("-r", "--regionid", action="store", type="string", dest="regionid", default="1",
                           help="Region Id for the management server cluster")
+        self.parser.add_option("-c", "--db-conf-path", action="store", dest="dbConfPath", help="The path to find db.properties which hold db properties")
+        self.parser.add_option("-f", "--db-files-path", action="store", dest="dbFilesPath", help="The path to find sql files to create initial database(s)")
+        self.parser.add_option("-j", "--encryption-jar-path", action="store", dest="encryptionJarPath", help="The path to the jasypt library to be used to encrypt the values in db.properties")
+        self.parser.add_option("-n", "--encryption-key-file", action="store", dest="encryptionKeyFile", help="The name of the file in which encryption key to be generated")
+        self.parser.add_option("-b", "--mysql-bin-path", action="store", dest="mysqlbinpath", help="The mysql installed bin path")
 
         (self.options, self.args) = self.parser.parse_args()
         parseCasualCredit()

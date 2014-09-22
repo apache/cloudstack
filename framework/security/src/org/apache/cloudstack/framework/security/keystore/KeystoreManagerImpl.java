@@ -23,6 +23,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,6 +31,7 @@ import java.util.regex.Pattern;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -129,17 +131,22 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
         }
         String prvKey = ksVo.getKey();
         String prvCert = ksVo.getCertificate();
+        String domainSuffix = ksVo.getDomainSuffix();
         String certChain = null;
-        List<KeystoreVO> certchains = _ksDao.findCertChain();
+        String rootCert = null;
+        List<KeystoreVO> certchains = _ksDao.findCertChain(domainSuffix);
         if (certchains.size() > 0) {
-            StringBuilder chains = new StringBuilder();
+            ArrayList<String> chains = new ArrayList<String>();
             for (KeystoreVO cert : certchains) {
-                chains.append(cert.getCertificate());
-                chains.append("\n");
+                if (chains.size() == 0) {// For the first time it will be length 0
+                    rootCert = cert.getCertificate();
+                }
+                chains.add(cert.getCertificate());
             }
-            certChain = chains.toString();
+            Collections.reverse(chains);
+            certChain = StringUtils.join(chains, "\n");
         }
-        Certificates certs = new Certificates(prvKey, prvCert, certChain);
+        Certificates certs = new Certificates(prvKey, prvCert, certChain, rootCert);
         return certs;
     }
 

@@ -91,4 +91,9 @@ public class KVMPhysicalDisk {
     public KVMStoragePool getPool() {
         return this.pool;
     }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
 }

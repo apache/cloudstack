@@ -17,6 +17,8 @@
 package org.apache.cloudstack.api;
 
 
+import org.apache.log4j.Logger;
+
 /**
  * queryAsyncJobResult API command.
  */
@@ -27,11 +29,19 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public static final String vpcSyncObject = "vpc";
     public static final String snapshotHostSyncObject = "snapshothost";
     public static final String gslbSyncObject = "globalserverloadbalacner";
+    private static final Logger s_logger = Logger.getLogger(BaseAsyncCmd.class.getName());
 
     private Object job;
 
     @Parameter(name = "starteventid", type = CommandType.LONG)
     private Long startEventId;
+
+    @Parameter(name = ApiConstants.CUSTOM_JOB_ID , type = CommandType.STRING)
+    private String injectedJobId;
+
+    public String getInjectedJobId() {
+        return this.injectedJobId;
+    }
 
     /**
      * For proper tracking of async commands through the system, events must be generated when the command is
@@ -89,4 +99,5 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public Object getJob() {
         return job;
     }
+
 }

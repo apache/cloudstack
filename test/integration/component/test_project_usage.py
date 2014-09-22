@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,16 +17,29 @@
 """ P1 tests for Snapshots
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-from marvin.sshClient import SshClient
-import datetime
-
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import deleteVolume
+from marvin.lib.utils import (cleanup_resources)
+from marvin.lib.base import (Project,
+                             VirtualMachine,
+                             Account,
+                             Network,
+                             PublicIPAddress,
+                             NATRule,
+                             ServiceOffering,
+                             Vpn,
+                             VpnUser,
+                             Snapshot,
+                             ImageStore,
+                             DiskOffering,
+                             LoadBalancerRule,
+                             Template,
+                             Iso)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               list_volumes)
 
 class Services:
     """Test Snapshots Services
@@ -116,14 +129,13 @@ class TestVmUsage(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVmUsage,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVmUsage, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -192,7 +204,7 @@ class TestVmUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_vm_usage(self):
         """Test Create/Destroy VM and verify usage calculation
         """
@@ -205,14 +217,19 @@ class TestVmUsage(cloudstackTestCase):
         #    VM.Destroy and volume .delete Event for the created account
         # 4. Delete the account
 
-        self.debug("Stopping the VM: %s" % self.virtual_machine.id)
-        # Stop the VM
-        self.virtual_machine.stop(self.apiclient)
+        try:
+            self.debug("Stopping the VM: %s" % self.virtual_machine.id)
+            # Stop the VM
+            self.virtual_machine.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop VM: %s" % e)
 
-        time.sleep(self.services["sleep"])
-        # Destroy the VM
-        self.debug("Destroying the VM: %s" % self.virtual_machine.id)
-        self.virtual_machine.delete(self.apiclient)
+        try:
+            # Destroy the VM
+            self.debug("Destroying the VM: %s" % self.virtual_machine.id)
+            self.virtual_machine.delete(self.apiclient, expunge=True)
+        except Exception as e:
+            self.fail("Failed to delete VM: %s" % e)
 
         # Fetch project account ID from project UUID
         self.debug(
@@ -311,14 +328,13 @@ class TestPublicIPUsage(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestPublicIPUsage,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestPublicIPUsage, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
@@ -404,7 +420,7 @@ class TestPublicIPUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_public_ip_usage(self):
         """Test Assign new IP and verify usage calculation
         """
@@ -483,14 +499,13 @@ class TestVolumeUsage(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVolumeUsage,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVolumeUsage, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -563,7 +578,7 @@ class TestVolumeUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_volume_usage(self):
         """Test Create/delete a volume and verify correct usage is recorded
         """
@@ -577,7 +592,10 @@ class TestVolumeUsage(cloudstackTestCase):
 
         # Stop VM
         self.debug("Stopping VM with ID: %s" % self.virtual_machine.id)
-        self.virtual_machine.stop(self.apiclient)
+        try:
+            self.virtual_machine.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop VM: %s" % e)
 
         volume_response = list_volumes(
                                     self.apiclient,
@@ -597,7 +615,10 @@ class TestVolumeUsage(cloudstackTestCase):
                                                  data_volume.id,
                                                  self.virtual_machine.id
                                                  ))
-        self.virtual_machine.detach_volume(self.apiclient, data_volume)
+        try:
+            self.virtual_machine.detach_volume(self.apiclient, data_volume)
+        except Exception as e:
+            self.fail("Failed to detach volume: %s" % e)
 
         # Delete Data disk
         self.debug("Delete volume ID: %s" % data_volume.id)
@@ -668,14 +689,13 @@ class TestTemplateUsage(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestTemplateUsage,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestTemplateUsage, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.services["server"]["zoneid"] = cls.zone.id
         template = get_template(
@@ -684,26 +704,28 @@ class TestTemplateUsage(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
-        cls.account = Account.create(
+        cls._cleanup = []
+        try:
+            cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.name
+            cls._cleanup.append(cls.account)
+            cls.services["account"] = cls.account.name
 
-        cls.project = Project.create(
+            cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
                                  account=cls.account.name,
                                  domainid=cls.account.domainid
                                  )
-
-        cls.service_offering = ServiceOffering.create(
+            cls._cleanup.insert(-1, cls.project)
+            cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
-        #create virtual machine
-        cls.virtual_machine = VirtualMachine.create(
+                                            cls.services["service_offering"])
+            #create virtual machine
+            cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["server"],
                                     templateid=template.id,
@@ -711,25 +733,22 @@ class TestTemplateUsage(cloudstackTestCase):
                                     projectid=cls.project.id
                                     )
 
-        #Stop virtual machine
-        cls.virtual_machine.stop(cls.api_client)
+            #Stop virtual machine
+            cls.virtual_machine.stop(cls.api_client)
 
-        #Wait before server has be successfully stopped
-        time.sleep(30)
-        list_volume = list_volumes(
+            list_volume = list_volumes(
                                    cls.api_client,
                                    projectid=cls.project.id,
                                    type='ROOT',
                                    listall=True
                                    )
-        if isinstance(list_volume, list):
-            cls.volume = list_volume[0]
-        else:
-            raise Exception("List Volumes failed!")
-        cls._cleanup = [
-                        cls.project,
-                        cls.account,
-                        ]
+            if isinstance(list_volume, list):
+                cls.volume = list_volume[0]
+            else:
+                raise Exception("List Volumes failed!")
+        except Exception as e:
+            cls.tearDownClass()
+            raise unittest.SkipTest("Failed during setUpClass: %s" % e)
         return
 
     @classmethod
@@ -755,7 +774,7 @@ class TestTemplateUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
     def test_01_template_usage(self):
         """Test Upload/ delete a template and verify correct usage is generated
             for the template uploaded
@@ -844,11 +863,13 @@ class TestISOUsage(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestISOUsage, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestISOUsage, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.services["server"]["zoneid"] = cls.zone.id
         cls.services["iso"]["zoneid"] = cls.zone.id
@@ -908,7 +929,7 @@ class TestISOUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
     def test_01_ISO_usage(self):
         """Test Create/Delete a ISO and verify its usage is generated correctly
         """
@@ -990,14 +1011,13 @@ class TestLBRuleUsage(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestLBRuleUsage,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestLBRuleUsage, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
@@ -1082,7 +1102,7 @@ class TestLBRuleUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_lb_usage(self):
         """Test Create/Delete a LB rule and verify correct usage is recorded
         """
@@ -1173,14 +1193,13 @@ class TestSnapshotUsage(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestSnapshotUsage,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestSnapshotUsage, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -1250,7 +1269,7 @@ class TestSnapshotUsage(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_snapshot_usage(self):
         """Test Create/Delete a manual snap shot and verify
         correct usage is recorded
@@ -1274,8 +1293,6 @@ class TestSnapshotUsage(cloudstackTestCase):
                          True,
                          "Check if list volumes return a valid data"
                         )
-
-        volume = volumes[0]
 
         # Create a snapshot from the ROOTDISK
         self.debug("Creating snapshot from volume: %s" % volumes[0].id)
@@ -1351,14 +1368,13 @@ class TestNatRuleUsage(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestNatRuleUsage,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestNatRuleUsage, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
@@ -1443,7 +1459,7 @@ class TestNatRuleUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "simulator"], required_hardware="false")
     def test_01_nat_usage(self):
         """Test Create/Delete a PF rule and verify correct usage is recorded
         """
@@ -1534,14 +1550,13 @@ class TestVpnUsage(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVpnUsage,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVpnUsage, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
@@ -1627,7 +1642,7 @@ class TestVpnUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "simulator"], required_hardware="false")
     def test_01_vpn_usage(self):
         """Test Create/Delete a VPN and verify correct usage is recorded
         """

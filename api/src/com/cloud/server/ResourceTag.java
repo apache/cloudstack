@@ -35,6 +35,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         PortForwardingRule(true, true),
         FirewallRule(true, true),
         SecurityGroup(true, false),
+        SecurityGroupRule(true, false),
         PublicIpAddress(true, true),
         Project(true, false),
         Vpc(true, true),
@@ -53,7 +54,11 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         User(true, true),
         DiskOffering(false, true),
         AutoScaleVmProfile(false, true),
-        AutoScaleVmGroup(false, true);
+        AutoScaleVmGroup(false, true),
+        LBStickinessPolicy(false, true),
+        LBHealthCheckPolicy(false, true),
+        SnapshotPolicy(false, true);
+
 
         ResourceObjectType(boolean resourceTagsSupport, boolean resourceMetadataSupport) {
             this.resourceTagsSupport = resourceTagsSupport;

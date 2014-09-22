@@ -275,7 +275,23 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     public List<Long> getAccountIdsForDomains(List<Long> domainIds) {
         SearchCriteria<Long> sc = AccountIdsSearch.create();
         sc.setParameters("ids", domainIds.toArray(new Object[domainIds.size()]));
-        return customSearch(sc, null);
+        return customSearchIncludingRemoved(sc, null);
     }
+
+    @Override
+    public long getDomainIdForGivenAccountId(long id) {
+        long domain_id = -1;
+        try {
+            AccountVO account_vo = findById(id);
+            domain_id = account_vo.getDomainId();
+        }
+        catch (Exception e) {
+            s_logger.warn("getDomainIdForGivenAccountId: Exception :" + e.getMessage());
+        }
+        finally {
+            return domain_id;
+        }
+    }
+
 
 }

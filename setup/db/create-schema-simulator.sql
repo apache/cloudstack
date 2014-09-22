@@ -73,14 +73,14 @@ CREATE TABLE `simulator`.`mockvm` (
   `name` varchar(255),
   `host_id` bigint unsigned,
   `type` varchar(40),
-  `state` varchar(40),
+  `power_state` varchar(40),
   `vnc_port` bigint unsigned,
   `memory` bigint unsigned,
   `cpu` bigint unsigned,
   `bootargs` varchar(255),
   PRIMARY KEY  (`id`),
   INDEX `i_mockvm__host_id`(`host_id`),
-  INDEX `i_mockvm__state`(`state`),
+  INDEX `i_mockvm__power_state`(`power_state`),
   INDEX `i_mockvm__type`(`type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -106,7 +106,10 @@ CREATE TABLE `simulator`.`mockconfiguration` (
   `cluster_id` bigint unsigned,
   `host_id` bigint unsigned,
   `name` varchar(255),
-  `values` varchar(4095),
+  `values` varchar(4096),
+  `count` int,
+  `json_response` varchar(4096),
+  `removed` datetime,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

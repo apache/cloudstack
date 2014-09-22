@@ -114,12 +114,11 @@ public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         PortableIpRange portableIpRange = _entityMgr.findById(PortableIpRange.class, getEntityId());
-        PortableIpRangeResponse response = null;
         if (portableIpRange != null) {
-            response = _responseGenerator.createPortableIPRangeResponse(portableIpRange);
+            PortableIpRangeResponse response = _responseGenerator.createPortableIPRangeResponse(portableIpRange);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
         }
-        response.setResponseName(getCommandName());
-        this.setResponseObject(response);
     }
 
     @Override

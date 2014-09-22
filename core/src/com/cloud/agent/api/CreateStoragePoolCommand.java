@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,16 +15,43 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import com.cloud.storage.StoragePool;
 
+import java.util.Map;
+
 public class CreateStoragePoolCommand extends ModifyStoragePoolCommand {
+    public static final String DATASTORE_NAME = "datastoreName";
+    public static final String IQN = "iqn";
+    public static final String STORAGE_HOST = "storageHost";
+    public static final String STORAGE_PORT = "storagePort";
+
+    private boolean _createDatastore;
+    private Map<String, String> _details;
 
     public CreateStoragePoolCommand() {
     }
 
     public CreateStoragePoolCommand(boolean add, StoragePool pool) {
         super(add, pool);
+    }
+
+    public void setCreateDatastore(boolean createDatastore) {
+        _createDatastore = createDatastore;
+    }
+
+    public boolean getCreateDatastore() {
+        return _createDatastore;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        _details = details;
+    }
+
+    public Map<String, String> getDetails() {
+        return _details;
     }
 }

@@ -21,50 +21,26 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 import datetime
-
-class Services:
-    """Test Dedicating Public IP addresses
-    """
-
-    def __init__(self):
-        self.services = {
-                        "domain": {
-                                   "name": "Domain",
-                                   },
-                        "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    "password": "password",
-                         },
-                        "gateway": "10.102.197.1",
-                        "netmask": "255.255.255.0",
-                        "forvirtualnetwork": "true",
-                        "startip": "10.102.197.70",
-                        "endip": "10.102.197.73",
-                        "zoneid": "1",
-                        "podid": "",
-                        "vlan": "4444",
-                    }
 
 class TestDedicatePublicIPRange(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestDedicatePublicIPRange, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cls.testClient = super(TestDedicatePublicIPRange, cls).getClsTestClient()
+        cls.apiclient = cls.testClient.getApiClient()
+        cls.services =  cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.services["zoneid"] = cls.zone.id
+        cls.pod = get_pod(cls.apiclient, cls.zone.id)
         # Create Account
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
@@ -77,7 +53,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -96,7 +72,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["simulator", "advanced", "publiciprange", "dedicate", "release", "selfservice"])
+    @attr(tags = ["advanced", "publiciprange", "dedicate", "release"], required_hardware="false")
     def test_dedicatePublicIpRange(self):
         """Test public IP range dedication
         """
@@ -112,7 +88,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
 
         self.debug("Creating Public IP range")
         self.public_ip_range = PublicIpRange.create(
-                                    self.api_client,
+                                    self.apiclient,
                                     self.services
                                )
         list_public_ip_range_response = PublicIpRange.list(

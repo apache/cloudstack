@@ -43,7 +43,6 @@ import com.cloud.agent.api.baremetal.PrepareCreateTemplateCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
-import com.cloud.vm.VirtualMachine.State;
 
 public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
     private static final Logger s_logger = Logger.getLogger(BaremetalPingPxeResource.class);
@@ -143,7 +142,7 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
             return null;
         } else {
             SSHCmdHelper.releaseSshConnection(sshConnection);
-            return new PingRoutingCommand(getType(), id, new HashMap<String, State>(), new HashMap<String, HostVmStateReportEntry>());
+            return new PingRoutingCommand(getType(), id, new HashMap<String, HostVmStateReportEntry>());
         }
     }
 

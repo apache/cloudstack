@@ -125,11 +125,11 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         if (getHostId() == null && getStoragePoolId() == null) {
-            throw new InvalidParameterValueException("either hostId or storageId must be specified");
+            throw new InvalidParameterValueException("Either hostId or storageId must be specified");
         }
 
         if (getHostId() != null && getStoragePoolId() != null) {
-            throw new InvalidParameterValueException("only one of hostId and storageId can be specified");
+            throw new InvalidParameterValueException("Only one of hostId and storageId can be specified");
         }
 
         UserVm userVm = _userVmService.getUserVm(getVirtualMachineId());
@@ -142,6 +142,9 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             destinationHost = _resourceService.getHost(getHostId());
             if (destinationHost == null) {
                 throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
+            }
+            if (destinationHost.getType() != Host.Type.Routing) {
+                throw new InvalidParameterValueException("The specified host(" + destinationHost.getName() + ") is not suitable to migrate the VM, please specify another one");
             }
             CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
         }

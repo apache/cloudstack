@@ -23,6 +23,7 @@ import java.util.Map;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -142,40 +143,50 @@ public interface ResourceManager extends ResourceService {
     List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId);
 
     /**
+     * Check if host is GPU enabled
+     * @param hostId the host to be checked
+     * @return true if host contains GPU card else false
+     */
+    boolean isHostGpuEnabled(long hostId);
+
+    /**
      * Check if host has GPU devices available
      * @param hostId the host to be checked
+     * @param groupName: gpuCard name
      * @param vgpuType the VGPU type
      * @return true when the host has the capacity with given VGPU type
      */
-    boolean isGPUDeviceAvailable(long hostId, String vgpuType);
+    boolean isGPUDeviceAvailable(long hostId, String groupName, String vgpuType);
 
     /**
      * Get available GPU device
      * @param hostId the host to be checked
+     * @param groupName: gpuCard name
      * @param vgpuType the VGPU type
      * @return GPUDeviceTO[]
      */
-    GPUDeviceTO getGPUDevice(long hostId, String vgpuType);
+    GPUDeviceTO getGPUDevice(long hostId, String groupName, String vgpuType);
 
     /**
      * Return listof available GPU devices
      * @param hostId, the host to be checked
+     * @param groupName: gpuCard name
      * @param vgpuType the VGPU type
      * @return List of HostGpuGroupsVO.
      */
-    List<HostGpuGroupsVO> listAvailableGPUDevice(long hostId, String vgpuType);
+    List<HostGpuGroupsVO> listAvailableGPUDevice(long hostId, String groupName, String vgpuType);
 
     /**
      * Update GPU device details (post VM deployment)
      * @param hostId, the dest host Id
      * @param groupDetails, capacity of GPU group.
      */
-    void updateGPUDetails(long hostId, HashMap<String, HashMap<String, Long>> groupDetails);
+    void updateGPUDetails(long hostId, HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails);
 
     /**
      * Get GPU details for a host
      * @param host, the Host object
      * @return Details of groupNames and enabled VGPU type with remaining capacity.
      */
-    HashMap<String, HashMap<String, Long>> getGPUStatistics(HostVO host);
+    HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUStatistics(HostVO host);
 }

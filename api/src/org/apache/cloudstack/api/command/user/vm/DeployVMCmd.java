@@ -16,18 +16,26 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.log4j.Logger;
-
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network;
+import com.cloud.network.Network.IpAddresses;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -49,25 +57,15 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.Network;
-import com.cloud.network.Network.IpAddresses;
-import com.cloud.offering.DiskOffering;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
-import com.cloud.vm.VirtualMachine;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
@@ -105,7 +103,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     private Long domainId;
 
     //Network information
-    @ACL(accessType = AccessType.UseEntry)
+    //@ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NETWORK_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = NetworkResponse.class, description = "list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
     private List<Long> networkIds;
 
@@ -130,7 +128,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "an optional group for the virtual machine")
     private String group;
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor on which to deploy the virtual machine")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor on which to deploy the virtual machine. "
+            + "The parameter is required and respected only when hypervisor info is not set on the ISO/Template passed to the call")
     private String hypervisor;
 
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 32K of data after base64 encoding.", length = 32768)
@@ -227,8 +226,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
             Iterator iter = parameterCollection.iterator();
             while (iter.hasNext()) {
                 HashMap<String, String> value = (HashMap<String, String>)iter.next();
-                for (String key : value.keySet()) {
-                    customparameterMap.put(key, value.get(key));
+                for (Map.Entry<String,String> entry: value.entrySet()) {
+                    customparameterMap.put(entry.getKey(),entry.getValue());
                 }
             }
         }
@@ -248,6 +247,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
 
     public Boolean getDisplayVm() {
         return displayVm;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if(displayVm == null)
+            return true;
+        else
+            return displayVm;
     }
 
     public List<Long> getSecurityGroupIdList() {
@@ -346,7 +353,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
                 String requestedIp = ips.get("ip");
                 String requestedIpv6 = ips.get("ipv6");
                 if (requestedIpv6 != null) {
-                    requestedIpv6 = requestedIpv6.toLowerCase();
+                    requestedIpv6 = NetUtils.standardizeIp6Address(requestedIpv6);
                 }
                 IpAddresses addrs = new IpAddresses(requestedIp, requestedIpv6);
                 ipToNetworkMap.put(networkId, addrs);
@@ -360,7 +367,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         if (ip6Address == null) {
             return null;
         }
-        return ip6Address.toLowerCase();
+        return NetUtils.standardizeIp6Address(ip6Address);
     }
 
     public List<Long> getAffinityGroupIdList() {
@@ -406,16 +413,6 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         }
 
         return accountId;
-    }
-
-    @Override
-    public boolean isDisplayResourceEnabled(){
-        Boolean display = getDisplayVm();
-        if(display == null){
-            return true;
-        } else {
-            return display;
-        }
     }
 
     @Override

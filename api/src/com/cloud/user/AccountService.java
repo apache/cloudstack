@@ -24,7 +24,6 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 
 import com.cloud.domain.Domain;
-import com.cloud.domain.PartOf;
 import com.cloud.exception.PermissionDeniedException;
 
 public interface AccountService {
@@ -74,11 +73,15 @@ public interface AccountService {
         User
         createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID);
 
-    boolean isAdmin(short accountType);
+    boolean isAdmin(Long accountId);
 
     Account finalizeOwner(Account caller, String accountName, Long domainId, Long projectId);
 
     Account getActiveAccountByName(String accountName, Long domainId);
+
+    UserAccount getActiveUserAccount(String username, Long domainId);
+
+    UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey, String timeZone);
 
     Account getActiveAccountById(long accountId);
 
@@ -111,8 +114,13 @@ public interface AccountService {
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
             ControlledEntity... entities) throws PermissionDeniedException;
 
-    //TO be implemented, to check accessibility for an entity owned by domain
-    void checkAccess(Account account, AccessType accessType, boolean sameOwner, PartOf... entities) throws PermissionDeniedException;
-
     Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
+
+    /**
+     * returns the user account object for a given user id
+     * @param userId user id
+     * @return useraccount object if it exists else null
+     */
+    UserAccount getUserAccountById(Long userId);
+
 }

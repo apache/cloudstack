@@ -55,7 +55,7 @@
                             label: 'label.name'
                         },
                         id: {
-                            label: 'ID'
+                            label: 'label.id'
                         },
                         endpoint: {
                             label: 'label.endpoint'
@@ -148,8 +148,11 @@
                             path: 'regions.GSLB',
                             label: 'GSLB'
                         }, {
+                            path: 'network.vpc',
+                            label: 'label.regionlevelvpc'
+                        }, {
                             path: 'regions.portableIpRanges',
-                            label: 'Portable IP',
+                            label: 'label.portable.ip',
                             preFilter: function(args) {
                                 if (isAdmin())
                                     return true;
@@ -271,7 +274,7 @@
                 title: 'GSLB',
                 listView: {
                     id: 'GSLB',
-                    label: 'GSLB',
+                    label: 'label.gslb',
                     fields: {
                         name: {
                             label: 'label.name'
@@ -473,7 +476,7 @@
                         name: 'label.gslb.details',
                         viewAll: {
                             path: 'regions.lbUnderGSLB',
-                            label: 'assigned load balancing'
+                            label: 'label.gslb.assigned.lb'
                         },
                         actions: {                            
                         	edit: {

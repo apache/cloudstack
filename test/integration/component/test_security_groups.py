@@ -18,13 +18,21 @@
 """ P1 for Security groups
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Account,
+                             ServiceOffering,
+                             VirtualMachine,
+                             SecurityGroup,
+                             Router,
+                             Host,
+                             Configurations)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               get_process_status)
 from marvin.sshClient import SshClient
 
 #Import System modules
@@ -117,12 +125,13 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestDefaultSecurityGroup, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDefaultSecurityGroup, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -185,7 +194,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         self.debug("Deployed VM with ID: %s" % self.virtual_machine.id)
         self.cleanup.append(self.virtual_machine)
 
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -224,7 +233,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
                    "Verify list routers response for account: %s" \
                    % self.account.name
                    )
-        routers = list_routers(
+        routers = Router.list(
                                self.apiclient,
                                zoneid=self.zone.id,
                                listall=True
@@ -299,7 +308,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         self.debug("Deployed VM with ID: %s" % self.virtual_machine.id)
         self.cleanup.append(self.virtual_machine)
 
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
                                                  )
@@ -361,12 +370,12 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         # SSH Attempt to VM should fail
         with self.assertRaises(Exception):
             self.debug("SSH into VM: %s" % self.virtual_machine.ssh_ip)
-            ssh = SshClient(
-                                    self.virtual_machine.ssh_ip,
-                                    self.virtual_machine.ssh_port,
-                                    self.virtual_machine.username,
-                                    self.virtual_machine.password
-                                    )
+            SshClient(
+                      self.virtual_machine.ssh_ip,
+                      self.virtual_machine.ssh_port,
+                      self.virtual_machine.username,
+                      self.virtual_machine.password
+                      )
         return
 
 
@@ -390,12 +399,13 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestAuthorizeIngressRule, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAuthorizeIngressRule, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -526,12 +536,13 @@ class TestRevokeIngressRule(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestRevokeIngressRule, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRevokeIngressRule, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -648,7 +659,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
         self.debug("Revoking ingress rule for sec group ID: %s for ssh access"
                                                             % security_group.id)
         # Revoke Security group to SSH to VM
-        result = security_group.revoke(
+        security_group.revoke(
                                 self.apiclient,
                                 id=ssh_rule["ruleid"]
                                 )
@@ -684,12 +695,13 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestDhcpOnlyRouter, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDhcpOnlyRouter, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -748,7 +760,7 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
         #2. The only service supported by this router should be dhcp
 
         # Find router associated with user account
-        list_router_response = list_routers(
+        list_router_response = Router.list(
                                     self.apiclient,
                                     zoneid=self.zone.id,
                                     listall=True
@@ -760,7 +772,7 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
                         )
         router = list_router_response[0]
 
-        hosts = list_hosts(
+        hosts = Host.list(
                            self.apiclient,
                            zoneid=router.zoneid,
                            type='Routing',
@@ -821,12 +833,13 @@ class TestdeployVMWithUserData(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestdeployVMWithUserData, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestdeployVMWithUserData, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -881,7 +894,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
         #    router for this VM
 
         # Find router associated with user account
-        list_router_response = list_routers(
+        list_router_response = Router.list(
                                     self.apiclient,
                                     zoneid=self.zone.id,
                                     listall=True
@@ -985,8 +998,8 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         self.services = Services().services
 
         # Get Zone, Domain and templates
-        self.domain = get_domain(self.apiclient, self.services)
-        self.zone = get_zone(self.apiclient, self.services)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.services['mode'] = self.zone.networktype
 
         template = get_template(
@@ -1194,29 +1207,14 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Destroy the VM
-        self.virtual_machine.delete(self.apiclient)
+        self.virtual_machine.delete(self.apiclient, expunge=True)
 
-        config = list_configurations(
-                                     self.apiclient,
-                                     name='expunge.delay'
-                                     )
-        self.assertEqual(
-                          isinstance(config, list),
-                          True,
-                          "Check list configurations response"
-                    )
-        response = config[0]
-        self.debug("expunge.delay: %s" % response.value)
-        # Wait for some time more than expunge.delay
-        time.sleep(int(response.value) * 2)
-
-        # Deleting Security group should raise exception
         try:
             self.debug("Deleting Security Group: %s" % security_group.id)
             security_group.delete(self.apiclient)
         except Exception as e:
-            self.fail("Failed to delete security group - ID: %s" \
-                      % security_group.id
+            self.fail("Failed to delete security group - ID: %s: %s" \
+                      % (security_group.id, e)
                       )
         return
 
@@ -1232,8 +1230,8 @@ class TestIngressRule(cloudstackTestCase):
         self.services = Services().services
 
         # Get Zone, Domain and templates
-        self.domain = get_domain(self.apiclient, self.services)
-        self.zone = get_zone(self.apiclient, self.services)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.services['mode'] = self.zone.networktype
 
         template = get_template(
@@ -1634,15 +1632,13 @@ class TestIngressRule(cloudstackTestCase):
                       % ingress_rule["id"]
                       )
 
-        self.virtual_machine.stop(self.apiclient)
-
-        # Sleep to ensure that VM is in stopped state
-        time.sleep(self.services["sleep"])
-
-        self.virtual_machine.start(self.apiclient)
-
-        # Sleep to ensure that VM is in running state
-        time.sleep(self.services["sleep"])
+        try:
+            self.virtual_machine.stop(self.apiclient)
+            self.virtual_machine.start(self.apiclient)
+            # Sleep to ensure that VM is in running state
+            time.sleep(self.services["sleep"])
+        except Exception as e:
+            self.fail("Exception occured: %s" % e)
 
         # SSH should be allowed on 22 port after restart
         try:

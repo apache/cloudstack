@@ -18,6 +18,7 @@ var g_mySession = null;
 var g_sessionKey = null;
 var g_role = null; // roles - root, domain-admin, ro-admin, user
 var g_username = null;
+var g_userid = null;
 var g_account = null;
 var g_domainid = null;
 var g_loginCmdText = null;
@@ -48,7 +49,55 @@ var md5HashedLogin = false;
 var pageSize = 20;
 //var pageSize = 1; //for testing only
 
-var rootAccountId = 1;
+function to_json_array(str) {
+    var simple_array = str.split(",");
+    var json_array = [];
+
+    $.each(simple_array, function(index, value) {
+        if ($.trim(value).length > 0) {
+            var obj = {
+                          id: value,
+                          name: value
+                      };
+
+            json_array.push(obj);
+        }
+    });
+
+    return json_array;
+}
+
+function _tag_equals(tag1, tag2) {
+    return (tag1.name == tag2.name) && (tag1.id == tag2.id);
+}
+
+function _tag_array_contains(tag, tags)
+{
+    for (var i = 0; i < tags.length; i++)
+    {
+        if (_tag_equals(tags[i], tag)) return true;
+    }
+
+    return false;
+}
+
+function unique_tags(tags)
+{
+    var unique = [];
+
+    if (tags != null)
+    {
+        for (var i = 0; i < tags.length; i++)
+        {
+            if (!_tag_array_contains(tags[i], unique))
+            {
+                unique.push(tags[i]);
+            }
+        }
+    }
+
+    return unique;
+}
 
 //async action
 var pollAsyncJobResult = function(args) {
@@ -764,18 +813,6 @@ var addGuestNetworkDialog = {
         return (g_role == 0);
     }
 
-    function isSelfOrChildDomainUser(username, useraccounttype, userdomainid, iscallerchilddomain) {
-        if (username == g_username) { //is self
-            return true;
-        } else if (isDomainAdmin() && !iscallerchilddomain && (useraccounttype == 0)) { //domain admin to user
-            return true;
-        } else if (isDomainAdmin() && iscallerchilddomain && (userdomainid != g_domainid)) { //domain admin to subdomain admin and user
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     // FUNCTION: Handles AJAX error callbacks.  You can pass in an optional function to
     // handle errors that are not already handled by this method.
 
@@ -808,10 +845,13 @@ var addGuestNetworkDialog = {
             var property;
             for (property in json) {
                 var errorObj = json[property];
-                if (errorObj.errorcode == 401 && errorObj.errortext == "unable to verify user credentials and/or request signature")
+                if (errorObj.errorcode == 401 && errorObj.errortext == "unable to verify user credentials and/or request signature") {
+                    $('#container').hide();
+
                     return _l('label.session.expired');
-                else
+                } else {
                     return _s(errorObj.errortext);
+                }
             }
         } else {
             return "";
@@ -912,6 +952,40 @@ cloudStack.converters = {
         } else {
             return (bytes / 1024 / 1024 / 1024 / 1024).toFixed(2) + " TB";
         }
+    },
+    toBytes: function(str) {
+        if (str === undefined) {
+            return "0";
+        }
+
+        var res = str.split(" ");
+
+        if (res.length === 1) {
+            // assume a number in GB
+
+            return parseInt(str, 10) * 1024 * 1024 * 1024;
+        }
+
+        // assume first string is a number and second string is a unit of size
+
+        if (res[1] === "KB") {
+            return parseInt(res[0], 10) * 1024;
+        }
+
+        if (res[1] === "MB") {
+            return parseInt(res[0], 10) * 1024 * 1024;
+        }
+
+        if (res[1] === "GB") {
+            return parseInt(res[0], 10) * 1024 * 1024 * 1024;
+        }
+
+        if (res[1] === "TB") {
+            return parseInt(res[0], 10) * 1024 * 1024 * 1024 * 1024;
+        }
+
+        // assume GB
+        return parseInt(res[0], 10) * 1024 * 1024 * 1024;
     },
     toLocalDate: function(UtcDate) {
         var localDate = "";
@@ -1027,39 +1101,39 @@ cloudStack.converters = {
 
                 // These are old values -- can be removed in the future
             case 8:
-                return "User VM";
+                return _l('label.user.vm');
             case 11:
-                return "Routing Host";
+                return _l('label.routing.host');
             case 12:
-                return "Storage";
+                return _l('label.menu.storage');
             case 13:
-                return "Usage Server";
+                return _l('label.usage.server');
             case 14:
-                return "Management Server";
+                return _l('label.management.server');
             case 15:
-                return "Domain Router";
+                return _l('label.domain.router');
             case 16:
-                return "Console Proxy";
+                return _l('label.console.proxy');
             case 17:
-                return "User VM";
+                return _l('label.user.vm');
             case 18:
-                return "VLAN";
+                return _l('label.vlan');
             case 19:
-                return "Secondary Storage VM";
+                return _l('label.secondary.storage.vm');
             case 20:
-                return "Usage Server";
+                return _l('label.usage.server');
             case 21:
-                return "Storage";
+                return _l('label.menu.storage');
             case 22:
-                return "Update Resource Count";
+                return _l('label.action.update.resource.count');
             case 23:
-                return "Usage Sanity Result";
+                return _l('label.usage.sanity.result');
             case 24:
-                return "Direct Attached Public IP";
+                return _l('label.direct.attached.public.ip');
             case 25:
-                return "Local Storage";
+                return _l('label.local.storage');
             case 26:
-                return "Resource Limit Exceeded";
+                return _l('label.resource.limit.exceeded');
         }
     },
 
@@ -1086,23 +1160,25 @@ cloudStack.converters = {
             case 9:
                 return _l('label.local.storage');
             case 10:
-                return "Routing Host";
+                return _l('label.routing.host');
             case 11:
-                return "Storage";
+                return _l('label.menu.storage');
             case 12:
-                return "Usage Server";
+                return _l('label.usage.server');
             case 13:
-                return "Management Server";
+                return _l('label.management.server');
             case 14:
-                return "Domain Router";
+                return _l('label.domain.router');
             case 15:
-                return "Console Proxy";
+                return _l('label.console.proxy');
             case 16:
-                return "User VM";
+                return _l('label.user.vm');
             case 17:
-                return "VLAN";
+                return _l('label.vlan');
             case 18:
-                return "Secondary Storage VM";
+                return _l('label.secondary.storage.vm');
+            case 19:
+                return _l('label.gpu');
         }
     },
 
@@ -1126,6 +1202,16 @@ cloudStack.converters = {
 
         return value;
     }
+}
+
+function isModuleIncluded(moduleName) {    
+    for(var moduleIndex = 0; moduleIndex < cloudStack.modules.length; moduleIndex++) {
+        if (cloudStack.modules[moduleIndex] == moduleName) {
+            return true;            
+            break;            
+        }
+    }    
+    return false;
 }
 
 //data parameter passed to API call in listView
@@ -1180,10 +1266,7 @@ var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {
     jsonObj.networkofferingidText = jsonObj.networkofferingid;
 
     if (jsonObj.acltype == "Domain") {
-        if (jsonObj.domainid == rootAccountId)
-            jsonObj.scope = "All";
-        else
-            jsonObj.scope = "Domain (" + jsonObj.domain + ")";
+        jsonObj.scope = "Domain (" + jsonObj.domain + ")";
     } else if (jsonObj.acltype == "Account") {
         if (jsonObj.project != null)
             jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.project + ")";
@@ -2093,42 +2176,42 @@ cloudStack.api = {
                 }
             },
             dataProvider: function(args) {
-            	args.response.success({
-                    data: args.jsonObj.tags
-                });
-            	
-            	/*
-                var resourceId = args.context[contextId][0].id;
-                var data = {
-                    resourceId: resourceId,
-                    resourceType: resourceType
-                };
+            	if (args.jsonObj != undefined) {
+	            	args.response.success({
+	                    data: args.jsonObj.tags
+	                });
+            	} else {
+            		var resourceId = args.context[contextId][0].id;
+                    var data = {
+                        resourceId: resourceId,
+                        resourceType: resourceType
+                    };
 
-                if (isAdmin() || isDomainAdmin()) {
-                    data.listAll = true;
-                }
-
-                if (args.context.projects) {
-                    data.projectid = args.context.projects[0].id;
-                }
-
-                if (args.jsonObj != null && args.jsonObj.projectid != null && data.projectid == null) {
-                    data.projectid = args.jsonObj.projectid;
-                }
-
-                $.ajax({
-                    url: createURL('listTags'),
-                    data: data,
-                    success: function(json) {
-                        args.response.success({
-                            data: json.listtagsresponse ? json.listtagsresponse.tag : []
-                        });
-                    },
-                    error: function(json) {
-                        args.response.error(parseXMLHttpResponse(json));
+                    if (isAdmin() || isDomainAdmin()) {
+                        data.listAll = true;
                     }
-                });
-                */
+
+                    if (args.context.projects) {
+                        data.projectid = args.context.projects[0].id;
+                    }
+
+                    if (args.jsonObj != null && args.jsonObj.projectid != null && data.projectid == null) {
+                        data.projectid = args.jsonObj.projectid;
+                    }
+
+                    $.ajax({
+                        url: createURL('listTags'),
+                        data: data,
+                        success: function(json) {
+                            args.response.success({
+                                data: json.listtagsresponse ? json.listtagsresponse.tag : []
+                            });
+                        },
+                        error: function(json) {
+                            args.response.error(parseXMLHttpResponse(json));
+                        }
+                    });
+            	}            	
             }
         };
     }

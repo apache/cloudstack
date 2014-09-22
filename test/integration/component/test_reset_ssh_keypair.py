@@ -19,18 +19,17 @@
 """
 
 #Import Local Modules
-from marvin.integration.lib.base import (VirtualMachine,
+from marvin.lib.base import (VirtualMachine,
                                          SSHKeyPair,
                                          Account,
                                          Template,
                                          ServiceOffering,
-                                         EgressFireWallRule)
-from marvin.integration.lib.common import (get_domain,
+                                         EgressFireWallRule,
+                                         Volume)
+from marvin.lib.common import (get_domain,
                                            get_zone,
-                                           get_template,
-                                           list_virtual_machines,
-                                           list_volumes)
-from marvin.integration.lib.utils import (cleanup_resources,
+                                           get_template)
+from marvin.lib.utils import (cleanup_resources,
                                           random_gen,
                                           validateList)
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
@@ -94,7 +93,7 @@ class Services:
             "SSHPasswordEnabledTemplate": "SSHKeyPassword",
             "sleep": 60,
             "timeout": 20,
-            "mode": 'advanced',
+            "mode": '',
         }
 
 def wait_vm_start(apiclient, vmid, timeout, sleep):
@@ -114,14 +113,13 @@ class TestResetSSHKeypair(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-            TestResetSSHKeypair,
-            cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestResetSSHKeypair, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
         # Get Zone, Domain and templates
-        domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         # Set Zones and disk offerings
@@ -137,118 +135,93 @@ class TestResetSSHKeypair(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = template.id
 
-        # Create VMs, NAT Rules etc
-        cls.account = Account.create(
-            cls.api_client,
-            cls.services["account"],
-            domainid=domain.id
-        )
+        cls._cleanup = []
+        try:
+            # Create VMs, NAT Rules etc
+            cls.account = Account.create(
+                                cls.api_client,
+                                cls.services["account"],
+                                domainid=domain.id)
+            cls._cleanup.append(cls.account)
 
-        cls.service_offering = ServiceOffering.create(
-            cls.api_client,
-            cls.services["service_offering"]
-        )
+            cls.service_offering = ServiceOffering.create(
+                                        cls.api_client,
+                                        cls.services["service_offering"])
+            cls._cleanup.append(cls.service_offering)
 
-        cls.virtual_machine = VirtualMachine.create(
-            cls.api_client,
-            cls.services["virtual_machine"],
-            accountid=cls.account.name,
-            domainid=cls.account.domainid,
-            serviceofferingid=cls.service_offering.id,
-            mode=cls.services["mode"]
-        )
+            cls.virtual_machine = VirtualMachine.create(
+                                    cls.api_client,
+                                    cls.services["virtual_machine"],
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
+                                    serviceofferingid=cls.service_offering.id,
+                                    mode=cls.services["mode"])
 
-        networkid = cls.virtual_machine.nic[0].networkid
+            networkid = cls.virtual_machine.nic[0].networkid
 
-        # create egress rule to allow wget of my cloud-set-guest-password script
-        if cls.zone.networktype.lower() == 'advanced':
-            EgressFireWallRule.create(cls.api_client,
+            # create egress rule to allow wget of my cloud-set-guest-password script
+            if cls.zone.networktype.lower() == 'advanced':
+                EgressFireWallRule.create(cls.api_client,
                                   networkid=networkid,
                                   protocol=cls.services["egress"]["protocol"],
                                   startport=cls.services["egress"]["startport"],
                                   endport=cls.services["egress"]["endport"],
                                   cidrlist=cls.services["egress"]["cidrlist"])
 
-        cls.virtual_machine.password = cls.services["virtual_machine"]["password"]
-        ssh = cls.virtual_machine.get_ssh_client()
+            cls.virtual_machine.password = cls.services["virtual_machine"]["password"]
+            ssh = cls.virtual_machine.get_ssh_client()
 
-        # below steps are required to get the new password from VR(reset password)
-        # http://cloudstack.org/dl/cloud-set-guest-password
-        # Copy this file to /etc/init.d
-        # chmod +x /etc/init.d/cloud-set-guest-password
-        # chkconfig --add cloud-set-guest-password
-        # similar steps to get SSH key from web so as to make it ssh enabled
+            # below steps are required to get the new password from VR(reset password)
+            # http://cloudstack.org/dl/cloud-set-guest-password
+            # Copy this file to /etc/init.d
+            # chmod +x /etc/init.d/cloud-set-guest-password
+            # chkconfig --add cloud-set-guest-password
+            # similar steps to get SSH key from web so as to make it ssh enabled
 
-        cmds = [
-            "cd /etc/init.d;wget http://people.apache.org/~tsp/cloud-set-guest-password",
-            "chmod +x /etc/init.d/cloud-set-guest-password",
-            "chkconfig --add cloud-set-guest-password",
-            "cd /etc/init.d;wget http://downloads.sourceforge.net/project/cloudstack/SSH%20Key%20Gen%20Script/" + \
-            "cloud-set-guest-sshkey.in?r=http%3A%2F%2Fsourceforge" + \
-            ".net%2Fprojects%2Fcloudstack%2Ffiles%2FSSH%2520Key%2520Gen%2520Script%2F&ts=1331225219&use_mirror=iweb",
-            "chmod +x /etc/init.d/cloud-set-guest-sshkey.in",
-            "chkconfig --add cloud-set-guest-sshkey.in"
-            ]
-        for c in cmds:
-            result = ssh.execute(c)
+            cmds = [
+                "cd /etc/init.d;wget http://people.apache.org/~tsp/cloud-set-guest-password",
+                "chmod +x /etc/init.d/cloud-set-guest-password",
+                "chkconfig --add cloud-set-guest-password",
+                "cd /etc/init.d;wget http://downloads.sourceforge.net/project/cloudstack/SSH%20Key%20Gen%20Script/" + \
+                "cloud-set-guest-sshkey.in?r=http%3A%2F%2Fsourceforge" + \
+                ".net%2Fprojects%2Fcloudstack%2Ffiles%2FSSH%2520Key%2520Gen%2520Script%2F&ts=1331225219&use_mirror=iweb",
+                "chmod +x /etc/init.d/cloud-set-guest-sshkey.in",
+                "chkconfig --add cloud-set-guest-sshkey.in"
+                ]
+            for c in cmds:
+                ssh.execute(c)
 
-        #Stop virtual machine
-        cls.virtual_machine.stop(cls.api_client)
+            #Stop virtual machine
+            cls.virtual_machine.stop(cls.api_client)
 
-        # Poll listVM to ensure VM is stopped properly
-        timeout = cls.services["timeout"]
-        while True:
-            time.sleep(cls.services["sleep"])
+            list_volume = Volume.list(
+                            cls.api_client,
+                            virtualmachineid=cls.virtual_machine.id,
+                            type='ROOT',
+                            listall=True)
 
-            # Ensure that VM is in stopped state
-            list_vm_response = list_virtual_machines(
-                cls.api_client,
-                id=cls.virtual_machine.id
-            )
-
-            if isinstance(list_vm_response, list):
-
-                vm = list_vm_response[0]
-                if vm.state == 'Stopped':
-                    break
-
-            if timeout == 0:
+            if isinstance(list_volume, list):
+                cls.volume = list_volume[0]
+            else:
                 raise Exception(
-                    "Failed to stop VM (ID: %s) " %
-                    vm.id)
-
-            timeout = timeout - 1
-
-        list_volume = list_volumes(
-            cls.api_client,
-            virtualmachineid=cls.virtual_machine.id,
-            type='ROOT',
-            listall=True
-        )
-        if isinstance(list_volume, list):
-            cls.volume = list_volume[0]
-        else:
-            raise Exception(
                 "Exception: Unable to find root volume for VM: %s" %
                 cls.virtual_machine.id)
 
-        cls.services["template"]["ostype"] = cls.services["ostype"]
-        #Create templates for Edit, Delete & update permissions testcases
-        cls.pw_ssh_enabled_template = Template.create(
-            cls.api_client,
-            cls.services["template"],
-            cls.volume.id,
-            account=cls.account.name,
-            domainid=cls.account.domainid
-        )
-        # Delete the VM - No longer needed
-        cls.virtual_machine.delete(cls.api_client)
-
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.pw_ssh_enabled_template,
-                        cls.account
-                       ]
+            cls.services["template"]["ostype"] = cls.services["ostype"]
+            #Create templates for Edit, Delete & update permissions testcases
+            cls.pw_ssh_enabled_template = Template.create(
+                cls.api_client,
+                cls.services["template"],
+                cls.volume.id,
+                account=cls.account.name,
+                domainid=cls.account.domainid
+            )
+            cls._cleanup.append(cls.pw_ssh_enabled_template)
+            # Delete the VM - No longer needed
+            cls.virtual_machine.delete(cls.api_client, expunge=True)
+        except Exception as e:
+            cls.tearDownClass()
+            raise unittest.SkipTest("Exception in setUpClass: %s" % e)
 
     @classmethod
     def tearDownClass(cls):
@@ -259,7 +232,6 @@ class TestResetSSHKeypair(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        self.services = Services().services
 
         self.keypair = SSHKeyPair.create(
                                     self.apiclient,
@@ -386,7 +358,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to SSH into VM with new keypair: %s, %s" %
                                                     (virtual_machine.name, e))
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -504,7 +476,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to SSH into VM with password: %s, %s" %
                                                     (virtual_machine.name, e))
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -607,7 +579,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to SSH into VM with new keypair: %s, %s" %
                                                     (virtual_machine.name, e))
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -718,7 +690,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to SSH into VM with new keypair: %s, %s" %
                                                     (virtual_machine.name, e))
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -793,7 +765,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
                                         domainid=self.account.domainid
                                         )
 
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -871,7 +843,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
                                         domainid=self.account.domainid
                                         )
 
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -947,7 +919,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
                                         )
         self.debug("Reset SSH key pair failed due to invalid parameters")
 
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
 class TestResetSSHKeyUserRights(cloudstackTestCase):
@@ -955,14 +927,13 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-            TestResetSSHKeyUserRights,
-            cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestResetSSHKeyUserRights, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         # Set Zones and disk offerings
@@ -1028,36 +999,16 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
             "chkconfig --add cloud-set-guest-sshkey.in"
             ]
         for c in cmds:
-            result = ssh.execute(c)
+            ssh.execute(c)
 
-        #Stop virtual machine
-        cls.virtual_machine.stop(cls.api_client)
+        try:
+            #Stop virtual machine
+            cls.virtual_machine.stop(cls.api_client)
+        except Exception as e:
+            cls.tearDownClass()
+            raise unittest.SkipTest("Exception in setUpClass: %s" % e)
 
-        # Poll listVM to ensure VM is stopped properly
-        timeout = cls.services["timeout"]
-        while True:
-            time.sleep(cls.services["sleep"])
-
-            # Ensure that VM is in stopped state
-            list_vm_response = list_virtual_machines(
-                cls.api_client,
-                id=cls.virtual_machine.id
-            )
-
-            if isinstance(list_vm_response, list):
-
-                vm = list_vm_response[0]
-                if vm.state == 'Stopped':
-                    break
-
-            if timeout == 0:
-                raise Exception(
-                    "Failed to stop VM (ID: %s) " %
-                    vm.id)
-
-            timeout = timeout - 1
-
-        list_volume = list_volumes(
+        list_volume = Volume.list(
             cls.api_client,
             virtualmachineid=cls.virtual_machine.id,
             type='ROOT',
@@ -1078,7 +1029,7 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
             cls.volume.id
         )
         # Delete the VM - No longer needed
-        cls.virtual_machine.delete(cls.api_client)
+        cls.virtual_machine.delete(cls.api_client, expunge=True)
 
         cls._cleanup = [
                         cls.service_offering,
@@ -1095,7 +1046,6 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        self.services = Services().services
 
         # Set Zones and disk offerings
         self.services["virtual_machine"]["zoneid"] = self.zone.id
@@ -1137,8 +1087,6 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
                                       )
         self.cleanup.append(self.user_account)
         self.debug("Account created: %s" % self.user_account.name)
-
-        self.services = Services().services
 
         # Spawn an instance
         virtual_machine = VirtualMachine.create(
@@ -1232,7 +1180,7 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
             self.fail("Failed to SSH into VM with new keypair: %s, %s" %
                                                     (virtual_machine.name, e))
 
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -1371,7 +1319,7 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
             self.fail("Failed to SSH into VM with new keypair: %s, %s" %
                                                     (virtual_machine.name, e))
 
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return
 
     @attr(tags=["simulator", "basic", "advanced"])
@@ -1510,5 +1458,5 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to SSH into VM with new keypair: %s, %s" %
                                                     (virtual_machine.name, e))
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=True)
         return

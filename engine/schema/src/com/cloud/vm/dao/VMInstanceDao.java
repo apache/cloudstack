@@ -17,6 +17,7 @@
 package com.cloud.vm.dao;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -133,4 +134,6 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     void resetVmPowerStateTracking(long instanceId);
 
     void resetHostPowerStateTracking(long hostId);
+
+    HashMap<String, Long> countVgpuVMs(Long dcId, Long podId, Long clusterId);
 }

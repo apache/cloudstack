@@ -52,6 +52,7 @@ public class CSExceptionErrorCode {
             ExceptionErrorCodeMap.put("com.cloud.exception.InsufficientAddressCapacityException", 4320);
             ExceptionErrorCodeMap.put("com.cloud.exception.InsufficientCapacityException", 4325);
             ExceptionErrorCodeMap.put("com.cloud.exception.InsufficientNetworkCapacityException", 4330);
+            ExceptionErrorCodeMap.put("com.cloud.exception.InsufficientVirtualNetworkCapacityException", 4331);
             ExceptionErrorCodeMap.put("com.cloud.exception.InsufficientServerCapacityException", 4335);
             ExceptionErrorCodeMap.put("com.cloud.exception.InsufficientStorageCapacityException", 4340);
             ExceptionErrorCodeMap.put("com.cloud.exception.InternalErrorException", 4345);

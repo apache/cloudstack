@@ -17,13 +17,12 @@
 (function(cloudStack) {
 
     var domainObjs;
-    var rootDomainId;
-
+    
     cloudStack.sections.accounts = {
         title: 'label.accounts',
         id: 'accounts',
         sectionSelect: {
-            label: 'Select View',
+            label: 'label.select-view',
             preFilter: function() {
                 return ['accounts'];
             }
@@ -94,10 +93,11 @@
                         },
                                                 
                         addLdapAccount: {
-                            label: 'Add LDAP Account',
+                            label: 'label.add.LDAP.account',
                             isHeader: true,
                             preFilter: function(args) {
-                                if ((isAdmin() || isDomainAdmin()) && isLdapEnabled()) {
+                                //if (isAdmin() && true) { //for testing only
+                                if (isAdmin() && isLdapEnabled()) {
                                     return true;
                                 } else {
                                     return false;
@@ -105,7 +105,7 @@
                             },
                             messages: {
                                 notification: function(args) {
-                                    return 'Add LDAP Account';
+                                    return 'label.add.LDAP.account';
                                 }
                             },
                             notification: {
@@ -659,7 +659,7 @@
                                     }
                                 }, {
                                     id: {
-                                        label: 'ID'
+                                        label: 'label.id'
                                     },
                                     accounttype: {
                                         label: 'label.role',
@@ -1369,7 +1369,7 @@
                                     }
                                 }, {
                                     id: {
-                                        label: 'ID'
+                                        label: 'label.id'
                                     },
                                     state: {
                                         label: 'label.state'
@@ -1527,19 +1527,21 @@
                     allowedActions.push("enable");
                 allowedActions.push("remove");
             }
-        } else {
-            if (isSelfOrChildDomainUser(jsonObj.username, jsonObj.accounttype, jsonObj.domainid, jsonObj.iscallerchilddomain)) {
-                if (isDomainAdmin() && jsonObj.username != g_username) {
-                    allowedActions.push("edit");
-                    if (jsonObj.state == "enabled")
-                        allowedActions.push("disable");
-                    if (jsonObj.state == "disabled")
-                        allowedActions.push("enable");
-                    allowedActions.push("remove");
-                }
+        } else { //domain-admin, regular-user
+        	if (jsonObj.username == g_username) { //selected user is self
+        		allowedActions.push("changePassword");
+                allowedActions.push("generateKeys");
+        	} else if (isDomainAdmin()) { //if selected user is not self, and the current login is domain-admin
+        		allowedActions.push("edit");
+                if (jsonObj.state == "enabled")
+                    allowedActions.push("disable");
+                if (jsonObj.state == "disabled")
+                    allowedActions.push("enable");
+                allowedActions.push("remove");
+                
                 allowedActions.push("changePassword");
                 allowedActions.push("generateKeys");
-            }
+        	}        	
         }
         return allowedActions;
     }

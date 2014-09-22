@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
 package com.cloud.agent.api;
 
@@ -26,7 +28,7 @@ import com.cloud.vm.VirtualMachine;
 public class RevertToVMSnapshotAnswer extends Answer {
 
     private List<VolumeObjectTO> volumeTOs;
-    private VirtualMachine.State vmState;
+    private VirtualMachine.PowerState vmState;
 
     public RevertToVMSnapshotAnswer(RevertToVMSnapshotCommand cmd, boolean result, String message) {
         super(cmd, result, message);
@@ -36,13 +38,13 @@ public class RevertToVMSnapshotAnswer extends Answer {
         super();
     }
 
-    public RevertToVMSnapshotAnswer(RevertToVMSnapshotCommand cmd, List<VolumeObjectTO> volumeTOs, VirtualMachine.State vmState) {
+    public RevertToVMSnapshotAnswer(RevertToVMSnapshotCommand cmd, List<VolumeObjectTO> volumeTOs, VirtualMachine.PowerState vmState) {
         super(cmd, true, "");
         this.volumeTOs = volumeTOs;
         this.vmState = vmState;
     }
 
-    public VirtualMachine.State getVmState() {
+    public VirtualMachine.PowerState getVmState() {
         return vmState;
     }
 
@@ -54,7 +56,7 @@ public class RevertToVMSnapshotAnswer extends Answer {
         this.volumeTOs = volumeTOs;
     }
 
-    public void setVmState(VirtualMachine.State vmState) {
+    public void setVmState(VirtualMachine.PowerState vmState) {
         this.vmState = vmState;
     }
 

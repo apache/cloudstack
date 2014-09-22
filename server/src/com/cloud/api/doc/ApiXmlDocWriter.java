@@ -16,6 +16,29 @@
 // under the License.
 package com.cloud.api.doc;
 
+import com.cloud.alert.AlertManager;
+import com.cloud.serializer.Param;
+import com.cloud.utils.IteratorUtil;
+import com.cloud.utils.ReflectUtil;
+import com.google.gson.annotations.SerializedName;
+import com.thoughtworks.xstream.XStream;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.log4j.Logger;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -40,32 +63,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-import org.apache.log4j.Logger;
-
-import com.google.gson.annotations.SerializedName;
-import com.thoughtworks.xstream.XStream;
-
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.IPAddressResponse;
-import org.apache.cloudstack.api.response.SecurityGroupResponse;
-import org.apache.cloudstack.api.response.SnapshotResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-
-import com.cloud.alert.AlertManager;
-import com.cloud.serializer.Param;
-import com.cloud.utils.IteratorUtil;
-import com.cloud.utils.ReflectUtil;
 
 public class ApiXmlDocWriter {
     public static final Logger s_logger = Logger.getLogger(ApiXmlDocWriter.class.getName());
@@ -100,15 +97,28 @@ public class ApiXmlDocWriter {
 
     public static void main(String[] args) {
 
-        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class, new String[] {"org.apache.cloudstack.api", "com.cloud.api"});
+        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class, new String[] {"org.apache.cloudstack.api", "com.cloud.api",
+                "com.cloud.api.commands", "com.globo.globodns.cloudstack.api", "org.apache.cloudstack.network.opendaylight.api",
+                "com.cloud.api.commands.netapp", "org.apache.cloudstack.api.command.admin.zone", "org.apache.cloudstack.network.contrail.api.command"});
 
         for (Class<?> cmdClass : cmdClasses) {
             String apiName = cmdClass.getAnnotation(APICommand.class).name();
             if (s_apiNameCmdClassMap.containsKey(apiName)) {
-                System.out.println("Warning, API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
-                continue;
+                // handle API cmd separation into admin cmd and user cmd with the common api name
+                Class<?> curCmd = s_apiNameCmdClassMap.get(apiName);
+                if (curCmd.isAssignableFrom(cmdClass)) {
+                    // api_cmd map always keep the admin cmd class to get full response and parameters
+                    s_apiNameCmdClassMap.put(apiName, cmdClass);
+                } else if (cmdClass.isAssignableFrom(curCmd)) {
+                    // just skip this one without warning
+                    continue;
+                } else {
+                    System.out.println("Warning, API Cmd class " + cmdClass.getName() + " has non-unique apiname " + apiName);
+                    continue;
+                }
+            } else {
+                s_apiNameCmdClassMap.put(apiName, cmdClass);
             }
-            s_apiNameCmdClassMap.put(apiName, cmdClass);
         }
 
         LinkedProperties preProcessedCommands = new LinkedProperties();
@@ -133,10 +143,8 @@ public class ApiXmlDocWriter {
         }
 
         for (String fileName : fileNames) {
-            try {
-                FileInputStream in = new FileInputStream(fileName);
+            try(FileInputStream in = new FileInputStream(fileName);) {
                 preProcessedCommands.load(in);
-                in.close();
             } catch (FileNotFoundException ex) {
                 System.out.println("Can't find file " + fileName);
                 System.exit(2);
@@ -174,15 +182,6 @@ public class ApiXmlDocWriter {
             }
         }
 
-        // Login and logout commands are hardcoded
-        s_allApiCommands.put("login", "login");
-        s_domainAdminApiCommands.put("login", "login");
-        s_regularUserApiCommands.put("login", "login");
-
-        s_allApiCommands.put("logout", "logout");
-        s_domainAdminApiCommands.put("logout", "logout");
-        s_regularUserApiCommands.put("logout", "logout");
-
         s_allApiCommandsSorted.putAll(s_allApiCommands);
         s_domainAdminApiCommandsSorted.putAll(s_domainAdminApiCommands);
         s_regularUserApiCommandsSorted.putAll(s_regularUserApiCommands);
@@ -214,66 +213,26 @@ public class ApiXmlDocWriter {
                 String key = (String)it.next();
 
                 // Write admin commands
-                if (key.equals("login")) {
-                    writeLoginCommand(out);
-                    writeLoginCommand(rootAdmin);
-                    writeLoginCommand(domainAdmin);
-                    writeLoginCommand(regularUser);
+                writeCommand(out, key);
+                writeCommand(rootAdmin, key);
 
-                    ObjectOutputStream singleRootAdminCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + "login" + ".xml"), "command");
-                    writeLoginCommand(singleRootAdminCommandOs);
-                    singleRootAdminCommandOs.close();
+                // Write single commands to separate xml files
+                ObjectOutputStream singleRootAdminCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + key + ".xml"), "command");
+                writeCommand(singleRootAdminCommandOs, key);
+                singleRootAdminCommandOs.close();
 
-                    ObjectOutputStream singleDomainAdminCommandOs = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + "login" + ".xml"), "command");
-                    writeLoginCommand(singleDomainAdminCommandOs);
+                if (s_domainAdminApiCommands.containsKey(key)) {
+                    writeCommand(domainAdmin, key);
+                    ObjectOutputStream singleDomainAdminCommandOs = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + key + ".xml"), "command");
+                    writeCommand(singleDomainAdminCommandOs, key);
                     singleDomainAdminCommandOs.close();
+                }
 
-                    ObjectOutputStream singleRegularUserCommandOs = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/" + "login" + ".xml"), "command");
-                    writeLoginCommand(singleRegularUserCommandOs);
+                if (s_regularUserApiCommands.containsKey(key)) {
+                    writeCommand(regularUser, key);
+                    ObjectOutputStream singleRegularUserCommandOs = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/" + key + ".xml"), "command");
+                    writeCommand(singleRegularUserCommandOs, key);
                     singleRegularUserCommandOs.close();
-
-                } else if (key.equals("logout")) {
-                    writeLogoutCommand(out);
-                    writeLogoutCommand(rootAdmin);
-                    writeLogoutCommand(domainAdmin);
-                    writeLogoutCommand(regularUser);
-
-                    ObjectOutputStream singleRootAdminCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + "logout" + ".xml"), "command");
-                    writeLogoutCommand(singleRootAdminCommandOs);
-                    singleRootAdminCommandOs.close();
-
-                    ObjectOutputStream singleDomainAdminCommandOs = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + "logout" + ".xml"), "command");
-                    writeLogoutCommand(singleDomainAdminCommandOs);
-                    singleDomainAdminCommandOs.close();
-
-                    ObjectOutputStream singleRegularUserCommandOs = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/" + "logout" + ".xml"), "command");
-                    writeLogoutCommand(singleRegularUserCommandOs);
-                    singleRegularUserCommandOs.close();
-
-                } else {
-                    writeCommand(out, key);
-                    writeCommand(rootAdmin, key);
-
-                    // Write single commands to separate xml files
-                    if (!key.equals("login")) {
-                        ObjectOutputStream singleRootAdminCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + key + ".xml"), "command");
-                        writeCommand(singleRootAdminCommandOs, key);
-                        singleRootAdminCommandOs.close();
-                    }
-
-                    if (s_domainAdminApiCommands.containsKey(key)) {
-                        writeCommand(domainAdmin, key);
-                        ObjectOutputStream singleDomainAdminCommandOs = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + key + ".xml"), "command");
-                        writeCommand(singleDomainAdminCommandOs, key);
-                        singleDomainAdminCommandOs.close();
-                    }
-
-                    if (s_regularUserApiCommands.containsKey(key)) {
-                        writeCommand(regularUser, key);
-                        ObjectOutputStream singleRegularUserCommandOs = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/" + key + ".xml"), "command");
-                        writeCommand(singleRegularUserCommandOs, key);
-                        singleRegularUserCommandOs.close();
-                    }
                 }
             }
 
@@ -282,24 +241,14 @@ public class ApiXmlDocWriter {
             while (it.hasNext()) {
                 String key = (String)it.next();
 
-                if (key.equals("login")) {
-                    writeLoginCommand(rootAdminSorted);
-                    writeLoginCommand(outDomainAdminSorted);
-                    writeLoginCommand(regularUserSorted);
-                } else if (key.equals("logout")) {
-                    writeLogoutCommand(rootAdminSorted);
-                    writeLogoutCommand(outDomainAdminSorted);
-                    writeLogoutCommand(regularUserSorted);
-                } else {
-                    writeCommand(rootAdminSorted, key);
+                writeCommand(rootAdminSorted, key);
 
-                    if (s_domainAdminApiCommands.containsKey(key)) {
-                        writeCommand(outDomainAdminSorted, key);
-                    }
+                if (s_domainAdminApiCommands.containsKey(key)) {
+                    writeCommand(outDomainAdminSorted, key);
+                }
 
-                    if (s_regularUserApiCommands.containsKey(key)) {
-                        writeCommand(regularUserSorted, key);
-                    }
+                if (s_regularUserApiCommands.containsKey(key)) {
+                    writeCommand(regularUserSorted, key);
                 }
             }
 
@@ -384,64 +333,6 @@ public class ApiXmlDocWriter {
         }
     }
 
-    private static void writeLoginCommand(ObjectOutputStream out) throws ClassNotFoundException, IOException {
-        ArrayList<Argument> request = new ArrayList<Argument>();
-        ArrayList<Argument> response = new ArrayList<Argument>();
-
-        // Create a new command, set name and description
-        Command apiCommand = new Command();
-        apiCommand.setName("login");
-        apiCommand.setDescription("Logs a user into the CloudStack. A successful login attempt will generate a JSESSIONID cookie value that can be passed in subsequent Query command calls until the \"logout\" command has been issued or the session has expired.");
-
-        // Generate request
-        request.add(new Argument("username", "Username", true));
-        request.add(new Argument(
-            "password",
-            "Hashed password (Default is MD5). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.",
-            true));
-        request.add(new Argument("domain",
-            "path of the domain that the user belongs to. Example: domain=/com/cloud/internal.  If no domain is passed in, the ROOT domain is assumed.", false));
-        request.add(new Argument("domainId",
-            "id of the domain that the user belongs to. If both domain and domainId are passed in, \"domainId\" parameter takes precendence", false));
-        apiCommand.setRequest(request);
-
-        // Generate response
-        response.add(new Argument("username", "Username"));
-        response.add(new Argument("userid", "User id"));
-        response.add(new Argument("password", "Password"));
-        response.add(new Argument("domainid", "domain ID that the user belongs to"));
-        response.add(new Argument("timeout", "the time period before the session has expired"));
-        response.add(new Argument("account", "the account name the user belongs to"));
-        response.add(new Argument("firstname", "first name of the user"));
-        response.add(new Argument("lastname", "last name of the user"));
-        response.add(new Argument("type", "the account type (admin, domain-admin, read-only-admin, user)"));
-        response.add(new Argument("timezone", "user time zone"));
-        response.add(new Argument("timezoneoffset", "user time zone offset from UTC 00:00"));
-        response.add(new Argument("sessionkey", "Session key that can be passed in subsequent Query command calls"));
-        apiCommand.setResponse(response);
-
-        out.writeObject(apiCommand);
-    }
-
-    private static void writeLogoutCommand(ObjectOutputStream out) throws ClassNotFoundException, IOException {
-        ArrayList<Argument> request = new ArrayList<Argument>();
-        ArrayList<Argument> response = new ArrayList<Argument>();
-
-        // Create a new command, set name and description
-        Command apiCommand = new Command();
-        apiCommand.setName("logout");
-        apiCommand.setDescription("Logs out the user");
-
-        // Generate request - no request parameters
-        apiCommand.setRequest(request);
-
-        // Generate response
-        response.add(new Argument("description", "success if the logout action succeeded"));
-        apiCommand.setResponse(response);
-
-        out.writeObject(apiCommand);
-    }
-
     private static ArrayList<Argument> setRequestFields(Set<Field> fields) {
         ArrayList<Argument> arguments = new ArrayList<Argument>();
         Set<Argument> requiredArguments = new HashSet<Argument>();
@@ -459,6 +350,8 @@ public class ApiXmlDocWriter {
                 if (parameterAnnotation.type() == BaseCmd.CommandType.LIST || parameterAnnotation.type() == BaseCmd.CommandType.MAP) {
                     reqArg.setType(parameterAnnotation.type().toString().toLowerCase());
                 }
+
+                reqArg.setDataType(parameterAnnotation.type().toString().toLowerCase());
 
                 if (!parameterAnnotation.since().isEmpty()) {
                     reqArg.setSinceVersion(parameterAnnotation.since());
@@ -506,6 +399,8 @@ public class ApiXmlDocWriter {
                     if (description != null && !description.isEmpty()) {
                         respArg.setDescription(description);
                     }
+
+                    respArg.setDataType(responseField.getType().getSimpleName().toLowerCase());
 
                     if (!paramAnnotation.since().isEmpty()) {
                         respArg.setSinceVersion(paramAnnotation.since());
@@ -580,14 +475,17 @@ public class ApiXmlDocWriter {
                 addDir(files[i], out);
                 continue;
             }
-            FileInputStream in = new FileInputStream(files[i].getPath());
-            out.putNextEntry(new ZipEntry(files[i].getPath().substring(pathToDir.length())));
-            int len;
-            while ((len = in.read(tmpBuf)) > 0) {
-                out.write(tmpBuf, 0, len);
+            try(FileInputStream in = new FileInputStream(files[i].getPath());) {
+                out.putNextEntry(new ZipEntry(files[i].getPath().substring(pathToDir.length())));
+                int len;
+                while ((len = in.read(tmpBuf)) > 0) {
+                    out.write(tmpBuf, 0, len);
+                }
+                out.closeEntry();
+            }catch(IOException ex)
+            {
+                s_logger.error("addDir:Exception:"+ ex.getMessage(),ex);
             }
-            out.closeEntry();
-            in.close();
         }
     }
 
@@ -604,8 +502,7 @@ public class ApiXmlDocWriter {
     private static void writeAlertTypes(String dirName) {
         XStream xs = new XStream();
         xs.alias("alert", Alert.class);
-        try {
-            ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "/alert_types.xml"), "alerts");
+        try(ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "/alert_types.xml"), "alerts");) {
             for (Field f : AlertManager.class.getFields()) {
                 if (f.getClass().isAssignableFrom(Number.class)) {
                     String name = f.getName().substring(11);
@@ -613,7 +510,6 @@ public class ApiXmlDocWriter {
                     out.writeObject(alert);
                 }
             }
-            out.close();
         } catch (IOException e) {
             s_logger.error("Failed to create output stream to write an alert types ", e);
         } catch (IllegalAccessException e) {

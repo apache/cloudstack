@@ -18,6 +18,15 @@
 ### bitmap of permissions at the end of each classname, 1 = ADMIN, 2 = RESOURCE_DOMAIN_ADMIN, 4 = DOMAIN_ADMIN, 8 = USER
 ### Please standardize naming conventions to camel-case (even for acronyms).
 
+### CloudStack authentication commands
+login=15
+logout=15
+
+### SAML SSO/SLO commands
+samlsso=15
+samlslo=15
+getSPMetadata=15
+
 ### Account commands
 createAccount=7
 deleteAccount=7
@@ -32,7 +41,7 @@ markDefaultZoneForAccount=1
 createUser=7
 deleteUser=7
 updateUser=15
-listUsers=7
+listUsers=15
 lockUser=7
 disableUser=7
 enableUser=7
@@ -79,6 +88,7 @@ createSnapshot=15
 listSnapshots=15
 deleteSnapshot=15
 createSnapshotPolicy=15
+updateSnapshotPolicy=15
 deleteSnapshotPolicies=15
 listSnapshotPolicies=15
 revertSnapshot=15
@@ -146,7 +156,7 @@ listDedicatedGuestVlanRanges=1
 associateIpAddress=15
 disassociateIpAddress=15
 listPublicIpAddresses=15
-updatePublicIpAddress=15
+updateIpAddress=15
 
 #### firewall commands
 listPortForwardingRules=15
@@ -167,11 +177,13 @@ deleteLoadBalancerRule=15
 removeFromLoadBalancerRule=15
 assignToLoadBalancerRule=15
 createLBStickinessPolicy=15
+updateLBStickinessPolicy=15
 deleteLBStickinessPolicy=15
 listLoadBalancerRules=15
 listLBStickinessPolicies=15
 listLBHealthCheckPolicies=15
 createLBHealthCheckPolicy=15
+updateLBHealthCheckPolicy=15
 deleteLBHealthCheckPolicy=15
 listLoadBalancerRuleInstances=15
 updateLoadBalancerRule=15
@@ -290,6 +302,7 @@ deleteHost=3
 prepareHostForMaintenance=1
 cancelHostMaintenance=1
 listHosts=3
+listHostTags=7
 findHostsForMigration=1
 addSecondaryStorage=1
 updateHostPassword=1
@@ -326,6 +339,7 @@ listAsyncJobs=15
 #### storage pools commands
 listStoragePools=3
 listStorageProviders=3
+listStorageTags=7
 createStoragePool=1
 updateStoragePool=1
 deleteStoragePool=1
@@ -604,6 +618,13 @@ listNiciraNvpDeviceNetworks=1
 # Not implemented (yet)
 #configureNiciraNvpDevice=1
 
+#### brocade vcs commands
+
+addBrocadeVcsDevice=1
+deleteBrocadeVcsDevice=1
+listBrocadeVcsDevices=1
+listBrocadeVcsDeviceNetworks=1
+
 #### bigswitch vns commands
 
 addBigSwitchVnsDevice=1
@@ -615,9 +636,18 @@ listBigSwitchVnsDevices=1
 addStratosphereSsp=1
 deleteStratoshereSsp=1
 
+#### nuage vsp commands
+
+addNuageVspDevice=1
+deleteNuageVspDevice=1
+listNuageVspDevices=1
+issueNuageVspResourceRequest=15
+
 #### host simulator commands
 
 configureSimulator=1
+querySimulatorMock=1
+cleanupSimulatorMock=1
 
 #### api discovery commands
 
@@ -627,6 +657,12 @@ listApis=15
 
 getApiLimit=15
 resetApiLimit=1
+
+#### API SolidFire Service Command
+getSolidFireAccountId=15
+getSolidFireVolumeSize=15
+getSolidFireVolumeAccessGroupId=15
+getSolidFireVolumeIscsiName=15
 
 #### Region commands
 addRegion=1
@@ -728,21 +764,6 @@ listLdapUsers=3
 ldapCreateAccount=3
 importLdapUsers=3
 
-### IAM commands
-createIAMPolicy=1
-deleteIAMPolicy=1
-listIAMPolicies=1
-addIAMPermissionToIAMPolicy=1
-removeIAMPermissionFromIAMPolicy=1
-createIAMGroup=1
-deleteIAMGroup=1
-listIAMGroups=1
-addAccountToIAMGroup=1
-removeAccountFromIAMGroup=1
-attachIAMPolicyToIAMGroup=1
-removeIAMPolicyFromIAMGroup=1
-attachIAMPolicyToAccount=1
-removeIAMPolicyFromAccount=1
 
 #### juniper-contrail commands
 createServiceInstance=1
@@ -751,3 +772,6 @@ createServiceInstance=1
 addOpenDaylightController=1
 deleteOpenDaylightController=1
 listOpenDaylightControllers=1
+
+### GloboDNS commands
+addGloboDnsHost=1

@@ -83,16 +83,15 @@ import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
@@ -103,6 +102,7 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -196,7 +196,7 @@ public class VirtualMachineManagerImplTest {
     @Mock
     HostVO _destHostMock;
     @Mock
-    Map<Volume, StoragePool> _volumeToPoolMock;
+    Map<Long, Long> _volumeToPoolMock;
     @Mock
     EntityManager _entityMgr;
     @Mock
@@ -310,7 +310,7 @@ public class VirtualMachineManagerImplTest {
         boolean useLocalStorage = false;
 
         ServiceOfferingVO serviceOffering =
-                new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
+                new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, ProvisioningType.THIN, useLocalStorage, false, null, false, null, false);
         return serviceOffering;
     }
 
@@ -355,11 +355,13 @@ public class VirtualMachineManagerImplTest {
         // Mock the disk offering and pool objects for a volume.
         when(_volumeMock.getDiskOfferingId()).thenReturn(5L);
         when(_volumeMock.getPoolId()).thenReturn(200L);
+        when(_volumeMock.getId()).thenReturn(5L);
         when(_diskOfferingDao.findById(anyLong())).thenReturn(_diskOfferingMock);
-        when(_storagePoolDao.findById(anyLong())).thenReturn(_srcStoragePoolMock);
+        when(_storagePoolDao.findById(200L)).thenReturn(_srcStoragePoolMock);
+        when(_storagePoolDao.findById(201L)).thenReturn(_destStoragePoolMock);
 
         // Mock the volume to pool mapping.
-        when(_volumeToPoolMock.get(_volumeMock)).thenReturn(_destStoragePoolMock);
+        when(_volumeToPoolMock.get(5L)).thenReturn(201L);
         when(_destStoragePoolMock.getId()).thenReturn(201L);
         when(_srcStoragePoolMock.getId()).thenReturn(200L);
         when(_destStoragePoolMock.isLocal()).thenReturn(false);
@@ -396,7 +398,7 @@ public class VirtualMachineManagerImplTest {
 
         CheckVirtualMachineAnswer checkVmAnswerMock = mock(CheckVirtualMachineAnswer.class);
         when(checkVmAnswerMock.getResult()).thenReturn(true);
-        when(checkVmAnswerMock.getState()).thenReturn(State.Running);
+        when(checkVmAnswerMock.getState()).thenReturn(PowerState.PowerOn);
         when(_agentMgr.send(anyLong(), isA(CheckVirtualMachineCommand.class))).thenReturn(checkVmAnswerMock);
 
         // Mock the state transitions of vm.
@@ -465,12 +467,12 @@ public class VirtualMachineManagerImplTest {
         VirtualMachineGuru guru = mock(VirtualMachineGuru.class);
         VirtualMachine vm = mock(VirtualMachine.class);
         VirtualMachineProfile profile = mock(VirtualMachineProfile.class);
-        StopAnswer answer = new StopAnswer(new StopCommand(vm, false), "ok", true);
+        StopAnswer answer = new StopAnswer(new StopCommand(vm, false, false), "ok", true);
         when(profile.getVirtualMachine()).thenReturn(vm);
         when(vm.getHostId()).thenReturn(1L);
         when(_agentMgr.send(anyLong(), (Command)any())).thenReturn(answer);
 
-        boolean actual = _vmMgr.sendStop(guru, profile, false);
+        boolean actual = _vmMgr.sendStop(guru, profile, false, false);
 
         Assert.assertTrue(actual);
     }
@@ -480,12 +482,12 @@ public class VirtualMachineManagerImplTest {
         VirtualMachineGuru guru = mock(VirtualMachineGuru.class);
         VirtualMachine vm = mock(VirtualMachine.class);
         VirtualMachineProfile profile = mock(VirtualMachineProfile.class);
-        StopAnswer answer = new StopAnswer(new StopCommand(vm, false), "fail", false);
+        StopAnswer answer = new StopAnswer(new StopCommand(vm, false, false), "fail", false);
         when(profile.getVirtualMachine()).thenReturn(vm);
         when(vm.getHostId()).thenReturn(1L);
         when(_agentMgr.send(anyLong(), (Command)any())).thenReturn(answer);
 
-        boolean actual = _vmMgr.sendStop(guru, profile, false);
+        boolean actual = _vmMgr.sendStop(guru, profile, false, false);
 
         Assert.assertFalse(actual);
     }
@@ -499,7 +501,7 @@ public class VirtualMachineManagerImplTest {
         when(vm.getHostId()).thenReturn(1L);
         when(_agentMgr.send(anyLong(), (Command)any())).thenReturn(null);
 
-        boolean actual = _vmMgr.sendStop(guru, profile, false);
+        boolean actual = _vmMgr.sendStop(guru, profile, false, false);
 
         Assert.assertFalse(actual);
     }

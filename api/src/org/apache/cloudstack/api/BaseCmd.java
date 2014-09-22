@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.HttpUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -84,8 +85,8 @@ import com.cloud.vm.snapshot.VMSnapshotService;
 
 public abstract class BaseCmd {
     private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
-    public static final String RESPONSE_TYPE_XML = "xml";
-    public static final String RESPONSE_TYPE_JSON = "json";
+    public static final String RESPONSE_TYPE_XML = HttpUtils.RESPONSE_TYPE_XML;
+    public static final String RESPONSE_TYPE_JSON = HttpUtils.RESPONSE_TYPE_JSON;
     public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     public static final DateFormat NEW_INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public static final String USER_ERROR_MESSAGE = "Internal error executing command, please contact your system administrator";
@@ -360,7 +361,53 @@ public abstract class BaseCmd {
      * display flag is used to control the display of the resource only to the end user. It doesnt affect Root Admin.
      * @return display flag
      */
-    public boolean isDisplayResourceEnabled(){
-        return true;
+    public boolean isDisplay(){
+        CallContext context = CallContext.current();
+        Map<Object, Object> contextMap = context.getContextParameters();
+        boolean isDisplay = true;
+
+        // Iterate over all the first class entities in context and check their display property.
+        for(Map.Entry<Object, Object> entry : contextMap.entrySet()){
+            try{
+                Object key = entry.getKey();
+                Class clz = Class.forName((String)key);
+                if(Displayable.class.isAssignableFrom(clz)){
+                    final Object objVO = getEntityVO(clz, entry.getValue());
+                    isDisplay = ((Displayable) objVO).isDisplay();
+                }
+
+                // If the flag is false break immediately
+                if(!isDisplay)
+                    break;
+            } catch (Exception e){
+                s_logger.trace("Caught exception while checking first class entities for display property, continuing on", e);
+            }
+        }
+
+        context.setEventDisplayEnabled(isDisplay);
+        return isDisplay;
+
     }
+
+    private Object getEntityVO(Class entityType, Object entityId){
+
+        // entityId can be internal db id or UUID so accordingly call findbyId or findByUUID
+
+        if (entityId instanceof Long){
+            // Its internal db id - use findById
+            return _entityMgr.findById(entityType, (Long)entityId);
+        } else if(entityId instanceof String){
+            try{
+                // In case its an async job the internal db id would be a string because of json deserialization
+                Long internalId = Long.valueOf((String) entityId);
+                return _entityMgr.findById(entityType, internalId);
+            } catch (NumberFormatException e){
+               // It is uuid - use findByUuid`
+               return _entityMgr.findByUuid(entityType, (String)entityId);
+            }
+        }
+
+        return null;
+    }
+
 }

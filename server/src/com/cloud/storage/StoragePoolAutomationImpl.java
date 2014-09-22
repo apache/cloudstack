@@ -23,15 +23,14 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -362,12 +361,17 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 // if the instance is of type user vm, call the user vm manager
                 if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
                     UserVmVO userVm = userVmDao.findById(vmInstance.getId());
-
-                    vmMgr.advanceStart(userVm.getUuid(), null, null);                        // update work queue
-                    work.setStartedAfterMaintenance(true);
-                    _storagePoolWorkDao.update(work.getId(), work);
+                    // check if the vm has a root volume. If not, remove the item from the queue, the vm should be
+                    // started only when it has at least one root volume attached to it
+                    // don't allow to start vm that doesn't have a root volume
+                    if (volumeDao.findByInstanceAndType(work.getId(), Volume.Type.ROOT).isEmpty()) {
+                        _storagePoolWorkDao.remove(work.getId());
+                    } else {
+                        vmMgr.advanceStart(userVm.getUuid(), null, null);
+                        work.setStartedAfterMaintenance(true);
+                        _storagePoolWorkDao.update(work.getId(), work);
+                    }
                 }
-                return true;
             } catch (Exception e) {
                 s_logger.debug("Failed start vm", e);
                 throw new CloudRuntimeException(e.toString());

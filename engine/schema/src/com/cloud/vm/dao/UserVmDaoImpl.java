@@ -79,28 +79,28 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     ResourceTagDao _tagsDao;
 
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT =
-        "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') "
-            + "GROUP BY pod_id HAVING count(id) > 0 ORDER BY count(id) DESC";
+            "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') "
+                    + "GROUP BY pod_id HAVING count(id) > 0 ORDER BY count(id) DESC";
 
     private static final String VM_DETAILS = "select vm_instance.id, "
-        + "account.id, account.account_name, account.type, domain.name, instance_group.id, instance_group.name,"
-        + "data_center.id, data_center.name, data_center.is_security_group_enabled, host.id, host.name, "
-        + "vm_template.id, vm_template.name, vm_template.display_text, iso.id, iso.name, "
-        + "vm_template.enable_password, service_offering.id, disk_offering.name, storage_pool.id, storage_pool.pool_type, "
-        + "service_offering.cpu, service_offering.speed, service_offering.ram_size, volumes.id, volumes.device_id, volumes.volume_type, security_group.id, security_group.name, "
-        + "security_group.description, nics.id, nics.ip4_address, nics.default_nic, nics.gateway, nics.network_id, nics.netmask, nics.mac_address, nics.broadcast_uri, " +
-        "nics.isolation_uri, "
-        + "networks.traffic_type, networks.guest_type, user_ip_address.id, user_ip_address.public_ip_address from vm_instance "
-        + "left join account on vm_instance.account_id=account.id  " + "left join domain on vm_instance.domain_id=domain.id "
-        + "left join instance_group_vm_map on vm_instance.id=instance_group_vm_map.instance_id "
-        + "left join instance_group on instance_group_vm_map.group_id=instance_group.id " + "left join data_center on vm_instance.data_center_id=data_center.id "
-        + "left join host on vm_instance.host_id=host.id " + "left join vm_template on vm_instance.vm_template_id=vm_template.id "
-        + "left join user_vm on vm_instance.id=user_vm.id " + "left join vm_template iso on iso.id=user_vm.iso_id "
-        + "left join service_offering on vm_instance.service_offering_id=service_offering.id "
-        + "left join disk_offering  on vm_instance.service_offering_id=disk_offering.id " + "left join volumes on vm_instance.id=volumes.instance_id "
-        + "left join storage_pool on volumes.pool_id=storage_pool.id " + "left join security_group_vm_map on vm_instance.id=security_group_vm_map.instance_id "
-        + "left join security_group on security_group_vm_map.security_group_id=security_group.id " + "left join nics on vm_instance.id=nics.instance_id "
-        + "left join networks on nics.network_id=networks.id " + "left join user_ip_address on user_ip_address.vm_id=vm_instance.id " + "where vm_instance.id in (";
+            + "account.id, account.account_name, account.type, domain.name, instance_group.id, instance_group.name,"
+            + "data_center.id, data_center.name, data_center.is_security_group_enabled, host.id, host.name, "
+            + "vm_template.id, vm_template.name, vm_template.display_text, iso.id, iso.name, "
+            + "vm_template.enable_password, service_offering.id, disk_offering.name, storage_pool.id, storage_pool.pool_type, "
+            + "service_offering.cpu, service_offering.speed, service_offering.ram_size, volumes.id, volumes.device_id, volumes.volume_type, security_group.id, security_group.name, "
+            + "security_group.description, nics.id, nics.ip4_address, nics.default_nic, nics.gateway, nics.network_id, nics.netmask, nics.mac_address, nics.broadcast_uri, " +
+            "nics.isolation_uri, "
+            + "networks.traffic_type, networks.guest_type, user_ip_address.id, user_ip_address.public_ip_address from vm_instance "
+            + "left join account on vm_instance.account_id=account.id  " + "left join domain on vm_instance.domain_id=domain.id "
+            + "left join instance_group_vm_map on vm_instance.id=instance_group_vm_map.instance_id "
+            + "left join instance_group on instance_group_vm_map.group_id=instance_group.id " + "left join data_center on vm_instance.data_center_id=data_center.id "
+            + "left join host on vm_instance.host_id=host.id " + "left join vm_template on vm_instance.vm_template_id=vm_template.id "
+            + "left join user_vm on vm_instance.id=user_vm.id " + "left join vm_template iso on iso.id=user_vm.iso_id "
+            + "left join service_offering on vm_instance.service_offering_id=service_offering.id "
+            + "left join disk_offering  on vm_instance.service_offering_id=disk_offering.id " + "left join volumes on vm_instance.id=volumes.instance_id "
+            + "left join storage_pool on volumes.pool_id=storage_pool.id " + "left join security_group_vm_map on vm_instance.id=security_group_vm_map.instance_id "
+            + "left join security_group on security_group_vm_map.security_group_id=security_group.id " + "left join nics on vm_instance.id=nics.instance_id "
+            + "left join networks on nics.network_id=networks.id " + "left join user_ip_address on user_ip_address.vm_id=vm_instance.id " + "where vm_instance.id in (";
 
     private static final int VM_DETAILS_BATCH_SIZE = 100;
 
@@ -186,7 +186,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         AccountDataCenterVirtualSearch.and("account", AccountDataCenterVirtualSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountDataCenterVirtualSearch.and("dc", AccountDataCenterVirtualSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         AccountDataCenterVirtualSearch.join("nicSearch", nicSearch, AccountDataCenterVirtualSearch.entity().getId(), nicSearch.entity().getInstanceId(),
-            JoinBuilder.JoinType.INNER);
+                JoinBuilder.JoinType.INNER);
         AccountDataCenterVirtualSearch.done();
 
         UserVmByIsoSearch = createSearchBuilder();
@@ -216,7 +216,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
 
     @Override
-    public void updateVM(long id, String displayName, boolean enable, Long osTypeId, String userData, boolean displayVm, boolean isDynamicallyScalable, String customId, String hostName) {
+    public void updateVM(long id, String displayName, boolean enable, Long osTypeId, String userData, boolean displayVm,
+            boolean isDynamicallyScalable, String customId, String hostName, String instanceName) {
         UserVmVO vo = createForUpdate();
         vo.setDisplayName(displayName);
         vo.setHaEnabled(enable);
@@ -229,6 +230,9 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         }
         if (customId != null) {
             vo.setUuid(customId);
+        }
+        if(instanceName != null){
+            vo.setInstanceName(instanceName);
         }
 
         update(id, vo);
@@ -297,6 +301,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         if (UserVmSearch == null) {
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+            nicSearch.and("removed", nicSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
             nicSearch.and().op("ip4Address", nicSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);
             nicSearch.or("ip6Address", nicSearch.entity().getIp6Address(), SearchCriteria.Op.NNULL);
             nicSearch.cp();
@@ -355,91 +360,139 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     @Override
     public List<Long> listPodIdsHavingVmsforAccount(long zoneId, long accountId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
+        String sql = LIST_PODS_HAVING_VMS_FOR_ACCOUNT;
 
-        try {
-            String sql = LIST_PODS_HAVING_VMS_FOR_ACCOUNT;
-            pstmt = txn.prepareAutoCloseStatement(sql);
+        try(PreparedStatement pstmt = txn.prepareStatement(sql)) {
             pstmt.setLong(1, zoneId);
             pstmt.setLong(2, accountId);
-
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                result.add(rs.getLong(1));
+            try(ResultSet rs = pstmt.executeQuery();)
+            {
+                while (rs.next()) {
+                    result.add(rs.getLong(1));
+                }
             }
+            catch (Exception e) {
+                s_logger.error("listPodIdsHavingVmsforAccount:Exception: " +  e.getMessage());
+                throw new CloudRuntimeException("listPodIdsHavingVmsforAccount:Exception: " + e.getMessage(), e);
+            }
+            txn.commit();
             return result;
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + LIST_PODS_HAVING_VMS_FOR_ACCOUNT, e);
-        } catch (Throwable e) {
-            throw new CloudRuntimeException("Caught: " + LIST_PODS_HAVING_VMS_FOR_ACCOUNT, e);
+        } catch (Exception e) {
+            s_logger.error("listPodIdsHavingVmsforAccount:Exception : " +  e.getMessage());
+            throw new CloudRuntimeException("listPodIdsHavingVmsforAccount:Exception: " + e.getMessage(), e);
         }
+        finally {
+            try{
+                if (txn != null)
+                {
+                    txn.close();
+                }
+            }
+            catch (Exception e)
+            {
+                s_logger.error("listVmDetails:Exception:" + e.getMessage());
+            }
+        }
+
     }
 
     @Override
     public Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> userVmDataHash) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-
         try {
             int curr_index = 0;
-
             List<UserVmData> userVmDataList = new ArrayList(userVmDataHash.values());
-
-            if (userVmDataList.size() > VM_DETAILS_BATCH_SIZE) {
-                pstmt = txn.prepareStatement(VM_DETAILS + getQueryBatchAppender(VM_DETAILS_BATCH_SIZE));
-                while ((curr_index + VM_DETAILS_BATCH_SIZE) <= userVmDataList.size()) {
-                    // set the vars value
-                    for (int k = 1, j = curr_index; j < curr_index + VM_DETAILS_BATCH_SIZE; j++, k++) {
-                        pstmt.setLong(k, userVmDataList.get(j).getId());
-                    }
-                    ResultSet rs = pstmt.executeQuery();
-                    while (rs.next()) {
-                        long vm_id = rs.getLong("vm_instance.id");
-                        //check if the entry is already there
-                        UserVmData uvm = userVmDataHash.get(vm_id);
-                        if (uvm == null) {
-                            uvm = new UserVmData();
-                            uvm.setId(vm_id);
+            if (userVmDataList.size() > VM_DETAILS_BATCH_SIZE)
+            {
+                try (PreparedStatement pstmt = txn.prepareStatement(VM_DETAILS + getQueryBatchAppender(VM_DETAILS_BATCH_SIZE));)
+                {
+                    while ((curr_index + VM_DETAILS_BATCH_SIZE) <= userVmDataList.size()) {
+                        // set the vars value
+                        for (int k = 1, j = curr_index; j < curr_index + VM_DETAILS_BATCH_SIZE; j++, k++) {
+                            pstmt.setLong(k, userVmDataList.get(j).getId());
                         }
-                        // initialize the data with this row
-                        setUserVmData(uvm, rs);
+                        try(ResultSet rs = pstmt.executeQuery();)
+                        {
+                            while (rs.next()) {
+                                long vm_id = rs.getLong("vm_instance.id");
+                                //check if the entry is already there
+                                UserVmData uvm = userVmDataHash.get(vm_id);
+                                if (uvm == null) {
+                                    uvm = new UserVmData();
+                                    uvm.setId(vm_id);
+                                }
+                                // initialize the data with this row
+                                setUserVmData(uvm, rs);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            s_logger.error("listVmDetails:Exception:" + e.getMessage());
+                            throw new CloudRuntimeException("listVmDetails: Exception:" + e.getMessage(),e);
+                        }
+                        curr_index += VM_DETAILS_BATCH_SIZE;
                     }
-                    rs.close();
-                    curr_index += VM_DETAILS_BATCH_SIZE;
+                }
+                catch (Exception e)
+                {
+                    s_logger.error("listVmDetails:Exception:" + e.getMessage());
+                    throw new CloudRuntimeException("listVmDetails: Exception:" + e.getMessage(),e);
                 }
             }
 
             if (curr_index < userVmDataList.size()) {
                 int batch_size = (userVmDataList.size() - curr_index);
-                pstmt = txn.prepareStatement(VM_DETAILS + getQueryBatchAppender(batch_size));
-                // set the vars value
-                for (int k = 1, j = curr_index; j < curr_index + batch_size; j++, k++) {
-                    pstmt.setLong(k, userVmDataList.get(j).getId());
-                }
-                ResultSet rs = pstmt.executeQuery();
-                while (rs.next()) {
-                    long vm_id = rs.getLong("vm_instance.id");
-                    //check if the entry is already there
-                    UserVmData uvm = userVmDataHash.get(vm_id);
-                    if (uvm == null) {
-                        uvm = new UserVmData();
-                        uvm.setId(vm_id);
+                try (PreparedStatement vm_details_pstmt = txn.prepareStatement(VM_DETAILS + getQueryBatchAppender(batch_size)))
+                {
+                    // set the vars value
+                    for (int k = 1, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                        vm_details_pstmt.setLong(k, userVmDataList.get(j).getId());
                     }
-                    // initialize the data with this row
-                    setUserVmData(uvm, rs);
+                    try(ResultSet rs = vm_details_pstmt.executeQuery();) {
+                        while (rs.next()) {
+                            long vm_id = rs.getLong("vm_instance.id");
+                            //check if the entry is already there
+                            UserVmData uvm = userVmDataHash.get(vm_id);
+                            if (uvm == null) {
+                                uvm = new UserVmData();
+                                uvm.setId(vm_id);
+                            }
+                            // initialize the data with this row
+                            setUserVmData(uvm, rs);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        s_logger.error("listVmDetails: Exception:" + e.getMessage());
+                        throw new CloudRuntimeException("listVmDetails: Exception:" + e.getMessage(),e);
+                    }
                 }
-                rs.close();
+                catch (Exception e)
+                {
+                    s_logger.error("listVmDetails:Exception:" + e.getMessage());
+                    throw new CloudRuntimeException("listVmDetails: Exception:" + e.getMessage(),e);
+                }
             }
-
-            if (pstmt != null)
-                pstmt.close();
+            txn.commit();
             return userVmDataHash;
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + VM_DETAILS, e);
-        } catch (Throwable e) {
-            throw new CloudRuntimeException("Caught: " + VM_DETAILS, e);
+        } catch (Exception e) {
+            s_logger.error("listVmDetails:Exception:" + e.getMessage());
+            throw new CloudRuntimeException("listVmDetails:Exception : ", e);
         }
+        finally {
+            try{
+                if (txn != null)
+                {
+                    txn.close();
+                }
+            }
+            catch (Exception e)
+            {
+                s_logger.error("listVmDetails:Exception:" + e.getMessage());
+            }
+        }
+
     }
 
     public static UserVmData setUserVmData(UserVmData userVmData, ResultSet rs) throws SQLException {

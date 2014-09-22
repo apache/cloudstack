@@ -28,8 +28,8 @@
   </parent>
   <dependencies>
     <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>xapi</artifactId>
+      <groupId>net.java.dev.vcc.thirdparty</groupId>
+      <artifactId>xen-api</artifactId>
       <version>${cs.xapi.version}</version>
     </dependency>    
   </dependencies>  

@@ -97,7 +97,7 @@ public interface VpcService {
      * @param vpc
      * @return
      */
-    public List<? extends Vpc> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, String cidr, Long vpcOffId, String state,
+    public Pair<List<? extends Vpc>, Integer> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, String cidr, Long vpcOffId, String state,
         String accountName, Long domainId, String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired,
         Map<String, String> tags, Long projectId, Boolean display);
 
@@ -206,7 +206,7 @@ public interface VpcService {
      * @return
      * @throws ResourceUnavailableException
      */
-    public boolean applyStaticRoutes(long vpcId) throws ResourceUnavailableException;
+    public boolean applyStaticRoutesForVpc(long vpcId) throws ResourceUnavailableException;
 
     /**
      * Deletes static route from the backend and the database
@@ -247,5 +247,11 @@ public interface VpcService {
      */
     IpAddress associateIPToVpc(long ipId, long vpcId) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException,
         ConcurrentOperationException;
+
+    /**
+     * @param routeId
+     * @return
+     */
+    public boolean applyStaticRoute(long routeId) throws ResourceUnavailableException;
 
 }

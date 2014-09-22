@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,13 +20,13 @@
 #Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.utils import (random_gen,
+from marvin.lib.utils import (random_gen,
                                           cleanup_resources)
-from marvin.integration.lib.base import (SecurityGroup,
+from marvin.lib.base import (SecurityGroup,
                                          VirtualMachine,
                                          Account,
                                          ServiceOffering)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            list_virtual_machines)
@@ -149,15 +149,13 @@ class TestDefaultSecurityGroupEgress(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(
-                               TestDefaultSecurityGroupEgress,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDefaultSecurityGroupEgress, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -307,15 +305,13 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(
-                               TestAuthorizeIngressRule,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAuthorizeIngressRule, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -465,15 +461,13 @@ class TestDefaultGroupEgress(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(
-                               TestDefaultGroupEgress,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDefaultGroupEgress, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -663,15 +657,13 @@ class TestDefaultGroupEgressAfterDeploy(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(
-                               TestDefaultGroupEgressAfterDeploy,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDefaultGroupEgressAfterDeploy, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -842,15 +834,13 @@ class TestRevokeEgressRule(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(
-                               TestRevokeEgressRule,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRevokeEgressRule, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -1125,15 +1115,13 @@ class TestInvalidAccountAuthroize(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(
-                               TestInvalidAccountAuthroize,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestInvalidAccountAuthroize, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -1246,15 +1234,13 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(
-                               TestMultipleAccountsEgressRuleNeg,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestMultipleAccountsEgressRuleNeg, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -1495,15 +1481,13 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(
-                               TestMultipleAccountsEgressRule,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestMultipleAccountsEgressRule, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -1786,15 +1770,13 @@ class TestStartStopVMWithEgressRule(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(
-                               TestStartStopVMWithEgressRule,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestStartStopVMWithEgressRule, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -1919,27 +1901,11 @@ class TestStartStopVMWithEgressRule(cloudstackTestCase):
                           "Check egress rule created properly"
                     )
 
-        # Stop virtual machine
-        self.debug("Stopping virtual machine: %s" % self.virtual_machine.id)
-        self.virtual_machine.stop(self.apiclient)
-
-        vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  id=self.virtual_machine.id,
-                                  listall=True
-                                  )
-        self.assertEqual(
-                         isinstance(vms, list),
-                         True,
-                         "List VM should return a valid list"
-                         )
-        vm = vms[0]
-        self.assertEqual(
-                         vm.state,
-                         "Stopped",
-                         "VM state should be stopped"
-                         )
-        self.debug("VM: %s state: %s" % (vm.id, vm.state))
+        try:
+            # Stop virtual machine
+            self.virtual_machine.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop instance: %s" % e)
 
         # Start virtual machine
         self.debug("Starting virtual machine: %s" % self.virtual_machine.id)
@@ -1993,15 +1959,13 @@ class TestInvalidParametersForEgress(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(
-                               TestInvalidParametersForEgress,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestInvalidParametersForEgress, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(

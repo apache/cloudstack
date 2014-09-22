@@ -25,6 +25,7 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -63,6 +64,8 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     protected GenericSearchBuilder<IPAddressVO, Long> CountFreePublicIps;
     @Inject
     ResourceTagDao _tagsDao;
+    @Inject
+    UserIpAddressDetailsDao _detailsDao;
 
     // make it public for JUnit test
     public IPAddressDaoImpl() {
@@ -166,6 +169,8 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         address.setSystem(false);
         address.setVmIp(null);
         address.setDisplay(true);
+        //remove resource details for the ip
+        _detailsDao.removeDetails(ipAddressId);
         update(ipAddressId, address);
     }
 
@@ -256,6 +261,17 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         sc.setParameters("associatedWithVmId", vmId);
 
         return findOneBy(sc);
+    }
+
+
+    // for vm secondary ips case mapping is  IP1--> vmIp1, IP2-->vmIp2, etc
+    // Used when vm is mapped to muliple to public ips
+    @Override
+    public List<IPAddressVO> findAllByAssociatedVmId(long vmId) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("associatedWithVmId", vmId);
+
+        return listBy(sc);
     }
 
     @Override

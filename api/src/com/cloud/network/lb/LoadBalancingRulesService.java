@@ -98,7 +98,7 @@ public interface LoadBalancingRulesService {
 
     boolean assignSSLCertToLoadBalancerRule(Long lbRuleId, String certName, String publicCert, String privateKey);
 
-    boolean removeFromLoadBalancer(long lbRuleId, List<Long> vmIds);
+    boolean removeFromLoadBalancer(long lbRuleId, List<Long> vmIds,   Map<Long, List<String>> vmIdIpMap);
 
     boolean applyLoadBalancerConfig(long lbRuleId) throws ResourceUnavailableException;
 
@@ -153,4 +153,12 @@ public interface LoadBalancingRulesService {
     Map<Ip, UserVm> getLbInstances(long lbId);
 
     boolean isLbRuleMappedToVmGuestIp(String vmSecondaryIp);
+
+    List<String> listLbVmIpAddress(long id, long vmId);
+
+    StickinessPolicy updateLBStickinessPolicy(long id, String customId, Boolean forDisplay);
+
+    HealthCheckPolicy updateLBHealthCheckPolicy(long id, String customId, Boolean forDisplay);
+
+    LoadBalancer findLbByStickinessId(long stickinessPolicyId);
 }

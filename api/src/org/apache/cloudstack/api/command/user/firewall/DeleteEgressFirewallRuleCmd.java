@@ -74,7 +74,7 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_FIREWALL_CLOSE;
+        return EventTypes.EVENT_FIREWALL_EGRESS_CLOSE;
     }
 
     @Override
@@ -98,7 +98,7 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException {
         CallContext.current().setEventDetails("Rule Id: " + id);
-        boolean result = _firewallService.revokeFirewallRule(id, true);
+        boolean result = _firewallService.revokeEgressFirewallRule(id, true);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

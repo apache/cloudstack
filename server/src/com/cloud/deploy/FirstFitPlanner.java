@@ -56,7 +56,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
@@ -191,7 +190,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
                 }
                 podsWithCapacity.removeAll(avoid.getPodsToAvoid());
             }
-            if (!isRootAdmin(plan.getReservationContext())) {
+            if (!isRootAdmin(vmProfile)) {
                 List<Long> disabledPods = listDisabledPods(plan.getDataCenterId());
                 if (!disabledPods.isEmpty()) {
                     if (s_logger.isDebugEnabled()) {
@@ -322,7 +321,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
                 prioritizedClusterIds.removeAll(avoid.getClustersToAvoid());
             }
 
-            if (!isRootAdmin(plan.getReservationContext())) {
+            if (!isRootAdmin(vmProfile)) {
                 List<Long> disabledClusters = new ArrayList<Long>();
                 if (isZone) {
                     disabledClusters = listDisabledClusters(plan.getDataCenterId(), null);
@@ -465,11 +464,11 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
 
     }
 
-    private boolean isRootAdmin(ReservationContext reservationContext) {
-        if(reservationContext != null){
-            if(reservationContext.getAccount() != null){
-                return _accountMgr.isRootAdmin(reservationContext.getAccount().getId());
-            }else{
+    private boolean isRootAdmin(VirtualMachineProfile vmProfile) {
+        if (vmProfile != null) {
+            if (vmProfile.getOwner() != null) {
+                return _accountMgr.isRootAdmin(vmProfile.getOwner().getId());
+            } else {
                 return false;
             }
         }

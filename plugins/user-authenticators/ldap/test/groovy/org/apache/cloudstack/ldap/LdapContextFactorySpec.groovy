@@ -53,6 +53,8 @@ class LdapContextFactorySpec extends spock.lang.Specification {
 		ldapConfiguration.getSSLStatus() >> true
 		ldapConfiguration.getTrustStore() >> "/tmp/ldap.ts"
 		ldapConfiguration.getTrustStorePassword() >> "password"
+        ldapConfiguration.getReadTimeout() >> 1000
+        ldapConfiguration.getLdapPageSize() >> 1
 
         username = "rmurphy"
         principal = "cn=" + username + "," + ldapConfiguration.getBaseDn()
@@ -65,15 +67,6 @@ class LdapContextFactorySpec extends spock.lang.Specification {
 		when: "A context attempts to bind and no Ldap server is avaiable"
 		ldapContextFactory.createInitialDirContext(null, null, true)
 		then: "An expection is thrown"
-		thrown NamingException
-    }
-
-    def "Test successful failed connection"() {
-		given: "We have a LdapContextFactory"
-		def ldapContextFactory = Spy(LdapContextFactory, constructorArgs: [ldapConfiguration])
-		when: "Test connection is executed"
-		ldapContextFactory.testConnection(ldapConfiguration.getProviderUrl())
-		then: "An exception is thrown"
 		thrown NamingException
     }
 

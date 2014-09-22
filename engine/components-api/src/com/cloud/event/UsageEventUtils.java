@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
@@ -46,6 +47,7 @@ public class UsageEventUtils {
     private static DataCenterDao s_dcDao;
     private static final Logger s_logger = Logger.getLogger(UsageEventUtils.class);
     protected static EventBus s_eventBus = null;
+    protected static ConfigurationDao s_configDao;
 
     @Inject
     UsageEventDao usageEventDao;
@@ -53,6 +55,8 @@ public class UsageEventUtils {
     AccountDao accountDao;
     @Inject
     DataCenterDao dcDao;
+    @Inject
+    ConfigurationDao configDao;
 
     public UsageEventUtils() {
     }
@@ -62,6 +66,7 @@ public class UsageEventUtils {
         s_usageEventDao = usageEventDao;
         s_accountDao = accountDao;
         s_dcDao = dcDao;
+        s_configDao = configDao;
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
@@ -161,7 +166,11 @@ public class UsageEventUtils {
     }
 
     private static void publishUsageEvent(String usageEventType, Long accountId, Long zoneId, String resourceType, String resourceUUID) {
-
+        String configKey = "publish.usage.events";
+        String value = s_configDao.getValue(configKey);
+        boolean configValue = Boolean.parseBoolean(value);
+        if( !configValue)
+            return;
         try {
             s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {

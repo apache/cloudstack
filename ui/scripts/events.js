@@ -43,7 +43,7 @@
                             label: 'label.level'
                         },
                         type: {
-                            label: 'Type',
+                            label: 'label.type',
                             truncate: true
                         },
                         domain: {
@@ -67,7 +67,7 @@
                             isMultiSelectAction: true,
                             messages: {
                                 confirm: function(args) {
-                                    return 'Please confirm you would like to remove the selected events';
+                                    return 'message.confirm.remove.selected.events';
                                 },
                                 notification: function(args) {
                                     return 'label.delete.events';
@@ -224,7 +224,7 @@
                             isMultiSelectAction: true,
                             messages: {
                                 confirm: function(args) {
-                                    return 'Please confirm you would like to archive the selected events';
+                                    return 'message.confirm.archive.selected.events';
                                 },
                                 notification: function(args) {
                                     return 'label.archive.events';
@@ -265,20 +265,20 @@
                                         description: ''
                                     }, {
                                         id: 'INFO',
-                                        description: 'INFO'
+                                        description: 'label.info.upper'
                                     }, {
                                         id: 'WARN',
-                                        description: 'WARN'
+                                        description: 'label.warn.upper'
                                     }, {
                                         id: 'ERROR',
-                                        description: 'ERROR'
+                                        description: 'label.error.upper'
                                     }]
                                 });
                             }
                         },
 
                         domainid: {
-                            label: 'Domain',
+                            label: 'label.domain',
                             select: function(args) {
                                 if (isAdmin() || isDomainAdmin()) {
                                     $.ajax({
@@ -321,7 +321,7 @@
                         },
 
                         account: {
-                            label: 'Account',
+                            label: 'label.account',
                             isHidden: function(args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
@@ -352,13 +352,13 @@
 
                             // Remove single event
                             remove: {
-                                label: 'Delete',
+                                label: 'label.delete',
                                 messages: {
                                     notification: function(args) {
-                                        return 'Event Deleted';
+                                        return 'label.event.deleted';
                                     },
                                     confirm: function() {
-                                        return 'Are you sure you want to remove this event?';
+                                        return 'message.confirm.remove.event';
                                     }
                                 },
                                 action: function(args) {
@@ -376,13 +376,13 @@
 
                             // Archive single event
                             archive: {
-                                label: 'Archive',
+                                label: 'label.archive',
                                 messages: {
                                     notification: function(args) {
-                                        return 'Event Archived';
+                                        return 'label.event.archived';
                                     },
                                     confirm: function() {
-                                        return 'Please confirm that you want to archive this event.';
+                                        return 'message.confirm.archive.event';
                                     }
                                 },
                                 action: function(args) {
@@ -460,7 +460,7 @@
                             label: 'label.description'
                         },
                         type: {
-                            label: 'Type'
+                            label: 'label.type'
                         },
                         sent: {
                             label: 'label.date',
@@ -477,7 +477,7 @@
                             isMultiSelectAction: true,
                             messages: {
                                 confirm: function(args) {
-                                    return 'Please confirm you would like to remove the selected alerts';
+                                    return 'message.confirm.remove.selected.alerts';
                                 },
                                 notification: function(args) {
                                     return 'label.delete.alerts';
@@ -576,7 +576,7 @@
                             isMultiSelectAction: true,
                             messages: {
                                 confirm: function(args) {
-                                    return 'Please confirm you would like to archive the selected alerts';
+                                    return 'message.confirm.archive.selected.alerts';
                                 },
                                 notification: function(args) {
                                     return 'label.archive.alerts';
@@ -682,18 +682,18 @@
                         });
                     },
                     detailView: {
-                        name: 'Alert details',
+                        name: 'label.alert.details',
                         actions: {
 
                             // Remove single Alert
                             remove: {
-                                label: 'Delete',
+                                label: 'label.delete',
                                 messages: {
                                     notification: function(args) {
-                                        return 'Alert Deleted';
+                                        return 'label.alert.deleted';
                                     },
                                     confirm: function() {
-                                        return 'Are you sure you want to delete this alert ?';
+                                        return 'message.confirm.delete.alert';
                                     }
                                 },
                                 action: function(args) {
@@ -710,13 +710,13 @@
                             },
 
                             archive: {
-                                label: 'Archive',
+                                label: 'label.archive',
                                 messages: {
                                     notification: function(args) {
-                                        return 'Alert Archived';
+                                        return 'label.alert.archived';
                                     },
                                     confirm: function() {
-                                        return 'Please confirm that you want to archive this alert.';
+                                        return 'message.confirm.archive.alert';
                                     }
                                 },
                                 action: function(args) {
@@ -738,7 +738,7 @@
                                 title: 'label.details',
                                 fields: [{
                                     id: {
-                                        label: 'ID'
+                                        label: 'label.id'
                                     },
                                     description: {
                                         label: 'label.description'

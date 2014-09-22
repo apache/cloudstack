@@ -22,12 +22,14 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Arrays;
+
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
@@ -65,8 +67,7 @@ public class ApiXmlDocReader {
         }
 
         try {
-            try {
-                ObjectInputStream inOld = xs.createObjectInputStream(new FileReader(oldFile));
+            try (ObjectInputStream inOld = xs.createObjectInputStream(new FileReader(oldFile));){
                 while (true) {
                     Command c1 = (Command)inOld.readObject();
                     oldCommands.put(c1.getName(), c1);
@@ -75,8 +76,7 @@ public class ApiXmlDocReader {
                 // EOF exception shows that there is no more objects in ObjectInputStream, so do nothing here
             }
 
-            try {
-                ObjectInputStream inNew = xs.createObjectInputStream(new FileReader(newFile));
+            try (ObjectInputStream inNew = xs.createObjectInputStream(new FileReader(newFile));){
                 while (true) {
                     Command c = (Command)inNew.readObject();
                     commands.put(c.getName(), c);
@@ -89,28 +89,26 @@ public class ApiXmlDocReader {
         }
 
         // Check if any commands got added in new version
-        for (String key : commands.keySet()) {
-            if (!oldCommands.containsKey(key)) {
-                addedCommands.add(commands.get(key));
+        for (Map.Entry<String,Command>entry : commands.entrySet()) {
+            if (!oldCommands.containsKey(entry.getKey())) {
+                addedCommands.add(entry.getValue());
             } else {
-                stableCommands.put(commands.get(key).getName(), commands.get(key));
+                stableCommands.put(entry.getValue().getName(), entry.getValue());
             }
         }
 
         // Check if any commands were removed in new version
-        for (String key : oldCommands.keySet()) {
-            if (!commands.containsKey(key)) {
-                removedCommands.add(oldCommands.get(key));
-                if (stableCommands.get(key) != null) {
-                    stableCommands.remove(key);
+        for (Map.Entry<String,Command>entry : oldCommands.entrySet()) {
+            if (!commands.containsKey(entry.getKey())) {
+                removedCommands.add(entry.getValue());
+                if (stableCommands.get(entry.getKey()) != null) {
+                    stableCommands.remove(entry.getKey());
                 }
             }
         }
 
-        try {
-            FileWriter fstream = new FileWriter(dirName + "/diff.txt");
-            BufferedWriter out = new BufferedWriter(fstream);
-
+        try (FileWriter fstream = new FileWriter(dirName + "/diff.txt");
+             BufferedWriter out = new BufferedWriter(fstream);){
             // Print added commands
             out.write("Added commands:\n");
             for (Command c : addedCommands) {
@@ -135,13 +133,13 @@ public class ApiXmlDocReader {
 
             out.write("\nChanges in command type (sync versus async)\n");
             // Verify if the command was sync and became async and vice versa
-            for (String key : stableCommands.keySet()) {
-                if (commands.get(key).isAsync() != oldCommands.get(key).isAsync()) {
+            for (Map.Entry<String,Command>entry : stableCommands.entrySet()) {
+                if (commands.get(entry.getKey()).isAsync() != oldCommands.get(entry.getKey()).isAsync()) {
                     String type = "Sync";
-                    if (commands.get(key).isAsync()) {
+                    if (commands.get(entry.getKey()).isAsync()) {
                         type = "Async";
                     }
-                    out.write("\n\t" + stableCommands.get(key).getName() + " became " + type);
+                    out.write("\n\t" + entry.getValue().getName() + " became " + type);
                 }
             }
 
@@ -181,8 +179,11 @@ public class ApiXmlDocReader {
                 // Compare stable request arguments of old and new version
                 for (Iterator<String> i = stableReqArgs.keySet().iterator(); i.hasNext();) {
                     String argName = i.next();
-                    if (oldCommand.getReqArgByName(argName).isRequired() == newCommand.getReqArgByName(argName).isRequired()) {
-                        i.remove();
+                    if ((oldCommand.getReqArgByName(argName) != null) && (newCommand.getReqArgByName(argName) != null))
+                    {
+                        if (oldCommand.getReqArgByName(argName).isRequired().equals(newCommand.getReqArgByName(argName).isRequired())) {
+                            i.remove();
+                        }
                     }
                 }
 
@@ -245,9 +246,9 @@ public class ApiXmlDocReader {
                             for (Argument stableArg : stableReqArgs.values()) {
                                 String newRequired = "optional";
                                 String oldRequired = "optional";
-                                if (oldCommand.getReqArgByName(stableArg.getName()).isRequired() == true)
+                                if ((oldCommand.getReqArgByName(stableArg.getName()) != null) && (oldCommand.getReqArgByName(stableArg.getName()).isRequired() == true))
                                     oldRequired = "required";
-                                if (newCommand.getReqArgByName(stableArg.getName()).isRequired() == true)
+                                if ((newCommand.getReqArgByName(stableArg.getName()) != null) && (newCommand.getReqArgByName(stableArg.getName()).isRequired() == true))
                                     newRequired = "required";
                                 changedParameters.append(stableArg.getName() + " (old version - " + oldRequired + ", new version - " + newRequired + "), ");
                             }
@@ -285,9 +286,6 @@ public class ApiXmlDocReader {
                     }
                 }
             }
-
-            out.close();
-
         } catch (IOException e) {
             e.printStackTrace();
         }

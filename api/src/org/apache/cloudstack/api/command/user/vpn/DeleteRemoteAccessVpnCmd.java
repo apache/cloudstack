@@ -20,6 +20,8 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
@@ -91,7 +93,9 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        _ravService.destroyRemoteAccessVpnForIp(publicIpId, CallContext.current().getCallingAccount());
+        if (! _ravService.destroyRemoteAccessVpnForIp(publicIpId, CallContext.current().getCallingAccount())) {
+                       throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete remote access vpn");
+        }
     }
 
     @Override

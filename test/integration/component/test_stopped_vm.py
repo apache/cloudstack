@@ -18,15 +18,27 @@
 """ P1 for stopped Virtual Maschine life cycle
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-#Import System modules
-import time
+from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Account,
+                             VirtualMachine,
+                             ServiceOffering,
+                             Volume,
+                             Router,
+                             DiskOffering,
+                             Host,
+                             Iso,
+                             Cluster,
+                             StoragePool,
+                             Template)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               get_builtin_template_info,
+                               update_resource_limit)
+from marvin.codes import PASS
 
 
 class Services:
@@ -108,14 +120,13 @@ class TestDeployVM(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-                               TestDeployVM,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeployVM, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.template = get_template(
                             cls.api_client,
@@ -170,7 +181,7 @@ class TestDeployVM(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
-    @attr(tags=["advanced", "eip", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns"], required_hardware="false")
     def test_01_deploy_vm_no_startvm(self):
         """Test Deploy Virtual Machine with no startVM parameter
         """
@@ -193,34 +204,11 @@ class TestDeployVM(cloudstackTestCase):
                                     mode=self.zone.networktype
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-
-                            vm_response.state,
-                            "Running",
-                            "VM should be in Running state after deployment"
-                        )
+        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.RUNNING)
+        self.assertEqual(response[0], PASS, response[1])
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_02_deploy_vm_startvm_true(self):
         """Test Deploy Virtual Machine with startVM=true parameter
         """
@@ -244,34 +232,11 @@ class TestDeployVM(cloudstackTestCase):
                                     mode=self.zone.networktype
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-
-                            vm_response.state,
-                            "Running",
-                            "VM should be in Running state after deployment"
-                        )
+        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.RUNNING)
+        self.assertEqual(response[0], PASS, response[1])
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_03_deploy_vm_startvm_false(self):
         """Test Deploy Virtual Machine with startVM=false parameter
         """
@@ -296,30 +261,8 @@ class TestDeployVM(cloudstackTestCase):
                                     diskofferingid=self.disk_offering.id,
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-            vm_response.state,
-            "Stopped",
-            "VM should be in Stopped state after deployment with startvm=false"
-        )
+        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.STOPPED)
+        self.assertEqual(response[0], PASS, response[1])
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
@@ -332,38 +275,10 @@ class TestDeployVM(cloudstackTestCase):
                          "List routers should return empty response"
                          )
         self.debug("Destroying instance: %s" % self.virtual_machine.name)
-        self.virtual_machine.delete(self.apiclient)
-        self.debug("Instance is destroyed!")
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-        self.debug("Instance destroyed..waiting till expunge interval")
-
-        interval = list_configurations(
-                                    self.apiclient,
-                                    name='expunge.interval'
-                                    )
-        delay = list_configurations(
-                                    self.apiclient,
-                                    name='expunge.delay'
-                                    )
-        # Sleep to ensure that all resources are deleted
-        time.sleep((int(interval[0].value) + int(delay[0].value)))
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-
-        self.assertEqual(
-                            list_vm_response,
-                            None,
-                            "Check list response returns a valid list"
-                        )
+        self.virtual_machine.delete(self.apiclient, expunge=True)
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_04_deploy_startvm_false_attach_volume(self):
         """Test Deploy Virtual Machine with startVM=false and attach volume
         """
@@ -386,30 +301,8 @@ class TestDeployVM(cloudstackTestCase):
                                     diskofferingid=self.disk_offering.id,
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-            vm_response.state,
-            "Stopped",
-            "VM should be in Stopped state after deployment with startvm=false"
-        )
+        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.STOPPED)
+        self.assertEqual(response[0], PASS, response[1])
         self.debug("Creating a volume in account: %s" %
                                                     self.account.name)
         volume = Volume.create(
@@ -426,10 +319,10 @@ class TestDeployVM(cloudstackTestCase):
         try:
             self.virtual_machine.attach_volume(self.apiclient, volume)
         except Exception as e:
-            self.fail("Attach volume failed!")
+            self.fail("Attach volume failed with Exception: %s" % e)
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_05_deploy_startvm_false_change_so(self):
         """Test Deploy Virtual Machine with startVM=false and change service offering
         """
@@ -451,30 +344,8 @@ class TestDeployVM(cloudstackTestCase):
                                     startvm=False,
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-            vm_response.state,
-            "Stopped",
-            "VM should be in Stopped state after deployment with startvm=false"
-        )
+        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.STOPPED)
+        self.assertEqual(response[0], PASS, response[1])
         medium_service_off = ServiceOffering.create(
                                 self.apiclient,
                                 self.services["service_offering"]
@@ -502,7 +373,7 @@ class TestDeployVM(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_06_deploy_startvm_attach_detach(self):
         """Test Deploy Virtual Machine with startVM=false and
             attach detach volumes
@@ -527,30 +398,8 @@ class TestDeployVM(cloudstackTestCase):
                                     diskofferingid=self.disk_offering.id,
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-            vm_response.state,
-            "Stopped",
-            "VM should be in Stopped state after deployment with startvm=false"
-        )
+        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.STOPPED)
+        self.assertEqual(response[0], PASS, response[1])
         self.debug("Creating a volume in account: %s" %
                                                     self.account.name)
         volume = Volume.create(
@@ -567,7 +416,7 @@ class TestDeployVM(cloudstackTestCase):
         try:
             self.virtual_machine.attach_volume(self.apiclient, volume)
         except Exception as e:
-            self.fail("Attach volume failed!")
+            self.fail("Attach volume failed with Exception: %s" % e)
 
         self.debug("Detaching the disk: %s" % volume.name)
         self.virtual_machine.detach_volume(self.apiclient, volume)
@@ -587,7 +436,7 @@ class TestDeployVM(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_07_deploy_startvm_attach_iso(self):
         """Test Deploy Virtual Machine with startVM=false and attach ISO
         """
@@ -610,30 +459,8 @@ class TestDeployVM(cloudstackTestCase):
                                     diskofferingid=self.disk_offering.id,
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-            vm_response.state,
-            "Stopped",
-            "VM should be in Stopped state after deployment with startvm=false"
-        )
+        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.STOPPED)
+        self.assertEqual(response[0], PASS, response[1])
         self.debug("Registering a ISO in account: %s" %
                                                     self.account.name)
         iso = Iso.create(
@@ -678,7 +505,7 @@ class TestDeployVM(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_08_deploy_attached_volume(self):
         """Test Deploy Virtual Machine with startVM=false and attach volume already attached to different machine
         """
@@ -701,30 +528,8 @@ class TestDeployVM(cloudstackTestCase):
                                     startvm=False,
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine_1.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine_1.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-            vm_response.state,
-            "Stopped",
-            "VM should be in Stopped state after deployment with startvm=false"
-        )
+        response = self.virtual_machine_1.getState(self.apiclient, VirtualMachine.STOPPED)
+        self.assertEqual(response[0], PASS, response[1])
 
         self.debug("Deploying instance in the account: %s" %
                                                 self.account.name)
@@ -739,7 +544,7 @@ class TestDeployVM(cloudstackTestCase):
 
         self.debug("Deployed instance in account: %s" %
                                                     self.account.name)
-        list_vm_response = list_virtual_machines(
+        list_vm_response = VirtualMachine.list(
                                                  self.apiclient,
                                                  id=self.virtual_machine_2.id
                                                  )
@@ -808,7 +613,7 @@ class TestDeployVM(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_09_stop_vm_migrate_vol(self):
         """Test Stopped Virtual Machine's ROOT volume migration
         """
@@ -867,51 +672,12 @@ class TestDeployVM(cloudstackTestCase):
                                     mode=self.zone.networktype
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-        self.assertEqual(
-                            vm_response.state,
-                            "Running",
-                            "VM should be in Running state after deployment"
-                        )
-        self.debug("Stopping instance: %s" % self.virtual_machine.name)
-        self.virtual_machine.stop(self.apiclient)
-        self.debug("Instance is stopped!")
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-        self.assertEqual(
-                            vm_response.state,
-                            "Stopped",
-                            "VM should be in Stopped state after stoping vm"
-                        )
+        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.RUNNING)
+        self.assertEqual(response[0], PASS, response[1])
+        try:
+            self.virtual_machine.stop(self.apiclient)
+        except Exception as e:
+            self.fail("failed to stop instance: %s" % e)
         volumes = Volume.list(
                               self.apiclient,
                               virtualmachineid=self.virtual_machine.id,
@@ -962,14 +728,13 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-                               TestDeployHaEnabledVM,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeployHaEnabledVM, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.template = get_template(
                             cls.api_client,
@@ -1005,6 +770,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
 
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.services = Services().services
         self.services["virtual_machine"]["zoneid"] = self.zone.id
         self.services["virtual_machine"]["template"] = self.template.id
@@ -1025,7 +791,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
-    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_01_deploy_ha_vm_startvm_false(self):
         """Test Deploy HA enabled Virtual Machine with startvm=false
         """
@@ -1047,34 +813,11 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                                     startvm=False
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-
-                            vm_response.state,
-                            "Stopped",
-                            "VM should be in Stopped state after deployment"
-                        )
+        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.STOPPED)
+        self.assertEqual(response[0], PASS, response[1])
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_02_deploy_ha_vm_from_iso(self):
         """Test Deploy HA enabled Virtual Machine from ISO
         """
@@ -1109,37 +852,15 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                                     templateid=self.iso.id,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id,
-                                    startvm=True
+                                    startvm=True,
+                                    hypervisor=self.hypervisor
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-
-                            vm_response.state,
-                            "Running",
-                            "VM should be in Running state after deployment"
-                        )
+        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.RUNNING)
+        self.assertEqual(response[0], PASS, response[1])
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_03_deploy_ha_vm_iso_startvm_false(self):
         """Test Deploy HA enabled Virtual Machine from ISO with startvm=false
         """
@@ -1161,31 +882,8 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                                     startvm=False
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-
-                            vm_response.state,
-                            "Stopped",
-                            "VM should be in Running state after deployment"
-                        )
+        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.STOPPED)
+        self.assertEqual(response[0], PASS, response[1])
         return
 
 
@@ -1194,14 +892,13 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-                               TestRouterStateAfterDeploy,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRouterStateAfterDeploy, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.template = get_template(
                             cls.api_client,
@@ -1256,7 +953,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
-    @attr(tags=["advanced", "eip", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns"], required_hardware="false")
     def test_01_deploy_vm_no_startvm(self):
         """Test Deploy Virtual Machine with no startVM parameter
         """
@@ -1279,31 +976,8 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
                                     startvm=False
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine_1.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine_1.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-
-                            vm_response.state,
-                            "Stopped",
-                            "VM should be in stopped state after deployment"
-                        )
+        response = self.virtual_machine_1.getState(self.apiclient, VirtualMachine.STOPPED)
+        self.assertEqual(response[0], PASS, response[1])
         self.debug("Checking the router state after VM deployment")
         routers = Router.list(
                               self.apiclient,
@@ -1329,31 +1003,8 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
                                     startvm=True
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine_2.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine_2.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-
-                            vm_response.state,
-                            "Running",
-                            "VM should be in Running state after deployment"
-                        )
+        response = self.virtual_machine_2.getState(self.apiclient, VirtualMachine.RUNNING)
+        self.assertEqual(response[0], PASS, response[1])
         self.debug("Checking the router state after VM deployment")
         routers = Router.list(
                               self.apiclient,
@@ -1375,21 +1026,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
                 )
         self.debug("Destroying the running VM:%s" %
                                         self.virtual_machine_2.name)
-        self.virtual_machine_2.delete(self.apiclient)
-        self.debug("Instance destroyed..waiting till expunge interval")
-
-        interval = list_configurations(
-                                    self.apiclient,
-                                    name='expunge.interval'
-                                    )
-        delay = list_configurations(
-                                    self.apiclient,
-                                    name='expunge.delay'
-                                    )
-        # Sleep to ensure that all resources are deleted
-        time.sleep((int(interval[0].value) + int(delay[0].value)) * 2)
-
-        self.debug("Checking the router state after VM deployment")
+        self.virtual_machine_2.delete(self.apiclient, expunge=True)
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
@@ -1409,14 +1046,13 @@ class TestDeployVMBasicZone(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-                               TestDeployVMBasicZone,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeployVMBasicZone, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.template = get_template(
                             cls.api_client,
@@ -1477,14 +1113,13 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-                               TestDeployVMFromTemplate,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeployVMFromTemplate, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         # Create service, disk offerings  etc
         cls.service_offering = ServiceOffering.create(
@@ -1511,8 +1146,8 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def setUp(self):
-
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.services = Services().services
         self.services["virtual_machine"]["zoneid"] = self.zone.id
@@ -1523,8 +1158,8 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
                             )
 
         builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
-        self.services["template"]["url"] = builtin_info[0] 
-        self.services["template"]["hypervisor"] = builtin_info[1]     
+        self.services["template"]["url"] = builtin_info[0]
+        self.services["template"]["hypervisor"] = builtin_info[1]
         self.services["template"]["format"] = builtin_info[2]
 
         # Register new template
@@ -1533,7 +1168,8 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
                                         self.services["template"],
                                         zoneid=self.zone.id,
                                         account=self.account.name,
-                                        domainid=self.account.domainid
+                                        domainid=self.account.domainid,
+                                        hypervisor=self.hypervisor
                                         )
         self.debug(
                 "Registered a template of format: %s with ID: %s" % (
@@ -1556,7 +1192,7 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
-    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "provisioning"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="true")
     def test_deploy_vm_password_enabled(self):
         """Test Deploy Virtual Machine with startVM=false & enabledpassword in
         template
@@ -1580,57 +1216,14 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
                                     startvm=False,
                                 )
 
-        self.debug("Deployed instance in account: %s" %
-                                                    self.account.name)
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-
-                            vm_response.state,
-                            "Stopped",
-                            "VM should be in stopped state after deployment"
-                        )
+        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.STOPPED)
+        self.assertEqual(response[0], PASS, response[1])
         self.debug("Starting the instance: %s" % self.virtual_machine.name)
         self.virtual_machine.start(self.apiclient)
         self.debug("Started the instance: %s" % self.virtual_machine.name)
 
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.virtual_machine.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.virtual_machine.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-                            vm_response.state,
-                            "Running",
-                            "VM should be in running state after deployment"
-                        )
+        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.RUNNING)
+        self.assertEqual(response[0], PASS, response[1])
         return
 
 
@@ -1638,14 +1231,13 @@ class TestVMAccountLimit(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestVMAccountLimit,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVMAccountLimit, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.template = get_template(
                             cls.api_client,
@@ -1694,7 +1286,7 @@ class TestVMAccountLimit(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_vm_per_account(self):
         """Test VM limit per account
         """
@@ -1754,14 +1346,13 @@ class TestUploadAttachVolume(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestUploadAttachVolume,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestUploadAttachVolume, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.template = get_template(
                             cls.api_client,
@@ -1810,7 +1401,7 @@ class TestUploadAttachVolume(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_upload_attach_volume(self):
         """Test Upload volume and attach to VM in stopped state
         """
@@ -1864,14 +1455,13 @@ class TestDeployOnSpecificHost(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestDeployOnSpecificHost,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeployOnSpecificHost, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,

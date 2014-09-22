@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage;
 
+import org.apache.commons.lang.NotImplementedException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,29 +32,30 @@ public class Storage {
         BAREMETAL(false, false, false, "BAREMETAL"),
         VMDK(true, true, false, "vmdk"),
         VDI(true, true, false, "vdi"),
-        TAR(false, false, false, "tar");
+        TAR(false, false, false, "tar"),
+        DIR(false, false, false, "dir");
 
-        private final boolean thinProvisioned;
+        private final boolean supportThinProvisioning;
         private final boolean supportSparse;
         private final boolean supportSnapshot;
         private final String fileExtension;
 
-        private ImageFormat(boolean thinProvisioned, boolean supportSparse, boolean supportSnapshot) {
-            this.thinProvisioned = thinProvisioned;
+        private ImageFormat(boolean supportThinProvisioning, boolean supportSparse, boolean supportSnapshot) {
+            this.supportThinProvisioning = supportThinProvisioning;
             this.supportSparse = supportSparse;
             this.supportSnapshot = supportSnapshot;
             fileExtension = null;
         }
 
-        private ImageFormat(boolean thinProvisioned, boolean supportSparse, boolean supportSnapshot, String fileExtension) {
-            this.thinProvisioned = thinProvisioned;
+        private ImageFormat(boolean supportThinProvisioning, boolean supportSparse, boolean supportSnapshot, String fileExtension) {
+            this.supportThinProvisioning = supportThinProvisioning;
             this.supportSparse = supportSparse;
             this.supportSnapshot = supportSnapshot;
             this.fileExtension = fileExtension;
         }
 
-        public boolean isThinProvisioned() {
-            return thinProvisioned;
+        public boolean supportThinProvisioning() {
+            return supportThinProvisioning;
         }
 
         public boolean supportsSparse() {
@@ -70,6 +73,35 @@ public class Storage {
             return fileExtension;
         }
 
+    }
+
+    public static enum ProvisioningType {
+        THIN("thin"),
+        SPARSE("sparse"),
+        FAT("fat");
+
+        private final String provisionType;
+
+        private ProvisioningType(String provisionType){
+            this.provisionType = provisionType;
+        }
+
+        public String toString(){
+            return this.provisionType;
+        }
+
+        public static ProvisioningType getProvisioningType(String provisioningType){
+
+            if(provisioningType.equals(THIN.provisionType)){
+                return ProvisioningType.THIN;
+            } else if(provisioningType.equals(SPARSE.provisionType)){
+                return ProvisioningType.SPARSE;
+            } else if (provisioningType.equals(FAT.provisionType)){
+                return ProvisioningType.FAT;
+            } else{
+                    throw new NotImplementedException();
+            }
+        }
     }
 
     public static enum FileSystem {

@@ -18,6 +18,7 @@ package com.cloud.usage.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.TimeZone;
 
 import javax.ejb.Local;
 
+import com.cloud.exception.CloudException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -55,18 +57,21 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
     @Override
     public void removeBy(long accountId, long volId) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        PreparedStatement pstmt = null;
         try {
             txn.start();
-            String sql = REMOVE_BY_USERID_VOLID;
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, accountId);
-            pstmt.setLong(2, volId);
-            pstmt.executeUpdate();
+            try(PreparedStatement pstmt = txn.prepareStatement(REMOVE_BY_USERID_VOLID);) {
+                if (pstmt != null) {
+                    pstmt.setLong(1, accountId);
+                    pstmt.setLong(2, volId);
+                    pstmt.executeUpdate();
+                }
+            }catch (SQLException e) {
+                throw new CloudException("Error removing usageVolumeVO:"+e.getMessage(), e);
+            }
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Error removing usageVolumeVO", e);
+            s_logger.warn("Error removing usageVolumeVO:"+e.getMessage(), e);
         } finally {
             txn.close();
         }
@@ -83,8 +88,8 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
                 pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
                 pstmt.setLong(2, usage.getAccountId());
                 pstmt.setLong(3, usage.getId());
+                pstmt.executeUpdate();
             }
-            pstmt.executeUpdate();
             txn.commit();
         } catch (Exception e) {
             txn.rollback();

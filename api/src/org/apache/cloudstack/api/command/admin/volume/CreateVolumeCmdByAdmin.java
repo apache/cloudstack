@@ -28,8 +28,11 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "createVolume", responseObject = VolumeResponse.class, description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.", responseView = ResponseView.Full)
+@APICommand(name = "createVolume", responseObject = VolumeResponse.class, description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.", responseView = ResponseView.Full, entityType = {
+        Volume.class, VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVolumeCmdByAdmin extends CreateVolumeCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVolumeCmdByAdmin.class.getName());
 

@@ -74,4 +74,8 @@ public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Lo
     List<TemplateDataStoreVO> listOnCache(long templateId);
 
     void updateStoreRoleToCachce(long storeId);
+
+    List<TemplateDataStoreVO> listTemplateDownloadUrls();
+
+    void removeByTemplateStore(long templateId, long imageStoreId);
 }

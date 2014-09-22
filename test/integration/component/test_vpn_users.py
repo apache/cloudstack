@@ -19,9 +19,9 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackException import cloudstackAPIException
+from marvin.cloudstackException import CloudstackAPIException
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import (
+from marvin.lib.base import (
                                         Account,
                                         ServiceOffering,
                                         VirtualMachine,
@@ -31,11 +31,11 @@ from marvin.integration.lib.base import (
                                         Configurations,
                                         NATRule
                                         )
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template
                                         )
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 
 
 class Services:
@@ -94,12 +94,13 @@ class Services:
 class TestVPNUsers(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestVPNUsers,
-            cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPNUsers, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.services["mode"] = cls.zone.networktype
 
@@ -155,7 +156,7 @@ class TestVPNUsers(cloudstackTestCase):
                                                services=self.services["virtual_machine"]
                                                )
             return
-        except cloudstackAPIException as e:
+        except CloudstackAPIException as e:
                 self.tearDown()
                 raise e
 
@@ -258,7 +259,7 @@ class TestVPNUsers(cloudstackTestCase):
         self.debug("Limit exceeded exception raised!")
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_02_use_vpn_port(self):
         """Test create VPN when L2TP port in use"""
 
@@ -289,7 +290,7 @@ class TestVPNUsers(cloudstackTestCase):
         self.debug("Create VPN connection failed! Test successful!")
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_03_enable_vpn_use_port(self):
         """Test create NAT rule when VPN when L2TP enabled"""
 
@@ -315,7 +316,7 @@ class TestVPNUsers(cloudstackTestCase):
         self.debug("Create NAT rule failed! Test successful!")
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_04_add_new_users(self):
         """Test add new users to existing VPN"""
 
@@ -343,7 +344,7 @@ class TestVPNUsers(cloudstackTestCase):
             self.fail("Failed to create new VPN user: %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_05_add_duplicate_user(self):
         """Test add duplicate user to existing VPN"""
 
@@ -366,7 +367,7 @@ class TestVPNUsers(cloudstackTestCase):
             self.create_VPN_Users(rand_name=False)
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_06_add_VPN_user_global_admin(self):
         """Test as global admin, add a new VPN user to an existing VPN entry
             that was created by another account."""
@@ -396,7 +397,7 @@ class TestVPNUsers(cloudstackTestCase):
                                domainid=self.account.domainid)
         self.cleanup.append(admin)
         self.debug("Creating API client for newly created user")
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
 
@@ -409,7 +410,7 @@ class TestVPNUsers(cloudstackTestCase):
                                                                             e)
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_07_add_VPN_user_domain_admin(self):
         """Test as domain admin, add a new VPN user to an existing VPN entry
             that was created by another account."""
@@ -438,7 +439,7 @@ class TestVPNUsers(cloudstackTestCase):
                                domainid=self.account.domainid)
         self.cleanup.append(admin)
         self.debug("Creating API client for newly created user")
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
 

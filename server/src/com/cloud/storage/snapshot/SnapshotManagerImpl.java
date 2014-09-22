@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -272,6 +273,30 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_POLICY_UPDATE, eventDescription = "updating snapshot policy", async = true)
+    public SnapshotPolicy updateSnapshotPolicy(UpdateSnapshotPolicyCmd cmd) {
+
+        Long id = cmd.getId();
+        String customUUID = cmd.getCustomId();
+        Boolean display = cmd.getDisplay();
+
+        SnapshotPolicyVO policyVO = _snapshotPolicyDao.findById(id);
+        if(display != null){
+            boolean previousDisplay = policyVO.isDisplay();
+            policyVO.setDisplay(display);
+            _snapSchedMgr.scheduleOrCancelNextSnapshotJobOnDisplayChange(policyVO, previousDisplay);
+        }
+
+        if(customUUID != null)
+            policyVO.setUuid(customUUID);
+
+        _snapshotPolicyDao.update(id, policyVO);
+
+        return policyVO;
+
+    }
+
+    @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "creating snapshot", async = true)
     public Snapshot createSnapshot(Long volumeId, Long policyId, Long snapshotId, Account snapshotOwner) {
@@ -441,10 +466,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         Map<String, String> tags = cmd.getTags();
         Long zoneId = cmd.getZoneId();
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        List<Long> permittedResources = new ArrayList<Long>();
-
 
         // Verify parameters
         if (volumeId != null) {
@@ -455,14 +477,14 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         }
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
-                domainIdRecursiveListProject, cmd.listAll(), false, "listSnapshots");
+       _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+       Long domainId = domainIdRecursiveListProject.first();
        Boolean isRecursive = domainIdRecursiveListProject.second();
        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(SnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<SnapshotVO> sb = _snapshotDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("statusNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ); //exclude those Destroyed snapshot, not showing on UI
         sb.and("volumeId", sb.entity().getVolumeId(), SearchCriteria.Op.EQ);
@@ -485,7 +507,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         }
 
         SearchCriteria<SnapshotVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sc.setParameters("statusNEQ", Snapshot.State.Destroyed);
 
@@ -601,7 +623,9 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 if (snapshotStrategy.deleteSnapshot(snapshot.getId())) {
                     if (Type.MANUAL == snapshot.getRecurringType()) {
                         _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.snapshot);
-                        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage, new Long(snapshotStoreRef.getSize()));
+                        if  (snapshotStoreRef != null) {
+                            _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage, new Long(snapshotStoreRef.getSize()));
+                        }
                     }
 
                     // Log event after successful deletion
@@ -617,8 +641,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_POLICY_CREATE, eventDescription = "creating snapshot policy")
     public SnapshotPolicyVO createPolicy(CreateSnapshotPolicyCmd cmd, Account policyOwner) {
         Long volumeId = cmd.getVolumeId();
+        boolean display = cmd.isDisplay();
         VolumeVO volume = _volsDao.findById(cmd.getVolumeId());
         if (volume == null) {
             throw new InvalidParameterValueException("Failed to create snapshot policy, unable to find a volume with id " + volumeId);
@@ -626,7 +652,8 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
-        if (volume.getState() != Volume.State.Ready) {
+        // If display is false we don't actually schedule snapshots.
+        if (volume.getState() != Volume.State.Ready && display) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() +
                 ". Cannot take snapshot.");
         }
@@ -673,33 +700,37 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             throw new InvalidParameterValueException("maxSnaps exceeds limit: " + intervalMaxSnaps + " for interval type: " + cmd.getIntervalType());
         }
 
-        // Verify that max doesn't exceed domain and account snapshot limits
-        long accountLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(owner, ResourceType.snapshot);
-        long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(_domainMgr.getDomain(owner.getDomainId()), ResourceType.snapshot);
-        int max = cmd.getMaxSnaps().intValue();
-        if (!_accountMgr.isRootAdmin(owner.getId())&& ((accountLimit != -1 && max > accountLimit) || (domainLimit != -1 && max > domainLimit))) {
-            String message = "domain/account";
-            if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                message = "domain/project";
+        // Verify that max doesn't exceed domain and account snapshot limits in case display is on
+        if(display){
+            long accountLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(owner, ResourceType.snapshot);
+            long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(_domainMgr.getDomain(owner.getDomainId()), ResourceType.snapshot);
+            int max = cmd.getMaxSnaps().intValue();
+            if (!_accountMgr.isRootAdmin(owner.getId())&& ((accountLimit != -1 && max > accountLimit) || (domainLimit != -1 && max > domainLimit))) {
+                String message = "domain/account";
+                if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                    message = "domain/project";
+                }
+
+                throw new InvalidParameterValueException("Max number of snapshots shouldn't exceed the " + message + " level snapshot limit");
             }
-
-            throw new InvalidParameterValueException("Max number of snapshots shouldn't exceed the " + message + " level snapshot limit");
         }
-
         SnapshotPolicyVO policy = _snapshotPolicyDao.findOneByVolumeInterval(volumeId, intvType);
         if (policy == null) {
-            policy = new SnapshotPolicyVO(volumeId, cmd.getSchedule(), timezoneId, intvType, cmd.getMaxSnaps());
+            policy = new SnapshotPolicyVO(volumeId, cmd.getSchedule(), timezoneId, intvType, cmd.getMaxSnaps(), display);
             policy = _snapshotPolicyDao.persist(policy);
             _snapSchedMgr.scheduleNextSnapshotJob(policy);
         } else {
             try {
+                boolean previousDisplay = policy.isDisplay();
                 policy = _snapshotPolicyDao.acquireInLockTable(policy.getId());
                 policy.setSchedule(cmd.getSchedule());
                 policy.setTimezone(timezoneId);
                 policy.setInterval((short)intvType.ordinal());
                 policy.setMaxSnaps(cmd.getMaxSnaps());
                 policy.setActive(true);
+                policy.setDisplay(display);
                 _snapshotPolicyDao.update(policy.getId(), policy);
+                _snapSchedMgr.scheduleOrCancelNextSnapshotJobOnDisplayChange(policy, previousDisplay);
             } finally {
                 if (policy != null) {
                     _snapshotPolicyDao.releaseFromLockTable(policy.getId());
@@ -707,6 +738,8 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             }
 
         }
+        // TODO - Make createSnapshotPolicy - BaseAsyncCreate and remove this.
+        CallContext.current().putContextParameter(SnapshotPolicy.class.getName(), policy.getUuid());
         return policy;
     }
 
@@ -719,12 +752,25 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     @Override
     public Pair<List<? extends SnapshotPolicy>, Integer> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd) {
         Long volumeId = cmd.getVolumeId();
+        boolean display = cmd.isDisplay();
+        Long id = cmd.getId();
+        Pair<List<SnapshotPolicyVO>, Integer> result = null;
+        // TODO - Have a better way of doing this.
+        if(id != null){
+            result = _snapshotPolicyDao.listAndCountById(id, display, null);
+            if(result != null && result.first() != null && !result.first().isEmpty()){
+                SnapshotPolicyVO snapshotPolicy = result.first().get(0);
+                volumeId = snapshotPolicy.getVolumeId();
+            }
+        }
         VolumeVO volume = _volsDao.findById(volumeId);
         if (volume == null) {
             throw new InvalidParameterValueException("Unable to find a volume with id " + volumeId);
         }
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
-        Pair<List<SnapshotPolicyVO>, Integer> result = _snapshotPolicyDao.listAndCountByVolumeId(volumeId);
+        if(result != null)
+            return new Pair<List<? extends SnapshotPolicy>, Integer>(result.first(), result.second());
+        result = _snapshotPolicyDao.listAndCountByVolumeId(volumeId, display);
         return new Pair<List<? extends SnapshotPolicy>, Integer>(result.first(), result.second());
     }
 
@@ -769,7 +815,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         if (account != null) {
             long volAcctId = volume.getAccountId();
-            if (_accountMgr.isAdmin(account.getType())) {
+            if (_accountMgr.isAdmin(account.getId())) {
                 Account userAccount = _accountDao.findById(Long.valueOf(volAcctId));
                 if (!_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
                     throw new PermissionDeniedException("Unable to list snapshot schedule for volume " + volumeId + ", permission denied.");
@@ -1041,7 +1087,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         try {
             _resourceLimitMgr.checkResourceLimit(owner, ResourceType.snapshot);
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.secondary_storage, new Long(volume.getSize()));
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.secondary_storage, new Long(volume.getSize()).longValue());
         } catch (ResourceAllocationException e) {
             if (snapshotType != Type.MANUAL) {
                 String msg = "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots";

@@ -57,13 +57,13 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
 
     @Override
     public Status isAgentAlive(Host agent) {
-        if (agent.getHypervisorType() != Hypervisor.HypervisorType.KVM) {
+        if (agent.getHypervisorType() != Hypervisor.HypervisorType.KVM && agent.getHypervisorType() != Hypervisor.HypervisorType.LXC) {
             return null;
         }
         CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
         List<HostVO> neighbors = _resourceMgr.listHostsInClusterByStatus(agent.getClusterId(), Status.Up);
         for (HostVO neighbor : neighbors) {
-            if (neighbor.getId() == agent.getId() || neighbor.getHypervisorType() != Hypervisor.HypervisorType.KVM) {
+            if (neighbor.getId() == agent.getId() || (neighbor.getHypervisorType() != Hypervisor.HypervisorType.KVM && neighbor.getHypervisorType() != Hypervisor.HypervisorType.LXC)) {
                 continue;
             }
             try {

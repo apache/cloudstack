@@ -419,23 +419,23 @@
                         desc: 'message.tooltip.zone.name'
                     },
                     ip4dns1: {
-                        label: 'IPv4 DNS1',
+                        label: 'label.ipv4.dns1',
                         validation: {
                             required: true
                         },
                         desc: 'message.tooltip.dns.1'
                     },
                     ip4dns2: {
-                        label: 'IPv4 DNS2',
+                        label: 'label.ipv4.dns2',
                         desc: 'message.tooltip.dns.2'
                     },
 
                     ip6dns1: {
-                        label: 'IPv6 DNS1',
+                        label: 'label.ipv6.dns1',
                         desc: 'message.tooltip.dns.1'
                     },
                     ip6dns2: {
-                        label: 'IPv6 DNS2',
+                        label: 'label.ipv6.dns2',
                         desc: 'message.tooltip.dns.2'
                     },
 
@@ -474,7 +474,6 @@
                                         nonSupportedHypervisors["BareMetal"] = 1;
                                         nonSupportedHypervisors["Hyperv"] = 1;
                                         nonSupportedHypervisors["Ovm"] = 1;
-                                        nonSupportedHypervisors["LXC"] = 1;
                                     }
 
                                     if (items != null) {
@@ -617,7 +616,7 @@
                     },
                     isdedicated: {                        
                         isBoolean: true,
-                        label: 'Dedicated',
+                        label: 'label.dedicated',
                         isChecked: false 
                     },
                     domain: {
@@ -648,7 +647,7 @@
                     },
 
                     account: {
-                        label: 'Account',
+                        label: 'label.account',
                         isHidden: true,
                         dependsOn: 'isdedicated',
                         //docID:'helpAccountForDedication',
@@ -770,15 +769,15 @@
                         label: 'label.private.interface'
                     },
                     gslbprovider: {
-                        label: 'GSLB service',
+                        label: 'label.gslb.service',
                         isBoolean: true,
                         isChecked: false
                     },
                     gslbproviderpublicip: {
-                        label: 'GSLB service Public IP'
+                        label: 'label.gslb.service.public.ip'
                     },
                     gslbproviderprivateip: {
-                        label: 'GSLB service Private IP'
+                        label: 'label.gslb.service.private.ip'
                     },
                     numretries: {
                         label: 'label.numretries',
@@ -852,7 +851,7 @@
                         label: 'label.guest.end.ip'
                     }, //Basic, Advanced with SG
                     vlanId: {
-                        label: 'VLAN ID'
+                        label: 'label.vlan.id'
                     }, //Advanced with SG
 
                     vlanRange: { //in multiple tabs (tabs is as many as Guest Traffic types in multiple physical networks in Advanced Zone without SG)
@@ -1038,7 +1037,7 @@
                     },
 
                     overridepublictraffic: {
-                        label: 'Override Public-Traffic',
+                        label: 'label.override.public.traffic',
                         isBoolean: true,
                         isHidden: true
 
@@ -1118,7 +1117,7 @@
                     */
 					
                     overrideguesttraffic: {
-                        label: 'Override Guest-Traffic',
+                        label: 'label.override.guest.traffic',
                         isBoolean: true,
                         isHidden: true
 
@@ -1201,21 +1200,21 @@
 
                     //Cisco Nexus Vswitch
                     vsmipaddress: {
-                        label: 'Nexus 1000v IP Address',
+                        label: 'label.cisco.nexus1000v.ip.address',
                         validation: {
                             required: false
                         },
                         isHidden: true
                     },
                     vsmusername: {
-                        label: 'Nexus 1000v Username',
+                        label: 'label.cisco.nexus1000v.username',
                         validation: {
                             required: false
                         },
                         isHidden: true
                     },
                     vsmpassword: {
-                        label: 'Nexus 1000v Password',
+                        label: 'label.cisco.nexus1000v.password',
                         validation: {
                             required: false
                         },
@@ -1569,7 +1568,7 @@
 
                                 var protocol = $(this).val();
 
-                                $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>"label.path":');
+                                $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>' + _l('label.path') + ':');
 
                                 if (protocol == null)
                                     return;
@@ -1785,7 +1784,14 @@
                         isHidden: true
                     },
 
-                    //SMB                                           
+                    //SMB
+                    smbDomain: {
+                    	label: 'label.smb.domain',
+                    	validation: {
+                            required: true
+                        },
+                        isHidden: true
+                    },          
                     smbUsername: {
                     	label: 'label.smb.username',
                     	validation: {
@@ -1801,13 +1807,7 @@
                         },
                         isHidden: true
                     },
-                    smbDomain: {
-                    	label: 'label.smb.domain',
-                    	validation: {
-                            required: true
-                        },
-                        isHidden: true
-                    },                          
+                                    
                     
                     //iscsi
                     iqn: {
@@ -2121,7 +2121,13 @@
                     //NFS, SMB (end)
 
 
-                    //SMB (begin)                                            
+                    //SMB (begin) 
+                    smbDomain: {
+                    	label: 'label.smb.domain',
+                    	validation: {
+                            required: true
+                        }
+                    },
                     smbUsername: {
                     	label: 'label.smb.username',
                     	validation: {
@@ -2134,13 +2140,7 @@
                     	validation: {
                             required: true
                         }
-                    },
-                    smbDomain: {
-                    	label: 'label.smb.domain',
-                    	validation: {
-                            required: true
-                        }
-                    },
+                    },                    
                     //SMB (end)
                     
                     //S3 (begin)

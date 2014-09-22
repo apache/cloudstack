@@ -27,12 +27,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.domain.dao.DomainDao;
@@ -160,7 +161,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewall rule", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_EGRESS_OPEN, eventDescription = "creating egress firewall rule for network", create = true)
     public FirewallRule createEgressFirewallRule(FirewallRule rule) throws NetworkRuleConflictException {
         Account caller = CallContext.current().getCallingAccount();
 
@@ -262,9 +263,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         Boolean display = cmd.getDisplay();
 
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        List<Long> permittedResources = new ArrayList<Long>();
 
         if (ipId != null) {
             IPAddressVO ipAddressVO = _ipAddressDao.findById(ipId);
@@ -275,13 +274,14 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources, domainIdRecursiveListProject, cmd.listAll(), false, "listFirewallRules");
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter filter = new Filter(FirewallRuleVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<FirewallRuleVO> sb = _firewallDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
@@ -303,7 +303,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
 
         SearchCriteria<FirewallRuleVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -404,6 +404,12 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
             boolean notNullPorts =
                 (newRule.getSourcePortStart() != null && newRule.getSourcePortEnd() != null && rule.getSourcePortStart() != null && rule.getSourcePortEnd() != null);
+            boolean nullPorts =
+                (newRule.getSourcePortStart() == null && newRule.getSourcePortEnd() == null && rule.getSourcePortStart() == null && rule.getSourcePortEnd() == null);
+            if(nullPorts && duplicatedCidrs && (rule.getProtocol().equalsIgnoreCase(newRule.getProtocol())))
+            {
+                throw new NetworkRuleConflictException("There is already a firewall rule specified with protocol = " +newRule.getProtocol()+ " and no ports");
+            }
             if (!notNullPorts) {
                 continue;
             } else if (!oneOfRulesIsFirewall &&
@@ -613,12 +619,19 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewall rule", async = true)
+    public boolean applyIngressFwRules(long ipId, Account caller) throws ResourceUnavailableException {
+        return applyIngressFirewallRules(ipId, caller);
+    }
+
+    @Override
     public boolean applyIngressFirewallRules(long ipId, Account caller) throws ResourceUnavailableException {
         List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(ipId, Purpose.Firewall);
         return applyFirewallRules(rules, false, caller);
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_EGRESS_OPEN, eventDescription = "creating egress firewall rule", async = true)
     public boolean applyEgressFirewallRules(FirewallRule rule, Account caller) throws ResourceUnavailableException {
                 List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), Purpose.Firewall, FirewallRule.TrafficType.Egress);
                 return applyFirewallRules(rules, false, caller);
@@ -719,7 +732,21 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_CLOSE, eventDescription = "revoking firewall rule", async = true)
-    public boolean revokeFirewallRule(long ruleId, boolean apply) {
+    public boolean revokeIngressFwRule(long ruleId, boolean apply) {
+        return revokeIngressFirewallRule(ruleId, apply);
+    }
+
+
+    @Override
+    public boolean revokeIngressFirewallRule(long ruleId, boolean apply) {
+        Account caller = CallContext.current().getCallingAccount();
+        long userId = CallContext.current().getCallingUserId();
+        return revokeFirewallRule(ruleId, apply, caller, userId);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_EGRESS_CLOSE, eventDescription = "revoking egress firewall rule", async = true)
+    public boolean revokeEgressFirewallRule(long ruleId, boolean apply) {
         Account caller = CallContext.current().getCallingAccount();
         long userId = CallContext.current().getCallingUserId();
         return revokeFirewallRule(ruleId, apply, caller, userId);
@@ -727,7 +754,14 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_UPDATE, eventDescription = "updating firewall rule", async = true)
-    public FirewallRule updateFirewallRule(long ruleId, String customId, Boolean forDisplay) {
+    public FirewallRule updateIngressFirewallRule(long ruleId, String customId, Boolean forDisplay) {
+        Account caller = CallContext.current().getCallingAccount();
+        return updateFirewallRule(ruleId, customId, caller, forDisplay);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_EGRESS_UPDATE, eventDescription = "updating egress firewall rule", async = true)
+    public FirewallRule updateEgressFirewallRule(long ruleId, String customId, Boolean forDisplay) {
         Account caller = CallContext.current().getCallingAccount();
         return updateFirewallRule(ruleId, customId, caller, forDisplay);
     }
@@ -881,7 +915,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
 
         s_logger.debug("Revoking Firewall rule id=" + fwRule.getId() + " as a part of rule delete id=" + ruleId + " with apply=" + apply);
-        return revokeFirewallRule(fwRule.getId(), apply);
+        return revokeIngressFirewallRule(fwRule.getId(), apply);
 
     }
 

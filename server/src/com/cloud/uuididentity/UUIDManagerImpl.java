@@ -54,6 +54,15 @@ public class UUIDManagerImpl implements UUIDManager {
             throw new PermissionDeniedException("Please check your permissions, you are not allowed to create/update custom id");
         }
 
+        checkUuidSimple(uuid, entityType);
+    }
+
+    @Override
+    public <T> void checkUuidSimple(String uuid, Class<T> entityType) {
+
+        if (uuid == null)
+            return;
+
         // check format
         if (!IsUuidFormat(uuid))
             throw new InvalidParameterValueException("UUID: " + uuid + " doesn't follow the UUID format");

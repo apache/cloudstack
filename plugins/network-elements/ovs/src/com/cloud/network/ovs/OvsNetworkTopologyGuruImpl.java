@@ -95,8 +95,7 @@ public class OvsNetworkTopologyGuruImpl extends ManagerBase implements OvsNetwor
         List<? extends Network> vpcNetworks =  _vpcMgr.getVpcNetworks(vpcId);
         List<Long> vpcHostIds = new ArrayList<>();
         for (Network vpcNetwork : vpcNetworks) {
-            List<Long> networkHostIds = new ArrayList<Long>();
-            networkHostIds = getNetworkSpanedHosts(vpcNetwork.getId());
+            List<Long> networkHostIds = getNetworkSpanedHosts(vpcNetwork.getId());
             if (networkHostIds != null && !networkHostIds.isEmpty()) {
                 for (Long hostId : networkHostIds) {
                     if (!vpcHostIds.contains(hostId)) {
@@ -181,7 +180,7 @@ public class OvsNetworkTopologyGuruImpl extends ManagerBase implements OvsNetwor
         Set<Long> vmIdsSet = new HashSet<>();
         List<? extends Network> vpcNetworks =  _vpcMgr.getVpcNetworks(vpcId);
         for (Network network : vpcNetworks) {
-            List<Long> networkVmIds = getActiveVmsInNetworkOnHost(network.getId(), hostId);
+            List<Long> networkVmIds = getActiveVmsInNetworkOnHost(network.getId(), hostId, false);
             if (networkVmIds  != null && !networkVmIds.isEmpty()) {
                 vmIdsSet.addAll(networkVmIds);
             }
@@ -195,21 +194,19 @@ public class OvsNetworkTopologyGuruImpl extends ManagerBase implements OvsNetwor
      * get the list of all Vm id's in the network that are running on the host
      */
     @Override
-    public List<Long> getActiveVmsInNetworkOnHost(long networkId, long hostId) {
+    public List<Long> getActiveVmsInNetworkOnHost(long networkId, long hostId, boolean includeVr) {
         List <Long> vmIds = new ArrayList<>();
         List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(networkId,
-                VirtualMachine.State.Running, VirtualMachine.State.Starting, VirtualMachine.State.Stopping, VirtualMachine.State.Unknown,
-                VirtualMachine.State.Migrating);
+                VirtualMachine.State.Running, VirtualMachine.State.Migrating);
         // Find routers for the network
         List<DomainRouterVO> routers = _routerDao.findByNetwork(networkId);
-
         if (vms != null) {
             for (UserVmVO vm : vms) {
                 if (vm.getHostId() == hostId)
                     vmIds.add(vm.getId());
             }
         }
-        if (routers.size() != 0) {
+        if (routers.size() != 0 && includeVr) {
             for (DomainRouterVO router: routers) {
                 if (router.getHostId() == hostId)
                     vmIds.add(router.getId());

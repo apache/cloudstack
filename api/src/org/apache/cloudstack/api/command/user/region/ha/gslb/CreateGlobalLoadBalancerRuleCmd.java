@@ -147,15 +147,12 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {
-
-        CallContext callerContext = CallContext.current();
         GlobalLoadBalancerRule rule = _entityMgr.findById(GlobalLoadBalancerRule.class, getEntityId());
-        GlobalLoadBalancerResponse response = null;
         if (rule != null) {
-            response = _responseGenerator.createGlobalLoadBalancerResponse(rule);
-            setResponseObject(response);
+            GlobalLoadBalancerResponse response = _responseGenerator.createGlobalLoadBalancerResponse(rule);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
         }
-        response.setResponseName(getCommandName());
     }
 
     @Override

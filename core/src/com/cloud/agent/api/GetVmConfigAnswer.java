@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import java.util.List;
@@ -42,13 +45,15 @@ public class GetVmConfigAnswer extends Answer {
     public class NicDetails {
         String macAddress;
         int vlanid;
+        boolean state;
 
         public NicDetails() {
         }
 
-        public NicDetails(String macAddress, int vlanid) {
+        public NicDetails(String macAddress, int vlanid, boolean state) {
             this.macAddress = macAddress;
             this.vlanid = vlanid;
+            this.state = state;
         }
 
         public String getMacAddress() {
@@ -59,6 +64,9 @@ public class GetVmConfigAnswer extends Answer {
             return vlanid;
         }
 
+        public boolean getState() {
+            return state;
+        }
     }
 
     @Override

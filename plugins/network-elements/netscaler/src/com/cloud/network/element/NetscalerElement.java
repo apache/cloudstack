@@ -677,11 +677,13 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         // NetScaler can only act as Lb and Static Nat service provider
         if (services != null && !services.isEmpty() && !netscalerServices.containsAll(services)) {
             s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination " + services + " is not supported.");
-            String servicesList = "";
+
+            StringBuffer buff = new StringBuffer();
             for (Service service : services) {
-                servicesList += service.getName() + " ";
+                buff.append(service.getName());
+                buff.append(" ");
             }
-            s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination " + servicesList + " is not supported.");
+            s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination " + buff.toString() + " is not supported.");
             s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination " + services + " is not supported.");
             return false;
         }

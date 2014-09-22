@@ -18,10 +18,10 @@
 """
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.cloudstackException import cloudstackAPIException
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.cloudstackException import CloudstackAPIException
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 # from netaddr import *
 import netaddr
 from nose.plugins.attrib import attr
@@ -87,13 +87,15 @@ class TestMultipleIpRanges(cloudstackTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestMultipleIpRanges, cls).getClsTestClient().getApiClient()
-        cls.dbclient = super(TestMultipleIpRanges, cls).getClsTestClient().getDbConnection()
+        cls.testClient = super(TestEgressAfterHostMaintenance, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.dbclient = cls.testClient.getDbConnection()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.pod = get_pod(cls.api_client, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id

@@ -43,6 +43,8 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
@@ -162,12 +164,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected ExecutorService _executor;
     protected ThreadPoolExecutor _connectExecutor;
     protected ScheduledExecutorService _directAgentExecutor;
+    protected ScheduledExecutorService _cronJobExecutor;
     protected ScheduledExecutorService _monitorExecutor;
 
     private int _directAgentThreadCap;
 
     protected StateMachine2<Status, Status.Event, Host> _statusStateMachine = Status.getStateMachine();
-    private final Map<Long, Long> _pingMap = new ConcurrentHashMap<Long, Long>(10007);
+    private final ConcurrentHashMap<Long, Long> _pingMap = new ConcurrentHashMap<Long, Long>(10007);
 
     @Inject
     ResourceManager _resourceMgr;
@@ -185,15 +188,15 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             "The number of direct agents to load each time", false);
     protected final ConfigKey<Integer> DirectAgentPoolSize = new ConfigKey<Integer>("Advanced", Integer.class, "direct.agent.pool.size", "500",
             "Default size for DirectAgentPool", false);
-    protected final ConfigKey<Float> DirectAgentThreadCap = new ConfigKey<Float>("Advanced", Float.class, "direct.agent.thread.cap", "0.1",
+    protected final ConfigKey<Float> DirectAgentThreadCap = new ConfigKey<Float>("Advanced", Float.class, "direct.agent.thread.cap", "1",
             "Percentage (as a value between 0 and 1) of direct.agent.pool.size to be used as upper thread cap for a single direct agent to process requests", false);
     protected final ConfigKey<Boolean> CheckTxnBeforeSending = new ConfigKey<Boolean>(
-        "Developer",
-        Boolean.class,
-        "check.txn.before.sending.agent.commands",
-        "false",
-        "This parameter allows developers to enable a check to see if a transaction wraps commands that are sent to the resource.  This is not to be enabled on production systems.",
-        true);
+            "Developer",
+            Boolean.class,
+            "check.txn.before.sending.agent.commands",
+            "false",
+            "This parameter allows developers to enable a check to see if a transaction wraps commands that are sent to the resource.  This is not to be enabled on production systems.",
+            true);
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -219,7 +222,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _connection = new NioServer("AgentManager", Port.value(), Workers.value() + 10, this);
         s_logger.info("Listening on " + Port.value() + " with " + Workers.value() + " workers");
 
+        // executes all agent commands other than cron and ping
         _directAgentExecutor = new ScheduledThreadPoolExecutor(DirectAgentPoolSize.value(), new NamedThreadFactory("DirectAgent"));
+        // executes cron and ping agent commands
+        _cronJobExecutor = new ScheduledThreadPoolExecutor(DirectAgentPoolSize.value(), new NamedThreadFactory("DirectAgentCronJob"));
         s_logger.debug("Created DirectAgentAttache pool with size: " + DirectAgentPoolSize.value());
         _directAgentThreadCap = Math.round(DirectAgentPoolSize.value() * DirectAgentThreadCap.value()) + 1; // add 1 to always make the value > 0
 
@@ -266,15 +272,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public int registerForInitialConnects(final StartupCommandProcessor creator, boolean priority) {
         synchronized (_hostMonitors) {
             _monitorId++;
-
             if (priority) {
                 _creationMonitors.add(0, new Pair<Integer, StartupCommandProcessor>(_monitorId, creator));
             } else {
                 _creationMonitors.add(new Pair<Integer, StartupCommandProcessor>(_monitorId, creator));
             }
+            return _monitorId;
         }
-
-        return _monitorId;
     }
 
     @Override
@@ -375,6 +379,18 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return !txn.dbTxnStarted();
     }
 
+    private static void tagCommand(Command cmd) {
+        AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrent();
+        if (context != null && context.getJob() != null) {
+            AsyncJob job = context.getJob();
+
+            if (job.getRelated() != null && !job.getRelated().isEmpty())
+                cmd.setContextParam("job", "job-" + job.getRelated() + "/" + "job-" + job.getId());
+            else
+                cmd.setContextParam("job", "job-" + job.getId());
+        }
+    }
+
     @Override
     public Answer[] send(Long hostId, Commands commands, int timeout) throws AgentUnavailableException, OperationTimedoutException {
         assert hostId != null : "Who's not checking the agent id before sending?  ... (finger wagging)";
@@ -389,8 +405,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (CheckTxnBeforeSending.value()) {
             if (!noDbTxn()) {
                 throw new CloudRuntimeException("We do not allow transactions to be wrapped around commands sent to be executed on remote agents.  "
-                                                + "We cannot predict how long it takes a command to complete.  "
-                                                + "The transaction may be rolled back because the connection took too long.");
+                        + "We cannot predict how long it takes a command to complete.  "
+                        + "The transaction may be rolled back because the connection took too long.");
             }
         } else {
             assert noDbTxn() : "I know, I know.  Why are we so strict as to not allow txn across an agent call?  ...  Why are we so cruel ... Why are we such a dictator .... Too bad... Sorry...but NO AGENT COMMANDS WRAPPED WITHIN DB TRANSACTIONS!";
@@ -403,6 +419,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (cmds.length == 0) {
             commands.setAnswers(new Answer[0]);
         }
+
+        for (Command cmd : cmds)
+            tagCommand(cmd);
 
         final AgentAttache agent = getAttache(hostId);
         if (agent == null || agent.isClosed()) {
@@ -462,6 +481,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (cmds.length == 0) {
             throw new AgentUnavailableException("Empty command set for agent " + agent.getId(), agent.getId());
         }
+
+        for (Command cmd : cmds)
+            tagCommand(cmd);
+
         Request req = new Request(hostId, agent.getName(), _nodeId, cmds, commands.stopOnError(), true);
         req.setSequence(agent.getNextSequence());
 
@@ -552,21 +575,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         agentStatusTransitTo(host, Event.Ready, _nodeId);
         attache.ready();
         return attache;
-    }
-
-    protected boolean notifyCreatorsOfConnection(StartupCommand[] cmd) throws ConnectionException {
-        boolean handled = false;
-        for (Pair<Integer, StartupCommandProcessor> monitor : _creationMonitors) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Sending Connect to creator: " + monitor.second().getClass().getSimpleName());
-            }
-            handled = monitor.second().processInitialConnect(cmd);
-            if (handled) {
-                break;
-            }
-        }
-
-        return handled;
     }
 
     @Override
@@ -699,12 +707,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     protected AgentAttache createAttacheForDirectConnect(Host host, ServerResource resource) throws ConnectionException {
-//        if (resource instanceof DummySecondaryStorageResource || resource instanceof KvmDummyResourceBase) {
-//            return new DummyAttache(this, host.getId(), false);
-//        }
-
         s_logger.debug("create DirectAgentAttache for " + host.getId());
-        DirectAgentAttache attache = new DirectAgentAttache(this, host.getId(), host.getName(), resource, host.isInMaintenanceStates(), this);
+        DirectAgentAttache attache = new DirectAgentAttache(this, host.getId(), host.getName(), resource, host.isInMaintenanceStates());
 
         AgentAttache old = null;
         synchronized (_agents) {
@@ -802,6 +806,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                  * Why this can happen? Ask God not me. I hate there was no piece of comment for code handling race condition.
                  * God knew what race condition the code dealt with!
                  */
+                s_logger.debug("Caught exception while getting agent's next status", ne);
             }
 
             if (nextStatus == Status.Alert) {
@@ -1157,14 +1162,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
             if (s_logger.isDebugEnabled()) {
                 if (cmd instanceof PingRoutingCommand) {
-                    final PingRoutingCommand ping = (PingRoutingCommand)cmd;
-                    if (ping.getNewStates().size() > 0) {
-                        s_logger.debug("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request);
-                    } else {
-                        logD = false;
-                        s_logger.debug("Ping from " + hostId);
-                        s_logger.trace("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request);
-                    }
+                    logD = false;
+                    s_logger.debug("Ping from " + hostId);
+                    s_logger.trace("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request);
                 } else if (cmd instanceof PingCommand) {
                     logD = false;
                     s_logger.debug("Ping from " + hostId);
@@ -1382,6 +1382,22 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _executor.submit(new DisconnectTask(attache, event, true));
     }
 
+    protected boolean isHostOwnerSwitched(final long hostId) {
+        HostVO host = _hostDao.findById(hostId);
+        if (host == null) {
+            s_logger.warn("Can't find the host " + hostId);
+            return false;
+        }
+        return isHostOwnerSwitched(host);
+    }
+
+    protected boolean isHostOwnerSwitched(HostVO host) {
+        if (host.getStatus() == Status.Up && host.getManagementServerId() != null && host.getManagementServerId() != _nodeId) {
+            return true;
+        }
+        return false;
+    }
+
     private void disconnectInternal(final long hostId, final Status.Event event, boolean invstigate) {
         AgentAttache attache = findAttache(hostId);
 
@@ -1451,6 +1467,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return _directAgentExecutor;
     }
 
+    public ScheduledExecutorService getCronJobPool() {
+        return _cronJobExecutor;
+    }
+
     public int getDirectAgentThreadCap() {
         return _directAgentThreadCap;
     }
@@ -1460,7 +1480,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     public void pingBy(long agentId) {
-        _pingMap.put(agentId, InaccurateClock.getTimeInSeconds());
+        // Update PingMap with the latest time if agent entry exists in the PingMap
+        if (_pingMap.replace(agentId, InaccurateClock.getTimeInSeconds()) == null) {
+            s_logger.info("PingMap for agent: " + agentId + " will not be updated because agent is no longer in the PingMap");
+        }
     }
 
     protected class MonitorTask extends ManagedContextRunnable {

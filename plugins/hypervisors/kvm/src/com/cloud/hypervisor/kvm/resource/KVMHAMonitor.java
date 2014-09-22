@@ -17,8 +17,10 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
@@ -39,24 +41,24 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     public KVMHAMonitor(NfsStoragePool pool, String host, String scriptPath) {
         if (pool != null) {
-            this._storagePool.put(pool._poolUUID, pool);
+            _storagePool.put(pool._poolUUID, pool);
         }
-        this._hostIP = host;
+        _hostIP = host;
         KVMHABase.s_heartBeatPath = scriptPath;
     }
 
     public void addStoragePool(NfsStoragePool pool) {
         synchronized (_storagePool) {
-            this._storagePool.put(pool._poolUUID, pool);
+            _storagePool.put(pool._poolUUID, pool);
         }
     }
 
     public void removeStoragePool(String uuid) {
         synchronized (_storagePool) {
-            NfsStoragePool pool = this._storagePool.get(uuid);
+            NfsStoragePool pool = _storagePool.get(uuid);
             if (pool != null) {
                 Script.runSimpleBashScript("umount " + pool._mountDestPath);
-                this._storagePool.remove(uuid);
+                _storagePool.remove(uuid);
             }
         }
     }
@@ -72,6 +74,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         @Override
         protected void runInContext() {
             synchronized (_storagePool) {
+                Set<String> removedPools = new HashSet<String>();
                 for (String uuid : _storagePool.keySet()) {
                     NfsStoragePool primaryStoragePool = _storagePool.get(uuid);
 
@@ -84,13 +87,13 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                         storage = conn.storagePoolLookupByUUIDString(uuid);
                         if (storage == null) {
                             s_logger.debug("Libvirt storage pool " + uuid + " not found, removing from HA list");
-                            removeStoragePool(uuid);
+                            removedPools.add(uuid);
                             continue;
 
                         } else if (storage.getInfo().state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
                             s_logger.debug("Libvirt storage pool " + uuid + " found, but not running, removing from HA list");
 
-                            removeStoragePool(uuid);
+                            removedPools.add(uuid);
                             continue;
                         }
                         s_logger.debug("Found NFS storage pool " + uuid + " in libvirt, continuing");
@@ -102,7 +105,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                         // connection fails
                         if (e.toString().contains("pool not found")) {
                             s_logger.debug("removing pool from HA monitor since it was deleted");
-                            removeStoragePool(uuid);
+                            removedPools.add(uuid);
                             continue;
                         }
                     }
@@ -130,6 +133,12 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                         cmd.add("-m", primaryStoragePool._mountDestPath);
                         cmd.add("-c");
                         result = cmd.execute();
+                    }
+                }
+
+                if (!removedPools.isEmpty()) {
+                    for (String uuid : removedPools) {
+                        removeStoragePool(uuid);
                     }
                 }
             }

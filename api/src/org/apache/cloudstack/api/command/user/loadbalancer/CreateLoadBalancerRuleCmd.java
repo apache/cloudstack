@@ -124,8 +124,13 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Boolean getDisplay() {
-        return display;
+    @Override
+    public boolean isDisplay() {
+        if (display != null) {
+            return display;
+        } else {
+            return true;
+        }
     }
 
     public String getAlgorithm() {
@@ -148,7 +153,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
         if (publicIpId != null) {
             IpAddress ipAddr = _networkService.getIp(publicIpId);
             if (ipAddr == null || !ipAddr.readyToUse()) {
-                throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + ipAddr.getId());
+                throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + publicIpId);
             }
         } else if (getEntityId() != null) {
             LoadBalancer rule = _entityMgr.findById(LoadBalancer.class, getEntityId());
@@ -162,7 +167,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
         if (publicIpId != null) {
             IpAddress ipAddr = _networkService.getIp(publicIpId);
             if (ipAddr == null || !ipAddr.readyToUse()) {
-                throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + ipAddr.getId());
+                throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + publicIpId);
             } else {
                 return ipAddr.getVpcId();
             }
@@ -309,7 +314,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
         try {
             LoadBalancer result =
                 _lbService.createPublicLoadBalancerRule(getXid(), getName(), getDescription(), getSourcePortStart(), getSourcePortEnd(), getDefaultPortStart(),
-                    getDefaultPortEnd(), getSourceIpAddressId(), getProtocol(), getAlgorithm(), getNetworkId(), getEntityOwnerId(), getOpenFirewall(), getLbProtocol(), getDisplay());
+                    getDefaultPortEnd(), getSourceIpAddressId(), getProtocol(), getAlgorithm(), getNetworkId(), getEntityOwnerId(), getOpenFirewall(), getLbProtocol(), isDisplay());
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException e) {
@@ -318,6 +323,8 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
         } catch (InsufficientAddressCapacityException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, e.getMessage());
+        } catch (InvalidParameterValueException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
         }
     }
 

@@ -18,15 +18,28 @@
 """ P1 tests for netscaler configurations
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import (cleanup_resources,
+                              random_gen)
+from marvin.lib.base import (VirtualMachine,
+                             NetworkServiceProvider,
+                             PublicIPAddress,
+                             Account,
+                             Network,
+                             NetScaler,
+                             LoadBalancerRule,
+                             NetworkOffering,
+                             ServiceOffering,
+                             PhysicalNetwork,
+                             Configurations)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               add_netscaler)
 from marvin.sshClient import SshClient
-import datetime
+import time
 
 
 class Services:
@@ -156,14 +169,13 @@ class TestAddNetScaler(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestAddNetScaler,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAddNetScaler, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls._cleanup = []
         return
 
@@ -192,7 +204,7 @@ class TestAddNetScaler(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advancedns", "provisioning"])
+    @attr(tags=["advancedns"], required_hardware="true")
     def test_add_netscaler_device(self):
         """Test add netscaler device
         """
@@ -282,14 +294,13 @@ class TestInvalidParametersNetscaler(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestInvalidParametersNetscaler,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestInvalidParametersNetscaler, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls._cleanup = []
         return
 
@@ -318,7 +329,7 @@ class TestInvalidParametersNetscaler(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advancedns", "provisioning"])
+    @attr(tags=["advancedns"], required_hardware="true")
     def test_invalid_cred(self):
         """Test add netscaler device with invalid credential
         """
@@ -387,7 +398,7 @@ class TestInvalidParametersNetscaler(cloudstackTestCase):
                                   )
         return
 
-    @attr(tags=["advancedns", "provisioning"])
+    @attr(tags=["advancedns"], required_hardware="true")
     def test_invalid_public_interface(self):
         """Test add netscaler device with invalid public interface
         """
@@ -454,7 +465,7 @@ class TestInvalidParametersNetscaler(cloudstackTestCase):
                                   )
         return
 
-    @attr(tags=["advancedns", "provisioning"])
+    @attr(tags=["advancedns"], required_hardware="true")
     def test_invalid_private_interface(self):
         """Test add netscaler device with invalid private interface
         """
@@ -526,14 +537,13 @@ class TestNetScalerDedicated(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestNetScalerDedicated,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestNetScalerDedicated, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -562,7 +572,7 @@ class TestNetScalerDedicated(cloudstackTestCase):
             netscaler_provider = nw_service_providers[0]
 
         if netscaler_provider.state != 'Enabled':
-            response = NetworkServiceProvider.update(
+            NetworkServiceProvider.update(
                                           cls.api_client,
                                           id=netscaler_provider.id,
                                           state='Enabled'
@@ -624,11 +634,11 @@ class TestNetScalerDedicated(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
+            interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-            wait = list_configurations(
+            wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -749,14 +759,13 @@ class TestNetScalerShared(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestNetScalerShared,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestNetScalerShared, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -785,7 +794,7 @@ class TestNetScalerShared(cloudstackTestCase):
             netscaler_provider = nw_service_providers[0]
 
         if netscaler_provider.state != 'Enabled':
-            response = NetworkServiceProvider.update(
+            NetworkServiceProvider.update(
                                           cls.api_client,
                                           id=netscaler_provider.id,
                                           state='Enabled'
@@ -843,11 +852,11 @@ class TestNetScalerShared(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
+            interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-            wait = list_configurations(
+            wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -992,14 +1001,13 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestNetScalerCustomCapacity,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestNetScalerCustomCapacity, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1028,7 +1036,7 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
             netscaler_provider = nw_service_providers[0]
 
         if netscaler_provider.state != 'Enabled':
-            response = NetworkServiceProvider.update(
+            NetworkServiceProvider.update(
                                           cls.api_client,
                                           id=netscaler_provider.id,
                                           state='Enabled'
@@ -1092,11 +1100,11 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
+            interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-            wait = list_configurations(
+            wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -1249,7 +1257,7 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
         self.debug("Deploying VM in account: %s" % self.account_3.name)
         with self.assertRaises(Exception):
             # Spawn an instance in that network
-            virtual_machine_3 = VirtualMachine.create(
+            VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account_3.name,
@@ -1265,14 +1273,13 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestNetScalerNoCapacity,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestNetScalerNoCapacity, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1301,7 +1308,7 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
             netscaler_provider = nw_service_providers[0]
 
         if netscaler_provider.state != 'Enabled':
-            response = NetworkServiceProvider.update(
+            NetworkServiceProvider.update(
                                           cls.api_client,
                                           id=netscaler_provider.id,
                                           state='Enabled'
@@ -1365,11 +1372,11 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
+            interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-            wait = list_configurations(
+            wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -1523,7 +1530,7 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
         self.debug("Deploying VM in account: %s" % self.account_3.name)
         with self.assertRaises(Exception):
             # Spawn an instance in that network
-            virtual_machine_3 = VirtualMachine.create(
+            VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account_3.name,
@@ -1539,14 +1546,13 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestGuestNetworkWithNetScaler,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestGuestNetworkWithNetScaler, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1575,7 +1581,7 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
             netscaler_provider = nw_service_providers[0]
 
         if netscaler_provider.state != 'Enabled':
-            response = NetworkServiceProvider.update(
+            NetworkServiceProvider.update(
                                           cls.api_client,
                                           id=netscaler_provider.id,
                                           state='Enabled'
@@ -1633,11 +1639,11 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
+            interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-            wait = list_configurations(
+            wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -2037,11 +2043,11 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
         self.debug("Account: %s is deleted!" % self.account_1.name)
 
         self.debug("Waiting for network.gc.interval & network.gc.wait..")
-        interval = list_configurations(
+        interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-        wait = list_configurations(
+        wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -2096,14 +2102,13 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(
-                               TestGuestNetworkShutDown,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestGuestNetworkShutDown, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -2231,15 +2236,18 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
             "Stopping all the VM instances for the account: %s" %
                                                     self.account.name)
 
-        self.vm_1.stop(self.apiclient)
-        self.vm_2.stop(self.apiclient)
+        try:
+            self.vm_1.stop(self.apiclient)
+            self.vm_2.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop instance: %s" % e)
 
         self.debug("Sleep for network.gc.interval + network.gc.wait")
-        interval = list_configurations(
+        interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-        wait = list_configurations(
+        wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -2502,14 +2510,13 @@ class TestServiceProvider(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestServiceProvider,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestServiceProvider, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -2538,7 +2545,7 @@ class TestServiceProvider(cloudstackTestCase):
             cls.netscaler_provider = nw_service_providers[0]
 
         if cls.netscaler_provider.state != 'Enabled':
-            response = NetworkServiceProvider.update(
+            NetworkServiceProvider.update(
                                           cls.api_client,
                                           id=cls.netscaler_provider.id,
                                           state='Enabled'
@@ -2595,11 +2602,11 @@ class TestServiceProvider(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
+            interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-            wait = list_configurations(
+            wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )
@@ -2817,14 +2824,13 @@ class TestDeleteNetscaler(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestDeleteNetscaler,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeleteNetscaler, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -2853,7 +2859,7 @@ class TestDeleteNetscaler(cloudstackTestCase):
             netscaler_provider = nw_service_providers[0]
 
         if netscaler_provider.state != 'Enabled':
-            response = NetworkServiceProvider.update(
+            NetworkServiceProvider.update(
                                           cls.api_client,
                                           id=netscaler_provider.id,
                                           state='Enabled'
@@ -2911,11 +2917,11 @@ class TestDeleteNetscaler(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
+            interval = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
-            wait = list_configurations(
+            wait = Configurations.list(
                                     self.apiclient,
                                     name='network.gc.wait'
                                     )

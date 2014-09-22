@@ -157,13 +157,25 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
 
     private boolean validateIpAddresses() {
         for (String ipAddress : _syslogHostsList) {
-            if (ipAddress.trim().equalsIgnoreCase("localhost")) {
-                continue;
-            }
-            if (!NetUtils.isValidIp(ipAddress)) {
+            String[] hostTokens = (ipAddress.trim()).split(":");
+            String ip = hostTokens[0];
+
+            if (hostTokens.length >= 1 && hostTokens.length <= 2) {
+                if (hostTokens.length == 2 && !NetUtils.isValidPort(hostTokens[1])) {
+                    return false;
+                }
+                if (ip.equalsIgnoreCase("localhost")) {
+                    continue;
+                }
+                if (!NetUtils.isValidIp(ip)) {
+                    return false;
+                }
+            } else
+            {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -265,7 +277,7 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
             return;
         }
 
-        this._facility = facility;
+        _facility = facility;
         if (_syslogAppenders != null && !_syslogAppenders.isEmpty()) {
             for (SyslogAppender syslogAppender : _syslogAppenders) {
                 syslogAppender.setFacility(facility);
@@ -299,8 +311,8 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
     }
 
     public void setSyslogHosts(String syslogHosts) {
-        this._syslogHosts = syslogHosts;
-        this.setSyslogAppenders();
+        _syslogHosts = syslogHosts;
+        setSyslogAppenders();
     }
 
     public String getDelimiter() {
@@ -308,7 +320,7 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
     }
 
     public void setDelimiter(String delimiter) {
-        this._delimiter = delimiter;
+        _delimiter = delimiter;
     }
 
     public String getPairDelimiter() {
@@ -316,7 +328,7 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
     }
 
     public void setPairDelimiter(String pairDelimiter) {
-        this._pairDelimiter = pairDelimiter;
+        _pairDelimiter = pairDelimiter;
     }
 
     public String getKeyValueDelimiter() {
@@ -324,6 +336,6 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
     }
 
     public void setKeyValueDelimiter(String keyValueDelimiter) {
-        this._keyValueDelimiter = keyValueDelimiter;
+        _keyValueDelimiter = keyValueDelimiter;
     }
 }

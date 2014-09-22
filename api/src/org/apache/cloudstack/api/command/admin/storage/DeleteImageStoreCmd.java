@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteImageStore", description = "Deletes an image store .", responseObject = SuccessResponse.class, since = "4.2.0",
+@APICommand(name = "deleteImageStore", description = "Deletes an image store or Secondary Storage.", responseObject = SuccessResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteImageStoreCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteImageStoreCmd.class.getName());
@@ -40,7 +40,7 @@ public class DeleteImageStoreCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, required = true, description = "the image store ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, required = true, description = "The image store ID or Secondary Storage ID.")
     private Long id;
 
     // ///////////////////////////////////////////////////

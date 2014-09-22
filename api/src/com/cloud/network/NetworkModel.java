@@ -90,6 +90,8 @@ public interface NetworkModel {
 
     boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services);
 
+    Network getNetworkWithSGWithFreeIPs(Long zoneId);
+
     Network getNetworkWithSecurityGroupEnabled(Long zoneId);
 
     String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId);

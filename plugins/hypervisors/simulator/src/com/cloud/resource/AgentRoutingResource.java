@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.resource;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,17 +51,21 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
+import com.cloud.serializer.GsonHelper;
+import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockVMVO;
 import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.cloud.vm.VirtualMachine.State;
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 
 public class AgentRoutingResource extends AgentStorageResource {
     private static final Logger s_logger = Logger.getLogger(AgentRoutingResource.class);
+    private static final Gson s_gson = GsonHelper.getGson();
 
-    protected Map<String, State> _vms = new HashMap<String, State>();
     private Map<String, Pair<Long, Long>> _runningVms = new HashMap<String, Pair<Long, Long>>();
     long usedCpu = 0;
     long usedMem = 0;
@@ -77,7 +82,7 @@ public class AgentRoutingResource extends AgentStorageResource {
     }
 
     @Override
-    public Answer executeRequest(Command cmd) {
+    public Answer executeRequestInContext(Command cmd) {
         try {
             if (cmd instanceof StartCommand) {
                 return execute((StartCommand)cmd);
@@ -104,26 +109,60 @@ public class AgentRoutingResource extends AgentStorageResource {
 
     @Override
     public PingCommand getCurrentStatus(long id) {
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
+        try {
+            MockConfigurationVO config = _simMgr.getMockConfigurationDao().findByNameBottomUP(agentHost.getDataCenterId(), agentHost.getPodId(), agentHost.getClusterId(), agentHost.getId(), "PingCommand");
+            if (config != null) {
+                Map<String, String> configParameters = config.getParameters();
+                for (Map.Entry<String, String> entry : configParameters.entrySet()) {
+                    if (entry.getKey().equalsIgnoreCase("result")) {
+                        String value = entry.getValue();
+                        if (value.equalsIgnoreCase("fail")) {
+                            return null;
+                        }
+                    }
+                }
+            }
+
+            config = _simMgr.getMockConfigurationDao().findByNameBottomUP(agentHost.getDataCenterId(), agentHost.getPodId(), agentHost.getClusterId(), agentHost.getId(), "PingRoutingWithNwGroupsCommand");
+            if (config != null) {
+                String message = config.getJsonResponse();
+                if (message != null) {
+                    // json response looks like {"<Type>":....}
+                    String objectType = message.split(":")[0].substring(2).replace("\"", "");
+                    String objectData = message.substring(message.indexOf(':') + 1, message.length() - 1);
+                    if (objectType != null) {
+                        Class<?> clz = null;
+                        try {
+                            clz = Class.forName(objectType);
+                        } catch (ClassNotFoundException e) {
+                        }
+                        if (clz != null) {
+                            StringReader reader = new StringReader(objectData);
+                            JsonReader jsonReader = new JsonReader(reader);
+                            jsonReader.setLenient(true);
+                            return (PingCommand)s_gson.fromJson(jsonReader, clz);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            txn.rollback();
+        } finally {
+            txn.close();
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
+        }
+
         if (isStopped()) {
             return null;
         }
-        synchronized (_vms) {
-            if (_vms.size() == 0) {
-                //load vms state from database
-                _vms.putAll(_simMgr.getVmStates(hostGuid));
-            }
-        }
-        final HashMap<String, State> newStates = sync();
         HashMap<String, Pair<Long, Long>> nwGrpStates = _simMgr.syncNetworkGroups(hostGuid);
-        return new PingRoutingWithNwGroupsCommand(getType(), id, newStates, getHostVmStateReport(), nwGrpStates);
+        return new PingRoutingWithNwGroupsCommand(getType(), id, getHostVmStateReport(), nwGrpStates);
     }
 
     @Override
     public StartupCommand[] initialize() {
-        synchronized (_vms) {
-            _vms.clear();
-        }
-        Map<String, State> changes = _simMgr.getVmStates(this.hostGuid);
         Map<String, MockVMVO> vmsMaps = _simMgr.getVms(this.hostGuid);
         totalCpu = agentHost.getCpuCount() * agentHost.getCpuSpeed();
         totalMem = agentHost.getMemorySize();
@@ -139,7 +178,6 @@ public class AgentRoutingResource extends AgentStorageResource {
         StartupRoutingCommand cmd =
             new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), HypervisorType.Simulator,
                 RouterPrivateIpStrategy.HostLocal);
-        cmd.setStateChanges(changes);
 
         Map<String, String> hostDetails = new HashMap<String, String>();
         hostDetails.put(RouterPrivateIpStrategy.class.getCanonicalName(), RouterPrivateIpStrategy.DcGlobal.toString());
@@ -188,27 +226,15 @@ public class AgentRoutingResource extends AgentStorageResource {
         if (this.totalCpu < (vmSpec.getCpus() * vmSpec.getMaxSpeed() + this.usedCpu) || this.totalMem < (vmSpec.getMaxRam() + this.usedMem)) {
             return new StartAnswer(cmd, "Not enough resource to start the vm");
         }
-        State state = State.Stopped;
-        synchronized (_vms) {
-            _vms.put(vmName, State.Starting);
+        Answer result = _simMgr.simulate(cmd, hostGuid);
+        if (!result.getResult()) {
+            return new StartAnswer(cmd, result.getDetails());
         }
 
-        try {
-            Answer result = _simMgr.simulate(cmd, hostGuid);
-            if (!result.getResult()) {
-                return new StartAnswer(cmd, result.getDetails());
-            }
+        this.usedCpu += vmSpec.getCpus() * vmSpec.getMaxSpeed();
+        this.usedMem += vmSpec.getMaxRam();
+        _runningVms.put(vmName, new Pair<Long, Long>(Long.valueOf(vmSpec.getCpus() * vmSpec.getMaxSpeed()), vmSpec.getMaxRam()));
 
-            this.usedCpu += vmSpec.getCpus() * vmSpec.getMaxSpeed();
-            this.usedMem += vmSpec.getMaxRam();
-            _runningVms.put(vmName, new Pair<Long, Long>(Long.valueOf(vmSpec.getCpus() * vmSpec.getMaxSpeed()), vmSpec.getMaxRam()));
-            state = State.Running;
-
-        } finally {
-            synchronized (_vms) {
-                _vms.put(vmName, state);
-            }
-        }
 
         return new StartAnswer(cmd);
 
@@ -219,31 +245,19 @@ public class AgentRoutingResource extends AgentStorageResource {
         StopAnswer answer = null;
         String vmName = cmd.getVmName();
 
-        State state = null;
-        synchronized (_vms) {
-            state = _vms.get(vmName);
-            _vms.put(vmName, State.Stopping);
+        Answer result = _simMgr.simulate(cmd, hostGuid);
+
+        if (!result.getResult()) {
+            return new StopAnswer(cmd, result.getDetails(), false);
         }
-        try {
-            Answer result = _simMgr.simulate(cmd, hostGuid);
 
-            if (!result.getResult()) {
-                return new StopAnswer(cmd, result.getDetails(), false);
-            }
+        answer = new StopAnswer(cmd, null, true);
+        Pair<Long, Long> data = _runningVms.get(vmName);
+        if (data != null) {
+            this.usedCpu -= data.first();
+            this.usedMem -= data.second();
+         }
 
-            answer = new StopAnswer(cmd, null, true);
-            Pair<Long, Long> data = _runningVms.get(vmName);
-            if (data != null) {
-                this.usedCpu -= data.first();
-                this.usedMem -= data.second();
-            }
-            state = State.Stopped;
-
-        } finally {
-            synchronized (_vms) {
-                _vms.put(vmName, state);
-            }
-        }
 
         return answer;
     }
@@ -251,12 +265,6 @@ public class AgentRoutingResource extends AgentStorageResource {
     protected CheckVirtualMachineAnswer execute(final CheckVirtualMachineCommand cmd) {
         final String vmName = cmd.getVmName();
         CheckVirtualMachineAnswer result = (CheckVirtualMachineAnswer)_simMgr.simulate(cmd, hostGuid);
-        State state = result.getState();
-        if (state == State.Running) {
-            synchronized (_vms) {
-                _vms.put(vmName, State.Running);
-            }
-        }
         return result;
     }
 
@@ -278,79 +286,11 @@ public class AgentRoutingResource extends AgentStorageResource {
 
     protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport() {
         HashMap<String, HostVmStateReportEntry> report = new HashMap<String, HostVmStateReportEntry>();
-
-        for (String vmName : _runningVms.keySet()) {
-            report.put(vmName, new HostVmStateReportEntry(PowerState.PowerOn, agentHost.getName()));
+        Map<String, PowerState> states = _simMgr.getVmStates(this.hostGuid);
+        for (String vmName : states.keySet()) {
+            report.put(vmName, new HostVmStateReportEntry(states.get(vmName), agentHost.getName()));
         }
-
         return report;
-    }
-
-    protected HashMap<String, State> sync() {
-        Map<String, State> newStates;
-        Map<String, State> oldStates = null;
-
-        HashMap<String, State> changes = new HashMap<String, State>();
-
-        synchronized (_vms) {
-            oldStates = new HashMap<String, State>(_vms.size());
-            oldStates.putAll(_vms);
-            newStates = new HashMap<String, State>(_vms.size());
-            newStates.putAll(_vms);
-
-            for (Map.Entry<String, State> entry : newStates.entrySet()) {
-                String vm = entry.getKey();
-
-                State newState = entry.getValue();
-                State oldState = oldStates.remove(vm);
-
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("VM " + vm + ": has state " + newState + " and we have state " + (oldState != null ? oldState.toString() : "null"));
-                }
-
-                if (oldState == null) {
-                    _vms.put(vm, newState);
-                    changes.put(vm, newState);
-                } else if (oldState == State.Starting) {
-                    if (newState == State.Running) {
-                        _vms.put(vm, newState);
-                    } else if (newState == State.Stopped) {
-                        s_logger.debug("Ignoring vm " + vm + " because of a lag in starting the vm.");
-                    }
-                } else if (oldState == State.Stopping) {
-                    if (newState == State.Stopped) {
-                        _vms.put(vm, newState);
-                    } else if (newState == State.Running) {
-                        s_logger.debug("Ignoring vm " + vm + " because of a lag in stopping the vm. ");
-                    }
-                } else if (oldState != newState) {
-                    _vms.put(vm, newState);
-                    changes.put(vm, newState);
-                }
-            }
-
-            for (Map.Entry<String, State> entry : oldStates.entrySet()) {
-                String vm = entry.getKey();
-                State oldState = entry.getValue();
-
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("VM " + vm + " is now missing from simulator agent so reporting stopped");
-                }
-
-                if (oldState == State.Stopping) {
-                    s_logger.debug("Ignoring VM " + vm + " in transition state stopping.");
-                    _vms.remove(vm);
-                } else if (oldState == State.Starting) {
-                    s_logger.debug("Ignoring VM " + vm + " in transition state starting.");
-                } else if (oldState == State.Stopped) {
-                    _vms.remove(vm);
-                } else {
-                    changes.put(entry.getKey(), State.Stopped);
-                }
-            }
-        }
-
-        return changes;
     }
 
     private Answer execute(ShutdownCommand cmd) {

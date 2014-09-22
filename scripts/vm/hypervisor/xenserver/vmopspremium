@@ -31,14 +31,14 @@ import socket
 import cloudstack_pluginlib as lib
 import logging
 
-lib.setup_logging("/var/log/cloud/vmops.log")
+lib.setup_logging("/var/log/cloud/cloud.log")
 
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        logging.debug("#### VMOPS enter  %s ####" % name )
+        logging.debug("#### CLOUD enter  %s ####" % name )
         res = fn(*v, **k)
-        logging.debug("#### VMOPS exit  %s ####" % name )
+        logging.debug("#### CLOUD exit  %s ####" % name )
         return res
     return wrapped
 
@@ -127,9 +127,10 @@ def setup_heartbeat_file(session, args):
 @echo
 def heartbeat(session, args):
     host = args['host']
+    timeout = args['timeout']
     interval = args['interval']
     try: 
-       cmd = ["/bin/bash", "/opt/cloud/bin/launch_hb.sh", host, interval]
+       cmd = ["/bin/bash", "/opt/cloud/bin/launch_hb.sh", host, timeout, interval]
        txt = util.pread2(cmd)
     except:
        txt='fail'

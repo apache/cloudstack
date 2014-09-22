@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -1055,25 +1056,27 @@ public class VirtualMachineMO extends BaseMO {
             s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + new Gson().toJson(vmdkDatastorePathChain) +
                     ", datastore: " + morDs.getValue());
 
-        VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, getScsiDeviceControllerKey(), vmdkDatastorePathChain, morDs, -1, 1);
-        VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+        synchronized (_mor.getValue().intern()) {
+            VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, getScsiDeviceControllerKey(), vmdkDatastorePathChain, morDs, -1, 1);
+            VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
+            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
-        deviceConfigSpec.setDevice(newDisk);
-        deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+            deviceConfigSpec.setDevice(newDisk);
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
-        reConfigSpec.getDeviceChange().add(deviceConfigSpec);
+            reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
-        ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-        boolean result = _context.getVimClient().waitForTask(morTask);
+            ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
+            boolean result = _context.getVimClient().waitForTask(morTask);
 
-        if (!result) {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("vCenter API trace - attachDisk() done(failed)");
-            throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            if (!result) {
+                if (s_logger.isTraceEnabled())
+                    s_logger.trace("vCenter API trace - attachDisk() done(failed)");
+                throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            }
+
+            _context.waitForTaskProgressDone(morTask);
         }
-
-        _context.waitForTaskProgressDone(morTask);
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - attachDisk() done(successfully)");
@@ -1084,25 +1087,27 @@ public class VirtualMachineMO extends BaseMO {
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + new Gson().toJson(vmdkDatastorePathChain));
 
-        VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, controllerKey, vmdkDatastorePathChain, -1, 1);
-        VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+        synchronized (_mor.getValue().intern()) {
+            VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, controllerKey, vmdkDatastorePathChain, -1, 1);
+            VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
+            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
-        deviceConfigSpec.setDevice(newDisk);
-        deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+            deviceConfigSpec.setDevice(newDisk);
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
-        reConfigSpec.getDeviceChange().add(deviceConfigSpec);
+            reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
-        ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-        boolean result = _context.getVimClient().waitForTask(morTask);
+            ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
+            boolean result = _context.getVimClient().waitForTask(morTask);
 
-        if (!result) {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("vCenter API trace - attachDisk() done(failed)");
-            throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            if (!result) {
+                if (s_logger.isTraceEnabled())
+                    s_logger.trace("vCenter API trace - attachDisk() done(failed)");
+                throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            }
+
+            _context.waitForTaskProgressDone(morTask);
         }
-
-        _context.waitForTaskProgressDone(morTask);
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - attachDisk() done(successfully)");
@@ -1909,13 +1914,27 @@ public class VirtualMachineMO extends BaseMO {
         }
     }
 
+    private static String trimSnapshotDeltaPostfix(String name) {
+        String[] tokens = name.split("-");
+        if (tokens.length > 1 && tokens[tokens.length - 1].matches("[0-9]{6,}")) {
+            List<String> trimmedTokens = new ArrayList<String>();
+            for (int i = 0; i < tokens.length - 1; i++)
+                trimmedTokens.add(tokens[i]);
+            return StringUtils.join(trimmedTokens, "-");
+        }
+        return name;
+    }
+
     // return pair of VirtualDisk and disk device bus name(ide0:0, etc)
     public Pair<VirtualDisk, String> getDiskDevice(String vmdkDatastorePath, boolean matchExactly) throws Exception {
         List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
 
-        s_logger.info("Look for disk device info from volume : " + vmdkDatastorePath);
         DatastoreFile dsSrcFile = new DatastoreFile(vmdkDatastorePath);
         String srcBaseName = dsSrcFile.getFileBaseName();
+
+        srcBaseName = trimSnapshotDeltaPostfix(srcBaseName);
+
+        s_logger.info("Look for disk device info from volume : " + vmdkDatastorePath + " with trimmed base name: " + srcBaseName);
 
         if (devices != null && devices.size() > 0) {
             for (VirtualDevice device : devices) {
@@ -2295,17 +2314,22 @@ public class VirtualMachineMO extends BaseMO {
     public int getNextDeviceNumber(int controllerKey) throws Exception {
         List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
 
-        int deviceNumber = -1;
+        List<Integer> existingUnitNumbers = new ArrayList<Integer>();
+        int deviceNumber = 0;
         if (devices != null && devices.size() > 0) {
             for (VirtualDevice device : devices) {
                 if (device.getControllerKey() != null && device.getControllerKey().intValue() == controllerKey) {
-                    if (device.getUnitNumber() != null && device.getUnitNumber().intValue() > deviceNumber) {
-                        deviceNumber = device.getUnitNumber().intValue();
-                    }
+                    existingUnitNumbers.add(device.getUnitNumber());
                 }
             }
         }
-        return ++deviceNumber;
+        while (true) {
+            if (!existingUnitNumbers.contains(Integer.valueOf(deviceNumber))) {
+                break;
+            }
+            ++deviceNumber;
+        }
+        return deviceNumber;
     }
 
     private List<VirtualDevice> getNicDevices(boolean sorted) throws Exception {
@@ -2362,7 +2386,7 @@ public class VirtualMachineMO extends BaseMO {
             attachedNetworkSummary = ((VirtualEthernetCard)nic).getDeviceInfo().getSummary();
             if (attachedNetworkSummary.startsWith(networkNamePrefix)) {
                 return new Pair<Integer, VirtualDevice>(new Integer(index), nic);
-            } else if (attachedNetworkSummary.endsWith("DistributedVirtualPortBackingInfo.summary")) {
+            } else if (attachedNetworkSummary.endsWith("DistributedVirtualPortBackingInfo.summary") || attachedNetworkSummary.startsWith("DVSwitch")) {
                 dvPortGroupName = getDvPortGroupName((VirtualEthernetCard)nic);
                 if (dvPortGroupName != null && dvPortGroupName.startsWith(networkNamePrefix)) {
                     s_logger.debug("Found a dvPortGroup already associated with public NIC.");

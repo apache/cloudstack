@@ -47,6 +47,5 @@
     <module>console-proxy</module>
     <module>console-proxy-rdp/rdpconsole</module>
     <module>secondary-storage</module>
-    <module>iam</module>
   </modules>
 </project>

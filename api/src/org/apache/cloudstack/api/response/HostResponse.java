@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -212,6 +213,10 @@ public class HostResponse extends BaseResponse {
     @Param(description = "true if the host is Ha host (dedicated to vms started by HA process; false otherwise")
     private Boolean haHost;
 
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "Host details in key/value pairs.", since = "4.5")
+    private Map details;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -328,6 +333,7 @@ public class HostResponse extends BaseResponse {
     public void setGpuGroups(List<GpuResponse> gpuGroup) {
         this.gpuGroup = gpuGroup;
     }
+
     public void setDiskSizeTotal(Long diskSizeTotal) {
         this.diskSizeTotal = diskSizeTotal;
     }
@@ -415,4 +421,9 @@ public class HostResponse extends BaseResponse {
     public void setHaHost(Boolean haHost) {
         this.haHost = haHost;
     }
+
+    public void setDetails(Map details) {
+        this.details = details;
+    }
+
 }

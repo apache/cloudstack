@@ -65,6 +65,8 @@ import org.apache.log4j.Logger;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import org.apache.cloudstack.storage.command.CopyCommand;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
@@ -90,10 +92,9 @@ import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
-import com.cloud.agent.api.StartupRoutingCommand.VmState;
-import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -124,9 +125,11 @@ import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
@@ -177,7 +180,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     protected final int _retry = 24;
     protected final int _sleep = 10000;
     protected static final int DEFAULT_DOMR_SSHPORT = 3922;
-    private final int maxid = 4094;
     private String _clusterGuid;
 
     // Used by initialize to assert object configured before
@@ -212,8 +214,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         // Create default StartupRoutingCommand, then customise
         StartupRoutingCommand defaultStartRoutCmd =
-            new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.Hyperv, RouterPrivateIpStrategy.HostLocal, new HashMap<String, VmState>(),
-                new HashMap<String, HostVmStateReportEntry>());
+            new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.Hyperv, RouterPrivateIpStrategy.HostLocal);
 
         // Identity within the data centre is decided by CloudStack kernel,
         // and passed via ServerResource.configure()
@@ -225,7 +226,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         defaultStartRoutCmd.setPrivateIpAddress(_agentIp);
         defaultStartRoutCmd.setStorageIpAddress(_agentIp);
         defaultStartRoutCmd.setPool(_clusterGuid);
-        defaultStartRoutCmd.setHostVmStateReport(getHostVmStateReport());
 
         s_logger.debug("Generated StartupRoutingCommand for _agentIp \"" + _agentIp + "\"");
 
@@ -317,7 +317,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
     @Override
     public final PingCommand getCurrentStatus(final long id) {
-        PingCommand pingCmd = new PingRoutingCommand(getType(), id, null, getHostVmStateReport());
+        PingCommand pingCmd = new PingRoutingCommand(getType(), id, getHostVmStateReport());
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Ping host " + _name + " (IP " + _agentIp + ")");
@@ -356,8 +356,12 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
         s_logger.debug("HostVmStateReportCommand received response "
                 + s_gson.toJson(result));
-        if (!result.isEmpty()) {
-            return result;
+        if (result != null) {
+            if (!result.isEmpty()) {
+                return result;
+            } else {
+                return new ArrayList<Map<String, String>>();
+            }
         }
         return null;
     }
@@ -365,7 +369,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport() {
         final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
         ArrayList<Map<String, String>> vmList = requestHostVmStateReport();
-        if (vmList == null || vmList.isEmpty()) {
+        if (vmList == null) {
             return null;
         }
 
@@ -486,6 +490,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             answer = execute((PlugNicCommand)cmd);
         } else if (clazz == UnPlugNicCommand.class) {
             answer = execute((UnPlugNicCommand)cmd);
+        } else if (clazz == CopyCommand.class) {
+            answer = execute((CopyCommand)cmd);
         }
         else {
             if (clazz == StartCommand.class) {
@@ -510,7 +516,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             // Only Answer instances are returned by remote agents.
             // E.g. see Response.getAnswers()
             Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
-            String logResult = cleanPassword(StringEscapeUtils.unescapeJava(result.toString()));
+            String logResult = cleanPassword(s_gson.toJson(result));
             s_logger.debug("executeRequest received response " + logResult);
             if (result.length > 0) {
                 return result[0];
@@ -519,6 +525,46 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         return answer;
     }
 
+    private Answer execute(CopyCommand cmd) {
+        URI agentUri = null;
+        try {
+            String cmdName = cmd.getClass().getName();
+            agentUri =
+                    new URI("https", null, _agentIp, _port,
+                            "/api/HypervResource/" + cmdName, null, null);
+        } catch (URISyntaxException e) {
+            String errMsg = "Could not generate URI for Hyper-V agent";
+            s_logger.error(errMsg, e);
+            return null;
+        }
+        cleanPassword(cmd.getSrcTO().getDataStore());
+        cleanPassword(cmd.getDestTO().getDataStore());
+
+        // Send the cmd to hyperv agent.
+        String ansStr = postHttpRequest(s_gson.toJson(cmd), agentUri);
+        if (ansStr == null) {
+            return Answer.createUnsupportedCommandAnswer(cmd);
+        }
+
+        Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
+        String logResult = cleanPassword(s_gson.toJson(result));
+        s_logger.debug("executeRequest received response " + logResult);
+        if (result.length > 0) {
+            return result[0];
+        }
+
+        return null;
+    }
+
+    private void cleanPassword(DataStoreTO dataStoreTO) {
+        if (dataStoreTO instanceof NfsTO) {
+            NfsTO nfsTO = (NfsTO)dataStoreTO;
+            String url = nfsTO.getUrl();
+            if (url.contains("cifs") && url.contains("password")) {
+                nfsTO.setUrl(url.substring(0, url.indexOf('?')));
+            }
+        }
+    }
 
     private PlugNicAnswer execute(PlugNicCommand cmd) {
         if (s_logger.isInfoEnabled()) {
@@ -535,11 +581,15 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             }
             int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
             int publicNicInfo = -1;
-            publicNicInfo = getVmNics(vmName, maxid);
+            publicNicInfo = getVmFreeNicIndex(vmName);
             if (publicNicInfo > 0) {
-                modifyNicVlan(vmName, vlanId, publicNicInfo);
+                modifyNicVlan(vmName, vlanId, publicNicInfo, true, cmd.getNic().getName());
+                return new PlugNicAnswer(cmd, true, "success");
             }
-            return new PlugNicAnswer(cmd, true, "success");
+            String msg = " Plug Nic failed for the vm as it has reached max limit of NICs to be added";
+            s_logger.warn(msg);
+            return new PlugNicAnswer(cmd, false, msg);
+
         } catch (Exception e) {
             s_logger.error("Unexpected exception: ", e);
             return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + e.toString());
@@ -563,7 +613,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             int publicNicInfo = -1;
             publicNicInfo = getVmNics(vmName, vlanId);
             if (publicNicInfo > 0) {
-                modifyNicVlan(vmName, maxid, publicNicInfo);
+                modifyNicVlan(vmName, 2, publicNicInfo, false, "");
             }
             return new UnPlugNicAnswer(cmd, true, "success");
         } catch (Exception e) {
@@ -1765,6 +1815,37 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         return new IpAssocAnswer(cmd, results);
     }
 
+
+    protected int getVmFreeNicIndex(String vmName) {
+        GetVmConfigCommand vmConfig = new GetVmConfigCommand(vmName);
+        URI agentUri = null;
+        int nicposition = -1;
+        try {
+            String cmdName = GetVmConfigCommand.class.getName();
+            agentUri =
+                    new URI("https", null, _agentIp, _port,
+                            "/api/HypervResource/" + cmdName, null, null);
+        } catch (URISyntaxException e) {
+            String errMsg = "Could not generate URI for Hyper-V agent";
+            s_logger.error(errMsg, e);
+        }
+        String ansStr = postHttpRequest(s_gson.toJson(vmConfig), agentUri);
+        Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
+        s_logger.debug("GetVmConfigCommand response received "
+                + s_gson.toJson(result));
+        if (result.length > 0) {
+            GetVmConfigAnswer ans = ((GetVmConfigAnswer)result[0]);
+            List<NicDetails> nics = ans.getNics();
+            for (NicDetails nic : nics) {
+                if (nic.getState() == false) {
+                    nicposition = nics.indexOf(nic);
+                    break;
+                }
+            }
+        }
+        return nicposition;
+    }
+
     protected int getVmNics(String vmName, int vlanid) {
         GetVmConfigCommand vmConfig = new GetVmConfigCommand(vmName);
         URI agentUri = null;
@@ -1816,8 +1897,9 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
     }
 
-    protected void modifyNicVlan(String vmName, int vlanId, int pos) {
-        ModifyVmNicConfigCommand modifynic = new ModifyVmNicConfigCommand(vmName, vlanId, pos);
+    protected void modifyNicVlan(String vmName, int vlanId, int pos, boolean enable, String switchLabelName) {
+        ModifyVmNicConfigCommand modifyNic = new ModifyVmNicConfigCommand(vmName, vlanId, pos, enable);
+        modifyNic.setSwitchLableName(switchLabelName);
         URI agentUri = null;
         try {
             String cmdName = ModifyVmNicConfigCommand.class.getName();
@@ -1828,7 +1910,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             String errMsg = "Could not generate URI for Hyper-V agent";
             s_logger.error(errMsg, e);
         }
-        String ansStr = postHttpRequest(s_gson.toJson(modifynic), agentUri);
+        String ansStr = postHttpRequest(s_gson.toJson(modifyNic), agentUri);
         Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
         s_logger.debug("executeRequest received response "
                 + s_gson.toJson(result));

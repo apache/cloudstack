@@ -77,19 +77,23 @@
         steps: [
             // Step 1: Setup
             function(args) {
-                if (args.initArgs.pluginForm != null && args.initArgs.pluginForm.name == "vpcTierInstanceWizard") { //from VPC Tier chart
-                    //populate only one zone to the dropdown, the zone which the VPC is under.
-                    zoneObjs = [{
-                        id: args.context.vpc[0].zoneid,
-                        name: args.context.vpc[0].zonename,
-                        networktype: 'Advanced'
-                    }];
-                    args.response.success({
-                        data: {
-                            zones: zoneObjs
-                        }
-                    });
-                } else { //from Instance page
+                //from VPC Tier chart -- when the tier (network) has strechedl2subnet==false:
+                //only own zone is populated to the dropdown
+                if (args.initArgs.pluginForm != null && args.initArgs.pluginForm.name == "vpcTierInstanceWizard"
+                    && args.context.networks[0].strechedl2subnet) {
+                        zoneObjs = [{
+                            id: args.context.vpc[0].zoneid,
+                            name: args.context.vpc[0].zonename,
+                            networktype: 'Advanced'
+                        }];
+                        args.response.success({
+                            data: {
+                                zones: zoneObjs
+                            }
+                        });
+                }
+                //in all other cases (as well as from instance page) all zones are populated to dropdown
+                else {
                     $.ajax({
                         url: createURL("listZones&available=true"),
                         dataType: "json",
@@ -261,6 +265,7 @@
 
             // Step 3: Service offering
             function(args) {
+            	selectedTemplateObj = null; //reset            	
                 if (args.currentData["select-template"] == "select-template") {
                     if (featuredTemplateObjs != null && featuredTemplateObjs.length > 0) {
                         for (var i = 0; i < featuredTemplateObjs.length; i++) {
@@ -335,7 +340,8 @@
                             customIopsDoFlag: 'iscustomizediops',
                             data: {
                                 diskOfferings: diskOfferingObjs
-                            }
+                            },
+                            multiDisk: false
                         });
                     }
                 });
@@ -507,6 +513,47 @@
                             }
                         }
                     });
+
+                    //In addition to the networks in the current zone, find networks in other zones that have stretchedL2subnet==true
+                    //capability and show them on the UI
+                    var allOtherAdvancedZones = [];
+                    $.ajax({
+                        url: createURL('listZones'),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {
+                            var result = $.grep(json.listzonesresponse.zone, function(zone) {
+                               return (zone.networktype == 'Advanced');
+                            });
+                            $(result).each(function() {
+                                if (selectedZoneObj.id != this.id)
+                                    allOtherAdvancedZones.push(this);
+                            });
+                        }
+                    });
+                    if (allOtherAdvancedZones.length > 0) {
+                        for (var i = 0; i < allOtherAdvancedZones.length; i++) {
+                            var networkDataForZone = {
+                                zoneId: allOtherAdvancedZones[i].id,
+                                canusefordeploy: true
+                            };
+                            $.ajax({
+                                url: createURL('listNetworks'),
+                                data: networkDataForZone,
+                                async: false,
+                                success: function(json) {
+                                    var networksInThisZone = json.listnetworksresponse.network ? json.listnetworksresponse.network : [];
+                                    if (networksInThisZone.length > 0) {
+                                        for (var i = 0; i < networksInThisZone.length; i++) {
+                                            if (networksInThisZone[i].strechedl2subnet) {
+                                                networkObjsToPopulate.push(networksInThisZone[i]);
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
 
                     $.ajax({
                         url: createURL("listNetworkOfferings"),
@@ -893,6 +940,11 @@
             		group : group
             	});
             }
+
+            $(window).trigger('cloudStack.deployVirtualMachine', {
+                deployVmData: deployVmData,
+                formData: args.data
+            });
 
             $.ajax({
                 url: createURL('deployVirtualMachine'),

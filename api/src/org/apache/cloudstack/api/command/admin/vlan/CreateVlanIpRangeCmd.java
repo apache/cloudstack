@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vlan;
 
+import com.cloud.utils.net.NetUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -128,7 +129,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     }
 
     public Boolean isForVirtualNetwork() {
-        return forVirtualNetwork == null ? true : forVirtualNetwork;
+        return forVirtualNetwork == null ? Boolean.TRUE : forVirtualNetwork;
     }
 
     public String getGateway() {
@@ -166,28 +167,28 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
         if (startIpv6 == null) {
             return null;
         }
-        return startIpv6.toLowerCase();
+        return NetUtils.standardizeIp6Address(startIpv6);
     }
 
     public String getEndIpv6() {
         if (endIpv6 == null) {
             return null;
         }
-        return endIpv6.toLowerCase();
+        return NetUtils.standardizeIp6Address(endIpv6);
     }
 
     public String getIp6Gateway() {
         if (ip6Gateway == null) {
             return null;
         }
-        return ip6Gateway.toLowerCase();
+        return NetUtils.standardizeIp6Address(ip6Gateway);
     }
 
     public String getIp6Cidr() {
         if (ip6Cidr == null) {
             return null;
         }
-        return ip6Cidr.toLowerCase();
+        return NetUtils.standardizeIp6Cidr(ip6Cidr);
     }
 
     /////////////////////////////////////////////////////

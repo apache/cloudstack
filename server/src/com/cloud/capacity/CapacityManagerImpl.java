@@ -514,31 +514,33 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     }
 
-    private long getUsedBytes(StoragePoolVO pool) {
-        long usedBytes = 0;
+    @Override
+    public long getUsedBytes(StoragePoolVO pool) {
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+
+        if (storeDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
+
+            return primaryStoreDriver.getUsedBytes(pool);
+        }
+
+        throw new CloudRuntimeException("Storage driver in CapacityManagerImpl.getUsedBytes(StoragePoolVO) is not a PrimaryDataStoreDriver.");
+    }
+
+    @Override
+    public long getUsedIops(StoragePoolVO pool) {
+        long usedIops = 0;
 
         List<VolumeVO> volumes = _volumeDao.findByPoolId(pool.getId(), null);
 
-        if (volumes != null && volumes.size() > 0) {
-            DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
-            DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
-            PrimaryDataStoreDriver primaryStoreDriver = null;
-
-            if (storeDriver instanceof PrimaryDataStoreDriver) {
-                primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
-            }
-
+        if (volumes != null) {
             for (VolumeVO volume : volumes) {
-                if (primaryStoreDriver != null) {
-                    usedBytes += primaryStoreDriver.getVolumeSizeIncludingHypervisorSnapshotReserve(volume, pool);
-                }
-                else {
-                    usedBytes += volume.getSize();
-                }
+                usedIops += volume.getMinIops() != null ? volume.getMinIops() : 0;
             }
         }
 
-        return usedBytes;
+        return usedIops;
     }
 
     @Override
@@ -548,7 +550,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         // if the storage pool is managed, the used bytes can be larger than the sum of the sizes of all of the non-destroyed volumes
         // in this case, call getUsedBytes(StoragePoolVO)
         if (pool.isManaged()) {
-            totalAllocatedSize = getUsedBytes(pool);
+            return getUsedBytes(pool);
         }
         else {
             // Get size for all the non-destroyed volumes

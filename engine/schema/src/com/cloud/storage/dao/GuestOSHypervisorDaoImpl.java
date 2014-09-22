@@ -34,6 +34,7 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
 
     protected final SearchBuilder<GuestOSHypervisorVO> guestOsSearch;
     protected final SearchBuilder<GuestOSHypervisorVO> mappingSearch;
+    protected final SearchBuilder<GuestOSHypervisorVO> userDefinedMappingSearch;
 
     protected GuestOSHypervisorDaoImpl() {
         guestOsSearch = createSearchBuilder();
@@ -45,6 +46,13 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
         mappingSearch.and("hypervisor_type", mappingSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         mappingSearch.and("hypervisor_version", mappingSearch.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
         mappingSearch.done();
+
+        userDefinedMappingSearch = createSearchBuilder();
+        userDefinedMappingSearch.and("guest_os_id", userDefinedMappingSearch.entity().getGuestOsId(), SearchCriteria.Op.EQ);
+        userDefinedMappingSearch.and("hypervisor_type", userDefinedMappingSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        userDefinedMappingSearch.and("hypervisor_version", userDefinedMappingSearch.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
+        userDefinedMappingSearch.and("is_user_defined", userDefinedMappingSearch.entity().getIsUserDefined(), SearchCriteria.Op.EQ);
+        userDefinedMappingSearch.done();
     }
 
     @Override
@@ -58,9 +66,27 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
     @Override
     public GuestOSHypervisorVO findByOsIdAndHypervisor(long guestOsId, String hypervisorType, String hypervisorVersion) {
         SearchCriteria<GuestOSHypervisorVO> sc = mappingSearch.create();
+        String version = "default";
+        if (!(hypervisorVersion == null || hypervisorVersion.isEmpty())) {
+            version = hypervisorVersion;
+        }
         sc.setParameters("guest_os_id", guestOsId);
         sc.setParameters("hypervisor_type", hypervisorType);
-        sc.setParameters("hypervisor_version", hypervisorVersion);
+        sc.setParameters("hypervisor_version", version);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public GuestOSHypervisorVO findByOsIdAndHypervisorAndUserDefined(long guestOsId, String hypervisorType, String hypervisorVersion, boolean isUserDefined) {
+        SearchCriteria<GuestOSHypervisorVO> sc = userDefinedMappingSearch.create();
+        String version = "default";
+        if (!(hypervisorVersion == null || hypervisorVersion.isEmpty())) {
+            version = hypervisorVersion;
+        }
+        sc.setParameters("guest_os_id", guestOsId);
+        sc.setParameters("hypervisor_type", hypervisorType);
+        sc.setParameters("hypervisor_version", version);
+        sc.setParameters("is_user_defined", isUserDefined);
         return findOneBy(sc);
     }
 

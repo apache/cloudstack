@@ -91,6 +91,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.Storage;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -378,7 +379,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
             ServiceOfferingVO newOff =
                 new ServiceOfferingVO("System Offering For Internal LB VM", 1, InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_RAMSIZE,
-                    InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_CPU_MHZ, null, null, true, null, useLocalStorage, true, null, true,
+                    InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_CPU_MHZ, null, null, true, null,
+                    Storage.ProvisioningType.THIN, useLocalStorage, true, null, true,
                     VirtualMachine.Type.InternalLoadBalancerVm, true);
             newOff.setUniqueName(ServiceOffering.internalLbVmDefaultOffUniqueName);
             newOff = _serviceOfferingDao.persistSystemServiceOffering(newOff);

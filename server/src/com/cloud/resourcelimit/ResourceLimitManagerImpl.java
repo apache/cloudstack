@@ -325,6 +325,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         Account account = _accountDao.findById(accountId);
+        if (account == null) {
+            return max;
+        }
 
         // Check if limit is configured for account
         if (limit != null) {
@@ -458,7 +461,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         List<ResourceLimitVO> limits = new ArrayList<ResourceLimitVO>();
         boolean isAccount = true;
 
-        if (!_accountMgr.isAdmin(caller.getType())) {
+        if (!_accountMgr.isAdmin(caller.getId())) {
             accountId = caller.getId();
             domainId = null;
         } else {
@@ -633,6 +636,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         if (accountId != null) {
             Account account = _entityMgr.findById(Account.class, accountId);
+            if (account == null) {
+                throw new InvalidParameterValueException("Unable to find account " + accountId);
+            }
             if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
                 throw new InvalidParameterValueException("Can't update system account");
             }

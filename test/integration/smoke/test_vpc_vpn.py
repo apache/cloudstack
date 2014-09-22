@@ -17,105 +17,29 @@
 """ Tests for VPN in VPC
 """
 #Import Local Modules
+from marvin.codes import FAILED
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 
 import time
-
-class Services:
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                "password": "password",
-            },
-            "virtual_machine": {
-                "displayname": "Test VM",
-                "username": "root",
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            "service_offering": {
-                "name": "Tiny Instance",
-                "displaytext": "Tiny Instance",
-                "cpunumber": 1,
-                "cpuspeed": 100,
-                "memory": 256,
-            },
-            "network_offering": {
-                "name": "Network offering for internal vpc",
-                "displaytext": "Network offering for internal vpc",
-                "guestiptype": "Isolated",
-                "traffictype": "Guest",
-                "supportedservices": "Vpn,Dhcp,Dns,Lb,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL",
-                "serviceProviderList": {
-                    "Dhcp": "VpcVirtualRouter",
-                    "Dns": "VpcVirtualRouter",
-                    "Vpn": "VpcVirtualRouter",
-                    "UserData": "VpcVirtualRouter",
-                    "Lb": "InternalLbVM",
-                    "SourceNat": "VpcVirtualRouter",
-                    "StaticNat": "VpcVirtualRouter",
-                    "PortForwarding": "VpcVirtualRouter",
-                    "NetworkACL": "VpcVirtualRouter",
-                },
-                "serviceCapabilityList": {
-                    "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
-                    "Lb": {"lbSchemes": "internal", "SupportedLbIsolation": "dedicated"}
-                }
-            },
-            "vpn_user": {
-                "username": "test",
-                "password": "password",
-            },
-            "vpc": {
-                "name": "vpc_vpn",
-                "displaytext": "vpc-vpn",
-                "cidr": "10.1.1.0/24"
-            },
-            "ntwk": {
-                "name": "tier1",
-                "displaytext": "vpc-tier1",
-                "gateway" : "10.1.1.1",
-                "netmask" : "255.255.255.192"
-            },
-            "vpc2": {
-                "name": "vpc2_vpn",
-                "displaytext": "vpc2-vpn",
-                "cidr": "10.2.1.0/24"
-            },
-            "ntwk2": {
-                "name": "tier2",
-                "displaytext": "vpc-tier2",
-                "gateway" : "10.2.1.1",
-                "netmask" : "255.255.255.192"
-            }
-        }
-
 
 class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apiclient = super(TestVpcRemoteAccessVpn, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        testClient = super(TestVpcRemoteAccessVpn, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offering"]
+            cls.services["service_offerings"]
         )
         cls.account = Account.create(cls.apiclient, services=cls.services["account"])
         cls.template = get_template(
@@ -123,9 +47,13 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.cleanup = [cls.account]
 
-    @attr(tags=["advanced", "selfservice"])
+   
+    @attr(tags=["advanced"], required_hardware="false")
     def test_vpc_remote_access_vpn(self):
         """Test VPN in VPC"""
 
@@ -211,13 +139,15 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apiclient = super(TestVpcSite2SiteVpn, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        testClient = super(TestVpcSite2SiteVpn, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offering"]
+            cls.services["service_offerings"]
         )
         cls.account = Account.create(cls.apiclient, services=cls.services["account"])
         cls.template = get_template(
@@ -225,9 +155,12 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.cleanup = [cls.account]
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_vpc_site2site_vpn(self):
         """Test VPN in VPC"""
 

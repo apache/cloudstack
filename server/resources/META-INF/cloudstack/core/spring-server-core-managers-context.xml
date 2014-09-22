@@ -32,6 +32,11 @@
                       http://www.springframework.org/schema/util/spring-util-3.0.xsd"
                       >
 
+    <bean id="authenticationManagerImpl" class="com.cloud.api.auth.APIAuthenticationManagerImpl">
+        <property name="apiAuthenticators"
+                  value="#{pluggableAPIAuthenticatorsRegistry.registered}" />
+    </bean>
+
     <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl">
         <property name="userAuthenticators"
             value="#{userAuthenticatorsRegistry.registered}" />
@@ -224,7 +229,8 @@
     <bean id="PlannerHostReservationDaoImpl" class="com.cloud.deploy.dao.PlannerHostReservationDaoImpl" />
 
     <bean id="GlobalLoadBalancingRulesServiceImpl"
-        class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" />
-        
+        class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" >
+        <property name="gslbServiceProviders" value="#{gslbServiceProvidersRegistry.registered}" />
+    </bean>
     <bean id="certServiceImpl" class="org.apache.cloudstack.network.lb.CertServiceImpl" />
 </beans>

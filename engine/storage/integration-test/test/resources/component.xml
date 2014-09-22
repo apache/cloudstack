@@ -109,7 +109,7 @@
   </bean>
 
 
-  <bean id="XcpServerDiscoverer" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer">
+  <bean id="XcpServerDiscoverer" class="com.cloud.hypervisor.xenserver.discoverer.XcpServerDiscoverer">
     <property name="name" value="XCP Agent"/>
   </bean>
 

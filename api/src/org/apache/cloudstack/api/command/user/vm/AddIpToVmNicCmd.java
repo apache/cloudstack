@@ -20,7 +20,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NicResponse;
@@ -45,7 +45,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "addIpToNic", description = "Assigns secondary IP to NIC", responseObject = NicSecondaryIpResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class AddIpToVmNicCmd extends BaseAsyncCmd {
+public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddIpToVmNicCmd.class.getName());
     private static final String s_name = "addiptovmnicresponse";
 
@@ -100,7 +100,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_NET_IP_ASSIGN;
+        return EventTypes.EVENT_NIC_SECONDARY_IP_ASSIGN;
     }
 
     @Override
@@ -125,35 +125,18 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
 
         CallContext.current().setEventDetails("Nic Id: " + getNicId());
-        String ip;
-        NicSecondaryIp result;
-        String secondaryIp = null;
-        if ((ip = getIpaddress()) != null) {
-            if (!NetUtils.isValidIp(ip)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Invalid ip address " + ip);
-            }
-        }
-
-        try {
-            result = _networkService.allocateSecondaryGuestIP(getNicId(), getIpaddress());
-        } catch (InsufficientAddressCapacityException e) {
-            throw new InvalidParameterValueException("Allocating guest ip for nic failed : " + e.getMessage());
-        }
+        NicSecondaryIp result = _entityMgr.findById(NicSecondaryIp.class, getEntityId());
 
         if (result != null) {
-            secondaryIp = result.getIp4Address();
-            if (isZoneSGEnabled()) {
-                // add security group rules for the secondary ip addresses
-                boolean success = false;
-                success = _securityGroupService.securityGroupRulesForVmSecIp(getNicId(), secondaryIp, true);
-                if (success == false) {
-                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set security group rules for the secondary ip");
-                }
+            CallContext.current().setEventDetails("secondary Ip Id: " + getEntityId());
+            boolean success = false;
+            success = _networkService.configureNicSecondaryIp(result, isZoneSGEnabled());
+
+            if (success == false) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set security group rules for the secondary ip");
             }
 
-            s_logger.info("Associated ip address to NIC : " + secondaryIp);
-            NicSecondaryIpResponse response = new NicSecondaryIpResponse();
-            response = _responseGenerator.createSecondaryIPToNicResponse(result);
+            NicSecondaryIpResponse response = _responseGenerator.createSecondaryIPToNicResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
@@ -161,10 +144,6 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
         }
     }
 
-    @Override
-    public String getSyncObjType() {
-        return BaseAsyncCmd.networkSyncObject;
-    }
 
     @Override
     public Long getSyncObjId() {
@@ -188,4 +167,29 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
         return vm.getAccountId();
     }
 
+    @Override
+    public void create() throws ResourceAllocationException {
+        String ip;
+        NicSecondaryIp result;
+        String secondaryIp = null;
+        if ((ip = getIpaddress()) != null) {
+            if (!NetUtils.isValidIp(ip)) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Invalid ip address " + ip);
+            }
+        }
+
+        try {
+            result = _networkService.allocateSecondaryGuestIP(getNicId(), getIpaddress());
+            if (result != null) {
+                setEntityId(result.getId());
+                setEntityUuid(result.getUuid());
+            }
+        } catch (InsufficientAddressCapacityException e) {
+            throw new InvalidParameterValueException("Allocating guest ip for nic failed : " + e.getMessage());
+        }
+
+        if (result == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign secondary ip to nic");
+        }
+    }
 }

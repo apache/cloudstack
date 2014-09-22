@@ -33,7 +33,7 @@ public interface PhysicalNetwork extends Identity, InternalIdentity {
     }
 
     public enum IsolationMethod {
-        VLAN, L3, GRE, STT, VNS, MIDO, SSP, VXLAN, ODL, L3VPN;
+        VLAN, L3, GRE, STT, VNS, MIDO, SSP, VXLAN, ODL, L3VPN, VSP, VCS;
     }
 
     public enum BroadcastDomainRange {

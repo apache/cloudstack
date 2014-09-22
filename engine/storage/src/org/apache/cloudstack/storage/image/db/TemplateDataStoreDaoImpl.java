@@ -63,6 +63,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     private SearchBuilder<TemplateDataStoreVO> storeTemplateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeTemplateStateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeTemplateDownloadStatusSearch;
+    private SearchBuilder<TemplateDataStoreVO> downloadTemplateSearch;
 
     @Inject
     private DataStoreManager _storeMgr;
@@ -130,6 +131,11 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         storeTemplateSearch.and("template_id", storeTemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
         storeTemplateSearch.and("destroyed", storeTemplateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         storeTemplateSearch.done();
+
+        downloadTemplateSearch = createSearchBuilder();
+        downloadTemplateSearch.and("download_url", downloadTemplateSearch.entity().getExtractUrl(), Op.NNULL);
+        downloadTemplateSearch.and("destroyed", downloadTemplateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        downloadTemplateSearch.done();
 
         return true;
     }
@@ -283,6 +289,16 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
             return result;
         }
         return null;
+    }
+
+    @Override
+    public  void removeByTemplateStore(long templateId, long imageStoreId) {
+        SearchCriteria<TemplateDataStoreVO> sc = storeTemplateSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("store_id", imageStoreId);
+        sc.setParameters("destroyed", false);
+        expunge(sc);
+
     }
 
     @Override
@@ -486,6 +502,13 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
             }
         }
 
+    }
+
+    @Override
+    public List<TemplateDataStoreVO> listTemplateDownloadUrls() {
+        SearchCriteria<TemplateDataStoreVO> sc = downloadTemplateSearch.create();
+        sc.setParameters("destroyed", false);
+        return listBy(sc);
     }
 
 }

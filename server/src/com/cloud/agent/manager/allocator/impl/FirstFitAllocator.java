@@ -243,7 +243,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
         // We will try to reorder the host lists such that we give priority to hosts that have
         // the minimums to support a VM's requirements
-        hosts = prioritizeHosts(template, hosts);
+        hosts = prioritizeHosts(template, offering, hosts);
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Found " + hosts.size() + " hosts for allocation after prioritization: " + hosts);
@@ -278,10 +278,12 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             }
 
             // Check if GPU device is required by offering and host has the availability
-            if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString())) != null
-                    && !_resourceMgr.isGPUDeviceAvailable(host.getId(), offeringDetails.getValue())){
-                s_logger.info("Host name: " + host.getName() + ", hostId: "+ host.getId() +" does not have required GPU devices available");
-                continue;
+            if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString())) != null) {
+                ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.pciDevice.toString());
+                if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
+                    s_logger.info("Host name: " + host.getName() + ", hostId: "+ host.getId() +" does not have required GPU devices available");
+                    continue;
+                }
             }
 
             int cpu_requested = offering.getCpu() * offering.getSpeed();
@@ -353,7 +355,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         return true;
     }
 
-    protected List<? extends Host> prioritizeHosts(VMTemplateVO template, List<? extends Host> hosts) {
+    protected List<? extends Host> prioritizeHosts(VMTemplateVO template, ServiceOffering offering, List<? extends Host> hosts) {
         if (template == null) {
             return hosts;
         }
@@ -416,6 +418,22 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         prioritizedHosts.addAll(0, highPriorityHosts);
         prioritizedHosts.addAll(lowPriorityHosts);
 
+        // if service offering is not GPU enabled then move all the GPU enabled hosts to the end of priority list.
+        if (_serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) == null) {
+
+            List<Host> gpuEnabledHosts = new ArrayList<Host>();
+            // Check for GPU enabled hosts.
+            for (Host host : prioritizedHosts) {
+                if (_resourceMgr.isHostGpuEnabled(host.getId())) {
+                    gpuEnabledHosts.add(host);
+                }
+            }
+            // Move GPU enabled hosts to the end of list
+            if(!gpuEnabledHosts.isEmpty()) {
+                prioritizedHosts.removeAll(gpuEnabledHosts);
+                prioritizedHosts.addAll(gpuEnabledHosts);
+            }
+        }
         return prioritizedHosts;
     }
 
@@ -479,7 +497,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             if (allocationAlgorithm != null) {
                 _allocationAlgorithm = allocationAlgorithm;
             }
-            String value = configs.get("xen.check.hvm");
+            String value = configs.get("xenserver.check.hvm");
             _checkHvm = value == null ? true : Boolean.parseBoolean(value);
         }
         return true;

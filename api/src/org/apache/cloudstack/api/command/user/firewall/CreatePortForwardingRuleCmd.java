@@ -21,6 +21,8 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -45,8 +47,11 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "createPortForwardingRule", description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class, entityType = {PortForwardingRule.class},
+
+@APICommand(name = "createPortForwardingRule", description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class, entityType = {FirewallRule.class,
+        VirtualMachine.class, IpAddress.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
     public static final Logger s_logger = Logger.getLogger(CreatePortForwardingRuleCmd.class.getName());
@@ -57,6 +62,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.IP_ADDRESS_ID,
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
@@ -94,6 +100,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
                description = "the ending port of port forwarding rule's private port range")
     private Integer publicEndPort;
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
@@ -177,7 +184,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         if (ipAddressId != null) {
             IpAddress ipAddr = _networkService.getIp(ipAddressId);
             if (ipAddr == null || !ipAddr.readyToUse()) {
-                throw new InvalidParameterValueException("Unable to create PF rule, invalid IP address id " + ipAddr.getId());
+                throw new InvalidParameterValueException("Unable to create PF rule, invalid IP address id " + ipAddressId);
             } else {
                 return ipAddr.getVpcId();
             }

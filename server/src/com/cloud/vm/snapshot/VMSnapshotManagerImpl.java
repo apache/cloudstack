@@ -73,6 +73,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
+import com.cloud.utils.ReflectionUse;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.EntityManager;
@@ -133,10 +134,6 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     int _vmSnapshotMax;
     int _wait;
 
-    // TODO
-    static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced",
-            Boolean.class, "vm.job.enabled", "true",
-            "True to enable new VM sync model. false to use the old way", false);
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced",
             Long.class, "vm.job.check.interval", "3000",
             "Interval in milliseconds to check if the job is complete", false);
@@ -169,9 +166,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     @Override
     public List<VMSnapshotVO> listVMSnapshots(ListVMSnapshotCmd cmd) {
         Account caller = getCaller();
-        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        List<Long> permittedResources = new ArrayList<Long>();
 
         boolean listAll = cmd.listAll();
         Long id = cmd.getId();
@@ -184,14 +179,15 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
-                domainIdRecursiveListProject, listAll, false, "listVMSnapshot");
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, listAll,
+                false);
+        Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(VMSnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<VMSnapshotVO> sb = _vmSnapshotDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("vm_id", sb.entity().getVmId(), SearchCriteria.Op.EQ);
         sb.and("domain_id", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
@@ -203,7 +199,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         sb.done();
 
         SearchCriteria<VMSnapshotVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (accountName != null && cmd.getDomainId() != null) {
             Account account = _accountMgr.getActiveAccountByName(accountName, cmd.getDomainId());
@@ -214,8 +210,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             sc.setParameters("vm_id", vmId);
         }
 
-        if (cmd.getDomainId() != null) {
-            sc.setParameters("domain_id", cmd.getDomainId());
+        if (domainId != null) {
+            sc.setParameters("domain_id", domainId);
         }
 
         if (state == null) {
@@ -368,17 +364,14 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
         // serialize VM operation
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
-        if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+        if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
             VmWorkJobVO placeHolder = null;
-            if (VmJobEnabled.value()) {
-                placeHolder = createPlaceHolderWork(vmId);
-            }
+            placeHolder = createPlaceHolderWork(vmId);
             try {
-            return orchestrateCreateVMSnapshot(vmId, vmSnapshotId, quiescevm);
+                return orchestrateCreateVMSnapshot(vmId, vmSnapshotId, quiescevm);
             } finally {
-                if (VmJobEnabled.value())
-                    _workJobDao.expunge(placeHolder.getId());
+                _workJobDao.expunge(placeHolder.getId());
             }
 
         } else {
@@ -466,17 +459,14 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
         // serialize VM operation
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
-        if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+        if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
             VmWorkJobVO placeHolder = null;
-            if (VmJobEnabled.value()) {
-                placeHolder = createPlaceHolderWork(vmSnapshot.getVmId());
-            }
+            placeHolder = createPlaceHolderWork(vmSnapshot.getVmId());
             try {
-            return orchestrateDeleteVMSnapshot(vmSnapshotId);
+                return orchestrateDeleteVMSnapshot(vmSnapshotId);
             } finally {
-                if (VmJobEnabled.value())
-                    _workJobDao.expunge(placeHolder.getId());
+                _workJobDao.expunge(placeHolder.getId());
             }
         } else {
             Outcome<VMSnapshot> outcome = deleteVMSnapshotThroughJobQueue(vmSnapshot.getVmId(), vmSnapshotId);
@@ -581,18 +571,15 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
         // serialize VM operation
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
-        if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+        if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
 
             VmWorkJobVO placeHolder = null;
-            if (VmJobEnabled.value()) {
-                placeHolder = createPlaceHolderWork(vmSnapshotVo.getVmId());
-            }
+            placeHolder = createPlaceHolderWork(vmSnapshotVo.getVmId());
             try {
-            return orchestrateRevertToVMSnapshot(vmSnapshotId);
+                return orchestrateRevertToVMSnapshot(vmSnapshotId);
             } finally {
-                if (VmJobEnabled.value())
-                    _workJobDao.expunge(placeHolder.getId());
+                _workJobDao.expunge(placeHolder.getId());
             }
 
         } else {
@@ -718,16 +705,14 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     public boolean deleteAllVMSnapshots(long vmId, VMSnapshot.Type type) {
         // serialize VM operation
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
-        if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+        if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
             VmWorkJobVO placeHolder = null;
-            if (VmJobEnabled.value()) {
-                placeHolder = createPlaceHolderWork(vmId);
-            }
+            placeHolder = createPlaceHolderWork(vmId);
             try {
-            return orchestrateDeleteAllVMSnapshots(vmId, type);
+                return orchestrateDeleteAllVMSnapshots(vmId, type);
             } finally {
-                if (VmJobEnabled.value())
+                if (placeHolder != null)
                     _workJobDao.expunge(placeHolder.getId());
             }
 
@@ -1044,23 +1029,27 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 vmId);
     }
 
+    @ReflectionUse
     public Pair<JobInfo.Status, String> orchestrateCreateVMSnapshot(VmWorkCreateVMSnapshot work) throws Exception {
         VMSnapshot snapshot = orchestrateCreateVMSnapshot(work.getVmId(), work.getVmSnapshotId(), work.isQuiesceVm());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
                 _jobMgr.marshallResultObject(new Long(snapshot.getId())));
     }
 
+    @ReflectionUse
     public Pair<JobInfo.Status, String> orchestrateDeleteVMSnapshot(VmWorkDeleteVMSnapshot work) {
         boolean result = orchestrateDeleteVMSnapshot(work.getVmSnapshotId());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
                 _jobMgr.marshallResultObject(result));
     }
 
+    @ReflectionUse
     public Pair<JobInfo.Status, String> orchestrateRevertToVMSnapshot(VmWorkRevertToVMSnapshot work) throws Exception {
         orchestrateRevertToVMSnapshot(work.getVmSnapshotId());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
 
+    @ReflectionUse
     public Pair<JobInfo.Status, String> orchestrateDeleteAllVMSnapshots(VmWorkDeleteAllVMSnapshots work) {
         boolean result = orchestrateDeleteAllVMSnapshots(work.getVmId(), work.getSnapshotType());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,

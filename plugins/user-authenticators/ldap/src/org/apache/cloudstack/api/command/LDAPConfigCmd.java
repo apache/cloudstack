@@ -155,7 +155,7 @@ public class LDAPConfigCmd extends BaseCmd {
     }
 
     public Integer getPort() {
-        return port <= 0 ? 389 : port;
+        return (Integer)(port.intValue() <= 0 ? 389 : port.intValue());
     }
 
     public void setPort(Integer port) {

@@ -55,7 +55,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, required = true, description = "the trafficType to be added to the physical network")
     private String trafficType;
 
-    @Parameter(name = ApiConstants.XEN_NETWORK_LABEL,
+    @Parameter(name = ApiConstants.XENSERVER_NETWORK_LABEL,
                type = CommandType.STRING,
                description = "The network name label of the physical device dedicated to this traffic on a XenServer host")
     private String xenLabel;

@@ -37,16 +37,17 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
 import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
@@ -71,6 +72,17 @@ public class ParamProcessWorker implements DispatchWorker {
     @Inject
     protected EntityManager _entityMgr;
 
+    List<SecurityChecker> _secChecker;
+
+    public List<SecurityChecker> getSecChecker() {
+        return _secChecker;
+    }
+
+    @Inject
+    public void setSecChecker(List<SecurityChecker> secChecker) {
+        _secChecker = secChecker;
+    }
+
     @Override
     public void handle(final DispatchTask task) {
         processParameters(task.getCmd(), task.getParams());
@@ -88,8 +100,8 @@ public class ParamProcessWorker implements DispatchWorker {
             if (paramObj == null) {
                 if (parameterAnnotation.required()) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " +
-                        cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) +
-                        " due to missing parameter " + parameterAnnotation.name());
+                            cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) +
+                            " due to missing parameter " + parameterAnnotation.name());
                 }
                 continue;
             }
@@ -103,17 +115,17 @@ public class ParamProcessWorker implements DispatchWorker {
                             parameterAnnotation.name());
                 }
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " +
-                    cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value " + paramObj + " for parameter " +
-                    parameterAnnotation.name());
+                        cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value " + paramObj + " for parameter " +
+                        parameterAnnotation.name());
             } catch (final ParseException parseEx) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
                 }
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " +
-                    cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + ", please pass dates in the format mentioned in the api documentation");
+                        cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + ", please pass dates in the format mentioned in the api documentation");
             } catch (final InvalidParameterValueException invEx) {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " +
-                    cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value. " + invEx.getMessage());
+                        cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value. " + invEx.getMessage());
             } catch (final CloudRuntimeException cloudEx) {
                 s_logger.error("CloudRuntimeException", cloudEx);
                 // FIXME: Better error message? This only happens if the API command is not executable, which typically
@@ -121,7 +133,7 @@ public class ParamProcessWorker implements DispatchWorker {
                 // there was
                 // and IllegalAccessException setting one of the parameters.
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Internal error executing API command " +
-                    cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
+                        cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
             }
 
             //check access on the resource this field points to
@@ -130,81 +142,73 @@ public class ParamProcessWorker implements DispatchWorker {
                 final CommandType fieldType = parameterAnnotation.type();
 
                 if (checkAccess != null) {
-                    // Verify that caller can perform actions in behalf of vm owner
-                    //acumulate all Controlled Entities together.
+                    // Verify that caller can perform actions in behalf of vm
+                    // owner acumulate all Controlled Entities together.
+                    // parse the array of resource types and in case of map
+                    // check access on key or value or both as specified in @acl
+                    // implement external dao for classes that need findByName
+                    // for maps, specify access to be checkd on key or value.
+                    // Find the controlled entity DBid by uuid
 
-                    //parse the array of resource types and in case of map check access on key or value or both as specified in @acl
-                    //implement external dao for classes that need findByName
-                    //for maps, specify access to be checkd on key or value.
-
-                    // find the controlled entity DBid by uuid
-                    if (parameterAnnotation.entityType() != null) {
+                    if (parameterAnnotation.entityType() != null && parameterAnnotation.entityType().length > 0
+                            && parameterAnnotation.entityType()[0].getAnnotation(EntityReference.class) != null) {
                         final Class<?>[] entityList = parameterAnnotation.entityType()[0].getAnnotation(EntityReference.class).value();
 
-                        for (final Class entity : entityList) {
-                            // Check if the parameter type is a single
-                            // Id or list of id's/name's
-                            switch (fieldType) {
-                                case LIST:
-                                    final CommandType listType = parameterAnnotation.collectionType();
-                                    switch (listType) {
-                                        case LONG:
-                                        case UUID:
-                                            final List<Long> listParam = (List<Long>)field.get(cmd);
-                                            for (final Long entityId : listParam) {
-                                                final Object entityObj = _entityMgr.findById(entity, entityId);
-                                                entitiesToAccess.put(entityObj, checkAccess.accessType());
-                                            }
+                        // Check if the parameter type is a single
+                        // Id or list of id's/name's
+                        switch (fieldType) {
+                        case LIST:
+                            final CommandType listType = parameterAnnotation.collectionType();
+                            switch (listType) {
+                            case LONG:
+                            case UUID:
+                                final List<Long> listParam = (List<Long>) field.get(cmd);
+                                for (final Long entityId : listParam) {
+                                    for (final Class entity : entityList) {
+                                        final Object entityObj = _entityMgr.findById(entity, entityId);
+                                        if(entityObj != null){
+                                            entitiesToAccess.put(entityObj, checkAccess.accessType());
                                             break;
-                                        /*
-                                         * case STRING: List<String> listParam =
-                                         * new ArrayList<String>(); listParam =
-                                         * (List)field.get(cmd); for(String
-                                         * entityName: listParam){
-                                         * ControlledEntity entityObj =
-                                         * (ControlledEntity
-                                         * )daoClassInstance(entityId);
-                                         * entitiesToAccess.add(entityObj); }
-                                         * break;
-                                         */
-                                        default:
-                                            break;
+                                        }
                                     }
-                                    break;
-                                case LONG:
-                                case UUID:
-                                    final Object entityObj = _entityMgr.findById(entity, (Long)field.get(cmd));
+                                }
+                                break;
+                                /*
+                                 * case STRING: List<String> listParam = new
+                                 * ArrayList<String>(); listParam =
+                                 * (List)field.get(cmd); for(String entityName:
+                                 * listParam){ ControlledEntity entityObj =
+                                 * (ControlledEntity )daoClassInstance(entityId);
+                                 * entitiesToAccess.add(entityObj); } break;
+                                 */
+                            default:
+                                break;
+                            }
+                            break;
+                        case LONG:
+                        case UUID:
+                            for (final Class entity : entityList) {
+                                final Object entityObj = _entityMgr.findById(entity, (Long) field.get(cmd));
+                                if(entityObj != null){
                                     entitiesToAccess.put(entityObj, checkAccess.accessType());
                                     break;
-                                default:
-                                    break;
-                            }
-
-                            if (ControlledEntity.class.isAssignableFrom(entity)) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("ControlledEntity name is:" + entity.getName());
                                 }
                             }
-
-                            if (InfrastructureEntity.class.isAssignableFrom(entity)) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("InfrastructureEntity name is:" + entity.getName());
-                                }
-                            }
+                            break;
+                        default:
+                            break;
                         }
-
                     }
-
                 }
 
             } catch (final IllegalArgumentException e) {
                 s_logger.error("Error initializing command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
                 throw new CloudRuntimeException("Internal error initializing parameters for command " + cmd.getCommandName() + " [field " + field.getName() +
-                    " is not accessible]");
+                        " is not accessible]");
             } catch (final IllegalAccessException e) {
                 s_logger.error("Error initializing command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
                 throw new CloudRuntimeException("Internal error initializing parameters for command " + cmd.getCommandName() + " [field " + field.getName() +
-                    " is not accessible]");
+                        " is not accessible]");
             }
 
         }
@@ -213,28 +217,30 @@ public class ParamProcessWorker implements DispatchWorker {
     }
 
 
-    private void doAccessChecks(final BaseCmd cmd, final Map<Object, AccessType> entitiesToAccess) {
-        final Account caller = CallContext.current().getCallingAccount();
-        final Account owner = _accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
+    private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
+        Account caller = CallContext.current().getCallingAccount();
+        // due to deleteAccount design flaw CLOUDSTACK-6588, we should still include those removed account as well to clean up leftover resources from that account
+        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 
         if (cmd instanceof BaseAsyncCreateCmd) {
-            //check that caller can access the owner account.
-            _accountMgr.checkAccess(caller, null, true, owner);
+            // check that caller can access the owner account.
+            _accountMgr.checkAccess(caller, null, false, owner);
         }
 
         if (!entitiesToAccess.isEmpty()) {
-            //check that caller can access the owner account.
-            _accountMgr.checkAccess(caller, null, true, owner);
-            for (final Object entity : entitiesToAccess.keySet()) {
+            // check that caller can access the owner account.
+            _accountMgr.checkAccess(caller, null, false, owner);
+            for (Map.Entry<Object,AccessType>entry : entitiesToAccess.entrySet()) {
+                Object entity = entry.getKey();
                 if (entity instanceof ControlledEntity) {
-                    _accountMgr.checkAccess(caller, entitiesToAccess.get(entity), true, (ControlledEntity)entity);
+                    _accountMgr.checkAccess(caller, entry.getValue(), true, (ControlledEntity) entity);
                 } else if (entity instanceof InfrastructureEntity) {
-                    //FIXME: Move this code in adapter, remove code from Account manager
+                    // FIXME: Move this code in adapter, remove code from
+                    // Account manager
                 }
             }
         }
     }
-
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void setFieldValue(final Field field, final BaseCmd cmdObj, final Object paramObj, final Parameter annotation) throws IllegalArgumentException, ParseException {
@@ -242,117 +248,119 @@ public class ParamProcessWorker implements DispatchWorker {
             field.setAccessible(true);
             final CommandType fieldType = annotation.type();
             switch (fieldType) {
-                case BOOLEAN:
-                    field.set(cmdObj, Boolean.valueOf(paramObj.toString()));
-                    break;
-                case DATE:
-                    // This piece of code is for maintaining backward compatibility
-                    // and support both the date formats(Bug 9724)
-                    // Do the date messaging for ListEventsCmd only
-                    if (cmdObj instanceof ListEventsCmd || cmdObj instanceof DeleteEventsCmd || cmdObj instanceof ArchiveEventsCmd ||
+            case BOOLEAN:
+                field.set(cmdObj, Boolean.valueOf(paramObj.toString()));
+                break;
+            case DATE:
+                // This piece of code is for maintaining backward compatibility
+                // and support both the date formats(Bug 9724)
+                // Do the date messaging for ListEventsCmd only
+                if (cmdObj instanceof ListEventsCmd || cmdObj instanceof DeleteEventsCmd || cmdObj instanceof ArchiveEventsCmd ||
                         cmdObj instanceof ArchiveAlertsCmd || cmdObj instanceof DeleteAlertsCmd) {
-                        final boolean isObjInNewDateFormat = isObjInNewDateFormat(paramObj.toString());
-                        if (isObjInNewDateFormat) {
-                            final DateFormat newFormat = BaseCmd.NEW_INPUT_FORMAT;
-                            synchronized (newFormat) {
-                                field.set(cmdObj, newFormat.parse(paramObj.toString()));
-                            }
-                        } else {
-                            final DateFormat format = BaseCmd.INPUT_FORMAT;
-                            synchronized (format) {
-                                Date date = format.parse(paramObj.toString());
-                                if (field.getName().equals("startDate")) {
-                                    date = messageDate(date, 0, 0, 0);
-                                } else if (field.getName().equals("endDate")) {
-                                    date = messageDate(date, 23, 59, 59);
-                                }
-                                field.set(cmdObj, date);
-                            }
+                    final boolean isObjInNewDateFormat = isObjInNewDateFormat(paramObj.toString());
+                    if (isObjInNewDateFormat) {
+                        final DateFormat newFormat = BaseCmd.NEW_INPUT_FORMAT;
+                        synchronized (newFormat) {
+                            field.set(cmdObj, newFormat.parse(paramObj.toString()));
                         }
                     } else {
                         final DateFormat format = BaseCmd.INPUT_FORMAT;
                         synchronized (format) {
-                            format.setLenient(false);
-                            field.set(cmdObj, format.parse(paramObj.toString()));
-                        }
-                    }
-                    break;
-                case FLOAT:
-                    // Assuming that the parameters have been checked for required before now,
-                    // we ignore blank or null values and defer to the command to set a default
-                    // value for optional parameters ...
-                    if (paramObj != null && isNotBlank(paramObj.toString())) {
-                        field.set(cmdObj, Float.valueOf(paramObj.toString()));
-                    }
-                    break;
-                case INTEGER:
-                    // Assuming that the parameters have been checked for required before now,
-                    // we ignore blank or null values and defer to the command to set a default
-                    // value for optional parameters ...
-                    if (paramObj != null && isNotBlank(paramObj.toString())) {
-                        field.set(cmdObj, Integer.valueOf(paramObj.toString()));
-                    }
-                    break;
-                case LIST:
-                    final List listParam = new ArrayList();
-                    final StringTokenizer st = new StringTokenizer(paramObj.toString(), ",");
-                    while (st.hasMoreTokens()) {
-                        final String token = st.nextToken();
-                        final CommandType listType = annotation.collectionType();
-                        switch (listType) {
-                            case INTEGER:
-                                listParam.add(Integer.valueOf(token));
-                                break;
-                            case UUID:
-                                if (token.isEmpty())
-                                    break;
-                                final Long internalId = translateUuidToInternalId(token, annotation);
-                                listParam.add(internalId);
-                                break;
-                            case LONG: {
-                                listParam.add(Long.valueOf(token));
+                            Date date = format.parse(paramObj.toString());
+                            if (field.getName().equals("startDate")) {
+                                date = messageDate(date, 0, 0, 0);
+                            } else if (field.getName().equals("endDate")) {
+                                date = messageDate(date, 23, 59, 59);
                             }
-                                break;
-                            case SHORT:
-                                listParam.add(Short.valueOf(token));
-                            case STRING:
-                                listParam.add(token);
-                                break;
+                            field.set(cmdObj, date);
                         }
                     }
-                    field.set(cmdObj, listParam);
-                    break;
-                case UUID:
-                    if (paramObj.toString().isEmpty())
+                } else {
+                    final DateFormat format = BaseCmd.INPUT_FORMAT;
+                    synchronized (format) {
+                        format.setLenient(false);
+                        field.set(cmdObj, format.parse(paramObj.toString()));
+                    }
+                }
+                break;
+            case FLOAT:
+                // Assuming that the parameters have been checked for required before now,
+                // we ignore blank or null values and defer to the command to set a default
+                // value for optional parameters ...
+                if (paramObj != null && isNotBlank(paramObj.toString())) {
+                    field.set(cmdObj, Float.valueOf(paramObj.toString()));
+                }
+                break;
+            case INTEGER:
+                // Assuming that the parameters have been checked for required before now,
+                // we ignore blank or null values and defer to the command to set a default
+                // value for optional parameters ...
+                if (paramObj != null && isNotBlank(paramObj.toString())) {
+                    field.set(cmdObj, Integer.valueOf(paramObj.toString()));
+                }
+                break;
+            case LIST:
+                final List listParam = new ArrayList();
+                final StringTokenizer st = new StringTokenizer(paramObj.toString(), ",");
+                while (st.hasMoreTokens()) {
+                    final String token = st.nextToken();
+                    final CommandType listType = annotation.collectionType();
+                    switch (listType) {
+                    case INTEGER:
+                        listParam.add(Integer.valueOf(token));
                         break;
-                    final Long internalId = translateUuidToInternalId(paramObj.toString(), annotation);
-                    field.set(cmdObj, internalId);
+                    case UUID:
+                        if (token.isEmpty())
+                            break;
+                        final Long internalId = translateUuidToInternalId(token, annotation);
+                        listParam.add(internalId);
+                        break;
+                    case LONG: {
+                        listParam.add(Long.valueOf(token));
+                    }
                     break;
-                case LONG:
-                    field.set(cmdObj, Long.valueOf(paramObj.toString()));
-                    break;
-                case SHORT:
-                    field.set(cmdObj, Short.valueOf(paramObj.toString()));
-                    break;
-                case STRING:
-                    if ((paramObj != null) && paramObj.toString().length() > annotation.length()) {
+                    case SHORT:
+                        listParam.add(Short.valueOf(token));
+                        break;
+                    case STRING:
+                        listParam.add(token);
+                        break;
+                    }
+                }
+                field.set(cmdObj, listParam);
+                break;
+            case UUID:
+                final Long internalId = translateUuidToInternalId(paramObj.toString(), annotation);
+                field.set(cmdObj, internalId);
+                break;
+            case LONG:
+                field.set(cmdObj, Long.valueOf(paramObj.toString()));
+                break;
+            case SHORT:
+                field.set(cmdObj, Short.valueOf(paramObj.toString()));
+                break;
+            case STRING:
+                if ((paramObj != null)) {
+                    if (paramObj.toString().length() > annotation.length()) {
                         s_logger.error("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
                         throw new InvalidParameterValueException("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
+                    } else {
+                        field.set(cmdObj, paramObj.toString());
                     }
-                    field.set(cmdObj, paramObj.toString());
-                    break;
-                case TZDATE:
-                    field.set(cmdObj, DateUtil.parseTZDateString(paramObj.toString()));
-                    break;
-                case MAP:
-                default:
-                    field.set(cmdObj, paramObj);
-                    break;
+                }
+                break;
+            case TZDATE:
+                field.set(cmdObj, DateUtil.parseTZDateString(paramObj.toString()));
+                break;
+            case MAP:
+            default:
+                field.set(cmdObj, paramObj);
+                break;
             }
         } catch (final IllegalAccessException ex) {
             s_logger.error("Error initializing command " + cmdObj.getCommandName() + ", field " + field.getName() + " is not accessible.");
             throw new CloudRuntimeException("Internal error initializing parameters for command " + cmdObj.getCommandName() + " [field " + field.getName() +
-                " is not accessible]");
+                    " is not accessible]");
         }
     }
 
@@ -384,6 +392,11 @@ public class ParamProcessWorker implements DispatchWorker {
         // Enforce that it's uuid for newly added apis from version 3.x
         if (!isPre3x && !isUuid)
             return null;
+
+        // There may be multiple entities defined on the @EntityReference of a Response.class
+        // UUID CommandType would expect only one entityType, so use the first entityType
+        final Class<?>[] entities = annotation.entityType()[0].getAnnotation(EntityReference.class).value();
+
         // Allow both uuid and internal id for pre3x apis
         if (isPre3x && !isUuid) {
             try {
@@ -391,12 +404,15 @@ public class ParamProcessWorker implements DispatchWorker {
             } catch (final NumberFormatException e) {
                 internalId = null;
             }
-            if (internalId != null)
+            if (internalId != null){
+                // Populate CallContext for each of the entity.
+                for (final Class<?> entity : entities) {
+                    CallContext.current().putContextParameter(entity.getName(), internalId);
+                }
                 return internalId;
+            }
         }
-        // There may be multiple entities defined on the @EntityReference of a Response.class
-        // UUID CommandType would expect only one entityType, so use the first entityType
-        final Class<?>[] entities = annotation.entityType()[0].getAnnotation(EntityReference.class).value();
+
         // Go through each entity which is an interface to a VO class and get a VO object
         // Try to getId() for the object using reflection, break on first non-null value
         for (final Class<?> entity : entities) {
@@ -407,21 +423,23 @@ public class ParamProcessWorker implements DispatchWorker {
                 continue;
             }
             // Invoke the getId method, get the internal long ID
-            // If that fails hide exceptions as the uuid may not exist
+            // If that fails hide exceptions as the uuid may not exist                                         s
             try {
                 internalId = ((InternalIdentity)objVO).getId();
             } catch (final IllegalArgumentException e) {
             } catch (final NullPointerException e) {
             }
             // Return on first non-null Id for the uuid entity
-            if (internalId != null)
+            if (internalId != null){
+                CallContext.current().putContextParameter(entity.getName(), uuid);
                 break;
+            }
         }
         if (internalId == null) {
             if (s_logger.isDebugEnabled())
                 s_logger.debug("Object entity uuid = " + uuid + " does not exist in the database.");
             throw new InvalidParameterValueException("Invalid parameter " + annotation.name() + " value=" + uuid +
-                " due to incorrect long value format, or entity does not exist or due to incorrect parameter annotation for the field in api cmd class.");
+                    " due to incorrect long value format, or entity does not exist or due to incorrect parameter annotation for the field in api cmd class.");
         }
         return internalId;
     }

@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -229,7 +229,6 @@ namespace HypervResource
             string errMsg = vmName;
             var diskDrives = vmInfo.disks;
             var bootArgs = vmInfo.bootArgs;
-            string defaultvlan = "4094"; 
 
             // assert
             errMsg = vmName + ": missing disk information, array empty or missing, agent expects *at least* one disk for a VM";
@@ -334,7 +333,6 @@ namespace HypervResource
                 else if (templateInfo != null && templateInfo.nfsDataStoreTO != null)
                 {
                     NFSTO share = templateInfo.nfsDataStoreTO;
-                    Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
                     // The share is mapped, now attach the iso
                     isoPath = Utils.NormalizePath(Path.Combine(share.UncPath, templateInfo.path));
                 }
@@ -379,8 +377,9 @@ namespace HypervResource
                 }
             }
 
-            String publicIpAddress = "";
             int nicCount = 0;
+            int enableState = 2;
+
             // Add the Nics to the VM in the deviceId order.
             foreach (var nc in nicInfo)
             {
@@ -388,6 +387,7 @@ namespace HypervResource
                 {
 
                     int nicid = nic.deviceId;
+                    Int32 networkRateMbps = nic.networkRateMbps;
                     string mac = nic.mac;
                     string vlan = null;
                     string isolationUri = nic.isolationUri;
@@ -418,18 +418,17 @@ namespace HypervResource
                             throw ex;
                         }
                     }
-                    if(nicIp.Equals("0.0.0.0") && nicNetmask.Equals("255.255.255.255") ) {
-                        // this is the extra nic added to VR.
-                        vlan = defaultvlan;
-                    }
 
-                    if (nicCount == 2)
-                    {
-                         publicIpAddress = nic.ip;
-                    }
 
                     if (nicid == nicCount)
                     {
+                        if (nicIp.Equals("0.0.0.0") && nicNetmask.Equals("255.255.255.255"))
+                        {
+                            // this is the extra nic added to VR.
+                            vlan = null;
+                            enableState = 3;
+                        }
+
                         // Create network adapter
                         var newAdapter = CreateNICforVm(newVm, mac);
                         String switchName ="";
@@ -437,18 +436,26 @@ namespace HypervResource
                         {
                             switchName =  nic.name;
                         }
-
+                        EthernetPortAllocationSettingData portSettings = null;
                         // connection to vswitch
-                        var portSettings = AttachNicToPort(newVm, newAdapter, switchName);
-
+                        portSettings = AttachNicToPort(newVm, newAdapter, switchName, enableState);
+                        //reset the flag for other nics
+                        enableState = 2;
                         // set vlan
                         if (vlan != null)
                         {
                             SetPortVlan(vlan, portSettings);
                         }
 
+                        if (networkRateMbps > 0)
+                        {
+                            SetBandWidthLimit((ulong)networkRateMbps, portSettings);
+                        }
+
                         logger.DebugFormat("Created adapter {0} on port {1}, {2}", 
                             newAdapter.Path, portSettings.Path, (vlan == null ? "No VLAN" : "VLAN " + vlan));
+                     //   logger.DebugFormat("Created adapter {0} on port {1}, {2}", 
+                    //       newAdapter.Path, portSettings.Path, (vlan == null ? "No VLAN" : "VLAN " + vlan));
                     }
                 }
                 nicCount++;
@@ -464,14 +471,8 @@ namespace HypervResource
                
                 String bootargs = bootArgs;
                 AddUserData(vm, bootargs);
-
-                // Verify key added to subsystem
-                //kvpInfo = GetKvpSettings(vmSettings);
-
-                // HostExchangesItems are embedded objects in the sense that the object value is stored and not a reference to the object.
-                //kvpProps = kvpInfo.HostExchangeItems;
-
             }
+
             // call patch systemvm iso only for systemvms
             if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
             {
@@ -483,21 +484,13 @@ namespace HypervResource
 
             logger.DebugFormat("Starting VM {0}", vmName);
             SetState(newVm, RequiredState.Enabled);
+            // Mark the VM as created by cloudstack tag
+            TagVm(newVm);
 
             // we need to reboot to get the hv kvp daemon get started vr gets configured.
             if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
             {
                 System.Threading.Thread.Sleep(90000);
-                // wait for the second boot and then return with sucesss
-                //if publicIPAddress is empty or null don't ping the ip
-              /*if (publicIpAddress.Equals("") == true)
-                {
-                    System.Threading.Thread.Sleep(90000);
-                }
-                else
-                {
-                    pingResource(publicIpAddress);
-                }*/
             }
             logger.InfoFormat("Started VM {0}", vmName);
             return newVm;
@@ -532,7 +525,7 @@ namespace HypervResource
             return false;
         }
 
-        private EthernetPortAllocationSettingData AttachNicToPort(ComputerSystem newVm, SyntheticEthernetPortSettingData newAdapter, String vSwitchName)
+        private EthernetPortAllocationSettingData AttachNicToPort(ComputerSystem newVm, SyntheticEthernetPortSettingData newAdapter, String vSwitchName, int enableState)
         {
             // Get the virtual switch
             VirtualEthernetSwitch vSwitch = GetExternalVirtSwitch(vSwitchName);
@@ -561,7 +554,7 @@ namespace HypervResource
             var newEthernetPortSettings = new EthernetPortAllocationSettingData((ManagementBaseObject)defaultEthernetPortSettingsObj.LateBoundObject.Clone());
             newEthernetPortSettings.LateBoundObject["Parent"] = newAdapter.Path.Path;
             newEthernetPortSettings.LateBoundObject["HostResource"] = new string[] { vSwitch.Path.Path };
-
+            newEthernetPortSettings.LateBoundObject["EnabledState"] = enableState; //3 disabled 2 Enabled
             // Insert NIC into vm
             string[] newResources = new string[] { newEthernetPortSettings.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20) };
             ManagementPath[] newResourcePaths = AddVirtualResource(newResources, newVm);
@@ -922,7 +915,93 @@ namespace HypervResource
         }
 
         // Modify the systemvm nic's VLAN id
-        public void ModifyVmVLan(string vmName, uint vlanid, String mac)
+        public void ModifyVmVLan(string vmName, String vlanid, String mac)
+        {
+            int enableState = 2;
+            bool enable = true;
+            ComputerSystem vm = GetComputerSystem(vmName);
+            SyntheticEthernetPortSettingData[] nicSettingsViaVm = GetEthernetPortSettings(vm);
+            // Obtain controller for Hyper-V virtualisation subsystem
+            VirtualSystemManagementService vmMgmtSvc = GetVirtualisationSystemManagementService();
+            EthernetPortAllocationSettingData networkAdapter = null;
+            string normalisedMAC = string.Join("", (mac.Split(new char[] { ':' })));
+            int index = 0;
+            foreach (SyntheticEthernetPortSettingData item in nicSettingsViaVm)
+            {
+                if (normalisedMAC.ToLower().Equals(item.Address.ToLower()))
+                {
+                    break;
+                }
+                index++;
+            }
+            String vSwitchName = "";
+            VirtualEthernetSwitch vSwitch = GetExternalVirtSwitch(vSwitchName);
+            EthernetPortAllocationSettingData[] ethernetConnections = GetEthernetConnections(vm);
+            networkAdapter = ethernetConnections[index];
+            networkAdapter.LateBoundObject["EnabledState"] = enableState; //3 disabled 2 Enabled
+            networkAdapter.LateBoundObject["HostResource"] = new string[] { vSwitch.Path.Path };
+
+            ModifyVmResources(vmMgmtSvc, vm, new String[] {
+                networkAdapter.LateBoundObject.GetText(TextFormat.CimDtd20)
+                });
+
+            EthernetSwitchPortVlanSettingData vlanSettings = GetVlanSettings(ethernetConnections[index]);
+
+            if (vlanSettings == null)
+            {
+                // when modifying  nic to not connected dont create vlan
+                if (enable)
+                {
+                    if (vlanid != null)
+                    {
+                        SetPortVlan(vlanid, networkAdapter);
+                    }
+                }
+            }
+            else
+            {
+                if (enable)
+                {
+                    if (vlanid != null)
+                    {
+                        //Assign vlan configuration to nic
+                        vlanSettings.LateBoundObject["AccessVlanId"] = vlanid;
+                        vlanSettings.LateBoundObject["OperationMode"] = 1;
+                        ModifyFeatureVmResources(vmMgmtSvc, vm, new String[] {
+                            vlanSettings.LateBoundObject.GetText(TextFormat.CimDtd20)});
+                    }
+                }
+                else
+                {
+                    var virtSysMgmtSvc = GetVirtualisationSystemManagementService();
+
+                    // This method will remove the vlan settings present on the Nic
+                    ManagementPath jobPath;
+                    var ret_val = virtSysMgmtSvc.RemoveFeatureSettings(new ManagementPath[] { vlanSettings.Path },
+                        out jobPath);
+
+                    // If the Job is done asynchronously
+                    if (ret_val == ReturnCode.Started)
+                    {
+                        JobCompleted(jobPath);
+                    }
+                    else if (ret_val != ReturnCode.Completed)
+                    {
+                        var errMsg = string.Format(
+                            "Failed to remove vlan resource {0} from VM {1} (GUID {2}) due to {3}",
+                            vlanSettings.Path,
+                            vm.ElementName,
+                            vm.Name,
+                            ReturnCode.ToString(ret_val));
+                        var ex = new WmiException(errMsg);
+                        logger.Error(errMsg, ex);
+                    }
+                }
+            }
+        }
+
+        // This is disabling the VLAN settings on the specified nic. It works Awesome.
+        public void DisableNicVlan(String mac, String vmName)
         {
             ComputerSystem vm = GetComputerSystem(vmName);
             SyntheticEthernetPortSettingData[] nicSettingsViaVm = GetEthernetPortSettings(vm);
@@ -944,29 +1023,139 @@ namespace HypervResource
             EthernetPortAllocationSettingData[] ethernetConnections = GetEthernetConnections(vm);
             EthernetSwitchPortVlanSettingData vlanSettings = GetVlanSettings(ethernetConnections[index]);
 
-            //Assign configuration to new NIC
-            vlanSettings.LateBoundObject["AccessVlanId"] = vlanid;
-            vlanSettings.LateBoundObject["OperationMode"] = 1;
-            ModifyFeatureVmResources(vmMgmtSvc, vm, new String[] {
-                vlanSettings.LateBoundObject.GetText(TextFormat.CimDtd20)});
+            var virtSysMgmtSvc = GetVirtualisationSystemManagementService();
+
+            // This method will remove the vlan settings present on the Nic
+            ManagementPath jobPath;
+            var ret_val = virtSysMgmtSvc.RemoveFeatureSettings(new ManagementPath[]{ vlanSettings.Path},
+                out jobPath);
+
+            // If the Job is done asynchronously
+            if (ret_val == ReturnCode.Started)
+            {
+                JobCompleted(jobPath);
+            }
+            else if (ret_val != ReturnCode.Completed)
+            {
+                var errMsg = string.Format(
+                    "Failed to remove vlan resource {0} from VM {1} (GUID {2}) due to {3}",
+                    vlanSettings.Path,
+                    vm.ElementName,
+                    vm.Name,
+                    ReturnCode.ToString(ret_val));
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+
+        // Modify All VM Nics to disable
+        public void DisableVmNics()
+        {
+            ComputerSystem vm = GetComputerSystem("test");
+            EthernetPortAllocationSettingData[] ethernetConnections = GetEthernetConnections(vm);
+            // Get the virtual switch
+            VirtualEthernetSwitch vSwitch = GetExternalVirtSwitch("vswitch2");
+
+            foreach (EthernetPortAllocationSettingData epasd in ethernetConnections)
+            {
+                epasd.LateBoundObject["EnabledState"] = 2; //3 disabled 2 Enabled
+                epasd.LateBoundObject["HostResource"] = new string[] { vSwitch.Path.Path };
+
+                VirtualSystemManagementService vmMgmtSvc = GetVirtualisationSystemManagementService();
+                ModifyVmResources(vmMgmtSvc, vm, new String[] {
+                epasd.LateBoundObject.GetText(TextFormat.CimDtd20)
+                });
+            }
         }
 
         // Modify the systemvm nic's VLAN id
-        public void ModifyVmVLan(string vmName, uint vlanid, uint pos)
+        public void ModifyVmVLan(string vmName, String vlanid, uint pos, bool enable, string switchLabelName)
         {
+            // This if to modify the VPC VR nics
+            // 1. Enable the network adapter and connect to a switch
+            // 2. modify the vlan id
+            int enableState = 2;
             ComputerSystem vm = GetComputerSystem(vmName);
-            SyntheticEthernetPortSettingData[] nicSettingsViaVm = GetEthernetPortSettings(vm);
+                EthernetPortAllocationSettingData[] ethernetConnections = GetEthernetConnections(vm);
             // Obtain controller for Hyper-V virtualisation subsystem
+            EthernetPortAllocationSettingData networkAdapter = null;
             VirtualSystemManagementService vmMgmtSvc = GetVirtualisationSystemManagementService();
 
-            EthernetPortAllocationSettingData[] ethernetConnections = GetEthernetConnections(vm);
-            EthernetSwitchPortVlanSettingData vlanSettings = GetVlanSettings(ethernetConnections[pos]);
+            String vSwitchName = "";
+            if (switchLabelName != null)
+                vSwitchName = switchLabelName;
+            VirtualEthernetSwitch vSwitch = GetExternalVirtSwitch(vSwitchName);
+            if (pos <= ethernetConnections.Length)
+            {
+                if (enable == false)
+                {
+                    enableState = 3;
+                }
 
-            //Assign configuration to new NIC
-            vlanSettings.LateBoundObject["AccessVlanId"] = vlanid;
-            vlanSettings.LateBoundObject["OperationMode"] = 1;
-            ModifyFeatureVmResources(vmMgmtSvc, vm, new String[] {
-                vlanSettings.LateBoundObject.GetText(TextFormat.CimDtd20)});
+                networkAdapter = ethernetConnections[pos];
+                networkAdapter.LateBoundObject["EnabledState"] = enableState; //3 disabled 2 Enabled
+                networkAdapter.LateBoundObject["HostResource"] = new string[] { vSwitch.Path.Path };
+                ModifyVmResources(vmMgmtSvc, vm, new String[] {
+                networkAdapter.LateBoundObject.GetText(TextFormat.CimDtd20)
+                });
+            }
+
+            // check when nic is disabled, removing vlan is required or not.
+            EthernetPortAllocationSettingData[] vmEthernetConnections = GetEthernetConnections(vm);
+            EthernetSwitchPortVlanSettingData vlanSettings = GetVlanSettings(vmEthernetConnections[pos]);
+
+            if (vlanSettings == null)
+            {
+                // when modifying  nic to not connected dont create vlan
+                if (enable)
+                {
+                    if (vlanid != null)
+                    {
+                        SetPortVlan(vlanid, networkAdapter);
+                    }
+                }
+            }
+            else
+            {
+                if (enable)
+                {
+                    if (vlanid != null)
+                    {
+                        //Assign vlan configuration to nic
+                        vlanSettings.LateBoundObject["AccessVlanId"] = vlanid;
+                        vlanSettings.LateBoundObject["OperationMode"] = 1;
+                        ModifyFeatureVmResources(vmMgmtSvc, vm, new String[] {
+                            vlanSettings.LateBoundObject.GetText(TextFormat.CimDtd20)});
+                    }
+                }
+                else
+                {
+                    var virtSysMgmtSvc = GetVirtualisationSystemManagementService();
+
+                    // This method will remove the vlan settings present on the Nic
+                    ManagementPath jobPath;
+                    var ret_val = virtSysMgmtSvc.RemoveFeatureSettings(new ManagementPath[] { vlanSettings.Path },
+                        out jobPath);
+
+                    // If the Job is done asynchronously
+                    if (ret_val == ReturnCode.Started)
+                    {
+                        JobCompleted(jobPath);
+                    }
+                    else if (ret_val != ReturnCode.Completed)
+                    {
+                        var errMsg = string.Format(
+                            "Failed to remove vlan resource {0} from VM {1} (GUID {2}) due to {3}",
+                            vlanSettings.Path,
+                            vm.ElementName,
+                            vm.Name,
+                            ReturnCode.ToString(ret_val));
+                        var ex = new WmiException(errMsg);
+                        logger.Error(errMsg, ex);
+                    }
+                }
+            }
         }
 
         public void AttachIso(string displayName, string iso)
@@ -1006,8 +1195,16 @@ namespace HypervResource
                 return;
             }
 
-            // Stop VM
-            logger.DebugFormat("Stop VM {0} (GUID {1})", vm.ElementName, vm.Name);
+            //try to shutdown vm first
+            ShutdownVm(vm);
+
+            if(GetComputerSystem(vm.ElementName).EnabledState != EnabledState.Disabled)
+            {
+                logger.Info("Could not shutdown system cleanly, will forcefully delete the system");
+            }
+
+            // Remove VM
+            logger.DebugFormat("Remove VM {0} (GUID {1})", vm.ElementName, vm.Name);
             SetState(vm, RequiredState.Disabled);
 
             // Delete SwitchPort
@@ -1041,6 +1238,32 @@ namespace HypervResource
                 vm = GetComputerSystem(displayName);
             }
             while (vm != null);
+        }
+
+        public void ShutdownVm(ComputerSystem vm)
+        {
+            ShutdownComponent sc = GetShutdownComponent(vm);
+            if (sc != null)
+            {
+                var ret_val = sc.InitiateShutdown(true, "need to shutdown");
+                if (ret_val != ReturnCode.Completed)
+                {
+                    logger.Info("Shutting down of system failed, may be shutdown integration services are missing");
+                }
+                else
+                {
+                    // shutdown job is not returned so checking for shutdown completion by checking the current state of system.
+                    // poll every one second and timeout after 10 minutes
+                    for (int period = 0 ; period < 600 && (GetComputerSystem(vm.ElementName).EnabledState != EnabledState.Disabled); period++)
+                    {
+                        System.Threading.Thread.Sleep(1000);
+                    }
+                }
+            }
+            else
+            {
+                logger.Info("Shutting down of system failed; may be shutdown integration services are missing");
+            }
         }
 
         /// <summary>
@@ -1091,7 +1314,6 @@ namespace HypervResource
         public void MigrateVolume(string vmName, string volume, string destination)
         {
             ComputerSystem vm = GetComputerSystem(vmName);
-            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
             VirtualSystemMigrationSettingData migrationSettingData = VirtualSystemMigrationSettingData.CreateInstance();
             VirtualSystemMigrationService service = GetVirtualisationSystemMigrationService();
             StorageAllocationSettingData[] sasd = GetStorageSettings(vm);
@@ -1099,8 +1321,7 @@ namespace HypervResource
             string[] rasds = null;
             if (sasd != null)
             {
-                rasds = new string[sasd.Length];
-                uint index = 0;
+                rasds = new string[1];
                 foreach (StorageAllocationSettingData item in sasd)
                 {
                     string vhdFileName = Path.GetFileNameWithoutExtension(item.HostResource[0]);
@@ -1109,9 +1330,9 @@ namespace HypervResource
                         string newVhdPath = Path.Combine(destination, Path.GetFileName(item.HostResource[0]));
                         item.LateBoundObject["HostResource"] = new string[] { newVhdPath };
                         item.LateBoundObject["PoolId"] = "";
+                        rasds[0] = item.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
+                        break;
                     }
-
-                    rasds[index++] = item.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
                 }
             }
 
@@ -1148,7 +1369,6 @@ namespace HypervResource
         public void MigrateVmWithVolume(string vmName, string destination, Dictionary<string, string> volumeToPool)
         {
             ComputerSystem vm = GetComputerSystem(vmName);
-            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
             VirtualSystemMigrationSettingData migrationSettingData = VirtualSystemMigrationSettingData.CreateInstance();
             VirtualSystemMigrationService service = GetVirtualisationSystemMigrationService();
             StorageAllocationSettingData[] sasd = GetStorageSettings(vm);
@@ -1504,6 +1724,43 @@ namespace HypervResource
             return newResourcePaths[0];
         }
 
+        private void SetBandWidthLimit(ulong limit, EthernetPortAllocationSettingData portPath)
+        {
+            logger.DebugFormat("Setting network rate limit to {0}", limit);
+
+            var vmVirtMgmtSvc = GetVirtualisationSystemManagementService();
+            var bandwidthSettings = EthernetSwitchPortBandwidthSettingData.GetInstances(vmVirtMgmtSvc.Scope, "InstanceID LIKE \"%Default\"");
+
+            // Assert
+            if (bandwidthSettings.Count != 1)
+            {
+                var errMsg = string.Format("Internal error, could not find default EthernetSwitchPortBandwidthSettingData instance");
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+            var defaultBandwidthSettings = bandwidthSettings.OfType<EthernetSwitchPortBandwidthSettingData>().First();
+
+            var newBandwidthSettings = new EthernetSwitchPortBandwidthSettingData((ManagementBaseObject)defaultBandwidthSettings.LateBoundObject.Clone());
+            newBandwidthSettings.Limit = limit * 1000000;
+
+            // Insert bandwidth settings to nic
+            string[] newResources = new string[] { newBandwidthSettings.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20) };
+            ManagementPath[] newResourcePaths = AddFeatureSettings(newResources, portPath.Path);
+
+            // assert
+            if (newResourcePaths.Length != 1)
+            {
+                var errMsg = string.Format(
+                    "Failed to properly apply network rate limit {0} for NIC on port {1}",
+                    limit,
+                    portPath.Path);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+
 
         /// <summary>
         /// External VSwitch has an external NIC, and we assume there is only one external NIC and one external vswitch.
@@ -1658,6 +1915,31 @@ namespace HypervResource
             }
         }
 
+        private static void ModifySystemSetting(VirtualSystemManagementService vmMgmtSvc, string systemSettings)
+        {
+            // Resource settings are changed through the management service
+            System.Management.ManagementPath jobPath;
+
+            var ret_val = vmMgmtSvc.ModifySystemSettings(
+                systemSettings,
+                out jobPath);
+
+            // If the Job is done asynchronously
+            if (ret_val == ReturnCode.Started)
+            {
+                JobCompleted(jobPath);
+            }
+            else if (ret_val != ReturnCode.Completed)
+            {
+                var errMsg = string.Format(
+                    "Failed to update system setting {0}",
+                    ReturnCode.ToString(ret_val));
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+
         public void DeleteHostKvpItem(ComputerSystem vm, string key)
         {
             // Obtain controller for Hyper-V virtualisation subsystem
@@ -1695,13 +1977,27 @@ namespace HypervResource
             }
         }
 
+        public Boolean TagVm(ComputerSystem vm)
+        {
+            VirtualSystemManagementService vmMgmtSvc = GetVirtualisationSystemManagementService();
+            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
+
+            vmSettings.LateBoundObject["Notes"] = new string[] { "Created by CloudStack, do not edit. \n" };
+            ModifySystemSetting(vmMgmtSvc, vmSettings.LateBoundObject.GetText(TextFormat.CimDtd20));
+            return true;
+        }
+
         private static ComputerSystem CreateDefaultVm(VirtualSystemManagementService vmMgmtSvc, string name)
         {
             // Tweak default settings by basing new VM on default global setting object 
             // with designed display name.
-
+            UInt16 startupAction = 2; // Do nothing.
+            UInt16 stopAction = 4; // Shutdown.
             VirtualSystemSettingData vs_gs_data = VirtualSystemSettingData.CreateInstance();
             vs_gs_data.LateBoundObject["ElementName"] = name;
+            vs_gs_data.LateBoundObject["AutomaticStartupAction"] = startupAction.ToString();
+            vs_gs_data.LateBoundObject["AutomaticShutdownAction"] = stopAction.ToString();
+            vs_gs_data.LateBoundObject["Notes"] = new string[] { "CloudStack creating VM, do not edit. \n" };
 
             System.Management.ManagementPath jobPath;
             System.Management.ManagementPath defined_sys;
@@ -2019,8 +2315,21 @@ namespace HypervResource
 
         public ComputerSystem.ComputerSystemCollection GetComputerSystemCollection()
         {
-            var wmiQuery = String.Format("Caption=\"Virtual Machine\"");
+            var wmiQuery = String.Format("ProcessId >= 0");
             return ComputerSystem.GetInstances(wmiQuery);
+        }
+
+        public ShutdownComponent GetShutdownComponent(ComputerSystem vm)
+        {
+            var wmiQuery = String.Format("SystemName=\"{0}\"", vm.Name);
+            ShutdownComponent.ShutdownComponentCollection vmCollection = ShutdownComponent.GetInstances(wmiQuery);
+
+            // Return the first one
+            foreach (ShutdownComponent sc in vmCollection)
+            {
+                return sc;
+            }
+            return null;
         }
 
         public Dictionary<String, VmState> GetVmSync(String privateIpAddress)
@@ -2375,6 +2684,10 @@ namespace HypervResource
 
         public void GetSummaryInfo(Dictionary<string, VmStatsEntry> vmProcessorInfo, List<System.Management.ManagementPath> vmsToInspect)
         {
+            if (vmsToInspect == null || vmsToInspect.Count == 0)
+            {
+                return;
+            }
             // Process info available from WMI, 
             // See http://msdn.microsoft.com/en-us/library/hh850062(v=vs.85).aspx
             uint[] requestedInfo = new uint[] {  // TODO: correct?
@@ -2406,6 +2719,22 @@ namespace HypervResource
                 };
                 vmProcessorInfo.Add(summaryInfo.ElementName, vmInfo);
             }
+        }
+
+        public string GetVmNote(System.Management.ManagementPath sysPath)
+        {
+            uint[] requestedInfo = new uint[] { 3 };
+            System.Management.ManagementPath[] vmPaths = new System.Management.ManagementPath[] { sysPath };
+            var vmsvc = GetVirtualisationSystemManagementService();
+            System.Management.ManagementBaseObject[] sysSummary;
+            vmsvc.GetSummaryInformation(requestedInfo, vmPaths, out sysSummary);
+            foreach (var summary in sysSummary)
+            {
+                var summaryInfo = new SummaryInformation(summary);
+                return summaryInfo.Notes;
+            }
+
+            return null;
         }
     }
 
@@ -2646,7 +2975,7 @@ namespace HypervResource
 
         public static string ToCloudStackPowerState(UInt16 value)
         {
-            string result = "Unknown";
+            string result = "PowerUnknown";
             switch (value)
             {
                 case Enabled: result = "PowerOn"; break;

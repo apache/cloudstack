@@ -80,10 +80,10 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 
         if (_accountService.isNormalUser(caller.getId())) {
             if (caller.getDomainId() != domainId) {
-                throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getId());
+                throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getUuid());
             }
         } else if (!_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-            throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getId());
+            throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getUuid());
         }
 
         return true;
@@ -332,13 +332,35 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         if (action != null && ("SystemCapability".equals(action))) {
             if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
                 return true;
+            } else {
+                return false;
             }
-
         } else if (action != null && ("DomainCapability".equals(action))) {
             if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
                 return true;
+            } else {
+                return false;
+            }
+        } else if (action != null && ("DomainResourceCapability".equals(action))) {
+            if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                return true;
+            } else {
+                return false;
             }
         }
         return checkAccess(caller, entity, accessType);
+    }
+
+    @Override
+    public boolean checkAccess(Account caller, AccessType accessType, String action, ControlledEntity... entities)
+            throws PermissionDeniedException {
+
+        // returns true only if access to all entities is granted
+        for (ControlledEntity entity : entities) {
+            if (!checkAccess(caller, entity, accessType, action)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

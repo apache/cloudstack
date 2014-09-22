@@ -134,14 +134,23 @@ public class DeployDestination implements Serializable {
         destination.append("Host(").append(hostId).append(")").append("-");
         destination.append("Storage(");
         if (_storage != null) {
-            String storageStr = "";
+            StringBuffer storageBuf = new StringBuffer();
+            //String storageStr = "";
             for (Volume vol : _storage.keySet()) {
-                if (!storageStr.equals("")) {
-                    storageStr = storageStr + ", ";
+                if (!storageBuf.toString().equals("")) {
+                    storageBuf.append(storageBuf.toString());
+                    storageBuf.append(", ");
                 }
-                storageStr = storageStr + "Volume(" + vol.getId() + "|" + vol.getVolumeType().name() + "-->Pool(" + _storage.get(vol).getId() + ")";
+                storageBuf.append(storageBuf);
+                storageBuf.append("Volume(");
+                storageBuf.append(vol.getId());
+                storageBuf.append("|");
+                storageBuf.append(vol.getVolumeType().name());
+                storageBuf.append("-->Pool(");
+                storageBuf.append(_storage.get(vol).getId());
+                storageBuf.append(")");
             }
-            destination.append(storageStr);
+            destination.append(storageBuf.toString());
         }
         return destination.append(")]").toString();
     }

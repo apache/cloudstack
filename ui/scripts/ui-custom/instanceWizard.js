@@ -59,6 +59,24 @@
                     });
                     data['new-network-ip'] = $form.find('.new-network .select.advanced .specify-ip input[type=text]').val();
 
+                    // Handle multi-disk service offerings
+                    if ($form.find('.multi-disk-select-container').size()) {
+                        data['disk-offerings-multi'] = [];
+
+                        var $diskGroups = $form.find('.disk-select-group');
+                        var $selectedDisks = $.grep($diskGroups, function (diskGroup) {
+                            return $(diskGroup).find('input[type=checkbox]:checked').size();
+                        });
+
+                        $selectedDisks.map(function (disk) {
+                            data['disk-offerings-multi'].push(
+                                $.extend($(disk).data('json-obj'), {
+                                    _diskOfferingId: $(disk).find('input[type=radio]:checked').val()
+                                })
+                            );
+                        });
+                    }
+
                     args.action({
                         // Populate data
                         context: context,
@@ -491,7 +509,11 @@
                         return {
                             response: {
                                 success: function(args) {
+                                    var multiDisk = args.multiDisk;
+
+                                    $step.find('.multi-disk-select-container').remove();
                                     $step.removeClass('custom-disk-size');
+
                                     if (args.required) {
                                         $step.find('.section.no-thanks').hide();
                                         $step.addClass('required');
@@ -500,15 +522,68 @@
                                         $step.removeClass('required');
                                     }
 
-                                    $step.find('.content .select-container').append(
-                                        makeSelects('diskofferingid', args.data.diskOfferings, {
-                                            id: 'id',
-                                            name: 'name',
-                                            desc: 'displaytext'
-                                        }, {
-                                            'wizard-field': 'disk-offering'
-                                        })
-                                    );
+                                    var $selectContainer = $step.find('.content .select-container:not(.multi-disk)');
+
+                                    if (multiDisk) { // Render as multiple groups for each disk
+                                        var $multiDiskSelect = $('<div>').addClass('multi-disk-select-container');
+
+                                        $(multiDisk).map(function(index, disk) {
+                                            var $group = $('<div>').addClass('disk-select-group');
+                                            var $header = $('<div>').addClass('disk-select-header').append(
+                                                $('<div>').addClass('title').html(disk.label)
+                                            ).appendTo($group);
+                                            var $checkbox = $('<input>').addClass('multi-disk-select')
+                                            .attr({
+                                                type: 'checkbox',
+                                                'disk-id': disk.id
+                                            })
+                                            .prependTo($header);
+                                            var $multiSelectContainer = $selectContainer.clone().append(
+                                                makeSelects('diskofferingid.' + disk.id, args.data.diskOfferings, {
+                                                    id: 'id',
+                                                    name: 'name',
+                                                    desc: 'displaytext'
+                                                }, {
+                                                    'wizard-field': 'disk-offering'
+                                                })
+                                            ).appendTo($group).addClass('multi-disk');
+
+                                            $group.appendTo($multiDiskSelect);
+                                            $group.data('json-obj', disk);
+
+                                            // Show-hide disk group selects
+                                            $checkbox.click(function() {
+                                                $group.toggleClass('selected');
+                                                $group.find('.select:first input[type=radio]').click();
+
+                                                if (!$multiDiskSelect.find('input[type=checkbox]:checked').size()) {
+                                                    $step.find('.no-thanks input[type=radio]').click();
+                                                } else {
+                                                    $step.find('.no-thanks input[type=radio]').attr('checked', false);
+                                                }
+                                            });
+
+                                            // Add custom disk size box
+                                            $step.find('.section.custom-size').clone().hide().appendTo($group);
+                                        });
+
+                                        $multiDiskSelect.insertAfter($selectContainer);
+                                        $selectContainer.hide();
+
+                                        // Fix issue with containers always showing after reload
+                                        $multiDiskSelect.find('.select-container').attr('style', null); 
+                                    } else {
+                                        $selectContainer.show();
+                                        $step.find('.content .select-container').append(
+                                            makeSelects('diskofferingid', args.data.diskOfferings, {
+                                                id: 'id',
+                                                name: 'name',
+                                                desc: 'displaytext'
+                                            }, {
+                                                'wizard-field': 'disk-offering'
+                                            })
+                                        );
+                                    }
 
                                     $step.find('input[type=radio]').bind('change', function() {
                                         var $target = $(this);
@@ -516,53 +591,73 @@
                                         var item = $.grep(args.data.diskOfferings, function(elem) {
                                             return elem.id == val;
                                         })[0];
+                                        var isMultiDisk = $step.find('.multi-disk-select').size();
+
+                                        // Uncheck any multi-select groups
+                                        if ($target.closest('.no-thanks').size() && isMultiDisk) {
+                                            $step.find('.disk-select-group input[type=checkbox]:checked').click();
+                                            $(this).attr('checked', true);
+
+                                            return true;
+                                        }
 
                                         if (!item) {
-                                        	// handle removal of custom size controls
-                                            $step.find('.section.custom-size').hide();
-                                            $step.removeClass('custom-disk-size');
+                                            if (isMultiDisk) {
+                                                $(this).closest('.disk-select-group .section.custom-size').hide();
+                                                $(this).closest('.disk-select-group').removeClass('custom-size');
+                                            } else {
+                                                // handle removal of custom size controls
+                                                $step.find('.section.custom-size').hide();
+                                                $step.removeClass('custom-disk-size');
 
-                                            // handle removal of custom IOPS controls
-                                            $step.removeClass('custom-iops-do');
-
+                                                // handle removal of custom IOPS controls
+                                                $step.removeClass('custom-iops-do');
+                                            }
+                                            
                                             return true;
                                         }
 
                                         var custom = item[args.customFlag];
 
-                                        $step.find('.custom-size-label').remove();
+                                        if (!isMultiDisk) $step.find('.custom-size-label').remove();
 
-                                        if (custom) {
+                                        if (custom && !isMultiDisk) {
                                             $target.parent().find('.name')
+                                            .append(
+                                                $('<span>').addClass('custom-size-label')
+                                                .append(': ')
                                                 .append(
-                                                    $('<span>').addClass('custom-size-label')
-                                                    .append(': ')
-                                                    .append(
-                                                        $('<span>').addClass('custom-disk-size').html(
-                                                            $step.find('.custom-size input[name=size]').val()
-                                                        )
-                                                    )
-                                                    .append(' GB')
+                                                    $('<span>').addClass('custom-disk-size').html(
+                                                        $step.find('.custom-size input[name=size]').val()
+                                                )
+                                                )
+                                                .append(' GB')
                                             );
                                             $target.parent().find('.select-desc .desc')
+                                            .append(
+                                                $('<span>').addClass('custom-size-label')
+                                                .append(', ')
                                                 .append(
-                                                    $('<span>').addClass('custom-size-label')
-                                                    .append(', ')
-                                                    .append(
-                                                        $('<span>').addClass('custom-disk-size').html(
-                                                            $step.find('.custom-size input[name=size]').val()
-                                                        )
-                                                    )
-                                                    .append(' GB')
+                                                    $('<span>').addClass('custom-disk-size').html(
+                                                        $step.find('.custom-size input[name=size]').val()
+                                                )
+                                                )
+                                                .append(' GB')
                                             );
                                             $step.find('.section.custom-size').show();
                                             $step.addClass('custom-disk-size');
                                             $target.closest('.select-container').scrollTop(
                                                 $target.position().top
                                             );
+                                        } else if (custom && isMultiDisk) {
+                                            $(this).closest('.disk-select-group').addClass('custom-size');
                                         } else {
-                                            $step.find('.section.custom-size').hide();
-                                            $step.removeClass('custom-disk-size');
+                                            if (isMultiDisk) {
+                                                $(this).closest('.disk-select-group').removeClass('custom-size');
+                                            } else {
+                                                $step.find('.section.custom-size').hide();
+                                                $step.removeClass('custom-disk-size');
+                                            }
                                         }
 
                                         var customIops = item[args.customIopsDoFlag];
@@ -1118,7 +1213,7 @@
                 $wizard.find('.tab-view').tabs();
                 $wizard.find('.slider').each(function() {
                    var $slider = $(this);
-
+                   
                     $slider.slider({
                         min: minCustomDiskSize,
                         max: maxCustomDiskSize,

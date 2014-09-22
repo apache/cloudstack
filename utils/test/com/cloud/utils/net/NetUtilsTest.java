@@ -19,6 +19,14 @@
 
 package com.cloud.utils.net;
 
+import com.googlecode.ipv6.IPv6Address;
+import org.apache.log4j.Logger;
+import org.junit.Test;
+
+import java.math.BigInteger;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -30,15 +38,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-
-import java.math.BigInteger;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import org.apache.log4j.Logger;
-import org.junit.Test;
-
-import com.googlecode.ipv6.IPv6Address;
 
 public class NetUtilsTest {
 
@@ -199,6 +198,12 @@ public class NetUtilsTest {
     }
 
     @Test
+    public void testStandardizeIp6Address() {
+        assertEquals(NetUtils.standardizeIp6Address("1234:0000:0000:5678:0000:000:ABCD:0001"), "1234::5678:0:0:abcd:1");
+        assertEquals(NetUtils.standardizeIp6Cidr("1234:0000:0000:5678:0000:000:ABCD:0001/64"), "1234::5678:0:0:0:0/64");
+    }
+
+    @Test
     public void testGenerateUriForPvlan() {
         assertEquals("pvlan://123-i456", NetUtils.generateUriForPvlan("123", "456").toString());
     }
@@ -223,6 +228,17 @@ public class NetUtilsTest {
         assertTrue(NetUtils.isValidCIDR(cidrFirst));
         assertTrue(NetUtils.isValidCIDR(cidrSecond));
         assertTrue(NetUtils.isValidCIDR(cidrThird));
+    }
+
+    @Test
+    public void testIsValidCidrList() throws Exception {
+        String cidrFirst = "10.0.144.0/20,1.2.3.4/32,5.6.7.8/24";
+        String cidrSecond = "10.0.151.0/20,129.0.0.0/4";
+        String cidrThird = "10.0.144.0/21";
+
+        assertTrue(NetUtils.isValidCidrList(cidrFirst));
+        assertTrue(NetUtils.isValidCidrList(cidrSecond));
+        assertTrue(NetUtils.isValidCidrList(cidrThird));
     }
 
     @Test

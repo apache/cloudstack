@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.Network;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -59,73 +60,45 @@ public class Upgrade430to440 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
-        populateIAMGroupAccountMap(conn);
         secondaryIpsAccountAndDomainIdsUpdate(conn);
+        moveCidrsToTheirOwnTable(conn);
+        addExtractTemplateAndVolumeColumns(conn);
+        updateVlanUris(conn);
     }
 
-    // populate iam_group_account_map table for existing accounts
-    private void populateIAMGroupAccountMap(Connection conn) {
-        PreparedStatement acctInsert = null;
-        PreparedStatement acctQuery = null;
-        ResultSet rs = null;
+    private void addExtractTemplateAndVolumeColumns(Connection conn) {
 
-        s_logger.debug("Populating iam_group_account_map table for existing accounts...");
-        try {
-            acctInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`iam_group_account_map` (group_id, account_id, created) values(?, ?, Now())");
-            acctQuery = conn
-                    .prepareStatement("select id, type from `cloud`.`account` where removed is null");
-            rs = acctQuery.executeQuery();
+        try (PreparedStatement selectTemplateInfostmt = conn.prepareStatement("SELECT *  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'cloud' AND TABLE_NAME = 'template_store_ref' AND COLUMN_NAME = 'download_url_created'");
+             ResultSet templateInfoResults = selectTemplateInfostmt.executeQuery();
+             PreparedStatement addDownloadUrlCreatedToTemplateStorerefstatement = conn.prepareStatement("ALTER TABLE `cloud`.`template_store_ref` ADD COLUMN `download_url_created` datetime");
+             PreparedStatement addDownloadUrlToTemplateStorerefstatement = conn.prepareStatement("ALTER TABLE `cloud`.`template_store_ref` ADD COLUMN `download_url` varchar(255)");
+             PreparedStatement selectVolumeInfostmt = conn.prepareStatement("SELECT *  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'cloud' AND TABLE_NAME = 'volume_store_ref' AND COLUMN_NAME = 'download_url_created'");
+             ResultSet volumeInfoResults = selectVolumeInfostmt.executeQuery();
+             PreparedStatement addDownloadUrlCreatedToVolumeStorerefstatement = conn.prepareStatement("ALTER TABLE `cloud`.`volume_store_ref` ADD COLUMN `download_url_created` datetime");
+            ) {
 
-            while (rs.next()) {
-                Long acct_id = rs.getLong("id");
-                short type = rs.getShort("type");
-
-                // insert entry in iam_group_account_map table
-                acctInsert.setLong(1, type + 1);
-                acctInsert.setLong(2, acct_id);
-                acctInsert.executeUpdate();
+            // Add download_url_created, download_url to template_store_ref
+            if (!templateInfoResults.next()) {
+                addDownloadUrlCreatedToTemplateStorerefstatement.executeUpdate();
+                addDownloadUrlToTemplateStorerefstatement.executeUpdate();
             }
+
+            // Add download_url_created to volume_store_ref - note download_url already exists
+            if (!volumeInfoResults.next()) {
+                addDownloadUrlCreatedToVolumeStorerefstatement.executeUpdate();
+            }
+
         } catch (SQLException e) {
-            String msg = "Unable to populate iam_group_account_map for existing accounts." + e.getMessage();
-            s_logger.error(msg);
-            throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (acctInsert != null) {
-                    acctInsert.close();
-                }
-                if (acctQuery != null) {
-                    acctQuery.close();
-                }
-            } catch (SQLException e) {
-            }
+            throw new CloudRuntimeException("Adding columns for Extract Template And Volume functionality failed");
         }
-        s_logger.debug("Completed populate iam_group_account_map for existing accounts.");
     }
-
-
 
     private void secondaryIpsAccountAndDomainIdsUpdate(Connection conn) {
-        PreparedStatement pstmt = null;
-        PreparedStatement pstmtVm = null;
-        PreparedStatement pstmtNw = null;
-        PreparedStatement pstmtUpdate = null;
-
-        ResultSet rs1 = null;
-        ResultSet vmRs = null;
-        ResultSet networkRs = null;
-
         String secondIpsSql = "SELECT id, vmId, network_id, account_id, domain_id, ip4_address FROM `cloud`.`nic_secondary_ips`";
 
-        try {
-            pstmt = conn.prepareStatement(secondIpsSql);
-            rs1 = pstmt.executeQuery();
-
+        try (PreparedStatement pstmt = conn.prepareStatement(secondIpsSql);
+             ResultSet rs1 = pstmt.executeQuery();
+            ) {
             while(rs1.next()) {
                 long ipId = rs1.getLong(1);
                 long vmId = rs1.getLong(2);
@@ -134,118 +107,125 @@ public class Upgrade430to440 implements DbUpgrade {
                 long domainId = rs1.getLong(5);
                 String ipAddr = rs1.getString(6);
 
-                pstmtVm = conn.prepareStatement("SELECT account_id, domain_id FROM `cloud`.`vm_instance` where id = ?");
-                pstmtVm.setLong(1,vmId);
+                try(PreparedStatement pstmtVm = conn.prepareStatement("SELECT account_id, domain_id FROM `cloud`.`vm_instance` where id = ?");) {
+                    pstmtVm.setLong(1,vmId);
 
-                vmRs = pstmtVm.executeQuery();
+                    try(ResultSet vmRs = pstmtVm.executeQuery();) {
 
-                if (vmRs.next()) {
-                    long vmAccountId = vmRs.getLong(1);
-                    long vmDomainId = vmRs.getLong(2);
+                        if (vmRs.next()) {
+                            long vmAccountId = vmRs.getLong(1);
+                            long vmDomainId = vmRs.getLong(2);
 
-                    if (vmAccountId != accountId && vmAccountId != domainId) {
-                        // update the secondary ip accountid and domainid to vm accountid domainid
-                        // check the network type. If network is shared accountid doaminid needs to be updated in
-                        // in both nic_secondary_ips table and user_ip_address table
+                            if (vmAccountId != accountId && vmAccountId != domainId) {
+                                // update the secondary ip accountid and domainid to vm accountid domainid
+                                // check the network type. If network is shared accountid doaminid needs to be updated in
+                                // in both nic_secondary_ips table and user_ip_address table
 
-                        pstmtUpdate = conn.prepareStatement("UPDATE `cloud`.`nic_secondary_ips` SET account_id = ?, domain_id= ? WHERE id = ?");
-                        pstmtUpdate.setLong(1, vmAccountId);
-                        pstmtUpdate.setLong(2,vmDomainId);
-                        pstmtUpdate.setLong(3,ipId);
-                        pstmtUpdate.executeUpdate();
-                        pstmtUpdate.close();
+                                try(PreparedStatement pstmtUpdate = conn.prepareStatement("UPDATE `cloud`.`nic_secondary_ips` SET account_id = ?, domain_id= ? WHERE id = ?");) {
+                                    pstmtUpdate.setLong(1, vmAccountId);
+                                    pstmtUpdate.setLong(2,vmDomainId);
+                                    pstmtUpdate.setLong(3,ipId);
+                                    pstmtUpdate.executeUpdate();
+                                } catch (SQLException e) {
+                                    throw new CloudRuntimeException("Exception while updating secondary ip for nic " + ipId, e);
+                                }
 
-                        pstmtNw = conn.prepareStatement("SELECT guest_type FROM `cloud`.`networks` where id = ?");
-                        pstmtNw.setLong(1,networkId);
+                                try(PreparedStatement pstmtNw = conn.prepareStatement("SELECT guest_type FROM `cloud`.`networks` where id = ?");) {
+                                    pstmtNw.setLong(1,networkId);
 
-                        networkRs = pstmtNw.executeQuery();
-                        if (networkRs.next()) {
-                            String guesttype = networkRs.getString(1);
+                                    try(ResultSet networkRs = pstmtNw.executeQuery();) {
+                                        if (networkRs.next()) {
+                                            String guesttype = networkRs.getString(1);
 
-                            if (guesttype.equals(Network.GuestType.Shared.toString())) {
-                                pstmtUpdate = conn.prepareStatement("UPDATE `cloud`.`user_ip_address` SET account_id = ?, domain_id= ? WHERE public_ip_address = ?");
-                                pstmtUpdate.setLong(1,vmAccountId);
-                                pstmtUpdate.setLong(2,vmDomainId);
-                                pstmtUpdate.setString(3,ipAddr);
-                                pstmtUpdate.executeUpdate();
-                                pstmtUpdate.close();
+                                            if (guesttype.equals(Network.GuestType.Shared.toString())) {
+                                                try(PreparedStatement pstmtUpdate = conn.prepareStatement("UPDATE `cloud`.`user_ip_address` SET account_id = ?, domain_id= ? WHERE public_ip_address = ?");) {
+                                                    pstmtUpdate.setLong(1,vmAccountId);
+                                                    pstmtUpdate.setLong(2,vmDomainId);
+                                                    pstmtUpdate.setString(3,ipAddr);
+                                                    pstmtUpdate.executeUpdate();
+                                                } catch (SQLException e) {
+                                                    throw new CloudRuntimeException("Exception while updating public ip  " + ipAddr, e);
+                                                }
+                                            }
+                                        }
+                                    } catch (SQLException e) {
+                                        throw new CloudRuntimeException("Exception while retrieving guest type for network " + networkId, e);
+                                    }
 
-                            }
-                        }
-                                networkRs.close();
-                        networkRs = null;
-                                pstmtNw.close();
-                        pstmtNw = null;
+                                } catch (SQLException e) {
+                                    throw new CloudRuntimeException("Exception while retrieving guest type for network " + networkId, e);
+                                }
+                            } // if
+                        } // if
                     }
-                } //if
-
-                pstmtVm.close();
-                pstmtVm = null;
-                        vmRs.close();
-                vmRs = null;
+                }
             } // while
-
-
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while Moving private zone information to dedicated resources", e);
-        } finally {
-
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-
-                } catch (SQLException e) {
-                }
-            }
-
-
-            if (rs1 != null) {
-                try {
-                    rs1.close();
-                } catch (SQLException e) {
-                }
-            }
-
-
-
-            if (pstmtVm != null) {
-                try {
-                    pstmtVm.close();
-                } catch (SQLException e) {
-                }
-            }
-
-            if (vmRs != null) {
-                try {
-                    vmRs.close();
-                } catch (SQLException e) {
-                }
-            }
-
-
-
-            if (pstmtNw != null) {
-                try {
-                    pstmtNw.close();
-
-                } catch (SQLException e) {
-                }
-            }
-
-
-            if (networkRs != null) {
-                try {
-                    networkRs.close();
-                } catch (SQLException e) {
-                }
-            }
         }
         s_logger.debug("Done updating vm nic secondary ip  account and domain ids");
     }
 
 
+    private void moveCidrsToTheirOwnTable(Connection conn) {
+        s_logger.debug("Moving network acl item cidrs to a row per cidr");
+
+        String networkAclItemSql = "SELECT id, cidr FROM `cloud`.`network_acl_item`";
+        String networkAclItemCidrSql = "INSERT INTO `cloud`.`network_acl_item_cidrs` (network_acl_item_id, cidr) VALUES (?,?)";
+
+        try (PreparedStatement pstmtItem = conn.prepareStatement(networkAclItemSql);
+             ResultSet rsItems = pstmtItem.executeQuery();
+             PreparedStatement pstmtCidr = conn.prepareStatement(networkAclItemCidrSql);
+            ) {
 
 
+            // for each network acl item
+            while(rsItems.next()) {
+                long itemId = rsItems.getLong(1);
+                // get the source cidr list
+                String cidrList = rsItems.getString(2);
+                s_logger.debug("Moving '" + cidrList +  "' to a row per cidr");
+                // split it
+                String[] cidrArray = cidrList.split(",");
+                // insert a record per cidr
+                pstmtCidr.setLong(1, itemId);
+                for (String cidr : cidrArray) {
+                    pstmtCidr.setString(2, cidr);
+                    pstmtCidr.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while Moving network acl item cidrs to a row per cidr", e);
+        }
+        s_logger.debug("Done moving network acl item cidrs to a row per cidr");
+    }
+
+    private void updateVlanUris(Connection conn) {
+        s_logger.debug("updating vlan URIs");
+        try(PreparedStatement selectstatement = conn.prepareStatement("SELECT id, vlan_id FROM `cloud`.`vlan` where vlan_id not like '%:%'");
+            ResultSet results = selectstatement.executeQuery()) {
+
+            while (results.next()) {
+                long id = results.getLong(1);
+                String vlan = results.getString(2);
+                if (vlan == null || "".equals(vlan)) {
+                    continue;
+                }
+                String vlanUri = BroadcastDomainType.Vlan.toUri(vlan).toString();
+                try(PreparedStatement updatestatement = conn.prepareStatement("update `cloud`.`vlan` set vlan_id=? where id=?");)
+                {
+                    updatestatement.setString(1, vlanUri);
+                    updatestatement.setLong(2, id);
+                    updatestatement.executeUpdate();
+                } catch (SQLException e) {
+                    throw new CloudRuntimeException("Unable to update vlan URI " + vlanUri + " for vlan record " + id, e);
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update vlan URIs ", e);
+        }
+        s_logger.debug("Done updateing vlan URIs");
+    }
 
     @Override
     public File[] getCleanupScripts() {

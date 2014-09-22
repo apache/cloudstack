@@ -245,8 +245,10 @@ public class ComponentContext implements ApplicationContextAware {
     private static ApplicationContext getApplicationContext(Object instance) {
         ApplicationContext result = null;
 
-        if (instance != null && s_appContextDelegates != null) {
-            result = s_appContextDelegates.get(instance.getClass());
+        synchronized (s_appContextDelegates) {
+            if (instance != null && s_appContextDelegates != null) {
+                result = s_appContextDelegates.get(instance.getClass());
+            }
         }
 
         return result == null ? s_appContext : result;

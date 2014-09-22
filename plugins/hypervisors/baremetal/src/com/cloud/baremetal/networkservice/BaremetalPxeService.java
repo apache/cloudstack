@@ -24,6 +24,7 @@ package com.cloud.baremetal.networkservice;
 
 import java.util.List;
 
+import com.cloud.network.Network;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
 
@@ -37,7 +38,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface BaremetalPxeService extends Adapter {
 
-    public boolean prepare(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context);
+    public boolean prepare(VirtualMachineProfile profile, NicProfile nic, Network network, DeployDestination dest, ReservationContext context);
 
     public boolean prepareCreateTemplate(Long pxeServerId, UserVm vm, String templateUrl);
 

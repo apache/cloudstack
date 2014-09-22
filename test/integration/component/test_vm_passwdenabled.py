@@ -18,9 +18,9 @@ import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 
 
@@ -92,15 +92,13 @@ class TestVMPasswordEnabled(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-            TestVMPasswordEnabled,
-            cls
-        ).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cls.testClient = super(TestVMPasswordEnabled, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        domain = get_domain(cls.api_client, cls.services)
-        zone = get_zone(cls.api_client, cls.services)
+        domain = get_domain(cls.api_client)
+        zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = zone.networktype
         template = get_template(
             cls.api_client,
@@ -210,7 +208,7 @@ class TestVMPasswordEnabled(cloudstackTestCase):
             domainid=cls.account.domainid
         )
         # Delete the VM - No longer needed
-        cls.virtual_machine.delete(cls.api_client)
+        cls.virtual_machine.delete(cls.api_client, expunge=True)
         cls.services["small"]["template"] = cls.pw_enabled_template.id
 
         cls.vm = VirtualMachine.create(

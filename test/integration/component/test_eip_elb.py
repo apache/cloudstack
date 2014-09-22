@@ -22,9 +22,9 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from marvin.sshClient import SshClient
 import datetime
 
@@ -91,11 +91,13 @@ class TestEIP(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestEIP, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestEIP, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -795,36 +797,8 @@ class TestEIP(cloudstackTestCase):
                                             ))
 
         self.debug("Destroying an instance: %s" % self.virtual_machine.name)
-        self.virtual_machine.delete(self.apiclient)
+        self.virtual_machine.delete(self.apiclient, expunge=True)
         self.debug("Destroy instance complete!")
-
-        config = list_configurations(
-                                     self.apiclient,
-                                     name='expunge.delay'
-                                     )
-        self.assertEqual(
-                          isinstance(config, list),
-                          True,
-                          "Check list configurations response"
-                    )
-        exp_delay = config[0]
-        self.debug("expunge.delay: %s" % exp_delay.value)
-
-        config = list_configurations(
-                                     self.apiclient,
-                                     name='expunge.interval'
-                                     )
-        self.assertEqual(
-                          isinstance(config, list),
-                          True,
-                          "Check list configurations response"
-                    )
-        exp_interval = config[0]
-        self.debug("expunge.interval: %s" % exp_interval.value)
-
-        # wait for exp_delay+exp_interval - cleans up VM
-        total_wait = int(exp_interval.value) + int(exp_delay.value)
-        time.sleep(total_wait)
 
         vms = VirtualMachine.list(
                                   self.apiclient,
@@ -909,11 +883,13 @@ class TestELB(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestELB, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestELB, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,

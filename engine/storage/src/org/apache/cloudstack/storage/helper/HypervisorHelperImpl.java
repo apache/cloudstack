@@ -44,8 +44,12 @@ import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
@@ -60,9 +64,13 @@ public class HypervisorHelperImpl implements HypervisorHelper {
     @Inject
     GuestOSDao guestOSDao;
     @Inject
+    GuestOSHypervisorDao guestOsHypervisorDao;
+    @Inject
     ConfigurationDao configurationDao;
     @Inject
     AgentManager agentMgr;
+    @Inject
+    HostDao hostDao;
 
     @Override
     public DataTO introduceObject(DataTO object, Scope scope, Long storeId) {
@@ -116,7 +124,10 @@ public class HypervisorHelperImpl implements HypervisorHelper {
         GuestOSVO guestOS = guestOSDao.findById(virtualMachine.getGuestOSId());
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(virtualMachine.getId());
         CreateVMSnapshotCommand ccmd =
-            new CreateVMSnapshotCommand(virtualMachine.getInstanceName(), vmSnapshotTO, volumeTOs, guestOS.getDisplayName(), virtualMachine.getState());
+            new CreateVMSnapshotCommand(virtualMachine.getInstanceName(), vmSnapshotTO, volumeTOs, guestOS.getDisplayName());
+        HostVO host = hostDao.findById(hostId);
+        GuestOSHypervisorVO guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
+        ccmd.setPlatformEmulator(guestOsMapping.getGuestOsName());
         ccmd.setWait(wait);
         try {
             Answer answer = agentMgr.send(hostId, ccmd);

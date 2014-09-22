@@ -197,6 +197,7 @@ remove_snat() {
   fi
 
   local pubIp=$1
+  local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
   logger -t cloud "$(basename $0):Removing SourceNAT $pubIp on interface $ethDev"
   sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask;
   return $?
@@ -230,6 +231,11 @@ add_first_ip() {
       sudo arping -c 1 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
       sudo arping -c 1 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
   fi
+
+  # add interface gateway ip info into file, used on redundant router fail over for adding routes
+  sed -i /"$ethDev "/d $IFACEGWIPFILE
+  echo "$ethDev $defaultGwIP" >> $IFACEGWIPFILE
+
   add_routing $1
 
   return 0
@@ -257,6 +263,17 @@ remove_first_ip() {
      sudo ip link set $ethDev down
      return 1
   fi
+
+  for ipMask in $existingIpMask
+  do
+    if [ "$ipMask" == "$pubIp" ]
+    then
+            continue
+    fi
+    sudo ip addr add dev $ethDev $ipMask brd +
+  done
+
+  sed -i /"$ethDev "/d $IFACEGWIPFILE
   remove_routing $1
   sudo ip link set $ethDev down
   return $?
@@ -344,6 +361,7 @@ op=""
 is_master=0
 is_redundant=0
 if_keep_state=0
+IFACEGWIPFILE='/var/cache/cloud/ifaceGwIp'
 grep "redundant_router=1" /var/cache/cloud/cmdline > /dev/null
 if [ $? -eq 0 ]
 then

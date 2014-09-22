@@ -61,27 +61,39 @@ public class TestClock extends TimerTask {
     }
 
     public int getMinute() {
-        return _minute;
+        synchronized (this) {
+            return _minute;
+        }
     }
 
     public int getHour() {
-        return _hour;
+        synchronized (this) {
+            return _hour;
+        }
     }
 
     public int getDay() {
-        return _day;
+        synchronized (this) {
+            return _day;
+        }
     }
 
     public int getWeek() {
-        return _week;
+        synchronized (this) {
+            return _week;
+        }
     }
 
     public int getMonth() {
-        return _month;
+        synchronized (this) {
+            return _month;
+        }
     }
 
     public int getYear() {
-        return _year;
+        synchronized (this) {
+            return _year;
+        }
     }
 
     public int getMinutesPerHour() {

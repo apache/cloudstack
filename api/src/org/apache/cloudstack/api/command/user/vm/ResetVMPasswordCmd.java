@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncVMCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -42,7 +42,7 @@ import com.cloud.vm.VirtualMachine;
                     "The virtual machine must be in a \"Stopped\" state and the template must already " +
         "support this feature for this command to take effect. [async]", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class ResetVMPasswordCmd extends BaseAsyncVMCmd {
+public class ResetVMPasswordCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ResetVMPasswordCmd.class.getName());
 
     private static final String s_name = "resetpasswordforvirtualmachineresponse";
@@ -64,7 +64,6 @@ public class ResetVMPasswordCmd extends BaseAsyncVMCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    @Override
     public Long getId() {
         return id;
     }

@@ -27,16 +27,27 @@ from subprocess import call
 import socket
 import sys
 import os
+import subprocess
+import traceback
 
 def generateSSLKey(outputPath):
-	hostName = socket.gethostbyname(socket.gethostname())
-	keyFile = outputPath + os.sep + "cloud.keystore"
-	print("HostName = %s" % hostName)
-	print("OutputPath = %s" % keyFile)
-	dname='cn="Cloudstack User",ou="' + hostName + '",o="' + hostName + '",c="Unknown"';
-	print("dname = %s" % dname)
-	return_code = call(["keytool", "-genkey", "-keystore", keyFile, "-storepass", "vmops.com", "-keypass", "vmops.com", "-keyalg", "RSA", "-validity", "3650", "-dname", dname])
-	print("SSL key generated is : %s" % return_code)
+  logf = open("ssl-keys.log", "w")
+  hostName = socket.gethostbyname(socket.gethostname())
+  keyFile = outputPath + os.sep + "cloud.keystore"
+  logf.write("HostName = %s\n" % hostName)
+  logf.write("OutputPath = %s\n" % keyFile)
+  dname='cn="Cloudstack User",ou="' + hostName + '",o="' + hostName + '",c="Unknown"';
+  logf.write("dname = %s\n" % dname)
+  logf.flush()
+  try :
+    return_code = subprocess.Popen(["keytool", "-genkey", "-keystore", keyFile, "-storepass", "vmops.com", "-keypass", "vmops.com", "-keyalg", "RSA", "-validity", "3650", "-dname", dname],shell=True,stdout=logf, stderr=logf)
+    return_code.wait()
+  except OSError as e:
+    logf.flush()
+    traceback.print_exc(file=logf)
+  logf.flush()
+  logf.write("SSL key generated is : %s" % return_code)
+  logf.flush()
 
 argsSize=len(sys.argv)
 if argsSize != 2:

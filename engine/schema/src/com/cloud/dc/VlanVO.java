@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.dc;
 
+import com.cloud.utils.db.GenericDao;
+
+import java.util.Date;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -72,6 +75,13 @@ public class VlanVO implements Vlan {
 
     @Column(name = "uuid")
     String uuid;
+
+    @Column(name= GenericDao.REMOVED_COLUMN)
+    private Date removed;
+
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date created;
+
 
     public VlanVO(VlanType vlanType, String vlanTag, String vlanGateway, String vlanNetmask, long dataCenterId, String ipRange, Long networkId, Long physicalNetworkId,
             String ip6Gateway, String ip6Cidr, String ip6Range) {
@@ -148,6 +158,16 @@ public class VlanVO implements Vlan {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public Date getRemoved() {
+        return removed;
+    }
+
+    @Override
+    public Date getCreated() {
+        return created;
     }
 
     @Override

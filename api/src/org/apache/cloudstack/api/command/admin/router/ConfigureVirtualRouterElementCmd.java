@@ -127,8 +127,10 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
         VirtualRouterProvider result = _service.get(0).configure(this);
         if (result != null) {
             VirtualRouterProviderResponse routerResponse = _responseGenerator.createVirtualRouterProviderResponse(result);
-            routerResponse.setResponseName(getCommandName());
-            this.setResponseObject(routerResponse);
+            if(routerResponse != null) {
+                routerResponse.setResponseName(getCommandName());
+                this.setResponseObject(routerResponse);
+            }
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure the virtual router provider");
         }

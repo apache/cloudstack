@@ -308,7 +308,7 @@ public class Script implements Callable<String> {
         public Task(OutputInterpreter interpreter, BufferedReader reader) {
             this.interpreter = interpreter;
             this.reader = reader;
-            this.result = null;
+            result = null;
         }
 
         @Override
@@ -340,8 +340,6 @@ public class Script implements Callable<String> {
     public static String findScript(String path, String script) {
         s_logger.debug("Looking for " + script + " in the classpath");
 
-        path = path.replace("/", File.separator);
-
         URL url = ClassLoader.getSystemResource(script);
         s_logger.debug("System resource: " + url);
         File file = null;
@@ -350,6 +348,12 @@ public class Script implements Callable<String> {
             s_logger.debug("Absolute path =  " + file.getAbsolutePath());
             return file.getAbsolutePath();
         }
+
+        if (path == null) {
+            s_logger.warn("No search path specified, unable to look for " + script);
+            return null;
+        }
+        path = path.replace("/", File.separator);
 
         /**
          * Look in WEB-INF/classes of the webapp

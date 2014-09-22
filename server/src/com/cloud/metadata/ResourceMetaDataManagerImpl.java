@@ -36,11 +36,15 @@ import org.apache.cloudstack.resourcedetail.dao.RemoteAccessVpnDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.Site2SiteCustomerGatewayDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnConnectionDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnGatewayDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.VpcGatewayDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.LBStickinessPolicyDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.LBHealthCheckPolicyDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -113,6 +117,12 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     AutoScaleVmProfileDetailsDao _autoScaleVmProfileDetailsDao;
     @Inject
     AutoScaleVmGroupDetailsDao _autoScaleVmGroupDetailsDao;
+    @Inject
+    LBStickinessPolicyDetailsDao _stickinessPolicyDetailsDao;
+    @Inject
+    LBHealthCheckPolicyDetailsDao _healthcheckPolicyDetailsDao;
+    @Inject
+    SnapshotPolicyDetailsDao _snapshotPolicyDetailsDao;
 
     private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> s_daoMap = new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
 
@@ -142,6 +152,9 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         s_daoMap.put(ResourceObjectType.User, _userDetailsDao);
         s_daoMap.put(ResourceObjectType.AutoScaleVmProfile, _autoScaleVmProfileDetailsDao);
         s_daoMap.put(ResourceObjectType.AutoScaleVmGroup, _autoScaleVmGroupDetailsDao);
+        s_daoMap.put(ResourceObjectType.LBStickinessPolicy, _stickinessPolicyDetailsDao);
+        s_daoMap.put(ResourceObjectType.LBHealthCheckPolicy, _healthcheckPolicyDetailsDao);
+        s_daoMap.put(ResourceObjectType.SnapshotPolicy, _snapshotPolicyDetailsDao);
 
         return true;
     }
@@ -215,6 +228,10 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
             return dao.findDetail(resourceId, key);
         }
 
+        private List<? extends ResourceDetail> getDetails(String key, String value, Boolean forDisplay) {
+            return dao.findDetails(key, value, forDisplay);
+        }
+
         private void addDetail(long resourceId, String key, String value, boolean forDisplay) {
             dao.addDetail(resourceId, key, value, forDisplay);
         }
@@ -246,6 +263,12 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     public ResourceDetail getDetail(long resourceId, ResourceObjectType resourceType, String key) {
         DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
         return newDetailDaoHelper.getDetail(resourceId, key);
+    }
+
+    @Override
+    public List<? extends ResourceDetail> getDetails(ResourceObjectType resourceType, String key, String value, Boolean forDisplay){
+        DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
+        return newDetailDaoHelper.getDetails(key, value, forDisplay);
     }
 
     @Override

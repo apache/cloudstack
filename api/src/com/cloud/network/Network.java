@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -34,7 +35,7 @@ import com.cloud.utils.fsm.StateObject;
 /**
  * owned by an account.
  */
-public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity, Serializable {
+public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity, Serializable, Displayable {
 
     public enum GuestType {
         Shared, Isolated
@@ -111,7 +112,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     public static class Provider {
         private static List<Provider> supportedProviders = new ArrayList<Provider>();
 
-        public static final Provider VirtualRouter = new Provider("VirtualRouter", false);
+        public static final Provider VirtualRouter = new Provider("VirtualRouter", false, false);
         public static final Provider JuniperContrailRouter = new Provider("JuniperContrailRouter", false);
         public static final Provider JuniperContrailVpcRouter = new Provider("JuniperContrailVpcRouter", false);
         public static final Provider JuniperSRX = new Provider("JuniperSRX", true);
@@ -131,13 +132,31 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         // add new Ovs provider
         public static final Provider Ovs = new Provider("Ovs", false);
         public static final Provider Opendaylight = new Provider("Opendaylight", false);
+        // add Nuage Vsp Providers
+        public static final Provider NuageVsp = new Provider("NuageVsp", false);
+        public static final Provider NuageVspVpc = new Provider("NuageVspVpc", false);
+        public static final Provider BrocadeVcs = new Provider("BrocadeVcs", false);
+        // add GloboDns provider
+        public static final Provider GloboDns = new Provider("GloboDns", true);
 
         private final String name;
         private final boolean isExternal;
 
+        // set to true, if on network shutdown resources (acquired/configured at implemented phase) needed to cleaned up. set to false
+        // if no clean-up is required ( for e.g appliance based providers like VirtualRouter, VM is destroyed so there is no need to cleanup).
+        private final boolean needCleanupOnShutdown;
+
         public Provider(String name, boolean isExternal) {
             this.name = name;
             this.isExternal = isExternal;
+            needCleanupOnShutdown = true;
+            supportedProviders.add(this);
+        }
+
+        public Provider(String name, boolean isExternal, boolean needCleanupOnShutdown) {
+            this.name = name;
+            this.isExternal = isExternal;
+            this.needCleanupOnShutdown = needCleanupOnShutdown;
             supportedProviders.add(this);
         }
 
@@ -147,6 +166,10 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
         public boolean isExternal() {
             return isExternal;
+        }
+
+        public boolean cleanupNeededOnShutdown() {
+            return needCleanupOnShutdown;
         }
 
         public static Provider getProvider(String providerName) {
@@ -219,7 +242,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
         Allocated("Indicates the network configuration is in allocated but not setup"), Setup("Indicates the network configuration is setup"), Implementing(
                 "Indicates the network configuration is being implemented"), Implemented("Indicates the network configuration is in use"), Shutdown(
-                        "Indicates the network configuration is being destroyed"), Destroy("Indicates that the network is destroyed");
+                "Indicates the network configuration is being destroyed"), Destroy("Indicates that the network is destroyed");
 
         protected static final StateMachine2<State, Network.Event, Network> s_fsm = new StateMachine2<State, Network.Event, Network>();
 
@@ -327,7 +350,10 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     boolean getSpecifyIpRanges();
 
+    @Deprecated
     boolean getDisplayNetwork();
+
+    boolean isDisplay();
 
     String getGuruName();
 

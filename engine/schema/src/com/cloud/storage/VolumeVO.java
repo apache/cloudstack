@@ -32,6 +32,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
@@ -143,6 +144,9 @@ public class VolumeVO implements Volume {
     @Column(name = "format")
     private Storage.ImageFormat format;
 
+    @Column(name = "provisioning_type")
+    private Storage.ProvisioningType provisioningType;
+
     @Column(name = "display_volume", updatable = true, nullable = false)
     protected boolean displayVolume = true;
 
@@ -163,12 +167,15 @@ public class VolumeVO implements Volume {
     Integer hypervisorSnapshotReserve;
 
     // Real Constructor
-    public VolumeVO(Type type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size, Long minIops, Long maxIops, String iScsiName) {
-        volumeType = type;
+    public VolumeVO(Type type, String name, long dcId, long domainId,
+            long accountId, long diskOfferingId, Storage.ProvisioningType provisioningType, long size,
+            Long minIops, Long maxIops, String iScsiName) {
+        this.volumeType = type;
         this.name = name;
         dataCenterId = dcId;
         this.accountId = accountId;
         this.domainId = domainId;
+        this.provisioningType = provisioningType;
         this.size = size;
         this.minIops = minIops;
         this.maxIops = maxIops;
@@ -178,14 +185,17 @@ public class VolumeVO implements Volume {
         uuid = UUID.randomUUID().toString();
     }
 
-    public VolumeVO(String name, long dcId, Long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Long minIops,
-            Long maxIops, String iScsiName, Volume.Type vType) {
+    public VolumeVO(String name, long dcId, Long podId, long accountId,
+            long domainId, Long instanceId, String folder, String path, Storage.ProvisioningType provisioningType,
+            long size, Long minIops, Long maxIops, String iScsiName,
+            Volume.Type vType) {
         this.name = name;
         this.accountId = accountId;
         this.domainId = domainId;
         this.instanceId = instanceId;
         this.folder = folder;
         this.path = path;
+        this.provisioningType = provisioningType;
         this.size = size;
         this.minIops = minIops;
         this.maxIops = maxIops;
@@ -198,13 +208,16 @@ public class VolumeVO implements Volume {
         uuid = UUID.randomUUID().toString();
     }
 
-    public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Volume.Type vType) {
+    public VolumeVO(String name, long dcId, long podId, long accountId,
+            long domainId, Long instanceId, String folder, String path, Storage.ProvisioningType provisioningType,
+            long size, Volume.Type vType) {
         this.name = name;
         this.accountId = accountId;
         this.domainId = domainId;
         this.instanceId = instanceId;
         this.folder = folder;
         this.path = path;
+        this.provisioningType = provisioningType;
         this.size = size;
         minIops = null;
         maxIops = null;
@@ -227,6 +240,7 @@ public class VolumeVO implements Volume {
             that.getInstanceId(),
             that.getFolder(),
             that.getPath(),
+            that.getProvisioningType(),
             that.getSize(),
             that.getMinIops(),
             that.getMaxIops(),
@@ -245,6 +259,7 @@ public class VolumeVO implements Volume {
         templateId = that.getTemplateId();
         deviceId = that.getDeviceId();
         format = that.getFormat();
+        provisioningType = that.getProvisioningType();
         uuid = UUID.randomUUID().toString();
     }
 
@@ -552,6 +567,15 @@ public class VolumeVO implements Volume {
         return displayVolume;
     }
 
+    @Override
+    public  boolean isDisplay(){
+        return displayVolume;
+    }
+
+    public void setDisplay(boolean display){
+        this.displayVolume = display;
+    }
+
     public void setDisplayVolume(boolean displayVolume) {
         this.displayVolume = displayVolume;
     }
@@ -565,7 +589,16 @@ public class VolumeVO implements Volume {
         this.format = format;
     }
 
-    public void setVmSnapshotChainSize(Long vmSnapshotChainSize) {
+    @Override
+    public ProvisioningType getProvisioningType(){
+        return provisioningType;
+    }
+
+    public void setProvisioningType(ProvisioningType provisioningType){
+        this.provisioningType = provisioningType;
+    }
+
+    public void setVmSnapshotChainSize(Long vmSnapshotChainSize){
         this.vmSnapshotChainSize = vmSnapshotChainSize;
     }
 

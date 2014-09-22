@@ -171,7 +171,6 @@ public class NetscalerResource implements ServerResource {
     // interface to interact with service VM of the SDX appliance
     com.citrix.sdx.nitro.service.nitro_service _netscalerSdxService;
 
-    Long _timeout = new Long(100000);
     base_response apiCallResult;
 
     public NetscalerResource() {
@@ -248,7 +247,7 @@ public class NetscalerResource implements ServerResource {
 
             //enable load balancing feature
             enableLoadBalancingFeature();
-            SSL.enableSslFeature(_netscalerService);
+            SSL.enableSslFeature(_netscalerService, _isSdx);
 
             //if the the device is cloud stack provisioned then make it part of the public network
             if (_cloudManaged) {
@@ -294,7 +293,8 @@ public class NetscalerResource implements ServerResource {
             if (!_isSdx) {
                 _netscalerService = new nitro_service(_ip, "https");
                 _netscalerService.set_credential(_username, _password);
-                _netscalerService.set_timeout(_timeout);
+                _netscalerService.set_certvalidation(false);
+                _netscalerService.set_hostnameverification(false);
                 apiCallResult = _netscalerService.login();
                 if (apiCallResult.errorcode != 0) {
                     throw new ExecutionException("Failed to log in to Netscaler device at " + _ip + " due to error " + apiCallResult.errorcode + " and message " +
@@ -630,7 +630,11 @@ public class NetscalerResource implements ServerResource {
                                 newService.set_port(destination.getDestPort());
                                 newService.set_servername(nsServerName);
                                 newService.set_state("ENABLED");
-                                newService.set_servicetype(lbProtocol);
+                                if(lbProtocol.equalsIgnoreCase(NetUtils.SSL_PROTO)) {
+                                    newService.set_servicetype(NetUtils.HTTP_PROTO);
+                                } else {
+                                    newService.set_servicetype(lbProtocol);
+                                }
 
                                 apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.service.add(_netscalerService, newService);
                                 if (apiCallResult.errorcode != 0) {
@@ -978,7 +982,6 @@ public class NetscalerResource implements ServerResource {
                 try {
                     nitro_service _netscalerService = new nitro_service(cmd.getLoadBalancerIP(), "https");
                     _netscalerService.set_credential(username, password);
-                    _netscalerService.set_timeout(_timeout);
                     apiCallResult = _netscalerService.login();
                     if (apiCallResult.errorcode == 0) {
                         nsServiceUp = true;
@@ -1761,14 +1764,14 @@ public class NetscalerResource implements ServerResource {
         }
 
         private static String genGslbObjectName(Object... args) {
-            String objectName = "";
+            StringBuffer buff = new StringBuffer();
             for (int i = 0; i < args.length; i++) {
-                objectName += args[i];
+                buff.append(args[i]);
                 if (i != args.length - 1) {
-                    objectName += "-";
+                    buff.append("-");
                 }
             }
-            return objectName;
+            return buff.toString();
         }
     }
 
@@ -1907,7 +1910,10 @@ public class NetscalerResource implements ServerResource {
             }
         }
 
-        private static void enableSslFeature(nitro_service ns) throws ExecutionException {
+        private static void enableSslFeature(nitro_service ns, boolean isSdx) throws ExecutionException {
+            if (isSdx) {
+                return;
+            }
             try {
                 base_response result = ns.enable_features(new String[] {"SSL"});
                 if (result.errorcode != 0)
@@ -3168,7 +3174,9 @@ public class NetscalerResource implements ServerResource {
                 scaleUpAction.set_vserver(nsVirtualServerName); // Actions Vserver, the one that is autoscaled, with CS
                 // now both are same. Not exposed in API.
                 scaleUpAction.set_profilename(profileName);
-                scaleUpAction.set_quiettime(scaleUpQuietTime);
+                if(scaleUpQuietTime != null) {
+                    scaleUpAction.set_quiettime(scaleUpQuietTime);
+                }
                 String scaleUpParameters =
                         "command=deployVirtualMachine" + "&" + ApiConstants.ZONE_ID + "=" + profileTO.getZoneId() + "&" + ApiConstants.SERVICE_OFFERING_ID + "=" +
                                 profileTO.getServiceOfferingId() + "&" + ApiConstants.TEMPLATE_ID + "=" + profileTO.getTemplateId() + "&" + ApiConstants.DISPLAY_NAME + "=" +
@@ -3765,14 +3773,14 @@ public class NetscalerResource implements ServerResource {
     }
 
     private String genObjectName(Object... args) {
-        String objectName = "";
+        StringBuffer buff = new StringBuffer();
         for (int i = 0; i < args.length; i++) {
-            objectName += args[i];
+            buff.append(args[i]);
             if (i != args.length - 1) {
-                objectName += _objectNamePathSep;
+                buff.append(_objectNamePathSep);
             }
         }
-        return objectName;
+        return buff.toString();
     }
 
     @Override

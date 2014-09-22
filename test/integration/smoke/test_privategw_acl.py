@@ -19,9 +19,9 @@
 #Import Local Modules
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 
 
@@ -39,7 +39,7 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.privateGwId = None
 
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_privategw_acl(self):
         #TODO: SIMENH: add a new test to verification of ACL rules
 
@@ -105,25 +105,7 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.assertIsNotNone(createNetworkResponse.id, "Network failed to create")
         self.networkId = createNetworkResponse.id
 
-    def deployVm(self):
-        deployVirtualMachineCmd = deployVirtualMachine.deployVirtualMachineCmd()
-        deployVirtualMachineCmd.networkids = self.networkId
-        deployVirtualMachineCmd.serviceofferingid = self.serviceOfferingId
-        deployVirtualMachineCmd.zoneid = self.zoneId
-        deployVirtualMachineCmd.templateid = self.templateId
-        deployVirtualMachineCmd.hypervisor = "XenServer"
-        deployVMResponse = self.apiClient.deployVirtualMachine(deployVirtualMachineCmd)
 
-    def deployVm(self):
-        deployVirtualMachineCmd = deployVirtualMachine.deployVirtualMachineCmd()
-        deployVirtualMachineCmd.networkids = TestNetworkACL.networkId
-        deployVirtualMachineCmd.serviceofferingid = TestNetworkACL.serviceOfferingId
-        deployVirtualMachineCmd.zoneid = TestNetworkACL.zoneId
-        deployVirtualMachineCmd.templateid = TestNetworkACL.templateId
-        deployVirtualMachineCmd.hypervisor = "XenServer"
-        deployVMResponse = self.apiClient.deployVirtualMachine(deployVirtualMachineCmd)
-        TestNetworkACL.vmId = deployVMResponse.id
-        self.vmId = deployVMResponse.id
 
     def createPvtGw(self):
         createPrivateGatewayCmd = createPrivateGateway.createPrivateGatewayCmd()
@@ -146,7 +128,4 @@ class TestPrivateGwACL(cloudstackTestCase):
 
     def tearDown(self):
         #destroy the vm
-        if self.vmId is not None:
-            destroyVirtualMachineCmd = destroyVirtualMachine.destroyVirtualMachineCmd()
-            destroyVirtualMachineCmd.id = self.vmId
-            destroyVirtualMachineResponse = self.apiClient.destroyVirtualMachine(destroyVirtualMachineCmd)
+        return

@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.iam.api.IAMGroup;
 import org.apache.cloudstack.iam.api.IAMPolicy;
@@ -59,6 +60,25 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         return checkAccess(caller, entity, accessType, null);
     }
 
+    private String buildAccessCacheKey(Account caller, ControlledEntity entity, AccessType accessType, String action) {
+        StringBuffer key = new StringBuffer();
+        key.append(caller.getAccountId());
+        key.append("-");
+        String entityType = null;
+        if (entity != null && entity.getEntityType() != null) {
+            entityType = entity.getEntityType().getSimpleName();
+            if (entity instanceof InternalIdentity) {
+                entityType += ((InternalIdentity)entity).getId();
+            }
+        }
+        key.append(entityType != null ? entityType : "null");
+        key.append("-");
+        key.append(accessType != null ? accessType.toString() : "null");
+        key.append("-");
+        key.append(action != null ? action : "null");
+        return key.toString();
+    }
+
     @Override
     public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType, String action)
             throws PermissionDeniedException {
@@ -66,24 +86,46 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         if (caller == null) {
             throw new InvalidParameterValueException("Caller cannot be passed as NULL to IAM!");
         }
+
+        if (entity == null && action == null) {
+            throw new InvalidParameterValueException("Entity and action cannot be both NULL in checkAccess!");
+        }
+
+        // check IAM cache first
+        String accessKey = buildAccessCacheKey(caller, entity, accessType, action);
+        CheckAccessResult allowDeny = (CheckAccessResult)_iamSrv.getFromIAMCache(accessKey);
+        if (allowDeny != null) {
+            s_logger.debug("IAM access check for " + accessKey + " from cache: " + allowDeny.isAllow());
+            if (allowDeny.isAllow()) {
+                return true;
+            } else {
+                if (allowDeny.getDenyMsg() != null) {
+                    throw new PermissionDeniedException(allowDeny.getDenyMsg());
+                } else {
+                    return false;
+                }
+            }
+        }
+
         if (entity == null && action != null) {
             // check if caller can do this action
             List<IAMPolicy> policies = _iamSrv.listIAMPolicies(caller.getAccountId());
 
             boolean isAllowed = _iamSrv.isActionAllowedForPolicies(action, policies);
             if (!isAllowed) {
-                throw new PermissionDeniedException("The action '" + action + "' not allowed for account " + caller);
+                String msg = "The action '" + action + "' not allowed for account " + caller;
+                _iamSrv.addToIAMCache(accessKey, new CheckAccessResult(msg));
+                throw new PermissionDeniedException(msg);
             }
+            _iamSrv.addToIAMCache(accessKey, new CheckAccessResult(true));
             return true;
         }
 
-        if (entity == null) {
-            throw new InvalidParameterValueException("Entity and action cannot be both NULL in checkAccess!");
-        }
 
         // if a Project entity, skip
         Account entityAccount = _accountService.getAccount(entity.getAccountId());
         if (entityAccount != null && entityAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            _iamSrv.addToIAMCache(accessKey, new CheckAccessResult(false));
             return false;
         }
 
@@ -96,8 +138,8 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
             accessType = AccessType.UseEntry;
         }
 
-        // get all Policies of this caller w.r.t the entity
-        List<IAMPolicy> policies = getEffectivePolicies(caller, entity);
+        // get all Policies of this caller by considering recursive domain group policy
+        List<IAMPolicy> policies = getEffectivePolicies(caller);
         HashMap<IAMPolicy, Boolean> policyPermissionMap = new HashMap<IAMPolicy, Boolean>();
 
         for (IAMPolicy policy : policies) {
@@ -107,14 +149,22 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
                 permissions = _iamSrv.listPolicyPermissionByActionAndEntity(policy.getId(), action, entityType);
                 if (permissions.isEmpty()) {
                     if (accessType != null) {
-                        permissions.addAll(_iamSrv.listPolicyPermissionByAccessAndEntity(policy.getId(),
-                                accessType.toString(), entityType));
+                        for (AccessType type : AccessType.values()) {
+                            if (type.ordinal() >= accessType.ordinal()) {
+                                permissions.addAll(_iamSrv.listPolicyPermissionByAccessAndEntity(policy.getId(),
+                                        type.toString(), entityType));
+                            }
+                        }
                     }
                 }
             } else {
                 if (accessType != null) {
-                    permissions.addAll(_iamSrv.listPolicyPermissionByAccessAndEntity(policy.getId(),
-                            accessType.toString(), entityType));
+                    for (AccessType type : AccessType.values()) {
+                        if (type.ordinal() >= accessType.ordinal()) {
+                            permissions.addAll(_iamSrv.listPolicyPermissionByAccessAndEntity(policy.getId(),
+                                    type.toString(), entityType));
+                        }
+                    }
                 }
             }
             for (IAMPolicyPermission permission : permissions) {
@@ -128,6 +178,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
                 }
             }
             if (policyPermissionMap.containsKey(policy) && policyPermissionMap.get(policy)) {
+                _iamSrv.addToIAMCache(accessKey, new CheckAccessResult(true));
                 return true;
             }
         }
@@ -135,14 +186,59 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         if (!policies.isEmpty()) { // Since we reach this point, none of the
                                    // roles granted access
 
+            String msg = "Account " + caller + " does not have permission to access resource " + entity
+                    + " for access type: " + accessType;
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Account " + caller + " does not have permission to access resource " + entity
-                        + " for access type: " + accessType);
+                s_logger.debug(msg);
             }
-            throw new PermissionDeniedException(caller + " does not have permission to access resource " + entity);
+            _iamSrv.addToIAMCache(accessKey, new CheckAccessResult(msg));
+            throw new PermissionDeniedException(msg);
         }
 
+        _iamSrv.addToIAMCache(accessKey, new CheckAccessResult(false));
         return false;
+    }
+
+    @Override
+    public boolean checkAccess(Account caller, AccessType accessType, String action, ControlledEntity... entities)
+            throws PermissionDeniedException {
+
+        // operate access on multiple entities?
+        if (accessType != null && accessType == AccessType.OperateEntry) {
+            // In this case caller MUST own n-1 entities.
+
+            for (ControlledEntity entity : entities) {
+                checkAccess(caller, entity, accessType, action);
+
+                boolean otherEntitiesAccess = true;
+
+                for (ControlledEntity otherEntity : entities) {
+                    if (otherEntity.getAccountId() == caller.getAccountId()
+                            || (checkAccess(caller, otherEntity, accessType, action) && otherEntity.getAccountId() == entity
+                                    .getAccountId())) {
+                        continue;
+                    } else {
+                        otherEntitiesAccess = false;
+                        break;
+                    }
+                }
+
+                if (otherEntitiesAccess) {
+                    return true;
+                }
+            }
+
+            throw new PermissionDeniedException(caller
+                    + " does not have permission to perform this operation on these resources");
+
+        } else {
+            for (ControlledEntity entity : entities) {
+                if (!checkAccess(caller, entity, accessType, action)) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     private boolean checkPermissionScope(Account caller, String scope, Long scopeId, ControlledEntity entity) {
@@ -179,16 +275,9 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         return false;
     }
 
-    private List<IAMPolicy> getEffectivePolicies(Account caller, ControlledEntity entity) {
+    private List<IAMPolicy> getEffectivePolicies(Account caller) {
 
-        // Get the static Policies of the Caller
         List<IAMPolicy> policies = _iamSrv.listIAMPolicies(caller.getId());
-
-        // add any dynamic policies w.r.t the entity
-        if (caller.getId() == entity.getAccountId()) {
-            // The caller owns the entity
-            policies.add(_iamSrv.getResourceOwnerPolicy());
-        }
 
         List<IAMGroup> groups = _iamSrv.listIAMGroups(caller.getId());
         for (IAMGroup group : groups) {
@@ -200,5 +289,41 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         }
 
         return policies;
+    }
+
+    private class CheckAccessResult {
+        boolean allow;
+        String denyMsg;
+
+        public CheckAccessResult(boolean aw) {
+            this(aw, null);
+        }
+
+        public CheckAccessResult(String msg) {
+            this(false, msg);
+        }
+
+        public CheckAccessResult(boolean aw, String msg) {
+            allow = aw;
+            denyMsg = msg;
+        }
+
+        public boolean isAllow() {
+            return allow;
+        }
+
+        public void setAllow(boolean aw) {
+            allow = aw;
+        }
+
+
+        public String getDenyMsg() {
+            return denyMsg;
+        }
+
+        public void setDenyMsg(String denyMsg) {
+            this.denyMsg = denyMsg;
+        }
+
     }
 }

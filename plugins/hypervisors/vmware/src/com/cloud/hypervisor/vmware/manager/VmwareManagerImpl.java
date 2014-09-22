@@ -531,7 +531,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             return true;
         }
 
-        if (msid == _clusterMgr.getManagementNodeId() && runid != _clusterMgr.getCurrentRunId()) {
+        if (runid != _clusterMgr.getManagementRunId(msid)) {
             if (s_logger.isInfoEnabled())
                 s_logger.info("Worker VM's owner management server has changed runid, recycle it");
             return true;
@@ -1186,7 +1186,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public boolean isLegacyZone(long dcId) {
         boolean isLegacyZone = false;
-        LegacyZoneVO legacyZoneVo = _legacyZoneDao.findById(dcId);
+        LegacyZoneVO legacyZoneVo = _legacyZoneDao.findByZoneId(dcId);
         if (legacyZoneVo != null) {
             isLegacyZone = true;
         }
@@ -1217,5 +1217,20 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // Currently a zone can have only 1 VMware DC associated with.
         // Returning list of VmwareDatacenterVO objects, in-line with future requirements, if any, like participation of multiple VMware DCs in a zone.
         return vmwareDcList;
+    }
+
+    @Override
+    public boolean hasNexusVSM(Long clusterId) {
+        ClusterVSMMapVO vsmMapVo = null;
+
+        vsmMapVo = _vsmMapDao.findByClusterId(clusterId);
+        if (vsmMapVo == null) {
+            s_logger.info("There is no instance of Nexus 1000v VSM associated with this cluster [Id:" + clusterId + "] yet.");
+            return false;
+        }
+        else {
+            s_logger.info("An instance of Nexus 1000v VSM [Id:" + vsmMapVo.getVsmId() + "] associated with this cluster [Id:" + clusterId + "]");
+            return true;
+        }
     }
 }

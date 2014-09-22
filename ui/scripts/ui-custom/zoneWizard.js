@@ -300,11 +300,11 @@
             if (hypervisor == 'VMware') {
             	fields = {
             		vSwitchName: {
-	                    label: 'vSwitch Name' ,
+	                    label: 'label.vswitch.name' ,
 	                    defaultValue: trafficData.vSwitchName
 	                },
 	                vlanId: { 
-	                	label: 'VLAN ID',
+	                        label: 'label.vlan.id',
 	                	defaultValue: trafficData.vlanId
 	                }	                
 	            };  
@@ -354,7 +354,7 @@
 	            		
 	            		$.extend(fields, {
 	            		    vSwitchType: {
-	            		        label: 'vSwitch Type',
+	                                label: 'label.vSwitch.type',
 	            		        select: function (args) {            		        	
 	            		            args.response.success({
 	            		                data: [{
@@ -726,7 +726,13 @@
                             }).html('ODL'),
                             $('<option>').attr({
                                 value: 'L3VPN'
-                            }).html('L3VPN')
+                            }).html('L3VPN'),
+		                    $('<option>').attr({
+                                value: 'VSP'
+                            }).html('VSP'),
+                            $('<option>').attr({
+                                value: 'VCS'
+                            }).html('VCS')
                         )
                     )
                 );

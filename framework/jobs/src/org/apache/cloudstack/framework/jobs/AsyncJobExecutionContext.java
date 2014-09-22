@@ -182,6 +182,11 @@ public class AsyncJobExecutionContext  {
         return context;
     }
 
+    // return currentExecutionContext without create it
+    public static AsyncJobExecutionContext getCurrent() {
+        return s_currentExectionContext.get();
+    }
+
     public static AsyncJobExecutionContext registerPseudoExecutionContext(long accountId, long userId) {
         AsyncJobExecutionContext context = s_currentExectionContext.get();
         if (context == null) {

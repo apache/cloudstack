@@ -17,10 +17,11 @@
 package com.cloud.network;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface RemoteAccessVpn extends ControlledEntity, InternalIdentity, Identity {
+public interface RemoteAccessVpn extends ControlledEntity, InternalIdentity, Identity, Displayable {
     enum State {
         Added, Running, Removed
     }
@@ -39,5 +40,6 @@ public interface RemoteAccessVpn extends ControlledEntity, InternalIdentity, Ide
 
     State getState();
 
+    @Override
     boolean isDisplay();
 }

@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
-    var vmMigrationHostObjs;
+    var vmMigrationHostObjs, ostypeObjs;
 
     var vmSnapshotAction = function(args) {
         var action = {
@@ -574,6 +574,7 @@
                         createForm: {
                             title: 'label.action.destroy.instance', 
                             desc: 'label.action.destroy.instance',
+			    isWarning: true,
                             preFilter: function(args) {
                             	if (isAdmin() || isDomainAdmin()) {
                             		args.$form.find('.form-item[rel=expunge]').css('display', 'inline-block');
@@ -935,14 +936,14 @@
                                                         	 //do nothing                                                        	 
                                                          } else if (result.jobstatus == 2) {
                                                         	 cloudStack.dialog.notice({
-                                                                 message: "Failed to update XenServer Tools Version 6.1+ field. Error: " + _s(result.jobresult.errortext)
+                                                                 message: _s(result.jobresult.errortext)
                                                              });                                                             
                                                          }
                                                      }
                                                  },
                                                  error: function(XMLHttpResponse) {                                                    
                                                      cloudStack.dialog.notice({
-                                                         message: "Failed to update XenServer Tools Version 6.1+ field. Error: " + parseXMLHttpResponse(XMLHttpResponse)
+                                                         message: parseXMLHttpResponse(XMLHttpResponse)
                                                      });                                                          
                                                  }
                                              });
@@ -961,7 +962,7 @@
                             title: 'label.action.attach.iso',
                             fields: {
                                 iso: {
-                                    label: 'ISO',
+                                    label: 'label.iso',
                                     select: function(args) {
                                         var items = [];
                                         var map = {};
@@ -1174,25 +1175,27 @@
                                 },
                                 osTypeId: {
                                     label: 'label.os.type',
-                                    select: function(args) {
-                                        $.ajax({
-                                            url: createURL("listOsTypes"),
-                                            dataType: "json",
-                                            async: true,
-                                            success: function(json) {
-                                                var ostypes = json.listostypesresponse.ostype;
-                                                var items = [];
-                                                $(ostypes).each(function() {
-                                                    items.push({
-                                                        id: this.id,
-                                                        description: this.description
-                                                    });
-                                                });
-                                                args.response.success({
-                                                    data: items
-                                                });
-                                            }
+                                    select: function(args) {                                   
+                                    	if (ostypeObjs == undefined) {                                     	
+	                                        $.ajax({
+	                                            url: createURL("listOsTypes"),
+	                                            dataType: "json",
+	                                            async: false,
+	                                            success: function(json) {	                                            	
+	                                            	ostypeObjs = json.listostypesresponse.ostype;	
+	                                            }
+	                                        });
+                                    	}                                    	
+                                    	var items = [];
+                                        $(ostypeObjs).each(function() {
+                                            items.push({
+                                                id: this.id,
+                                                description: this.description
+                                            });
                                         });
+                                        args.response.success({
+                                            data: items
+                                        });                                    	
                                     }
                                 },
                                 isPublic: {
@@ -1628,14 +1631,14 @@
                         },
                         action: function(args) {                            
                             $.ajax({
-                                url: createURL('assignVirtualMachine&virtualmachine'),
+                                url: createURL('assignVirtualMachine'),
                                 data: {
                                     virtualmachineid: args.context.instances[0].id,
                                     domainid: args.data.domainid,
                                     account: args.data.account
                                 },                                
                                 success: function(json) {   
-                                    var item = json.virtualmachine.virtualmachine;                                     
+                                    var item = json.assignvirtualmachineresponse.virtualmachine;                                     
                                     args.response.success({
                                         data: item
                                     });                                    
@@ -1684,7 +1687,32 @@
                             }
                             
                             if ('instances' in args.context && args.context.instances[0].hypervisor != 'XenServer') {
-                          	  hiddenFields.push('xenserverToolsVersion61plus');
+                          	    hiddenFields.push('xenserverToolsVersion61plus');
+                            }
+                            
+                            if ('instances' in args.context && args.context.instances[0].guestosid != undefined) {                        
+                            	if (ostypeObjs == undefined) {
+	                            	$.ajax({
+	                                    url: createURL("listOsTypes"),
+	                                    dataType: "json",
+	                                    async: false,
+	                                    success: function(json) {	                                    	
+	                                    	ostypeObjs = json.listostypesresponse.ostype;		                                    	
+	                                    }
+	                                });
+                            	}                            	
+                            	if (ostypeObjs != undefined) {
+                            		var ostypeName;
+                            		for (var i = 0; i < ostypeObjs.length; i++) {
+                            			if (ostypeObjs[i].id == args.context.instances[0].guestosid) {                            				
+                            				ostypeName = ostypeObjs[i].description;
+                            				break;
+                            			}
+                            		}                            		
+                            		if (ostypeName == undefined || ostypeName.indexOf("Win") == -1) {                            			
+                            			hiddenFields.push('xenserverToolsVersion61plus');
+                            		}                            		
+                            	}
                             }
                             
                             if (!args.context.instances[0].publicip) {
@@ -1742,24 +1770,26 @@
                             guestosid: {
                                 label: 'label.os.type',
                                 isEditable: true,
-                                select: function(args) {
-                                    $.ajax({
-                                        url: createURL("listOsTypes"),
-                                        dataType: "json",
-                                        async: true,
-                                        success: function(json) {
-                                            var ostypes = json.listostypesresponse.ostype;
-                                            var items = [];
-                                            $(ostypes).each(function() {
-                                                items.push({
-                                                    id: this.id,
-                                                    description: this.description
-                                                });
-                                            });
-                                            args.response.success({
-                                                data: items
-                                            });
-                                        }
+                                select: function(args) {                                
+                                    if (ostypeObjs == undefined) {                                	
+	                                	$.ajax({
+	                                        url: createURL("listOsTypes"),
+	                                        dataType: "json",
+	                                        async: false,
+	                                        success: function(json) {	                                       
+	                                        	ostypeObjs = json.listostypesresponse.ostype;	 
+	                                        }
+	                                    });
+                                    }                                    
+                                    var items = [];
+                                    $(ostypeObjs).each(function() {
+                                        items.push({
+                                            id: this.id,
+                                            description: this.description
+                                        });
+                                    });
+                                    args.response.success({
+                                        data: items
                                     });
                                 }
                             },
@@ -1806,7 +1836,7 @@
                             	label: 'label.memory.mb'
                             },
                             vgpu: {
-                                label: 'VGPU'
+                                label: 'label.vgpu'
                             },
                             haenable: {
                                 label: 'label.ha.enabled',
@@ -1877,7 +1907,11 @@
                                         else
                                             jsonObj.xenserverToolsVersion61plus = false;
                                     }
-                                    
+                                                                       
+                                    if (isModuleIncluded("dr")) {
+                                        cloudStack.dr.sharedFunctions.addExtraProperties(jsonObj, "UserVM");
+                                    }                                    
+                                                                        
                                     args.response.success({
                                         actionFilter: vmActionfilter,
                                         data: jsonObj
@@ -2109,7 +2143,7 @@
                         multiple: true,
                         fields: [{
                             id: {
-                                label: 'ID'
+                                label: 'label.id'
                             },
                             name: {
                                 label: 'label.name'

@@ -42,6 +42,7 @@ import com.cloud.offering.DiskOffering.DiskCacheMode;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -165,6 +166,11 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public boolean isDisplayVolume() {
         return volumeVO.isDisplayVolume();
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return volumeVO.isDisplay();
     }
 
     public long getVolumeId() {
@@ -653,6 +659,11 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public ImageFormat getFormat() {
         return volumeVO.getFormat();
+    }
+
+    @Override
+    public ProvisioningType getProvisioningType(){
+        return this.volumeVO.getProvisioningType();
     }
 
     @Override

@@ -32,7 +32,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.host.Host;
@@ -147,13 +146,11 @@ public class DummyResource implements ServerResource {
 
     @Override
     public StartupCommand[] initialize() {
-        Map<String, VmState> changes = null;
-
         final List<Object> info = getHostInfo();
 
         final StartupRoutingCommand cmd =
             new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), HypervisorType.KVM,
-                RouterPrivateIpStrategy.HostLocal, changes, null);
+                RouterPrivateIpStrategy.HostLocal);
         fillNetworkInformation(cmd);
         cmd.getHostDetails().putAll(getVersionStrings());
         cmd.setCluster(getConfiguredProperty("cluster", "1"));

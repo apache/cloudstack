@@ -25,10 +25,12 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
@@ -244,7 +246,19 @@ public class AgentResourceBase implements ServerResource {
     }
 
     @Override
-    public Answer executeRequest(Command cmd) {
+    public final Answer executeRequest(final Command cmd) {
+        final AtomicReference<Answer> result = new AtomicReference<Answer>();
+        new ManagedContextRunnable() {
+            @Override
+            protected void runInContext() {
+                result.set(executeRequestInContext(cmd));
+            }
+        }.run();
+
+        return result.get();
+    }
+
+    public Answer executeRequestInContext(Command cmd) {
         return null;
     }
 

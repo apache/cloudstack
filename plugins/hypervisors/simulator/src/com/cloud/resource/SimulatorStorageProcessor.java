@@ -95,9 +95,11 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     @Override
     public Answer createTemplateFromVolume(CopyCommand cmd) {
         DataTO destData = cmd.getDestTO();
+        VolumeObjectTO srcData = (VolumeObjectTO)cmd.getSrcTO();
         TemplateObjectTO template = new TemplateObjectTO();
         template.setPath(template.getName());
         template.setFormat(Storage.ImageFormat.RAW);
+        template.setSize(srcData.getSize());
         DataStoreTO imageStore = destData.getDataStore();
         if (!(imageStore instanceof NfsTO)) {
             return new CopyCmdAnswer("unsupported protocol");

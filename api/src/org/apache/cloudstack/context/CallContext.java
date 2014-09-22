@@ -114,7 +114,20 @@ public class CallContext {
     }
 
     public static CallContext current() {
-        return s_currentContext.get();
+        CallContext context = s_currentContext.get();
+
+        // TODO other than async job and api dispatches, there are many system background running threads
+        // that do not setup CallContext at all, however, many places in code that are touched by these background tasks
+        // assume not-null CallContext. Following is a fix to address therefore caused NPE problems
+        //
+        // There are security implications with this. It assumes that all system background running threads are
+        // indeed have no problem in running under system context.
+        //
+        if (context == null) {
+            context = registerSystemCallContextOnceOnly();
+        }
+
+        return context;
     }
 
     /**
@@ -132,10 +145,7 @@ public class CallContext {
 
     protected static CallContext register(User callingUser, Account callingAccount, Long userId, Long accountId, String contextId) {
         /*
-<<<<<<< HEAD
                 Unit tests will have multiple times of setup/tear-down call to this, remove assertions to all unit test to run
-=======
->>>>>>> a7a8a19... BUG-ID: CS-19295: add job path to help associate an API job to related internal job. Reviewed-By: Self
                 assert s_currentContext.get() == null : "There's a context already so what does this new register context mean? " + s_currentContext.get().toString();
                 if (s_currentContext.get() != null) { // FIXME: This should be removed soon.  I added this check only to surface all the places that have this problem.
                     throw new CloudRuntimeException("There's a context already so what does this new register context mean? " + s_currentContext.get().toString());
@@ -314,6 +324,17 @@ public class CallContext {
 
     public void setEventDisplayEnabled(boolean eventDisplayEnabled) {
         isEventDisplayEnabled = eventDisplayEnabled;
+    }
+
+    public Map<Object, Object> getContextParameters() {
+        return context;
+    }
+
+    public void putContextParameters(Map<Object, Object> details){
+        if (details == null) return;
+        for(Map.Entry<Object,Object>entry : details.entrySet()){
+            putContextParameter(entry.getKey(), entry.getValue());
+        }
     }
 
     public static void setActionEventInfo(String eventType, String description) {

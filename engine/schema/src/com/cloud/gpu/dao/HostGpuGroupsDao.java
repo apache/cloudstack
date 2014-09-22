@@ -24,7 +24,7 @@ import com.cloud.utils.db.GenericDao;
 public interface HostGpuGroupsDao extends GenericDao<HostGpuGroupsVO, Long> {
 
     /**
-     * Find host device by hostId and PCI ID
+     * Find host device by hostId and groupName
      * @param hostId the host
      * @param groupName GPU group
      * @return HostGpuGroupsVO

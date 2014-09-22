@@ -17,10 +17,10 @@
 
 """ P1 tests for shared networks
 """
-#Import Local Modules
+# Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.base import (Account,
+from marvin.lib.base import (Account,
                                          Network,
                                          NetworkOffering,
                                          VirtualMachine,
@@ -31,15 +31,16 @@ from marvin.integration.lib.base import (Account,
                                          FireWallRule,
                                          ServiceOffering,
                                          PublicIPAddress)
-from marvin.integration.lib.utils import (cleanup_resources,
+from marvin.lib.utils import (cleanup_resources,
+                                          validateList,
                                           xsplit)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            wait_for_cleanup,
                                            get_free_vlan)
+from marvin.codes import *
 import random
-
 import netaddr
 
 class Services:
@@ -67,8 +68,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 128, # In MBs
+                                    "cpuspeed": 100,  # in MHz
+                                    "memory": 128,  # In MBs
                                     },
                          "network_offering": {
                                     "name": 'MySharedOffering',
@@ -154,16 +155,13 @@ class TestSharedNetworks(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestSharedNetworks,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestSharedNetworks, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
-
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -186,7 +184,7 @@ class TestSharedNetworks(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -198,15 +196,15 @@ class TestSharedNetworks(cloudstackTestCase):
 
         # Set the subnet number of shared networks randomly prior to execution
         # of each test case to avoid overlapping of ip addresses
-        shared_network_subnet_number = random.randrange(1,254)
+        shared_network_subnet_number = random.randrange(1, 254)
 
-        self.services["network"]["gateway"] = "172.16."+str(shared_network_subnet_number)+".1"
-        self.services["network"]["startip"] = "172.16."+str(shared_network_subnet_number)+".2"
-        self.services["network"]["endip"] = "172.16."+str(shared_network_subnet_number)+".20"
+        self.services["network"]["gateway"] = "172.16." + str(shared_network_subnet_number) + ".1"
+        self.services["network"]["startip"] = "172.16." + str(shared_network_subnet_number) + ".2"
+        self.services["network"]["endip"] = "172.16." + str(shared_network_subnet_number) + ".20"
 
-        self.services["network1"]["gateway"] = "172.16."+str(shared_network_subnet_number + 1)+".1"
-        self.services["network1"]["startip"] = "172.16."+str(shared_network_subnet_number + 1)+".2"
-        self.services["network1"]["endip"] = "172.16."+str(shared_network_subnet_number + 1)+".20"
+        self.services["network1"]["gateway"] = "172.16." + str(shared_network_subnet_number + 1) + ".1"
+        self.services["network1"]["startip"] = "172.16." + str(shared_network_subnet_number + 1) + ".2"
+        self.services["network1"]["endip"] = "172.16." + str(shared_network_subnet_number + 1) + ".20"
 
         self.cleanup = []
         self.cleanup_networks = []
@@ -218,12 +216,12 @@ class TestSharedNetworks(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created network offerings
+            # Clean up, terminate the created network offerings
             cleanup_resources(self.api_client, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
-        #below components is not a part of cleanup because to mandate the order and to cleanup network
+        # below components is not a part of cleanup because to mandate the order and to cleanup network
         try:
             for vm in self.cleanup_vms:
                vm.delete(self.api_client)
@@ -242,7 +240,7 @@ class TestSharedNetworks(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during account cleanup : %s" % e)
 
-        #Wait till all resources created are cleaned up completely and then attempt to delete domains
+        # Wait till all resources created are cleaned up completely and then attempt to delete domains
         wait_for_cleanup(self.api_client, ["account.cleanup.interval"])
 
         try:
@@ -250,7 +248,7 @@ class TestSharedNetworks(cloudstackTestCase):
                 network.delete(self.api_client)
         except Exception:
             self.debug("Network %s failed to delete. Moving on" % network.id)
-            pass #because domain/account deletion will get rid of the network
+            pass  # because domain/account deletion will get rid of the network
 
         try:
             for domain in self.cleanup_domains:
@@ -260,7 +258,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_sharedNetworkOffering_01(self):
         """  Test shared network Offering 01 """
 
@@ -282,7 +280,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #  3. listNetworkOfferings - name=mysharedoffering , should list offering in disabled state
         #  4. listNetworkOfferings - name=mysharedoffering, should list enabled offering
 
-        #Create an account
+        # Create an account
         self.account = Account.create(
                          self.api_client,
                          self.services["account"],
@@ -292,7 +290,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.account.id,
@@ -316,7 +314,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Admin Type account created: %s" % self.account.name)
 
-        #Verify that there should be at least one physical network present in zone.
+        # Verify that there should be at least one physical network present in zone.
         list_physical_networks_response = PhysicalNetwork.list(
                                                          self.api_client,
                                                          zoneid=self.zone.id
@@ -339,14 +337,14 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
 
-        #Create Network Offering
+        # Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
                                                  self.api_client,
                                                  self.services["network_offering"],
                                                  conservemode=False
                                                  )
 
-        #Verify that the network offering got created
+        # Verify that the network offering got created
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -367,14 +365,14 @@ class TestSharedNetworks(cloudstackTestCase):
             "The network offering created should be bydefault disabled."
             )
 
-        #Update network offering state from disabled to enabled.
+        # Update network offering state from disabled to enabled.
         NetworkOffering.update(
                                 self.shared_network_offering,
                                 self.api_client,
                                 id=self.shared_network_offering.id,
                                 state="enabled"
                                 )
-        #Verify that the state of the network offering is updated
+        # Verify that the state of the network offering is updated
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -396,7 +394,7 @@ class TestSharedNetworks(cloudstackTestCase):
             )
         self.debug("NetworkOffering created and enabled: %s" % self.shared_network_offering.id)
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_sharedNetworkOffering_02(self):
         """ Test Shared Network Offering 02 """
 
@@ -416,7 +414,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #  2. listPhysicalNetworks should return at least one active physical network
         #  3. createNetworkOffering fails - vlan should be specified in advanced zone
 
-        #Create an account
+        # Create an account
         self.account = Account.create(
                          self.api_client,
                          self.services["account"],
@@ -426,7 +424,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.account.id,
@@ -450,7 +448,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Admin type account created: %s" % self.account.name)
 
-        #Verify that there should be at least one physical network present in zone.
+        # Verify that there should be at least one physical network present in zone.
         list_physical_networks_response = PhysicalNetwork.list(
                                                          self.api_client,
                                                          zoneid=self.zone.id
@@ -474,7 +472,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network_offering"]["specifyIpRanges"] = "False"
 
         try:
-            #Create Network Offering
+            # Create Network Offering
             self.shared_network_offering = NetworkOffering.create(
                                                      self.api_client,
                                                      self.services["network_offering"],
@@ -482,10 +480,10 @@ class TestSharedNetworks(cloudstackTestCase):
                                                      )
             self.fail("Network offering got created with vlan as False in advance mode and shared guest type, which is invalid case.")
         except Exception as e:
-            self.debug("Network Offering creation failed with vlan as False in advance mode and shared guest type. Exception: %s" % 
+            self.debug("Network Offering creation failed with vlan as False in advance mode and shared guest type. Exception: %s" %
                         e)
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_sharedNetworkOffering_03(self):
         """ Test Shared Network Offering 03 """
 
@@ -506,7 +504,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #  3. createNetworkOffering fails - ip ranges should be specified when creating shared network offering
 
 
-        #Create an account
+        # Create an account
         self.account = Account.create(
                          self.api_client,
                          self.services["account"],
@@ -516,7 +514,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.account.id,
@@ -540,7 +538,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Admin Type account created: %s" % self.account.name)
 
-        #Verify that there should be at least one physical network present in zone.
+        # Verify that there should be at least one physical network present in zone.
         list_physical_networks_response = PhysicalNetwork.list(
                                                          self.api_client,
                                                          zoneid=self.zone.id
@@ -564,7 +562,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network_offering"]["specifyIpRanges"] = "False"
 
         try:
-            #Create Network Offering
+            # Create Network Offering
             self.shared_network_offering = NetworkOffering.create(
                                                      self.api_client,
                                                      self.services["network_offering"],
@@ -575,7 +573,7 @@ class TestSharedNetworks(cloudstackTestCase):
             self.debug("Network Offering creation failed with vlan as true and ip ranges as False in advance mode and with shared guest type.\
                         Exception : %s" % e)
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_createSharedNetwork_All(self):
         """ Test Shared Network ALL  """
 
@@ -609,7 +607,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #  7. a. listVirtualMachines should show both VMs in running state in the user account and the admin account
         #     b. VM's IPs shoud be in the range of the shared network ip ranges
 
-        #Create admin account
+        # Create admin account
         self.admin_account = Account.create(
                                     self.api_client,
                                     self.services["account"],
@@ -619,7 +617,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.admin_account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.admin_account.id,
@@ -643,7 +641,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Admin type account created: %s" % self.admin_account.name)
 
-        #Create an user account
+        # Create an user account
         self.user_account = Account.create(
                                    self.api_client,
                                    self.services["account"],
@@ -653,7 +651,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.user_account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.user_account.id,
@@ -687,7 +685,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network_offering"]["specifyIpRanges"] = "True"
 
 
-        #Create Network Offering
+        # Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
                                                  self.api_client,
                                                  self.services["network_offering"],
@@ -696,7 +694,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
 
 
-        #Verify that the network offering got created
+        # Verify that the network offering got created
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -719,7 +717,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Shared Network offering created: %s" % self.shared_network_offering.id)
 
-        #Update network offering state from disabled to enabled.
+        # Update network offering state from disabled to enabled.
         NetworkOffering.update(
                                 self.shared_network_offering,
                                 self.api_client,
@@ -727,7 +725,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                 state="enabled"
                                 )
 
-        #Verify that the state of the network offering is updated
+        # Verify that the state of the network offering is updated
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -748,7 +746,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The network offering state should get updated to Enabled."
             )
 
-        #create network using the shared network offering created
+        # create network using the shared network offering created
         self.services["network"]["acltype"] = "Domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
@@ -846,7 +844,7 @@ class TestSharedNetworks(cloudstackTestCase):
         if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_createSharedNetwork_accountSpecific(self):
         """ Test Shared Network with scope account """
 
@@ -880,7 +878,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #     VM should be deployed in user account only
         #    verify VM's IP is within shared network range
 
-        #Create admin account
+        # Create admin account
         self.admin_account = Account.create(
                                      self.api_client,
                                      self.services["account"],
@@ -890,7 +888,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.admin_account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.admin_account.id,
@@ -914,7 +912,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Admin type account created: %s" % self.admin_account.name)
 
-        #Create an user account
+        # Create an user account
         self.user_account = Account.create(
                          self.api_client,
                          self.services["account"],
@@ -924,7 +922,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.user_account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.user_account.id,
@@ -957,14 +955,14 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
 
-        #Create Network Offering
+        # Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
                                                  self.api_client,
                                                  self.services["network_offering"],
                                                  conservemode=False
                                                  )
 
-        #Verify that the network offering got created
+        # Verify that the network offering got created
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -987,14 +985,14 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Shared Network Offering created: %s" % self.shared_network_offering.id)
 
-        #Update network offering state from disabled to enabled.
+        # Update network offering state from disabled to enabled.
         NetworkOffering.update(
                                 self.shared_network_offering,
                                 self.api_client,
                                 id=self.shared_network_offering.id,
                                 state="enabled"
                                 )
-        #Verify that the state of the network offering is updated
+        # Verify that the state of the network offering is updated
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -1015,7 +1013,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The network offering state should get updated to Enabled."
             )
 
-        #create network using the shared network offering created
+        # create network using the shared network offering created
         self.services["network"]["acltype"] = "Account"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
@@ -1095,7 +1093,7 @@ class TestSharedNetworks(cloudstackTestCase):
         if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_createSharedNetwork_domainSpecific(self):
         """ Test Shared Network with scope domain """
 
@@ -1131,7 +1129,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #     VM should be deployed in user account and domain admin account
         #     verify VM's IP are within shared network range
 
-        #Create admin account
+        # Create admin account
         self.admin_account = Account.create(
                                      self.api_client,
                                      self.services["account"],
@@ -1141,7 +1139,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.admin_account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.admin_account.id,
@@ -1165,7 +1163,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Admin type account created: %s" % self.admin_account.id)
 
-        #create domain
+        # create domain
         self.dom_domain = Domain.create(
                                 self.api_client,
                                 self.services["domain"],
@@ -1173,7 +1171,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_domains.append(self.dom_domain)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_domains_response = Domain.list(
                                       self.api_client,
                                       id=self.dom_domain.id
@@ -1191,7 +1189,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Domain created: %s" % self.dom_domain.id)
 
-        #Create admin account
+        # Create admin account
         self.domain_admin_account = Account.create(
                                      self.api_client,
                                      self.services["account"],
@@ -1201,7 +1199,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.domain_admin_account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.domain_admin_account.id,
@@ -1225,7 +1223,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Domain admin account created: %s" % self.domain_admin_account.id)
 
-        #Create an user account
+        # Create an user account
         self.domain_user_account = Account.create(
                          self.api_client,
                          self.services["account"],
@@ -1235,7 +1233,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.domain_user_account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.domain_user_account.id,
@@ -1268,7 +1266,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
 
-        #Create Network Offering
+        # Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
                                                  self.api_client,
                                                  self.services["network_offering"],
@@ -1276,7 +1274,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  )
 
 
-        #Verify that the network offering got created
+        # Verify that the network offering got created
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -1299,7 +1297,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Shared Network Offering created: %s" % self.shared_network_offering.id)
 
-        #Update network offering state from disabled to enabled.
+        # Update network offering state from disabled to enabled.
         NetworkOffering.update(
                                 self.shared_network_offering,
                                 self.api_client,
@@ -1307,7 +1305,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                 state="enabled"
                                 )
 
-        #Verify that the state of the network offering is updated
+        # Verify that the state of the network offering is updated
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -1328,7 +1326,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The network offering state should get updated to Enabled."
             )
 
-        #create network using the shared network offering created
+        # create network using the shared network offering created
         self.services["network"]["acltype"] = "domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
@@ -1439,7 +1437,7 @@ class TestSharedNetworks(cloudstackTestCase):
         if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_createSharedNetwork_projectSpecific(self):
         """ Test Shared Network with scope project  """
 
@@ -1474,7 +1472,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #     VM should be deployed in project account only
         #     verify VM's IP are within shared network range
 
-        #Create admin account
+        # Create admin account
         self.admin_account = Account.create(
                                      self.api_client,
                                      self.services["account"],
@@ -1484,7 +1482,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.admin_account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.admin_account.id,
@@ -1578,7 +1576,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network_offering"]["specifyIpRanges"] = "True"
 
 
-        #Create Network Offering
+        # Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
                                                  self.api_client,
                                                  self.services["network_offering"],
@@ -1586,7 +1584,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  )
 
 
-        #Verify that the network offering got created
+        # Verify that the network offering got created
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -1607,7 +1605,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The network offering created should be by default disabled."
             )
 
-        #Update network offering state from disabled to enabled.
+        # Update network offering state from disabled to enabled.
         NetworkOffering.update(
                                 self.shared_network_offering,
                                 self.api_client,
@@ -1615,7 +1613,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                 state="enabled"
                                 )
 
-        #Verify that the state of the network offering is updated
+        # Verify that the state of the network offering is updated
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -1638,7 +1636,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Shared Network found: %s" % self.shared_network_offering.id)
 
-        #create network using the shared network offering created
+        # create network using the shared network offering created
         self.services["network"]["acltype"] = "account"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
@@ -1740,7 +1738,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #  4. listPhysicalNetworks should return at least one active physical network
         #  5. network creation should FAIL since VLAN is used for guest networks
 
-        #Create admin account
+        # Create admin account
         self.admin_account = Account.create(
                                      self.api_client,
                                      self.services["account"],
@@ -1750,7 +1748,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.admin_account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.admin_account.id,
@@ -1781,7 +1779,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
 
-        #Create Network Offering
+        # Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
                                                  self.api_client,
                                                  self.services["network_offering"],
@@ -1789,7 +1787,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  )
 
 
-        #Verify that the network offering got created
+        # Verify that the network offering got created
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -1812,7 +1810,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Shared Network Offering created: %s" % self.shared_network_offering.id)
 
-        #Update network offering state from disabled to enabled.
+        # Update network offering state from disabled to enabled.
         NetworkOffering.update(
                                 self.shared_network_offering,
                                 self.api_client,
@@ -1820,7 +1818,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                 state="enabled"
                                 )
 
-        #Verify that the state of the network offering is updated
+        # Verify that the state of the network offering is updated
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -1841,7 +1839,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The network offering state should get updated to Enabled."
             )
 
-        #create network using the shared network offering created
+        # create network using the shared network offering created
         self.services["network"]["vlan"] = str.split(str(physical_network.vlan), "-")[0]
         self.services["network"]["acltype"] = "domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
@@ -1860,7 +1858,7 @@ class TestSharedNetworks(cloudstackTestCase):
             self.debug("Network creation failed because the valn id being used by another network. Exception: %s" % e)
 
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_createSharedNetwork_usedVlan2(self):
         """ Test Shared Network with used vlan 02 """
 
@@ -1886,7 +1884,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #  5. network creation shoud PASS
         #  6. network creation should FAIL since VLAN is already used by previously created network
 
-        #Create admin account
+        # Create admin account
         self.admin_account = Account.create(
                                      self.api_client,
                                      self.services["account"],
@@ -1895,7 +1893,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                      )
         self.cleanup_accounts.append(self.admin_account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.admin_account.id,
@@ -1928,7 +1926,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
 
-        #Create Network Offering
+        # Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
                                                  self.api_client,
                                                  self.services["network_offering"],
@@ -1936,7 +1934,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  )
 
 
-        #Verify that the network offering got created
+        # Verify that the network offering got created
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -1959,7 +1957,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Shared Network Offering created: %s" % self.shared_network_offering.id)
 
-        #Update network offering state from disabled to enabled.
+        # Update network offering state from disabled to enabled.
         NetworkOffering.update(
                                 self.shared_network_offering,
                                 self.api_client,
@@ -1967,7 +1965,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                 state="enabled"
                                 )
 
-        #Verify that the state of the network offering is updated
+        # Verify that the state of the network offering is updated
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -1988,7 +1986,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The network offering state should get updated to Enabled."
             )
 
-        #create network using the shared network offering created
+        # create network using the shared network offering created
         self.services["network"]["acltype"] = "Domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
@@ -2042,7 +2040,7 @@ class TestSharedNetworks(cloudstackTestCase):
         except Exception as e:
             self.debug("Network creation failed because the valn id being used by another network. Exception: %s" % e)
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_deployVM_multipleSharedNetwork(self):
         """ Test Vm deployment with multiple shared networks """
 
@@ -2056,7 +2054,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #  2. a. VM should deploy successfully
         #     b. VM should be deployed in both networks and have IP in both the networks
 
-        #Create admin account
+        # Create admin account
         self.admin_account = Account.create(
 	                     self.api_client,
 					     self.services["account"],
@@ -2066,7 +2064,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.admin_account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.admin_account.id,
@@ -2099,7 +2097,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
 
-        #Create Network Offering
+        # Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
                                                  self.api_client,
                                                  self.services["network_offering"],
@@ -2107,7 +2105,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  )
 
 
-        #Verify that the network offering got created
+        # Verify that the network offering got created
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -2130,7 +2128,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Shared Network offering created: %s" % self.shared_network_offering.id)
 
-        #Update network offering state from disabled to enabled.
+        # Update network offering state from disabled to enabled.
         NetworkOffering.update(
                                 self.shared_network_offering,
                                 self.api_client,
@@ -2138,7 +2136,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                 state="enabled"
                                 )
 
-        #Verify that the state of the network offering is updated
+        # Verify that the state of the network offering is updated
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -2159,7 +2157,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The network offering state should get updated to Enabled."
             )
 
-        #create network using the shared network offering created
+        # create network using the shared network offering created
         self.services["network"]["acltype"] = "domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
@@ -2292,7 +2290,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.assertTrue(self.network1_admin_account_virtual_machine.nic[0].ipaddress is not None, "ip should be assigned to running virtual machine")
 
-    @attr(tags=["advanced", "advancedns", "provisioning"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_deployVM_isolatedAndShared(self):
         """ Test VM deployment in shared and isolated networks """
 
@@ -2311,7 +2309,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #    b. VM should be deployed in both networks and have IP in both the networks
         #  4. FW and PF should apply successfully, ssh into the VM should work over isolated network
 
-        #Create admin account
+        # Create admin account
         self.admin_account = Account.create(
                                      self.api_client,
                                      self.services["account"],
@@ -2321,7 +2319,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.admin_account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.admin_account.id,
@@ -2348,7 +2346,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
 
-        #Create Network Offering
+        # Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
                                                  self.api_client,
                                                  self.services["network_offering"],
@@ -2356,7 +2354,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  )
 
 
-        #Verify that the network offering got created
+        # Verify that the network offering got created
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -2379,7 +2377,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Shared Network offering created: %s" % self.shared_network_offering.id)
 
-        #Update network offering state from disabled to enabled.
+        # Update network offering state from disabled to enabled.
         NetworkOffering.update(
                                 self.shared_network_offering,
                                 self.api_client,
@@ -2387,7 +2385,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                 state="enabled"
                                 )
 
-        #Verify that the state of the network offering is updated
+        # Verify that the state of the network offering is updated
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -2415,7 +2413,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                           )
 
 
-        #Update network offering state from disabled to enabled.
+        # Update network offering state from disabled to enabled.
         NetworkOffering.update(
                                 self.isolated_network_offering,
                                 self.api_client,
@@ -2423,7 +2421,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                 state="enabled"
                                 )
 
-        #Verify that the state of the network offering is updated
+        # Verify that the state of the network offering is updated
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.isolated_network_offering.id
@@ -2450,7 +2448,7 @@ class TestSharedNetworks(cloudstackTestCase):
         if shared_vlan is None:
             self.fail("Failed to get free vlan id for shared network")
 
-        #create network using the shared network offering created
+        # create network using the shared network offering created
         self.services["network"]["acltype"] = "domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
@@ -2517,7 +2515,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Isolated Network created: %s" % self.isolated_network.id)
 
-        self.shared_network_admin_account_virtual_machine =\
+        self.shared_network_admin_account_virtual_machine = \
                                     VirtualMachine.create(
                                         self.api_client,
                                         self.services["virtual_machine"],
@@ -2597,7 +2595,7 @@ class TestSharedNetworks(cloudstackTestCase):
                             )
 
         self.debug("Enabled static NAT for public IP ID: %s" % public_ip.id)
-        #Create Firewall rule on source NAT
+        # Create Firewall rule on source NAT
         fw_rule = FireWallRule.create(
                             self.api_client,
                             ipaddressid=self.public_ip.ipaddress.id,
@@ -2631,7 +2629,7 @@ class TestSharedNetworks(cloudstackTestCase):
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % (self.isolated_network_admin_account_virtual_machine.ipaddress, e))
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_networkWithsubdomainaccessTrue(self):
         """ Test Shared Network with subdomainaccess=True """
 
@@ -2640,7 +2638,7 @@ class TestSharedNetworks(cloudstackTestCase):
         # Validations,
         #  (Expected) API should fail saying that subdomainaccess cannot be given when scope is Account
 
-        #Create admin account
+        # Create admin account
         self.admin_account = Account.create(
                                      self.api_client,
                                      self.services["account"],
@@ -2650,7 +2648,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.admin_account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.admin_account.id,
@@ -2683,7 +2681,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
 
-        #Create Network Offering
+        # Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
                                                  self.api_client,
                                                  self.services["network_offering"],
@@ -2691,7 +2689,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  )
 
 
-        #Verify that the network offering got created
+        # Verify that the network offering got created
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -2714,14 +2712,14 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Shared Network Offering created: %s" % self.shared_network_offering.id)
 
-        #Update network offering state from disabled to enabled.
+        # Update network offering state from disabled to enabled.
         NetworkOffering.update(
                                 self.shared_network_offering,
                                 self.api_client,
                                 id=self.shared_network_offering.id,
                                 state="enabled"
                                 )
-        #Verify that the state of the network offering is updated
+        # Verify that the state of the network offering is updated
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -2742,7 +2740,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The network offering state should get updated to Enabled."
             )
 
-        #create network using the shared network offering created
+        # create network using the shared network offering created
         self.services["network"]["acltype"] = "Account"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
@@ -2762,7 +2760,7 @@ class TestSharedNetworks(cloudstackTestCase):
         except:
             self.debug("Network creation failed because subdomainaccess parameter was passed when scope was account.")
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_networkWithsubdomainaccessFalse(self):
         """ Test shared Network with subdomainaccess=False """
 
@@ -2771,7 +2769,7 @@ class TestSharedNetworks(cloudstackTestCase):
         # Validations,
         #  (Expected) API should fail saying that subdomainaccess cannot be given when scope is Account
 
-        #Create admin account
+        # Create admin account
         self.admin_account = Account.create(
                                      self.api_client,
                                      self.services["account"],
@@ -2781,7 +2779,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.cleanup_accounts.append(self.admin_account)
 
-        #verify that the account got created with state enabled
+        # verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.admin_account.id,
@@ -2814,14 +2812,14 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
 
-        #Create Network Offering
+        # Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
                                                  self.api_client,
                                                  self.services["network_offering"],
                                                  conservemode=False
                                                  )
 
-        #Verify that the network offering got created
+        # Verify that the network offering got created
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -2844,14 +2842,14 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Shared Network Offering created: %s" % self.shared_network_offering.id)
 
-        #Update network offering state from disabled to enabled.
+        # Update network offering state from disabled to enabled.
         NetworkOffering.update(
                                 self.shared_network_offering,
                                 self.api_client,
                                 id=self.shared_network_offering.id,
                                 state="enabled"
                                 )
-        #Verify that the state of the network offering is updated
+        # Verify that the state of the network offering is updated
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -2872,7 +2870,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The network offering state should get updated to Enabled."
             )
 
-        #create network using the shared network offering created
+        # create network using the shared network offering created
         self.services["network"]["acltype"] = "Account"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
@@ -2891,3 +2889,180 @@ class TestSharedNetworks(cloudstackTestCase):
             self.fail("Network creation should fail.")
         except:
             self.debug("Network creation failed because subdomainaccess parameter was passed when scope was account.")
+
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_escalation_ES1621(self):
+        """
+        @summary: ES1621:Allow creating shared networks with overlapping
+                  ip ranges in different vlans
+        @steps:
+        Step1: Create an Admin account for the test
+        Step2: Create shared network offering
+        Step3: Update the network offering to Enabled state
+        Step4: list network offering
+        Step5: Create network with above offering
+        Step6: List netwokrs and verify the network created in step5 in the response
+        Step7: Create another network with offering,vlan and ip range same as in step6
+        Step8: Verify that network creationin Step7 should fail
+        Step9: Repeat step6 with diff vlan but same ip range and network offering
+        Step10: List netwokrs and verify the network created in step9 in the response
+        Step11: Dislable network offering for the cleanup to delete at the end of the test
+        """
+        # Creating Admin account
+        self.admin_account = Account.create(
+                                    self.api_client,
+                                    self.services["account"],
+                                    admin=True,
+                                    domainid=self.domain.id
+                                    )
+        self.cleanup_accounts.append(self.admin_account)
+        # verify that the account got created with state enabled
+        list_accounts_response = Account.list(
+                                        self.api_client,
+                                        id=self.admin_account.id,
+                                        listall=True
+                                        )
+        status = validateList(list_accounts_response)
+        self.assertEqual(
+            PASS,
+            status[0],
+            "listAccounts returned invalid object in response"
+        )
+        self.assertEqual(
+            list_accounts_response[0].state,
+            "enabled",
+            "The admin account created is not enabled."
+            )
+        self.debug("Admin type account created: %s" % self.admin_account.name)
+        physical_network, shared_vlan = get_free_vlan(self.api_client, self.zone.id)
+        if shared_vlan is None:
+            self.fail("Failed to get free vlan id for shared network")
+        self.debug("Physical network found: %s" % physical_network.id)
+        self.services["network_offering"]["specifyVlan"] = "True"
+        self.services["network_offering"]["specifyIpRanges"] = "True"
+        # Create Network Offering
+        self.shared_network_offering = NetworkOffering.create(
+                                                 self.api_client,
+                                                 self.services["network_offering"],
+                                                 conservemode=False
+                                                 )
+        # Verify that the network offering got created
+        list_network_offerings_response = NetworkOffering.list(
+                                                         self.api_client,
+                                                         id=self.shared_network_offering.id
+                                                         )
+        status = validateList(list_network_offerings_response)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "listNetworkOfferings returned invalid object in response."
+        )
+        self.assertEqual(
+            list_network_offerings_response[0].state,
+            "Disabled",
+            "The network offering created should be bydefault disabled."
+            )
+        self.debug("Shared Network offering created: %s" % self.shared_network_offering.id)
+        # Update network offering state from disabled to enabled.
+        NetworkOffering.update(
+                                self.shared_network_offering,
+                                self.api_client,
+                                id=self.shared_network_offering.id,
+                                state="enabled"
+                                )
+        # Verify that the state of the network offering is updated
+        list_network_offerings_response = NetworkOffering.list(
+                                                         self.api_client,
+                                                         id=self.shared_network_offering.id
+                                                         )
+        status = validateList(list_network_offerings_response)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "listNetworkOfferings returned invalid object in response after enabling it."
+        )
+        self.assertEqual(
+            list_network_offerings_response[0].state,
+            "Enabled",
+            "The network offering state should get updated to Enabled."
+            )
+        # create network using the shared network offering created
+        self.services["network"]["acltype"] = "Domain"
+        self.services["network"]["networkofferingid"] = self.shared_network_offering.id
+        self.services["network"]["physicalnetworkid"] = physical_network.id
+        self.services["network"]["vlan"] = shared_vlan
+        self.network = Network.create(
+                         self.api_client,
+                         self.services["network"],
+                         networkofferingid=self.shared_network_offering.id,
+                         zoneid=self.zone.id,
+                         )
+        self.cleanup_networks.append(self.network)
+        list_networks_response = Network.list(
+                                        self.api_client,
+                                        id=self.network.id
+                                        )
+        status = validateList(list_accounts_response)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "listNetworks returned invalid object in response."
+        )
+        self.assertEqual(
+            list_networks_response[0].specifyipranges,
+            True,
+            "The network is created with ip range but the flag is set to False."
+            )
+        self.debug("Shared Network created for scope domain: %s" % self.network.id)
+        # Create another network with same ip range and vlan. It should fail
+        try:
+            self.network1 = Network.create(
+                         self.api_client,
+                         self.services["network"],
+                         networkofferingid=self.shared_network_offering.id,
+                         zoneid=self.zone.id,
+                         )
+            self.cleanup_networks.append(self.network1)
+            self.fail("CS is allowing to create shared network with ip range and vlan same as used by another shared network")
+        except Exception as e:
+            self.debug("Network Creation Exception Raised: %s" % e)
+        # Create another shared network with overlapped ip range but different vlan
+        physical_network, shared_vlan1 = get_free_vlan(self.api_client, self.zone.id)
+        if shared_vlan1 is None:
+            self.fail("Failed to get free vlan id for shared network")
+        self.services["network"]["vlan"] = shared_vlan1
+        self.network2 = Network.create(
+                         self.api_client,
+                         self.services["network"],
+                         networkofferingid=self.shared_network_offering.id,
+                         zoneid=self.zone.id,
+                         )
+        self.cleanup_networks.append(self.network2)
+        list_networks_response = Network.list(
+                                        self.api_client,
+                                        id=self.network2.id
+                                        )
+        status = validateList(list_networks_response)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "listNetworks returned invalid object in response after creating with overlapped ip range in diff vlan."
+        )
+        self.assertEqual(
+            list_networks_response[0].specifyipranges,
+            True,
+            "The network is created with ip range but the flag is set to False after creating with overlapped ip range in diff vlan."
+            )
+        self.debug("Shared Network created for scope domain: %s" % self.network2.id)
+        # Update network offering state from enabled to disabled.
+        NetworkOffering.update(
+                                self.shared_network_offering,
+                                self.api_client,
+                                id=self.shared_network_offering.id,
+                                state="disabled"
+                                )
+        self.cleanup_networks.append(self.shared_network_offering)
+        return
+
+
+

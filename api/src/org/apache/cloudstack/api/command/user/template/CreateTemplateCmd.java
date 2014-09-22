@@ -266,7 +266,8 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException {
         VirtualMachineTemplate template = null;
-        template = _templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
+        //TemplateOwner should be the caller https://issues.citrite.net/browse/CS-17530
+        template = _templateService.createPrivateTemplateRecord(this, CallContext.current().getCallingAccount());
         if (template != null) {
             setEntityId(template.getId());
             setEntityUuid(template.getUuid());

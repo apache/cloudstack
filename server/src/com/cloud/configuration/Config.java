@@ -16,15 +16,6 @@
 // under the License.
 package com.cloud.configuration;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.StringTokenizer;
-
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.config.ConfigKey;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
@@ -38,6 +29,14 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.StringTokenizer;
 
 public enum Config {
 
@@ -522,15 +521,6 @@ public enum Config {
     KVMSnapshotEnabled("Snapshots", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "whether snapshot is enabled for KVM hosts", null),
 
     // Advanced
-    JobExpireMinutes("Advanced", ManagementServer.class, String.class, "job.expire.minutes", "1440", "Time (in minutes) for async-jobs to be kept in system", null),
-    JobCancelThresholdMinutes(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "job.cancel.threshold.minutes",
-            "60",
-            "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long",
-            null),
     EventPurgeInterval(
             "Advanced",
             ManagementServer.class,
@@ -702,7 +692,7 @@ public enum Config {
             "system.vm.use.local.storage",
             "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.",
-            null),
+            null, ConfigKey.Scope.Zone.toString()),
     SystemVMAutoReserveCapacity(
             "Advanced",
             ManagementServer.class,
@@ -1063,7 +1053,7 @@ public enum Config {
             Boolean.class,
             "vm.instancename.flag",
             "false",
-            "If set to true, will set guest VM's name as it appears on the hypervisor, to its hostname",
+            "If set to true, will set guest VM's name as it appears on the hypervisor, to its hostname. The flag is supported for VMware hypervisor only",
             "true,false"),
     IncorrectLoginAttemptsAllowed(
             "Advanced",
@@ -1079,17 +1069,17 @@ public enum Config {
     OvmGuestNetwork("Hidden", ManagementServer.class, String.class, "ovm.guest.network.device", null, "Specify the private bridge on host for private network", null),
 
     // XenServer
-    XenPublicNetwork(
+    XenServerPublicNetwork(
             "Hidden",
             ManagementServer.class,
             String.class,
-            "xen.public.network.device",
+            "xenserver.public.network.device",
             null,
             "[ONLY IF THE PUBLIC NETWORK IS ON A DEDICATED NIC]:The network name label of the physical device dedicated to the public network on a XenServer host",
             null),
-    XenStorageNetwork1("Hidden", ManagementServer.class, String.class, "xen.storage.network.device1", null, "Specify when there are storage networks", null),
-    XenStorageNetwork2("Hidden", ManagementServer.class, String.class, "xen.storage.network.device2", null, "Specify when there are storage networks", null),
-    XenPrivateNetwork("Hidden", ManagementServer.class, String.class, "xen.private.network.device", null, "Specify when the private network name is different", null),
+    XenServerStorageNetwork1("Hidden", ManagementServer.class, String.class, "xenserver.storage.network.device1", null, "Specify when there are storage networks", null),
+    XenServerStorageNetwork2("Hidden", ManagementServer.class, String.class, "xenserver.storage.network.device2", null, "Specify when there are storage networks", null),
+    XenServerPrivateNetwork("Hidden", ManagementServer.class, String.class, "xenserver.private.network.device", null, "Specify when the private network name is different", null),
     NetworkGuestCidrLimit(
             "Network",
             NetworkOrchestrationService.class,
@@ -1098,32 +1088,40 @@ public enum Config {
             "22",
             "size limit for guest cidr; can't be less than this value",
             null),
-    XenSetupMultipath("Advanced", ManagementServer.class, String.class, "xen.setup.multipath", "false", "Setup the host to do multipath", null),
-    XenBondStorageNic("Advanced", ManagementServer.class, String.class, "xen.bond.storage.nics", null, "Attempt to bond the two networks if found", null),
-    XenHeartBeatInterval(
+    XenServerSetupMultipath("Advanced", ManagementServer.class, String.class, "xenserver.setup.multipath", "false", "Setup the host to do multipath", null),
+    XenServerBondStorageNic("Advanced", ManagementServer.class, String.class, "xenserver.bond.storage.nics", null, "Attempt to bond the two networks if found", null),
+    XenServerHeartBeatTimeout(
             "Advanced",
             ManagementServer.class,
             Integer.class,
-            "xen.heartbeat.interval",
-            "60",
-            "heartbeat to use when implementing XenServer Self Fencing",
+            "xenserver.heartbeat.timeout",
+            "120",
+            "heartbeat timeout to use when implementing XenServer Self Fencing",
             null),
-    XenGuestNetwork("Hidden", ManagementServer.class, String.class, "xen.guest.network.device", null, "Specify for guest network name label", null),
-    XenMaxNics("Advanced", AgentManager.class, Integer.class, "xen.nics.max", "7", "Maximum allowed nics for Vms created on Xen", null),
-    XenPVdriverVersion(
+    XenServerHeartBeatInterval(
+            "Advanced",
+            ManagementServer.class,
+            Integer.class,
+            "xenserver.heartbeat.interval",
+            "60",
+            "heartbeat interval to use when checking before XenServer Self Fencing",
+            null),
+    XenServerGuestNetwork("Hidden", ManagementServer.class, String.class, "xenserver.guest.network.device", null, "Specify for guest network name label", null),
+    XenServerMaxNics("Advanced", AgentManager.class, Integer.class, "xenserver.nics.max", "7", "Maximum allowed nics for Vms created on XenServer", null),
+    XenServerPVdriverVersion(
             "Advanced",
             ManagementServer.class,
             String.class,
-            "xen.pvdriver.version",
+            "xenserver.pvdriver.version",
             "xenserver61",
             "default Xen PV driver version for registered template, valid value:xenserver56,xenserver61 ",
             "xenserver56,xenserver61"),
     XenServerHotFix("Advanced",
             ManagementServer.class,
             Boolean.class,
-            "xen.hotfix.enabled",
+            "xenserver.hotfix.enabled",
             "false",
-            "Enable/Disable xenserver hot fix",
+            "Enable/Disable XenServer hot fix",
             null),
 
     // VMware
@@ -1366,7 +1364,7 @@ public enum Config {
             "Hidden",
             ManagementServer.class,
             Boolean.class,
-            "xen.create.pools.in.pod",
+            "xenserver.create.pools.in.pod",
             "false",
             "Should we automatically add XenServers into pools that are inside a Pod",
             null),
@@ -1379,6 +1377,86 @@ public enum Config {
             "security.singlesignon.tolerance.millis",
             "300000",
             "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.",
+            null),
+    SAMLIsPluginEnabled(
+            "Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "saml2.enabled",
+            "false",
+            "Set it to true to enable SAML SSO plugin",
+            null),
+    SAMLUserAccountName(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "saml2.default.accountname",
+            "admin",
+            "The name of the default account to use when creating users from SAML SSO",
+            null),
+    SAMLUserDomain(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "saml2.default.domainid",
+            "1",
+            "The default domain UUID to use when creating users from SAML SSO",
+            null),
+    SAMLCloudStackRedirectionUrl(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "saml2.redirect.url",
+            "http://localhost:8080/client",
+            "The CloudStack UI url the SSO should redirected to when successful",
+            null),
+    SAMLServiceProviderID(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "saml2.sp.id",
+            "org.apache.cloudstack",
+            "SAML2 Service Provider Identifier String",
+            null),
+    SAMLServiceProviderSingleSignOnURL(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "saml2.sp.sso.url",
+            "http://localhost:8080/client/api?command=samlsso",
+            "SAML2 CloudStack Service Provider Single Sign On URL",
+            null),
+    SAMLServiceProviderSingleLogOutURL(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "saml2.sp.slo.url",
+            "http://localhost:8080/client/api?command=samlslo",
+            "SAML2 CloudStack Service Provider Single Log Out URL",
+            null),
+    SAMLIdentityProviderID(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "saml2.idp.id",
+            "https://openidp.feide.no",
+            "SAML2 Identity Provider Identifier String",
+            null),
+    SAMLIdentityProviderMetadataURL(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "saml2.idp.metadata.url",
+            "https://openidp.feide.no/simplesaml/saml2/idp/metadata.php",
+            "SAML2 Identity Provider Metadata XML Url",
+            null),
+    SAMLTimeout(
+            "Advanced",
+            ManagementServer.class,
+            Long.class,
+            "saml2.timeout",
+            "30000",
+            "SAML2 IDP Metadata Downloading and parsing etc. activity timeout in milliseconds",
             null),
     //NetworkType("Hidden", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
     RouterRamSize("Hidden", NetworkOrchestrationService.class, Integer.class, "router.ram.size", "128", "Default RAM for router VM (in MB).", null),
@@ -1762,6 +1840,38 @@ public enum Config {
             "The maximum number of retrying times to search for an available IPv6 address in the table",
             null),
 
+    BaremetalInternalStorageServer(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "baremetal.internal.storage.server.ip",
+            null,
+            "the ip address of server that stores kickstart file, kernel, initrd, ISO for advanced networking baremetal provisioning",
+            null),
+    BaremetalProvisionDoneNotificationEnabled(
+            "Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "baremetal.provision.done.notification.enabled",
+            "true",
+            "whether to enable baremetal provison done notification",
+            null),
+    BaremetalProvisionDoneNotificationTimeout(
+            "Advanced",
+            ManagementServer.class,
+            Integer.class,
+            "baremetal.provision.done.notification.timeout",
+            "1800",
+            "the max time to wait before treating a baremetal provision as failure if no provision done notification is not received, in secs",
+            null),
+    BaremetalProvisionDoneNotificationPort(
+            "Advanced",
+            ManagementServer.class,
+            Integer.class,
+            "baremetal.provision.done.notification.port",
+            "8080",
+            "the port that listens baremetal provision done notification. Should be the same to port management server listening on for now. Please change it to management server port if it's not default 8080",
+            null),
     ExternalBaremetalSystemUrl(
             "Advanced",
             ManagementServer.class,
@@ -1801,6 +1911,23 @@ public enum Config {
             "timeout.baremetal.securitygroup.agent.echo",
             "3600",
             "Timeout to echo baremetal security group agent, in seconds, the provisioning process will be treated as a failure",
+            null),
+
+    BaremetalIpmiLanInterface(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "baremetal.ipmi.lan.interface",
+            "default",
+            "option specified in -I option of impitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default valule 'default' means using default option of ipmitool",
+            null),
+
+    BaremetalIpmiRetryTimes("Advanced",
+            ManagementServer.class,
+            String.class,
+            "baremetal.ipmi.fail.retry",
+            "5",
+            "ipmi interface will be temporary out of order after power opertions(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure",
             null),
 
     ApiLimitEnabled("Advanced", ManagementServer.class, Boolean.class, "api.throttling.enabled", "false", "Enable/disable Api rate limit", null),
@@ -1898,7 +2025,30 @@ public enum Config {
             "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack",
             null),
 
-    ManagementServerVendor("Advanced", ManagementServer.class, String.class, "mgt.server.vendor", "ACS", "the vendor of management server", null);
+    RedundantRouterVrrpInterval(
+            "Advanced",
+            NetworkOrchestrationService.class,
+            Integer.class,
+            "router.redundant.vrrp.interval",
+            "1",
+            "seconds between VRRP broadcast. It would 3 times broadcast fail to trigger fail-over mechanism of redundant router",
+            null),
+
+    RouterAggregationCommandEachTimeout(
+            "Advanced",
+            NetworkOrchestrationService.class,
+            Integer.class,
+            "router.aggregation.command.each.timeout",
+            "3",
+            "timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ",
+            null),
+
+    ManagementServerVendor("Advanced", ManagementServer.class, String.class, "mgt.server.vendor", "ACS", "the vendor of management server", null),
+    PublishActionEvent("Advanced", ManagementServer.class, Boolean.class, "publish.action.events", "true", "enable or disable publishing of action events on the event bus", null),
+    PublishAlertEvent("Advanced", ManagementServer.class, Boolean.class, "publish.alert.events", "true", "enable or disable publishing of alert events on the event bus", null),
+    PublishResourceStateEvent("Advanced", ManagementServer.class, Boolean.class, "publish.resource.state.events", "true", "enable or disable publishing of alert events on the event bus", null),
+    PublishUsageEvent("Advanced", ManagementServer.class, Boolean.class, "publish.usage.events", "true", "enable or disable publishing of usage events on the event bus", null),
+    PublishAsynJobEvent("Advanced", ManagementServer.class, Boolean.class, "publish.async.job.events", "true", "enable or disable publishing of usage events on the event bus", null);
 
     private final String _category;
     private final Class<?> _componentClass;

@@ -16,9 +16,10 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -29,6 +30,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
@@ -36,6 +38,11 @@ import com.cloud.utils.net.NetUtils;
 @Entity
 @Table(name = "network_acl_item")
 public class NetworkACLItemVO implements NetworkACLItem {
+
+    /**
+     *
+     */
+    private static final long serialVersionUID = 2790623532888742060L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -71,8 +78,11 @@ public class NetworkACLItemVO implements NetworkACLItem {
     @Enumerated(value = EnumType.STRING)
     TrafficType trafficType;
 
-    @Column(name = "cidr", length = 2048)
-    String sourceCidrs;
+    // This is a delayed load value.  If the value is null,
+    // then this field has not been loaded yet.
+    // Call the NetworkACLItem dao to load it.
+    @Transient
+    List<String> sourceCidrs;
 
     @Column(name = "uuid")
     String uuid;
@@ -108,32 +118,12 @@ public class NetworkACLItemVO implements NetworkACLItem {
     }
 
     public void setSourceCidrList(List<String> sourceCidrs) {
-        if (sourceCidrs == null) {
-            this.sourceCidrs = null;
-        } else {
-            StringBuilder sb = new StringBuilder();
-            for (String cidr : sourceCidrs) {
-                if (sb.length() != 0) {
-                    sb.append(",");
-                }
-                sb.append(cidr);
-            }
-            this.sourceCidrs = sb.toString();
-        }
+        this.sourceCidrs = sourceCidrs;
     }
 
     @Override
     public List<String> getSourceCidrList() {
-        if (sourceCidrs == null || sourceCidrs.isEmpty()) {
-            return null;
-        } else {
-            List<String> cidrList = new ArrayList<String>();
-            String[] cidrs = sourceCidrs.split(",");
-            for (String cidr : cidrs) {
-                cidrList.add(cidr);
-            }
-            return cidrList;
-        }
+        return sourceCidrs;
     }
 
     @Override
@@ -234,7 +224,12 @@ public class NetworkACLItemVO implements NetworkACLItem {
     }
 
     public void setSourceCidrs(String sourceCidrs) {
-        this.sourceCidrs = sourceCidrs;
+        List<String> srcCidrs = new LinkedList<String>();
+        StringTokenizer st = new StringTokenizer(sourceCidrs,",;");
+        while(st.hasMoreTokens()) {
+            srcCidrs.add(st.nextToken());
+        }
+        this.sourceCidrs = srcCidrs;
     }
 
     public void setNumber(int number) {

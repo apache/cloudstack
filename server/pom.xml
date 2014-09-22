@@ -133,6 +133,11 @@
       <artifactId>cloud-engine-components-api</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.opensaml</groupId>
+      <artifactId>opensaml</artifactId>
+      <version>${cs.opensaml.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <testResources>
@@ -205,7 +210,7 @@
                   <globmapper from="*.in" to="*" />
                   <filterchain>
                     <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${cs.replace.properties}" />
+                      <param type="propertiesfile" value="${project.basedir}/../${cs.replace.properties}" />
                     </filterreader>
                   </filterchain>
                 </copy>

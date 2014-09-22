@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package org.apache.cloudstack.storage.to;
 
 import java.util.Map;
@@ -46,6 +49,7 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     private int port;
     private final String url;
     private Map<String, String> details;
+    private static final String pathSeparator = "/";
 
     public PrimaryDataStoreTO(PrimaryDataStore dataStore) {
         this.uuid = dataStore.getUuid();
@@ -120,6 +124,11 @@ public class PrimaryDataStoreTO implements DataStoreTO {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    @Override
+    public String getPathSeparator() {
+        return pathSeparator;
     }
 
     @Override

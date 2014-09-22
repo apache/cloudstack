@@ -52,7 +52,9 @@
 
     <bean id="dispatchChainFactory" class="com.cloud.api.dispatch.DispatchChainFactory" />
 
-    <bean id="paramProcessWorker" class="com.cloud.api.dispatch.ParamProcessWorker" />
+    <bean id="paramProcessWorker" class="com.cloud.api.dispatch.ParamProcessWorker">
+        <property name="secChecker" value="#{securityCheckersRegistry.registered}" />
+    </bean>
 
     <bean id="paramUnpackWorker" class="com.cloud.api.dispatch.ParamUnpackWorker" />
 

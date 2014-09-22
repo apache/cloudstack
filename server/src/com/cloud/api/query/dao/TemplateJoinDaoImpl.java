@@ -278,6 +278,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         isoResponse.setPublic(iso.isPublicTemplate());
         isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
         isoResponse.setCreated(iso.getCreatedOnStore());
+        isoResponse.setDynamicallyScalable(iso.isDynamicallyScalable());
         if (iso.getTemplateType() == TemplateType.PERHOST) {
             // for xs-tools.iso and vmware-tools.iso, we didn't download, but is ready to use.
             isoResponse.setReady(true);
@@ -302,7 +303,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
         Account caller = CallContext.current().getCallingAccount();
         boolean isAdmin = false;
-        if ((caller == null) || _accountService.isAdmin(caller.getType())) {
+        if ((caller == null) || _accountService.isAdmin(caller.getId())) {
             isAdmin = true;
         }
 
@@ -380,7 +381,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         }
         // query details by batches
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-        isAscending = (isAscending == null ? true : isAscending);
+        isAscending = (isAscending == null ? Boolean.TRUE : isAscending);
         Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", isAscending, null, null);
         List<TemplateJoinVO> uvList = new ArrayList<TemplateJoinVO>();
         // query details by batches

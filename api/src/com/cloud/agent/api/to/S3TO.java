@@ -40,6 +40,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     private Date created;
     private boolean enableRRS;
     private long maxSingleUploadSizeInBytes;
+    private static final String pathSeparator = "/";
 
     public S3TO() {
 
@@ -288,5 +289,10 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
                 return false;
             }
         }
+    }
+
+    @Override
+    public String getPathSeparator() {
+        return pathSeparator;
     }
 }

@@ -61,7 +61,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
+            throw new CloudRuntimeException("DB exception: ", e);
         }
     }
 
@@ -142,7 +142,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             txn.commit();
 
             if (count < 1) {
-                throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runid + " is no longer valid"));
+                s_logger.info("Invalid cluster session detected, runId " + runid + " is no longer valid");
+                throw new CloudRuntimeException("Invalid cluster session detected, runId " + runid + " is no longer valid", new ClusterInvalidSessionException("runId " + runid + " is no longer valid"));
             }
         } catch (Exception e) {
             s_logger.warn("Unexpected exception, ", e);
@@ -222,10 +223,11 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             int count = pstmt.executeUpdate();
 
             if (count < 1) {
-                throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runId + " is no longer valid"));
+                s_logger.info("Invalid cluster session detected, runId " + runId + " is no longer valid");
+                throw new CloudRuntimeException("Invalid cluster session detected, runId " + runId + " is no longer valid", new ClusterInvalidSessionException("runId " + runId + " is no longer valid"));
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
+            throw new CloudRuntimeException("DB exception: ", e);
         }
     }
 
@@ -253,7 +255,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
                 orphanList.add(rs.getLong(1));
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
+            throw new CloudRuntimeException("DB exception: ", e);
         }
 
         return orphanList;

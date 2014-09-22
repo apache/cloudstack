@@ -38,8 +38,8 @@ public class StaticNatRuleImpl implements StaticNatRule {
         xid = rule.getXid();
         uuid = rule.getUuid();
         protocol = rule.getProtocol();
-        portStart = rule.getSourcePortStart();
-        portEnd = rule.getSourcePortEnd();
+        portStart = rule.getSourcePortStart().intValue();
+        portEnd = rule.getSourcePortEnd().intValue();
         state = rule.getState();
         accountId = rule.getAccountId();
         domainId = rule.getDomainId();

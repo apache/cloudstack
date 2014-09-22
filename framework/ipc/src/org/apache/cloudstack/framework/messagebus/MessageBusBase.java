@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.serializer.MessageSerializer;
 
 public class MessageBusBase implements MessageBus {
@@ -35,6 +37,8 @@ public class MessageBusBase implements MessageBus {
 
     private final SubscriptionNode _subscriberRoot;
     private MessageSerializer _messageSerializer;
+
+    private static final Logger s_logger = Logger.getLogger(MessageBusBase.class);
 
     public MessageBusBase() {
         _gate = new Gate();
@@ -58,6 +62,9 @@ public class MessageBusBase implements MessageBus {
         assert (subject != null);
         assert (subscriber != null);
         if (_gate.enter()) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Enter gate in message bus subscribe");
+            }
             try {
                 SubscriptionNode current = locate(subject, null, true);
                 assert (current != null);
@@ -75,6 +82,9 @@ public class MessageBusBase implements MessageBus {
     @Override
     public void unsubscribe(String subject, MessageSubscriber subscriber) {
         if (_gate.enter()) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Enter gate in message bus unsubscribe");
+            }
             try {
                 if (subject != null) {
                     SubscriptionNode current = locate(subject, null, false);
@@ -96,6 +106,9 @@ public class MessageBusBase implements MessageBus {
     @Override
     public void clearAll() {
         if (_gate.enter()) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Enter gate in message bus clearAll");
+            }
             try {
                 _subscriberRoot.clearAll();
                 doPrune();
@@ -112,6 +125,9 @@ public class MessageBusBase implements MessageBus {
     @Override
     public void prune() {
         if (_gate.enter()) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Enter gate in message bus prune");
+            }
             try {
                 doPrune();
             } finally {
@@ -144,6 +160,9 @@ public class MessageBusBase implements MessageBus {
     public void publish(String senderAddress, String subject, PublishScope scope, Object args) {
 
         if (_gate.enter(true)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Enter gate in message bus publish");
+            }
             try {
                 List<SubscriptionNode> chainFromTop = new ArrayList<SubscriptionNode>();
                 SubscriptionNode current = locate(subject, chainFromTop, false);
@@ -309,14 +328,20 @@ public class MessageBusBase implements MessageBus {
         public void leave() {
             synchronized (this) {
                 if (_reentranceCount > 0) {
-                    assert (_gateOwner == Thread.currentThread());
+                    try {
+                        assert (_gateOwner == Thread.currentThread());
 
-                    onGateOpen();
-                    _reentranceCount--;
-                    assert (_reentranceCount == 0);
-                    _gateOwner = null;
+                        onGateOpen();
+                    } finally {
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("Open gate of message bus");
+                        }
+                        _reentranceCount--;
+                        assert (_reentranceCount == 0);
+                        _gateOwner = null;
 
-                    notifyAll();
+                        notifyAll();
+                    }
                 }
             }
         }

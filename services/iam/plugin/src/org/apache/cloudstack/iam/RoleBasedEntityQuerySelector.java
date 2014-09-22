@@ -25,11 +25,14 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.QuerySelector;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.iam.api.IAMGroup;
 import org.apache.cloudstack.iam.api.IAMPolicy;
 import org.apache.cloudstack.iam.api.IAMPolicyPermission;
 import org.apache.cloudstack.iam.api.IAMService;
 
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 
@@ -39,24 +42,44 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
 
     @Inject
     IAMService _iamService;
+    @Inject
+    DomainDao _domainDao;
 
     @Override
-    public List<Long> getAuthorizedDomains(Account caller, String action) {
+    public List<Long> getAuthorizedDomains(Account caller, String action, AccessType accessType) {
         long accountId = caller.getAccountId();
+        if (accessType == null) {
+            accessType = AccessType.UseEntry;  // default always show resources authorized to use
+        }
         // Get the static Policies of the Caller
         List<IAMPolicy> policies = _iamService.listIAMPolicies(accountId);
         // for each policy, find granted permission with Domain scope
         List<Long> domainIds = new ArrayList<Long>();
         for (IAMPolicy policy : policies) {
-            List<IAMPolicyPermission> pp = _iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.DOMAIN.toString());
+            List<IAMPolicyPermission> pp = new ArrayList<IAMPolicyPermission>();
+            pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action,
+                    PermissionScope.DOMAIN.toString(), accessType.toString()));
+
             if (pp != null) {
                 for (IAMPolicyPermission p : pp) {
                     if (p.getScopeId() != null) {
+                        Long domainId = null;
                         if (p.getScopeId().longValue() == -1) {
-                            domainIds.add(caller.getDomainId());
+                            domainId = caller.getDomainId();
+                            //domainIds.add(caller.getDomainId());
                         } else {
-                            domainIds.add(p.getScopeId());
+                            domainId = p.getScopeId();
+                            //domainIds.add(p.getScopeId());
                         }
+                        //domainIds.add(domainId);
+                        // add all the domain children from this domain (including this domain itself). Like RoleBasedEntityAccessChecker, we made an assumption, if DOMAIN scope is granted, it means that
+                        // the whole domain tree is granted access.
+                        DomainVO domain = _domainDao.findById(domainId);
+                        List<Long> childDomains = _domainDao.getDomainChildrenIds(domain.getPath());
+                        if (childDomains != null && childDomains.size() > 0) {
+                            domainIds.addAll(childDomains);
+                        }
+
                     }
                 }
             }
@@ -65,14 +88,20 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
     }
 
     @Override
-    public List<Long> getAuthorizedAccounts(Account caller, String action) {
+    public List<Long> getAuthorizedAccounts(Account caller, String action, AccessType accessType) {
         long accountId = caller.getAccountId();
+        if (accessType == null) {
+            accessType = AccessType.UseEntry;  // default always show resources authorized to use
+        }
         // Get the static Policies of the Caller
         List<IAMPolicy> policies = _iamService.listIAMPolicies(accountId);
         // for each policy, find granted permission with Account scope
         List<Long> accountIds = new ArrayList<Long>();
         for (IAMPolicy policy : policies) {
-            List<IAMPolicyPermission> pp = _iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.ACCOUNT.toString());
+            List<IAMPolicyPermission> pp = new ArrayList<IAMPolicyPermission>();
+            pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action,
+                    PermissionScope.ACCOUNT.toString(), accessType.toString()));
+
             if (pp != null) {
                 for (IAMPolicyPermission p : pp) {
                     if (p.getScopeId() != null) {
@@ -89,8 +118,11 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
     }
 
     @Override
-    public List<Long> getAuthorizedResources(Account caller, String action) {
+    public List<Long> getAuthorizedResources(Account caller, String action, AccessType accessType) {
         long accountId = caller.getAccountId();
+        if (accessType == null) {
+            accessType = AccessType.UseEntry;  // default always show resources authorized to use
+        }
         // Get the static Policies of the Caller
         List<IAMPolicy> policies = _iamService.listIAMPolicies(accountId);
 
@@ -107,7 +139,10 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
         // for each policy, find granted permission with Resource scope
         List<Long> entityIds = new ArrayList<Long>();
         for (IAMPolicy policy : policies) {
-            List<IAMPolicyPermission> pp = _iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.RESOURCE.toString());
+            List<IAMPolicyPermission> pp = new ArrayList<IAMPolicyPermission>();
+            pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action,
+                    PermissionScope.RESOURCE.toString(), accessType.toString()));
+
             if (pp != null) {
                 for (IAMPolicyPermission p : pp) {
                     if (p.getScopeId() != null) {
@@ -120,13 +155,18 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
     }
 
     @Override
-    public boolean isGrantedAll(Account caller, String action) {
+    public boolean isGrantedAll(Account caller, String action, AccessType accessType) {
         long accountId = caller.getAccountId();
+        if (accessType == null) {
+            accessType = AccessType.UseEntry;  // default always show resources authorized to use
+        }
         // Get the static Policies of the Caller
         List<IAMPolicy> policies = _iamService.listIAMPolicies(accountId);
         // for each policy, find granted permission with ALL scope
         for (IAMPolicy policy : policies) {
-            List<IAMPolicyPermission> pp = _iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.ALL.toString());
+            List<IAMPolicyPermission> pp = new ArrayList<IAMPolicyPermission>();
+            pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.ALL.toString(),
+                    accessType.toString()));
             if (pp != null && pp.size() > 0) {
                 return true;
             }
@@ -145,3 +185,4 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
     }
 
 }
+
