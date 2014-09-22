@@ -521,15 +521,6 @@ public enum Config {
     KVMSnapshotEnabled("Snapshots", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "whether snapshot is enabled for KVM hosts", null),
 
     // Advanced
-    JobExpireMinutes("Advanced", ManagementServer.class, String.class, "job.expire.minutes", "1440", "Time (in minutes) for async-jobs to be kept in system", null),
-    JobCancelThresholdMinutes(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "job.cancel.threshold.minutes",
-            "60",
-            "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long",
-            null),
     EventPurgeInterval(
             "Advanced",
             ManagementServer.class,
