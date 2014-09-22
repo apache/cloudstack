@@ -208,12 +208,16 @@ def get_process_status(hostip, port, username, password, linklocalip, process, h
                       process)
 
     # Double hop into router
-    timeout = 5
+    if str(hypervisor).lower() == 'hyperv':
+        timeout = 12
+    else:
+        timeout = 5
     # Ensure the SSH login is successful
     while True:
         res = ssh.execute(ssh_command)
-
-        if res[0] != "Host key verification failed.":
+        if "Connection refused".lower() in res[0].lower():
+            pass
+        elif res[0] != "Host key verification failed.":
             break
         elif timeout == 0:
             break
