@@ -147,6 +147,7 @@ public class BaremetalManagerImpl extends ManagerBase implements BaremetalManage
         }
 
         vm.setState(State.Running);
+        vm.setLastHostId(vm.getHostId());
         vmDao.update(vm.getId(), vm);
         s_logger.debug(String.format("received baremetal provision done notification for vm[id:%s name:%s] running on host[mac:%s, ip:%s]",
                 vm.getId(), vm.getInstanceName(), host.getPrivateMacAddress(), host.getPrivateIpAddress()));

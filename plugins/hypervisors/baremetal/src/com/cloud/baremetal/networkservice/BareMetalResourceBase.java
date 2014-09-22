@@ -36,7 +36,6 @@ import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
-import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyAnswer;
@@ -59,7 +58,6 @@ import com.cloud.configuration.Config;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -395,10 +393,13 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
             return null;
         }
 
+        return new PingRoutingCommand(getType(), id, null);
+
+            /*
         if (hostId != null) {
             final List<? extends VMInstanceVO> vms = vmDao.listByHostId(hostId);
             if (vms.isEmpty()) {
-                return new PingRoutingCommand(getType(), id, getHostVmStateReport());
+                return new PingRoutingCommand(getType(), id, null);
             } else {
                 VMInstanceVO vm = vms.get(0);
                 SecurityGroupHttpClient client = new SecurityGroupHttpClient();
@@ -406,8 +407,9 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
                 return new PingRoutingWithNwGroupsCommand(getType(), id, null, nwGrpStates);
             }
         } else {
-            return new PingRoutingCommand(getType(), id, getHostVmStateReport());
+            return new PingRoutingCommand(getType(), id, null);
         }
+            */
     }
 
     protected Answer execute(IpmISetBootDevCommand cmd) {
