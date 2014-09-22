@@ -38,7 +38,6 @@ import org.apache.log4j.NDC;
 
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
@@ -83,10 +82,10 @@ import com.cloud.utils.mgmt.JmxUtil;
 
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
     // Advanced
-    private static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>(Long.class, "job.expire.minutes", "Advanced", "1440",
-        "Time (in minutes) for async-jobs to be kept in system", true, ConfigKey.Scope.Global, 60l);
-    private static final ConfigKey<Long> JobCancelThresholdMinutes = new ConfigKey<Long>(Long.class, "job.cancel.threshold.minutes", "Advanced", "60",
-            "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", true, ConfigKey.Scope.Global, 240l);
+    private static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.expire.minutes", "1440",
+        "Time (in minutes) for async-jobs to be kept in system", true, ConfigKey.Scope.Global);
+    private static final ConfigKey<Long> JobCancelThresholdMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.cancel.threshold.minutes", "60",
+        "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", true, ConfigKey.Scope.Global);
 
     private static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class);
 
@@ -112,8 +111,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private MessageBus _messageBus;
     @Inject
     private AsyncJobMonitor _jobMonitor;
-    @Inject
-    private ConfigDepot _configDepot;
 
     private volatile long _executionRunNumber = 1;
 
@@ -778,16 +775,16 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
                     // limit to 100 jobs per turn, this gives cleanup throughput as 600 jobs per minute
                     // hopefully this will be fast enough to balance potential growth of job table
-                    //1) Expire unfinished jobs that weren't processed yet
-                    List<AsyncJobVO> l = _jobDao.getExpiredUnfinishedJobs(cutTime, 100);
-                    for (AsyncJobVO job : l) {
+                    // 1) Expire unfinished jobs that weren't processed yet
+                    List<AsyncJobVO> unfinishedJobs = _jobDao.getExpiredUnfinishedJobs(cutTime, 100);
+                    for (AsyncJobVO job : unfinishedJobs) {
                         s_logger.info("Expunging unfinished job " + job);
 
                         _jobMonitor.unregisterByJobId(job.getId());
                         expungeAsyncJob(job);
                     }
 
-                    //2) Expunge finished jobs
+                    // 2) Expunge finished jobs
                     List<AsyncJobVO> completedJobs = _jobDao.getExpiredCompletedJobs(cutTime, 100);
                     for (AsyncJobVO job : completedJobs) {
                         s_logger.trace("Expunging completed job " + job);
@@ -825,7 +822,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 _jobDao.expunge(job.getId());
-                //purge corresponding sync queue item
+                // purge corresponding sync queue item
                 _queueMgr.purgeAsyncJobQueueItemId(job.getId());
             }
         });
