@@ -234,7 +234,69 @@
                         }
                     }
                 }
-            },
+            },           
+            baremetalRct: {
+                type: 'select',
+                title: 'Baremetal Rack Configuration',
+                listView: {
+                    id: 'baremetalRct',
+                    label: 'Baremetal Rack Configuration',
+                    fields: {                       
+                        url: {
+                            label: 'label.url'
+                        }
+                    },
+                    dataProvider: function(args) {
+                        var data = {};
+                        listViewDataProvider(args, data);
+                        
+                        args.response.success({ data: [] });
+                    },
+                    actions: {
+                        add: {
+                            label: 'Add Baremetal Rack Configuration',
+                            messages: {                                
+                                notification: function(args) {
+                                    return 'Add Baremetal Rack Configuration';
+                                }
+                            },
+                            createForm: {
+                                title: 'Add Baremetal Rack Configuration',
+                                fields: {
+                                    url: {
+                                        label: 'label.url',
+                                        validation: {
+                                            required: true
+                                        }
+                                    }
+                                }
+                            },
+                            action: function(args) {                                
+                                $.ajax({
+                                	url: createURL("addBaremetalRct"),
+                                	data: {
+                                		baremetalrcturl: args.data.url
+                                	},
+                                	success: function(json) {                                		
+                                		var jid = json.addbaremetalrctresponse.jobid
+                                		args.response.success({
+                                            _custom: {
+                                                jobId: jid,
+                                                getUpdatedItem: function(json) {                                                	
+                                                    return json.queryasyncjobresultresponse.jobresult.baremetalrct;
+                                                }
+                                            }
+                                        });
+                                	}
+                                });
+                            },
+                            notification: {
+                                poll: pollAsyncJobResult
+                            }
+                        }
+                    }
+                }
+            },            
             hypervisorCapabilities: {
                 type: 'select',
                 title: 'label.hypervisor.capabilities',
