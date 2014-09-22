@@ -39,4 +39,6 @@ public interface BaremetalVlanManager extends Manager, PluggableService {
     void releaseVlan(Network nw, VirtualMachineProfile vm);
 
     void registerSwitchBackend(BaremetalSwitchBackend backend);
+
+    BaremetalRctResponse listRct();
 }
