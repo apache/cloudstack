@@ -241,7 +241,10 @@
                 listView: {
                     id: 'baremetalRct',
                     label: 'Baremetal Rack Configuration',
-                    fields: {                       
+                    fields: {   
+                    	id: {
+                    		label: 'label.id'
+                    	},
                         url: {
                             label: 'label.url'
                         }
@@ -250,7 +253,13 @@
                         var data = {};
                         listViewDataProvider(args, data);
                         
-                        args.response.success({ data: [] });
+                        $.ajax({
+                        	url: createURL("listBaremetalRct"),
+                        	data: data,
+                        	success: function(json) {                        		
+                        		args.response.success({ data: json.listbaremetalrctresponse.baremetalrct });
+                        	}
+                        });   
                     },
                     actions: {
                         add: {
