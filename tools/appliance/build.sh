@@ -405,6 +405,17 @@ function xen_server_export() {
   fi
 }
 
+function ovm_export() {
+  log INFO "creating OVM export"
+  local hdd_path="${1}"
+  rm -f img.raw
+  vboxmanage internalcommands converttoraw -format vdi "${hdd_path}" img.raw
+  mv img.raw ${appliance_build_name}-ovm.raw
+  bzip2 "${appliance_build_name}-ovm.raw"
+  mv "${appliance_build_name}-ovm.raw.bz2" dist/
+  log INFO "${appliance} exported for OracleVM: dist/${appliance_build_name}-ovm.vhd.bz2"
+}
+
 function kvm_export() {
   set +e
   which faketime >/dev/null 2>&1 && which vhd-util >/dev/null 2>&1
@@ -526,6 +537,7 @@ function main() {
 
   compact_hdd "${hdd_uuid}"
   xen_server_export "${hdd_path}"
+  ovm_export "${hdd_path}"
   kvm_export "${hdd_path}"
   vmware_export "${machine_uuid}" "${hdd_uuid}"
   vagrant_export "${machine_uuid}"
