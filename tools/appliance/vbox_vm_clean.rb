@@ -8,6 +8,7 @@ require 'sys/proctable'
 include Sys
 
 do_delete = (ARGV.include? 'delete' or ARGV.include? '--delete' or ARGV.include? '-d')
+do_kill = (ARGV.include? 'kill' or ARGV.include? '--kill' or ARGV.include? '-k')
 
 lines = `VBoxManage list vms`
 vms = lines.split(/\n/)
@@ -26,29 +27,31 @@ vms.each do |vmline|
     `#{cmd}`
   end
 
-  sleep(1)
-  # ps x | grep VBoxHeadless | grep systemvm64template-4.4.0 | egrep -o '^\s*[0-9]+' | xargs kill
-  ProcTable.ps { |p|
-    next unless p.cmdline.include? "VBoxHeadless"
-    next unless p.cmdline.include? vm_name
-    # not all rubies / proctables expose ruid
-    if defined? p.ruid
-      # VBoxManage should only list _our_ vms, but just to be safe...
-      next unless p.ruid == Process.uid
-    end
+  if do_kill
+    sleep(1)
+    # ps x | grep VBoxHeadless | grep systemvm64template-4.4.0 | egrep -o '^\s*[0-9]+' | xargs kill
+    ProcTable.ps do |p|
+      next unless p.cmdline.include? "VBoxHeadless"
+      next unless p.cmdline.include? vm_name
+      # not all rubies / proctables expose ruid
+      if defined? p.ruid
+        # VBoxManage should only list _our_ vms, but just to be safe...
+        next unless p.ruid == Process.uid
+      end
 
-    puts "kill -SIGKILL #{p.pid}"
-    begin
-      Process.kill("KILL", p.pid)
-    rescue => exception
-      puts exception.backtrace
+      puts "kill -SIGKILL #{p.pid}"
+      begin
+        Process.kill("KILL", p.pid)
+      rescue => exception
+        puts exception.backtrace
+      end
+      sleep(5)
+      puts "kill -SIGTERM #{p.pid}"
+      begin
+        Process.kill("TERM", p.pid)
+      rescue => exception
+        puts exception.backtrace
+      end
     end
-    sleep(5)
-    puts "kill -SIGTERM #{p.pid}"
-    begin
-      Process.kill("TERM", p.pid)
-    rescue => exception
-      puts exception.backtrace
-    end
-  }
+  end
 end
