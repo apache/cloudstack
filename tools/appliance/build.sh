@@ -276,7 +276,7 @@ function stop_vbox() {
 
 function clean_vbox() {
   log INFO "deleting all virtualbox vms and disks for ${USER}"
-  bundle exec ./vbox_vm_clean.rb --delete
+  bundle exec ./vbox_vm_clean.rb --delete --kill
   bundle exec ./vbox_disk_clean.rb
 }
 
@@ -502,10 +502,10 @@ function hyperv_export() {
 function main() {
   prepare
   if [ "${clean_vbox}" == "1" ]; then
-    clean_vbox --delete
-    add_on_exit clean_vbox --delete
+    clean_vbox
+    add_on_exit clean_vbox
   else
-    stop_vbox # some extra encouragement for virtualbox to stop things
+    stop_vbox
   fi
   create_definition
   veewee_destroy # in case of left-over cruft from failed build
@@ -513,7 +513,6 @@ function main() {
   veewee_build
   save_mac_address
   veewee_halt
-  stop_vbox # some extra encouragement for virtualbox to stop things
   retry 10 check_appliance_shutdown
   retry 10 check_appliance_disk_ready
   retry 10 remove_shares
