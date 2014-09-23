@@ -239,6 +239,7 @@ import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostResourceSummary;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareContextPool;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -4794,14 +4795,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareContext context = null;
         if(s_serviceContext.get() != null) {
             context = s_serviceContext.get();
-            if (context.validate()) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("ThreadLocal context is still valid, just reuse");
+            String poolKey = VmwareContextPool.composePoolKey(_vCenterAddress, _username);
+            // Before re-using the thread local context, ensure it corresponds to the right vCenter API session and that it is valid to make calls.
+            if(context.getPoolKey().equals(poolKey)) {
+                if (context.validate()) {
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace("ThreadLocal context is still valid, just reuse");
+                    }
+                    return context;
+                } else {
+                    s_logger.info("Validation of the context failed, dispose and use a new one");
+                    invalidateServiceContext(context);
                 }
-                return context;
             } else {
-                s_logger.info("Validation of the context failed, dispose and use a new one");
-                invalidateServiceContext(context);
+                // Exisitng ThreadLocal context corresponds to a different vCenter API session. Why has it not been recycled?
+                s_logger.warn("ThreadLocal VMware context: " + poolKey + " doesn't correspond to the right vCenter. Expected VMware context: " + context.getPoolKey());
             }
         }
         try {
