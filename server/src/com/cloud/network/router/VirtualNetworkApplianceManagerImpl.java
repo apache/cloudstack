@@ -1632,7 +1632,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
             // Except for Basic Zone, the for loop will iterate only once
             for (final DeployDestination destination : destinations) {
                 final Pair<DeploymentPlan, List<DomainRouterVO>> planAndRouters = getDeploymentPlanAndRouters(isPodBased, destination, guestNetwork.getId());
-                routers = planAndRouters.second();
+                List<DomainRouterVO> destRouters = planAndRouters.second();
 
                 // 2) Figure out required routers count
                 int routerCount = 1;
@@ -1640,16 +1640,16 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
                     routerCount = 2;
                     //Check current redundant routers, if possible(all routers are stopped), reset the priority
                     if (routers.size() != 0) {
-                        checkAndResetPriorityOfRedundantRouter(routers);
+                        checkAndResetPriorityOfRedundantRouter(destRouters);
                     }
                 }
 
                 // If old network is redundant but new is single router, then routers.size() = 2 but routerCount = 1
-                if (routers.size() >= routerCount) {
-                    return routers;
+                if (destRouters.size() >= routerCount) {
+                    return destRouters;
                 }
 
-                if (routers.size() >= 5) {
+                if (destRouters.size() >= 5) {
                     s_logger.error("Too much redundant routers!");
                 }
 
@@ -1690,7 +1690,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
                 }
 
                 // 3) deploy virtual router(s)
-                final int count = routerCount - routers.size();
+                final int count = routerCount - destRouters.size();
                 final DeploymentPlan plan = planAndRouters.first();
                 for (int i = 0; i < count; i++) {
                     LinkedHashMap<Network, List<? extends NicProfile>> networks = createRouterNetworks(owner, isRedundant, plan, guestNetwork, new Pair<Boolean, PublicIp>(
