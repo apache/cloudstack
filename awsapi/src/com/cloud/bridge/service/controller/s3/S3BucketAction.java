@@ -35,6 +35,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLStreamException;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.json.simple.parser.ParseException;
 import org.w3c.dom.Document;
@@ -43,7 +44,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.amazon.s3.GetBucketAccessControlPolicyResponse;
-import com.amazon.s3.ListAllMyBucketsResponse;
 import com.amazon.s3.ListBucketResponse;
 
 import com.cloud.bridge.io.MTOMAwareResultStreamWriter;
@@ -327,18 +327,18 @@ public class S3BucketAction implements ServletAction {
         S3PolicyContext context = new S3PolicyContext(PolicyActions.PutBucketPolicy, bucketName);
 
         switch (S3Engine.verifyPolicy(context)) {
-            case ALLOW:
-                break;
+        case ALLOW:
+            break;
 
-            case DEFAULT_DENY:
-                if (null != owner && !client.equals(owner)) {
-                    response.setStatus(405);
-                    return;
-                }
-                break;
-            case DENY:
-                response.setStatus(403);
+        case DEFAULT_DENY:
+            if (null != owner && !client.equals(owner)) {
+                response.setStatus(405);
                 return;
+            }
+            break;
+        case DENY:
+            response.setStatus(403);
+            return;
         }
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         // [B] Place the policy into the database over writting an existing policy
@@ -394,19 +394,19 @@ public class S3BucketAction implements ServletAction {
         String client = UserContext.current().getCanonicalUserId();
         S3PolicyContext context = new S3PolicyContext(PolicyActions.GetBucketPolicy, bucketName);
         switch (S3Engine.verifyPolicy(context)) {
-            case ALLOW:
-                break;
+        case ALLOW:
+            break;
 
-            case DEFAULT_DENY:
-                if (null != owner && !client.equals(owner)) {
-                    response.setStatus(405);
-                    return;
-                }
-                break;
-
-            case DENY:
-                response.setStatus(403);
+        case DEFAULT_DENY:
+            if (null != owner && !client.equals(owner)) {
+                response.setStatus(405);
                 return;
+            }
+            break;
+
+        case DENY:
+            response.setStatus(403);
+            return;
         }
 
         // [B] Pull the policy from the database if one exists
@@ -463,10 +463,9 @@ public class S3BucketAction implements ServletAction {
 
         S3ListAllMyBucketsResponse engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);
 
-        // To allow the all buckets list to be serialized via Axiom classes
-        ListAllMyBucketsResponse allBuckets = S3SerializableServiceImplementation.toListAllMyBucketsResponse(engineResponse);
+        S3SerializableServiceImplementation.toListAllMyBucketsResponse(engineResponse);
 
-        OutputStream outputStream = response.getOutputStream();
+        response.getOutputStream();
         response.setStatus(200);
         response.setContentType("application/xml");
         // The content-type literally should be "application/xml; charset=UTF-8"
@@ -531,15 +530,14 @@ public class S3BucketAction implements ServletAction {
 
             StringBuffer xmlError = new StringBuffer();
             xmlError.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-                .append("<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message>")
-                .append("<BucketName>")
-                .append((String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY))
-                .append("</BucketName>")
-                .append("<RequestId>1DEADBEEF9</RequestId>")
-                // TODO
-                .append("<HostId>abCdeFgHiJ1k2LmN3op4q56r7st89</HostId>")
-                // TODO
-                .append("</Error>");
+            .append("<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message>")
+            .append("<BucketName>").append(StringEscapeUtils.escapeHtml((String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY)))
+            .append("</BucketName>")
+            .append("<RequestId>1DEADBEEF9</RequestId>")
+            // TODO
+            .append("<HostId>abCdeFgHiJ1k2LmN3op4q56r7st89</HostId>")
+            // TODO
+            .append("</Error>");
             S3RestServlet.endResponse(response, xmlError.toString());
 
         }
@@ -603,16 +601,16 @@ public class S3BucketAction implements ServletAction {
 
         // [C]
         switch (sbucket.getVersioningStatus()) {
-            default:
-            case 0:
-                versioningStatus = "";
-                break;
-            case 1:
-                versioningStatus = "Enabled";
-                break;
-            case 2:
-                versioningStatus = "Suspended";
-                break;
+        default:
+        case 0:
+            versioningStatus = "";
+            break;
+        case 1:
+            versioningStatus = "Enabled";
+            break;
+        case 2:
+            versioningStatus = "Suspended";
+            break;
         }
 
         StringBuffer xml = new StringBuffer();
@@ -656,7 +654,7 @@ public class S3BucketAction implements ServletAction {
         if (null == versionIdMarker)
             xml.append("<VersionIdMarker/>");
         else
-            xml.append("<VersionIdMarker>").append(keyMarker).append("</VersionIdMarker");
+            xml.append("<VersionIdMarker>").append(StringEscapeUtils.escapeHtml(keyMarker)).append("</VersionIdMarker");
 
         xml.append("<MaxKeys>").append(engineResponse.getMaxKeys()).append("</MaxKeys>");
         xml.append("<IsTruncated>").append(engineResponse.isTruncated()).append("</IsTruncated>");
@@ -773,7 +771,7 @@ public class S3BucketAction implements ServletAction {
         } catch (ObjectAlreadyExistsException oaee) {
             response.setStatus(409);
             String xml =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <Error><Code>OperationAborted</Code><Message>A conflicting conditional operation is currently in progress against this resource. Please try again..</Message>";
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <Error><Code>OperationAborted</Code><Message>A conflicting conditional operation is currently in progress against this resource. Please try again..</Message>";
             response.setContentType("text/xml; charset=UTF-8");
             S3RestServlet.endResponse(response, xml.toString());
         }
@@ -969,7 +967,7 @@ public class S3BucketAction implements ServletAction {
         xml.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
         xml.append("<ListMultipartUploadsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">");
         xml.append("<Bucket>").append(bucketName).append("</Bucket>");
-        xml.append("<KeyMarker>").append((null == keyMarker ? "" : keyMarker)).append("</KeyMarker>");
+        xml.append("<KeyMarker>").append((null == keyMarker ? "" : StringEscapeUtils.escapeHtml(keyMarker))).append("</KeyMarker>");
         xml.append("<UploadIdMarker>").append((null == uploadIdMarker ? "" : uploadIdMarker)).append("</UploadIdMarker>");
 
         // [C] Construct the contents of the <Upload> element
@@ -1015,9 +1013,9 @@ public class S3BucketAction implements ServletAction {
                     partsList.append("<CommonPrefixes>");
                     partsList.append("<Prefix>");
                     if (prefix != null && prefix.length() > 0)
-                        partsList.append(prefix + delimiter + subName);
+                        partsList.append(StringEscapeUtils.escapeHtml(prefix) + StringEscapeUtils.escapeHtml(delimiter) + StringEscapeUtils.escapeHtml(subName));
                     else
-                        partsList.append(subName);
+                        partsList.append(StringEscapeUtils.escapeHtml(subName));
                     partsList.append("</Prefix>");
                     partsList.append("</CommonPrefixes>");
                 }
