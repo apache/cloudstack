@@ -17,7 +17,7 @@
 # under the License.
 import CsHelper
 from pprint import pprint
-from cs_databag import CsDataBag, CsCmdLine
+from CsDatabag import CsDataBag, CsCmdLine
 import logging
 
 class CsChain(object):
