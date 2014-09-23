@@ -105,6 +105,7 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
             BaremetalRctResponse rsp = new BaremetalRctResponse();
             rsp.setUrl(vo.getUrl());
             rsp.setId(vo.getUuid());
+            rsp.setObjectName("baremetalrct");
             return rsp;
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException(String.format("%s is not a legal http url", cmd.getRctUrl()));
@@ -178,6 +179,7 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
             BaremetalRctResponse rsp = new BaremetalRctResponse();
             rsp.setId(vo.getUuid());
             rsp.setUrl(vo.getUrl());
+            rsp.setObjectName("baremetalrct");
             return rsp;
         }
         return null;
