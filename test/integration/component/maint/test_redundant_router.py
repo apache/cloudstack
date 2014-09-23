@@ -1574,6 +1574,9 @@ class TestRvRRedundancy(cloudstackTestCase):
                          "Vm should be in running state after deployment"
                          )
 
+        # wait for VR to update state
+        time.sleep(self.services["sleep"])
+
         self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
