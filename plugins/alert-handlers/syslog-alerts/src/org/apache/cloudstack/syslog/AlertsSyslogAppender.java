@@ -49,7 +49,7 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
     public static final int LENGTH_OF_STRING_MESSAGE = 8;
     public static final String MESSAGE_DELIMITER_STRING = "   ";
     //add the alertType in this array it its level needs to be set to critical
-    private static final int[] criticalAlerts = {7, 8, 9, 10, 11, 12, 13, 15, 16, 19, 20};
+    private static final int[] criticalAlerts = {7, 8, 9, 10, 11, 12, 13, 15, 16, 19, 20, 27};
     private static final Map<Integer, String> alertsMap;
 
     static {
@@ -81,6 +81,7 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
         aMap.put(24, "unallocatedDirectAttachedPublicIp");
         aMap.put(25, "unallocatedLocalStorage");
         aMap.put(26, "resourceLimitExceeded");
+        aMap.put(27, "sync");
 
         alertsMap = Collections.unmodifiableMap(aMap);
     }
@@ -230,7 +231,8 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
         }
 
         if (alertType >= 0) {
-            message.append("alertType").append(_keyValueDelimiter).append(" ").append(alertsMap.get(alertType)).append(MESSAGE_DELIMITER_STRING);
+            message.append("alertType").append(_keyValueDelimiter).append(" ").append(alertsMap.containsKey(alertType) ? alertsMap.get(alertType) : "unknown")
+                    .append(MESSAGE_DELIMITER_STRING);
             if (dataCenterId != 0) {
                 message.append("dataCenterId").append(_keyValueDelimiter).append(" ").append(dataCenterId).append(MESSAGE_DELIMITER_STRING);
             }
@@ -246,10 +248,10 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
             if (sysMessage != null) {
                 message.append("message").append(_keyValueDelimiter).append(" ").append(sysMessage);
             } else {
-                errorHandler.error(" What is the use of alert without message ");
+                errorHandler.error("What is the use of alert without message ");
             }
         } else {
-            errorHandler.error(" Invalid alert Type ");
+            errorHandler.error("Invalid alert Type ");
         }
 
         return message.toString();
