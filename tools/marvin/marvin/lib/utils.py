@@ -121,7 +121,9 @@ def cleanup_resources(api_client, resources):
         obj.delete(api_client)
 
 
-def is_server_ssh_ready(ipaddress, port, username, password, retries=20, retryinterv=30, timeout=10.0, keyPairFileLocation=None):
+def is_server_ssh_ready(ipaddress, port, username, password, retries=20,
+        retryinterv=30, timeout=10.0, keyPairFileLocation=None,
+        knownHostsFilePath=None):
     '''
     @Name: is_server_ssh_ready
     @Input: timeout: tcp connection timeout flag,
@@ -140,7 +142,8 @@ def is_server_ssh_ready(ipaddress, port, username, password, retries=20, retryin
             keyPairFiles=keyPairFileLocation,
             retries=retries,
             delay=retryinterv,
-            timeout=timeout)
+            timeout=timeout,
+            knownHostsFilePath=knownHostsFilePath)
     except Exception, e:
         raise Exception("SSH connection has Failed. Waited %ss. Error is %s" % (retries * retryinterv, str(e)))
     else:

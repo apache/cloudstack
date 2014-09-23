@@ -24,6 +24,7 @@ from paramiko import (BadHostKeyException,
                       SFTPClient)
 import socket
 import time
+import os
 from marvin.cloudstackException import (
     internalError,
     GetDetailExceptionInfo
@@ -49,7 +50,8 @@ class SshClient(object):
     '''
 
     def __init__(self, host, port, user, passwd, retries=60, delay=10,
-                 log_lvl=logging.DEBUG, keyPairFiles=None, timeout=10.0):
+                 log_lvl=logging.DEBUG, keyPairFiles=None, timeout=10.0,
+                 knownHostsFilePath=None):
         self.host = None
         self.port = 22
         self.user = user
@@ -77,6 +79,18 @@ class SshClient(object):
             self.timeout = timeout
         if port is not None and port >= 0:
             self.port = port
+
+        # If the known_hosts file is not at default location,
+        # then its location can be passed, or else the default
+        # path will be considered (which is ~/.ssh/known_hosts)
+        if knownHostsFilePath:
+            self.knownHostsFilePath = knownHostsFilePath
+        else:
+            self.knownHostsFilePath = os.path.expanduser(
+                os.path.join(
+                    "~",
+                    ".ssh",
+                    "known_hosts"))
         if self.createConnection() == FAILED:
             raise internalError("SSH Connection Failed")
 
@@ -120,14 +134,14 @@ class SshClient(object):
                                      password=self.passwd,
                                      timeout=self.timeout)
                 else:
-                    self.ssh.load_host_keys(self.keyPairFiles)
+                    self.ssh.load_host_keys(self.knownHostsFilePath)
                     self.ssh.connect(hostname=self.host,
                                      port=self.port,
                                      username=self.user,
                                      password=self.passwd,
                                      key_filename=self.keyPairFiles,
                                      timeout=self.timeout,
-                                     look_for_keys=True
+                                     look_for_keys=False
                                      )
                 self.logger.debug("===SSH to Host %s port : %s SUCCESSFUL==="
                                   % (str(self.host), str(self.port)))
