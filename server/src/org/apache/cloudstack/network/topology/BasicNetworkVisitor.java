@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.network.topology;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -27,6 +28,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;
@@ -67,6 +69,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.NicIpAliasVO;
 
 @Component
 public class BasicNetworkVisitor extends NetworkTopologyVisitor {
@@ -259,13 +262,29 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     }
 
     @Override
-    public boolean visit(final DhcpPvlanRules dhcpRules) throws ResourceUnavailableException {
-        throw new CloudRuntimeException("DhcpPvlanRules not implemented in Basic Network Topology.");
+    public boolean visit(final DhcpSubNetRules subnet) throws ResourceUnavailableException {
+        final VirtualRouter router = subnet.getRouter();
+        final Network network = subnet.getNetwork();
+        final NicIpAliasVO nicAlias = subnet.getNicAlias();
+        final String routerAliasIp = subnet.getRouterAliasIp();
+
+        final Commands cmds = new Commands(Command.OnError.Stop);
+
+        final List<IpAliasTO> ipaliasTo = new ArrayList<IpAliasTO>();
+        ipaliasTo.add(new IpAliasTO(routerAliasIp, nicAlias.getNetmask(), nicAlias.getAliasCount().toString()));
+
+        _commandSetupHelper.createIpAlias(router, ipaliasTo, nicAlias.getNetworkId(), cmds);
+
+        // also add the required configuration to the dnsmasq for supporting
+        // dhcp and dns on the new ip.
+        _commandSetupHelper.configDnsMasq(router, network, cmds);
+
+        return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
 
     @Override
-    public boolean visit(final DhcpSubNetRules dhcpRules) throws ResourceUnavailableException {
-        throw new CloudRuntimeException("DhcpSubNetRules not implemented in Basic Network Topology.");
+    public boolean visit(final DhcpPvlanRules dhcpRules) throws ResourceUnavailableException {
+        throw new CloudRuntimeException("DhcpPvlanRules not implemented in Basic Network Topology.");
     }
 
     @Override

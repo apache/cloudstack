@@ -26,7 +26,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PvlanSetupCommand;
-import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.ResourceUnavailableException;
@@ -37,7 +36,6 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.AdvancedVpnRules;
 import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.DhcpPvlanRules;
-import com.cloud.network.rules.DhcpSubNetRules;
 import com.cloud.network.rules.NetworkAclsRules;
 import com.cloud.network.rules.NicPlugInOutRules;
 import com.cloud.network.rules.PrivateGatewayRules;
@@ -54,7 +52,6 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.NicIpAliasVO;
 
 @Component
 public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
@@ -121,7 +118,6 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         Map<String, String> vlanMacAddress = vpcip.getVlanMacAddress();
         List<PublicIpAddress> ipsToSend = vpcip.getIpsToSend();
 
-
         if (!ipsToSend.isEmpty()) {
             _commandSetupHelper.createVpcAssociatePublicIPCommands(router, ipsToSend, cmds, vlanMacAddress);
             return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
@@ -151,7 +147,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
             Commands cmds = new Commands(Command.OnError.Stop);
             _commandSetupHelper.createVpcAssociatePrivateIPCommands(router, privateIps, cmds, isAddOperation);
 
-            try{
+            try {
                 if (_networkGeneralHelper.sendCommandsToRouter(router, cmds)) {
                     s_logger.debug("Successfully applied ip association for ip " + ip + " in vpc network " + network);
                     return true;
@@ -159,8 +155,8 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
                     s_logger.warn("Failed to associate ip address " + ip + " in vpc network " + network);
                     return false;
                 }
-            }catch (Exception ex) {
-                s_logger.warn("Failed to send  " + (isAddOperation ?"add ":"delete ") + " private network " + network + " commands to rotuer ");
+            } catch (Exception ex) {
+                s_logger.warn("Failed to send  " + (isAddOperation ? "add " : "delete ") + " private network " + network + " commands to rotuer ");
                 return false;
             }
         } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
@@ -179,7 +175,8 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         final VirtualRouter router = dhcp.getRouter();
         final PvlanSetupCommand setupCommand = dhcp.getSetupCommand();
 
-        // In fact we send command to the host of router, we're not programming router but the host
+        // In fact we send command to the host of router, we're not programming
+        // router but the host
         Commands cmds = new Commands(Command.OnError.Stop);
         cmds.addCommand(setupCommand);
 
@@ -189,26 +186,6 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
             s_logger.warn("Timed Out", e);
             return false;
         }
-    }
-
-    @Override
-    public boolean visit(final DhcpSubNetRules subnet) throws ResourceUnavailableException {
-        final VirtualRouter router = subnet.getRouter();
-        final Network network = subnet.getNetwork();
-        final NicIpAliasVO nicAlias = subnet.getNicAlias();
-        final String routerAliasIp = subnet.getRouterAliasIp();
-
-        final Commands cmds = new Commands(Command.OnError.Stop);
-
-        final List<IpAliasTO> ipaliasTo = new ArrayList<IpAliasTO>();
-        ipaliasTo.add(new IpAliasTO(routerAliasIp, nicAlias.getNetmask(), nicAlias.getAliasCount().toString()));
-
-        _commandSetupHelper.createIpAlias(router, ipaliasTo, nicAlias.getNetworkId(), cmds);
-
-        //also add the required configuration to the dnsmasq for supporting dhcp and dns on the new ip.
-        _commandSetupHelper.configDnsMasq(router, network, cmds);
-
-        return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
 
     @Override
@@ -230,7 +207,8 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         Commands cmds = new Commands(Command.OnError.Continue);
         _commandSetupHelper.createApplyVpnUsersCommand(users, router, cmds);
 
-        // Currently we receive just one answer from the agent. In the future we have to parse individual answers and set
+        // Currently we receive just one answer from the agent. In the future we
+        // have to parse individual answers and set
         // results accordingly
         return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
