@@ -19,13 +19,16 @@ from merge import dataBag
 
 class CsDataBag(object):
 
-    def __init__(self, key):
+    def __init__(self, key, fw = None):
         self.data = {}
-        db = dataBag()
-        db.setKey(key)
-        db.load()
-        self.dbag = db.getDataBag()
-        global fw
+        self.db = dataBag()
+        self.db.setKey(key)
+        self.db.load()
+        self.dbag = self.db.getDataBag()
+        self.fw = fw
+
+    def dump(self):
+        print self.dbag
 
     def get_bag(self):
         return self.dbag
@@ -33,11 +36,18 @@ class CsDataBag(object):
     def process(self):
         pass
 
+    def save(self):
+        """
+        Call to the databag save routine
+        Use sparingly!
+        """
+        self.db.save(self.dbag)
+
 class CsCmdLine(CsDataBag):
     """ Get cmdline config parameters """
     def is_redundant(self):
-        if "redundant" in self.dbag['config']:
-            return self.dbag['config']['redundant'] == "true"
+        if "redundant_router" in self.dbag['config']:
+            return self.dbag['config']['redundant_router'] == "true"
         return False
 
     def get_name(self):
