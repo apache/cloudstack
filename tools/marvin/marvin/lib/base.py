@@ -1971,9 +1971,6 @@ class DiskOffering:
         if "customizediops" in services:
             cmd.customizediops = services["customizediops"]
 
-        if "disksize" in services:
-            cmd.disksize = services["disksize"]
-
         if "maxiops" in services:
             cmd.maxiops = services["maxiops"]
 
