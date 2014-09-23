@@ -33,7 +33,7 @@
 import sys
 import os
 from pprint import pprint
-from cs_databag import CsDataBag, CsCmdLine
+from CsDatabag import CsDataBag, CsCmdLine
 import logging
 import CsHelper
 from CsFile import CsFile
@@ -49,24 +49,30 @@ class CsRedundant(object):
             "arping_gateways.sh.templ", "check_bumpup.sh", "disable_pubip.sh",
             "services.sh", 
             ]
-    CS_TEMPLATES_DIR = "/opt/cloud/templates"
+    CS_TEMPLATES_DIR  = "/opt/cloud/templates"
+    CONNTRACKD_BIN    = "/usr/sbin/conntrackd"
+    CONNTRACKD_LOCK   = "/var/lock/conntrack.lock"
+    CONNTRACKD_CONFIG = "/etc/conntrackd/conntrackd.conf"
 
-    def __init__(self):
-        pass
 
-    def set(self, cl, address):
-        logging.debug("Router redundancy status is %s", cl.is_redundant())
+    def __init__(self, cl, address):
         self.cl = cl
         self.address = address
-        if cl.is_redundant():
+
+    def set(self):
+        logging.debug("Router redundancy status is %s", self.cl.is_redundant())
+        if self.cl.is_redundant():
             self._redundant_on()
         else:
             self._redundant_off()
 
     def _redundant_off(self):
+        CsHelper.service("conntrackd", "stop")
+        CsHelper.service("keepalived", "stop")
         CsHelper.umount_tmpfs(self.CS_RAMDISK_DIR)
         CsHelper.rmdir(self.CS_RAMDISK_DIR)
-        CsHelper.rm("/etc/cron.d/heartbeat")
+        CsHelper.rm("/etc/conntrackd/conntrackd.conf")
+        CsHelper.rm("/etc/keepalived/keepalived.conf")
 
     def _redundant_on(self):
         CsHelper.mkdir(self.CS_RAMDISK_DIR, 0755, False)
@@ -97,6 +103,11 @@ class CsRedundant(object):
         connt.search("[\s\t]Interface ", "\t\tInterface %s" % control.get_device())
         connt.section("Address Ignore {", "}", self._collect_ignore_ips())
         connt.commit()
+        if connt.is_changed():
+            CsHelper.service("conntrackd", "restart")
+
+        if file.is_changed():
+            CsHelper.service("keepalived", "restart")
 
         # FIXME
         # enable/disable_pubip/master/slave etc. will need rewriting to use the new python config
@@ -107,6 +118,28 @@ class CsRedundant(object):
         cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
         cron.add("*/1 * * * * root $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" %  self.CS_ROUTER_DIR, -1)
         cron.commit()
+
+    def set_master(self):
+        """
+        This will enable all the public ips on the router
+        It is part of the process that sets the current router to master
+        """
+        ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
+        for o in ads:
+            CsHelper.execute("ifconfig %s down" % o.get_device())
+            CsHelper.execute("ifconfig %s up" % o.get_device())
+            CsHelper.execute("arping -I %s -A %s -c 1" % (o.get_device(), o.get_ip()))
+        # FIXME Need to add in the default routes but I am unsure what the gateway is
+        # ip route add default via $gw table Table_$dev proto static
+        cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONFIG)
+        CsHelper.execute("%s -c" % cmd)
+        CsHelper.execute("%s -f" % cmd)
+        CsHelper.execute("%s -R" % cmd)
+        CsHelper.execute("%s -B" % cmd)
+        CsHelper.service("ipsec", "restart")
+        CsHelper.service("xl2tpd", "restart")
+        CsHelper.service("cloud-passwd-srvr", "restart")
+        CsHelper.service("dnsmasq", "restart")
 
     def _collect_ignore_ips(self):
         """

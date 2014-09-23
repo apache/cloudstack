@@ -51,7 +51,7 @@ vrrp_instance inside_network {
         heartbeat
     }
 
-    notify_master "[RROUTER_BIN_PATH]/master.sh"
+    notify_master "/opt/cloud/bin/master.py"
     notify_backup "[RROUTER_BIN_PATH]/backup.sh"
     notify_fault "[RROUTER_BIN_PATH]/fault.sh"
 }

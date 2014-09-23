@@ -144,6 +144,18 @@ class UpdateConfigTestCase(SystemVMTestCase):
         }
     ]
 
+    def redundant(self, what):
+        with hide("everything"):
+            result = run("python /opt/cloud/bin/set_redundant.py %s" % what,
+                         timeout=600, warn_only=True)
+            assert result.succeeded, 'Set redundancy to %s' % what
+
+    def configure(self):
+        with hide("everything"):
+            result = run("python /opt/cloud/bin/configure.py",
+                         timeout=600, warn_only=True)
+            assert result.succeeded, "Configure ran"
+
     def update_config(self, config):
         config_json = json.dumps(config, indent=2)
         #print_doc('config.json', config_json)
@@ -375,6 +387,15 @@ class UpdateConfigTestCase(SystemVMTestCase):
         config['add'] = False
         self.update_config(config)
         assert not ip.has_ip("%s/%s" % (config['router_guest_ip'], config['cidr']), config['device'])
+        # Now setup what we have redundant
+        self.redundant("-e")
+        self.configure()
+        assert process.is_up("keepalived"), "Keepalived should be running after enabling redundancy"
+        assert process.is_up("conntrackd"), "Conntrackd should be running after enabling redundancy"
+        self.redundant("-d")
+        self.configure()
+        assert not process.is_up("keepalived"), "Keepalived should be not running after disabling redundancy"
+        assert not process.is_up("conntrackd"), "Conntrackd should be not running after disabling redundancy"
         for o in configs:
             o['add'] = False
             self.update_config(o)
