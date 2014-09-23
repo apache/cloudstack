@@ -1686,6 +1686,7 @@
         <script src="lib/jquery.js" type="text/javascript"></script>
         <script src="lib/jquery.easing.js" type="text/javascript"></script>
         <script src="lib/jquery.validate.js" type="text/javascript"></script>
+        <script src="lib/jquery.validate.additional-methods.js" type="text/javascript"></script>
         <script src="lib/jquery-ui/js/jquery-ui.js" type="text/javascript"></script>
         <script src="lib/date.js" type="text/javascript"></script>
         <script src="lib/jquery.cookies.js" type="text/javascript"></script>
