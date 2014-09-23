@@ -694,7 +694,7 @@ CREATE TABLE `cloud`.`op_router_monitoring_services` (
    CONSTRAINT `fk_virtual_router__id` FOREIGN KEY `fk_virtual_router__id` (`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `cloud`.`event` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+ALTER TABLE `cloud`.`event` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'True if the detail can be displayed to the end user';
 
 DROP VIEW IF EXISTS `cloud`.`event_view`;
 CREATE VIEW `cloud`.`event_view` AS
