@@ -44,11 +44,8 @@ class CsRedundant(object):
     CS_RAMDISK_DIR = "/ramdisk"
     CS_ROUTER_DIR  = "%s/rrouter" % CS_RAMDISK_DIR
     CS_TEMPLATES = [
-            "enable_pubip.sh.templ",
-            "master.sh.templ", "backup.sh.templ", "fault.sh.templ",
-            "primary-backup.sh.templ", "heartbeat.sh.templ", "check_heartbeat.sh.templ",
-            "arping_gateways.sh.templ", "check_bumpup.sh", "disable_pubip.sh",
-            "services.sh", 
+            "heartbeat.sh.templ", "check_heartbeat.sh.templ",
+            "arping_gateways.sh.templ"
             ]
     CS_TEMPLATES_DIR  = "/opt/cloud/templates"
     CONNTRACKD_BIN    = "/usr/sbin/conntrackd"
