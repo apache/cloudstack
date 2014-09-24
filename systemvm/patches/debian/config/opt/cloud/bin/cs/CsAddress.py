@@ -24,11 +24,13 @@ import subprocess
 from CsRoute import CsRoute
 from CsRule import CsRule
 
+VRRP_TYPES =  [ 'guest', 'public' ]
+
 class CsAddress(CsDataBag):
 
     def compare(self):
-        for dev in CsDevice('', self.fw).list():
-            ip = CsIP(dev, self.fw)
+        for dev in CsDevice('', self.config).list():
+            ip = CsIP(dev, self.config)
             ip.compare(self.dbag)
 
     def get_ips(self):
@@ -44,7 +46,7 @@ class CsAddress(CsDataBag):
         """
         Returns if the ip needs to be managed by keepalived or not
         """
-        if "nw_type" in o and o['nw_type'] in [ 'guest' ]:
+        if "nw_type" in o and o['nw_type'] in VRRP_TYPES:
             return True
         return False
 
@@ -61,7 +63,7 @@ class CsAddress(CsDataBag):
         for dev in self.dbag:
             if dev == "id":
                 continue
-            ip = CsIP(dev, self.fw)
+            ip = CsIP(dev, self.config)
             addcnt = 0
             for address in self.dbag[dev]:
                 if not address["nw_type"] == "control":
@@ -72,7 +74,7 @@ class CsAddress(CsDataBag):
                     ip.post_configure()
                 else:
                     logging.info("Address %s on device %s not configured", ip.ip(), dev)
-                    if CsDevice(dev, self.fw).waitfordevice():
+                    if CsDevice(dev, self.config).waitfordevice():
                         ip.configure()
                 # This could go one level up but the ip type is stored in the 
                 # ip address object and not in the device object
@@ -132,7 +134,7 @@ class CsInterface:
         """
         Returns if the ip needs to be managed by keepalived or not
         """
-        if "nw_type" in self.address and self.address['nw_type'] in [ 'guest' ]:
+        if "nw_type" in self.address and self.address['nw_type'] in VRRP_TYPES:
             return True
         return False
 
@@ -146,7 +148,7 @@ class CsInterface:
 
 class CsDevice:
     """ Configure Network Devices """
-    def __init__(self, dev, fw):
+    def __init__(self, dev, config):
         self.devlist = []
         self.dev = dev
         self.buildlist()
@@ -155,7 +157,8 @@ class CsDevice:
         if dev != '':
             self.tableNo = dev[3]
             self.table = "Table_%s" % dev
-        self.fw = fw
+        self.fw = config.get_fw()
+        self.cl = config.get_cmdline()
 
     def configure_rp(self):
         """
@@ -191,26 +194,18 @@ class CsDevice:
     def list(self):
         return self.devlist
 
-    def setUp(self):
-        """ Ensure device is up """
-        cmd = "ip link show %s | grep 'state DOWN'" % self.dev
-        for i in CsHelper.execute(cmd):
-            if " DOWN " in i:
-                cmd2 = "ip link set %s up" % self.dev
-                CsHelper.execute(cmd2)
-        cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-xmark 0x%s/0xffffffff" % \
-        (self.dev, self.dev[3])
-        self.fw.append(["mangle", "", cmd])
 
 
 class CsIP:
 
-    def __init__(self, dev, fw):
+    def __init__(self, dev, config):
         self.dev = dev
         self.iplist = {}
         self.address = {}
         self.list()
-        self.fw = fw
+        self.fw = config.get_fw()
+        self.cl = config.get_cmdline()
+        self.config = config
 
     def setAddress(self, address):
         self.address = address
@@ -230,10 +225,27 @@ class CsIP:
             route = CsRoute(self.dev)
             route.routeTable()
             CsRule(self.dev).addMark()
-            CsDevice(self.dev, self.fw).setUp()
+            self.check_is_up()
+            self.set_mark()
             self.arpPing()
             CsRpsrfs(self.dev).enable()
             self.post_config_change("add")
+
+    def check_is_up(self):
+        """ Ensure device is up """
+        cmd = "ip link show %s | grep 'state DOWN'" % self.getDevice()
+        for i in CsHelper.execute(cmd):
+            if " DOWN " in i:
+                cmd2 = "ip link set %s up" % self.getDevice()
+# Do not change the state of ips on a master redundant router that are managed by vrrp
+                if self.cl.is_master() or \
+                   not self.needs_vrrp():
+                    CsHelper.execute(cmd2)
+
+    def set_mark(self):
+        cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-xmark 0x%s/0xffffffff" % \
+        (self.getDevice(), self.getDevice()[3])
+        self.fw.append(["mangle", "", cmd])
 
     def get_type(self):
         """ Return the type of the IP
@@ -260,7 +272,7 @@ class CsIP:
         # On deletion nw_type will no longer be known
         if self.get_type() in [ "guest" ]:
             devChain = "ACL_INBOUND_%s" % (self.dev)
-            CsDevice(self.dev, self.fw).configure_rp()
+            CsDevice(self.dev, self.config).configure_rp()
 
             self.fw.append(["nat", "front", 
             "-A POSTROUTING -s %s -o %s -j SNAT --to-source %s" % \
@@ -283,14 +295,11 @@ class CsIP:
             pwdsvc = CsPasswdSvc(self).setup()
         elif self.get_type() == "public":
             if self.address["source_nat"] == True:
-                cmdline = CsDataBag("cmdline", self.fw)
-                dbag = cmdline.get_bag()
-                type = dbag["config"]["type"]
-                if type == "vpcrouter":
-                    vpccidr = dbag["config"]["vpccidr"]
+                if self.cl.get_type() == "vpcrouter":
+                    vpccidr = self.cl.get_vpccidr()
                     self.fw.append(["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
                     self.fw.append(["nat","","-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
-                elif type == "router":
+                elif self.cl.get_type() == "router":
                     logging.error("Not able to setup sourcenat for a regular router yet")
                 else:
                     logging.error("Unable to process source nat configuration for router of type %s" % type)
@@ -306,6 +315,14 @@ class CsIP:
 
     def configured(self):
         if self.address['cidr'] in self.iplist.keys():
+            return True
+        return False
+
+    def needs_vrrp(self):
+        """
+        Returns if the ip needs to be managed by keepalived or not
+        """
+        if "nw_type" in self.address and self.address['nw_type'] in VRRP_TYPES:
             return True
         return False
 
