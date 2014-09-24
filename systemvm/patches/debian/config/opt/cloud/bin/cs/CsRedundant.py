@@ -37,6 +37,7 @@ from CsDatabag import CsDataBag, CsCmdLine
 import logging
 import CsHelper
 from CsFile import CsFile
+from CsConfig import CsConfig
 
 class CsRedundant(object):
 
@@ -55,8 +56,8 @@ class CsRedundant(object):
     CONNTRACKD_CONFIG = "/etc/conntrackd/conntrackd.conf"
 
 
-    def __init__(self, cl, address):
-        self.cl = cl
+    def __init__(self, config, address):
+        self.cl = config.get_cmdline()
         self.address = address
 
     def set(self):
@@ -119,11 +120,53 @@ class CsRedundant(object):
         cron.add("*/1 * * * * root $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" %  self.CS_ROUTER_DIR, -1)
         cron.commit()
 
+    def set_fault(self):
+        """ Set fault mode on this router """
+        if not self.cl.is_redundant():
+            logging.error("Set fault called on non-redundant router")
+            return
+        logging.info("Router switched to fault mode")
+        ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
+        for o in ads:
+            CsHelper.execute("ifconfig %s down" % o.get_device())
+        cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONFIG)
+        CsHelper.execute("%s -s" % cmd)
+        CsHelper.service("ipsec", "stop")
+        CsHelper.service("xl2tpd", "stop")
+        CsHelper.service("cloud-passwd-srvr", "stop")
+        CsHelper.service("dnsmasq", "stop")
+        cl.dbag['config']['redundant_master'] = "false"
+        cl.save()
+
+    def set_backup(self):
+        """ Set the current router to backup """
+        if not self.cl.is_redundant():
+            logging.error("Set backup called on non-redundant router")
+            return
+        if not self.cl.is_master():
+            logging.error("Set backup called on node that is already backup")
+            return
+        logging.info("Router switched to backup mode")
+        ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
+        for o in ads:
+            CsHelper.execute("ifconfig %s down" % o.get_device())
+        cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONFIG)
+        CsHelper.execute("%s -d" % cmd)
+        CsHelper.service("ipsec", "stop")
+        CsHelper.service("xl2tpd", "stop")
+        CsHelper.service("cloud-passwd-srvr", "stop")
+        CsHelper.service("dnsmasq", "stop")
+        self.cl.dbag['config']['redundant_master'] = "false"
+        self.cl.save()
+
     def set_master(self):
-        """
-        This will enable all the public ips on the router
-        It is part of the process that sets the current router to master
-        """
+        """ Set the current router to master """
+        if not self.cl.is_redundant():
+            logging.error("Set master called on non-redundant router")
+            return
+        if self.cl.is_master():
+            logging.error("Set master called on master node")
+            return
         ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
         for o in ads:
             CsHelper.execute("ifconfig %s down" % o.get_device())
@@ -140,6 +183,9 @@ class CsRedundant(object):
         CsHelper.service("xl2tpd", "restart")
         CsHelper.service("cloud-passwd-srvr", "restart")
         CsHelper.service("dnsmasq", "restart")
+        self.cl.dbag['config']['redundant_master'] = "true"
+        self.cl.save()
+        logging.info("Router switched to master mode")
 
     def _collect_ignore_ips(self):
         """

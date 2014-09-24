@@ -19,8 +19,9 @@
 
 # This file is used by the tests to switch the redundancy status
 
-from CsDatabag import CsCmdLine
+from cs.CsConfig  import CsConfig
 from optparse import OptionParser
+import logging
 
 parser = OptionParser()
 parser.add_option("-e", "--enable",
@@ -32,10 +33,15 @@ parser.add_option("-d", "--disable",
 
 (options, args) = parser.parse_args()
 
-cl = CsCmdLine("cmdline")
-if options.enable:
-    cl.dbag['config']['redundant_router'] = "true"
-if options.disable:
-    cl.dbag['config']['redundant_router'] = "false"
+config = CsConfig(False) 
+logging.basicConfig(filename= config.get_logger(),
+                    level=config.get_level(),
+                    format=config.get_format())
+config.set_cl()
 
-cl.save()
+if options.enable:
+    config.get_cmdline().dbag['config']['redundant_router'] = "true"
+if options.disable:
+    config.get_cmdline().dbag['config']['redundant_router'] = "false"
+
+config.get_cmdline().save()

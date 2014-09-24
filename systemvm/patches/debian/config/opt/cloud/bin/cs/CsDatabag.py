@@ -19,13 +19,16 @@ from merge import dataBag
 
 class CsDataBag(object):
 
-    def __init__(self, key, fw = None):
+    def __init__(self, key, config = None):
         self.data = {}
         self.db = dataBag()
         self.db.setKey(key)
         self.db.load()
         self.dbag = self.db.getDataBag()
-        self.fw = fw
+        if config:
+            self.fw = config.get_fw()
+            self.cl = config.get_cmdline()
+            self.config = config
 
     def dump(self):
         print self.dbag
@@ -45,6 +48,7 @@ class CsDataBag(object):
 
 class CsCmdLine(CsDataBag):
     """ Get cmdline config parameters """
+
     def is_redundant(self):
         if "redundant_router" in self.dbag['config']:
             return self.dbag['config']['redundant_router'] == "true"
@@ -61,4 +65,17 @@ class CsCmdLine(CsDataBag):
             return self.dbag['config']['type']
         else:
             return "unknown"
+
+    def get_vpccidr(self):
+        if "vpccidr" in self.dbag['config']:
+            return self.dbag['config']['vpccidr']
+        else:
+            return "unknown"
+
+    def is_master(self):
+        if not self.is_redundant():
+            return False
+        if "redundant_master" in self.dbag['config']:
+            return self.dbag['config']['redundant_master'] == "true"
+        return False
 

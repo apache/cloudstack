@@ -20,7 +20,6 @@ import sys
 import os
 
 from merge import dataBag
-from CsDatabag import CsDataBag, CsCmdLine
 from pprint import pprint
 import subprocess
 import logging
@@ -38,7 +37,16 @@ from CsFile import CsFile
 from CsAddress import CsAddress, CsInterface, CsDevice, CsIP
 from CsApp import CsApache, CsPasswdSvc, CsDnsmasq
 from CsRoute import CsRoute
+from fcntl import flock, LOCK_EX, LOCK_UN
 
+from cs.CsDatabag import CsDataBag, CsCmdLine
+import cs.CsHelper
+from cs.CsNetfilter import CsNetfilters
+from cs.CsDhcp import CsDhcp
+from cs.CsRedundant import *
+from cs.CsFile import CsFile
+from cs.CsAddress import CsAddress
+from cs.CsApp import CsApache, CsPasswdSvc, CsDnsmasq
 
 class CsPassword(CsDataBag):
     """
@@ -445,40 +453,42 @@ class CsForwardingRules(CsDataBag):
         self.fw.append(["nat","front","-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % ( rule["public_ip"], rule["internal_ip"]) ])
         self.fw.append(["nat","front","-A POSTROUTING -o %s -s %s/32 -j SNAT --to-source %s" % ( device, rule["internal_ip"], rule["public_ip"]) ])
 
+
 def main(argv):
-    fw = []
-    logging.basicConfig(filename='/var/log/cloud.log',
-                        level=logging.DEBUG,
-                        format='%(asctime)s %(message)s')
- 
-    cl = CsCmdLine("cmdline", fw)
-    address = CsAddress("ips", fw)
+    config = CsConfig(False) 
+    logging.basicConfig(filename= config.get_logger(),
+                        level=config.get_level(),
+                        format=config.get_format())
+    config.set_cl()
+    cl = config.get_cmdline()
+
+    address = CsAddress("ips", config)
     address.compare()
     address.process()
 
-    password = CsPassword("vmpassword", fw)
+    password = CsPassword("vmpassword", config)
     password.process()
 
-    metadata = CsVmMetadata('vmdata', fw)
+    metadata = CsVmMetadata('vmdata', config)
     metadata.process()
 
-    acls = CsAcl('networkacl', fw)
+    acls = CsAcl('networkacl', config)
     acls.process()
 
-    fwd = CsForwardingRules("forwardingrules", fw)
+    fwd = CsForwardingRules("forwardingrules", config)
     fwd.process()
 
-    vpns = CsSite2SiteVpn("site2sitevpn", fw)
+    vpns = CsSite2SiteVpn("site2sitevpn", config)
     vpns.process()
 
-    red = CsRedundant(cl, address)
+    red = CsRedundant(config, address)
     red.set()
 
     nf = CsNetfilters()
-    nf.compare(fw)
+    nf.compare(config.get_fw())
 
-    dh = CsDataBag("dhcpentry", fw)
-    dhcp = CsDhcp(dh.get_bag(), cl)
+    dh = CsDataBag("dhcpentry")
+    dhcp = CsDhcp(dh.get_bag(), config.get_cmdline())
 
 if __name__ == "__main__":
     main(sys.argv)
