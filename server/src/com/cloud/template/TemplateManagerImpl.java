@@ -629,13 +629,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // Event details
         String copyEventType;
-        String createEventType;
         if (template.getFormat().equals(ImageFormat.ISO)) {
             copyEventType = EventTypes.EVENT_ISO_COPY;
-            createEventType = EventTypes.EVENT_ISO_CREATE;
         } else {
             copyEventType = EventTypes.EVENT_TEMPLATE_COPY;
-            createEventType = EventTypes.EVENT_TEMPLATE_CREATE;
         }
 
         TemplateInfo srcTemplate = _tmplFactory.getTemplate(template.getId(), srcSecStore);
@@ -1493,8 +1490,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template", create = true)
     public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd, Account templateOwner) throws ResourceAllocationException {
-        Long userId = CallContext.current().getCallingUserId();
-
         Account caller = CallContext.current().getCallingAccount();
         boolean isAdmin = (_accountMgr.isAdmin(caller.getId()));
 
