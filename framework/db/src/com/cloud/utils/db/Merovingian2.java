@@ -138,10 +138,9 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             } catch (InterruptedException e) {
             }
         }
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Timed out on acquiring lock " + key + ".  Waited for " + (InaccurateClock.getTime() - startTime));
-        }
-        return false;
+        String msg = "Timed out on acquiring lock " + key + " .  Waited for " + ((InaccurateClock.getTime() - startTime)/1000) +  "seconds";
+        s_logger.warn(msg);
+        throw new CloudRuntimeException(msg);
     }
 
     protected boolean increment(String key, String threadName, int threadId) {
