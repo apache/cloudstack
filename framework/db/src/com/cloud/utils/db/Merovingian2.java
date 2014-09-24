@@ -120,7 +120,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         }
         long startTime = InaccurateClock.getTime();
 
-        while ((InaccurateClock.getTime() - startTime) < (timeInSeconds * 1000)) {
+        while ((InaccurateClock.getTime() - startTime) < (timeInSeconds * 1000l)) {
             int count = owns(key);
 
             if (count >= 1) {
