@@ -178,14 +178,3 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.2.5', 'CentOS 6 (64-bit)', 228, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.2.5', 'Windows 8 (64-bit)', 229, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.2.5', 'Windows Server 2012 (64-bit)', 168, now(), 0);
-
--- should have been in schema-430to440.sql
-CREATE TABLE `cloud`.`baremetal_rct` (
-  `id` bigint unsigned UNIQUE AUTO_INCREMENT,
-  `uuid` varchar(40) UNIQUE NOT NULL,
-  `url` varchar(2048) NOT NULL,
-  `rct` text NOT NULL,
-   PRIMARY KEY (`id`)
-) ENGINE = InnoDB DEFAULT CHARSET=utf8;
-
-
