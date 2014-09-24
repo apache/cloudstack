@@ -2361,10 +2361,15 @@
                                         success: function(data) {
                                             args.response.success({
                                                 _custom: {
-                                                    getUpdatedItem: function(json) {
+                                                    getUpdatedItem: function(json) {                                                    	
+                                                    	var vpnenabledAndRunning = false;
+                                                    	if (json.queryasyncjobresultresponse.jobresult.remoteaccessvpn.state == "Running") {
+                                                    		vpnenabledAndRunning = true;
+                                                    	}                                                    	
+                                                    	                                                    	
                                                         return {
                                                             vpn: json.queryasyncjobresultresponse.jobresult.remoteaccessvpn,
-                                                            vpnenabled: true
+                                                            vpnenabled: vpnenabledAndRunning
                                                         };
                                                     },
                                                     getActionFilter: function() {
@@ -2387,7 +2392,13 @@
                                         return 'label.enable.vpn';
                                     },
                                     complete: function(args) {
-                                        return _l('message.enabled.vpn') + ' ' + args.vpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.vpn.presharedkey;
+                                    	var msg;
+                                    	if (args.vpn.state == "Running") {
+                                    	    msg = _l('message.enabled.vpn') + ' ' + args.vpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.vpn.presharedkey;                                	
+                                    	} else {
+                                    		msg = "VPN configuration has been generated, but it failed to apply. Please check connectivity of the network element, then re-try.";
+                                    	}   
+                                        return msg;
                                     }
                                 },
                                 notification: {
