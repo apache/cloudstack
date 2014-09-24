@@ -178,3 +178,6 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.2.5', 'CentOS 6 (64-bit)', 228, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.2.5', 'Windows 8 (64-bit)', 229, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.2.5', 'Windows Server 2012 (64-bit)', 168, now(), 0);
+
+-- Fix CLOUDSTACK-7624
+ALTER TABLE `cloud`.`configuration` MODIFY default_value varchar(8191), MODIFY value varchar(8191);

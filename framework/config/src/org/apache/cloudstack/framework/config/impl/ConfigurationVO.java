@@ -43,10 +43,10 @@ public class ConfigurationVO implements Configuration {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "value", length = 4095)
+    @Column(name = "value", length = 8191)
     private String value;
 
-    @Column(name = "default_value", length = 4095)
+    @Column(name = "default_value", length = 8191)
     private String defaultValue;
 
     @Column(name = "description", length = 1024)
