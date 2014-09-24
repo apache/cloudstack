@@ -1557,10 +1557,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             List<Provider> providersToImplement = getNetworkProviders(network.getId());
             for (NetworkElement element : networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
-                    if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
-                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: "
-                                + network.getPhysicalNetworkId());
-                    }
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Asking " + element.getName() + " to release " + profile);
                     }
@@ -1615,10 +1611,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             List<Provider> providersToImplement = getNetworkProviders(network.getId());
             for (NetworkElement element : networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
-                    if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
-                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: "
-                                + network.getPhysicalNetworkId());
-                    }
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Asking " + element.getName() + " to release " + nic);
                     }
@@ -2150,11 +2142,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         for (NetworkElement element : networkElements) {
             if (providersToShutdown.contains(element.getProvider())) {
                 try {
-                    if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
-                        s_logger.warn("Unable to complete shutdown of the network elements due to element: " + element.getName()
-                                + " either doesn't exist or not enabled in the physical network " + _networkModel.getPhysicalNetworkId(network));
-                        success = false;
-                    }
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Sending network shutdown to " + element.getName());
                     }
@@ -2238,12 +2225,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         for (NetworkElement element : networkElements) {
             if (providersToDestroy.contains(element.getProvider())) {
                 try {
-                    if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
-                        s_logger.warn("Unable to complete destroy of the network elements due to element: " + element.getName()
-                                + " either doesn't exist or not enabled in the physical network " + _networkModel.getPhysicalNetworkId(network));
-                        success = false;
-                    }
-
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Sending destroy to " + element);
                     }
