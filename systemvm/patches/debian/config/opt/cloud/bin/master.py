@@ -17,11 +17,36 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from CsRedundant import CsRedundant
-from CsDatabag import CsCmdLine
-from CsAddress import CsAddress
+from cs.CsRedundant import CsRedundant
+from cs.CsDatabag import CsCmdLine
+from cs.CsAddress import CsAddress
+from cs.CsConfig import CsConfig
+from optparse import OptionParser
 
-cl = CsCmdLine("cmdline")
+parser = OptionParser()
+parser.add_option("-m", "--master",
+                  action="store_true", default=False, dest="master",
+                  help="Set router master")
+parser.add_option("-b", "--backup",
+                  action="store_true", default=False, dest="backup",
+                  help="Set router backup")
+parser.add_option("-f", "--fault",
+                  action="store_true", default=False, dest="fault",
+                  help="Notify Fault")
+(options, args) = parser.parse_args()
+
+config = CsConfig(False) 
+logging.basicConfig(filename= config.get_logger(),
+                    level=config.get_level(),
+                    format=config.get_format())
+config.set_cl()
+cl = CsCmdLine("cmdline", config)
+
 address = CsAddress("ips")
-red = CsRedundant(cl, address)
-red.set_master()
+red = CsRedundant(config, address)
+
+if options.master:
+    red.set_master()
+
+if options.backup:
+    red.set_backup()
