@@ -139,8 +139,9 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             }
         }
         String msg = "Timed out on acquiring lock " + key + " .  Waited for " + ((InaccurateClock.getTime() - startTime)/1000) +  "seconds";
-        s_logger.warn(msg);
-        throw new CloudRuntimeException(msg);
+        Exception e = new CloudRuntimeException(msg);
+        s_logger.warn(msg, e);
+        return false;
     }
 
     protected boolean increment(String key, String threadName, int threadId) {
@@ -269,7 +270,9 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
                     throw new CloudRuntimeException("release:Exception:"+ e.getMessage(), e);
                 }
             } else if (rows < 1) {
-                s_logger.warn("Was unable to find lock for the key " + key + " and thread id " + threadId);
+                String msg = ("Was unable to find lock for the key " + key + " and thread id " + threadId);
+                Exception e = new CloudRuntimeException(msg);
+                s_logger.warn(msg, e);
             }
             return rows == 1;
         } catch (Exception e) {
