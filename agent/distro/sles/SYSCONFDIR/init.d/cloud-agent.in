@@ -1,6 +1,6 @@
 #!/bin/bash
 ### BEGIN INIT INFO
-# Provides:          cloud agent
+# Provides:          cloudstack-agent
 # Required-Start:    $network 
 # Required-Stop:     $network 
 # Default-Start:     3 4 5
