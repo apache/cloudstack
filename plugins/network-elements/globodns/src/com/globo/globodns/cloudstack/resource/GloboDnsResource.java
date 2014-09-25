@@ -363,7 +363,7 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
         if (record == null) {
             // Create new record
             record = _globoDns.getRecordAPI().createRecord(domainId, name, ip, type);
-            s_logger.info("Created record " + name + " in domain " + domainId);
+            s_logger.info("Created record " + record.getName() + " in domain " + domainId);
         } else {
             if (!ip.equals(record.getContent())) {
                 if (Boolean.TRUE.equals(override)) {
