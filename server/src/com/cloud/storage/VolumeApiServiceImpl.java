@@ -291,11 +291,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
         }
 
-        String userSpecifiedName = volumeName;
-        if (userSpecifiedName == null) {
-            userSpecifiedName = getRandomVolumeName();
-        }
-
         UriUtils.validateUrl(format, url);
 
 
