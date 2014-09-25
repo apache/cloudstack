@@ -519,8 +519,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     public DeploymentPlanner getDeploymentPlannerByName(String plannerName) {
         if (plannerName != null) {
             for (DeploymentPlanner plannerInList : _planners) {
-                if (plannerName != null) {
-                }
                 if (plannerName.equalsIgnoreCase(plannerInList.getName())) {
                     return plannerInList;
                 }
