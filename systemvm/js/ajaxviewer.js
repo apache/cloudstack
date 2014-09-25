@@ -200,7 +200,7 @@ KeyboardMapper.prototype = {
 					this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: X11Keysym, modifiers: modifiers});
 					this.mappedInput.push({type : AjaxViewer.KEY_UP, code: X11Keysym, modifiers: modifiers});
 				}
-			} else {
+			} else if(!(code == 48 && modifiers == AjaxViewer.SHIFT_KEY_MASK) && !(code == 95 && modifiers == 0)){
 				this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: code, modifiers: modifiers});
 				this.mappedInput.push({type : AjaxViewer.KEY_UP, code: code, modifiers: modifiers});
 			}
@@ -239,9 +239,9 @@ KeyboardMapper.prototype = {
 			}
 
 			// special handling for ALT/CTRL key
-			if(eventType == AjaxViewer.KEY_UP && (code == AjaxViewer.JS_KEY_ALT || code == code == AjaxViewer.JS_KEY_CTRL))
+			if(eventType == AjaxViewer.KEY_UP && (code == AjaxViewer.JS_KEY_ALT || code == code == AjaxViewer.JS_KEY_CTRL)) {
 				this.mappedInput.push({type : eventType, code: this.jsX11KeysymMap[code], modifiers: modifiers});
-			
+			}
 		} else if(eventType == AjaxViewer.KEY_PRESS) {
 			// special handling for * and + key on number pad
 			if(code == AjaxViewer.JS_NUMPAD_MULTIPLY) {
