@@ -912,11 +912,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("display", display);
         }
 
-        if (ids != null) {
-            List<?> idList = (ids instanceof List<?> ? (List<?>)ids : null);
-            if (idList != null && !idList.isEmpty()) {
-                sc.setParameters("idIN", idList.toArray());
-            }
+        if (ids != null && !ids.isEmpty()) {
+            sc.setParameters("idIN", ids.toArray());
         }
 
         if (templateId != null) {
