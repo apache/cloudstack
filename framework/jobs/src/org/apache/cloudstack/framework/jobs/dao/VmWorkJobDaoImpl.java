@@ -140,7 +140,7 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
         // loop at application level to avoid mysql deadlock issues
         SearchCriteria<VmWorkJobVO> sc = ExpungingWorkJobSearch.create();
         sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
-        sc.setParameters("lastUpdated", cutDate);
+        sc.setParameters("cutDate", cutDate);
         sc.setParameters("dispatcher", "VmWorkJobDispatcher");
         List<VmWorkJobVO> expungeList = listBy(sc);
         for (VmWorkJobVO job : expungeList) {
