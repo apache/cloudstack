@@ -17,7 +17,7 @@
 # under the License.
 
 ### BEGIN INIT INFO
-# Provides:          cloud ipallocator
+# Provides:          cloudstack-ipallocator
 # Required-Start:    $network
 # Required-Stop:     $network
 # Default-Start:     3 4 5
