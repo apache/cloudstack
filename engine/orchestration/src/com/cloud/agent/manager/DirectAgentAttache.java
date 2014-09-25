@@ -166,11 +166,13 @@ public class DirectAgentAttache extends AgentAttache {
                 if (resource != null) {
                     PingCommand cmd = null;
                     int retried = 0;
-                    while ( cmd == null && ++retried < _HostPingRetryCount.value())
+                    cmd = resource.getCurrentStatus(_id);
+                    while (cmd == null && retried++ < _HostPingRetryCount.value())
                     {
-                        cmd = resource.getCurrentStatus(_id);
                         Thread.sleep(1000*_HostPingRetryTimer.value());
+                        cmd = resource.getCurrentStatus(_id);
                     }
+
                     if (cmd == null) {
                         s_logger.warn("Unable to get current status on " + _id + "(" + _name + ")");
                         return;
