@@ -33,6 +33,8 @@ from marvin.cloudstackAPI import *
 from marvin.codes import (FAILED, SUCCESS)
 from marvin.lib.utils import (random_gen)
 from marvin.config.test_data import test_data
+from marvin.lib.common import get_template,get_zone
+import time
 from sys import exit
 import os
 import pickle
@@ -842,6 +844,24 @@ class DeployDataCenters(object):
             self.__tcRunLogger.exception("====AddS3 Failed===")
             self.__cleanAndExit()
 
+    def waitZoneIsReady(self, zoneName):
+        apiClient = self.__apiClient
+        zone = get_zone(apiClient, zoneName)
+        retries = 5 * 60 / 10
+        while retries > 0:
+            template = get_template(apiClient, zone.id)
+            if template:
+                return SUCCESS
+            self.__tcRunLogger.debug("waiting for user vm template is up")
+            retries -= 1
+            time.sleep(10)
+
+        return FAILED
+
+    def waitForZonesReady(self):
+        for zone in self.__config.zones:
+            self.waitZoneIsReady(zone.name)
+
     def deploy(self):
         try:
             print "\n==== Deploy DC Started ===="
@@ -859,6 +879,7 @@ class DeployDataCenters(object):
             '''
             self.createZones(self.__config.zones)
             self.configureS3(self.__config.s3)
+            self.waitForZonesReady()
             '''
             Persist the Configuration to an external file post DC creation
             '''
