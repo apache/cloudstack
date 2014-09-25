@@ -155,10 +155,9 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         Vpc vpc = null;
-        boolean success = true;
         try {
             if (isStart()) {
-                success = _vpcService.startVpc(getEntityId(), true);
+                _vpcService.startVpc(getEntityId(), true);
             } else {
                 s_logger.debug("Not starting VPC as " + ApiConstants.START + "=false was passed to the API");
              }
