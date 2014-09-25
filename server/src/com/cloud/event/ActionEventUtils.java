@@ -301,7 +301,7 @@ public class ActionEventUtils {
             try{
                 Object key = entry.getKey();
                 Class<?> clz = Class.forName((String)key);
-                if(clz instanceof Class && Identity.class.isAssignableFrom(clz)){
+                if(clz != null && Identity.class.isAssignableFrom(clz)){
                     String uuid = getEntityUuid(clz, entry.getValue());
                     eventDescription.put(ReflectUtil.getEntityName(clz), uuid);
                 }
