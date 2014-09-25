@@ -29,13 +29,14 @@ from marvin.marvinLog import MarvinLog
 from marvin.deployDataCenter import DeployDataCenters
 from marvin.cloudstackTestClient import CSTestClient
 from marvin.cloudstackException import GetDetailExceptionInfo
+from marvin.lib.common import get_template,get_zone
 from marvin.codes import(
     XEN_SERVER,
     SUCCESS,
     FAILED
 )
 import os
-
+import time
 
 class MarvinInit:
 
@@ -148,7 +149,8 @@ class MarvinInit:
                     (self.__setTestDataPath() != FAILED) and
                     (self.__initLogging() != FAILED) and
                     (self.__createTestClient() != FAILED) and
-                    (self.__deployDC() != FAILED)):
+                    (self.__deployDC() != FAILED) and
+                    (self._waitZoneIsReady() != FAILED)):
                 print "\n==== Marvin Init Successful ===="
                 return SUCCESS
             print "\n==== Marvin Init Failed ===="
@@ -157,6 +159,21 @@ class MarvinInit:
             print "\n Exception Occurred Under init " \
                   "%s" % GetDetailExceptionInfo(e)
             return FAILED
+
+    def _waitZoneIsReady(self):
+        testClient = self.getTestClient()
+        apiClient = testClient.getApiClient()
+        zone = get_zone(apiClient, testClient.getZoneForTests())
+        retries = 5 * 60 / 10
+        while retries > 0:
+            template = get_template(apiClient, zone.id)
+            if template:
+               return SUCCESS
+            self.__tcRunLogger.debug("waiting for user vm template is up")
+            retries -= 1
+            time.sleep(10)
+
+        return FAILED
 
     def __initLogging(self):
         '''
