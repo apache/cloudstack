@@ -68,8 +68,14 @@ class TestvGPUWindowsVm(cloudstackTestCase):
              cls.k1passthroughgpuhosts=0
              cls.k2passthroughgpuhosts=0
              cls.nongpuhosts=[]
-             k2hosts=0
-             k1hosts=0
+             cls.k2hosts=0
+             cls.k1hosts=0
+             cls.k100_vgpu_service_offering=[]
+             cls.k200_vgpu_service_offering=[]
+             cls.vm_k1_card=[]
+             cls.vm_k2_card=[]
+             cls.vm2_k2_card=[]
+             cls.vmlifecycletest=0
 
              for ghost in hosts :
                  if ghost.hypervisorversion >= "6.2.0":
@@ -86,7 +92,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                     if (k2card==0) and (k1card==0):
                        cls.nongpuhosts.append(ghost.ipaddress)
                     if k2card !=0:
-                          k2hosts=k2hosts+1
+                          cls.k2hosts=cls.k2hosts+1
                           k260q = len(sshClient.execute("xe vgpu-type-list model-name=\"GRID K260Q\""))
                           k240q = len(sshClient.execute("xe vgpu-type-list model-name=\"GRID K240Q\""))
                           k220q = len(sshClient.execute("xe vgpu-type-list model-name=\"GRID K220Q\""))
@@ -107,7 +113,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                                   cls.k2passthroughgpuhosts=cls.k2passthroughgpuhosts+1
 
                     if k1card != 0:
-                            k1hosts=k1hosts+1
+                            cls.k1hosts=cls.k1hosts+1
                             k100 = len(sshClient.execute("xe vgpu-type-list model-name=\"GRID K100\""))
                             k120q = len(sshClient.execute("xe vgpu-type-list model-name=\"GRID K120Q\""))
                             k140q = len(sshClient.execute("xe vgpu-type-list model-name=\"GRID K140Q\""))
@@ -123,7 +129,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                                    cls.k100gpuhosts=cls.k100gpuhosts+1
                                 if k1passthrough != 0 :
                                    cls.k1passthroughgpuhosts=cls.k1passthroughgpuhosts+1
-        if (k1hosts == 0) and (k2hosts == 0):
+        if (cls.k2hosts == 0) and (cls.k1hosts == 0):
            raise unittest.SkipTest("No XenServer available with GPU Drivers installed")
 
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
@@ -139,6 +145,8 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         #cls.template = get_windows_template(cls.apiclient, cls.zone.id ,ostype_desc="Windows Server 2012 (64-bit)")
 
         if  cls.template == FAILED:
+            if "http://pleaseupdateURL/dummy.vhd" in cls.testdata["vgpu"] ["templateregister1"]["url"]:
+                raise unittest.SkipTest("Check Test Data file if it has the valid template URL")
             cls.template = Template.register(
                    cls.apiclient,
                    cls.testdata["vgpu"] ["templateregister1"],
@@ -166,86 +174,17 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                   template_response = list_template_response[0]
                   if template_response.isready == True:
                       break
-                  
+
                   if timeout == 0:
-                      raise unittest.SkipTest("Failed to download template(ID: %s)" % template_response.id)
+                      raise unittest.SkipTest("Failed to download template(ID: %s). " % template_response.id)
 
                   timeout = timeout - 1
-
-        """
-        Create Service Offerings for Both K1 and K2 cards to be used for VM life cycle tests
-        """
-
-        if(k1hosts != 0):
-            if(cls.k140qgpuhosts != 0):
-                gtype = "GRID K140Q"
-            elif(cls.k120qgpuhosts != 0):
-                gtype = "GRID K120Q"
-            elif(cls.k100gpuhosts !=0):
-                gtype = "GRID K100"
-            else:
-                gtype = "passthrough"
-
-            cls.testdata["vgpu"]["service_offerings"][gtype]["serviceofferingdetails"] = [{'pciDevice':'Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'},
-                                                                                       {'vgpuType':gtype}]
-            try:
-               cls.k100_vgpu_service_offering = ServiceOffering.create(
-                                                                    cls.apiclient,
-                                                                    cls.testdata["vgpu"]["service_offerings"][gtype]
-                                                                    )
-            except Exception as e:
-               cls.fail("Failed to create the service offering, %s" % e)
-
-        if(k2hosts != 0):
-            if(cls.k240qgpuhosts != 0):
-                gtype = "GRID K240Q"
-            elif(cls.k220qgpuhosts != 0):
-                gtype = "GRID K220Q"
-            elif(cls.k200gpuhosts !=0):
-                gtype = "GRID K200"
-            else:
-                gtype = "passthrough"
-
-            cls.testdata["vgpu"]["service_offerings"][gtype]["serviceofferingdetails"] = [{'pciDevice': 'Group of NVIDIA Corporation GK104GL [GRID K2] GPUs'},
-                                                                                       {'vgpuType':gtype}]
-            try:
-               cls.k200_vgpu_service_offering = ServiceOffering.create(
-                                                                    cls.apiclient,
-                                                                    cls.testdata["vgpu"]["service_offerings"][gtype]
-                                                                    )
-            except Exception as e:
-              cls.fail("Failed to create the service offering, %s" % e)
-
-        """
-        Create Virtual Machines for Both K1 and K2 cards to be used for VM life cycle tests
-        """
-
-        if(k1hosts != 0):
-            cls.vm_k1_card = VirtualMachine.create(
-            cls.apiclient,
-            cls.testdata["virtual_machine"],
-            accountid=cls.account.name,
-            zoneid=cls.zone.id,
-            domainid=cls.account.domainid,
-            serviceofferingid=cls.k100_vgpu_service_offering.id,
-            templateid=cls.template.id
-            )
-        if(k2hosts !=0):
-            cls.vm_k2_card = VirtualMachine.create(
-            cls.apiclient,
-            cls.testdata["virtual_machine"],
-            accountid=cls.account.name,
-            zoneid=cls.zone.id,
-            domainid=cls.account.domainid,
-            serviceofferingid=cls.k200_vgpu_service_offering.id,
-            templateid=cls.template.id
-            )
 
 
         cls._cleanup = [
                          cls.account,
-                         cls.k100_vgpu_service_offering,
-                         cls.k200_vgpu_service_offering
+                         #cls.k100_vgpu_service_offering,
+                         #cls.k200_vgpu_service_offering
                         ]
 
     @attr(tags = ['advanced', 'basic', 'vgpu'], required_hardware="true")
@@ -486,6 +425,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                         self.fail("Failed to start VM (ID: %s) with %s vGPU card " % (vm.id,vgpucard))
         return(list_vm_response[0])
 
+
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
     def destroy_vm(self):
         """Destroy Virtual Machine
@@ -603,6 +543,282 @@ class TestvGPUWindowsVm(cloudstackTestCase):
               self.check_for_vGPU_resource(vm.hostid,vm.instancename,vm.serviceofferingid,vm.vgpu)
               self.destroy_vm()
               self.delete_vgpu_service_offering(self.vgpuoffering)
+        return
+
+
+    def new_template_register(self,guestostype):
+
+        template1 = get_windows_template(self.apiclient, self.zone.id ,ostype_desc=guestostype)
+
+        if  template1 == FAILED:
+            if "http://pleaseupdateURL/dummy.vhd" in cls.testdata["vgpu"] [guestostype]["url"]:
+                raise unittest.SkipTest("Check Test Data file if it has the valid template URL")
+            template1 = Template.register(
+                   self.apiclient,
+                   self.testdata["vgpu"] [guestostype],
+                   hypervisor = "XenServer",
+                   zoneid=cls.zone.id,
+                   domainid=cls.account.domainid,
+                   account=cls.account.name
+                   )
+            timeout = self.testdata["vgpu"]["timeout"]
+
+            while True:
+                  time.sleep(self.testdata["vgpu"]["sleep"])
+                  list_template_response = Template.list(
+                       self.apiclient,
+                       templatefilter=\
+                       self.testdata["templatefilter"],
+                       id=template1.id
+                        )
+                  if (isinstance(list_template_response, list)) is not True:
+                      raise unittest.SkipTest("Check list template api response returns a valid list")
+
+                  if len(list_template_response) is None :
+                      raise unittest.SkipTest("Check template registered is in List Templates")
+
+                  template_response = list_template_response[0]
+                  if template_response.isready == True:
+                      break
+                  if timeout == 0:
+                      raise unittest.SkipTest("Failed to download template(ID: %s)" % template_response.id)
+
+                  timeout = timeout - 1
+        return(template1.id)
+
+    def deploy_vm_lifecycle(self):
+        """
+        Create Service Offerings for Both K1 and K2 cards to be used for VM life cycle tests
+        """
+
+        if(self.k1hosts != 0):
+            if(self.k140qgpuhosts != 0):
+                gtype = "GRID K140Q"
+            elif(self.k120qgpuhosts != 0):
+                gtype = "GRID K120Q"
+            elif(self.k100gpuhosts !=0):
+                gtype = "GRID K100"
+            else:
+                gtype = "passthrough"
+
+            self.testdata["vgpu"]["service_offerings"][gtype]["serviceofferingdetails"] = [{'pciDevice':'Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'},
+                                                                                       {'vgpuType':gtype}]
+            try:
+               self.__class__.k100_vgpu_service_offering = ServiceOffering.create(
+                                                                    self.apiclient,
+                                                                    self.testdata["vgpu"]["service_offerings"][gtype]
+                                                                    )
+            except Exception as e:
+               self.fail("Failed to create the service offering, %s" % e)
+
+        if(self.k2hosts != 0):
+            if(self.k240qgpuhosts != 0):
+                gtype = "GRID K240Q"
+            elif(cls.k220qgpuhosts != 0):
+                gtype = "GRID K220Q"
+            elif(self.k200gpuhosts !=0):
+                gtype = "GRID K200"
+            else:
+                gtype = "passthrough"
+
+            self.testdata["vgpu"]["service_offerings"][gtype]["serviceofferingdetails"] = [{'pciDevice': 'Group of NVIDIA Corporation GK104GL [GRID K2] GPUs'},
+                                                                                       {'vgpuType':gtype}]
+            try:
+               self.__class__.k200_vgpu_service_offering = ServiceOffering.create(
+                                                                    self.apiclient,
+                                                                    self.testdata["vgpu"]["service_offerings"][gtype]
+                                                                    )
+            except Exception as e:
+              self.fail("Failed to create the service offering, %s" % e)
+
+        win8templateid=self.new_template_register("Windows 8 (64-bit)")
+        win2012templateid=self.new_template_register("Windows Server 2012 (64-bit)")
+        win7templateid=self.new_template_register("Windows 7 (64-bit)")
+
+        """
+        Create Virtual Machines for Both K1 and K2 cards to be used for VM life cycle tests
+        """
+
+        if(self.k1hosts != 0):
+            self.__class__.vm_k1_card = VirtualMachine.create(
+            self.apiclient,
+            self.testdata["virtual_machine"],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            serviceofferingid=self.k100_vgpu_service_offering.id,
+            templateid=win8templateid
+            )
+        if(self.k2hosts !=0):
+            self.__class__.vm_k2_card = VirtualMachine.create(
+            self.apiclient,
+            self.testdata["virtual_machine"],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            serviceofferingid=self.k200_vgpu_service_offering.id,
+            templateid=win2012templateid
+            )
+        if(self.k2hosts !=0):
+            self.__class__.vm2_k2_card = VirtualMachine.create(
+            self.apiclient,
+            self.testdata["virtual_machine"],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            serviceofferingid=self.k200_vgpu_service_offering.id,
+            templateid=win7templateid
+            )
+        return
+
+
+    def check_gpu_resources_released_vm(self,gpuhostid,vm_vgpu_type,rcapacity):
+        hhosts = list_hosts(
+               self.apiclient,
+               hypervisor="XenServer",
+               id=gpuhostid
+               )
+        self.assertEqual(
+                            isinstance(hhosts, list),
+                            True,
+                            "Check list hosts response returns a valid list"
+                        )
+
+        self.assertNotEqual(
+                            len(hhosts),
+                            0,
+                            "Check Host details are available in List Hosts"
+                        )
+        for ggroup in hhosts:
+               if ggroup.ipaddress not in self.nongpuhosts:
+                  for gp in ggroup.gpugroup:
+                      #if gp.gpugroupname == "Group of NVIDIA Corporation GK104GL [GRID K2] GPUs":
+                         for gptype in gp.vgpu:
+                             if gptype.vgputype==vm_vgpu_type:
+                                self.debug("Latest remainingcapacity is %s and before remainingcapacity is %s"%(gptype.remainingcapacity,rcapacity))
+                                if gptype.remainingcapacity != rcapacity+1:
+                                   self.fail("Host capacity is not updated .GPU resources should be released when VM is stopped/Destroyed ")
+        return
+
+    def check_vm_state(self,vmid):
+        list_vm_response = list_virtual_machines(
+                                                     self.apiclient,
+                                                     id=vmid
+                                                     )
+
+        if list_vm_response is None:
+            return("Expunge")
+        return(list_vm_response[0].state)
+
+    def check_host_vgpu_remaining_capacity(self,gpuhostid,gtype):
+        gputhosts = list_hosts(
+               self.apiclient,
+               hypervisor="XenServer",
+               id=gpuhostid
+               )
+        vgpucapacity=0
+        for ghost in gputhosts:
+            if ghost.gpugroup is not None:
+                        for gp in ghost.gpugroup:
+                            #if gp.gpugroupname == gpucard:
+                               for gptype in gp.vgpu:
+                                   if gptype.vgputype == gtype:
+                                      vgpucapacity=vgpucapacity+gptype.remainingcapacity
+
+        return(vgpucapacity)
+
+    def verify_vm(self,vm_gpu_card):
+        if(vm_gpu_card):
+          vm_gpu_card.getState(
+                                   self.apiclient,
+                                   "Running")
+
+          self.check_for_vGPU_resource(vm_gpu_card.hostid,vm_gpu_card.instancename,vm_gpu_card.serviceofferingid,vm_gpu_card.vgpu)
+
+    def stop_life_cycle_vm (self,vm_gpu_card):
+
+        if(vm_gpu_card):
+          vm_gpu_card.stop(self.apiclient)
+          time.sleep(self.testdata["vgpu"]["sleep"])
+          vm_gpu_card.getState(
+                                   self.apiclient,
+                                   "Stopped")
+
+    def start_life_cycle_vm(self,vm_gpu_card):
+
+        if(vm_gpu_card):
+          vm_gpu_card.start(self.apiclient)
+          time.sleep(self.testdata["vgpu"]["sleep"])
+
+    def restore_life_cycle_vm(self,vm_gpu_card):
+        if(vm_gpu_card):
+          vm_gpu_card.restore(self.apiclient)
+          time.sleep(self.testdata["vgpu"]["sleep"])
+
+    def reboot_life_cycle_vm(self,vm_gpu_card):
+
+        if(vm_gpu_card):
+          vm_gpu_card.reboot(self.apiclient)
+          time.sleep(self.testdata["vgpu"]["sleep"])
+
+    def delete_vm_life_cycle_vm(self,vm_gpu_card):
+        if(vm_gpu_card):
+          vm_gpu_card.delete(self.apiclient)
+          time.sleep(self.testdata["vgpu"]["sleep"])
+          vm_gpu_card.getState(
+                                   self.apiclient,
+                                   "Destroyed")
+
+    def recover_vm_life_cycle_vm(self,vm_gpu_card):
+        if(vm_gpu_card):
+          vm_gpu_card.recover(self.apiclient)
+          vm_gpu_card.getState(
+                                   self.apiclient,
+                                   "Stopped")
+
+
+    def recovervm(self,vm_gpu_card):
+        if self.check_vm_state(vm_gpu_card.id)=="Expunge":
+            raise unittest.SkipTest("VM is already deleted hence skipping")
+        self.recover_vm_life_cycle_vm(vm_gpu_card)
+        self.start_life_cycle_vm(vm_gpu_card)
+        self.verify_vm(vm_gpu_card)
+        return
+
+
+    def startvm(self,vm_gpu_card):
+
+        self.start_life_cycle_vm(vm_gpu_card)
+        self.verify_vm(vm_gpu_card)
+        return
+
+    def stopvm(self,vm_gpu_card):
+
+        rcapacity=self.check_host_vgpu_remaining_capacity(vm_gpu_card.hostid,vm_gpu_card.vgpu)
+        self.stop_life_cycle_vm(vm_gpu_card)
+        self.check_gpu_resources_released_vm(vm_gpu_card.hostid,vm_gpu_card.vgpu,rcapacity)
+        return
+
+    def deletevm(self,vm_gpu_card):
+
+        rcapacity=self.check_host_vgpu_remaining_capacity(vm_gpu_card.hostid,vm_gpu_card.vgpu)
+        hostid=vm_gpu_card.hostid
+        vgputype=vm_gpu_card.vgpu
+        self.delete_vm_life_cycle_vm(vm_gpu_card)
+        self.check_gpu_resources_released_vm(hostid,vgputype,rcapacity)
+        return
+
+    def restorevm(self,vm_gpu_card):
+
+        self.restore_life_cycle_vm(vm_gpu_card)
+        self.verify_vm(vm_gpu_card)
+        return
+
+
+    def rebootvm(self,vm_vgpu_card):
+
+        self.reboot_life_cycle_vm(vm_vgpu_card)
+        self.verify_vm(vm_vgpu_card)
         return
 
 
@@ -909,31 +1125,28 @@ class TestvGPUWindowsVm(cloudstackTestCase):
     def test_12_validate_deployed_vGPU_windows_vm(self):
         """ Test deploy virtual machine
         """
+
+        self.deploy_vm_lifecycle()
+
         self.debug("Check if deployed VMs are in running state?")
-        if(self.vm_k1_card):
-          self.vm_k1_card.getState(
-                                   self.apiclient,
-                                   "Running")
-          self.check_for_vGPU_resource(self.vm_k1_card.hostid,self.vm_k1_card.instancename,self.vm_k1_card.serviceofferingid,self.vm_k1_card.vgpu)
 
-        if(self.vm_k2_card):
-          self.vm_k2_card.getState(
-                                   self.apiclient,
-                                   "Running")
+        self.verify_vm(self.__class__.vm_k1_card)
+        self.verify_vm(self.__class__.vm_k2_card)
+        self.verify_vm(self.__class__.vm2_k2_card)
 
-          self.check_for_vGPU_resource(self.vm_k2_card.hostid,self.vm_k2_card.instancename,self.vm_k2_card.serviceofferingid,self.vm_k2_card.vgpu)
-
+        self.__class__.vmlifecycletest=1
         return
 
     @attr(tags = ['advanced', 'basic' , 'vgpu'], required_hardware="true")
     def test_13_stop_vGPU_windows_vm(self):
         """ Test stop virtual machine
         """
-        if(self.vm_k1_card):
-          self.vm_k1_card.stop(self.apiclient)
+        if self.__class__.vmlifecycletest==0:
+            raise unittest.SkipTest("VM Life Cycle Deploy VM test failed hence skipping")
 
-        if(self.vm_k2_card):
-          self.vm_k2_card.stop(self.apiclient)
+        self.stopvm(self.__class__.vm_k1_card)
+        self.stopvm(self.__class__.vm_k2_card)
+        self.stopvm(self.__class__.vm2_k2_card)
 
         return
 
@@ -941,15 +1154,12 @@ class TestvGPUWindowsVm(cloudstackTestCase):
     def test_14_start_vGPU_windows_vm(self):
         """ Test start virtual machine
         """
-        if(self.vm_k1_card):
-          self.vm_k1_card.start(self.apiclient)
-          time.sleep(200)
-          self.check_for_vGPU_resource(self.vm_k1_card.hostid,self.vm_k1_card.instancename,self.vm_k1_card.serviceofferingid,self.vm_k1_card.vgpu)
+        if self.__class__.vmlifecycletest==0:
+            raise unittest.SkipTest("VM Life Cycle Deploy VM test failed hence skipping")
 
-        if(self.vm_k2_card):
-          self.vm_k2_card.start(self.apiclient)
-          time.sleep(200)
-          self.check_for_vGPU_resource(self.vm_k2_card.hostid,self.vm_k2_card.instancename,self.vm_k2_card.serviceofferingid,self.vm_k2_card.vgpu)
+        self.startvm(self.__class__.vm_k1_card)
+        self.startvm(self.__class__.vm_k2_card)
+        self.startvm(self.__class__.vm2_k2_card)
 
         return
 
@@ -957,23 +1167,13 @@ class TestvGPUWindowsVm(cloudstackTestCase):
     def test_15_restore_vGPU_windows_vm(self):
         """Test restore Virtual Machine
         """
-        if(self.vm_k1_card):
-          self.vm_k1_card.restore(self.apiclient)
-          time.sleep(200)
-          self.vm_k1_card.getState(
-                                   self.apiclient,
-                                   "Running")
 
-          self.check_for_vGPU_resource(self.vm_k1_card.hostid,self.vm_k1_card.instancename,self.vm_k1_card.serviceofferingid,self.vm_k1_card.vgpu)
+        if self.__class__.vmlifecycletest==0:
+            raise unittest.SkipTest("VM Life Cycle Deploy VM test failed hence skipping")
 
-        if(self.vm_k2_card):
-          self.vm_k2_card.restore(self.apiclient)
-          time.sleep(200)
-          self.vm_k2_card.getState(
-                                   self.apiclient,
-                                   "Running")
-
-          self.check_for_vGPU_resource(self.vm_k2_card.hostid,self.vm_k2_card.instancename,self.vm_k2_card.serviceofferingid,self.vm_k2_card.vgpu)
+        self.restorevm(self.__class__.vm_k1_card)
+        self.restorevm(self.__class__.vm_k2_card)
+        self.restorevm(self.__class__.vm2_k2_card)
 
         return
 
@@ -981,23 +1181,13 @@ class TestvGPUWindowsVm(cloudstackTestCase):
     def test_16_reboot_vGPU_windows_vm(self):
         """ Test reboot virtual machine
         """
-        if(self.vm_k1_card):
-          self.vm_k1_card.reboot(self.apiclient)
-          time.sleep(200)
-          self.vm_k1_card.getState(
-                                   self.apiclient,
-                                   "Running")
 
-          self.check_for_vGPU_resource(self.vm_k1_card.hostid,self.vm_k1_card.instancename,self.vm_k1_card.serviceofferingid,self.vm_k1_card.vgpu)
+        if self.__class__.vmlifecycletest==0:
+            raise unittest.SkipTest("VM Life Cycle Deploy VM test failed hence skipping")
 
-        if(self.vm_k2_card):
-          self.vm_k2_card.reboot(self.apiclient)
-          time.sleep(200)
-          self.vm_k2_card.getState(
-                                   self.apiclient,
-                                   "Running")
-
-          self.check_for_vGPU_resource(self.vm_k2_card.hostid,self.vm_k2_card.instancename,self.vm_k2_card.serviceofferingid,self.vm_k2_card.vgpu)
+        self.rebootvm(self.__class__.vm_k1_card)
+        self.rebootvm(self.__class__.vm_k2_card)
+        self.rebootvm(self.__class__.vm2_k2_card)
 
         return
 
@@ -1005,17 +1195,18 @@ class TestvGPUWindowsVm(cloudstackTestCase):
     def test_17_destroy_vGPU_windows_vm(self):
         """Test destroy Virtual Machine
         """
-        if(self.vm_k1_card):
-          self.vm_k1_card.delete(self.apiclient)
-          self.vm_k1_card.getState(
-                                   self.apiclient,
-                                   "Destroyed")
 
-        if(self.vm_k2_card):
-          self.vm_k2_card.delete(self.apiclient)
-          self.vm_k2_card.getState(
-                                   self.apiclient,
-                                   "Destroyed")
+        if self.__class__.vmlifecycletest==0:
+            raise unittest.SkipTest("VM Life Cycle Deploy VM test failed hence skipping")
+
+
+        self.deletevm(self.__class__.vm_k1_card)
+        self.deletevm(self.__class__.vm_k2_card)
+        self.deletevm(self.__class__.vm2_k2_card)
+
+
+        self.cleanup.append(self.__class__.k100_vgpu_service_offering)
+        self.cleanup.append(self.__class__.k200_vgpu_service_offering)
 
         return
 
@@ -1023,35 +1214,34 @@ class TestvGPUWindowsVm(cloudstackTestCase):
     def test_18_recover_vGPU_windows_vm(self):
         """Test recover Virtual Machine
         """
-        if(self.vm_k1_card):
-          self.vm_k1_card.recover(self.apiclient)
-          self.vm_k1_card.getState(
-                                   self.apiclient,
-                                   "Stopped")
 
+        if self.__class__.vmlifecycletest==0:
+            raise unittest.SkipTest("VM Life Cycle Deploy VM test failed hence skipping")
 
-        if(self.vm_k2_card):
-          self.vm_k2_card.recover(self.apiclient)
-          self.vm_k2_card.getState(
-                                   self.apiclient,
-                                   "Stopped")
+        self.recovervm(self.__class__.vm_k1_card)
+        self.recovervm(self.__class__.vm_k2_card)
+        self.recovervm(self.__class__.vm2_k2_card)
 
         return
 
     def test_19_destroy_vGPU_windows_vm_after_recover(self):
         """Test destroy Virtual Machine
         """
-        if(self.vm_k1_card):
-          self.vm_k1_card.delete(self.apiclient)
-          self.vm_k1_card.getState(
-                                   self.apiclient,
-                                   "Destroyed")
 
-        if(self.vm_k2_card):
-          self.vm_k2_card.delete(self.apiclient)
-          self.vm_k2_card.getState(
-                                   self.apiclient,
-                                   "Destroyed")
+        if self.__class__.vmlifecycletest==0:
+            raise unittest.SkipTest("VM Life Cycle Deploy VM test failed hence skipping")
+
+        if self.check_vm_state(self.__class__.vm_k1_card.id)=="Expunge":
+            raise unittest.SkipTest("VM is already deleted hence skipping")
+        self.deletevm(self.__class__.vm_k1_card)
+
+        if self.check_vm_state(self.__class__.vm_k2_card.id)=="Expunge":
+            raise unittest.SkipTest("VM is already deleted hence skipping")
+        self.deletevm(self.__class__.vm_k2_card)
+
+        if self.check_vm_state(self.__class__.vm2_k1_card.id)=="Expunge":
+            raise unittest.SkipTest("VM is already deleted hence skipping")
+        self.deletevm(self.__class__.vm2_k2_card)
 
         return
 
