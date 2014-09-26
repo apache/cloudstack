@@ -850,7 +850,7 @@ class DeployDataCenters(object):
         retries = 5 * 60 / 10
         while retries > 0:
             template = get_template(apiClient, zone.id)
-            if template:
+            if template is not None and template != "FAILED":
                 return SUCCESS
             self.__tcRunLogger.debug("waiting for user vm template is up")
             retries -= 1
