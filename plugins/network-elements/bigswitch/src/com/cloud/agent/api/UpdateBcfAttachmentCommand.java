@@ -20,12 +20,13 @@
 package com.cloud.agent.api;
 
 public class UpdateBcfAttachmentCommand extends BcfCommand {
-    private String _networkId;
-    private String _attachmentId;
-    private String _tenantId;
-    private String _attachmentName;
+    private final String _networkId;
+    private final String _attachmentId;
+    private final String _tenantId;
+    private final String _attachmentName;
 
-    public UpdateBcfAttachmentCommand(String networkId, String attachmentId, String tenantId, String attachmentName) {
+    public UpdateBcfAttachmentCommand(final String networkId, final String attachmentId,
+            final String tenantId, final String attachmentName) {
         this._networkId = networkId;
         this._attachmentId = attachmentId;
         this._tenantId = tenantId;

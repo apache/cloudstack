@@ -26,8 +26,8 @@ public class CreateBcfRouterInterfaceCommand extends BcfCommand{
     private final String _gateway;
     private final String _networkName;
 
-    public CreateBcfRouterInterfaceCommand(String tenantId, String networkId, String cidr,
-            String gateway, String networkName){
+    public CreateBcfRouterInterfaceCommand(final String tenantId, final String networkId,
+            final String cidr, final String gateway, final String networkName){
         this._tenantId = tenantId;
         this._networkId = networkId;
         this._networkName = networkName;
@@ -35,23 +35,23 @@ public class CreateBcfRouterInterfaceCommand extends BcfCommand{
         this._gateway = gateway;
     }
 
-    public String get_tenantId() {
+    public String getTenantId() {
         return _tenantId;
     }
 
-    public String get_networkId() {
+    public String getNetworkId() {
         return _networkId;
     }
 
-    public String get_networkName() {
+    public String getNetworkName() {
         return _networkName;
     }
 
-    public String get_cidr() {
+    public String getCidr() {
         return _cidr;
     }
 
-    public String get_gateway() {
+    public String getGateway() {
         return _gateway;
     }
 }

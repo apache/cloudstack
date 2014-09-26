@@ -20,6 +20,4 @@
 package com.cloud.agent.api;
 
 public class GetControllerHostsCommand extends BcfCommand {
-    public GetControllerHostsCommand() {
-    }
 }

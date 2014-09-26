@@ -312,7 +312,7 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
             return new BcfAnswer(cmd, true, "Segment " + network.getNetwork().getId() + " created", hash);
         } catch (BigSwitchBcfApiException e) {
             if (e.is_topologySyncRequested()) {
-                cmd.set_topologySyncRequested(true);
+                cmd.setTopologySyncRequested(true);
                 return new BcfAnswer(cmd, true, "Segment " + network.getNetwork().getId() + " created; topology sync required.");
             } else {
                 if (numRetries > 0) {
@@ -327,11 +327,11 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
 
     private Answer executeRequest(DeleteBcfSegmentCommand cmd, int numRetries) {
         try {
-            String hash = _bigswitchBcfApi.deleteNetwork(cmd.get_tenantUuid(), cmd.getNetworkUuid());
+            String hash = _bigswitchBcfApi.deleteNetwork(cmd.getTenantUuid(), cmd.getNetworkUuid());
             return new BcfAnswer(cmd, true, "Segment " + cmd.getNetworkUuid() + " deleted", hash);
         } catch (BigSwitchBcfApiException e) {
             if (e.is_topologySyncRequested()) {
-                cmd.set_topologySyncRequested(true);
+                cmd.setTopologySyncRequested(true);
                 return new BcfAnswer(cmd, true, "Segment " + cmd.getNetworkUuid() + " deleted; topology sync required.");
             } else {
                 if (numRetries > 0) {
@@ -357,7 +357,7 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
             return new BcfAnswer(cmd, true, "network attachment " + cmd.getPortId() + " created", hash);
         } catch (BigSwitchBcfApiException e) {
             if (e.is_topologySyncRequested()) {
-                cmd.set_topologySyncRequested(true);
+                cmd.setTopologySyncRequested(true);
                 return new BcfAnswer(cmd, true, "network attachment " + cmd.getPortId() + " created; topology sync required.");
             } else {
                 if (numRetries > 0) {
@@ -376,7 +376,7 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
             return new BcfAnswer(cmd, true, "network attachment " + nicName + " deleted", hash);
         } catch (BigSwitchBcfApiException e) {
             if (e.is_topologySyncRequested()) {
-                cmd.set_topologySyncRequested(true);
+                cmd.setTopologySyncRequested(true);
                 return new BcfAnswer(cmd, true, "network attachment " + nicName + " deleted; topology sync required.");
             } else {
                 if (numRetries > 0) {
@@ -398,7 +398,7 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
             return new BcfAnswer(cmd, true, "Network attachment  " + cmd.getAttachmentId() + " updated", hash);
         } catch (BigSwitchBcfApiException e) {
             if (e.is_topologySyncRequested()) {
-                cmd.set_topologySyncRequested(true);
+                cmd.setTopologySyncRequested(true);
                 return new BcfAnswer(cmd, true, "Network attachment  " + cmd.getAttachmentId() + " updated; topology sync required.");
             } else {
                 if (numRetries > 0) {
@@ -412,21 +412,21 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
 
     private Answer executeRequest(CreateBcfStaticNatCommand cmd, int numRetries) {
         FloatingIpData fip = new FloatingIpData();
-        fip.setTenantId(cmd.get_tenantId());
-        fip.setNetworkId(cmd.get_networkId());
-        fip.setFixedIp(cmd.get_privateIp());
-        fip.setFloatingIpAndId(cmd.get_publicIp());
-        fip.setMac(cmd.get_mac());
+        fip.setTenantId(cmd.getTenantId());
+        fip.setNetworkId(cmd.getNetworkId());
+        fip.setFixedIp(cmd.getPrivateIp());
+        fip.setFloatingIpAndId(cmd.getPublicIp());
+        fip.setMac(cmd.getMac());
 
         try {
-            String hash = _bigswitchBcfApi.createFloatingIp(cmd.get_tenantId(), fip);
-            return new BcfAnswer(cmd, true, "floating ip " + cmd.get_publicIp() + ":" +
-                    cmd.get_privateIp() + " created", hash);
+            String hash = _bigswitchBcfApi.createFloatingIp(cmd.getTenantId(), fip);
+            return new BcfAnswer(cmd, true, "floating ip " + cmd.getPublicIp() + ":" +
+                    cmd.getPrivateIp() + " created", hash);
         } catch (BigSwitchBcfApiException e) {
             if (e.is_topologySyncRequested()) {
-                cmd.set_topologySyncRequested(true);
-                return new BcfAnswer(cmd, true, "floating ip " + cmd.get_publicIp() + ":" +
-                        cmd.get_privateIp() + " created; topology sync required.");
+                cmd.setTopologySyncRequested(true);
+                return new BcfAnswer(cmd, true, "floating ip " + cmd.getPublicIp() + ":" +
+                        cmd.getPrivateIp() + " created; topology sync required.");
             } else {
                 if (numRetries > 0) {
                     return retry(cmd, --numRetries);
@@ -439,12 +439,12 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
 
     private Answer executeRequest(DeleteBcfStaticNatCommand cmd, int numRetries) {
         try {
-            String hash = _bigswitchBcfApi.deleteFloatingIp(cmd.get_tenantId(), cmd.get_floatingIpId());
-            return new BcfAnswer(cmd, true, "floating ip " + cmd.get_publicIp() + " deleted", hash);
+            String hash = _bigswitchBcfApi.deleteFloatingIp(cmd.getTenantId(), cmd.getFloatingIpId());
+            return new BcfAnswer(cmd, true, "floating ip " + cmd.getPublicIp() + " deleted", hash);
         } catch (BigSwitchBcfApiException e) {
             if (e.is_topologySyncRequested()) {
-                cmd.set_topologySyncRequested(true);
-                return new BcfAnswer(cmd, true, "floating ip " + cmd.get_publicIp() + " deleted; topology sync required.");
+                cmd.setTopologySyncRequested(true);
+                return new BcfAnswer(cmd, true, "floating ip " + cmd.getPublicIp() + " deleted; topology sync required.");
             } else {
                 if (numRetries > 0) {
                     return retry(cmd, --numRetries);
@@ -456,16 +456,16 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
     }
 
     private Answer executeRequest(CreateBcfRouterCommand cmd, int numRetries) {
-        RouterData router = new RouterData(cmd.get_tenantId());
+        RouterData router = new RouterData(cmd.getTenantId());
         try {
             String hash;
-            hash = _bigswitchBcfApi.createRouter(cmd.get_tenantId(), router);
+            hash = _bigswitchBcfApi.createRouter(cmd.getTenantId(), router);
 
-            return new BcfAnswer(cmd, true, "router " + cmd.get_tenantId() +
+            return new BcfAnswer(cmd, true, "router " + cmd.getTenantId() +
                     " created.", hash);
         } catch (BigSwitchBcfApiException e) {
             if (e.is_topologySyncRequested()) {
-                cmd.set_topologySyncRequested(true);
+                cmd.setTopologySyncRequested(true);
                 return new BcfAnswer(cmd, true, " created; topology sync required.");
             } else {
                 if (numRetries > 0) {
@@ -478,18 +478,18 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
     }
 
     private Answer executeRequest(CreateBcfRouterInterfaceCommand cmd, int numRetries) {
-        RouterInterfaceData routerInterface = new RouterInterfaceData(cmd.get_tenantId(),
-                cmd.get_gateway(), cmd.get_cidr(), cmd.get_networkId(), cmd.get_networkName());
+        RouterInterfaceData routerInterface = new RouterInterfaceData(cmd.getTenantId(),
+                cmd.getGateway(), cmd.getCidr(), cmd.getNetworkId(), cmd.getNetworkName());
         try {
             String hash;
-            hash = _bigswitchBcfApi.createRouterInterface(cmd.get_tenantId(),
-                    cmd.get_tenantId(), routerInterface);
+            hash = _bigswitchBcfApi.createRouterInterface(cmd.getTenantId(),
+                    cmd.getTenantId(), routerInterface);
 
-            return new BcfAnswer(cmd, true, "router " + cmd.get_tenantId() +
+            return new BcfAnswer(cmd, true, "router " + cmd.getTenantId() +
                     " created.", hash);
         } catch (BigSwitchBcfApiException e) {
             if (e.is_topologySyncRequested()) {
-                cmd.set_topologySyncRequested(true);
+                cmd.setTopologySyncRequested(true);
                 return new BcfAnswer(cmd, true, " created; topology sync required.");
             } else {
                 if (numRetries > 0) {
@@ -515,7 +515,7 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
             return new BcfAnswer(cmd, true, "tenant " + cmd.getTenantId() + " router updated", hash);
         } catch (BigSwitchBcfApiException e) {
             if (e.is_topologySyncRequested()) {
-                cmd.set_topologySyncRequested(true);
+                cmd.setTopologySyncRequested(true);
                 return new BcfAnswer(cmd, true, "tenant " + cmd.getTenantId() + " router updated but topology sync required.");
             } else {
                 if (numRetries > 0) {

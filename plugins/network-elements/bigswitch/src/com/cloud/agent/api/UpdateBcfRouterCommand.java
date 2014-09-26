@@ -27,9 +27,9 @@ import com.cloud.network.bigswitch.AclData;
 public class UpdateBcfRouterCommand extends BcfCommand {
     private String tenantId;
     private String publicIp;
-    private List<AclData> acls;
+    private final List<AclData> acls;
 
-    public UpdateBcfRouterCommand(String tenantId){
+    public UpdateBcfRouterCommand(final String tenantId){
         this.tenantId = tenantId;
         this.publicIp = null;
         this.acls = new ArrayList<AclData>();
@@ -39,7 +39,7 @@ public class UpdateBcfRouterCommand extends BcfCommand {
         return tenantId;
     }
 
-    public void setTenantId(String tenantId) {
+    public void setTenantId(final String tenantId) {
         this.tenantId = tenantId;
     }
 
@@ -47,7 +47,7 @@ public class UpdateBcfRouterCommand extends BcfCommand {
         return publicIp;
     }
 
-    public void setPublicIp(String publicIp) {
+    public void setPublicIp(final String publicIp) {
         this.publicIp = publicIp;
     }
 
@@ -55,7 +55,7 @@ public class UpdateBcfRouterCommand extends BcfCommand {
         return acls;
     }
 
-    public void addAcl(AclData acl){
+    public void addAcl(final AclData acl){
         this.acls.add(acl);
     }
 }

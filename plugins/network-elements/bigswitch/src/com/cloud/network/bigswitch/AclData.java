@@ -19,6 +19,8 @@
 
 package com.cloud.network.bigswitch;
 
+import java.util.Locale;
+
 import com.cloud.network.vpc.NetworkACLItem;
 import com.google.gson.annotations.SerializedName;
 
@@ -41,19 +43,19 @@ public class AclData {
         this.action = null;
         this.ipProto = null;
         this.source = new AclNetwork();
-        this.destination = new AclNetwork();;
+        this.destination = new AclNetwork();
     }
 
     public class AclNetwork{
-        @SerializedName("cidr") private String cidr;
-        @SerializedName("port") private Integer port;
+        @SerializedName("cidr") final private String cidr;
+        @SerializedName("port") final private Integer port;
 
         public AclNetwork(){
             this.cidr = null;
             this.port = null;
         }
 
-        public AclNetwork(String cidr, Integer port){
+        public AclNetwork(final String cidr, final Integer port){
             this.cidr = cidr;
             this.port = port;
         }
@@ -62,19 +64,19 @@ public class AclData {
     public String getId() {
         return id;
     }
-    public void setId(String id) {
+    public void setId(final String id) {
         this.id = id;
     }
     public int getPriority() {
         return priority;
     }
-    public void setPriority(int priority) {
+    public void setPriority(final int priority) {
         this.priority = priority;
     }
     public String getAction() {
         return action;
     }
-    public void setAction(String action) {
+    public void setAction(final String action) {
         if(action.equalsIgnoreCase(NetworkACLItem.Action.Allow.name())){
             this.action = "permit";
         } else {
@@ -84,9 +86,9 @@ public class AclData {
     public String getIpProto() {
         return ipProto;
     }
-    public void setIpProto(String ipProto) {
-        if (!ipProto.equalsIgnoreCase("all")){
-            switch(ipProto.toLowerCase()){
+    public void setIpProto(final String ipProto) {
+        if (ipProto != null && !ipProto.equalsIgnoreCase("all")){
+            switch(ipProto.toLowerCase(Locale.ENGLISH)){
             case "tcp":
                 this.ipProto = "6";
                 break;
@@ -96,19 +98,21 @@ public class AclData {
             case "icmp":
                 this.ipProto = "1";
                 break;
+            default:
+                throw new IllegalArgumentException("Protocol in ACL rule not supported");
             }
         }
     }
     public AclNetwork getSource() {
         return source;
     }
-    public void setSource(AclNetwork source) {
+    public void setSource(final AclNetwork source) {
         this.source = source;
     }
     public AclNetwork getDestination() {
         return destination;
     }
-    public void setDestination(AclNetwork destination) {
+    public void setDestination(final AclNetwork destination) {
         this.destination = destination;
     }
 }

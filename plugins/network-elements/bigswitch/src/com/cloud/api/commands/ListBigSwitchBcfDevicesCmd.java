@@ -48,10 +48,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "listBigSwitchBcfDevices", responseObject = BigSwitchBcfDeviceResponse.class, description = "Lists BigSwitch BCF Controller devices", since = "4.6.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListBigSwitchBcfDevicesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListBigSwitchBcfDevicesCmd.class.getName());
-    private static final String s_name = "listbigswitchbcfdeviceresponse";
+    public static final Logger S_LOGGER = Logger.getLogger(ListBigSwitchBcfDevicesCmd.class.getName());
+    private static final String S_NAME = "listbigswitchbcfdeviceresponse";
     @Inject
-    BigSwitchBcfElementService _bigswitchBcfElementService;
+    private BigSwitchBcfElementService bigswitchBcfElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -86,13 +86,13 @@ public class ListBigSwitchBcfDevicesCmd extends BaseListCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException {
         try {
-            List<BigSwitchBcfDeviceVO> bigswitchDevices = _bigswitchBcfElementService.listBigSwitchBcfDevices(this);
-            ListResponse<BigSwitchBcfDeviceResponse> response = new ListResponse<BigSwitchBcfDeviceResponse>();
-            List<BigSwitchBcfDeviceResponse> bigswitchDevicesResponse = new ArrayList<BigSwitchBcfDeviceResponse>();
+            final List<BigSwitchBcfDeviceVO> bigswitchDevices = bigswitchBcfElementService.listBigSwitchBcfDevices(this);
+            final ListResponse<BigSwitchBcfDeviceResponse> response = new ListResponse<BigSwitchBcfDeviceResponse>();
+            final List<BigSwitchBcfDeviceResponse> bigswitchDevicesResponse = new ArrayList<BigSwitchBcfDeviceResponse>();
 
             if (bigswitchDevices != null && !bigswitchDevices.isEmpty()) {
-                for (BigSwitchBcfDeviceVO bigswitchDeviceVO : bigswitchDevices) {
-                    BigSwitchBcfDeviceResponse bigswitchDeviceResponse = _bigswitchBcfElementService.createBigSwitchBcfDeviceResponse(bigswitchDeviceVO);
+                for (final BigSwitchBcfDeviceVO bigswitchDeviceVO : bigswitchDevices) {
+                    final BigSwitchBcfDeviceResponse bigswitchDeviceResponse = bigswitchBcfElementService.createBigSwitchBcfDeviceResponse(bigswitchDeviceVO);
                     bigswitchDevicesResponse.add(bigswitchDeviceResponse);
                 }
             }
@@ -101,14 +101,14 @@ public class ListBigSwitchBcfDevicesCmd extends BaseListCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } catch (InvalidParameterValueException invalidParamExcp) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage(), invalidParamExcp);
         } catch (CloudRuntimeException runtimeExcp) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage(), runtimeExcp);
         }
     }
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return S_NAME;
     }
 }

@@ -27,11 +27,11 @@ public class BcfConstants {
     public static final String BIGSWITCH_BCF_DEVICE_ID = "bcfdeviceid";
     public static final String BIGSWITCH_BCF_DEVICE_NAME = "bigswitchdevicename";
     public static final String BIGSWITCH_BCF_DEVICE_NAT = "nat";
-    public static final String EVENT_EXTERNAL_BCF_CONTROLLER_ADD = "PHYSICAL.BCFCONTROLLER.ADD";
-    public static final String EVENT_EXTERNAL_BCF_CONTROLLER_DELETE = "PHYSICAL.BCFCONTROLLER.DELETE";
+    public static final String EVENT_BCF_CONTROLLER_ADD = "PHYSICAL.BCFCONTROLLER.ADD";
+    public static final String EVENT_BCF_CONTROLLER_DELETE = "PHYSICAL.BCFCONTROLLER.DELETE";
 
-    public static final Provider BigSwitchBcf = new Provider("BigSwitchBcf", true);
+    public static final Provider BIG_SWITCH_BCF = new Provider("BigSwitchBcf", true);
 
-    public static final NetworkDevice BigSwitchBcfDevice = new NetworkDevice("BigSwitchBcf", BigSwitchBcf.getName());
+    public static final NetworkDevice BIG_SWITCH_BCF_DEVICE = new NetworkDevice("BigSwitchBcf", BIG_SWITCH_BCF.getName());
 
 }

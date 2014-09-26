@@ -20,14 +20,14 @@
 package com.cloud.agent.api;
 
 public class CreateBcfSegmentCommand extends BcfCommand {
-    private String _tenantId;
-    private String _tenantName;
-    private String _networkId;
-    private String _networkName;
-    private Integer _vlan;
+    private final String _tenantId;
+    private final String _tenantName;
+    private final String _networkId;
+    private final String _networkName;
+    private final Integer _vlan;
 
-    public CreateBcfSegmentCommand(String tenantId, String tenantName,
-            String networkId, String networkName, Integer vlan) {
+    public CreateBcfSegmentCommand(final String tenantId, final String tenantName,
+            final String networkId, final String networkName, final Integer vlan) {
         this._tenantId = tenantId;
         this._tenantName = tenantName;
         this._networkId = networkId;

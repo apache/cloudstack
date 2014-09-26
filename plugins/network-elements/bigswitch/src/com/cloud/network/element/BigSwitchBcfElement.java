@@ -30,26 +30,25 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.net.util.SubnetUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.commons.net.util.SubnetUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.BcfAnswer;
+import com.cloud.agent.api.UpdateBcfRouterCommand;
 import com.cloud.agent.api.CreateBcfAttachmentCommand;
 import com.cloud.agent.api.CreateBcfStaticNatCommand;
 import com.cloud.agent.api.DeleteBcfAttachmentCommand;
 import com.cloud.agent.api.DeleteBcfStaticNatCommand;
 import com.cloud.agent.api.StartupBigSwitchBcfCommand;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.UpdateBcfRouterCommand;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddBigSwitchBcfDeviceCmd;
-import com.cloud.api.commands.BcfConstants;
 import com.cloud.api.commands.DeleteBigSwitchBcfDeviceCmd;
 import com.cloud.api.commands.ListBigSwitchBcfDevicesCmd;
+import com.cloud.api.commands.BcfConstants;
 import com.cloud.api.response.BigSwitchBcfDeviceResponse;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenterVO;
@@ -209,7 +208,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
             return false;
         }
 
-        if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), service, BcfConstants.BigSwitchBcf)) {
+        if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), service, BcfConstants.BIG_SWITCH_BCF)) {
             s_logger.debug("BigSwitchBcfElement can't provide the " + service.getName() + " service on network " + network.getDisplayText());
             return false;
         }
@@ -411,7 +410,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
 
         ServerResource resource = new BigSwitchBcfResource();
 
-        final String deviceName = BcfConstants.BigSwitchBcf.getName();
+        final String deviceName = BcfConstants.BIG_SWITCH_BCF.getName();
         NetworkDevice networkDevice = NetworkDevice.getNetworkDevice(deviceName);
         final Long physicalNetworkId = cmd.getPhysicalNetworkId();
         final String hostname = cmd.getHost();
@@ -452,7 +451,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
             zoneName = String.valueOf(zoneId);
         }
 
-        boolean natNow = _bcfUtils.isNatEnabled();
+        Boolean natNow =  _bcfUtils.isNatEnabled();
         if (!nat && natNow){
             throw new CloudRuntimeException("NAT is enabled in existing controller. Enable NAT for new controller or remove existing controller first.");
         } else if (nat && !natNow){
@@ -684,7 +683,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
             }
             cidrList = r.getSourceCidrList();
             if(cidrList != null){
-                if (cidrList.size() > 1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())) {
+                if(cidrList.size()>1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())){
                     throw new ResourceUnavailableException("One CIDR and one port only please.",
                             Network.class, network.getId());
                 } else {
@@ -718,7 +717,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
             }
             cidrList = r.getSourceCidrList();
             if(cidrList != null){
-                if (cidrList.size() > 1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())) {
+                if(cidrList.size()>1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())){
                     throw new ResourceUnavailableException("One CIDR and one port only please.",
                             Network.class, network.getId());
                 } else {

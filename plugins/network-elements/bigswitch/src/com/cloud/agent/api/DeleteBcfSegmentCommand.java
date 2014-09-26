@@ -21,15 +21,15 @@ package com.cloud.agent.api;
 
 public class DeleteBcfSegmentCommand extends BcfCommand {
 
-    private String _tenantUuid;
-    private String _networkUuid;
+    private final String _tenantUuid;
+    private final String _networkUuid;
 
-    public DeleteBcfSegmentCommand(String tenantUuid, String networkUuid) {
+    public DeleteBcfSegmentCommand(final String tenantUuid, final String networkUuid) {
         this._tenantUuid = tenantUuid;
         this._networkUuid = networkUuid;
     }
 
-    public String get_tenantUuid() {
+    public String getTenantUuid() {
         return _tenantUuid;
     }
 
