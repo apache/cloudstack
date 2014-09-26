@@ -53,25 +53,25 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 public class BigSwitchBcfApi {
-    private static final Logger s_logger = Logger.getLogger(BigSwitchBcfApi.class);
-    private final static String s_protocol = "https";
-    private final static String s_nsBaseUri = "/networkService/v1.1";
+    private static final Logger S_LOGGER = Logger.getLogger(BigSwitchBcfApi.class);
+    private final static String S_PROTOCOL = "https";
+    private final static String S_NS_BASE_URL = "/networkService/v1.1";
     private final static String CONTENT_TYPE = "Content-type";
     private final static String ACCEPT = "Accept";
     private final static String CONTENT_JSON = "application/json";
     private final static String HTTP_HEADER_INSTANCE_ID = "Instance-ID";
     private final static String CLOUDSTACK_INSTANCE_ID = "cloudstack";
     private final static String HASH_MATCH = "X-BSN-BVS-HASH-MATCH";
-    private final static MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
+    private final static MultiThreadedHttpConnectionManager S_HTTP_CLIENT_MANAGER = new MultiThreadedHttpConnectionManager();
 
-    private String _host;
-    private String _username;
-    private String _password;
-    private String _hash;
-    private String _zoneId;
-    private Boolean _nat;
+    private String host;
+    private String username;
+    private String password;
+    private String hash;
+    private String zoneId;
+    private Boolean nat;
 
-    private boolean _isMaster = false;
+    private boolean isMaster;
 
     private int _port = 8000;
 
@@ -85,15 +85,15 @@ public class BigSwitchBcfApi {
      * in the unittests.
      */
     protected HttpClient createHttpClient() {
-        return new HttpClient(s_httpClientManager);
+        return new HttpClient(S_HTTP_CLIENT_MANAGER);
     }
 
-    protected HttpMethod createMethod(String type, String uri, int port) throws BigSwitchBcfApiException {
+    protected HttpMethod createMethod(final String type, final String uri, final int port) throws BigSwitchBcfApiException {
         String url;
         try {
-            url = new URL(s_protocol, _host, port, uri).toString();
+            url = new URL(S_PROTOCOL, host, port, uri).toString();
         } catch (MalformedURLException e) {
-            s_logger.error("Unable to build Big Switch API URL", e);
+            S_LOGGER.error("Unable to build Big Switch API URL", e);
             throw new BigSwitchBcfApiException("Unable to build Big Switch API URL", e);
         }
 
@@ -118,7 +118,7 @@ public class BigSwitchBcfApi {
             // Cast to ProtocolSocketFactory to avoid the deprecated constructor with the SecureProtocolSocketFactory parameter
             Protocol.registerProtocol("https", new Protocol("https", (ProtocolSocketFactory) new TrustingProtocolSocketFactory(), _port));
         } catch (IOException e) {
-            s_logger.warn("Failed to register the TrustingProtocolSocketFactory, falling back to default SSLSocketFactory", e);
+            S_LOGGER.warn("Failed to register the TrustingProtocolSocketFactory, falling back to default SSLSocketFactory", e);
         }
     }
 
@@ -126,99 +126,99 @@ public class BigSwitchBcfApi {
      * Setter used by UI to set BSN controller address
      * @param address
      */
-    public void setControllerAddress(String address) {
-        this._host = address;
+    public void setControllerAddress(final String address) {
+        this.host = address;
     }
 
     /**
      * Setter used by UI to set BSN controller user name
      * @param username
      */
-    public void setControllerUsername(String username) {
-        this._username = username;
+    public void setControllerUsername(final String username) {
+        this.username = username;
     }
 
     /**
      * Setter used by UI to set BSN controller password
      * @param password
      */
-    public void setControllerPassword(String password) {
-        this._password = password;
+    public void setControllerPassword(final String password) {
+        this.password = password;
     }
 
     /**
      * Setter used by UI to set BSN controller NAT mode
      * @param nat
      */
-    public void setControllerNat(Boolean nat) {
-        this._nat = nat;
+    public void setControllerNat(final Boolean nat) {
+        this.nat = nat;
     }
 
     public boolean isNatEnabled() {
-        return this._nat;
+        return this.nat;
     }
 
-    /**
-     * Setter used by UI to set BSN controller password
-     * @param password
-     */
-    public void setZoneId(String zoneId) {
-        this._zoneId = zoneId;
+    public void setZoneId(final String zoneId) {
+        this.zoneId = zoneId;
     }
 
-    public String createNetwork(NetworkData network) throws BigSwitchBcfApiException {
-        String uri = s_nsBaseUri + "/tenants/" + network.getNetwork().getTenantId() + "/networks";
+    public String createNetwork(final NetworkData network) throws BigSwitchBcfApiException {
+        String uri = S_NS_BASE_URL + "/tenants/" + network.getNetwork().getTenantId() + "/networks";
         return executeCreateObject(network, uri, Collections.<String, String> emptyMap());
     }
 
-    public String deleteNetwork(String tenantId, String networkId) throws BigSwitchBcfApiException {
-        String uri = s_nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId;
+    public String deleteNetwork(final String tenantId, final String networkId) throws BigSwitchBcfApiException {
+        String uri = S_NS_BASE_URL + "/tenants/" + tenantId + "/networks/" + networkId;
         return executeDeleteObject(uri);
     }
 
-    public String createAttachment(String tenantId, String networkId, AttachmentData attachment) throws BigSwitchBcfApiException {
-        String uri = s_nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + attachment.getAttachment().getId() + "/attachment";
+    public String createAttachment(final String tenantId, final String networkId,
+            final AttachmentData attachment) throws BigSwitchBcfApiException {
+        String uri = S_NS_BASE_URL + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + attachment.getAttachment().getId() + "/attachment";
         return executeCreateObject(attachment, uri, Collections.<String, String> emptyMap());
     }
 
-    public String modifyAttachment(String tenantId, String networkId, AttachmentData attachment) throws BigSwitchBcfApiException {
-        String uri = s_nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + attachment.getAttachment().getId() + "/attachment";
+    public String modifyAttachment(final String tenantId, final String networkId,
+            final AttachmentData attachment) throws BigSwitchBcfApiException {
+        String uri = S_NS_BASE_URL + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + attachment.getAttachment().getId() + "/attachment";
         return executeUpdateObject(attachment, uri, Collections.<String, String> emptyMap());
     }
 
-    public String deleteAttachment(String tenantId, String networkId, String attachmentId) throws BigSwitchBcfApiException {
-        String uri = s_nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + attachmentId + "/attachment";
+    public String deleteAttachment(final String tenantId, final String networkId,
+            final String attachmentId) throws BigSwitchBcfApiException {
+        String uri = S_NS_BASE_URL + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + attachmentId + "/attachment";
         return executeDeleteObject(uri);
     }
 
-    public String createRouter(String tenantId, RouterData router) throws BigSwitchBcfApiException {
-        String uri = s_nsBaseUri + "/tenants/" + tenantId + "/routers";
+    public String createRouter(final String tenantId, final RouterData router) throws BigSwitchBcfApiException {
+        String uri = S_NS_BASE_URL + "/tenants/" + tenantId + "/routers";
         return executeCreateObject(router, uri, Collections.<String, String> emptyMap());
     }
 
-    public String modifyRouter(String tenantId, RouterData router) throws BigSwitchBcfApiException,
+    public String modifyRouter(final String tenantId, final RouterData router) throws BigSwitchBcfApiException,
     IllegalArgumentException{
-        String uri = s_nsBaseUri + "/tenants/" + tenantId + "/routers";
+        String uri = S_NS_BASE_URL + "/tenants/" + tenantId + "/routers";
         return executeCreateObject(router, uri, Collections.<String, String> emptyMap());
     }
 
-    public String createRouterInterface(String tenantId, String routerId, RouterInterfaceData routerInterface) throws BigSwitchBcfApiException {
-        String uri = s_nsBaseUri + "/tenants/" + tenantId + "/routers/" + routerId + "/interfaces";
+    public String createRouterInterface(final String tenantId, final String routerId,
+            final RouterInterfaceData routerInterface) throws BigSwitchBcfApiException {
+        String uri = S_NS_BASE_URL + "/tenants/" + tenantId + "/routers/" + routerId + "/interfaces";
         return executeCreateObject(routerInterface, uri, Collections.<String, String> emptyMap());
     }
 
-    public String createFloatingIp(String tenantId, FloatingIpData fip) throws BigSwitchBcfApiException {
-        String uri = s_nsBaseUri + "/tenants/" + tenantId + "/floatingips";
+    public String createFloatingIp(final String tenantId, final FloatingIpData fip) throws BigSwitchBcfApiException {
+        String uri = S_NS_BASE_URL + "/tenants/" + tenantId + "/floatingips";
         return executeCreateObject(fip, uri, Collections.<String, String> emptyMap());
     }
 
-    public String deleteFloatingIp(String tenantId, String fipId) throws BigSwitchBcfApiException {
-        String uri = s_nsBaseUri + "/tenants/" + tenantId + "/floatingips/" + fipId;
+    public String deleteFloatingIp(final String tenantId, final String fipId) throws BigSwitchBcfApiException {
+        String uri = S_NS_BASE_URL + "/tenants/" + tenantId + "/floatingips/" + fipId;
         return executeDeleteObject(uri);
     }
 
     public ControlClusterStatus getControlClusterStatus() throws BigSwitchBcfApiException {
-        String uri = s_nsBaseUri + "/health";
+        String uri = S_NS_BASE_URL + "/health";
         ControlClusterStatus ccs = executeRetrieveObject(new TypeToken<ControlClusterStatus>() {
         }.getType(), uri, null);
         ccs.setStatus(true);
@@ -226,7 +226,7 @@ public class BigSwitchBcfApi {
     }
 
     public Capabilities getCapabilities() throws BigSwitchBcfApiException {
-        String uri = s_nsBaseUri + "/capabilities";
+        String uri = S_NS_BASE_URL + "/capabilities";
         List<String> capslist = executeRetrieveObject(new TypeToken<List<String>>() {
         }.getType(), uri, null);
         Capabilities caps = new Capabilities();
@@ -234,28 +234,28 @@ public class BigSwitchBcfApi {
         return caps;
     }
 
-    public String syncTopology(TopologyData topo) throws BigSwitchBcfApiException {
-        String uri = s_nsBaseUri + "/topology";
+    public String syncTopology(final TopologyData topo) throws BigSwitchBcfApiException {
+        String uri = S_NS_BASE_URL + "/topology";
         return executeCreateObject(topo, uri, Collections.<String, String> emptyMap());
     }
 
     public ControllerData getControllerData() {
-        return new ControllerData(_host, _isMaster);
+        return new ControllerData(host, isMaster);
     }
 
     private void checkInvariants() throws BigSwitchBcfApiException{
-        if (_host == null || _host.isEmpty()) {
+        if (host == null || host.isEmpty()) {
             throw new BigSwitchBcfApiException("Hostname is null or empty");
         }
-        if (_username == null || _username.isEmpty()){
+        if (username == null || username.isEmpty()){
             throw new BigSwitchBcfApiException("Username is null or empty");
         }
-        if (_password == null || _password.isEmpty()){
+        if (password == null || password.isEmpty()){
             throw new BigSwitchBcfApiException("Password is null or empty");
         }
     }
 
-    private String checkResponse(HttpMethodBase m, String errorMessageBase) throws BigSwitchBcfApiException,
+    private String checkResponse(final HttpMethodBase m, final String errorMessageBase) throws BigSwitchBcfApiException,
     IllegalArgumentException{
         String customErrorMsg = null;
         if (m.getStatusCode() == HttpStatus.SC_OK) {
@@ -273,7 +273,7 @@ public class BigSwitchBcfApi {
             throw new BigSwitchBcfApiException("BCF topology sync required", true);
         }
         if (m.getStatusCode() == HttpStatus.SC_SEE_OTHER) {
-            _isMaster = false;
+            isMaster = false;
             set_hash(HASH_IGNORE);
             return HASH_IGNORE;
         }
@@ -288,24 +288,25 @@ public class BigSwitchBcfApi {
         }
         String errorMessage = responseToErrorMessage(m);
         m.releaseConnection();
-        s_logger.error(errorMessageBase + errorMessage);
+        S_LOGGER.error(errorMessageBase + errorMessage);
         throw new BigSwitchBcfApiException(errorMessageBase + errorMessage + customErrorMsg);
     }
 
-    private void setHttpHeader(HttpMethodBase m) {
+    private void setHttpHeader(final HttpMethodBase m) {
         m.setRequestHeader(CONTENT_TYPE, CONTENT_JSON);
         m.setRequestHeader(ACCEPT, CONTENT_JSON);
-        m.setRequestHeader(HTTP_HEADER_INSTANCE_ID, CLOUDSTACK_INSTANCE_ID + "-" + _zoneId);
-        if (_hash != "" ) {
-            m.setRequestHeader(HASH_MATCH, _hash);
+        m.setRequestHeader(HTTP_HEADER_INSTANCE_ID, CLOUDSTACK_INSTANCE_ID + "-" + zoneId);
+        if (hash != "" ) {
+            m.setRequestHeader(HASH_MATCH, hash);
         }
 
-        String authString = _username + ":" + _password;
+        String authString = username + ":" + password;
         String encodedAuthString = "Basic " + Base64.encodeBase64String(authString.getBytes(Charset.forName("UTF-8")));
         m.setRequestHeader("Authorization", encodedAuthString);
     }
 
-    protected <T> String executeUpdateObject(T newObject, String uri, Map<String, String> parameters) throws BigSwitchBcfApiException,
+    protected <T> String executeUpdateObject(final T newObject, final String uri,
+            final Map<String, String> parameters) throws BigSwitchBcfApiException,
     IllegalArgumentException{
         checkInvariants();
 
@@ -328,7 +329,8 @@ public class BigSwitchBcfApi {
         return hash;
     }
 
-    protected <T> String executeCreateObject(T newObject, String uri, Map<String, String> parameters) throws BigSwitchBcfApiException {
+    protected <T> String executeCreateObject(final T newObject, final String uri,
+            final Map<String, String> parameters) throws BigSwitchBcfApiException {
         checkInvariants();
 
         PostMethod pm = (PostMethod)createMethod("post", uri, _port);
@@ -350,7 +352,7 @@ public class BigSwitchBcfApi {
         return hash;
     }
 
-    protected String executeDeleteObject(String uri) throws BigSwitchBcfApiException {
+    protected String executeDeleteObject(final String uri) throws BigSwitchBcfApiException {
         checkInvariants();
 
         DeleteMethod dm = (DeleteMethod)createMethod("delete", uri, _port);
@@ -367,8 +369,8 @@ public class BigSwitchBcfApi {
     }
 
     @SuppressWarnings("unchecked")
-    protected <T> T executeRetrieveObject(Type returnObjectType,
-            String uri, Map<String, String> parameters) throws BigSwitchBcfApiException {
+    protected <T> T executeRetrieveObject(final Type returnObjectType,
+            final String uri, final Map<String, String> parameters) throws BigSwitchBcfApiException {
         checkInvariants();
 
         GetMethod gm = (GetMethod)createMethod("get", uri, _port);
@@ -392,41 +394,41 @@ public class BigSwitchBcfApi {
             // CAUTIOUS: Safety margin of 2048 characters - extend if needed.
             returnValue = (T)gson.fromJson(gm.getResponseBodyAsString(2048), returnObjectType);
         } catch (IOException e) {
-            s_logger.error("IOException while retrieving response body", e);
+            S_LOGGER.error("IOException while retrieving response body", e);
             throw new BigSwitchBcfApiException(e);
         } finally {
             gm.releaseConnection();
         }
         if(returnValue instanceof ControlClusterStatus) {
             if(hash == HASH_CONFLICT) {
-                _isMaster = true;
+                isMaster = true;
                 ((ControlClusterStatus) returnValue).setTopologySyncRequested(true);
-            } else if (hash != HASH_IGNORE && !_isMaster) {
-                _isMaster = true;
+            } else if (hash != HASH_IGNORE && !isMaster) {
+                isMaster = true;
                 ((ControlClusterStatus) returnValue).setTopologySyncRequested(true);
             }
         }
         return returnValue;
     }
 
-    protected void executeMethod(HttpMethodBase method) throws BigSwitchBcfApiException {
+    protected void executeMethod(final HttpMethodBase method) throws BigSwitchBcfApiException {
         try {
             _client.executeMethod(method);
             if (method.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
                 method.releaseConnection();
             }
         } catch (HttpException e) {
-            s_logger.error("HttpException caught while trying to connect to the BigSwitch Controller", e);
+            S_LOGGER.error("HttpException caught while trying to connect to the BigSwitch Controller", e);
             method.releaseConnection();
             throw new BigSwitchBcfApiException("API call to BigSwitch Controller Failed", e);
         } catch (IOException e) {
-            s_logger.error("IOException caught while trying to connect to the BigSwitch Controller", e);
+            S_LOGGER.error("IOException caught while trying to connect to the BigSwitch Controller", e);
             method.releaseConnection();
             throw new BigSwitchBcfApiException("API call to BigSwitch Controller Failed", e);
         }
     }
 
-    private String responseToErrorMessage(HttpMethodBase method) {
+    private String responseToErrorMessage(final HttpMethodBase method) {
         assert method.isRequestSent() : "no use getting an error message unless the request is sent";
 
         if ("text/html".equals(method.getResponseHeader(CONTENT_TYPE).getValue())) {
@@ -436,7 +438,7 @@ public class BigSwitchBcfApi {
             try {
                 return method.getResponseBodyAsString(2048);
             } catch (IOException e) {
-                s_logger.debug("Error while loading response body", e);
+                S_LOGGER.debug("Error while loading response body", e);
             }
         }
 
@@ -449,11 +451,11 @@ public class BigSwitchBcfApi {
     }
 
     public String get_hash() {
-        return _hash;
+        return hash;
     }
 
-    public void set_hash(String hash) {
-        this._hash = hash;
+    public void set_hash(final String hash) {
+        this.hash = hash;
     }
 
 }

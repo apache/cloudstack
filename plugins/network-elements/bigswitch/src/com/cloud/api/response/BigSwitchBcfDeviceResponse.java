@@ -65,35 +65,35 @@ public class BigSwitchBcfDeviceResponse extends BaseResponse {
         return this.id;
     }
 
-    public void setId(String bcfDeviceId) {
+    public void setId(final String bcfDeviceId) {
         this.id = bcfDeviceId;
     }
 
-    public void setPhysicalNetworkId(String physicalNetworkId) {
+    public void setPhysicalNetworkId(final String physicalNetworkId) {
         this.physicalNetworkId = physicalNetworkId;
     }
 
-    public void setProviderName(String providerName) {
+    public void setProviderName(final String providerName) {
         this.providerName = providerName;
     }
 
-    public void setDeviceName(String deviceName) {
+    public void setDeviceName(final String deviceName) {
         this.deviceName = deviceName;
     }
 
-    public void setHostName(String hostName) {
+    public void setHostName(final String hostName) {
         this.hostName = hostName;
     }
 
-    public void setUserName(String username) {
+    public void setUserName(final String username) {
         this.username = username;
     }
 
-    public void setPassword(String password) {
+    public void setPassword(final String password) {
         this.password = password;
     }
 
-    public void setNat(Boolean nat) {
+    public void setNat(final Boolean nat) {
         this.nat = nat;
     }
 }

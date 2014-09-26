@@ -22,11 +22,11 @@ package com.cloud.agent.api;
 public class CreateBcfRouterCommand extends BcfCommand {
     private final String _tenantId;
 
-    public CreateBcfRouterCommand(String tenantId){
+    public CreateBcfRouterCommand(final String tenantId){
         this._tenantId = tenantId;
     }
 
-    public String get_tenantId() {
+    public String getTenantId() {
         return _tenantId;
     }
 }

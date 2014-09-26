@@ -22,17 +22,17 @@ package com.cloud.agent.api;
 public class BcfAnswer extends Answer{
     private final String hash;
 
-    public BcfAnswer(Command command, boolean success, String details) {
+    public BcfAnswer(final Command command, final boolean success, final String details) {
         super(command, success, details);
         this.hash = "";
     }
 
-    public BcfAnswer(Command command, boolean success, String details, String hash) {
+    public BcfAnswer(final Command command, final boolean success, final String details, final String hash) {
         super(command, success, details);
         this.hash = hash;
     }
 
-    public BcfAnswer(Command command, Exception e) {
+    public BcfAnswer(final Command command, final Exception e) {
         super(command, e);
         this.hash = "";
     }

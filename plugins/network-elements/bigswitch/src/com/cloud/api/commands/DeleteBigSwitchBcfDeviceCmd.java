@@ -41,9 +41,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "deleteBigSwitchBcfDevice", responseObject = SuccessResponse.class, description = " delete a BigSwitch BCF Controller device", since = "4.6.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteBigSwitchBcfDeviceCmd extends BaseAsyncCmd {
-    private static final String s_name = "deletebigswitchbcfdeviceresponse";
+    private static final String S_NAME = "deletebigswitchbcfdeviceresponse";
     @Inject
-    BigSwitchBcfElementService _bigswitchBcfElementService;
+    private BigSwitchBcfElementService bigswitchBcfElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -72,24 +72,24 @@ public class DeleteBigSwitchBcfDeviceCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException {
         try {
-            boolean result = _bigswitchBcfElementService.deleteBigSwitchBcfDevice(this);
+            final boolean result = bigswitchBcfElementService.deleteBigSwitchBcfDevice(this);
             if (result) {
-                SuccessResponse response = new SuccessResponse(getCommandName());
+                final SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete BigSwitch device.");
             }
         } catch (InvalidParameterValueException invalidParamExcp) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage(), invalidParamExcp);
         } catch (CloudRuntimeException runtimeExcp) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage(), runtimeExcp);
         }
     }
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return S_NAME;
     }
 
     @Override
@@ -99,7 +99,7 @@ public class DeleteBigSwitchBcfDeviceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return BcfConstants.EVENT_EXTERNAL_BCF_CONTROLLER_DELETE;
+        return BcfConstants.EVENT_BCF_CONTROLLER_DELETE;
     }
 
     @Override

@@ -26,8 +26,8 @@ public class CreateBcfStaticNatCommand extends BcfCommand {
     private final String _publicIp;
     private final String _mac;
 
-    public CreateBcfStaticNatCommand(String tenantId, String networkId,
-            String privateIp, String publicIp, String mac){
+    public CreateBcfStaticNatCommand(final String tenantId, final String networkId,
+            final String privateIp, final String publicIp, final String mac){
         this._tenantId = tenantId;
         this._networkId = networkId;
         this._privateIp = privateIp;
@@ -35,23 +35,23 @@ public class CreateBcfStaticNatCommand extends BcfCommand {
         this._mac = mac;
     }
 
-    public String get_tenantId() {
+    public String getTenantId() {
         return _tenantId;
     }
 
-    public String get_networkId() {
+    public String getNetworkId() {
         return _networkId;
     }
 
-    public String get_privateIp() {
+    public String getPrivateIp() {
         return _privateIp;
     }
 
-    public String get_publicIp() {
+    public String getPublicIp() {
         return _publicIp;
     }
 
-    public String get_mac() {
+    public String getMac() {
         return _mac;
     }
 }

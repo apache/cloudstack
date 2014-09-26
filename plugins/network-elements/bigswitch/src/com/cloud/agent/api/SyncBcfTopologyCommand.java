@@ -20,19 +20,19 @@
 package com.cloud.agent.api;
 
 public class SyncBcfTopologyCommand extends BcfCommand {
-    private final boolean networkIncluded;
-    private final boolean routerIncluded;
+    private final boolean _networkIncluded;
+    private final boolean _routerIncluded;
 
-    public SyncBcfTopologyCommand(boolean networkIncluded, boolean routerIncluded) {
-        this.networkIncluded = networkIncluded;
-        this.routerIncluded = routerIncluded;
+    public SyncBcfTopologyCommand(final boolean networkIncluded, final boolean routerIncluded) {
+        this._networkIncluded = networkIncluded;
+        this._routerIncluded = routerIncluded;
     }
 
     public boolean isNetworkIncluded() {
-        return networkIncluded;
+        return _networkIncluded;
     }
 
     public boolean isRouterIncluded() {
-        return routerIncluded;
+        return _routerIncluded;
     }
 }
