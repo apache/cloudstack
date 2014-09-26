@@ -40,8 +40,8 @@ import com.cloud.utils.db.TransactionLegacy;
 public class VmDiskStatisticsDaoImpl extends GenericDaoBase<VmDiskStatisticsVO, Long> implements VmDiskStatisticsDao {
     private static final Logger s_logger = Logger.getLogger(VmDiskStatisticsDaoImpl.class);
     private static final String ACTIVE_AND_RECENTLY_DELETED_SEARCH =
-        "SELECT vns.id, vns.data_center_id, vns.account_id, vns.vm_id, vns.volume_id, vns.agg_io_read, vns.agg_io_write, vns.agg_bytes_read, vns.agg_bytes_write "
-            + "FROM vm_disk_statistics vns, account a " + "WHERE vns.account_id = a.id AND (a.removed IS NULL OR a.removed >= ?) " + "ORDER BY vns.id";
+        "SELECT bcf.id, bcf.data_center_id, bcf.account_id, bcf.vm_id, bcf.volume_id, bcf.agg_io_read, bcf.agg_io_write, bcf.agg_bytes_read, bcf.agg_bytes_write "
+            + "FROM vm_disk_statistics bcf, account a " + "WHERE bcf.account_id = a.id AND (a.removed IS NULL OR a.removed >= ?) " + "ORDER BY bcf.id";
     private static final String UPDATED_VM_NETWORK_STATS_SEARCH = "SELECT id, current_io_read, current_io_write, net_io_read, net_io_write, agg_io_read, agg_io_write, "
         + "current_bytes_read, current_bytes_write, net_bytes_read, net_bytes_write, agg_bytes_read, agg_bytes_write " + "from  vm_disk_statistics "
         + "where (agg_io_read < net_io_read + current_io_read) OR (agg_io_write < net_io_write + current_io_write) OR "

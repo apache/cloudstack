@@ -224,7 +224,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
     private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter,
             Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler, Provider.JuniperContrailVpcRouter,
-            Provider.Ovs, Provider.NuageVsp);
+            Provider.Ovs, Provider.NuageVsp, Provider.BigSwitchBcf);
 
     int _cleanupInterval;
     int _maxNetworks;

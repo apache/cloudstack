@@ -6024,14 +6024,14 @@
                             }
                         }
                     },
-                    // BigSwitch Vns provider detail view
-                    bigswitchVns: {
+                    // BigSwitch BCF provider detail view
+                    bigswitchBcf: {
                         type: 'detailView',
-                        id: 'bigswitchVnsProvider',
-                        label: 'label.bigswitchVns',
+                        id: 'bigswitchBcfProvider',
+                        label: 'label.bigswitchBcf',
                         viewAll: {
                             label: 'label.devices',
-                            path: '_zone.bigswitchVnsDevices'
+                            path: '_zone.bigswitchBcfDevices'
                         },
                         tabs: {
                             details: {
@@ -6047,31 +6047,43 @@
                                     }
                                 }],
                                 dataProvider: function (args) {
-                                    refreshNspData("BigSwitchVns");
+                                    refreshNspData("BigSwitchBcf");
                                     var providerObj;
                                     $(nspHardcodingArray).each(function () {
-                                        if (this.id == "bigswitchVns") {
+                                        if (this.id == "bigswitchBcf") {
                                             providerObj = this;
                                             return false;
                                         }
                                     });
                                     args.response.success({
                                         data: providerObj,
-                                        actionFilter: networkProviderActionFilter('bigswitchVns')
+                                        actionFilter: networkProviderActionFilter('bigswitchBcf')
                                     });
                                 }
                             }
                         },
                         actions: {
                             add: {
-                                label: 'label.add.BigSwitchVns.device',
+                                label: 'label.add.BigSwitchBcf.device',
                                 createForm: {
-                                    title: 'label.add.BigSwitchVns.device',
+                                    title: 'label.add.BigSwitchBcf.device',
                                     preFilter: function (args) {
                                     },
                                     fields: {
                                         host: {
-                                            label: 'label.ip.address'
+                                            label: 'label.host.name'
+                                        },
+                                        username: {
+                                            label: 'label.username'
+                                        },
+                                        password: {
+                                            label: 'label.password',
+                                            isPassword: true
+                                        },
+                                        nat: {
+                                                label: 'label.bigswitch.bcf.nat',
+                                                isBoolean: true,
+                                                isChecked: false
                                         },
                                         numretries: {
                                             label: 'label.numretries',
@@ -6080,14 +6092,14 @@
                                     }
                                 },
                                 action: function (args) {
-                                    if (nspMap[ "bigswitchVns"] == null) {
+                                    if (nspMap[ "bigswitchBcf"] == null) {
                                         $.ajax({
-                                            url: createURL("addNetworkServiceProvider&name=BigSwitchVns&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                                            url: createURL("addNetworkServiceProvider&name=BigSwitchBcf&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                                             dataType: "json",
                                             async: true,
                                             success: function (json) {
                                                 var jobId = json.addnetworkserviceproviderresponse.jobid;
-                                                var addBigSwitchVnsProviderIntervalID = setInterval(function () {
+                                                var addBigSwitchBcfProviderIntervalID = setInterval(function () {
                                                     $.ajax({
                                                         url: createURL("queryAsyncJobResult&jobId=" + jobId),
                                                         dataType: "json",
@@ -6096,18 +6108,18 @@
                                                             if (result.jobstatus == 0) {
                                                                 return; //Job has not completed
                                                             } else {
-                                                                clearInterval(addBigSwitchVnsProviderIntervalID);
+                                                                clearInterval(addBigSwitchBcfProviderIntervalID);
                                                                 if (result.jobstatus == 1) {
-                                                                    nspMap[ "bigswitchVns"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
-                                                                    addBigSwitchVnsDevice(args, selectedPhysicalNetworkObj, "addBigSwitchVnsDevice", "addbigswitchvnsdeviceresponse", "bigswitchvnsdevice")
+                                                                    nspMap[ "bigswitchBcf"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                                                    addBigSwitchBcfDevice(args, selectedPhysicalNetworkObj, "addBigSwitchBcfDevice", "addbigswitchbcfdeviceresponse", "bigswitchbcfdevice")
                                                                 } else if (result.jobstatus == 2) {
-                                                                    alert("addNetworkServiceProvider&name=BigSwitchVns failed. Error: " + _s(result.jobresult.errortext));
+                                                                    alert("addNetworkServiceProvider&name=BigSwitchBcf failed. Error: " + _s(result.jobresult.errortext));
                                                                 }
                                                             }
                                                         },
                                                         error: function (XMLHttpResponse) {
                                                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                                            alert("addNetworkServiceProvider&name=BigSwitchVns failed. Error: " + errorMsg);
+                                                            alert("addNetworkServiceProvider&name=BigSwitchBcf failed. Error: " + errorMsg);
                                                         }
                                                     });
                                                 },
@@ -6115,12 +6127,12 @@
                                             }
                                         });
                                     } else {
-                                        addBigSwitchVnsDevice(args, selectedPhysicalNetworkObj, "addBigSwitchVnsDevice", "addbigswitchvnsdeviceresponse", "bigswitchvnsdevice")
+                                        addBigSwitchBcfDevice(args, selectedPhysicalNetworkObj, "addBigSwitchBcfDevice", "addbigswitchbcfdeviceresponse", "bigswitchbcfdevice")
                                     }
                                 },
                                 messages: {
                                     notification: function (args) {
-                                        return 'label.add.BigSwitchVns.device';
+                                        return 'label.add.BigSwitchBcf.device';
                                     }
                                 },
                                 notification: {
@@ -6131,7 +6143,7 @@
                                 label: 'label.enable.provider',
                                 action: function (args) {
                                     $.ajax({
-                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap[ "bigswitchVns"].id + "&state=Enabled"),
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap[ "bigswitchBcf"].id + "&state=Enabled"),
                                         dataType: "json",
                                         success: function (json) {
                                             var jid = json.updatenetworkserviceproviderresponse.jobid;
@@ -6162,7 +6174,7 @@
                                 label: 'label.disable.provider',
                                 action: function (args) {
                                     $.ajax({
-                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap[ "bigswitchVns"].id + "&state=Disabled"),
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap[ "bigswitchBcf"].id + "&state=Disabled"),
                                         dataType: "json",
                                         success: function (json) {
                                             var jid = json.updatenetworkserviceproviderresponse.jobid;
@@ -6193,7 +6205,7 @@
                                 label: 'label.shutdown.provider',
                                 action: function (args) {
                                     $.ajax({
-                                        url: createURL("deleteNetworkServiceProvider&id=" + nspMap[ "bigswitchVns"].id),
+                                        url: createURL("deleteNetworkServiceProvider&id=" + nspMap[ "bigswitchBcf"].id),
                                         dataType: "json",
                                         success: function (json) {
                                             var jid = json.deletenetworkserviceproviderresponse.jobid;
@@ -12709,11 +12721,11 @@
                     }
                 }
             },
-            bigswitchVnsDevices: {
-                id: 'bigswitchVnsDevices',
+            bigswitchBcfDevices: {
+                id: 'bigswitchBcfDevices',
                 title: 'label.devices',
                 listView: {
-                    id: 'bigswitchVnsDevices',
+                    id: 'bigswitchBcfDevices',
                     fields: {
                         hostname: {
                             label: 'label.bigswitch.controller.address'
@@ -12721,14 +12733,35 @@
                     },
                     actions: {
                         add: {
-                            label: 'label.add.BigSwitchVns.device',
+                            label: 'label.add.BigSwitchBcf.device',
                             createForm: {
-                                title: 'label.add.BigSwitchVns.device',
+                                title: 'label.add.BigSwitchBcf.device',
                                 preFilter: function (args) {
                                 },
                                 fields: {
                                     host: {
-                                        label: 'label.ip.address'
+                                        label: 'label.ip.address',
+                                        validation: {
+                                                     required: true
+                                                 }
+                                    },
+                                    username: {
+                                        label: 'label.username',
+                                        validation: {
+                                                     required: true
+                                                 }
+                                    },
+                                    password: {
+                                        label: 'label.password',
+                                        isPassword: true,
+                                        validation: {
+                                                     required: true
+                                                 }
+                                    },
+                                    nat: {
+                                                label: 'label.bigswitch.bcf.nat',
+                                                isBoolean: true,
+                                                isChecked: false
                                     },
                                     numretries: {
                                         label: 'label.numretries',
@@ -12737,14 +12770,14 @@
                                 }
                             },
                             action: function (args) {
-                                if (nspMap[ "bigswitchVns"] == null) {
+                                if (nspMap[ "bigswitchBcf"] == null) {
                                     $.ajax({
-                                        url: createURL("addNetworkServiceProvider&name=BigSwitchVns&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                                        url: createURL("addNetworkServiceProvider&name=BigSwitchBcf&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                                         dataType: "json",
                                         async: true,
                                         success: function (json) {
                                             var jobId = json.addnetworkserviceproviderresponse.jobid;
-                                            var addBigSwitchVnsProviderIntervalID = setInterval(function () {
+                                            var addBigSwitchBcfProviderIntervalID = setInterval(function () {
                                                 $.ajax({
                                                     url: createURL("queryAsyncJobResult&jobId=" + jobId),
                                                     dataType: "json",
@@ -12753,18 +12786,18 @@
                                                         if (result.jobstatus == 0) {
                                                             return;
                                                         } else {
-                                                            clearInterval(addBigSwitchVnsProviderIntervalID);
+                                                            clearInterval(addBigSwitchBcfProviderIntervalID);
                                                             if (result.jobstatus == 1) {
-                                                                nspMap[ "bigswitchVns"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
-                                                                addBigSwitchVnsDevice(args, selectedPhysicalNetworkObj, "addBigSwitchVnsDevice", "addbigswitchvnsdeviceresponse", "bigswitchvnsdevice")
+                                                                nspMap[ "bigswitchBcf"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                                                addBigSwitchBcfDevice(args, selectedPhysicalNetworkObj, "addBigSwitchBcfDevice", "addbigswitchbcfdeviceresponse", "bigswitchbcfdevice")
                                                             } else if (result.jobstatus == 2) {
-                                                                alert("addNetworkServiceProvider&name=BigSwitchVns failed. Error: " + _s(result.jobresult.errortext));
+                                                                alert("addNetworkServiceProvider&name=BigSwitchBcf failed. Error: " + _s(result.jobresult.errortext));
                                                             }
                                                         }
                                                     },
                                                     error: function (XMLHttpResponse) {
                                                         var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                                        alert("addNetworkServiceProvider&name=BigSwitchVns failed. Error: " + errorMsg);
+                                                        alert("addNetworkServiceProvider&name=BigSwitchBcf failed. Error: " + errorMsg);
                                                     }
                                                 });
                                             },
@@ -12772,13 +12805,13 @@
                                         }
                                     });
                                 } else {
-                                    addBigSwitchVnsDevice(args, selectedPhysicalNetworkObj, "addBigSwitchVnsDevice", "addbigswitchvnsdeviceresponse", "bigswitchvnsdevice")
+                                    addBigSwitchBcfDevice(args, selectedPhysicalNetworkObj, "addBigSwitchBcfDevice", "addbigswitchbcfdeviceresponse", "bigswitchbcfdevice")
                                 }
                             },
                             
                             messages: {
                                 notification: function (args) {
-                                    return 'label.added.new.bigswitch.vns.controller';
+                                    return 'label.added.new.bigswitch.bcf.controller';
                                 }
                             },
                             notification: {
@@ -12788,7 +12821,7 @@
                     },
                     dataProvider: function (args) {
                         $.ajax({
-                            url: createURL("listBigSwitchVnsDevices&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                            url: createURL("listBigSwitchBcfDevices&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                             data: {
                                 page: args.page,
                                 pageSize: pageSize
@@ -12796,7 +12829,7 @@
                             dataType: "json",
                             async: false,
                             success: function (json) {
-                                var items = json.listbigswitchvnsdeviceresponse.bigswitchvnsdevice;
+                                var items = json.listbigswitchbcfdeviceresponse.bigswitchbcfdevice;
                                 args.response.success({
                                     data: items
                                 });
@@ -12804,25 +12837,25 @@
                         });
                     },
                     detailView: {
-                        name: 'label.bigswitch.vns.details',
+                        name: 'label.bigswitch.bcf.details',
                         actions: {
                             'remove': {
-                                label: 'label.delete.BigSwitchVns',
+                                label: 'label.delete.BigSwitchBcf',
                                 messages: {
                                     confirm: function (args) {
-                                        return 'message.confirm.delete.BigSwitchVns';
+                                        return 'message.confirm.delete.BigSwitchBcf';
                                     },
                                     notification: function (args) {
-                                        return 'label.delete.BigSwitchVns';
+                                        return 'label.delete.BigSwitchBcf';
                                     }
                                 },
                                 action: function (args) {
                                     $.ajax({
-                                        url: createURL("deleteBigSwitchVnsDevice&vnsdeviceid=" + args.context.bigswitchvnsDevices[0].vnsdeviceid),
+                                        url: createURL("deleteBigSwitchBcfDevice&bcfdeviceid=" + args.context.bigswitchBcfDevices[0].bcfdeviceid),
                                         dataType: "json",
                                         async: true,
                                         success: function (json) {
-                                            var jid = json.deletebigswitchvnsdeviceresponse.jobid;
+                                            var jid = json.deletebigswitchbcfdeviceresponse.jobid;
                                             args.response.success({
                                                 _custom: {
                                                     jobId: jid
@@ -12840,20 +12873,20 @@
                             details: {
                                 title: 'label.details',
                                 fields:[ {
-                                    vnsdeviceid: {
+                                    bcfdeviceid: {
                                         label: 'label.id'
                                     },
                                     hostname: {
-                                        label: 'label.ip.address'
+                                        label: 'label.host.name'
                                     }
                                 }],
                                 dataProvider: function (args) {
                                     $.ajax({
-                                        url: createURL("listBigSwitchVnsDevices&vnsdeviceid=" + args.context.bigswitchVnsDevices[0].vnsdeviceid),
+                                        url: createURL("listBigSwitchBcfDevices&bcfdeviceid=" + args.context.bigswitchBcfDevices[0].bcfdeviceid),
                                         dataType: "json",
                                         async: true,
                                         success: function (json) {
-                                            var item = json.listbigswitchvnsdeviceresponse.bigswitchvnsdevice[0];
+                                            var item = json.listbigswitchbcfdeviceresponse.bigswitchbcfdevice[0];
                                             args.response.success({
                                                 data: item
                                             });
@@ -20159,11 +20192,14 @@
         });
     }
     
-    function addBigSwitchVnsDevice(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
+    function addBigSwitchBcfDevice(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
         var array1 =[];
         array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
         array1.push("&hostname=" + todb(args.data.host));
-        
+        array1.push("&username=" + args.data.username);
+        array1.push("&password=" + args.data.password);
+        array1.push("&nat=" + (args.data.nat == 'on' ? "true": "false"));
+
         $.ajax({
             url: createURL(apiCmd + array1.join("")),
             dataType: "json",
@@ -20905,8 +20941,8 @@
 							case "BrocadeVcs":
                             nspMap[ "brocadeVcs"] = items[i];
                             break;
-                            case "BigSwitchVns":
-                            nspMap[ "bigswitchVns"] = items[i];
+                            case "BigSwitchBcf":
+                            nspMap[ "bigswitchBcf"] = items[i];
                             break;
                             case "Ovs":
                             nspMap[ "Ovs"] = items[i];
@@ -20947,9 +20983,9 @@
             state: nspMap.brocadeVcs ? nspMap.brocadeVcs.state: 'Disabled'
         },
         {
-            id: 'bigswitchVns',
-            name: 'BigSwitch Vns',
-            state: nspMap.bigswitchVns ? nspMap.bigswitchVns.state: 'Disabled'
+            id: 'bigswitchBcf',
+            name: 'BigSwitch BCF',
+            state: nspMap.bigswitchBcf ? nspMap.bigswitchBcf.state: 'Disabled'
         },
         {
             id: 'BaremetalDhcpProvider',

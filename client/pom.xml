@@ -127,7 +127,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-plugin-network-vns</artifactId>
+      <artifactId>cloud-plugin-network-bigswitch</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

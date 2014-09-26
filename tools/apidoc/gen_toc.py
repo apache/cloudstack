@@ -138,7 +138,7 @@ known_categories = {
     'Tags': 'Resource tags',
     'NiciraNvpDevice': 'Nicira NVP',
     'BrocadeVcsDevice': 'Brocade VCS',
-    'BigSwitchVnsDevice': 'BigSwitch VNS',
+    'BigSwitchBcfDevice': 'BigSwitch BCF',
 	'NuageVsp': 'Nuage VSP',
     'AutoScale': 'AutoScale',
     'Counter': 'AutoScale',
