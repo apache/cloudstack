@@ -942,9 +942,40 @@ test_data = {
                               "displaytext": "win8withpv",
                               "name": "win8withpv",
                               "passwordenabled": False,
-                              "url": "http://10.147.28.7/templates/Windows8/Windows864.vhd",
+                              "url": "http://pleaseupdateURL/dummy.vhd",
                               "format": "VHD" ,
                               "ostype": "Windows 8 (64-bit)",
+                              "ispublic": "true",
+                              "hypervisor": "XenServer"
+                              },
+    "Windows 8 (64-bit)": {
+                              "displaytext": "Windows 8 (64-bit)",
+                              "name": "win8withpv",
+                              "passwordenabled": False,
+                              "url": "http://pleaseupdateURL/dummy.vhd",
+                              "format": "VHD" ,
+                              "ostype": "Windows 8 (64-bit)",
+                              "ispublic": "true",
+                              "hypervisor": "XenServer"
+                              },
+    "Windows Server 2012 (64-bit)": {
+                              "displaytext": "Windows Server 2012 (64-bit)",
+                              "name": "Windows Server 2012 (64-bit)",
+                              "passwordenabled": False,
+                              "url": "http://pleaseupdateURL/dummy.vhd",
+                              "format": "VHD" ,
+                              "ostype": "Windows Server 2012 (64-bit)",
+                              "ispublic": "true",
+                              "hypervisor": "XenServer"
+                              },
+
+    "Windows 7 (64-bit)": {
+                              "displaytext": "Windows 7 (64-bit)",
+                              "name": "Windows 7 (64-bit)",
+                              "passwordenabled": False,
+                              "url": "http://pleaseupdateURL/dummy.vhd",
+                              "format": "VHD" ,
+                              "ostype": "Windows 7 (64-bit)",
                               "ispublic": "true",
                               "hypervisor": "XenServer"
                               },
