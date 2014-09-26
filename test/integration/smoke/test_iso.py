@@ -229,6 +229,21 @@ class TestISO(cloudstackTestCase):
 
         return
 
+
+    def get_iso_details(self,isoname):
+
+        #ListIsos to list default ISOS (VM and xen tools)
+        list_default_iso_response = list_isos(
+                                      self.apiclient,
+                                      name=isoname,
+                                      isready="true"
+                                      )
+        self.assertEqual(
+                         list_default_iso_response,
+                         None,
+                         "Check if ISO exists in ListIsos"
+                         )
+
     @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
     def test_02_edit_iso(self):
         """Test Edit ISO
@@ -321,7 +336,7 @@ class TestISO(cloudstackTestCase):
                          "Check if ISO exists in ListIsos"
                          )
         return
-    
+
     @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns"], required_hardware="true")
     def test_04_extract_Iso(self):
         "Test for extract ISO"
@@ -513,4 +528,21 @@ class TestISO(cloudstackTestCase):
         cmd.id = iso_response.id
         cmd.zoneid = self.services["destzoneid"]
         self.apiclient.deleteIso(cmd)
+        return
+
+
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns"], required_hardware="false")
+    def test_07_list_default_iso(self):
+        """Test delete ISO
+        """
+
+        # Validate the following:
+        # list ISO should list default ISOS (VM and xen tools)
+
+
+        #ListIsos to list default ISOS (VM and xen tools)
+        list_xs__iso_response = self.get_iso_details("xs-tools.iso")
+        list_xs__iso_response = self.get_iso_details("vmware-tools.iso")
+
+
         return
