@@ -622,15 +622,10 @@
                                     });
 								
                                     if (existing.length == 0) {
-                                        itemsView.push({
-                                            id: item.id,
-                                            name: item.name,
-                                            description: item.description,
-                                            hypervisor: item.hypervisor,
-                                            ostypeid: item.ostypeid,
+                                        itemsView.push($.extend(item, {                                            
                                             zones: item.zonename,
                                             zoneids: [item.zoneid]
-                                        });
+                                        }));
                                     }
                                     else {
                                         existing[0].zones = 'label.multiplezones';
