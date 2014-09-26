@@ -28,5 +28,7 @@ public interface StaticNat {
 
     String getDestIpAddress();
 
+    String getSourceMacAddress();
+
     boolean isForRevoke();
 }

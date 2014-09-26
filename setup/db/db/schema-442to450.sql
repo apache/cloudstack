@@ -284,6 +284,24 @@ CREATE TABLE `cloud`.`brocade_network_vlan_map` (
    CONSTRAINT `fk_brocade_network_vlan_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `cloud`.`external_bigswitch_vns_devices`;
+CREATE TABLE `cloud`.`external_bigswitch_bcf_devices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which bigswitch bcf device is added',
+  `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this bigswitch bcf device',
+  `device_name` varchar(255) NOT NULL COMMENT 'name of the bigswitch bcf device',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external bigswitch bcf device',
+  `hostname` varchar(255) NOT NULL COMMENT 'host name or IP address for the bigswitch bcf device',
+  `username` varchar(255) NOT NULL COMMENT 'username for the bigswitch bcf device',
+  `password` varchar(255) NOT NULL COMMENT 'password for the bigswitch bcf device',
+  `nat` boolean NOT NULL COMMENT 'NAT support for the bigswitch bcf device',
+  `hash` varchar(255) NOT NULL COMMENT 'topology hash for the bigswitch bcf networks',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_external_bigswitch_bcf_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_bigswitch_bcf_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 /* As part of the separation of Xen and XenServer, update the column for the network labels */
 ALTER TABLE `cloud`.`physical_network_traffic_types` CHANGE `xen_network_label` `xenserver_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a XenServer host';
 

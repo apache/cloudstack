@@ -1406,7 +1406,14 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             throw new InvalidParameterValueException("Vm ip is not set as dnat ip for this public ip");
         }
 
-        StaticNatImpl staticNat = new StaticNatImpl(sourceIp.getAllocatedToAccountId(), sourceIp.getAllocatedInDomainId(), networkId, sourceIp.getId(), dstIp, forRevoke);
+        String srcMac = null;
+        try {
+            srcMac = _networkModel.getNextAvailableMacAddressInNetwork(networkId);
+        } catch (InsufficientAddressCapacityException e) {
+            throw new CloudRuntimeException("Insufficient MAC address for static NAT instantiation.");
+        }
+
+        StaticNatImpl staticNat = new StaticNatImpl(sourceIp.getAllocatedToAccountId(), sourceIp.getAllocatedInDomainId(), networkId, sourceIp.getId(), dstIp, srcMac, forRevoke);
         staticNats.add(staticNat);
         return staticNats;
     }
