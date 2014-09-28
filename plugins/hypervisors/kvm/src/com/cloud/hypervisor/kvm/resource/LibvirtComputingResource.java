@@ -2654,7 +2654,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected GetStorageStatsAnswer execute(final GetStorageStatsCommand cmd) {
         try {
-            KVMStoragePool sp = _storagePoolMgr.getStoragePool(cmd.getPooltype(), cmd.getStorageId());
+            KVMStoragePool sp = _storagePoolMgr.getStoragePool(cmd.getPooltype(), cmd.getStorageId(), true);
             return new GetStorageStatsAnswer(cmd, sp.getCapacity(), sp.getUsed());
         } catch (CloudRuntimeException e) {
             return new GetStorageStatsAnswer(cmd, e.toString());

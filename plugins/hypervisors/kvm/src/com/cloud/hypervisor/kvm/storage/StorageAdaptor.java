@@ -28,6 +28,9 @@ public interface StorageAdaptor {
 
     public KVMStoragePool getStoragePool(String uuid);
 
+    // Get the storage pool from libvirt, but control if libvirt should refresh the pool (can take a long time)
+    public KVMStoragePool getStoragePool(String uuid, boolean refreshInfo);
+
     // given disk path (per database) and pool, create new KVMPhysicalDisk, populate
     // it with info from local disk, and return it
     public KVMPhysicalDisk getPhysicalDisk(String volumeUuid, KVMStoragePool pool);
