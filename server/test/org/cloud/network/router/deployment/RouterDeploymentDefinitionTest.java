@@ -105,18 +105,14 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test
     public void testRedundancyProperty() {
         // Set and confirm is redundant
-        RouterDeploymentDefinition deployment1 = this.builder.create()
+        when(this.mockNw.isRedundant()).thenReturn(true);
+        RouterDeploymentDefinition deployment = this.builder.create()
                 .setGuestNetwork(this.mockNw)
                 .setDeployDestination(this.mockDestination)
-                .makeRedundant()
                 .build();
-        assertTrue("The builder ignored \".makeRedundant()\"", deployment1.isRedundant());
-        RouterDeploymentDefinition deployment2 = this.builder.create()
-                .setGuestNetwork(this.mockNw)
-                .setDeployDestination(this.mockDestination)
-                .setRedundant(true)
-                .build();
-        assertTrue("The builder ignored \".setRedundant(true)\"", deployment2.isRedundant());
+        assertTrue("The builder ignored redundancy from its inner network", deployment.isRedundant());
+        when(this.mockNw.isRedundant()).thenReturn(false);
+        assertFalse("The builder ignored redundancy from its inner network", deployment.isRedundant());
     }
 
     @Test
@@ -124,20 +120,16 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         // Vpc type
         assertFalse(this.deployment.isVpcRouter());
         // Offering null
-        this.deployment.offeringId = null;
-        assertNull(this.deployment.getOfferingId());
-        this.deployment.offeringId = OFFERING_ID;
-        assertEquals(OFFERING_ID, this.deployment.getOfferingId().longValue());
+        this.deployment.serviceOfferingId = null;
+        assertNull(this.deployment.getServiceOfferingId());
+        this.deployment.serviceOfferingId = OFFERING_ID;
+        assertEquals(OFFERING_ID, this.deployment.getServiceOfferingId().longValue());
         assertNotNull(this.deployment.getRouters());
         assertNotNull(this.deployment.getGuestNetwork());
         assertNotNull(this.deployment.getDest());
         assertNotNull(this.deployment.getOwner());
         this.deployment.plan = mock(DeploymentPlan.class);
         assertNotNull(this.deployment.getPlan());
-        // Redundant : by default is not
-        assertFalse(this.deployment.isRedundant());
-        this.deployment.isRedundant = true;
-        assertTrue(this.deployment.isRedundant());
         assertFalse(this.deployment.isPublicNetwork());
         this.deployment.isPublicNetwork = true;
         assertTrue(this.deployment.isPublicNetwork());
@@ -550,7 +542,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         when(routerVO2.getIsRedundantRouter()).thenReturn(false);
         when(routerVO2.getState()).thenReturn(VirtualMachine.State.Stopped);
         // If this deployment is not redundant nothing will be executed
-        this.deployment.isRedundant = true;
+        when(this.mockNw.isRedundant()).thenReturn(true);
 
         // Execute
         this.deployment.setupPriorityOfRedundantRouter();
@@ -577,7 +569,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         when(routerVO2.getIsRedundantRouter()).thenReturn(true);
         when(routerVO2.getState()).thenReturn(VirtualMachine.State.Running);
         // If this deployment is not redundant nothing will be executed
-        this.deployment.isRedundant = true;
+        when(this.mockNw.isRedundant()).thenReturn(true);
 
         // Execute
         this.deployment.setupPriorityOfRedundantRouter();
@@ -606,7 +598,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         when(routerVO2.getIsRedundantRouter()).thenReturn(true);
         when(routerVO2.getState()).thenReturn(VirtualMachine.State.Stopped);
         // If this deployment is not redundant nothing will be executed
-        this.deployment.isRedundant = true;
+        when(this.mockNw.isRedundant()).thenReturn(true);
 
         // Execute
         this.deployment.setupPriorityOfRedundantRouter();
@@ -655,17 +647,17 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
                 1, this.deployment.getNumberOfRoutersToDeploy());
 
         // Execute and assert, just the same but for redundant deployment
-        this.deployment.isRedundant = true;
+        when(this.mockNw.isRedundant()).thenReturn(true);
         assertEquals(NUMBER_OF_ROUTERS_TO_DEPLOY_IS_NOT_THE_EXPECTED,
                 2, this.deployment.getNumberOfRoutersToDeploy());
 
         // Just the same, instead of an empty list, a 1 items list
         this.deployment.routers.add(mock(DomainRouterVO.class));
-        this.deployment.isRedundant = false;
+        when(this.mockNw.isRedundant()).thenReturn(false);
         assertEquals(NUMBER_OF_ROUTERS_TO_DEPLOY_IS_NOT_THE_EXPECTED,
                 0, this.deployment.getNumberOfRoutersToDeploy());
 
-        this.deployment.isRedundant = true;
+        when(this.mockNw.isRedundant()).thenReturn(true);
         assertEquals(NUMBER_OF_ROUTERS_TO_DEPLOY_IS_NOT_THE_EXPECTED,
                 1, this.deployment.getNumberOfRoutersToDeploy());
     }
@@ -759,33 +751,33 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test
     public void testFindOfferingIdReceivingNewOne() {
         // Prepare
-        this.deployment.offeringId = 1L;
+        this.deployment.serviceOfferingId = 1L;
         when(this.mockNw.getNetworkOfferingId()).thenReturn(OFFERING_ID);
         when(this.mockNetworkOfferingDao.findById(OFFERING_ID)).thenReturn(this.mockNwOfferingVO);
         when(this.mockNwOfferingVO.getServiceOfferingId()).thenReturn(OFFERING_ID);
 
         // Execute
-        this.deployment.findOfferingId();
+        this.deployment.findServiceOfferingId();
 
         // Assert
         assertEquals("Given that no Offering was found, the previous Offering Id should be kept",
-                OFFERING_ID, this.deployment.offeringId.longValue());
+                OFFERING_ID, this.deployment.serviceOfferingId.longValue());
     }
 
     @Test
     public void testFindOfferingIdReceivingKeepingPrevious() {
         // Prepare
-        this.deployment.offeringId = 1L;
+        this.deployment.serviceOfferingId = 1L;
         when(this.mockNw.getNetworkOfferingId()).thenReturn(OFFERING_ID);
         when(this.mockNetworkOfferingDao.findById(OFFERING_ID)).thenReturn(this.mockNwOfferingVO);
         when(this.mockNwOfferingVO.getServiceOfferingId()).thenReturn(null);
 
         // Execute
-        this.deployment.findOfferingId();
+        this.deployment.findServiceOfferingId();
 
         // Assert
         assertEquals("Found Offering Id didn't replace previous one",
-                1L, this.deployment.offeringId.longValue());
+                1L, this.deployment.serviceOfferingId.longValue());
     }
 
     @Test
@@ -794,7 +786,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
 
         // Prepare
         this.deployment.routers = new ArrayList<>();
-        this.deployment.isRedundant = true;
+        when(this.mockNw.isRedundant()).thenReturn(true);
         //this.deployment.routers.add(routerVO1);
         RouterDeploymentDefinition deploymentUT = spy(this.deployment);
         doReturn(2).when(deploymentUT).getNumberOfRoutersToDeploy();
@@ -858,7 +850,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
 
     protected void driveTestPrepareDeployment(final boolean isRedundant, final boolean isPublicNw) {
         // Prepare
-        this.deployment.isRedundant = isRedundant;
+        when(this.mockNw.isRedundant()).thenReturn(isRedundant);
         when(this.mockNetworkModel.isProviderSupportServiceInNetwork(
                 NW_ID_1, Service.SourceNat, Provider.VirtualRouter)).thenReturn(isPublicNw);
         // Execute
@@ -898,7 +890,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         doReturn(noOfRoutersToDeploy).when(deploymentUT).getNumberOfRoutersToDeploy();
         doReturn(passPreparation).when(deploymentUT).prepareDeployment();
         doNothing().when(deploymentUT).findVirtualProvider();
-        doNothing().when(deploymentUT).findOfferingId();
+        doNothing().when(deploymentUT).findServiceOfferingId();
         doNothing().when(deploymentUT).findSourceNatIP();
         doNothing().when(deploymentUT).deployAllVirtualRouters();
 
@@ -916,7 +908,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
             }
         }
         verify(deploymentUT, times(proceedToDeployment)).findVirtualProvider();
-        verify(deploymentUT, times(proceedToDeployment)).findOfferingId();
+        verify(deploymentUT, times(proceedToDeployment)).findServiceOfferingId();
         verify(deploymentUT, times(proceedToDeployment)).findSourceNatIP();
         verify(deploymentUT, times(proceedToDeployment)).deployAllVirtualRouters();
     }

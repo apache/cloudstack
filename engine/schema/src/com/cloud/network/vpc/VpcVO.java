@@ -16,8 +16,7 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import java.util.Date;
-import java.util.UUID;
+import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -25,8 +24,8 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import com.cloud.utils.db.GenericDao;
+import java.util.Date;
+import java.util.UUID;
 
 @Entity
 @Table(name = "vpc")
@@ -61,6 +60,9 @@ public class VpcVO implements Vpc {
     @Enumerated(value = EnumType.STRING)
     State state;
 
+    @Column(name = "redundant")
+    boolean isRedundant;
+
     @Column(name = "vpc_offering_id")
     long vpcOfferingId;
 
@@ -89,8 +91,9 @@ public class VpcVO implements Vpc {
         uuid = UUID.randomUUID().toString();
     }
 
-    public VpcVO(long zoneId, String name, String displayText, long accountId, long domainId, long vpcOffId, String cidr,
-                 String networkDomain, boolean useDistributedRouter, boolean regionLevelVpc) {
+    public VpcVO(final long zoneId, final String name, final String displayText, final long accountId, final long domainId,
+                 final long vpcOffId, String cidr, final String networkDomain, final boolean useDistributedRouter,
+                 final boolean regionLevelVpc, final boolean isRedundant) {
         this.zoneId = zoneId;
         this.name = name;
         this.displayText = displayText;
@@ -103,6 +106,7 @@ public class VpcVO implements Vpc {
         vpcOfferingId = vpcOffId;
         this.usesDistributedRouter = useDistributedRouter;
         this.regionLevelVpc = regionLevelVpc;
+        this.isRedundant = isRedundant;
     }
 
     @Override
@@ -208,6 +212,11 @@ public class VpcVO implements Vpc {
     @Override
     public boolean isDisplay() {
         return display;
+    }
+
+    @Override
+    public boolean isRedundant() {
+       return this.isRedundant;
     }
 
     @Override

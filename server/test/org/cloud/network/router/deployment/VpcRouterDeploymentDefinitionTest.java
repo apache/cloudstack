@@ -20,12 +20,14 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.assertFalse;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.cloud.network.vpc.VpcOfferingVO;
 import java.util.List;
 
 import org.junit.Before;
@@ -54,7 +56,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     private static final String FOR_VPC_ONLY_THE_GIVEN_DESTINATION_SHOULD_BE_USED = "For Vpc only the given destination should be used";
 
     private static final long VPC_ID = 201L;
-    private static final long ZONE_ID = 211L;
+    public static final long VPC_OFFERING_ID = 210L;
 
     @Mock
     protected VpcDao mockVpcDao;
@@ -79,6 +81,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
         super.initMocks();
         when(mockVpc.getId()).thenReturn(VPC_ID);
         when(mockVpc.getZoneId()).thenReturn(VPC_ID);
+        when(mockVpc.getVpcOfferingId()).thenReturn(VPC_OFFERING_ID);
     }
 
     @Before
@@ -175,13 +178,34 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     }
 
     @Test
-    public void testCheckPreconditions() {
-        // TODO Implement this test
+    public void testFindOfferingIdLeavingPrevious() {
+        // Prepare
+        Long initialOfferingId = deployment.serviceOfferingId;
+        VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
+        when(mockVpcOffDao.findById(VPC_OFFERING_ID)).thenReturn(vpcOffering);
+        when(vpcOffering.getServiceOfferingId()).thenReturn(null);
+
+        // Execute
+        deployment.findServiceOfferingId();
+
+        // Assert
+        assertEquals("Offering Id shouldn't have been updated",
+                initialOfferingId, deployment.serviceOfferingId);
     }
 
     @Test
-    public void testExecuteDeployment() {
-        // TODO Implement this test
+    public void testFindOfferingIdSettingNewOne() {
+        // Prepare
+        VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
+        when(mockVpcOffDao.findById(VPC_OFFERING_ID)).thenReturn(vpcOffering);
+        when(vpcOffering.getServiceOfferingId()).thenReturn(VPC_OFFERING_ID);
+
+        // Test
+        deployment.findServiceOfferingId();
+
+        // Assert
+        assertEquals("Offering Id should have been updated",
+                VPC_OFFERING_ID, deployment.serviceOfferingId.longValue());
     }
 
     @Test
@@ -226,5 +250,18 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
 
         // Assert
         assertEquals("SourceNatIp returned by the VpcManager was not correctly set", publicIp, deployment.sourceNatIp);
+    }
+
+    @Test
+    public void testRedundancyProperty() {
+        // Set and confirm is redundant
+        when(this.mockVpc.isRedundant()).thenReturn(true);
+        RouterDeploymentDefinition deployment = this.builder.create()
+                .setVpc(this.mockVpc)
+                .setDeployDestination(this.mockDestination)
+                .build();
+        assertTrue("The builder ignored redundancy from its inner network", deployment.isRedundant());
+        when(this.mockVpc.isRedundant()).thenReturn(false);
+        assertFalse("The builder ignored redundancy from its inner network", deployment.isRedundant());
     }
 }

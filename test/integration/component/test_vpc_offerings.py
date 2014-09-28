@@ -77,9 +77,35 @@ class Services:
                                     "displaytext": 'VPC off',
                                     "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
                                 },
+                         "redundant_vpc_offering": {
+                                    "name": 'Redundant VPC off',
+                                    "displaytext": 'Redundant VPC off',
+                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
+                                    "serviceProviderList": {
+                                            "Vpn": 'VpcVirtualRouter',
+                                            "Dhcp": 'VpcVirtualRouter',
+                                            "Dns": 'VpcVirtualRouter',
+                                            "SourceNat": 'VpcVirtualRouter',
+                                            "PortForwarding": 'VpcVirtualRouter',
+                                            "Lb": 'VpcVirtualRouter',
+                                            "UserData": 'VpcVirtualRouter',
+                                            "StaticNat": 'VpcVirtualRouter',
+                                            "NetworkACL": 'VpcVirtualRouter'
+                                    },
+                                    "serviceCapabilityList": {
+                                        "SourceNat": {
+                                            "RedundantRouter": 'true'
+                                        }
+                                    },
+                                },
                          "vpc": {
                                  "name": "TestVPC",
                                  "displaytext": "TestVPC",
+                                 "cidr": '10.0.0.1/24'
+                                 },
+                         "redundant_vpc": {
+                                 "name": "TestRedundantVPC",
+                                 "displaytext": "TestRedundantVPC",
                                  "cidr": '10.0.0.1/24'
                                  },
                          "network": {
@@ -171,6 +197,7 @@ class TestVPCOffering(cloudstackTestCase):
         return
 
     def setUp(self):
+        self.debug("test_vpc_offering#setUp")
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
@@ -184,6 +211,7 @@ class TestVPCOffering(cloudstackTestCase):
         return
 
     def tearDown(self):
+        self.debug("test_vpc_offering#tearDown")
         try:
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
@@ -1102,4 +1130,56 @@ class TestVPCOffering(cloudstackTestCase):
                     'Disabled',
                     "List VPC offering should return only offerings that are disabled"
                  )
+        return
+
+    @attr(tags=["advanced", "redundancy"], required_hardware="false")
+    def test_09_create_redundant_vpc_offering(self):
+
+        self.debug("Creating Redundant VPC offering")
+        vpc_off = VpcOffering.create(
+                                     self.apiclient,
+                                     self.services["redundant_vpc_offering"]
+                                     )
+        self.cleanup.append(vpc_off)
+
+        self.debug("Check if the Redundant VPC offering is created successfully?")
+        self.validate_vpc_offering(vpc_off)
+
+        self.debug("Enabling the created Redundant VPC offering")
+        vpc_off.update(self.apiclient, state='Enabled')
+
+
+        self.debug("Creating a Redundant VPC network in the account: %s" %
+                                                    self.account.name)
+        vpc = VPC.create(
+                         self.apiclient,
+                         self.services["redundant_vpc"],
+                         vpcofferingid=vpc_off.id,
+                         zoneid=self.zone.id,
+                         account=self.account.name,
+                         domainid=self.account.domainid
+                         )
+        self.debug("Validating Redundant VPC Nw creation")
+        self.validate_vpc_network(vpc)
+
+        vpcs = VPC.list(
+            self.apiclient,
+            id=vpc.id
+        )
+
+        found = False
+        redundant = False
+        for iVpc in vpcs:
+            if iVpc.id == vpc.id:
+                found = True
+                if iVpc.redundantvpcrouter:
+                    redundant = True
+                break
+
+        self.assertEqual(
+                         redundant,
+                         True,
+                         "Didn't create any Redundant Vpc"
+                         )
+
         return

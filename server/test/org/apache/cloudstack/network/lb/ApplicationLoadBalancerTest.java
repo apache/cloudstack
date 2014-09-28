@@ -130,11 +130,11 @@ public class ApplicationLoadBalancerTest extends TestCase {
         Mockito.when(_lbService.deleteLoadBalancerRule(nonExistingLbId, true)).thenReturn(false);
 
         //mockito for .createApplicationLoadBalancer tests
-        NetworkVO guestNetwork = new NetworkVO(TrafficType.Guest, null, null, 1, null, 1, 1L);
+        NetworkVO guestNetwork = new NetworkVO(TrafficType.Guest, null, null, 1, null, 1, 1L, false);
         setId(guestNetwork, validGuestNetworkId);
         guestNetwork.setCidr("10.1.1.1/24");
 
-        NetworkVO publicNetwork = new NetworkVO(TrafficType.Public, null, null, 1, null, 1, 1L);
+        NetworkVO publicNetwork = new NetworkVO(TrafficType.Public, null, null, 1, null, 1, 1L, false);
 
         Mockito.when(_ntwkModel.getNetwork(validGuestNetworkId)).thenReturn(guestNetwork);
         Mockito.when(_ntwkModel.getNetwork(invalidGuestNetworkId)).thenReturn(null);

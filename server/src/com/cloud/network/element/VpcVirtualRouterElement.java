@@ -326,7 +326,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
         sourceNatCapabilities.putAll(capabilities.get(Service.SourceNat));
-        sourceNatCapabilities.put(Capability.RedundantRouter, "false");
+        // TODO This kind of logic is already placed in the DB
+        sourceNatCapabilities.put(Capability.RedundantRouter, "true");
         capabilities.put(Service.SourceNat, sourceNatCapabilities);
 
         Map<Capability, String> vpnCapabilities = new HashMap<Capability, String>();

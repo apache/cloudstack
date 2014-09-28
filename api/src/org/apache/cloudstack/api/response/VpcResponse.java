@@ -119,6 +119,10 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     @Param(description = "true if VPC is region level", since = "4.4")
     private Boolean regionLevelVpc;
 
+    @SerializedName(ApiConstants.REDUNDANT_VPC_ROUTER)
+    @Param(description = "if this VPC has redundant router", since = "4.4")
+    private boolean redundantRouter;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -214,5 +218,9 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
 
     public void setUsesDistributedRouter(Boolean usesDistributedRouter) {
         this.usesDistributedRouter = usesDistributedRouter;
+    }
+
+    public void setRedundantRouter(Boolean redundantRouter) {
+        this.redundantRouter = redundantRouter;
     }
 }

@@ -140,7 +140,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
         }
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
-                network.getDataCenterId(), physicalNetworkId);
+                network.getDataCenterId(), physicalNetworkId, offering.getRedundantRouter());
         if (network.getGateway() != null) {
             implemented.setGateway(network.getGateway());
         }
