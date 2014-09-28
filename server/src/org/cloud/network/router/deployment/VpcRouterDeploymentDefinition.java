@@ -16,12 +16,6 @@
 // under the License.
 package org.cloud.network.router.deployment;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.log4j.Logger;
-
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
@@ -41,6 +35,11 @@ import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile.Param;
+import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     private static final Logger logger = Logger.getLogger(VpcRouterDeploymentDefinition.class);
@@ -53,9 +52,10 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
     protected Vpc vpc;
 
-    protected VpcRouterDeploymentDefinition(final Vpc vpc, final DeployDestination dest, final Account owner, final Map<Param, Object> params, final boolean isRedundant) {
+    protected VpcRouterDeploymentDefinition(final Vpc vpc, final DeployDestination dest, final Account owner,
+            final Map<Param, Object> params) {
 
-        super(null, dest, owner, params, isRedundant);
+        super(null, dest, owner, params);
 
         this.vpc = vpc;
     }
@@ -108,9 +108,9 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
     @Override
     protected int getNumberOfRoutersToDeploy() {
-        // TODO Should we make our changes here in order to enable Redundant
-        // Router for VPC?
-        return routers.isEmpty() ? 1 : 0;
+        // Enable redundant Vpc, with the same behavior a Non Vpc Router
+        // TODO Remove this method unless we need to actually add some behavior
+        return super.getNumberOfRoutersToDeploy();
     }
 
     /**
@@ -125,9 +125,9 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
     @Override
     protected void setupPriorityOfRedundantRouter() {
-        // Nothing to do for now
-        // TODO Shouldn't we add this behavior once Redundant Router works for
-        // Vpc too
+        // Implement Redundant Vpc
+        // TODO Remove this method unless we need to actually add some behavior
+        super.setupPriorityOfRedundantRouter();
     }
 
     @Override
@@ -152,10 +152,10 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     }
 
     @Override
-    protected void findOfferingId() {
+    protected void findServiceOfferingId() {
         Long vpcOfferingId = vpcOffDao.findById(vpc.getVpcOfferingId()).getServiceOfferingId();
         if (vpcOfferingId != null) {
-            offeringId = vpcOfferingId;
+            serviceOfferingId = vpcOfferingId;
         }
     }
 
@@ -163,10 +163,16 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     protected void deployAllVirtualRouters() throws ConcurrentOperationException, InsufficientCapacityException,
             ResourceUnavailableException {
 
-        DomainRouterVO router = nwHelper.deployRouter(this, true);
+        // Implement Redundant Vpc
+        int routersToDeploy = this.getNumberOfRoutersToDeploy();
+        for(int i = 0; i < routersToDeploy; i++) {
+            // Don't start the router as we are holding the network lock that needs to be released at the end of router allocation
+            DomainRouterVO router = this.nwHelper.deployRouter(this, false);
 
-        if (router != null) {
-            routers.add(router);
+            if (router != null) {
+                // TODO this.routerDao.addRouterToGuestNetwork(router, this.guestNetwork);
+                this.routers.add(router);
+            }
         }
     }
 
@@ -178,5 +184,10 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     @Override
     protected void generateDeploymentPlan() {
         plan = new DataCenterDeployment(dest.getDataCenter().getId());
+    }
+
+    @Override
+    public boolean isRedundant() {
+        return this.vpc.isRedundant();
     }
 }

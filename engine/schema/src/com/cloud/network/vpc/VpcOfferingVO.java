@@ -73,6 +73,9 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "supports_region_level_vpc")
     boolean offersRegionLevelVPC = false;
 
+    @Column(name = "redundant_router_service")
+    boolean redundantRouter = false;
+
     public VpcOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -86,12 +89,14 @@ public class VpcOfferingVO implements VpcOffering {
         this.state = State.Disabled;
     }
 
-    public VpcOfferingVO(String name, String displayText, boolean isDefault, Long serviceOfferingId,
-                         boolean supportsDistributedRouter, boolean offersRegionLevelVPC) {
+    public VpcOfferingVO(final String name, final String displayText, final boolean isDefault, final Long serviceOfferingId,
+                         final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
+                         final boolean redundantRouter) {
         this(name, displayText, serviceOfferingId);
         this.isDefault = isDefault;
         this.supportsDistributedRouter = supportsDistributedRouter;
         this.offersRegionLevelVPC = offersRegionLevelVPC;
+        this.redundantRouter = redundantRouter;
     }
 
     @Override
@@ -164,4 +169,10 @@ public class VpcOfferingVO implements VpcOffering {
     public boolean offersRegionLevelVPC() {
         return offersRegionLevelVPC;
     }
+
+    @Override
+    public boolean getRedundantRouter() {
+        return this.redundantRouter;
+    }
+
 }

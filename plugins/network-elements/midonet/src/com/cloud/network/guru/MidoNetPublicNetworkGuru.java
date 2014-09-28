@@ -80,7 +80,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
         if (offering.getTrafficType() == Networks.TrafficType.Public) {
             NetworkVO ntwk =
                 new NetworkVO(offering.getTrafficType(), Networks.Mode.Static, Networks.BroadcastDomainType.Mido, offering.getId(), Network.State.Allocated,
-                    plan.getDataCenterId(), plan.getPhysicalNetworkId());
+                    plan.getDataCenterId(), plan.getPhysicalNetworkId(), offering.getRedundantRouter());
             return ntwk;
         } else {
             return null;
@@ -185,7 +185,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
         NetworkVO implemented =
             new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), Network.State.Allocated,
-                network.getDataCenterId(), physicalNetworkId);
+                network.getDataCenterId(), physicalNetworkId, offering.getRedundantRouter());
 
         if (network.getGateway() != null) {
             implemented.setGateway(network.getGateway());

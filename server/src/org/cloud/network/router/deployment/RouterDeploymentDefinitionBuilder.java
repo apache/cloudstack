@@ -16,16 +16,6 @@
 // under the License.
 package org.cloud.network.router.deployment;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
@@ -52,6 +42,14 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class RouterDeploymentDefinitionBuilder {
 
@@ -128,7 +126,7 @@ public class RouterDeploymentDefinitionBuilder {
         routerDeploymentDefinition.nicDao = nicDao;
         routerDeploymentDefinition.ipv6Dao = ipv6Dao;
         routerDeploymentDefinition.ipAddressDao = ipAddressDao;
-        routerDeploymentDefinition.offeringId = offeringId;
+        routerDeploymentDefinition.serviceOfferingId = offeringId;
 
         routerDeploymentDefinition.nwHelper = nwHelper;
 
@@ -160,21 +158,10 @@ public class RouterDeploymentDefinitionBuilder {
         protected DeployDestination dest;
         protected Account owner;
         protected Map<Param, Object> params;
-        protected boolean isRedundant;
         protected List<DomainRouterVO> routers = new ArrayList<>();
 
         protected IntermediateStateBuilder(final RouterDeploymentDefinitionBuilder builder) {
             this.builder = builder;
-        }
-
-        public IntermediateStateBuilder makeRedundant() {
-            isRedundant = true;
-            return this;
-        }
-
-        public IntermediateStateBuilder setRedundant(final boolean isRedundant) {
-            this.isRedundant = isRedundant;
-            return this;
         }
 
         public IntermediateStateBuilder setVpc(final Vpc vpc) {
@@ -183,7 +170,7 @@ public class RouterDeploymentDefinitionBuilder {
         }
 
         public IntermediateStateBuilder setGuestNetwork(final Network nw) {
-            guestNetwork = nw;
+            this.guestNetwork = nw;
             return this;
         }
 
@@ -205,9 +192,9 @@ public class RouterDeploymentDefinitionBuilder {
         public RouterDeploymentDefinition build() {
             RouterDeploymentDefinition routerDeploymentDefinition = null;
             if (vpc != null) {
-                routerDeploymentDefinition = new VpcRouterDeploymentDefinition(vpc, dest, owner, params, isRedundant);
+                routerDeploymentDefinition = new VpcRouterDeploymentDefinition(vpc, dest, owner, params);
             } else {
-                routerDeploymentDefinition = new RouterDeploymentDefinition(guestNetwork, dest, owner, params, isRedundant);
+                routerDeploymentDefinition = new RouterDeploymentDefinition(guestNetwork, dest, owner, params);
             }
 
             return builder.injectDependencies(routerDeploymentDefinition);

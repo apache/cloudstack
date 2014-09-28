@@ -326,6 +326,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     @Override
     State getState();
 
+    boolean isRedundant();
+
     long getRelated();
 
     URI getBroadcastUri();

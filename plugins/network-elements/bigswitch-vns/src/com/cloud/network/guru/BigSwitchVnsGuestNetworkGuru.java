@@ -138,7 +138,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
 
         NetworkVO implemented =
             new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
-                network.getDataCenterId(), physicalNetworkId);
+                network.getDataCenterId(), physicalNetworkId, offering.getRedundantRouter());
 
         if (network.getGateway() != null) {
             implemented.setGateway(network.getGateway());

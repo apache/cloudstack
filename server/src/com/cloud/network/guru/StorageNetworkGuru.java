@@ -90,7 +90,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         NetworkVO config =
             new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup, plan.getDataCenterId(),
-                plan.getPhysicalNetworkId());
+                plan.getPhysicalNetworkId(), offering.getRedundantRouter());
         return config;
     }
 
