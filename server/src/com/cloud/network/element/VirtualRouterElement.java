@@ -204,8 +204,13 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
-        RouterDeploymentDefinition routerDeploymentDefinition = routerDeploymentDefinitionBuilder.create().setGuestNetwork(network).setDeployDestination(dest)
-                .setAccountOwner(_accountMgr.getAccount(network.getAccountId())).setParams(params).setRedundant(offering.getRedundantRouter()).build();
+        RouterDeploymentDefinition routerDeploymentDefinition =
+                routerDeploymentDefinitionBuilder.create()
+                .setGuestNetwork(network)
+                .setDeployDestination(dest)
+                .setAccountOwner(_accountMgr.getAccount(network.getAccountId()))
+                .setParams(params)
+                .build();
 
         List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
 
@@ -239,8 +244,13 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             return false;
         }
 
-        RouterDeploymentDefinition routerDeploymentDefinition = routerDeploymentDefinitionBuilder.create().setGuestNetwork(network).setDeployDestination(dest)
-                .setAccountOwner(_accountMgr.getAccount(network.getAccountId())).setParams(vm.getParameters()).setRedundant(offering.getRedundantRouter()).build();
+        RouterDeploymentDefinition routerDeploymentDefinition =
+                routerDeploymentDefinitionBuilder.create()
+                .setGuestNetwork(network)
+                .setDeployDestination(dest)
+                .setAccountOwner(_accountMgr.getAccount(network.getAccountId()))
+                .setParams(vm.getParameters())
+                .build();
 
         List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
 

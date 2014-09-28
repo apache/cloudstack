@@ -608,6 +608,7 @@ public class ApiConstants {
     public static final String REMAININGCAPACITY = "remainingcapacity";
     public static final String MAXCAPACITY = "maxcapacity";
     public static final String DISTRIBUTED_VPC_ROUTER = "distributedvpcrouter";
+    public static final String REDUNDANT_VPC_ROUTER = "redundantvpcrouter";
     public static final String READ_ONLY = "readonly";
     public static final String SUPPORTS_REGION_LEVEL_VPC = "supportsregionLevelvpc";
     public static final String SUPPORTS_STRECHED_L2_SUBNET = "supportsstrechedl2subnet";

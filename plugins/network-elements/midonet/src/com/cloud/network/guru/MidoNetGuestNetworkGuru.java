@@ -104,7 +104,7 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
 
         NetworkVO implemented =
             new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), Network.State.Allocated,
-                network.getDataCenterId(), physicalNetworkId);
+                network.getDataCenterId(), physicalNetworkId, offering.getRedundantRouter());
 
         if (network.getGateway() != null) {
             implemented.setGateway(network.getGateway());

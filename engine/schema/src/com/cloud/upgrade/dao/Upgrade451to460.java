@@ -48,7 +48,7 @@ public class Upgrade451to460 implements DbUpgrade {
 
     @Override
     public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-451to460.sql");
+        final String script = Script.findScript("", "db/schema-451to460.sql");
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-451to460.sql");
         }
@@ -57,49 +57,81 @@ public class Upgrade451to460 implements DbUpgrade {
     }
 
     @Override
-    public void performDataMigration(Connection conn) {
+    public void performDataMigration(final Connection conn) {
         updateVMInstanceUserId(conn);
     }
 
-    public void updateVMInstanceUserId(Connection conn) {
+    public void updateVMInstanceUserId(final Connection conn) {
         // For schemas before this, copy first user from an account_id which deployed already running VMs
         s_logger.debug("Updating vm_instance column user_id using first user in vm_instance's account_id");
-        String vmInstanceSql = "SELECT id, account_id FROM `cloud`.`vm_instance`";
-        String userSql = "SELECT id FROM `cloud`.`user` where account_id=?";
-        String userIdUpdateSql = "update `cloud`.`vm_instance` set user_id=? where id=?";
+        final String vmInstanceSql = "SELECT id, account_id FROM `cloud`.`vm_instance`";
+        final String userSql = "SELECT id FROM `cloud`.`user` where account_id=?";
+        final String userIdUpdateSql = "update `cloud`.`vm_instance` set user_id=? where id=?";
         try(PreparedStatement selectStatement = conn.prepareStatement(vmInstanceSql)) {
-            ResultSet results = selectStatement.executeQuery();
+            final ResultSet results = selectStatement.executeQuery();
             while (results.next()) {
-                long vmId = results.getLong(1);
-                long accountId = results.getLong(2);
+                final long vmId = results.getLong(1);
+                final long accountId = results.getLong(2);
                 try (PreparedStatement selectUserStatement = conn.prepareStatement(userSql)) {
                     selectUserStatement.setLong(1, accountId);
-                    ResultSet userResults = selectUserStatement.executeQuery();
+                    final ResultSet userResults = selectUserStatement.executeQuery();
                     if (userResults.next()) {
-                        long userId = userResults.getLong(1);
+                        final long userId = userResults.getLong(1);
                         try (PreparedStatement updateStatement = conn.prepareStatement(userIdUpdateSql)) {
                             updateStatement.setLong(1, userId);
                             updateStatement.setLong(2, vmId);
                             updateStatement.executeUpdate();
-                        } catch (SQLException e) {
+                        } catch (final SQLException e) {
                             throw new CloudRuntimeException("Unable to update user ID " + userId + " on vm_instance id=" + vmId, e);
                         }
                     }
 
-                } catch (SQLException e) {
+                } catch (final SQLException e) {
                     throw new CloudRuntimeException("Unable to update user ID using accountId " + accountId + " on vm_instance id=" + vmId, e);
                 }
             }
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new CloudRuntimeException("Unable to update user Ids for previously deployed VMs", e);
         }
         s_logger.debug("Done updating user Ids for previously deployed VMs");
+        addRedundancyForNwAndVpc(conn);
     }
 
+    private void addRedundancyForNwAndVpc(final Connection conn) {
+        ResultSet rs = null;
+        try (PreparedStatement addRedundantColToVpcOfferingPstmt = conn.prepareStatement(
+                "ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN `redundant_router_service` tinyint(1) DEFAULT 0");
+                PreparedStatement addRedundantColToVpcPstmt = conn.prepareStatement(
+                        "ALTER TABLE `cloud`.`vpc` ADD COLUMN `redundant` tinyint(1) DEFAULT 0");
+                PreparedStatement addRedundantColToNwPstmt = conn.prepareStatement(
+                        "ALTER TABLE `cloud`.`networks` ADD COLUMN `redundant` tinyint(1) DEFAULT 0");
+
+                // The redundancy of the networks must be based on the redundancy of their network offerings
+                PreparedStatement redundancyPerNwPstmt = conn.prepareStatement(
+                        "select distinct nw.network_offering_id from networks nw join network_offerings off " +
+                        "on nw.network_offering_id = off.id where off.redundant_router_service = 1");
+                PreparedStatement updateNwRedundancyPstmt = conn.prepareStatement(
+                        "update networks set redundant = 1 where network_offering_id = ?");
+                ) {
+            addRedundantColToVpcPstmt.executeUpdate();
+            addRedundantColToVpcOfferingPstmt.executeUpdate();
+            addRedundantColToNwPstmt.executeUpdate();
+
+            rs = redundancyPerNwPstmt.executeQuery();
+            while(rs.next()){
+                final long nwOfferingId = rs.getLong("nw.network_offering_id");
+                updateNwRedundancyPstmt.setLong(1, nwOfferingId);
+                updateNwRedundancyPstmt.executeUpdate();
+            }
+        } catch (final SQLException e) {
+            e.printStackTrace();
+            throw new CloudRuntimeException("Adding redundancy to vpc, networks and vpc_offerings failed", e);
+        }
+    }
 
     @Override
     public File[] getCleanupScripts() {
-        String script = Script.findScript("", "db/schema-451to460-cleanup.sql");
+        final String script = Script.findScript("", "db/schema-451to460-cleanup.sql");
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-451to460-cleanup.sql");
         }

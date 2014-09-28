@@ -2703,6 +2703,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setNetworkDomain(vpc.getNetworkDomain());
         response.setForDisplay(vpc.isDisplay());
         response.setUsesDistributedRouter(vpc.usesDistributedRouter());
+        response.setRedundantRouter(vpc.isRedundant());
         response.setRegionLevelVpc(vpc.isRegionLevelVpc());
 
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(vpc.getVpcOfferingId());

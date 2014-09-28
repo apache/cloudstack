@@ -120,7 +120,7 @@ public class ManagementNetworkGuru extends ContrailGuru {
         }
         NetworkVO network =
             new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Lswitch, offering.getId(), Network.State.Allocated, plan.getDataCenterId(),
-                plan.getPhysicalNetworkId());
+                plan.getPhysicalNetworkId(), offering.getRedundantRouter());
         if (_mgmtCidr != null) {
             network.setCidr(_mgmtCidr);
             network.setGateway(_mgmtGateway);

@@ -477,7 +477,7 @@ public class NetworkHelperImpl implements NetworkHelper {
     public DomainRouterVO deployRouter(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean startRouter) throws InsufficientAddressCapacityException,
     InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
 
-        final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(routerDeploymentDefinition.getOfferingId());
+        final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(routerDeploymentDefinition.getServiceOfferingId());
         final Account owner = routerDeploymentDefinition.getOwner();
 
         // Router is the network element, we don't know the hypervisor type yet.

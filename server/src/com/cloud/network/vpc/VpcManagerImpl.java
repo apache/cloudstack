@@ -74,6 +74,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Network.Capability;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -142,6 +143,13 @@ import com.cloud.vm.dao.DomainRouterDao;
 @Local(value = {VpcManager.class, VpcService.class, VpcProvisioningService.class})
 public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
+
+    public static final String SERVICE = "service";
+    public static final String CAPABILITYTYPE = "capabilitytype";
+    public static final String CAPABILITYVALUE = "capabilityvalue";
+    public static final String TRUE_VALUE = "true";
+    public static final String FALSE_VALUE = "false";
+
     @Inject
     EntityManager _entityMgr;
     @Inject
@@ -254,7 +262,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName,
-                            svcProviderMap, true, State.Enabled, null, false, false);
+                            svcProviderMap, true, State.Enabled, null, false, false, false);
                 }
 
                 //configure default vpc offering with Netscaler as LB Provider
@@ -274,11 +282,30 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName,
-                            svcProviderMap, false, State.Enabled, null, false, false);
+                            svcProviderMap, false, State.Enabled, null, false, false, false);
 
                 }
-            }
 
+                if (_vpcOffDao.findByUniqueName(VpcOffering.redundantVPCOfferingName) == null) {
+                    s_logger.debug("Creating Redundant VPC offering " + VpcOffering.redundantVPCOfferingName);
+
+                    Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
+                    Set<Provider> defaultProviders = new HashSet<Provider>();
+                    defaultProviders.add(Provider.VPCVirtualRouter);
+                    for (Service svc : getSupportedServices()) {
+                        if (svc == Service.Lb) {
+                            Set<Provider> lbProviders = new HashSet<Provider>();
+                            lbProviders.add(Provider.VPCVirtualRouter);
+                            lbProviders.add(Provider.InternalLbVm);
+                            svcProviderMap.put(svc, lbProviders);
+                        } else {
+                            svcProviderMap.put(svc, defaultProviders);
+                        }
+                    }
+                    createVpcOffering(VpcOffering.redundantVPCOfferingName, VpcOffering.redundantVPCOfferingName,
+                            svcProviderMap, true, State.Enabled, null, false, false, true);
+                }
+            }
         });
 
         Map<String, String> configs = _configDao.getConfiguration(params);
@@ -329,6 +356,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                                          Map<String, List<String>> serviceProviders,
                                          Map serviceCapabilitystList,
                                          Long serviceOfferingId) {
+
         Map<Network.Service, Set<Network.Provider>> svcProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
         Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
         defaultProviders.add(Provider.VPCVirtualRouter);
@@ -401,12 +429,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        validateConnectivtyServiceCapablitlies(svcProviderMap.get(Service.Connectivity), serviceCapabilitystList);
+        validateConnectivtyServiceCapabilities(svcProviderMap.get(Service.Connectivity), serviceCapabilitystList);
 
         boolean supportsDistributedRouter = isVpcOfferingSupportsDistributedRouter(serviceCapabilitystList);
         boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilitystList);
+        boolean redundantRouter = this.isVpcOfferingRedundantRouter(serviceCapabilitystList);
         VpcOffering offering = createVpcOffering(name, displayText, svcProviderMap, false, null,
-                serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC);
+                serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC, redundantRouter);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
 
         return offering;
@@ -416,14 +445,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     protected VpcOffering createVpcOffering(final String name, final String displayText,
                                             final Map<Network.Service, Set<Network.Provider>> svcProviderMap,
                                             final boolean isDefault, final State state, final Long serviceOfferingId,
-                                            final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC) {
+                                            final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
+                                            final boolean redundantRouter) {
 
         return Transaction.execute(new TransactionCallback<VpcOffering>() {
             @Override
             public VpcOffering doInTransaction(TransactionStatus status) {
                 // create vpc offering object
                 VpcOfferingVO offering = new VpcOfferingVO(name, displayText, isDefault, serviceOfferingId,
-                        supportsDistributedRouter, offersRegionLevelVPC);
+                        supportsDistributedRouter, offersRegionLevelVPC, redundantRouter);
 
                 if (state != null) {
                     offering.setState(state);
@@ -451,152 +481,100 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         });
     }
 
-    private void validateConnectivtyServiceCapablitlies(Set<Provider> providers, Map serviceCapabilitystList) {
-
-        if (serviceCapabilitystList != null && !serviceCapabilitystList.isEmpty()) {
-            Collection serviceCapabilityCollection = serviceCapabilitystList.values();
-            Iterator iter = serviceCapabilityCollection.iterator();
-            Map<Network.Capability, String> capabilityMap = null;
-            boolean distributedRouterCapabilitySpecified = false;
-            boolean regionLevelVpcCapabilitySpecified = false;
-
-            while (iter.hasNext()) {
-                HashMap<String, String> svcCapabilityMap = (HashMap<String, String>)iter.next();
-                Network.Capability capability = null;
-                String svc = svcCapabilityMap.get("service");
-                String capabilityName = svcCapabilityMap.get("capabilitytype");
-                String capabilityValue = svcCapabilityMap.get("capabilityvalue");
-                if (capabilityName != null) {
-                    capability = Network.Capability.getCapability(capabilityName);
-                }
-
-                if ((capability == null) || (capabilityName == null) || (capabilityValue == null)) {
-                    throw new InvalidParameterValueException("Invalid capability:" + capabilityName + " capability value:" + capabilityValue);
-                }
-
-                if (!svc.equalsIgnoreCase(Service.Connectivity.getName())) {
-                    throw new InvalidParameterValueException("Invalid Service:" + svc + " specified. Only 'Connectivity'" +
-                            " service capabilities can be specified");
-                }
-
-                if (!capabilityName.equalsIgnoreCase("DistributedRouter") && !capabilityName.equalsIgnoreCase("RegionLevelVpc")) {
-                    throw new InvalidParameterValueException("Invalid Capability:" + capabilityName + " specified." +
-                            " Only 'DistributedRouter'/'RegionLevelVpc' capability can be specified.");
-                }
-
-                if (capabilityName.equalsIgnoreCase("DistributedRouter")) {
-                    distributedRouterCapabilitySpecified = true;
-                }
-
-                if (capabilityName.equalsIgnoreCase("RegionLevelVpc")) {
-                    regionLevelVpcCapabilitySpecified = true;
-                }
-
-                if (!capabilityValue.equalsIgnoreCase("true") && capabilityValue.equalsIgnoreCase("false")) {
-                    throw new InvalidParameterValueException("Invalid Capability value:" + capabilityValue + " specified.");
-                }
-            }
-
-            if (providers != null && !providers.isEmpty()) {
-                for (Provider provider: providers) {
-                    NetworkElement element = _ntwkModel.getElementImplementingProvider(provider.getName());
-                    Map<Service, Map<Network.Capability, String>> capabilities = element.getCapabilities();
-                    if (capabilities != null && !capabilities.isEmpty()) {
-                        Map<Network.Capability, String> connectivityCapabilities =  capabilities.get(Service.Connectivity);
-                        if (regionLevelVpcCapabilitySpecified) {
-                            if (connectivityCapabilities == null || (connectivityCapabilities != null &&
-                                    !connectivityCapabilities.keySet().contains(Network.Capability.RegionLevelVpc))) {
-                                throw new InvalidParameterValueException("Provider: " + provider.getName() + " does not support "
-                                        + Network.Capability.RegionLevelVpc.getName() + " capability.");
-                            }
-                        }
-                        if (distributedRouterCapabilitySpecified) {
-                            if (connectivityCapabilities == null || (connectivityCapabilities != null &&
-                                    !connectivityCapabilities.keySet().contains(Network.Capability.DistributedRouter))) {
-                                throw new InvalidParameterValueException("Provider: " + provider.getName() + " does not support "
-                                        + Network.Capability.DistributedRouter.getName() + " capability.");
-                            }
-                        }
+    protected void checkCapabilityPerServiceProvider(final Set<Provider> providers, final Capability capability,
+            final Service service) {
+        // TODO Shouldn't it fail it there are no providers?
+        if (providers != null) {
+            for (Provider provider: providers) {
+                NetworkElement element = _ntwkModel.getElementImplementingProvider(provider.getName());
+                Map<Service, Map<Capability, String>> capabilities = element.getCapabilities();
+                if (capabilities != null && !capabilities.isEmpty()) {
+                    Map<Capability, String> connectivityCapabilities =  capabilities.get(service);
+                    if (connectivityCapabilities == null || (connectivityCapabilities != null &&
+                            !connectivityCapabilities.keySet().contains(capability))) {
+                        throw new InvalidParameterValueException(String.format(
+                                "Provider %s does not support %s  capability.",
+                                provider.getName(), capability.getName()));
                     }
                 }
             }
         }
     }
 
-    private boolean isVpcOfferingForRegionLevelVpc(Map serviceCapabilitystList) {
-        boolean offersRegionLevelVPC = false;
+    private void validateConnectivtyServiceCapabilities(Set<Provider> providers, Map serviceCapabilitystList) {
         if (serviceCapabilitystList != null && !serviceCapabilitystList.isEmpty()) {
             Collection serviceCapabilityCollection = serviceCapabilitystList.values();
             Iterator iter = serviceCapabilityCollection.iterator();
-            Map<Network.Capability, String> capabilityMap = null;
+            List<Capability> specifiedCapabilities = new ArrayList<>();
 
             while (iter.hasNext()) {
                 HashMap<String, String> svcCapabilityMap = (HashMap<String, String>)iter.next();
-                Network.Capability capability = null;
-                String svc = svcCapabilityMap.get("service");
-                String capabilityName = svcCapabilityMap.get("capabilitytype");
-                String capabilityValue = svcCapabilityMap.get("capabilityvalue");
+                Capability capability = null;
+                String svc = svcCapabilityMap.get(SERVICE);
+                String capabilityName = svcCapabilityMap.get(CAPABILITYTYPE);
+                String capabilityValue = svcCapabilityMap.get(CAPABILITYVALUE);
                 if (capabilityName != null) {
-                    capability = Network.Capability.getCapability(capabilityName);
+                    capability = Capability.getCapability(capabilityName);
                 }
 
-                if ((capability == null) || (capabilityName == null) || (capabilityValue == null)) {
+                if ((capability == null) || (capabilityValue == null)) {
                     throw new InvalidParameterValueException("Invalid capability:" + capabilityName + " capability value:" + capabilityValue);
                 }
+                Service usedService = Service.getService(svc);
 
-                if (!svc.equalsIgnoreCase(Service.Connectivity.getName())) {
-                    throw new InvalidParameterValueException("Invalid Service:" + svc + " specified. Only for 'Connectivity' service capabilities can be specified");
-                }
+                this.checkCapabilityPerServiceProvider(providers, capability, usedService);
 
-                if (!capabilityName.equalsIgnoreCase("RegionLevelVpc")) {
-                    continue;
-                }
-
-                if (!capabilityValue.equalsIgnoreCase("true") && capabilityValue.equalsIgnoreCase("false")) {
+                if (!capabilityValue.equalsIgnoreCase(TRUE_VALUE) && !capabilityValue.equalsIgnoreCase(FALSE_VALUE)) {
                     throw new InvalidParameterValueException("Invalid Capability value:" + capabilityValue + " specified.");
                 }
-                offersRegionLevelVPC = capabilityValue.equalsIgnoreCase("true");
             }
         }
-        return offersRegionLevelVPC;
+    }
+
+    private boolean findCapabilityForService(Map serviceCapabilitystList, Capability capability, Service service) {
+        boolean foundCapability = false;
+        if (serviceCapabilitystList != null && !serviceCapabilitystList.isEmpty()) {
+            Iterator iter = serviceCapabilitystList.values().iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> currentCapabilityMap = (HashMap<String, String>)iter.next();
+                String currentCapabilityService = currentCapabilityMap.get(SERVICE);
+                String currentCapabilityName = currentCapabilityMap.get(CAPABILITYTYPE);
+                String currentCapabilityValue = currentCapabilityMap.get(CAPABILITYVALUE);
+
+                if ((currentCapabilityName == null) || (currentCapabilityService == null) || (currentCapabilityValue == null)) {
+                    throw new InvalidParameterValueException(String.format("Invalid capability with name %s, value %s and service %s",
+                            currentCapabilityName, currentCapabilityValue, currentCapabilityService));
+                }
+
+                if (currentCapabilityName.equalsIgnoreCase(capability.getName())) {
+                    foundCapability = currentCapabilityValue.equalsIgnoreCase(TRUE_VALUE);
+
+                    if (!currentCapabilityService.equalsIgnoreCase(service.getName())) {
+                        throw new InvalidParameterValueException(String.format(
+                                "Invalid Service: %s specified. Capability %s can be specified only for service %s",
+                                currentCapabilityService, service.getName(), currentCapabilityName));
+                    }
+
+                    break;
+                }
+            }
+        }
+        return foundCapability;
+    }
+
+    private boolean isVpcOfferingForRegionLevelVpc(Map serviceCapabilitystList) {
+        return this.findCapabilityForService(serviceCapabilitystList, Capability.RegionLevelVpc,
+                Service.Connectivity);
     }
 
     private boolean isVpcOfferingSupportsDistributedRouter(Map serviceCapabilitystList) {
-        boolean supportsDistributedRouter = false;
-        if (serviceCapabilitystList != null && !serviceCapabilitystList.isEmpty()) {
-            Collection serviceCapabilityCollection = serviceCapabilitystList.values();
-            Iterator iter = serviceCapabilityCollection.iterator();
-            Map<Network.Capability, String> capabilityMap = null;
+        return this.findCapabilityForService(serviceCapabilitystList, Capability.DistributedRouter,
+                Service.Connectivity);
+    }
 
-            while (iter.hasNext()) {
-                HashMap<String, String> svcCapabilityMap = (HashMap<String, String>)iter.next();
-                Network.Capability capability = null;
-                String svc = svcCapabilityMap.get("service");
-                String capabilityName = svcCapabilityMap.get("capabilitytype");
-                String capabilityValue = svcCapabilityMap.get("capabilityvalue");
-                if (capabilityName != null) {
-                    capability = Network.Capability.getCapability(capabilityName);
-                }
-
-                if ((capability == null) || (capabilityName == null) || (capabilityValue == null)) {
-                    throw new InvalidParameterValueException("Invalid capability:" + capabilityName + " capability value:" + capabilityValue);
-                }
-
-                if (!svc.equalsIgnoreCase(Service.Connectivity.getName())) {
-                    throw new InvalidParameterValueException("Invalid Service:" + svc + " specified. Only for 'Connectivity' service capabilities can be specified");
-                }
-
-                if (!capabilityName.equalsIgnoreCase("DistributedRouter")) {
-                    continue;
-                }
-
-                if (!capabilityValue.equalsIgnoreCase("true") && capabilityValue.equalsIgnoreCase("false")) {
-                    throw new InvalidParameterValueException("Invalid Capability value:" + capabilityValue + " specified.");
-                }
-                supportsDistributedRouter = capabilityValue.equalsIgnoreCase("true");
-            }
-        }
-        return supportsDistributedRouter;
+    private boolean isVpcOfferingRedundantRouter(Map serviceCapabilitystList) {
+        return this.findCapabilityForService(serviceCapabilitystList, Capability.RedundantRouter,
+                Service.SourceNat);
     }
 
     @Override
@@ -832,14 +810,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         boolean useDistributedRouter = vpcOff.supportsDistributedRouter();
-        return createVpc(zoneId, vpcOffId, owner, vpcName, displayText, cidr, networkDomain, displayVpc,
-                useDistributedRouter, isRegionLevelVpcOff);
+        final VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, owner.getId(), owner.getDomainId(), vpcOffId,
+                cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff, vpcOff.getRedundantRouter());
+
+        return createVpc(displayVpc, vpc);
     }
 
     @DB
-    protected Vpc createVpc(final long zoneId, final long vpcOffId, final Account vpcOwner, final String vpcName, final String displayText, final String cidr,
-            final String networkDomain, final Boolean displayVpc, final boolean useDistributedRouter, final boolean regionLevelVpc) {
-
+    protected Vpc createVpc(final Boolean displayVpc, final VpcVO vpc) {
+        final String cidr = vpc.getCidr();
         //Validate CIDR
         if (!NetUtils.isValidCIDR(cidr)) {
             throw new InvalidParameterValueException("Invalid CIDR specified " + cidr);
@@ -851,7 +830,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         // validate network domain
-        if (!NetUtils.verifyDomainName(networkDomain)) {
+        if (!NetUtils.verifyDomainName(vpc.getNetworkDomain())) {
             throw new InvalidParameterValueException("Invalid network domain. Total length shouldn't exceed 190 chars. Each domain "
                 + "label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', " + "the digits '0' through '9', "
                             + "and the hyphen ('-'); can't start or end with \"-\"");
@@ -860,24 +839,21 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return Transaction.execute(new TransactionCallback<VpcVO>() {
             @Override
             public VpcVO doInTransaction(TransactionStatus status) {
-                VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, vpcOwner.getId(), vpcOwner.getDomainId(), vpcOffId,
-                        cidr, networkDomain, useDistributedRouter, regionLevelVpc);
-
                 if (displayVpc != null) {
                     vpc.setDisplay(displayVpc);
                 }
-        vpc = _vpcDao.persist(vpc, finalizeServicesAndProvidersForVpc(zoneId, vpcOffId));
-        _resourceLimitMgr.incrementResourceCount(vpcOwner.getId(), ResourceType.vpc);
 
-        s_logger.debug("Created VPC " + vpc);
+                VpcVO persistedVpc = _vpcDao.persist(vpc, finalizeServicesAndProvidersForVpc(vpc.getZoneId(), vpc.getVpcOfferingId()));
+                _resourceLimitMgr.incrementResourceCount(vpc.getAccountId(), ResourceType.vpc);
+                s_logger.debug("Created VPC " + persistedVpc);
 
-        return vpc;
-    }
+                return persistedVpc;
+            }
         });
     }
 
     private Map<String, List<String>> finalizeServicesAndProvidersForVpc(long zoneId, long offeringId) {
-        Map<String, List<String>> svcProviders = new HashMap<String, List<String>>();
+        Map<String, List<String>> svcProviders = new HashMap<>();
         List<VpcOfferingServiceMapVO> servicesMap = _vpcOffSvcMapDao.listByVpcOffId(offeringId);
 
         for (VpcOfferingServiceMapVO serviceMap : servicesMap) {
@@ -1342,9 +1318,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         //3) No redundant router support
+        /* TODO This should have never been hardcoded like this in the first place
         if (guestNtwkOff.getRedundantRouter()) {
             throw new InvalidParameterValueException("No redunant router support when network belnogs to VPC");
         }
+        */
 
         //4) Conserve mode should be off
         if (guestNtwkOff.isConserveMode()) {

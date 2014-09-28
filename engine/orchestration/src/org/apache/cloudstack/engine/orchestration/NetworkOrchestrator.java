@@ -670,7 +670,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
                         NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), relatedFile, name, displayText, predefined
-                                .getNetworkDomain(), offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.getSpecifyIpRanges(), vpcId);
+                                .getNetworkDomain(), offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.getSpecifyIpRanges(),
+                                vpcId, offering.getRedundantRouter());
                         vo.setDisplayNetwork(isDisplayNetworkEnabled == null ? true : isDisplayNetworkEnabled);
                         vo.setStrechedL2Network(offering.getSupportsStrechedL2());
                         networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated,
