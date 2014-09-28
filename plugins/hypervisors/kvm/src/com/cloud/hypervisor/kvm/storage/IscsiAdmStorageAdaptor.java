@@ -53,6 +53,11 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
+    public KVMStoragePool getStoragePool(String uuid, boolean refreshInfo) {
+        return MapStorageUuidToStoragePool.get(uuid);
+    }
+
+    @Override
     public boolean deleteStoragePool(String uuid) {
         return MapStorageUuidToStoragePool.remove(uuid) != null;
     }

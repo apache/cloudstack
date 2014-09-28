@@ -195,11 +195,15 @@ public class KVMStoragePoolManager {
     }
 
     public KVMStoragePool getStoragePool(StoragePoolType type, String uuid) {
+        return this.getStoragePool(type, uuid, false);
+    }
+
+    public KVMStoragePool getStoragePool(StoragePoolType type, String uuid, boolean refreshInfo) {
 
         StorageAdaptor adaptor = getStorageAdaptor(type);
         KVMStoragePool pool = null;
         try {
-            pool = adaptor.getStoragePool(uuid);
+            pool = adaptor.getStoragePool(uuid, refreshInfo);
         } catch (Exception e) {
             StoragePoolInformation info = _storagePools.get(uuid);
             if (info != null) {

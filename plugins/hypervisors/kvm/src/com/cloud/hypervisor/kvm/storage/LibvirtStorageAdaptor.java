@@ -338,6 +338,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMStoragePool getStoragePool(String uuid) {
+        return this.getStoragePool(uuid, false);
+    }
+
+    @Override
+    public KVMStoragePool getStoragePool(String uuid, boolean refreshInfo) {
         s_logger.debug("Trying to fetch storage pool " + uuid + " from libvirt");
         StoragePool storage = null;
         try {
@@ -383,7 +388,21 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 }
             }
 
-            pool.refresh();
+            /**
+             * On large (RBD) storage pools it can take up to a couple of minutes
+             * for libvirt to refresh the pool.
+             *
+             * Refreshing a storage pool means that libvirt will have to iterate the whole pool
+             * and fetch information of each volume in there
+             *
+             * It is not always required to refresh a pool. So we can control if we want to or not
+             *
+             * By default only the getStorageStats call in the LibvirtComputingResource will ask to
+             * refresh the pool
+             */
+            if (refreshInfo) {
+                pool.refresh();
+            }
             pool.setCapacity(storage.getInfo().capacity);
             pool.setUsed(storage.getInfo().allocation);
             pool.setAvailable(storage.getInfo().available);
