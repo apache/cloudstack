@@ -717,11 +717,14 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
         VirtualMachineProfile uservm = vm;
 
+        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
         // If any router is running then send save password command otherwise
         // save the password in DB
         for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
-                return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
+                return networkTopology.savePasswordToRouter(network, nic, uservm, routers);
             }
         }
         String password = (String) uservm.getParameter(VirtualMachineProfile.Param.VmPassword);
@@ -735,10 +738,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         userVmVO.setUpdateParameters(true);
         _userVmDao.update(userVmVO.getId(), userVmVO);
 
-        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
-        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
-
-        return networkTopology.savePasswordToRouter(network, nic, uservm, routers);
+        return true;
     }
 
     @Override

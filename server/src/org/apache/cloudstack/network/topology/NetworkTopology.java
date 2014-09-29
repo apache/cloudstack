@@ -19,12 +19,12 @@ package org.apache.cloudstack.network.topology;
 
 import java.util.List;
 
-import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
@@ -41,23 +41,9 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface NetworkTopology {
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    StringBuilder createGuestBootLoadArgs(final NicProfile guestNic, final String defaultDns1, final String defaultDns2, DomainRouterVO router);
-
-    String retrieveGuestDhcpRange(final NicProfile guestNic, final Network guestNetwork, final DataCenter dc);
-
-    NicProfile retrieveControlNic(final VirtualMachineProfile profile);
-
-
-    // ====== USER FOR VPC ONLY ====== //
-=======
-=======
     NetworkTopologyVisitor getVisitor();
 
->>>>>>> 06c77f1... refactor all private methods in the virtual router appliance and VPC appliance
     // ====== USED FOR VPC ONLY ====== //
->>>>>>> 0b8b22f... adding setupPrivateGateway to new style;
 
     boolean setupDhcpForPvlan(final boolean add, final DomainRouterVO router, final Long hostId, final NicProfile nic) throws ResourceUnavailableException;
 
@@ -68,17 +54,10 @@ public interface NetworkTopology {
             throws ResourceUnavailableException;
 
     boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException;
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    
-=======
 
->>>>>>> 5e11fba... fixing check style issues
     boolean setupPrivateGateway(final PrivateGateway gateway, final VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException;
 
     String[] applyVpnUsers(final RemoteAccessVpn vpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException;
->>>>>>> 0b8b22f... adding setupPrivateGateway to new style;
 
     // ====== USED FOR GUEST NETWORK AND VCP ====== //
 

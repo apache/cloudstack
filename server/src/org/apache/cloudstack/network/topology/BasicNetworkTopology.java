@@ -45,7 +45,9 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.BasicVpnRules;
 import com.cloud.network.rules.DhcpEntryRules;
+import com.cloud.network.rules.DhcpSubNetRules;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRules;
 import com.cloud.network.rules.IpAssociationRules;
@@ -58,18 +60,15 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
-import com.cloud.network.rules.VpnRules;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.UserVmDao;
 
 @Component
 public class BasicNetworkTopology implements NetworkTopology {
@@ -89,14 +88,6 @@ public class BasicNetworkTopology implements NetworkTopology {
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper _networkHelper;
-
-    @Inject
-    protected UserVmDao _userVmDao;
-
-    @Override
-    public StringBuilder createGuestBootLoadArgs(final NicProfile guestNic, final String defaultDns1, final String defaultDns2, final DomainRouterVO router) {
-        return null;
-    }
 
     @Override
     public NetworkTopologyVisitor getVisitor() {
@@ -133,7 +124,18 @@ public class BasicNetworkTopology implements NetworkTopology {
     public boolean configDhcpForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
             final List<DomainRouterVO> routers) throws ResourceUnavailableException {
 
-        throw new CloudRuntimeException("configDhcpForSubnet not implemented in Basic Network Topology.");
+        s_logger.debug("CONFIG DHCP FOR SUBNETS RULES");
+
+        // Assuming we have only one router per network For Now.
+        final DomainRouterVO router = routers.get(0);
+        if (router.getState() != State.Running) {
+            s_logger.warn("Failed to configure dhcp: router not in running state");
+            throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
+        }
+
+        DhcpSubNetRules subNetRules = new DhcpSubNetRules(network, nic, profile);
+
+        return subNetRules.accept(_basicVisitor, router);
     }
 
     @Override
@@ -270,7 +272,7 @@ public class BasicNetworkTopology implements NetworkTopology {
             throw new ResourceUnavailableException("Unable to assign ip addresses, domR doesn't exist for network " + network.getId(), DataCenter.class, network.getDataCenterId());
         }
 
-        s_logger.debug("APPLYING VPN RULES");
+        s_logger.debug("APPLYING BASIC VPN RULES");
 
         BasicVpnRules vpnRules = new BasicVpnRules(network, users);
         boolean agentResults = true;
@@ -281,8 +283,6 @@ public class BasicNetworkTopology implements NetworkTopology {
                 throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class,
                         network.getDataCenterId());
             }
-
-            VpnRules vpnRules = _virtualNetworkApplianceFactory.createVpnRules(network, users);
 
             // Currently we receive just one answer from the agent. In the
             // future we have to parse individual answers and set
@@ -306,8 +306,6 @@ public class BasicNetworkTopology implements NetworkTopology {
     @Override
     public boolean savePasswordToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final List<? extends VirtualRouter> routers)
             throws ResourceUnavailableException {
-
-        _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
 
         s_logger.debug("SAVE PASSWORD TO ROUTE RULES");
 

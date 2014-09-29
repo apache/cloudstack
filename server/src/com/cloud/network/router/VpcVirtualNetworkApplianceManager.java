@@ -23,9 +23,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
-import com.cloud.network.VpnUser;
 import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.vm.DomainRouterVO;
 
 public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplianceManager, VpcVirtualNetworkApplianceService {
@@ -76,13 +74,4 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @throws ResourceUnavailableException
      */
     boolean stopRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router) throws ResourceUnavailableException;
-
-    /**
-     * @param vpn
-     * @param users
-     * @param routers
-     * @return
-     * @throws ResourceUnavailableException
-     */
-    String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users, VirtualRouter router) throws ResourceUnavailableException;
 }

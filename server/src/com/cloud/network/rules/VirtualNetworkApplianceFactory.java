@@ -18,6 +18,9 @@ package com.cloud.network.rules;
 
 import javax.inject.Inject;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -80,8 +83,11 @@ public class VirtualNetworkApplianceFactory {
     private IpAddressManager _ipAddrMgr;
     @Inject
     private NetworkACLManager _networkACLMgr;
-    @Inject
+
+    @Autowired
+    @Qualifier("networkHelper")
     private NetworkHelper _networkHelper;
+
     @Inject
     private NicProfileHelper _nicProfileHelper;
 
