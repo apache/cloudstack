@@ -107,6 +107,8 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -173,6 +175,8 @@ public class CommandSetupHelper {
     private VlanDao _vlanDao;
     @Inject
     private IPAddressDao _ipAddressDao;
+    @Inject
+    private GuestOSDao _guestOSDao;
 
     @Inject
     private RouterControlHelper _routerControlHelper;
@@ -216,12 +220,17 @@ public class CommandSetupHelper {
     public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final Commands cmds) {
         final DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName(), nic.getIp6Address(),
                 _networkModel.getExecuteInSeqNtwkElmtCmd());
-        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-        final Nic defaultNic = findGatewayIp(vm.getId());
-        String gatewayIp = defaultNic.getGateway();
-        if (gatewayIp != null && !gatewayIp.equals(nic.getGateway())) {
-            gatewayIp = "0.0.0.0";
+
+        String gatewayIp = nic.getGateway();
+        if (!nic.isDefaultNic()) {
+            GuestOSVO guestOS = _guestOSDao.findById(vm.getGuestOSId());
+            if (guestOS == null || !guestOS.getDisplayName().toLowerCase().contains("windows")) {
+                gatewayIp = "0.0.0.0";
+            }
         }
+
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
+
         dhcpCommand.setDefaultRouter(gatewayIp);
         dhcpCommand.setIp6Gateway(nic.getIp6Gateway());
         String ipaddress = null;

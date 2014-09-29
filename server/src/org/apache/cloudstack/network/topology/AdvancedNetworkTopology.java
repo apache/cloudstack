@@ -35,7 +35,7 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.AdvancedVpnRules;
 import com.cloud.network.rules.DhcpEntryRules;
-import com.cloud.network.rules.DhcpSubNetRules;
+import com.cloud.network.rules.DhcpPvlanRules;
 import com.cloud.network.rules.NetworkAclsRules;
 import com.cloud.network.rules.NicPlugInOutRules;
 import com.cloud.network.rules.PrivateGatewayRules;
@@ -90,6 +90,8 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Override
     public boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
 
+        s_logger.debug("APPLYING STATIC ROUTES RULES");
+
         if (staticRoutes == null || staticRoutes.isEmpty()) {
             s_logger.debug("No static routes to apply");
             return true;
@@ -127,24 +129,6 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         DhcpPvlanRules pvlanRules = new DhcpPvlanRules(isAddPvlan, nic);
 
         return pvlanRules.accept(_advancedVisitor, router);
-    }
-
-    @Override
-    public boolean configDhcpForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
-            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
-
-        s_logger.debug("CONFIG DHCP FOR SUBNETS RULES");
-
-        // Asuming we have only one router per network For Now.
-        final DomainRouterVO router = routers.get(0);
-        if (router.getState() != State.Running) {
-            s_logger.warn("Failed to configure dhcp: router not in running state");
-            throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
-        }
-
-        DhcpSubNetRules subNetRules = new DhcpSubNetRules(network, nic, profile);
-
-        return subNetRules.accept(_advancedVisitor, router);
     }
 
     @Override

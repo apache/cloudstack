@@ -53,8 +53,7 @@ public class LoadBalancingRules extends RuleApplier {
         // For load balancer we have to resend all lb rules for the network
         final List<LoadBalancerVO> lbs = loadBalancerDao.listByNetworkIdAndScheme(_network.getId(), Scheme.Public);
 
-        // We are cleaning it before because all the rules have to be sent to
-        // the router.
+        // We are cleaning it before because all the rules have to be sent to the router.
         _rules.clear();
 
         LoadBalancingRulesManager lbMgr = visitor.getVirtualNetworkApplianceFactory().getLbMgr();

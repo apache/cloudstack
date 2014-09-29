@@ -62,8 +62,12 @@ public class DhcpEntryRules extends RuleApplier {
         return visitor.visit(this);
     }
 
-    public NicProfile getNic() {
-        return _nic;
+    public VirtualMachineProfile getProfile() {
+        return _profile;
+    }
+
+    public DeployDestination getDestination() {
+        return _destination;
     }
 
     public NicVO getNicVo() {
