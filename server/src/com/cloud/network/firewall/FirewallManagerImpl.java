@@ -659,7 +659,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Failed to apply firewall rules due to ", ex);
+            s_logger.warn("Failed to apply firewall rules due to : "+ ex.getMessage());
             return false;
         }
 
