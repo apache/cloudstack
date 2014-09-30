@@ -228,16 +228,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     public VolumeVO allocateDuplicateVolumeVO(Volume oldVol, Long templateId) {
         VolumeVO newVol = new VolumeVO(oldVol.getVolumeType(),
-            oldVol.getName(),
-            oldVol.getDataCenterId(),
-            oldVol.getDomainId(),
-            oldVol.getAccountId(),
-            oldVol.getDiskOfferingId(),
-            oldVol.getProvisioningType(),
-            oldVol.getSize(),
-            oldVol.getMinIops(),
-            oldVol.getMaxIops(),
-            oldVol.get_iScsiName());
+                oldVol.getName(),
+                oldVol.getDataCenterId(),
+                oldVol.getDomainId(),
+                oldVol.getAccountId(),
+                oldVol.getDiskOfferingId(),
+                oldVol.getProvisioningType(),
+                oldVol.getSize(),
+                oldVol.getMinIops(),
+                oldVol.getMaxIops(),
+                oldVol.get_iScsiName());
         if (templateId != null) {
             newVol.setTemplateId(templateId);
         } else {
@@ -612,16 +612,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         maxIops = maxIops != null ? maxIops : offering.getMaxIops();
 
         VolumeVO vol = new VolumeVO(type,
-            name,
-            vm.getDataCenterId(),
-            owner.getDomainId(),
-            owner.getId(),
-            offering.getId(),
-            offering.getProvisioningType(),
-            size,
-            minIops,
-            maxIops,
-            null);
+                name,
+                vm.getDataCenterId(),
+                owner.getDomainId(),
+                owner.getId(),
+                offering.getId(),
+                offering.getProvisioningType(),
+                size,
+                minIops,
+                maxIops,
+                null);
         if (vm != null) {
             vol.setInstanceId(vm.getId());
         }
@@ -673,16 +673,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         maxIops = maxIops != null ? maxIops : offering.getMaxIops();
 
         VolumeVO vol = new VolumeVO(type,
-            name,
-            vm.getDataCenterId(),
-            owner.getDomainId(),
-            owner.getId(),
-            offering.getId(),
-            offering.getProvisioningType(),
-            size,
-            minIops,
-            maxIops,
-            null);
+                name,
+                vm.getDataCenterId(),
+                owner.getDomainId(),
+                owner.getId(),
+                offering.getId(),
+                offering.getProvisioningType(),
+                size,
+                minIops,
+                maxIops,
+                null);
         vol.setFormat(getSupportedImageFormatForCluster(template.getHypervisorType()));
         if (vm != null) {
             vol.setInstanceId(vm.getId());
@@ -699,8 +699,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         if (vm.getType() == VirtualMachine.Type.User) {
-           UserVmVO userVm = _userVmDao.findById(vm.getId());
-           vol.setDisplayVolume(userVm.isDisplayVm());
+            UserVmVO userVm = _userVmDao.findById(vm.getId());
+            vol.setDisplayVolume(userVm.isDisplayVm());
         }
 
 
@@ -1117,7 +1117,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (assignedPool == null && recreate) {
                 assignedPool = _storagePoolDao.findById(vol.getPoolId());
             }
-            if (assignedPool != null || recreate) {
+            if (assignedPool != null) {
                 Volume.State state = vol.getState();
                 if (state == Volume.State.Allocated || state == Volume.State.Creating) {
                     VolumeTask task = new VolumeTask(VolumeTaskType.RECREATE, vol, null);
