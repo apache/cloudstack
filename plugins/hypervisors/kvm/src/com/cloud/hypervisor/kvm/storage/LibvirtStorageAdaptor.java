@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -384,7 +385,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 String authUsername = spd.getAuthUserName();
                 if (authUsername != null) {
                     Secret secret = conn.secretLookupByUUIDString(spd.getSecretUUID());
-                    String secretValue = new String(Base64.encodeBase64(secret.getByteValue()));
+                    String secretValue = new String(Base64.encodeBase64(secret.getByteValue()), Charset.defaultCharset());
                     pool.setAuthUsername(authUsername);
                     pool.setAuthSecret(secretValue);
                 }
