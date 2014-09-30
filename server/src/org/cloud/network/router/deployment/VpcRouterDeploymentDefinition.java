@@ -53,9 +53,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
     protected Vpc vpc;
 
-
-    protected VpcRouterDeploymentDefinition(final Vpc vpc, final DeployDestination dest, final Account owner,
-            final Map<Param, Object> params, final boolean isRedundant) {
+    protected VpcRouterDeploymentDefinition(final Vpc vpc, final DeployDestination dest, final Account owner, final Map<Param, Object> params, final boolean isRedundant) {
 
         super(null, dest, owner, params, isRedundant);
 
@@ -64,7 +62,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
     @Override
     public Vpc getVpc() {
-        return this.vpc;
+        return vpc;
     }
 
     @Override
@@ -83,16 +81,15 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
         if (vpcLock == null) {
             throw new ConcurrentOperationException("Unable to lock vpc " + vpc.getId());
         }
-        this.tableLockId = vpcLock.getId();
+        tableLockId = vpcLock.getId();
     }
 
     @Override
     protected void unlock() {
-        if (this.tableLockId != null) {
-            vpcDao.releaseFromLockTable(this.tableLockId);
+        if (tableLockId != null) {
+            vpcDao.releaseFromLockTable(tableLockId);
             if (logger.isDebugEnabled()) {
-                logger.debug("Lock is released for vpc id " + this.tableLockId
-                        + " as a part of router startup in " + dest);
+                logger.debug("Lock is released for vpc id " + tableLockId + " as a part of router startup in " + dest);
             }
         }
     }
@@ -105,14 +102,15 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     @Override
     protected List<DeployDestination> findDestinations() {
         final List<DeployDestination> destinations = new ArrayList<>();
-        destinations.add(this.dest);
+        destinations.add(dest);
         return destinations;
     }
 
     @Override
     protected int getNumberOfRoutersToDeploy() {
-        // TODO Should we make our changes here in order to enable Redundant Router for VPC?
-        return this.routers.isEmpty() ? 1 : 0;
+        // TODO Should we make our changes here in order to enable Redundant
+        // Router for VPC?
+        return routers.isEmpty() ? 1 : 0;
     }
 
     /**
@@ -128,12 +126,13 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     @Override
     protected void setupPriorityOfRedundantRouter() {
         // Nothing to do for now
-        // TODO Shouldn't we add this behavior once Redundant Router works for Vpc too
+        // TODO Shouldn't we add this behavior once Redundant Router works for
+        // Vpc too
     }
 
     @Override
     protected void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
-        this.sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(this.owner, vpc);
+        sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc);
     }
 
     @Override
@@ -145,8 +144,8 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
             if (provider == null) {
                 throw new CloudRuntimeException("Cannot find service provider " + Type.VPCVirtualRouter.toString() + " in physical network " + pNtwk.getId());
             }
-            this.vrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), Type.VPCVirtualRouter);
-            if (this.vrProvider != null) {
+            vrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), Type.VPCVirtualRouter);
+            if (vrProvider != null) {
                 break;
             }
         }
@@ -156,28 +155,28 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     protected void findOfferingId() {
         Long vpcOfferingId = vpcOffDao.findById(vpc.getVpcOfferingId()).getServiceOfferingId();
         if (vpcOfferingId != null) {
-            this.offeringId = vpcOfferingId;
+            offeringId = vpcOfferingId;
         }
     }
 
     @Override
-    protected void deployAllVirtualRouters()
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+    protected void deployAllVirtualRouters() throws ConcurrentOperationException, InsufficientCapacityException,
+            ResourceUnavailableException {
 
-        DomainRouterVO router = this.nwHelper.deployRouter(this, true);
+        DomainRouterVO router = nwHelper.deployRouter(this, true);
 
         if (router != null) {
-            this.routers.add(router);
+            routers.add(router);
         }
     }
 
     @Override
     protected void planDeploymentRouters() {
-        this.routers = this.routerDao.listByVpcId(this.vpc.getId());
+        routers = routerDao.listByVpcId(vpc.getId());
     }
 
     @Override
     protected void generateDeploymentPlan() {
-        this.plan = new DataCenterDeployment(this.dest.getDataCenter().getId());
+        plan = new DataCenterDeployment(dest.getDataCenter().getId());
     }
 }

@@ -525,9 +525,9 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
             verify(deploymentUT, times(1)).lock();
             verify(deploymentUT, times(1)).checkPreconditions();
             verify(deploymentUT, times(1)).findDestinations();
-            verify(deploymentUT, times(2)).planDeploymentRouters();
             verify(deploymentUT, times(2)).generateDeploymentPlan();
             verify(deploymentUT, times(2)).executeDeployment();
+            //verify(deploymentUT, times(2)).planDeploymentRouters();
             verify(deploymentUT, times(1)).unlock();
         }
 
