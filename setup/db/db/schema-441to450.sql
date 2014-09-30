@@ -548,21 +548,25 @@ CREATE VIEW `cloud`.`domain_router_view` AS
             and async_job.job_status = 0;
 
 
-INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (231, UUID(), 1, 'CentOS 5.10 (32-bit)', utc_timestamp());
-INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (232, UUID(), 1, 'CentOS 5.10 (64-bit)', utc_timestamp());
-INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (233, UUID(), 3, 'Oracle Enterprise Linux 5.10 (32-bit)', utc_timestamp());
-INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (234, UUID(), 3, 'Oracle Enterprise Linux 5.10 (64-bit)', utc_timestamp());
-INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (235, UUID(), 3, 'Oracle Enterprise Linux 6.5 (32-bit)', utc_timestamp());
-INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (236, UUID(), 3, 'Oracle Enterprise Linux 6.5 (64-bit)', utc_timestamp());
-INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (237, UUID(), 4, 'Red Hat Enterprise Linux 5.10 (32-bit)', utc_timestamp());
-INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (238, UUID(), 4, 'Red Hat Enterprise Linux 5.10 (64-bit)', utc_timestamp());
-INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (239, UUID(), 4, 'Red Hat Enterprise Linux 6.5 (32-bit)', utc_timestamp());
-INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (240, UUID(), 4, 'Red Hat Enterprise Linux 6.5 (64-bit)', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (231, UUID(), 1, 'CentOS 5 (32-bit)', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (232, UUID(), 1, 'CentOS 5 (64-bit)', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (233, UUID(), 3, 'Oracle Enterprise Linux 5 (32-bit)', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (234, UUID(), 3, 'Oracle Enterprise Linux 5 (64-bit)', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (235, UUID(), 3, 'Oracle Enterprise Linux 6 (32-bit)', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (236, UUID(), 3, 'Oracle Enterprise Linux 6 (64-bit)', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (237, UUID(), 4, 'Red Hat Enterprise Linux 5 (32-bit)', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (238, UUID(), 4, 'Red Hat Enterprise Linux 5 (64-bit)', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (239, UUID(), 4, 'Red Hat Enterprise Linux 6 (32-bit)', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (240, UUID(), 4, 'Red Hat Enterprise Linux 6 (64-bit)', utc_timestamp());
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (241, UUID(), 10, 'Ubuntu 14.04 (32-bit)', utc_timestamp());
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (242, UUID(), 10, 'Ubuntu 14.04 (64-bit)', utc_timestamp());
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (243, UUID(), 5, 'SUSE Linux Enterprise Server 12 (32-bit)', utc_timestamp());
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (244, UUID(), 5, 'SUSE Linux Enterprise Server 12 (64-bit)', utc_timestamp());
-INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (245, UUID(), 4, 'Red Hat Enterprise Linux 7.0', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (245, UUID(), 4, 'Red Hat Enterprise Linux 7', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (246, UUID(), 1, 'CentOS 7', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (247, UUID(), 3, 'Oracle Linux 7', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (248, UUID(), 1, 'CentOS 6 (32-bit)', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (249, UUID(), 1, 'CentOS 6 (64-bit)', utc_timestamp());
 
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'CentOS 4.5 (32-bit)', 1, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'CentOS 4.6 (32-bit)', 2, utc_timestamp(), 0);
@@ -603,7 +607,10 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'CentOS 6 (32-bit)', 181, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'CentOS 6 (64-bit)', 182, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'CentOS 6 (32-bit)', 227, utc_timestamp(), 0);
-INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'CentOS 6 (64-bit)', 227, utc_timestamp(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'CentOS 6 (64-bit)', 228, utc_timestamp(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'CentOS 6 (32-bit)', 248, utc_timestamp(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'CentOS 6 (64-bit)', 249, utc_timestamp(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'CentOS 7', 246, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Debian Squeeze 6.0 (32-bit)', 132, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Debian Squeeze 6.0 (64-bit)', 133, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Debian Wheezy 7.0 (32-bit)', 183, utc_timestamp(), 0);
@@ -640,8 +647,9 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Oracle Enterprise Linux 6 (64-bit)', 218, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Oracle Enterprise Linux 6 (32-bit)', 219, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Oracle Enterprise Linux 6 (64-bit)', 220, utc_timestamp(), 0);
-INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Oracle Enterprise Linux 6 (32-bit)', 219, utc_timestamp(), 0);
-INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Oracle Enterprise Linux 6 (64-bit)', 220, utc_timestamp(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Oracle Enterprise Linux 6 (32-bit)', 235, utc_timestamp(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Oracle Enterprise Linux 6 (64-bit)', 236, utc_timestamp(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Oracle Linux 7', 247, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Red Hat Enterprise Linux 4.5 (32-bit)', 26, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Red Hat Enterprise Linux 4.6 (32-bit)', 27, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Red Hat Enterprise Linux 4.7 (32-bit)', 28, utc_timestamp(), 0);
