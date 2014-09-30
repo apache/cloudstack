@@ -775,7 +775,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("The next status of agent " + hostId + "is " + nextStatus + ", current status is " + currentStatus);
+                    s_logger.debug("The next status of agent " + hostId + " is " + nextStatus + ", current status is " + currentStatus);
                 }
             }
         }
@@ -1513,7 +1513,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                                     || host.getType() == Host.Type.SecondaryStorageCmdExecutor)) {
 
                                 s_logger.warn("Disconnect agent for CPVM/SSVM due to physical connection close. host: " + host.getId());
-                                disconnectWithoutInvestigation(agentId, Event.ShutdownRequested);
+                                disconnectWithoutInvestigation(agentId, Event.PingTimeout);
                             } else {
                                 status_logger.debug("Ping timeout for host " + agentId + ", do invstigation");
                                 disconnectWithInvestigation(agentId, Event.PingTimeout);
