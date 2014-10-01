@@ -228,7 +228,7 @@
                                                         }
                                                     } else if (result.jobstatus == 2) {
                                                         cloudStack.dialog.notice({
-                                                            message: 'message.update.ssl.failed' + ' ' + _s(result.jobresult.errortext)
+                                                            message: _l('message.update.ssl.failed') + ' ' + _s(result.jobresult.errortext)
                                                         });
                                                         $loading.remove();
                                                     }
@@ -236,7 +236,7 @@
                                             },
                                             error: function(XMLHttpResponse) {
                                                 cloudStack.dialog.notice({
-                                                    message: 'message.update.ssl.failed' + ' ' + parseXMLHttpResponse(XMLHttpResponse)
+                                                    message: _l('message.update.ssl.failed') + ' ' + parseXMLHttpResponse(XMLHttpResponse)
                                                 });
                                                 $loading.remove();
                                             }
@@ -245,7 +245,7 @@
                                 },
                                 error: function(XMLHttpResponse) {
                                     cloudStack.dialog.notice({
-                                        message: 'message.update.ssl.failed' + ' ' + parseXMLHttpResponse(XMLHttpResponse)
+                                        message: _l('message.update.ssl.failed') + ' ' + parseXMLHttpResponse(XMLHttpResponse)
                                     });
                                     $loading.remove();
                                 }
