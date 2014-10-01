@@ -23,8 +23,7 @@ from marvin.sshClient import SshClient
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from marvin.lib.utils import checkVolumeSize
-from marvin.codes import SUCCESS
+from marvin.codes import PASS
 from nose.plugins.attrib import attr
 from time import sleep
 # from ctypes.wintypes import BOOLEAN
@@ -57,7 +56,7 @@ class TestListInstances(cloudstackTestCase):
                 cls.services["disk_offering"]["storagetype"] = 'shared'
 
             cls.services['mode'] = cls.zone.networktype
-            cls.services["virtual_machine"]["hypervisor"] = cls.testClient.getHypervisorInfo()
+            cls.services["virtual_machine"]["hypervisor"] = cls.hypervisor
             cls.services["virtual_machine"]["zoneid"] = cls.zone.id
             cls.services["virtual_machine"]["template"] = cls.template.id
             cls.services["custom_volume"]["zoneid"] = cls.zone.id
@@ -84,7 +83,7 @@ class TestListInstances(cloudstackTestCase):
                                       cls.api_client,
                                       account=cls.account.name,
                                       domainid=cls.domain.id,
-                                      max= -1,
+                                      max=-1,
                                       resourcetype=i
                                       )
 
@@ -262,7 +261,7 @@ class TestListInstances(cloudstackTestCase):
                                  )
 
         # Deleting a single VM
-        VirtualMachine.delete(vm_created, self.userapiclient, expunge=False)
+        VirtualMachine.delete(vm_created, self.userapiclient, expunge=True)
 
         # Listing the VM's in page 2
         list_instance_response = VirtualMachine.list(
@@ -1590,8 +1589,123 @@ class TestListInstances(cloudstackTestCase):
                           )
         return
 
+    @attr(tags=["advanced", "basic"], required_hardware="true")
+    def test_12_running_vm_change_service(self):
+        """
+        @Desc: Test to verify change service for Running VM
+        @Steps:
+        Step1: Deploying a VM
+        Step2: Listing all the existing service offerings
+        Step3: If there is a matching Service Offering for change service of stopped VM
+                use that service offering. If not create one service offering for change service.
+        Step4: Perform change service for the Running VM
+        Step5: Verifying that change service is not possible for Running VM
+        """
+        # Listing all the VM's for a User
+        list_vms_before = VirtualMachine.list(
+                                              self.userapiclient,
+                                              listall=self.services["listall"],
+                                              )
+        self.assertIsNone(
+                           list_vms_before,
+                           "Virtual Machine already exists for newly created user"
+                           )
+        # Deploying a VM
+        vm_created = VirtualMachine.create(
+                                           self.userapiclient,
+                                           self.services["virtual_machine"],
+                                           accountid=self.account.name,
+                                           domainid=self.account.domainid,
+                                           serviceofferingid=self.service_offering.id,
+                                           )
+        self.assertIsNotNone(
+                             vm_created,
+                             "VM creation failed"
+                             )
+        self.cleanup.append(vm_created)
+        # Listing details of current Service Offering
+        vm_so_list = ServiceOffering.list(
+                                          self.userapiclient,
+                                          id=vm_created.serviceofferingid
+                                          )
+        status = validateList(vm_so_list)
+        self.assertEquals(
+                          PASS,
+                          status[0],
+                          "Listing of VM Service offering failed"
+                          )
+        current_so = vm_so_list[0]
+        # Listing all the VMs for a user again
+        list_vms_after = VirtualMachine.list(
+                                             self.userapiclient,
+                                             listall=self.services["listall"],
+                                             )
+        status = validateList(list_vms_after)
+        self.assertEquals(
+                          PASS,
+                          status[0],
+                          "VM creation failed"
+                          )
+        # Verifying that the size of the list is 1
+        self.assertEquals(
+                          1,
+                          len(list_vms_after),
+                          "VM list count is not matching"
+                          )
+        # Listing all the service offerings
+        service_offerings_list = ServiceOffering.list(
+                                                      self.userapiclient,
+                                                      virtualmachineid=vm_created.id
+                                                      )
+        # Verifying if any Service offering available for change service of VM
+        so_exists = False
+        if service_offerings_list is not None:
+            for i in range(0, len(service_offerings_list)):
+                if ((current_so.id != service_offerings_list[i].id) and\
+                   (current_so.storagetype == service_offerings_list[i].storagetype)):
+                    so_exists = True
+                    new_so = service_offerings_list[i]
+                    break
+        # If service offering does not exists, then creating one service offering for scale up
+        if not so_exists:
+            self.services["service_offerings"]["small"]["storagetype"] = current_so.storagetype
+            new_so = ServiceOffering.create(
+                                            self.apiClient,
+                                            self.services["service_offerings"]["small"]
+                                            )
+            self.cleanup.append(new_so)
+        # Changing service for the Running VM
+        with self.assertRaises(Exception):
+            vm_created.change_service_offering(
+                                            self.userapiclient,
+                                            new_so.id
+                                            )
+        # Listing VM details again
+        list_vms_after = VirtualMachine.list(
+                                             self.userapiclient,
+                                             id=vm_created.id
+                                             )
+        status = validateList(list_vms_after)
+        self.assertEquals(
+                          PASS,
+                          status[0],
+                          "Listing of VM failed"
+                          )
+        self.assertEquals(
+                          1,
+                          len(list_vms_after),
+                          "VMs list is not as expected"
+                          )
+        # Verifying that VM's service offerings is not changed
+        self.assertEquals(
+                          current_so.id,
+                          list_vms_after[0].serviceofferingid,
+                          "VM is not containing old Service Offering"
+                          )
+        return
+
     @attr(tags=["advanced"], required_hardware="true")
-    def test_12_vm_nics(self):
+    def test_13_vm_nics(self):
         """
         @Desc: Test to verify Nics for a VM
         @Steps:
@@ -1613,6 +1727,8 @@ class TestListInstances(cloudstackTestCase):
         Step15: Removing the non-default nic from VM
         Step16: Verifying that VM deployed in step1 has only 1 nic
         """
+        if self.hypervisor.lower() in ['hyperv']:
+            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the VM's for a User
         list_vms_before = VirtualMachine.list(
                                               self.userapiclient,
@@ -1897,7 +2013,7 @@ class TestInstances(cloudstackTestCase):
                 cls.services["disk_offering"]["storagetype"] = 'shared'
 
             cls.services['mode'] = cls.zone.networktype
-            cls.services["virtual_machine"]["hypervisor"] = cls.testClient.getHypervisorInfo()
+            cls.services["virtual_machine"]["hypervisor"] = cls.hypervisor
             cls.services["virtual_machine"]["zoneid"] = cls.zone.id
             cls.services["virtual_machine"]["template"] = cls.template.id
             cls.services["custom_volume"]["zoneid"] = cls.zone.id
@@ -1925,7 +2041,7 @@ class TestInstances(cloudstackTestCase):
                                       cls.api_client,
                                       account=cls.account.name,
                                       domainid=cls.domain.id,
-                                      max= -1,
+                                      max=-1,
                                       resourcetype=i
                                       )
             cls._cleanup.append(cls.account)
@@ -2006,8 +2122,8 @@ class TestInstances(cloudstackTestCase):
         Step10: Detaching the ISO attached in step8
         Step11: Verifying that detached ISO details are not associated with VM
         """
-        if self.hypervisor.lower() == 'kvm':
-            raise unittest.SkipTest("VM Snapshot is not supported on KVM. Hence, skipping the test")
+        if self.hypervisor.lower() in ['kvm', 'hyperv']:
+            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the VM's for a User
         list_vms_before = VirtualMachine.list(
                                               self.userapiclient,
@@ -2138,8 +2254,8 @@ class TestInstances(cloudstackTestCase):
         Step12: Listing all the VM snapshots in Page 2 with page size
         Step13: Verifying that size of the list is 0
         """
-        if self.hypervisor.lower() == 'kvm':
-            raise unittest.SkipTest("VM Snapshot is not supported on KVM. Hence, skipping the test")
+        if self.hypervisor.lower() in ['kvm', 'hyperv']:
+            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the VM's for a User
         list_vms_before = VirtualMachine.list(
                                               self.userapiclient,
@@ -2295,8 +2411,8 @@ class TestInstances(cloudstackTestCase):
         Step10: Verifying that only 1 VM snapshot is having current flag set as true.
         Step11: Verifying that the VM Snapshot with current flag set to true is the reverted snapshot in Step 8
         """
-        if self.hypervisor.lower() == 'kvm':
-            raise unittest.SkipTest("VM Snapshot is not supported on KVM. Hence, skipping the test")
+        if self.hypervisor.lower() in ['kvm', 'hyperv']:
+            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the VM's for a User
         list_vms_before = VirtualMachine.list(
                                               self.userapiclient,
@@ -3635,7 +3751,7 @@ class TestInstances(cloudstackTestCase):
         )
         vm_ip1 = "10.1.1.10"
         name1 = "hostA"
-        self.debug("network id:%s" %network.id)
+        self.debug("network id:%s" % network.id)
         self.services["virtual_machine"]["name"] = name1
         # Deploying a VM
         vm1 = VirtualMachine.create(
@@ -3650,7 +3766,7 @@ class TestInstances(cloudstackTestCase):
             )
         self.assertIsNotNone(
             vm1,
-            "VM1 creation failed with ip address %s and host name %s" %(vm_ip1,name1)
+            "VM1 creation failed with ip address %s and host name %s" % (vm_ip1, name1)
         )
         # self.cleanup.append(vm_created)
         self.cleanup.append(network)

@@ -34,7 +34,6 @@ from marvin.lib.common import (get_domain,
 from nose.plugins.attrib import attr
 from marvin.codes import PASS
 
-
 class TestVolumes(cloudstackTestCase):
 
     @classmethod
@@ -44,6 +43,7 @@ class TestVolumes(cloudstackTestCase):
             cls.testClient = super(TestVolumes, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
+            cls.hypervisor = cls.testClient.getHypervisorInfo()
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
             cls.zone = get_zone(
@@ -67,7 +67,7 @@ class TestVolumes(cloudstackTestCase):
 
             cls.services['mode'] = cls.zone.networktype
             cls.services["virtual_machine"][
-                "hypervisor"] = cls.testClient.getHypervisorInfo()
+                "hypervisor"] = cls.hypervisor
             cls.services["virtual_machine"]["zoneid"] = cls.zone.id
             cls.services["virtual_machine"]["template"] = cls.template.id
             cls.services["custom_volume"]["zoneid"] = cls.zone.id
@@ -463,6 +463,8 @@ class TestVolumes(cloudstackTestCase):
                 If not present creating it
         Step6: Resizing data volume
         """
+        if self.hypervisor.lower() in ['hyperv']:
+            raise unittest.SkipTest("This featureis not supported on existing hypervisor. Hence, skipping the test")
         # Listing volumes for a user before creating a volume
         list_volumes_before = Volume.list(
             self.userapiclient,
@@ -582,6 +584,8 @@ class TestVolumes(cloudstackTestCase):
         Step5: Attaching and Detaching custom volume created to Virtual Machine
         Step6: Resizing custom volume
         """
+        if self.hypervisor.lower() in ['hyperv']:
+            raise unittest.SkipTest("This featureis not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the disk offerings
         list_disk_offerings = DiskOffering.list(self.apiClient)
 
@@ -705,6 +709,8 @@ class TestVolumes(cloudstackTestCase):
         Step4: Creating Volume from snapshot
         Step5: Creating Template from Snapshot
         """
+        if self.hypervisor.lower() in ['hyperv']:
+            raise unittest.SkipTest("This featureis not supported on existing hypervisor. Hence, skipping the test")
         list_volumes_before = Volume.list(
             self.userapiclient,
             listall=self.services["listall"])
@@ -1466,6 +1472,8 @@ class TestVolumes(cloudstackTestCase):
         Step11: Listign the snapshots from page 2 again and verifyign that
                 list returns none
         """
+        if self.hypervisor.lower() in ['hyperv']:
+            raise unittest.SkipTest("This featureis not supported on existing hypervisor. Hence, skipping the test")
         list_volumes_before = Volume.list(
             self.userapiclient,
             listall=self.services["listall"])
@@ -1805,6 +1813,8 @@ class TestVolumes(cloudstackTestCase):
         Step4:Create another volume with size y
         Step5:Verify that the new volume is created with size Y but not with size X
         """
+        if self.hypervisor.lower() in ['hyperv']:
+            raise unittest.SkipTest("This featureis not supported on existing hypervisor. Hence, skipping the test")
         disk_offering = DiskOffering.create(
             self.api_client,
             self.services["disk_offering"],
