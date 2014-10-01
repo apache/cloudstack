@@ -1046,12 +1046,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             } else {
                 _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(), new Long(currentSize - newSize));
             }
+            return volume;
         } catch (InterruptedException e) {
             s_logger.warn("failed get resize volume result", e);
+            throw new CloudRuntimeException(e.getMessage());
         } catch (ExecutionException e) {
             s_logger.warn("failed get resize volume result", e);
+            throw new CloudRuntimeException(e.getMessage());
+        } catch (Exception e) {
+            s_logger.warn("failed get resize volume result", e);
+            throw new CloudRuntimeException(e.getMessage());
         }
-        return volume;
     }
 
     @Override
