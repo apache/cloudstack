@@ -19,7 +19,6 @@
 
 package com.cloud.storage.template;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +28,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Date;
 
-import org.apache.commons.httpclient.ChunkedInputStream;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
