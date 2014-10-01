@@ -1163,6 +1163,7 @@ setup_secstorage() {
   enable_svc dnsmasq 0
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 1
+  rm /etc/logrotate.d/cloud
 }
 
 setup_console_proxy() {
@@ -1189,6 +1190,7 @@ setup_console_proxy() {
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 1
   chkconfig nfs-common off
+  rm /etc/logrotate.d/cloud
 }
 
 setup_elbvm() {
