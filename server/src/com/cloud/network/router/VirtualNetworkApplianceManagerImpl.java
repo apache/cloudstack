@@ -1020,7 +1020,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
                 if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
                     //Check for ownership
                     //msHost in UP state with min id should run the job
-                    final ManagementServerHostVO msHost = _msHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
+                    final ManagementServerHostVO msHost = _msHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", false, 0L, 1L));
                     if (msHost == null || (msHost.getMsid() != mgmtSrvrId)) {
                         s_logger.debug("Skipping aggregate network stats update");
                         scanLock.unlock();
