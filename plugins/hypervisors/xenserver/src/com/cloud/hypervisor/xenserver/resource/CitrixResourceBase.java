@@ -6380,9 +6380,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     msg = licenseKeyWord;
                 }
             } else {
-                msg = e.getMessage();
+                msg = e.toString();
             }
-            s_logger.error("Creating VM Snapshot " + cmd.getTarget().getSnapshotName() + " failed due to: " + msg);
+            s_logger.warn("Creating VM Snapshot " + cmd.getTarget().getSnapshotName() + " failed due to: " + msg, e);
             return new CreateVMSnapshotAnswer(cmd, false, msg);
         } finally {
             try {
