@@ -964,7 +964,6 @@ dictionary = {
 'label.projects': '<fmt:message key="label.projects" />',
 'label.project.view': '<fmt:message key="label.project.view" />',
 'label.protocol': '<fmt:message key="label.protocol" />',
-'label.providers': '<fmt:message key="label.providers" />',
 'label.provider': '<fmt:message key="label.provider" />',
 'label.providers': '<fmt:message key="label.providers" />',
 'label.public': '<fmt:message key="label.public" />',
