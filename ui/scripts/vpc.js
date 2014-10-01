@@ -84,7 +84,7 @@
                         },
                         async: false,
                         success: function(json) {
-                            assignedInstances = json.listloadbalancerssresponse.loadbalancer[0].loadbalancerinstance;
+                            assignedInstances = json.listloadbalancersresponse.loadbalancer[0].loadbalancerinstance;
                             if (assignedInstances == null)
                                 assignedInstances = [];
                         }
@@ -773,7 +773,7 @@
                                 networkid: args.context.networks[0].id
                             },
                             success: function(json) {
-                                var items = json.listloadbalancerssresponse.loadbalancer;
+                                var items = json.listloadbalancersresponse.loadbalancer;
                                 if (items != null) {
                                     for (var i = 0; i < items.length; i++) {
                                         var item = items[i];
@@ -984,7 +984,7 @@
                                             id: args.context.internalLoadBalancers[0].id
                                         },
                                         success: function(json) {
-                                            var item = json.listloadbalancerssresponse.loadbalancer[0];
+                                            var item = json.listloadbalancersresponse.loadbalancer[0];
 
                                             //remove Rules tab and add sourceport, instanceport at Details tab because there is only one element in loadbalancerrul array property.
                                             item.sourceport = item.loadbalancerrule[0].sourceport;
@@ -1015,7 +1015,7 @@
                       id: args.context.internalLoadBalancers[0].id
                     },
                     success: function(json) {
-                      var item = json.listloadbalancerssresponse.loadbalancer[0];
+                      var item = json.listloadbalancersresponse.loadbalancer[0];
                       args.response.success({ data: item.loadbalancerrule });
                     }
                   });
@@ -1042,7 +1042,7 @@
                                                 id: args.context.internalLoadBalancers[0].id
                                             },
                                             success: function(json) {
-                                                var item = json.listloadbalancerssresponse.loadbalancer[0];
+                                                var item = json.listloadbalancersresponse.loadbalancer[0];
                                                 args.response.success({
                                                     data: item.loadbalancerinstance
                                                 });
@@ -4248,7 +4248,7 @@
                                         networkid: tier.id
                                     },
                                     success: function(json) {
-                                        internalLoadBalancers = json.listloadbalancerssresponse;
+                                        internalLoadBalancers = json.listloadbalancersresponse;
                                     },
                                     error: function(json) {
                                         error = true;
