@@ -17,16 +17,13 @@
 
 # Import Local Modules
 from marvin.cloudstackTestCase import *
-from marvin.cloudstackException import *
 from marvin.cloudstackAPI import *
-from marvin.sshClient import SshClient
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from marvin.lib.utils import checkVolumeSize
-from marvin.codes import SUCCESS
+from marvin.codes import PASS
 from nose.plugins.attrib import attr
-from time import sleep
+import time
 
 class TestTemplates(cloudstackTestCase):
 
@@ -732,7 +729,7 @@ class TestTemplates(cloudstackTestCase):
                           "Failed to list Zones"
                           )
         if not len(zones_list) > 1:
-            raise unittest.SkipTest("Enough zones doesnot exists to copy template")
+            raise unittest.SkipTest("Not enough zones exist to copy template")
         else:
             # Listing all the Templates for a User in Zone 1
             list_templates_zone1 = Template.list(

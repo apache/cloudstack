@@ -43,7 +43,6 @@ from marvin.lib.utils import validateList, cleanup_resources
 from marvin.codes import PASS
 from nose.plugins.attrib import attr
 
-
 class TestIpAddresses(cloudstackTestCase):
 
     @classmethod
@@ -75,7 +74,7 @@ class TestIpAddresses(cloudstackTestCase):
 
             cls.services['mode'] = cls.zone.networktype
             cls.services["virtual_machine"][
-                "hypervisor"] = cls.testClient.getHypervisorInfo()
+                "hypervisor"] = cls.hypervisor
             cls.services["virtual_machine"]["zoneid"] = cls.zone.id
             cls.services["virtual_machine"]["template"] = cls.template.id
             cls.service_offering = ServiceOffering.create(
@@ -522,6 +521,8 @@ class TestIpAddresses(cloudstackTestCase):
         Step8: Verifying that the length of the IP Addresses list is 1
         Step9: Verifying the details of the Listed IP Address
         """
+        if self.hypervisor.lower() in ['hyperv']:
+            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the vpc's for a user
         list_vpc_before = VPC.list(self.userapiclient)
         # Verifying No VPCs are listed
@@ -855,6 +856,8 @@ class TestIpAddresses(cloudstackTestCase):
                Step2
         Step11: Verifying that no Load Balancer Rules are listed
         """
+        if self.hypervisor.lower() in ['hyperv']:
+            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the vpc's for a user
         list_vpc_before = VPC.list(self.userapiclient)
         # Verifying No VPCs are listed
@@ -2067,6 +2070,8 @@ class TestIpAddresses(cloudstackTestCase):
                 associated in Step3
         Step12: Verifying that no Port Forwarding Rules are listed
         """
+        if self.hypervisor.lower() in ['hyperv']:
+            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the vpc's for a user
         list_vpc_before = VPC.list(self.userapiclient)
         # Verifying No VPCs are listed
@@ -3029,6 +3034,8 @@ class TestIpAddresses(cloudstackTestCase):
         Step7: Disabling the staticNat to IP Associated in Step3
         Step8: Verifying that StaticNat is disabled
         """
+        if self.hypervisor.lower() in ['hyperv']:
+            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the vpc's for a user
         list_vpc_before = VPC.list(self.userapiclient)
         # Verifying No VPCs are listed
