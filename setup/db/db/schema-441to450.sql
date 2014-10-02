@@ -443,7 +443,7 @@ CREATE VIEW `cloud`.`template_view` AS
 
 UPDATE configuration SET value='KVM,XenServer,VMware,BareMetal,Ovm,LXC,Hyperv' WHERE name='hypervisor.list';
 UPDATE `cloud`.`configuration` SET description="If set to true, will set guest VM's name as it appears on the hypervisor, to its hostname. The flag is supported for VMware hypervisor only" WHERE name='vm.instancename.flag';
--- INSERT IGNORE INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Hidden', 'DEFAULT', 'ImplicitHostTags', 'implicit.host.tags', 'GPU', 'Tag hosts at the time of host disovery based on the host properties/capabilities ', 'GPU') ON DUPLICATE KEY UPDATE category='Hidden';
+INSERT IGNORE INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Hidden', 'DEFAULT', 'ImplicitHostTags', 'implicit.host.tags', 'GPU', 'Tag hosts at the time of host disovery based on the host properties/capabilities ', 'GPU') ON DUPLICATE KEY UPDATE category='Hidden';
 
 DROP VIEW IF EXISTS `cloud`.`domain_router_view`;
 CREATE VIEW `cloud`.`domain_router_view` AS
