@@ -76,9 +76,7 @@ import com.cloud.deploy.PlannerHostReservationVO;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
@@ -242,11 +240,6 @@ public class DeploymentPlanningManagerImplTest {
         }
 
         @Bean
-        public HostTagsDao hostTagsDao() {
-            return Mockito.mock(HostTagsDao.class);
-        }
-
-        @Bean
         public ClusterDetailsDao clusterDetailsDao() {
             return Mockito.mock(ClusterDetailsDao.class);
         }
@@ -394,11 +387,6 @@ public class DeploymentPlanningManagerImplTest {
         @Bean
         public AffinityGroupService affinityGroupService() {
             return Mockito.mock(AffinityGroupService.class);
-        }
-
-        @Bean
-        public HostGpuGroupsDao hostGpuGroupsDap() {
-            return Mockito.mock(HostGpuGroupsDao.class);
         }
 
         public static class Library implements TypeFilter {
