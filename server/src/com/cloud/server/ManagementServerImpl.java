@@ -1706,6 +1706,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (configVo != null) {
                     configVo.setValue(_configDepot.get(param.getName()).valueIn(id).toString());
                     configVOList.add(configVo);
+                } else {
+                    s_logger.warn("configuration item  " + param.getName() + " not found in " + scope);
                 }
             }
 
