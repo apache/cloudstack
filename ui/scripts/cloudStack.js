@@ -496,8 +496,9 @@
         }
         
         //added for dictionary split up
-        
-        $.extend(dictionary,dictionary2);
+        if (dictionary != undefined && dictionary2 != undefined) {
+            $.extend(dictionary,dictionary2);
+        }
 
         // Localize validation messages
         cloudStack.localizeValidatorMessages();
