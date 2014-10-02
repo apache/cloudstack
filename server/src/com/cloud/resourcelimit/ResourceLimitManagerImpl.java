@@ -425,7 +425,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                             "Maximum number of resources of type '" + type + "' for project name=" + projectFinal.getName() + " in domain id=" + account.getDomainId() +
                                 " has been exceeded.";
                 }
-                throw new ResourceAllocationException(message, type);
+                ResourceAllocationException e=  new ResourceAllocationException(message, type);;
+                s_logger.error(message, e);
+                throw e;
             }
 
             // check all domains in the account's domain hierarchy
