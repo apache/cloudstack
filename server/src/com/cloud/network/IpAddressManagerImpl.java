@@ -758,7 +758,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         assert (addrs.size() == 1) : "Return size is incorrect: " + addrs.size();
 
-        if (!fetchFromDedicatedRange) {
+        if (!fetchFromDedicatedRange && VlanType.VirtualNetwork.equals(vlanUse)) {
             // Check that the maximum number of public IPs for the given accountId will not be exceeded
             try {
                 _resourceLimitMgr.checkResourceLimit(owner, ResourceType.public_ip);
