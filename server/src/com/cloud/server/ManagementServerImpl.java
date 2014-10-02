@@ -1703,9 +1703,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             List<ConfigurationVO> configVOList = new ArrayList<ConfigurationVO>();
             for (ConfigurationVO param : result.first()) {
                 ConfigurationVO configVo = _configDao.findByName(param.getName());
-                configVo.setValue(_configDepot.get(param.getName()).valueIn(id).toString());
-                configVOList.add(configVo);
-    }
+                if (configVo != null) {
+                    configVo.setValue(_configDepot.get(param.getName()).valueIn(id).toString());
+                    configVOList.add(configVo);
+                }
+            }
 
             return new Pair<List<? extends Configuration>, Integer>(configVOList, configVOList.size());
         }
