@@ -25,3 +25,5 @@
 %define _managementserviceattribute %attr(0755,root,root) %{_unitdir}/%{name}-management.service
 %define _iptablesservice Requires: iptables-services
 %define _serverxmlname server7
+%define _cloudstackmanagementconf install -D packaging/centos63/%{_os}/%{name}-management.conf ${RPM_BUILD_ROOT}%{_tmpfilesdir}/%{name}-management.conf
+%define _cloudstackmanagementconfattr %attr(0755,root,root) %{_tmpfilesdir}/%{name}-management.conf
