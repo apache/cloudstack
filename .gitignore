@@ -17,7 +17,6 @@
 
 build/replace.properties
 build/build.number
-bin/
 .lock-wscript
 .waf-*
 waf-*
