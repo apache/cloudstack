@@ -107,7 +107,7 @@ public class RemoteHostEndPoint implements EndPoint {
 
     // used when HypervisorGuruManager choose a different host to send command
     private void setId(long id) {
-        HostVO host = _hostDao.findById(hostId);
+        HostVO host = _hostDao.findById(id);
         if (host != null) {
             configure(host);
         }
