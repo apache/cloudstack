@@ -84,6 +84,9 @@ public class XenServer620SP1Resource extends XenServer620Resource {
         try {
             HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = getGPUGroupDetails(conn);
             cmd.setGpuGroupDetails(groupDetails);
+            if (groupDetails != null && !groupDetails.isEmpty()) {
+                cmd.setHostTags("GPU");
+            }
         } catch (Exception e) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Error while getting GPU device info from host " + cmd.getName(), e);
