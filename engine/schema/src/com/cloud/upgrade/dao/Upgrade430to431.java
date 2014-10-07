@@ -58,8 +58,8 @@ public class Upgrade430to431 implements DbUpgrade {
 
     private void updateVlanUris(Connection conn) {
         s_logger.debug("updating vlan URIs");
-        Exception thrown = null;
-        PreparedStatement selectstatement = null;
+        CloudRuntimeException thrown = null;
+    	PreparedStatement selectstatement = null;
         ResultSet results = null;
         try{
             selectstatement = conn.prepareStatement("SELECT id, vlan_id FROM `cloud`.`vlan` where vlan_id not like '%:%'");
@@ -112,6 +112,9 @@ public class Upgrade430to431 implements DbUpgrade {
                     thrown = new CloudRuntimeException("Unable to update vlan URIs ", e);
                 } //else don't obfuscate the original exception
             }
+        }
+        if (thrown != null) {
+            throw thrown;
         }
         s_logger.debug("Done updateing vlan URIs");
     }
