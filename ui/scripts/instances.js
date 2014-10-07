@@ -1945,13 +1945,22 @@
                                         networkid: {
                                             label: 'label.network',
                                             select: function(args) {
+                                            	var data1 = {
+                                            		zoneid: args.context.instances[0].zoneid	
+                                            	};
+                                            	if (isAdmin()) {
+                                            		$.extend(data1, {
+                                            			listAll: true
+                                            		});
+                                            	} else {
+                                            		$.extend(data1, {
+                                            			account: args.context.instances[0].account,
+                                                        domainid: args.context.instances[0].domainid
+                                            		});
+                                            	}     
                                                 $.ajax({
                                                     url: createURL('listNetworks'),
-                                                    data: {
-                                                        zoneid: args.context.instances[0].zoneid,
-                                                        account: args.context.instances[0].account,
-                                                        domainid: args.context.instances[0].domainid
-                                                    },
+                                                    data: data1,
                                                     success: function(json) {
                                                         args.response.success({
                                                             data: $.map(json.listnetworksresponse.network, function(network) {
