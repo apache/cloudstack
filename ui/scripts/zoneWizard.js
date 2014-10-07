@@ -476,6 +476,10 @@
                                         nonSupportedHypervisors["Ovm"] = 1;
                                     }
 
+                                    if (args.context.zones[0]['network-model'] == "Advanced") { //CLOUDSTACK-7681: UI > zone wizard > Advanced zone > hypervisor => do not support BareMetal                                    
+                                        nonSupportedHypervisors["BareMetal"] = 1;                                        
+                                    }
+                                    
                                     if (items != null) {
                                         for (var i = 0; i < items.length; i++) {
                                             if (items[i].name in nonSupportedHypervisors)
