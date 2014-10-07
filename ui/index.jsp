@@ -401,7 +401,7 @@
                             <div class="content">
                                 <div class="select-container">
                                     <!-- Name -->
-                                    <div class="select vm-instance-name">
+                                    <div class="select odd vm-instance-name">
                                         <div class="name">
                                             <span><fmt:message key="label.name"/> (<fmt:message key="label.optional"/>)</span>
                                         </div>
@@ -410,7 +410,7 @@
                                         </div>
                                     </div>
                                     <!-- Add to group -->
-                                    <div class="select odd">
+                                    <div class="select">
                                         <div class="name">
                                             <span><fmt:message key="label.add.to.group"/> (<fmt:message key="label.optional"/>)</span>
                                         </div>
@@ -418,6 +418,22 @@
                                             <input type="text" name="groupname" class="disallowSpecialCharacters" />
                                         </div>
                                     </div>
+
+                                    <!-- Keyboard Language -->
+                                    <div class="select odd">
+                                        <div class="name">
+                                            <span>Keyboard language</span>
+                                        </div>
+                                        <div class="value">
+                                            <select name="keyboardLanguage">
+                                                <option value=""></option>
+                                                <option value="us">Standard (US) keyboard</option>
+                                                <option value="uk">UK keyboard</option>
+                                                <option value="jp">Japanese keyboard</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
                                     <!-- Zone -->
                                     <div class="select">
                                         <div class="name">
