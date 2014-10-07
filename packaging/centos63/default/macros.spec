@@ -25,5 +25,3 @@
 %define _managementserviceattribute %{nil}
 %define _iptablesservice %{nil}
 %define _serverxmlname server
-%define _cloudstackmanagementconf %{nil}
-%define _cloudstackmanagementconfattr %{nil}
