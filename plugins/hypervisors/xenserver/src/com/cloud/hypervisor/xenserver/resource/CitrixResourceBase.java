@@ -4440,16 +4440,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         cmd.setCluster(_cluster);
         cmd.setPoolSync(false);
 
-        Pool pool;
         try {
-            pool = Pool.getByUuid(conn, _host.pool);
+            Pool pool = Pool.getByUuid(conn, _host.pool);
             Pool.Record poolr = pool.getRecord(conn);
-
-            Host.Record hostr = poolr.master.getRecord(conn);
+            poolr.master.getRecord(conn);
         } catch (Throwable e) {
             s_logger.warn("Check for master failed, failing the FULL Cluster sync command");
         }
-
         StartupStorageCommand sscmd = initializeLocalSR(conn);
         if (sscmd != null) {
             return new StartupCommand[] {cmd, sscmd};
