@@ -46,7 +46,7 @@ done
 # Get appliance uuids
 machine_uuid=`vboxmanage showvminfo $appliance | grep UUID | head -1 | awk '{print $2}'`
 hdd_uuid=`vboxmanage showvminfo $appliance | grep vdi | head -1 | awk '{print $8}' | cut -d ')' -f 1`
-hdd_path=`vboxmanage list hdds | grep "$appliance\/" | grep vdi | cut -c 14-`
+hdd_path=`vboxmanage list hdds | grep "$appliance\/" | grep vdi | cut -c 14- | sed -e 's/^ *//' -e 's/ *$//'`
 
 # Remove any shared folder
 shared_folders=`vboxmanage showvminfo $appliance | grep Name | grep Host`
