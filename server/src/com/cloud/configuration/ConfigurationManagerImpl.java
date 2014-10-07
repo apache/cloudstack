@@ -3964,8 +3964,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         + " capabilities can be sepcified for source nat service");
             }
 
-            for (Capability capability : sourceNatServiceCapabilityMap.keySet()) {
-                String value = sourceNatServiceCapabilityMap.get(capability);
+            for (Map.Entry<Capability ,String> srcNatPair : sourceNatServiceCapabilityMap.entrySet()) {
+                Capability capability = srcNatPair.getKey();
+                String value = srcNatPair.getValue();
                 if (capability == Capability.SupportedSourceNatTypes) {
                     boolean perAccount = value.contains("peraccount");
                     boolean perZone = value.contains("perzone");
@@ -4284,7 +4285,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     public Pair<List<? extends NetworkOffering>, Integer> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd) {
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-        isAscending = (isAscending == null ? true : isAscending);
+        isAscending = (isAscending == null ? Boolean.TRUE : isAscending);
         Filter searchFilter = new Filter(NetworkOfferingVO.class, "sortKey", isAscending, null, null);
         Account caller = CallContext.current().getCallingAccount();
         SearchCriteria<NetworkOfferingVO> sc = _networkOfferingDao.createSearchCriteria();
