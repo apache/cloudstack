@@ -669,6 +669,9 @@ class TestTemplateUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
             cls._cleanup.append(cls.account)
+            cls.userapiclient = cls.testClient.getUserApiClient(
+                                    UserName=cls.account.name,
+                                    DomainName=cls.account.domain)
             cls.services["account"] = cls.account.name
 
             cls.service_offering = ServiceOffering.create(
@@ -742,7 +745,7 @@ class TestTemplateUsage(cloudstackTestCase):
 
         #Create template from Virtual machine and Volume ID
         self.template = Template.create(
-                                self.apiclient,
+                                self.userapiclient,
                                 self.services["templates"],
                                 self.volume.id,
                                 TestTemplateUsage.account.name,
@@ -750,7 +753,7 @@ class TestTemplateUsage(cloudstackTestCase):
                                 )
         self.debug("Created template with ID: %s" % self.template.id)
         # Delete template
-        self.template.delete(self.apiclient)
+        self.template.delete(self.userapiclient)
         self.debug("Deleted template with ID: %s" % self.template.id)
 
         # Fetch account ID from account_uuid
