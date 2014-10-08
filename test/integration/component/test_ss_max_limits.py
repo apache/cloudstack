@@ -101,7 +101,7 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
             self.services["template_2"]["hypervisor"] = builtin_info[1]
             self.services["template_2"]["format"] = builtin_info[2]
 
-            template = Template.register(self.apiclient,
+            template = Template.register(self.userapiclient,
                                      self.services["template_2"],
                                      zoneid=self.zone.id,
                                      account=self.child_do_admin.name if not inProject else None,
@@ -110,7 +110,7 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
 
             template.download(self.apiclient)
 
-            templates = Template.list(self.apiclient,
+            templates = Template.list(self.userapiclient,
                                       templatefilter=\
                                       self.services["template_2"]["templatefilter"],
                                       id=template.id)
@@ -130,6 +130,10 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
 
             self.child_do_admin = Account.create(self.apiclient, self.services["account"], admin=True,
                                              domainid=self.child_domain.id)
+
+            self.userapiclient = self.testClient.getUserApiClient(
+                                    UserName=self.child_do_admin.name,
+                                    DomainName=self.child_do_admin.domain)
 
             # Create project as a domain admin
             self.project = Project.create(self.apiclient, self.services["project"],
@@ -195,11 +199,12 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
         self.assertEqual(response[0], PASS, response[1])
 
         with self.assertRaises(Exception):
-            template = Template.register(self.apiclient,
+            template = Template.register(self.userapiclient,
                                      self.services["template_2"],
                                      zoneid=self.zone.id,
                                      account=self.child_do_admin.name,
                                      domainid=self.child_do_admin.domainid)
+            template.delete(self.userapiclient)
         return
 
     @attr(tags=["advanced"], required_hardware="false")
@@ -231,11 +236,12 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
         self.assertEqual(response[0], PASS, response[1])
 
         with self.assertRaises(Exception):
-            template = Template.register(self.apiclient,
+            template = Template.register(self.userapiclient,
                                      self.services["template_2"],
                                      zoneid=self.zone.id,
                                      account=self.child_do_admin.name,
                                      domainid=self.child_do_admin.domainid)
+            template.delete(self.userapiclient)
         return
 
     @attr(tags=["advanced"], required_hardware="false")
@@ -256,7 +262,7 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
         self.assertEqual(response[0], PASS, response[1])
 
         try:
-            projects = Project.list(self.apiclient, id=self.project.id, listall=True)
+            projects = Project.list(self.userapiclient, id=self.project.id, listall=True)
         except Exception as e:
             self.fail("failed to get projects list: %s" % e)
 
@@ -272,8 +278,9 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
         self.assertEqual(response[0], PASS, response[1])
 
         with self.assertRaises(Exception):
-            template = Template.register(self.apiclient,
+            template = Template.register(self.userapiclient,
                                      self.services["template_2"],
                                      zoneid=self.zone.id,
                                      projectid=self.project.id)
+            template.delete(self.userapiclient)
         return
