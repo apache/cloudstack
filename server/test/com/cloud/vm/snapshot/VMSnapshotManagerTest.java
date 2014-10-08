@@ -47,6 +47,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -104,6 +105,8 @@ public class VMSnapshotManagerTest {
     ConfigurationDao _configDao;
     @Mock
     HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
+    @Mock
+    ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     int _vmSnapshotMax = 10;
 
     private static final long TEST_VM_ID = 3L;
@@ -124,6 +127,7 @@ public class VMSnapshotManagerTest {
         _vmSnapshotMgr._snapshotDao = _snapshotDao;
         _vmSnapshotMgr._guestOSDao = _guestOSDao;
         _vmSnapshotMgr._hypervisorCapabilitiesDao = _hypervisorCapabilitiesDao;
+        _vmSnapshotMgr._serviceOfferingDetailsDao = _serviceOfferingDetailsDao;
 
         doNothing().when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
 
@@ -133,6 +137,7 @@ public class VMSnapshotManagerTest {
         when(_vmSnapshotDao.findByName(anyLong(), anyString())).thenReturn(null);
         when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(new ArrayList<VMSnapshotVO>());
         when(_hypervisorCapabilitiesDao.isVmSnapshotEnabled(Hypervisor.HypervisorType.XenServer, "default")).thenReturn(true);
+        when(_serviceOfferingDetailsDao.findDetail(anyLong(), anyString())).thenReturn(null);
 
         List<VolumeVO> mockVolumeList = new ArrayList<VolumeVO>();
         mockVolumeList.add(volumeMock);
