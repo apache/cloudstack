@@ -40,7 +40,13 @@
                     snapshotMemory: {
                         label: 'label.vmsnapshot.memory',
                         isBoolean: true,
-                        isChecked: false
+                        isChecked: false,
+                        isHidden: function(args) {
+                            if (args.context.instances[0].vgpu != undefined) {
+                                return true;
+                            }
+                            return false;
+                        }
                     },
                     quiescevm: {
                         label: 'label.quiesce.vm',
