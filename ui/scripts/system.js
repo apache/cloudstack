@@ -14179,19 +14179,20 @@
                                     array1.push("&password=" + todb(args.data.vCenterPassword));
                                     
                                     //vSwitch Public Type
-                                    if (args.data.vSwitchPublicType != "")
-                                    array1.push("&publicvswitchtype=" + args.data.vSwitchPublicType);
-                                    
-                                    if (args.data.vSwitchPublicName != "")
-                                    array1.push("&publicvswitchname=" + args.data.vSwitchPublicName);
-                                    
+                                    if (args.$form.find('.form-item[rel=vSwitchPublicType]').css('display') != 'none' && args.data.vSwitchPublicType != "") {
+                                        array1.push("&publicvswitchtype=" + args.data.vSwitchPublicType);
+                                    }
+                                    if (args.$form.find('.form-item[rel=vSwitchPublicName]').css('display') != 'none' && args.data.vSwitchPublicName != "") {
+                                        array1.push("&publicvswitchname=" + args.data.vSwitchPublicName);
+                                    }
                                     
                                     //vSwitch Guest Type
-                                    if (args.data.vSwitchGuestType != "")
-                                    array1.push("&guestvswitchtype=" + args.data.vSwitchGuestType);
-                                    
-                                    if (args.data.vSwitchGuestName != "")
-                                    array1.push("&guestvswitchname=" + args.data.vSwitchGuestName);
+                                    if (args.$form.find('.form-item[rel=vSwitchGuestType]').css('display') != 'none' && args.data.vSwitchGuestType != "") {
+                                        array1.push("&guestvswitchtype=" + args.data.vSwitchGuestType);
+                                    }
+                                    if (args.$form.find('.form-item[rel=vSwitchGuestName]').css('display') != 'none' && args.data.vSwitchGuestName != "") {
+                                        array1.push("&guestvswitchname=" + args.data.vSwitchGuestName);
+                                    }
                                     
                                     //Nexus VSM fields
                                     if (args.$form.find('.form-item[rel=vsmipaddress]').css('display') != 'none' && args.data.vsmipaddress != null && args.data.vsmipaddress.length > 0) {
