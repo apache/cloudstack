@@ -940,7 +940,14 @@
             		group : group
             	});
             }
-
+            
+            var keyboard = args.data.keyboardLanguage;
+            if (keyboard != null && keyboard.length > 0) {  //when blank option (default option) is selected => args.data.keyboardLanguage == ""              
+            	$.extend(deployVmData, {
+            		keyboard : keyboard
+            	});
+            }            
+            
             $(window).trigger('cloudStack.deployVirtualMachine', {
                 deployVmData: deployVmData,
                 formData: args.data
