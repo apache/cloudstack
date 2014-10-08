@@ -1257,17 +1257,6 @@ class Template:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.updateTemplate(cmd))
 
-    @classmethod
-    def copy(cls, apiclient, id, sourcezoneid, destzoneid):
-        "Copy Template from source Zone to Destination Zone"
-
-        cmd = copyTemplate.copyTemplateCmd()
-        cmd.id = id
-        cmd.sourcezoneid = sourcezoneid
-        cmd.destzoneid = destzoneid
-
-        return apiclient.copyTemplate(cmd)
-
     def copy(self, apiclient, sourcezoneid, destzoneid):
         "Copy Template from source Zone to Destination Zone"
 

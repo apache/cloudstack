@@ -839,9 +839,8 @@ class TestTemplates(cloudstackTestCase):
                     count = count + 1
 
             # Copying the Template from Zone1 to Zone2
-            copied_template = Template.copy(
+            copied_template = template_created.copy(
                                             self.userapiclient,
-                                            template_created.id,
                                             sourcezoneid=template_created.zoneid,
                                             destzoneid=zones_list[1].id
                                             )
