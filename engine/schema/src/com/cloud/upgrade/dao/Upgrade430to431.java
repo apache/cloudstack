@@ -124,7 +124,7 @@ public class Upgrade430to431 implements DbUpgrade {
             }
         }
         if (thrown != null) {
-        	throw thrown;
+            throw thrown;
         }
         s_logger.debug("Done updateing vlan URIs");
     }
