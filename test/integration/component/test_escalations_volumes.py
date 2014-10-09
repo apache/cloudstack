@@ -16,10 +16,10 @@
 # under the License.
 
 # Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import createVolume, createTemplate
 from marvin.lib.utils import (cleanup_resources,
-                              random_gen,validateList)
+                              random_gen, validateList)
 from marvin.lib.base import (Account,
                              VirtualMachine,
                              ServiceOffering,
@@ -33,6 +33,7 @@ from marvin.lib.common import (get_domain,
                                get_template)
 from nose.plugins.attrib import attr
 from marvin.codes import PASS
+
 
 class TestVolumes(cloudstackTestCase):
 
@@ -208,7 +209,7 @@ class TestVolumes(cloudstackTestCase):
                 volume_created.name,
                 "Newly created volume name and the test data\
                 volume name are not matching"
-                )
+            )
 
         # Listing all the volumes again after creation of volumes
         list_volumes_after = Volume.list(
@@ -239,7 +240,7 @@ class TestVolumes(cloudstackTestCase):
             self.services["pagesize"],
             "List Volume response is not matching with\
             the page size length for page 1"
-            )
+        )
 
         # Listing all the volumes in page2
         list_volumes_page2 = Volume.list(
@@ -335,7 +336,7 @@ class TestVolumes(cloudstackTestCase):
             volume_created.name,
             "Newly created volume name and\
             the test data volume name are not matching"
-            )
+        )
         # Listing all the volumes for a user after creating a data volume
         list_volumes_after = Volume.list(
             self.userapiclient,
@@ -464,7 +465,9 @@ class TestVolumes(cloudstackTestCase):
         Step6: Resizing data volume
         """
         if self.hypervisor.lower() in ['hyperv']:
-            raise unittest.SkipTest("This featureis not supported on existing hypervisor. Hence, skipping the test")
+            raise unittest.SkipTest(
+                "This featureis not supported on existing\
+                        hypervisor. Hence, skipping the test")
         # Listing volumes for a user before creating a volume
         list_volumes_before = Volume.list(
             self.userapiclient,
@@ -585,7 +588,9 @@ class TestVolumes(cloudstackTestCase):
         Step6: Resizing custom volume
         """
         if self.hypervisor.lower() in ['hyperv']:
-            raise unittest.SkipTest("This featureis not supported on existing hypervisor. Hence, skipping the test")
+            raise unittest.SkipTest(
+                "This featureis not supported on existing\
+                        hypervisor. Hence, skipping the test")
         # Listing all the disk offerings
         list_disk_offerings = DiskOffering.list(self.apiClient)
 
@@ -710,7 +715,9 @@ class TestVolumes(cloudstackTestCase):
         Step5: Creating Template from Snapshot
         """
         if self.hypervisor.lower() in ['hyperv']:
-            raise unittest.SkipTest("This featureis not supported on existing hypervisor. Hence, skipping the test")
+            raise unittest.SkipTest(
+                "This featureis not supported on existing\
+                        hypervisor. Hence, skipping the test")
         list_volumes_before = Volume.list(
             self.userapiclient,
             listall=self.services["listall"])
@@ -1473,7 +1480,9 @@ class TestVolumes(cloudstackTestCase):
                 list returns none
         """
         if self.hypervisor.lower() in ['hyperv']:
-            raise unittest.SkipTest("This featureis not supported on existing hypervisor. Hence, skipping the test")
+            raise unittest.SkipTest(
+                "This featureis not supported on existing\
+                        hypervisor. Hence, skipping the test")
         list_volumes_before = Volume.list(
             self.userapiclient,
             listall=self.services["listall"])
@@ -1803,7 +1812,7 @@ class TestVolumes(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced","basic","sg"], required_hardware="true")
+    @attr(tags=["advanced", "basic", "sg"], required_hardware="true")
     def test_13_volume_custom_disk_size(self):
         """
         @Desc:Create volume from custom disk offering does not work as expected
@@ -1811,18 +1820,23 @@ class TestVolumes(cloudstackTestCase):
         Step2:Create Volume with size x
         Step3:Attach that volume to a vm
         Step4:Create another volume with size y
-        Step5:Verify that the new volume is created with size Y but not with size X
+        Step5:Verify that the new volume is created with size Y
+              but not with size X
         """
         if self.hypervisor.lower() in ['hyperv']:
-            raise unittest.SkipTest("This featureis not supported on existing hypervisor. Hence, skipping the test")
+            raise unittest.SkipTest(
+                "This featureis not supported on existing\
+                        hypervisor. Hence, skipping the test")
         disk_offering = DiskOffering.create(
             self.api_client,
             self.services["disk_offering"],
             custom=True
         )
-        self.assertIsNotNone(disk_offering,"Failed to create custom disk offering")
+        self.assertIsNotNone(
+            disk_offering,
+            "Failed to create custom disk offering")
         self.cleanup.append(disk_offering)
-        self.services["custom_volume"]["customdisksize"]=2
+        self.services["custom_volume"]["customdisksize"] = 2
         vol1 = Volume.create_custom_disk(
             self.userapiclient,
             self.services["custom_volume"],
@@ -1830,19 +1844,26 @@ class TestVolumes(cloudstackTestCase):
             domainid=self.domain.id,
             diskofferingid=disk_offering.id
         )
-        self.assertIsNotNone(vol1,"Volume creation failed with custom disk size")
+        self.assertIsNotNone(
+            vol1,
+            "Volume creation failed with custom disk size")
         vol1_res = Volume.list(
             self.userapiclient,
             id=vol1.id
         )
-        self.assertEqual(validateList(vol1_res)[0],PASS,"Volume list returned invalid response")
+        self.assertEqual(
+            validateList(vol1_res)[0],
+            PASS,
+            "Volume list returned invalid response")
         self.cleanup.append(vol1)
         vol1_size = vol1_res[0].size
         try:
-            self.virtual_machine.attach_volume(self.userapiclient,vol1)
+            self.virtual_machine.attach_volume(self.userapiclient, vol1)
         except Exception as e:
-            self.fail("Attaching custom data disk to vm failed with error{}".format(e))
-        self.services["custom_volume"]["customdisksize"]=3
+            self.fail(
+                "Attaching custom data disk to vm failed\
+                        with error{}".format(e))
+        self.services["custom_volume"]["customdisksize"] = 3
         vol2 = Volume.create_custom_disk(
             self.userapiclient,
             self.services["custom_volume"],
@@ -1850,22 +1871,28 @@ class TestVolumes(cloudstackTestCase):
             domainid=self.domain.id,
             diskofferingid=disk_offering.id
         )
-        self.assertIsNotNone(vol2,"Failed to create custom data disk with size %s" %
-                             self.services["custom_volume"]["customdisksize"])
+        self.assertIsNotNone(
+            vol2,
+            "Failed to create custom data disk with size %s" %
+            self.services["custom_volume"]["customdisksize"])
         self.cleanup.append(vol2)
         vol2_res = Volume.list(
             self.userapiclient,
             id=vol2.id
         )
-        self.assertEqual(validateList(vol2_res)[0],PASS,"Volume list returned invalid response")
-        vol2_size=vol2_res[0].size
+        self.assertEqual(
+            validateList(vol2_res)[0],
+            PASS,
+            "Volume list returned invalid response")
+        vol2_size = vol2_res[0].size
         self.assertNotEqual(
             vol1_size,
             vol2_size,
-            "Creating volume from custom disk offering does not work as expected"
+            "Creating volume from custom disk offering does not work\
+                    as expected"
         )
         try:
-            self.virtual_machine.detach_volume(self.userapiclient,vol1)
+            self.virtual_machine.detach_volume(self.userapiclient, vol1)
         except Exception as e:
             self.fail("Detaching volume failed with error %s" % e)
         return
