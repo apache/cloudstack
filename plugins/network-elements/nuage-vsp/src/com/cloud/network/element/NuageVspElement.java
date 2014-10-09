@@ -405,13 +405,15 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
 
     @Override
     public boolean applyNetworkACLs(Network network, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
-        s_logger.debug("Handling applyNetworkACLs for network " + network.getName() + " with " + rules.size() + " Network ACLs");
         if (rules == null || rules.isEmpty()) {
             s_logger.debug("No rules to apply. So, delete all the existing ACL in VSP from Subnet with uuid " + network.getUuid());
         } else {
             s_logger.debug("New rules has to applied. So, delete all the existing ACL in VSP from Subnet with uuid " + network.getUuid());
         }
-        applyACLRules(network, rules, true);
+        if (rules != null) {
+            s_logger.debug("Handling applyNetworkACLs for network " + network.getName() + " with " + rules.size() + " Network ACLs");
+            applyACLRules(network, rules, true);
+        }
         return true;
     }
 

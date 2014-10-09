@@ -85,8 +85,10 @@ public class UpdateVpnGatewayCmd extends BaseAsyncCustomIdCmd {
     @Override
     public void execute() {
         Site2SiteVpnGateway result = _s2sVpnService.updateVpnGateway(id, this.getCustomId(), getDisplay());
-        Site2SiteVpnGatewayResponse response = _responseGenerator.createSite2SiteVpnGatewayResponse(result);
-        response.setResponseName(getCommandName());
+        if (result != null) {
+            Site2SiteVpnGatewayResponse response = _responseGenerator.createSite2SiteVpnGatewayResponse(result);
+            response.setResponseName(getCommandName());
+        }
     }
 
     @Override

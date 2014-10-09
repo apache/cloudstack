@@ -313,19 +313,19 @@ public class Script implements Callable<String> {
 
         @Override
         public void run() {
-            done = false;
-            try {
-                result = interpreter.interpret(reader);
-            } catch (IOException ex) {
-                result = stackTraceAsString(ex);
-            } catch (Exception ex) {
-                result = stackTraceAsString(ex);
-            } finally {
-                synchronized (this) {
-                    done = true;
-                    notifyAll();
+            synchronized(this) {
+                done = false;
+                try {
+                    result = interpreter.interpret(reader);
+                } catch (IOException ex) {
+                    result = stackTraceAsString(ex);
+                } catch (Exception ex) {
+                    result = stackTraceAsString(ex);
+                } finally {
+                        done = true;
+                        notifyAll();
+                        IOUtils.closeQuietly(reader);
                 }
-                IOUtils.closeQuietly(reader);
             }
         }
 

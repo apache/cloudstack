@@ -1641,81 +1641,71 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @SuppressWarnings("unchecked")
     protected void loadCollection(T entity, Attribute attr) {
         EcInfo ec = (EcInfo)attr.attache;
-
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        ResultSet rs = null;
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = txn.prepareStatement(ec.selectSql);
+        try(PreparedStatement pstmt = txn.prepareStatement(ec.selectSql);)
+        {
             pstmt.setObject(1, _idField.get(entity));
-            rs = pstmt.executeQuery();
-            ArrayList lst = new ArrayList();
-            if (ec.targetClass == Integer.class) {
-                while (rs.next()) {
-                    lst.add(rs.getInt(1));
+            try(ResultSet rs = pstmt.executeQuery();)
+            {
+                ArrayList lst = new ArrayList();
+                if (ec.targetClass == Integer.class) {
+                    while (rs.next()) {
+                        lst.add(rs.getInt(1));
+                    }
+                } else if (ec.targetClass == Long.class) {
+                    while (rs.next()) {
+                        lst.add(rs.getLong(1));
+                    }
+                } else if (ec.targetClass == String.class) {
+                    while (rs.next()) {
+                        lst.add(rs.getString(1));
+                    }
+                } else if (ec.targetClass == Short.class) {
+                    while (rs.next()) {
+                        lst.add(rs.getShort(1));
+                    }
+                } else if (ec.targetClass == Date.class) {
+                    while (rs.next()) {
+                        lst.add(DateUtil.parseDateString(s_gmtTimeZone, rs.getString(1)));
+                    }
+                } else if (ec.targetClass == Boolean.class) {
+                    while (rs.next()) {
+                        lst.add(rs.getBoolean(1));
+                    }
+                } else {
+                    assert (false) : "You'll need to add more classeses";
                 }
-            } else if (ec.targetClass == Long.class) {
-                while (rs.next()) {
-                    lst.add(rs.getLong(1));
+                if (ec.rawClass == null) {
+                    Object[] array = (Object[]) Array.newInstance(ec.targetClass);
+                    lst.toArray(array);
+                    try {
+                        attr.field.set(entity, array);
+                    } catch (IllegalArgumentException e) {
+                        throw new CloudRuntimeException("Come on we screen for this stuff, don't we?", e);
+                    } catch (IllegalAccessException e) {
+                        throw new CloudRuntimeException("Come on we screen for this stuff, don't we?", e);
+                    }
+                } else {
+                    try {
+                        Collection coll = (Collection) ec.rawClass.newInstance();
+                        coll.addAll(lst);
+                        attr.field.set(entity, coll);
+                    } catch (IllegalAccessException e) {
+                        throw new CloudRuntimeException("Come on we screen for this stuff, don't we?", e);
+                    } catch (InstantiationException e) {
+                        throw new CloudRuntimeException("Never should happen", e);
+                    }
                 }
-            } else if (ec.targetClass == String.class) {
-                while (rs.next()) {
-                    lst.add(rs.getString(1));
-                }
-            } else if (ec.targetClass == Short.class) {
-                while (rs.next()) {
-                    lst.add(rs.getShort(1));
-                }
-            } else if (ec.targetClass == Date.class) {
-                while (rs.next()) {
-                    lst.add(DateUtil.parseDateString(s_gmtTimeZone, rs.getString(1)));
-                }
-            } else if (ec.targetClass == Boolean.class) {
-                while (rs.next()) {
-                    lst.add(rs.getBoolean(1));
-                }
-            } else {
-                assert (false) : "You'll need to add more classeses";
             }
-
-            if (ec.rawClass == null) {
-                Object[] array = (Object[])Array.newInstance(ec.targetClass);
-                lst.toArray(array);
-                try {
-                    attr.field.set(entity, array);
-                } catch (IllegalArgumentException e) {
-                    throw new CloudRuntimeException("Come on we screen for this stuff, don't we?", e);
-                } catch (IllegalAccessException e) {
-                    throw new CloudRuntimeException("Come on we screen for this stuff, don't we?", e);
-                }
-            } else {
-                try {
-                    Collection coll = (Collection)ec.rawClass.newInstance();
-                    coll.addAll(lst);
-                    attr.field.set(entity, coll);
-                } catch (IllegalAccessException e) {
-                    throw new CloudRuntimeException("Come on we screen for this stuff, don't we?", e);
-                } catch (InstantiationException e) {
-                    throw new CloudRuntimeException("Never should happen", e);
-                }
+            catch (SQLException e) {
+                throw new CloudRuntimeException("loadCollection: Exception : " +e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Error executing " + pstmt, e);
+            throw new CloudRuntimeException("loadCollection: Exception : " +e.getMessage(), e);
         } catch (IllegalArgumentException e) {
-            throw new CloudRuntimeException("Error executing " + pstmt, e);
+            throw new CloudRuntimeException("loadCollection: Exception : " +e.getMessage(), e);
         } catch (IllegalAccessException e) {
-            throw new CloudRuntimeException("Error executing " + pstmt, e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-                s_logger.error("Why are we getting an exception at close? ", e);
-            }
+            throw new CloudRuntimeException("loadCollection: Exception : " +e.getMessage(), e);
         }
     }
 

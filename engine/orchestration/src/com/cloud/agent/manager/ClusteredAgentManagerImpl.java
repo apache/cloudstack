@@ -195,35 +195,36 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         long cutSeconds = (System.currentTimeMillis() >> 10) - getTimeout();
         List<HostVO> hosts = _hostDao.findAndUpdateDirectAgentToLoad(cutSeconds, LoadSize.value().longValue(), _nodeId);
         List<HostVO> appliances = _hostDao.findAndUpdateApplianceToLoad(cutSeconds, _nodeId);
-        hosts.addAll(appliances);
 
-        if (hosts != null && hosts.size() > 0) {
-            s_logger.debug("Found " + hosts.size() + " unmanaged direct hosts, processing connect for them...");
-            for (HostVO host : hosts) {
-                try {
-                    AgentAttache agentattache = findAttache(host.getId());
-                    if (agentattache != null) {
-                        // already loaded, skip
-                        if (agentattache.forForward()) {
-                            if (s_logger.isInfoEnabled()) {
-                                s_logger.info(host + " is detected down, but we have a forward attache running, disconnect this one before launching the host");
+       if (hosts != null) {
+            hosts.addAll(appliances);
+            if (hosts.size() > 0) {
+                s_logger.debug("Found " + hosts.size() + " unmanaged direct hosts, processing connect for them...");
+                for (HostVO host : hosts) {
+                    try {
+                        AgentAttache agentattache = findAttache(host.getId());
+                        if (agentattache != null) {
+                            // already loaded, skip
+                            if (agentattache.forForward()) {
+                                if (s_logger.isInfoEnabled()) {
+                                    s_logger.info(host + " is detected down, but we have a forward attache running, disconnect this one before launching the host");
+                                }
+                                removeAgent(agentattache, Status.Disconnected);
+                            } else {
+                                continue;
                             }
-                            removeAgent(agentattache, Status.Disconnected);
-                        } else {
-                            continue;
                         }
-                    }
 
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Loading directly connected host " + host.getId() + "(" + host.getName() + ")");
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Loading directly connected host " + host.getId() + "(" + host.getName() + ")");
+                        }
+                        loadDirectlyConnectedHost(host, false);
+                    } catch (Throwable e) {
+                        s_logger.warn(" can not load directly connected host " + host.getId() + "(" + host.getName() + ") due to ", e);
                     }
-                    loadDirectlyConnectedHost(host, false);
-                } catch (Throwable e) {
-                    s_logger.warn(" can not load directly connected host " + host.getId() + "(" + host.getName() + ") due to ", e);
                 }
             }
         }
-
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("End scanning directly connected hosts");
         }
