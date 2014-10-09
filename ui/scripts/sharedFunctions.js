@@ -474,7 +474,7 @@ var addGuestNetworkDialog = {
                 networkOfferingId: {
                     label: 'label.network.offering',
                     docID: 'helpGuestNetworkZoneNetworkOffering',
-                    dependsOn: ['zoneId', 'scope'],
+                    dependsOn: ['zoneId', 'physicalNetworkId', 'scope'],
                     select: function(args) {                    	
                     	if(args.$form.find('.form-item[rel=zoneId]').find('select').val() == null || args.$form.find('.form-item[rel=zoneId]').find('select').val().length == 0) {
                     		args.response.success({
