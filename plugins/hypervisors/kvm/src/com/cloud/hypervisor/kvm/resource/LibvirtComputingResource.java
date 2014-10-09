@@ -953,6 +953,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         params.put("libvirt.host.pifs", _pifs);
 
         params.put("libvirt.computing.resource", this);
+        params.put("libvirtVersion", _hypervisorLibvirtVersion);
 
         configureVifDrivers(params);
 
