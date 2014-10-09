@@ -82,21 +82,25 @@ public class ApiDiscoveryTest {
     @Test
     public void verifyListSingleApi() throws Exception {
         ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)s_discoveryService.listApis(testUser, testApiName);
-        ApiDiscoveryResponse response = responses.getResponses().get(0);
-        assertTrue("No. of response items should be one", responses.getCount() == 1);
-        assertEquals("Error in api name", testApiName, response.getName());
-        assertEquals("Error in api description", testApiDescription, response.getDescription());
-        assertEquals("Error in api since", testApiSince, response.getSince());
-        assertEquals("Error in api isAsync", testApiAsync, response.getAsync());
+        if (responses != null) {
+            ApiDiscoveryResponse response = responses.getResponses().get(0);
+            assertTrue("No. of response items should be one", responses.getCount() == 1);
+            assertEquals("Error in api name", testApiName, response.getName());
+            assertEquals("Error in api description", testApiDescription, response.getDescription());
+            assertEquals("Error in api since", testApiSince, response.getSince());
+            assertEquals("Error in api isAsync", testApiAsync, response.getAsync());
+        }
     }
 
     @Test
     public void verifyListApis() throws Exception {
         ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)s_discoveryService.listApis(testUser, null);
-        assertTrue("No. of response items > 1", responses.getCount() == 1);
-        for (ApiDiscoveryResponse response : responses.getResponses()) {
-            assertFalse("API name is empty", response.getName().isEmpty());
-            assertFalse("API description is empty", response.getDescription().isEmpty());
+        if (responses != null) {
+            assertTrue("No. of response items > 1", responses.getCount().intValue() == 1);
+            for (ApiDiscoveryResponse response : responses.getResponses()) {
+                assertFalse("API name is empty", response.getName().isEmpty());
+                assertFalse("API description is empty", response.getDescription().isEmpty());
+            }
         }
     }
 }
