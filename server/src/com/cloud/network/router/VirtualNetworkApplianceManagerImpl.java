@@ -218,6 +218,7 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
@@ -4432,17 +4433,20 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
-        if (oldState == State.Stopped && event == VirtualMachine.Event.FollowAgentPowerOnReport && newState == State.Running) {
-            if (vo.getType() == VirtualMachine.Type.DomainRouter) {
-                s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band. we need to reboot to refresh network rules");
-                _executor.schedule(new RebootTask(vo.getId()), 1000, TimeUnit.MICROSECONDS);
-            }
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, VirtualMachine.Event> transition, VirtualMachine vo, boolean status, Object opaque) {
+      State oldState = transition.getCurrentState();
+      State newState = transition.getToState();
+      VirtualMachine.Event event = transition.getEvent();
+      if (oldState == State.Stopped && event == VirtualMachine.Event.FollowAgentPowerOnReport && newState == State.Running) {
+        if (vo.getType() == VirtualMachine.Type.DomainRouter) {
+          s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band. we need to reboot to refresh network rules");
+          _executor.schedule(new RebootTask(vo.getId()), 1000, TimeUnit.MICROSECONDS);
         }
-        return true;
+      }
+      return true;
     }
 
-    protected class RebootTask extends ManagedContextRunnable {
+  protected class RebootTask extends ManagedContextRunnable {
 
         long _routerId;
 

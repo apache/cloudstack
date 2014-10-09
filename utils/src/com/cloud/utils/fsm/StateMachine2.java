@@ -46,25 +46,33 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
     }
 
     public void addTransition(S currentState, E event, S toState) {
-        StateEntry entry = null;
-        if (currentState == null) {
-            entry = _initialStateEntry;
-        } else {
-            entry = _states.get(currentState);
-            if (entry == null) {
-                entry = new StateEntry(currentState);
-                _states.put(currentState, entry);
-            }
-        }
+      addTransition(new Transition<S, E>(currentState, event, toState, null));
+    }
 
-        entry.addTransition(event, toState);
 
-        entry = _states.get(toState);
+    public void addTransition(Transition<S, E> transition) {
+      S currentState = transition.getCurrentState();
+      E event = transition.getEvent();
+      S toState = transition.getToState();
+      StateEntry entry = null;
+      if (currentState == null) {
+        entry = _initialStateEntry;
+      } else {
+        entry = _states.get(currentState);
         if (entry == null) {
-            entry = new StateEntry(toState);
-            _states.put(toState, entry);
+          entry = new StateEntry(currentState);
+          _states.put(currentState, entry);
         }
-        entry.addFromTransition(event, currentState);
+      }
+
+      entry.addTransition(event, toState, transition);
+
+      entry = _states.get(toState);
+      if (entry == null) {
+        entry = new StateEntry(toState);
+        _states.put(toState, entry);
+      }
+      entry.addFromTransition(event, currentState);
     }
 
     public Set<E> getPossibleEvents(S s) {
@@ -73,19 +81,23 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
     }
 
     public S getNextState(S s, E e) throws NoTransitionException {
-        StateEntry entry = null;
-        if (s == null) {
-            entry = _initialStateEntry;
-        } else {
-            entry = _states.get(s);
-            assert entry != null : "Cannot retrieve transitions for state " + s;
-        }
+        return getTransition(s, e).getToState();
+    }
 
-        S ns = entry.nextStates.get(e);
-        if (ns == null) {
-            throw new NoTransitionException("Unable to transition to a new state from " + s + " via " + e);
-        }
-        return ns;
+    public Transition<S, E> getTransition(S s, E e) throws NoTransitionException {
+      StateEntry entry = null;
+      if (s == null) {
+        entry = _initialStateEntry;
+      } else {
+        entry = _states.get(s);
+        assert entry != null : "Cannot retrieve transitions for state " + s;
+      }
+
+      Transition<S, E> transition = entry.nextStates.get(e);
+      if (transition == null) {
+        throw new NoTransitionException("Unable to transition to a new state from " + s + " via " + e);
+      }
+      return transition;
     }
 
     public List<S> getFromStates(S s, E e) {
@@ -100,6 +112,7 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
     public boolean transitTo(V vo, E e, Object opaque, StateDao<S, E, V> dao) throws NoTransitionException {
         S currentState = vo.getState();
         S nextState = getNextState(currentState, e);
+        Transition<S, E> transition = getTransition(currentState, e);
 
         boolean transitionStatus = true;
         if (nextState == null) {
@@ -116,7 +129,7 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
         }
 
         for (StateListener<S, E, V> listener : _listeners) {
-            listener.postStateTransitionEvent(currentState, e, nextState, vo, transitionStatus, opaque);
+            listener.postStateTransitionEvent(transition, vo, transitionStatus, opaque);
         }
 
         return true;
@@ -138,21 +151,84 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
         return str.toString();
     }
 
+    public static class Transition<S, E> {
+
+      private S currentState;
+
+      private E event;
+
+      private S toState;
+
+      private List<Impact> impacts;
+
+      public static enum Impact {
+        USAGE
+      }
+
+      public Transition(S currentState, E event, S toState, List<Impact> impacts) {
+        this.currentState = currentState;
+        this.event = event;
+        this.toState = toState;
+        this.impacts = impacts;
+      }
+
+      public S getCurrentState() {
+        return currentState;
+      }
+
+      public E getEvent() {
+        return event;
+      }
+
+      public S getToState() {
+        return toState;
+      }
+
+      public boolean isImpacted(Impact impact) {
+        if (impacts == null || impacts.isEmpty()) {
+          return false;
+        }
+        return impacts.contains(impact);
+      }
+
+      @Override
+      public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Transition that = (Transition) o;
+
+        if (currentState != null ? !currentState.equals(that.currentState) : that.currentState != null) return false;
+        if (event != null ? !event.equals(that.event) : that.event != null) return false;
+        if (toState != null ? !toState.equals(that.toState) : that.toState != null) return false;
+
+        return true;
+      }
+
+      @Override
+      public int hashCode() {
+        int result = currentState != null ? currentState.hashCode() : 0;
+        result = 31 * result + (event != null ? event.hashCode() : 0);
+        result = 31 * result + (toState != null ? toState.hashCode() : 0);
+        return result;
+      }
+    }
+
     private class StateEntry {
         public S state;
-        public HashMap<E, S> nextStates;
+        public HashMap<E, Transition<S, E>> nextStates;
         public HashMap<E, List<S>> prevStates;
 
         public StateEntry(S state) {
             this.state = state;
-            nextStates = new HashMap<E, S>();
             prevStates = new HashMap<E, List<S>>();
+            nextStates = new HashMap<E, Transition<S, E>>();
         }
 
-        public void addTransition(E e, S s) {
+        public void addTransition(E e, S s, Transition<S, E> transition) {
             assert !nextStates.containsKey(e) : "State " + getStateStr() + " already contains a transition to state " + nextStates.get(e).toString() + " via event " +
                 e.toString() + ".  Please revisit the rule you're adding to state " + s.toString();
-            nextStates.put(e, s);
+            nextStates.put(e, transition);
         }
 
         public void addFromTransition(E e, S s) {
@@ -172,7 +248,7 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
 
         public void buildString(StringBuilder str) {
             str.append("State: ").append(getStateStr()).append("\n");
-            for (Map.Entry<E, S> nextState : nextStates.entrySet()) {
+            for (Map.Entry<E, Transition<S, E>> nextState : nextStates.entrySet()) {
                 str.append("  --> Event: ");
                 Formatter format = new Formatter();
                 str.append(format.format("%-30s", nextState.getKey().toString()));
