@@ -50,7 +50,7 @@
                 .addClass('navigation-item')
                 .addClass(sectionID)
                 .append($('<span>').addClass('icon').html('&nbsp;'))
-                .append($('<span>').html(_l(args.title)))
+                .append($('<span>').text(_l(args.title)))
                 .data('cloudStack-section-id', sectionID);
 
             if (args.customIcon) {
@@ -223,7 +223,7 @@
                 id: 'user'
             }).addClass('button')
                 .append(
-                    $('<div>').addClass('name').html(
+                    $('<div>').addClass('name').text(
                         args.context && args.context.users ?
                         cloudStack.concat(userLabel, 14) : 'Invalid User'
                     )
@@ -258,7 +258,7 @@
                     $('<div>').attr({
                         id: 'breadcrumbs'
                     })
-                    .append($('<div>').addClass('home').html(_l('label.home')))
+                    .append($('<div>').addClass('home').text(_l('label.home')))
                     .append($('<div>').addClass('end'))
             )
 
@@ -309,7 +309,7 @@
                 .attr({
                     href: '#'
                 })
-                .html(_l(this.toString()))
+                .text(_l(this.toString()))
                 .appendTo($options);
 
             if (this == 'label.help') {
@@ -323,8 +323,8 @@
             }
             if (this == 'label.about') {
                 $link.addClass('about').click(function() {
-                    var $logo = $('<div>').addClass('logo').html(_l('label.app.name')),
-                        $version = $('<div>').addClass('version').html(g_cloudstackversion),
+                    var $logo = $('<div>').addClass('logo').text(_l('label.app.name')),
+                        $version = $('<div>').addClass('version').text(g_cloudstackversion),
                         $about = $('<div>').addClass('about').append($logo).append($version);
                     $about.dialog({
                         modal: true,
