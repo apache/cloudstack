@@ -125,7 +125,13 @@ public class BridgeVifDriver extends VifDriverBase {
                         intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
                     }
             } else {
-                intf.defBridgeNet(_bridges.get("guest"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
+                String brname = "";
+                if (trafficLabel != null && !trafficLabel.isEmpty()) {
+                    brname = trafficLabel;
+                } else {
+                    brname = _bridges.get("guest");
+                }
+                intf.defBridgeNet(brname, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
             }
         } else if (nic.getType() == Networks.TrafficType.Control) {
             /* Make sure the network is still there */
