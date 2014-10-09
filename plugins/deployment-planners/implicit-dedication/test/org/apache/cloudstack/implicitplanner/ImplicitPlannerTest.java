@@ -69,10 +69,8 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.ImplicitDedicationPlanner;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostTagsDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -467,16 +465,6 @@ public class ImplicitPlannerTest {
         @Bean
         public HostDao hostDao() {
             return Mockito.mock(HostDao.class);
-        }
-
-        @Bean
-        public HostTagsDao hostTagsDao() {
-            return Mockito.mock(HostTagsDao.class);
-        }
-
-        @Bean
-        public HostGpuGroupsDao hostGpuGroupsDao() {
-            return Mockito.mock(HostGpuGroupsDao.class);
         }
 
         @Bean
