@@ -35,8 +35,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -89,6 +87,8 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -276,7 +276,6 @@ import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -822,6 +821,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     + "; make sure the virtual machine is stopped");
         }
 
+        // If target VM has associated VM snapshots then don't allow upgrading of VM
+        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+        if (vmSnapshots.size() > 0) {
+            throw new InvalidParameterValueException("Unable to change service offering for VM, please remove VM snapshots before changing service offering of VM");
+        }
+
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
         // Check resource limits for CPU and Memory.
@@ -848,19 +853,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Check that the specified service offering ID is valid
         _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
-
-        // remove diskAndMemory VM snapshots
-        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
-        for (VMSnapshotVO vmSnapshotVO : vmSnapshots) {
-            if (vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory) {
-                if (!_vmSnapshotMgr.deleteAllVMSnapshots(vmId, VMSnapshot.Type.DiskAndMemory)) {
-                    String errMsg = "Failed to remove VM snapshot during upgrading, snapshot id " + vmSnapshotVO.getId();
-                    s_logger.debug(errMsg);
-                    throw new CloudRuntimeException(errMsg);
-                }
-
-            }
-        }
 
         _itMgr.upgradeVmDb(vmId, svcOffId);
         if (newServiceOffering.isDynamic()) {
@@ -962,19 +954,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Check that the specified service offering ID is valid
         _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
 
-        // remove diskAndMemory VM snapshots
-        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
-        for (VMSnapshotVO vmSnapshotVO : vmSnapshots) {
-            if (vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory) {
-                if (!_vmSnapshotMgr.deleteAllVMSnapshots(vmId, VMSnapshot.Type.DiskAndMemory)) {
-                    String errMsg = "Failed to remove VM snapshot during upgrading, snapshot id " + vmSnapshotVO.getId();
-                    s_logger.debug(errMsg);
-                    throw new CloudRuntimeException(errMsg);
-                }
-
-            }
-        }
-
         _itMgr.upgradeVmDb(vmId, svcOffId);
         if (newServiceOffering.isDynamic()) {
             //save the custom values to the database.
@@ -1012,6 +991,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vmInstance == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
+
+        // Check that Vm does not have VM Snapshots
+        if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
+            throw new InvalidParameterValueException("NIC cannot be added to VM with VM Snapshots");
+        }
+
         NetworkVO network = _networkDao.findById(networkId);
         if (network == null) {
             throw new InvalidParameterValueException("unable to find a network with id " + networkId);
@@ -1096,6 +1081,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vmInstance == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
+
+        // Check that Vm does not have VM Snapshots
+        if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
+            throw new InvalidParameterValueException("NIC cannot be removed from VM with VM Snapshots");
+        }
+
         NicVO nic = _nicDao.findById(nicId);
         if (nic == null) {
             throw new InvalidParameterValueException("unable to find a nic with id " + nicId);
@@ -1153,6 +1144,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vmInstance == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
+
+        // Check that Vm does not have VM Snapshots
+        if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
+            throw new InvalidParameterValueException("NIC cannot be updated for VM with VM Snapshots");
+        }
+
         NicVO nic = _nicDao.findById(nicId);
         if (nic == null) {
             throw new InvalidParameterValueException("unable to find a nic with id " + nicId);
@@ -1324,6 +1321,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Verify input parameters
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
+
+        if (vmInstance != null) {
+            // If target VM has associated VM snapshots then don't allow upgrading of VM
+            List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+            if (vmSnapshots.size() > 0) {
+                throw new InvalidParameterValueException("Unable to scale VM, please remove VM snapshots before scaling VM");
+            }
+        }
 
         if (vmInstance.getState().equals(State.Stopped)) {
             upgradeStoppedVirtualMachine(vmId, newServiceOfferingId, customParameters);
@@ -3813,6 +3818,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Data disks attached to the vm, can not migrate. Need to dettach data disks at first");
         }
 
+        // Check that Vm does not have VM Snapshots
+        if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
+            throw new InvalidParameterValueException("VM's disk cannot be migrated, please remove all the VM Snapshots for this VM");
+        }
+
         HypervisorType destHypervisorType = destPool.getHypervisor();
         if (destHypervisorType == null) {
             destHypervisorType = _clusterDao.findById(
@@ -4229,6 +4239,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (destinationHost.getState() != com.cloud.host.Status.Up || destinationHost.getResourceState() != ResourceState.Enabled) {
             throw new CloudRuntimeException("Cannot migrate VM, destination host is not in correct state, has " + "status: " + destinationHost.getState() + ", state: "
                     + destinationHost.getResourceState());
+        }
+
+        // Check that Vm does not have VM Snapshots
+        if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
+            throw new InvalidParameterValueException("VM with VM Snapshots cannot be migrated with storage, please remove all VM snapshots");
         }
 
         List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
@@ -4697,8 +4712,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             // If target VM has associated VM snapshots then don't allow restore of VM
             List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
-            if (vmSnapshots.size() > 0 && vm.getHypervisorType() == HypervisorType.VMware) {
-                throw new InvalidParameterValueException("Unable to restore VM, please specify a VM that does not have VM snapshots");
+            if (vmSnapshots.size() > 0) {
+                throw new InvalidParameterValueException("Unable to restore VM, please remove VM snapshots before restoring VM");
             }
 
             VMTemplateVO template = null;
