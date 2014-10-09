@@ -31,6 +31,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -1451,10 +1452,12 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, VirtualMachine vo, boolean status, Object opaque) {
         if (!status) {
             return false;
         }
+      State oldState = transition.getCurrentState();
+      State newState = transition.getToState();
         if ((oldState == State.Starting) && (newState != State.Starting)) {
             // cleanup all VM reservation entries
             SearchCriteria<VMReservationVO> sc = _reservationDao.createSearchCriteria();

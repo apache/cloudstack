@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -56,12 +57,12 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, Volume vo, boolean status, Object opaque) {
-        pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
-        return true;
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, Volume vo, boolean status, Object opaque) {
+      pubishOnEventBus(transition.getEvent().name(), "postStateTransitionEvent", vo, transition.getCurrentState(), transition.getToState());
+      return true;
     }
 
-    private void pubishOnEventBus(String event, String status, Volume vo, State oldState, State newState) {
+  private void pubishOnEventBus(String event, String status, Volume vo, State oldState, State newState) {
 
         String configKey = Config.PublishResourceStateEvent.key();
         String value = _configDao.getValue(configKey);

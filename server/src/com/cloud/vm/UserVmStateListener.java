@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.server.ManagementService;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.dao.UserVmDao;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -77,36 +78,40 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
-        if (!status) {
-            return false;
-        }
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, VirtualMachine vo, boolean status, Object opaque) {
+      if (!status) {
+        return false;
+      }
+      Event event = transition.getEvent();
+      State oldState = transition.getCurrentState();
+      State newState = transition.getToState();
+      pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
 
-        pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
-
-        if (vo.getType() != VirtualMachine.Type.User) {
-            return true;
-        }
-
-        if (VirtualMachine.State.isVmCreated(oldState, event, newState)) {
-            generateUsageEvent(vo.getServiceOfferingId(), vo, EventTypes.EVENT_VM_CREATE);
-        } else if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
-            generateUsageEvent(vo.getServiceOfferingId(), vo, EventTypes.EVENT_VM_START);
-        } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
-            generateUsageEvent(vo.getServiceOfferingId(), vo, EventTypes.EVENT_VM_STOP);
-            List<NicVO> nics = _nicDao.listByVmId(vo.getId());
-            for (NicVO nic : nics) {
-                NetworkVO network = _networkDao.findById(nic.getNetworkId());
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(),
-                    Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 0L, vo.getClass().getName(), vo.getUuid(), vo.isDisplay());
-            }
-        } else if (VirtualMachine.State.isVmDestroyed(oldState, event, newState)) {
-            generateUsageEvent(vo.getServiceOfferingId(), vo, EventTypes.EVENT_VM_DESTROY);
-        }
+      if (vo.getType() != VirtualMachine.Type.User) {
         return true;
+      }
+
+      if(transition.isImpacted(StateMachine2.Transition.Impact.USAGE)) {
+        if (oldState == State.Destroyed && newState == State.Stopped) {
+          generateUsageEvent(vo.getServiceOfferingId(), vo, EventTypes.EVENT_VM_CREATE);
+        } else if (newState == State.Running) {
+          generateUsageEvent(vo.getServiceOfferingId(), vo, EventTypes.EVENT_VM_START);
+        } else if (newState == State.Stopped) {
+          generateUsageEvent(vo.getServiceOfferingId(), vo, EventTypes.EVENT_VM_STOP);
+          List<NicVO> nics = _nicDao.listByVmId(vo.getId());
+          for (NicVO nic : nics) {
+            NetworkVO network = _networkDao.findById(nic.getNetworkId());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(),
+                    Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 0L, vo.getClass().getName(), vo.getUuid(), vo.isDisplay());
+          }
+        } else if (newState == State.Destroyed || newState == State.Error || newState == State.Expunging) {
+          generateUsageEvent(vo.getServiceOfferingId(), vo, EventTypes.EVENT_VM_DESTROY);
+        }
+      }
+      return true;
     }
 
-    private void generateUsageEvent(Long serviceOfferingId, VirtualMachine vm,  String eventType){
+  private void generateUsageEvent(Long serviceOfferingId, VirtualMachine vm,  String eventType){
         boolean displayVm = true;
         if(vm.getType() == VirtualMachine.Type.User){
             UserVmVO uservm = _userVmDao.findById(vm.getId());

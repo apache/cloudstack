@@ -26,6 +26,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.db.QueryBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.BaremetalProvisionDoneNotificationCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.AddBaremetalHostCmd;
@@ -73,7 +80,9 @@ public class BaremetalManagerImpl extends ManagerBase implements BaremetalManage
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, VirtualMachine vo, boolean status, Object opaque) {
+      State newState = transition.getToState();
+      State oldState = transition.getCurrentState();
         if (newState != State.Starting && newState != State.Error && newState != State.Expunging) {
             return true;
         }

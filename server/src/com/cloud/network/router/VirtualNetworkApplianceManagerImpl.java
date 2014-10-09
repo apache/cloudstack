@@ -217,6 +217,7 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
@@ -4470,7 +4471,10 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, VirtualMachine.Event> transition, VirtualMachine vo, boolean status, Object opaque) {
+        State oldState = transition.getCurrentState();
+        State newState = transition.getToState();
+        VirtualMachine.Event event = transition.getEvent();
         if (event == VirtualMachine.Event.FollowAgentPowerOnReport && newState == State.Running) {
             if (vo.getType() == VirtualMachine.Type.DomainRouter) {
                 // opaque -> <hostId, powerHostId>

@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.resource.ResourceState;
+import com.cloud.utils.fsm.StateMachine2;
 
 import org.apache.log4j.Logger;
 
@@ -775,7 +776,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Object opaque) {
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, VirtualMachine vm, boolean status, Object opaque) {
         if (!status) {
             return false;
         }
@@ -783,6 +784,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         Pair<Long, Long> hosts = (Pair<Long, Long>)opaque;
         Long oldHostId = hosts.first();
 
+      State oldState = transition.getCurrentState();
+      State newState = transition.getToState();
+      Event event = transition.getEvent();
         s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event + "vm's original host id: " + vm.getLastHostId() +
             " new host id: " + vm.getHostId() + " host id before state transition: " + oldHostId);
 
