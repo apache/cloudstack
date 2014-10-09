@@ -2183,7 +2183,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 backedUpSnapshotUuid = backedUpSnapshotUuid.replace(".ovf", "");
             }
             DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
-            restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid);
+            restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid, cmd.getWait() * 1000);
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(newVolumeName);
