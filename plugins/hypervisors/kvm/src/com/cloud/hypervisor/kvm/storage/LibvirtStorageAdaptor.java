@@ -94,21 +94,30 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         try {
             vol = pool.storageVolLookupByName(volName);
         } catch (LibvirtException e) {
-            s_logger.debug("Can't find volume: " + e.toString());
+            s_logger.debug("Could not find volume " + volName + ": " + e.getMessage());
         }
+
+        /**
+         * The volume was not found in the storage pool
+         * This can happen when a volume has just been created on a different host and
+         * since then the libvirt storage pool has not been refreshed.
+         */
         if (vol == null) {
             try {
+                s_logger.debug("Refreshing storage pool " + pool.getName());
                 refreshPool(pool);
             } catch (LibvirtException e) {
-                s_logger.debug("failed to refresh pool: " + e.toString());
+                s_logger.debug("Failed to refresh storage pool: " + e.getMessage());
             }
 
             try {
                 vol = pool.storageVolLookupByName(volName);
+                s_logger.debug("Found volume " + volName + " in storage pool " + pool.getName() + " after refreshing the pool");
             } catch (LibvirtException e) {
-                throw new CloudRuntimeException(e.toString());
+                throw new CloudRuntimeException("Could not find volume " + volName + ": " + e.getMessage());
             }
         }
+
         return vol;
     }
 
