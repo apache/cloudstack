@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,16 +17,35 @@
 """ P1 tests for Resource limits
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import (cleanup_resources,
+                              validateList)
+from marvin.lib.base import (Account,
+                             Domain,
+                             Project,
+                             Template,
+                             Snapshot,
+                             Volume,
+                             NetworkOffering,
+                             ServiceOffering,
+                             VirtualMachine,
+                             DiskOffering,
+                             Configurations,
+                             Network,
+                             PublicIPAddress)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               list_snapshots,
+                               list_volumes,
+                               list_configurations,
+                               list_resource_limits,
+                               update_resource_limit
+                               )
 from marvin.codes import PASS
-import datetime
-
+import time
 
 class Services:
     """Test Resource Limits Services
@@ -525,6 +544,11 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
+
+        cls.userapiclient = cls.testClient.getUserApiClient(
+                                    UserName=cls.account.name,
+                                    DomainName=cls.account.domain)
+
         # Create project as a domain admin
         cls.project = Project.create(
                                  cls.api_client,
@@ -713,7 +737,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
 
         # Exception should be raised for second Public IP
         with self.assertRaises(Exception):
-            public_ip_2 = PublicIPAddress.create(
+            PublicIPAddress.create(
                                            self.apiclient,
                                            zoneid=virtual_machine_1.zoneid,
                                            services=self.services["server"],
@@ -772,7 +796,6 @@ class TestResourceLimitsProject(cloudstackTestCase):
                         True,
                         "Check for list volume response return valid data"
                         )
-        volume = volumes[0]
 
         self.debug("Creating snapshot from volume: %s" % volumes[0].id)
         # Create a snapshot from the ROOTDISK
@@ -915,7 +938,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
         self.debug("Creating template from volume: %s" % volume.id)
         # Create a template from the ROOTDISK
         template_1 = Template.create(
-                            self.apiclient,
+                            self.userapiclient,
                             self.services["template"],
                             volumeid=volume.id,
                             projectid=self.project.id
@@ -932,7 +955,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
         # Exception should be raised for second template
         with self.assertRaises(Exception):
             Template.create(
-                            self.apiclient,
+                            self.userapiclient,
                             self.services["template"],
                             volumeid=volume.id,
                             projectid=self.project.id
