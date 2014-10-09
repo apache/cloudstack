@@ -258,6 +258,11 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             throw new InvalidParameterValueException("Creating VM snapshot failed due to VM:" + vmId + " is a system VM or does not exist");
         }
 
+        if (_snapshotDao.listByInstanceId(vmId, Snapshot.State.BackedUp).size() > 0) {
+            throw new InvalidParameterValueException(
+                    "VM snapshot for this VM is not allowed. This VM has volumes attached which has snapshots, please remove all snapshots before taking VM snapshot");
+        }
+
         // VM snapshot with memory is not supported for VGPU Vms
         if (snapshotMemory && _serviceOfferingDetailsDao.findDetail(userVmVo.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
             throw new InvalidParameterValueException("VM snapshot with MEMORY is not supported for vGPU enabled VMs.");
@@ -566,6 +571,13 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 && userVm.getState() != VirtualMachine.State.Stopped) {
             throw new InvalidParameterValueException(
                     "VM Snapshot reverting failed due to vm is not in the state of Running or Stopped.");
+        }
+
+        if (userVm.getState() == VirtualMachine.State.Running && vmSnapshotVo.getType() == VMSnapshot.Type.Disk || userVm.getState() == VirtualMachine.State.Stopped
+                && vmSnapshotVo.getType() == VMSnapshot.Type.DiskAndMemory) {
+            throw new InvalidParameterValueException(
+                    "VM Snapshot revert not allowed. This will result in VM state change. You can revert running VM to disk and memory type snapshot and stopped VM to disk type"
+                            + " snapshot");
         }
 
         // if snapshot is not created, error out

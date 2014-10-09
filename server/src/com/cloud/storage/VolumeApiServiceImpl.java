@@ -707,6 +707,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         /* Does the caller have authority to act on this volume? */
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
+        if(volume.getInstanceId() != null) {
+            // Check that Vm to which this volume is attached does not have VM Snapshots
+            if (_vmSnapshotDao.findByVm(volume.getInstanceId()).size() > 0) {
+                throw new InvalidParameterValueException("Volume cannot be resized which is attached to VM with VM Snapshots");
+            }
+        }
+
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
         DiskOfferingVO newDiskOffering = null;
 
@@ -977,7 +984,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
 
             if (storagePool.isManaged() && storagePool.getHypervisor() == HypervisorType.Any && hosts != null && hosts.length > 0) {
-                HostVO host = this._hostDao.findById(hosts[0]);
+                HostVO host = _hostDao.findById(hosts[0]);
 
                 if (currentSize != newSize && host.getHypervisorType() == HypervisorType.XenServer && !userVm.getState().equals(State.Stopped)) {
                     throw new InvalidParameterValueException(errorMsg);
@@ -1504,7 +1511,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // Permissions check
         _accountMgr.checkAccess(caller, null, true, volume);
 
-
         // Check that the volume is currently attached to a VM
         if (vmId == null) {
             throw new InvalidParameterValueException("The specified volume is not attached to a VM.");
@@ -1693,6 +1699,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         VMInstanceVO vm = null;
         if (instanceId != null) {
             vm = _vmInstanceDao.findById(instanceId);
+        }
+
+        // Check that Vm to which this volume is attached does not have VM Snapshots
+        if (vm != null && _vmSnapshotDao.findByVm(vm.getId()).size() > 0) {
+            throw new InvalidParameterValueException("Volume cannot be migrated, please remove all VM snapshots for VM to which this volume is attached");
         }
 
         if (vm != null && vm.getState() == State.Running) {
@@ -1926,6 +1937,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         DataCenter zone = _dcDao.findById(volume.getDataCenterId());
         if (zone == null) {
             throw new InvalidParameterValueException("Can't find zone by id " + volume.getDataCenterId());
+        }
+
+        if (volume.getInstanceId() != null) {
+            // Check that Vm to which this volume is attached does not have VM Snapshots
+            if (_vmSnapshotDao.findByVm(volume.getInstanceId()).size() > 0) {
+                throw new InvalidParameterValueException("Volume snapshot is not allowed, please detach it from VM with VM Snapshots");
+            }
         }
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
