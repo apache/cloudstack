@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.storage.endpoint;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -259,6 +261,33 @@ public class DefaultEndPointSelector implements EndPointSelector {
             }
         }
         return null;
+    }
+
+    @Override
+    public EndPoint select(DataStore store, String downloadUrl){
+
+        HostVO host = null;
+        try {
+            URI uri = new URI(downloadUrl);
+            String scheme = uri.getScheme();
+            String publicIp = uri.getHost();
+            // If its https then public ip will be of the form xxx-xxx-xxx-xxx.mydomain.com
+            if(scheme.equalsIgnoreCase("https")){
+                publicIp = publicIp.split("\\.")[0]; // We want xxx-xxx-xxx-xxx
+                publicIp = publicIp.replace("-","."); // We not want the IP -  xxx.xxx.xxx.xxx
+            }
+            host = hostDao.findByPublicIp(publicIp);
+            if(host != null){
+                return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
+            }
+
+        } catch (URISyntaxException e) {
+            s_logger.debug("Received URISyntaxException for url" +downloadUrl);
+        }
+
+        // If ssvm doesnt exist then find any ssvm in the zone.
+        s_logger.debug("Coudn't find ssvm for url" +downloadUrl);
+        return findEndpointForImageStorage(store);
     }
 
     @Override

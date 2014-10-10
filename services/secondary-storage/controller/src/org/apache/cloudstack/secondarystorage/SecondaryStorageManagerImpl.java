@@ -43,6 +43,7 @@ import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
 
@@ -236,6 +237,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     ImageStoreDao _imageStoreDao;
     @Inject
     TemplateDataStoreDao _tmplStoreDao;
+    @Inject
+    VolumeDataStoreDao _volumeStoreDao;
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
     private int _secStorageVmMtuSize;
 
@@ -987,7 +990,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 s_logger.debug("Removing host entry for ssvm id=" + vmId);
                 _hostDao.remove(host.getId());
             }
-
+            //Expire the download urls in the entire zone for templates and volumes.
+            _tmplStoreDao.expireDnldUrlsForZone(host.getDataCenterId());
+            _volumeStoreDao.expireDnldUrlsForZone(host.getDataCenterId());
             return true;
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to expunge " + ssvm, e);

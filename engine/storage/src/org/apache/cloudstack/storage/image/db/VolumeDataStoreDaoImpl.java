@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.image.db;
 
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -51,6 +52,8 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     private SearchBuilder<VolumeDataStoreVO> cacheSearch;
     private SearchBuilder<VolumeDataStoreVO> storeVolumeSearch;
     private SearchBuilder<VolumeDataStoreVO> downloadVolumeSearch;
+    private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update volume_store_ref set download_url_created=? where store_id in (select id from image_store where data_center_id=?)";
+
 
     @Inject
     DataStoreManager storeMgr;
@@ -266,5 +269,23 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         SearchCriteria<VolumeDataStoreVO> sc = downloadVolumeSearch.create();
         sc.setParameters("destroyed", false);
         return listBy(sc);
+    }
+
+    @Override
+    public void expireDnldUrlsForZone(Long dcId){
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        try {
+            txn.start();
+            pstmt = txn.prepareAutoCloseStatement(EXPIRE_DOWNLOAD_URLS_FOR_ZONE);
+            pstmt.setDate(1, new java.sql.Date(-1l));// Set the time before the epoch time.
+            pstmt.setLong(2, dcId);
+            pstmt.executeUpdate();
+            txn.commit();
+        } catch (Exception e) {
+            txn.rollback();
+            s_logger.warn("Failed expiring download urls for dcId: " + dcId, e);
+        }
+
     }
 }

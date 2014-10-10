@@ -88,4 +88,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<HostVO> listByDataCenterId(long id);
 
     List<Long> listAllHosts(long zoneId);
+
+    HostVO findByPublicIp(String publicIp);
 }
