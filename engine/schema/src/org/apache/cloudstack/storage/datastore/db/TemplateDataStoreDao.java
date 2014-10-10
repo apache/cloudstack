@@ -78,4 +78,6 @@ public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Lo
     List<TemplateDataStoreVO> listTemplateDownloadUrls();
 
     void removeByTemplateStore(long templateId, long imageStoreId);
+
+    void expireDnldUrlsForZone(Long dcId);
 }

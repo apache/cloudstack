@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.image.db;
 
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -64,6 +65,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     private SearchBuilder<TemplateDataStoreVO> storeTemplateStateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeTemplateDownloadStatusSearch;
     private SearchBuilder<TemplateDataStoreVO> downloadTemplateSearch;
+    private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update template_store_ref set download_url_created=? where store_id in (select id from image_store where data_center_id=?)";
 
     @Inject
     private DataStoreManager _storeMgr;
@@ -509,6 +511,24 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         SearchCriteria<TemplateDataStoreVO> sc = downloadTemplateSearch.create();
         sc.setParameters("destroyed", false);
         return listBy(sc);
+    }
+
+    @Override
+    public void expireDnldUrlsForZone(Long dcId){
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        try {
+            txn.start();
+            pstmt = txn.prepareAutoCloseStatement(EXPIRE_DOWNLOAD_URLS_FOR_ZONE);
+            pstmt.setDate(1, new java.sql.Date(-1l));// Set the time before the epoch time.
+            pstmt.setLong(2, dcId);
+            pstmt.executeUpdate();
+            txn.commit();
+        } catch (Exception e) {
+            txn.rollback();
+            s_logger.warn("Failed expiring download urls for dcId: " + dcId, e);
+        }
+
     }
 
 }

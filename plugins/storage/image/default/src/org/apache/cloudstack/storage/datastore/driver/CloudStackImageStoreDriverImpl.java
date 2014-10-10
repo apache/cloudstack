@@ -23,6 +23,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.Upload;
 import org.apache.log4j.Logger;
 
@@ -48,6 +49,8 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    HostDao _hostDao;
     @Inject
     EndPointSelector _epSelector;
 
@@ -113,8 +116,8 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
     @Override
     public void deleteEntityExtractUrl(DataStore store, String installPath, String downloadUrl, Upload.Type entityType) {
-        // find an endpoint to send command
-        EndPoint ep = _epSelector.select(store);
+        // find an endpoint to send command based on the ssvm on which the url was created.
+        EndPoint ep = _epSelector.select(store, downloadUrl);
 
         // Delete Symlink at ssvm. In case of volume also delete the volume.
         DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(installPath, entityType, downloadUrl, ((ImageStoreEntity) store).getMountPoint());
