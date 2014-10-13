@@ -25,12 +25,14 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.resource.virtualnetwork.ConfigItem;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
 
-public class Site2SiteVpnConfigItem {
+public class Site2SiteVpnConfigItem extends AbstractConfigItemFacade{
+    @Override
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {
         return null;
     }
 
-    public List<ConfigItem> generateConfigItems(final ConfigBase configuration) {
+    @Override
+    protected List<ConfigItem> generateConfigItems(final ConfigBase configuration) {
         return null;
     }
 }
