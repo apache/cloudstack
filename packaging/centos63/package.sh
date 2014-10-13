@@ -79,7 +79,7 @@ function packaging() {
     cp -rf default $RPMDIR/SPECS
     cp -rf rhel7 $RPMDIR/SPECS
 
-    (cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "${DEFVER}" "${DEFREL}" ${DEFPRE+"${DEFPRE}"} ${DEFOSSNOSS+"$DEFOSSNOSS"} "${DOS}" -bb SPECS/cloud.spec)
+    (cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "${DEFVER}" "${DEFREL}" ${DEFPRE+"${DEFPRE}"} ${DEFOSSNOSS+"$DEFOSSNOSS"} ${DEFSIM+"$DEFSIM"} "${DOS}" -bb SPECS/cloud.spec)
 
     if [ $? -ne 0 ]; then
         echo "RPM Build Failed "
