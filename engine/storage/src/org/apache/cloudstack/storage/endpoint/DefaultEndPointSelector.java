@@ -215,11 +215,19 @@ public class DefaultEndPointSelector implements EndPointSelector {
     public EndPoint select(DataObject srcData, DataObject destData, StorageAction action) {
         if (action == StorageAction.BACKUPSNAPSHOT && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
             SnapshotInfo srcSnapshot = (SnapshotInfo)srcData;
+            VolumeInfo volumeInfo = srcSnapshot.getBaseVolume();
+            VirtualMachine vm = volumeInfo.getAttachedVM();
             if (srcSnapshot.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
-                VolumeInfo volumeInfo = srcSnapshot.getBaseVolume();
-                VirtualMachine vm = volumeInfo.getAttachedVM();
                 if (vm != null && vm.getState() == VirtualMachine.State.Running) {
                     return getEndPointFromHostId(vm.getHostId());
+                }
+            }
+            if (srcSnapshot.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+                if (vm != null) {
+                    Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+                    if (hostId != null) {
+                        return getEndPointFromHostId(hostId);
+                    }
                 }
             }
         }
