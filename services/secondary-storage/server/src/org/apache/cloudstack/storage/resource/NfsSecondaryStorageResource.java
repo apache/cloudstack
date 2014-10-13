@@ -692,8 +692,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             if (!destFile.createNewFile()) {
                 s_logger.warn("Reusing existing file " + destFile.getPath());
             }
-            FileOutputStream outputStream = new FileOutputStream(destFile);
-            entity.writeTo(outputStream);
+            try(FileOutputStream outputStream = new FileOutputStream(destFile);) {
+                entity.writeTo(outputStream);
+            }catch (IOException e) {
+                s_logger.debug("downloadFromUrlToNfs:Exception:"+e.getMessage(),e);
+            }
             return new File(destFile.getAbsolutePath());
         } catch (IOException e) {
             s_logger.debug("Faild to get url:" + url + ", due to " + e.toString());
