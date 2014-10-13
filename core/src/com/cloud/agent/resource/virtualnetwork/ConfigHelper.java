@@ -100,7 +100,7 @@ public class ConfigHelper {
         gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
     }
 
-    public static List<ConfigItem> generateCommandCfg(NetworkElementCommand cmd) {
+    public static List<ConfigItem> generateCommandCfg(final NetworkElementCommand cmd) {
         List<ConfigItem> cfg;
         if (cmd instanceof SetPortForwardingRulesVpcCommand) {
             cfg = generateConfig((SetPortForwardingRulesVpcCommand)cmd); // Migrated
@@ -151,85 +151,85 @@ public class ConfigHelper {
     }
 
 
-    private static List<ConfigItem> generateConfig(VpnUsersCfgCommand cmd) {
+    private static List<ConfigItem> generateConfig(final VpnUsersCfgCommand cmd) {
 
-        List<VpnUser> vpnUsers = new LinkedList<VpnUser>();
-        for (VpnUsersCfgCommand.UsernamePassword userpwd : cmd.getUserpwds()) {
+        final List<VpnUser> vpnUsers = new LinkedList<VpnUser>();
+        for (final VpnUsersCfgCommand.UsernamePassword userpwd : cmd.getUserpwds()) {
             vpnUsers.add(new VpnUser(userpwd.getUsername(), userpwd.getPassword(), userpwd.isAdd()));
         }
 
-        VpnUserList vpnUserList = new VpnUserList(vpnUsers);
+        final VpnUserList vpnUserList = new VpnUserList(vpnUsers);
         return generateConfigItems(vpnUserList);
     }
 
-    private static List<ConfigItem> generateConfig(RemoteAccessVpnCfgCommand cmd) {
-        RemoteAccessVpn remoteAccessVpn = new RemoteAccessVpn(cmd.isCreate(), cmd.getIpRange(), cmd.getPresharedKey(), cmd.getVpnServerIp(), cmd.getLocalIp(), cmd.getLocalCidr(),
+    private static List<ConfigItem> generateConfig(final RemoteAccessVpnCfgCommand cmd) {
+        final RemoteAccessVpn remoteAccessVpn = new RemoteAccessVpn(cmd.isCreate(), cmd.getIpRange(), cmd.getPresharedKey(), cmd.getVpnServerIp(), cmd.getLocalIp(), cmd.getLocalCidr(),
                 cmd.getPublicInterface());
         return generateConfigItems(remoteAccessVpn);
     }
 
 
-    private static List<ConfigItem> generateConfig(SetFirewallRulesCommand cmd) {
-        List<FirewallRule> rules = new ArrayList<FirewallRule>();
-        for (FirewallRuleTO rule : cmd.getRules()) {
-            FirewallRule fwRule = new FirewallRule(rule.getId(), rule.getSrcVlanTag(), rule.getSrcIp(), rule.getProtocol(), rule.getSrcPortRange(), rule.revoked(),
+    private static List<ConfigItem> generateConfig(final SetFirewallRulesCommand cmd) {
+        final List<FirewallRule> rules = new ArrayList<FirewallRule>();
+        for (final FirewallRuleTO rule : cmd.getRules()) {
+            final FirewallRule fwRule = new FirewallRule(rule.getId(), rule.getSrcVlanTag(), rule.getSrcIp(), rule.getProtocol(), rule.getSrcPortRange(), rule.revoked(),
                     rule.isAlreadyAdded(), rule.getSourceCidrList(), rule.getPurpose().toString(), rule.getIcmpType(), rule.getIcmpCode(), rule.getTrafficType().toString(),
                     rule.getGuestCidr(), rule.isDefaultEgressPolicy());
             rules.add(fwRule);
         }
 
-        FirewallRules ruleSet = new FirewallRules(rules.toArray(new FirewallRule[rules.size()]));
+        final FirewallRules ruleSet = new FirewallRules(rules.toArray(new FirewallRule[rules.size()]));
         return generateConfigItems(ruleSet);
 
     }
 
-    private static List<ConfigItem> generateConfig(SetPortForwardingRulesCommand cmd) {
-        List<ForwardingRule> rules = new ArrayList<ForwardingRule>();
+    private static List<ConfigItem> generateConfig(final SetPortForwardingRulesCommand cmd) {
+        final List<ForwardingRule> rules = new ArrayList<ForwardingRule>();
 
-        for (PortForwardingRuleTO rule : cmd.getRules()) {
-            ForwardingRule fwdRule = new ForwardingRule(rule.revoked(), rule.getProtocol().toLowerCase(), rule.getSrcIp(), rule.getStringSrcPortRange(), rule.getDstIp(),
+        for (final PortForwardingRuleTO rule : cmd.getRules()) {
+            final ForwardingRule fwdRule = new ForwardingRule(rule.revoked(), rule.getProtocol().toLowerCase(), rule.getSrcIp(), rule.getStringSrcPortRange(), rule.getDstIp(),
                     rule.getStringDstPortRange());
             rules.add(fwdRule);
         }
 
-        ForwardingRules ruleSet = new ForwardingRules(rules.toArray(new ForwardingRule[rules.size()]));
+        final ForwardingRules ruleSet = new ForwardingRules(rules.toArray(new ForwardingRule[rules.size()]));
 
         return generateConfigItems(ruleSet);
     }
 
-    private static List<ConfigItem> generateConfig(SetStaticNatRulesCommand cmd) {
+    private static List<ConfigItem> generateConfig(final SetStaticNatRulesCommand cmd) {
 
-        LinkedList<StaticNatRule> rules = new LinkedList<>();
-        for (StaticNatRuleTO rule : cmd.getRules()) {
-            StaticNatRule staticNatRule = new StaticNatRule(rule.revoked(), rule.getProtocol(), rule.getSrcIp(), rule.getStringSrcPortRange(), rule.getDstIp());
+        final LinkedList<StaticNatRule> rules = new LinkedList<>();
+        for (final StaticNatRuleTO rule : cmd.getRules()) {
+            final StaticNatRule staticNatRule = new StaticNatRule(rule.revoked(), rule.getProtocol(), rule.getSrcIp(), rule.getStringSrcPortRange(), rule.getDstIp());
             rules.add(staticNatRule);
         }
-        StaticNatRules staticNatRules = new StaticNatRules(rules);
+        final StaticNatRules staticNatRules = new StaticNatRules(rules);
 
         return generateConfigItems(staticNatRules);
     }
 
-    private static List<ConfigItem> generateConfig(LoadBalancerConfigCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
+    private static List<ConfigItem> generateConfig(final LoadBalancerConfigCommand cmd) {
+        final LinkedList<ConfigItem> cfg = new LinkedList<>();
 
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
+        final String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        final LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
 
-        String[] config = cfgtr.generateConfiguration(cmd);
-        StringBuffer buff = new StringBuffer();
+        final String[] config = cfgtr.generateConfiguration(cmd);
+        final StringBuffer buff = new StringBuffer();
         for (int i = 0; i < config.length; i++) {
             buff.append(config[i]);
             buff.append("\n");
         }
-        String tmpCfgFilePath = "/etc/haproxy/";
-        String tmpCfgFileName = "haproxy.cfg.new." + String.valueOf(System.currentTimeMillis());
+        final String tmpCfgFilePath = "/etc/haproxy/";
+        final String tmpCfgFileName = "haproxy.cfg.new." + String.valueOf(System.currentTimeMillis());
         cfg.add(new FileConfigItem(tmpCfgFilePath, tmpCfgFileName, buff.toString()));
 
-        String[][] rules = cfgtr.generateFwRules(cmd);
+        final String[][] rules = cfgtr.generateFwRules(cmd);
 
-        String[] addRules = rules[LoadBalancerConfigurator.ADD];
-        String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
-        String[] statRules = rules[LoadBalancerConfigurator.STATS];
+        final String[] addRules = rules[LoadBalancerConfigurator.ADD];
+        final String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
+        final String[] statRules = rules[LoadBalancerConfigurator.STATS];
 
         String args = " -f " + tmpCfgFilePath + tmpCfgFileName;
         StringBuilder sb = new StringBuilder();
@@ -269,126 +269,126 @@ public class ConfigHelper {
         return cfg;
     }
 
-    private static List<ConfigItem> generateConfig(SavePasswordCommand cmd) {
-        VmPassword vmPassword = new VmPassword(cmd.getVmIpAddress(), cmd.getPassword());
+    private static List<ConfigItem> generateConfig(final SavePasswordCommand cmd) {
+        final VmPassword vmPassword = new VmPassword(cmd.getVmIpAddress(), cmd.getPassword());
 
         return generateConfigItems(vmPassword);
     }
 
-    private static List<ConfigItem> generateConfig(DhcpEntryCommand cmd) {
-        VmDhcpConfig vmDhcpConfig = new VmDhcpConfig(cmd.getVmName(), cmd.getVmMac(), cmd.getVmIpAddress(), cmd.getVmIp6Address(), cmd.getDuid(), cmd.getDefaultDns(),
+    private static List<ConfigItem> generateConfig(final DhcpEntryCommand cmd) {
+        final VmDhcpConfig vmDhcpConfig = new VmDhcpConfig(cmd.getVmName(), cmd.getVmMac(), cmd.getVmIpAddress(), cmd.getVmIp6Address(), cmd.getDuid(), cmd.getDefaultDns(),
                 cmd.getDefaultRouter(), cmd.getStaticRoutes(), cmd.isDefault());
 
         return generateConfigItems(vmDhcpConfig);
     }
 
-    private static List<ConfigItem> generateConfig(CreateIpAliasCommand cmd) {
-        List<IpAddressAlias> ipAliases = new LinkedList<IpAddressAlias>();
-        List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
-        for (IpAliasTO ipaliasto : ipAliasTOs) {
-            IpAddressAlias alias = new IpAddressAlias(false, ipaliasto.getRouterip(), ipaliasto.getNetmask(), Long.parseLong(ipaliasto.getAlias_count()));
+    private static List<ConfigItem> generateConfig(final CreateIpAliasCommand cmd) {
+        final List<IpAddressAlias> ipAliases = new LinkedList<IpAddressAlias>();
+        final List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
+        for (final IpAliasTO ipaliasto : ipAliasTOs) {
+            final IpAddressAlias alias = new IpAddressAlias(false, ipaliasto.getRouterip(), ipaliasto.getNetmask(), Long.parseLong(ipaliasto.getAlias_count()));
             ipAliases.add(alias);
         }
 
-        IpAliases ipAliasList = new IpAliases(ipAliases);
+        final IpAliases ipAliasList = new IpAliases(ipAliases);
         return generateConfigItems(ipAliasList);
     }
 
-    private static List<ConfigItem> generateConfig(DeleteIpAliasCommand cmd) {
-        List<IpAddressAlias> ipAliases = new LinkedList<IpAddressAlias>();
+    private static List<ConfigItem> generateConfig(final DeleteIpAliasCommand cmd) {
+        final List<IpAddressAlias> ipAliases = new LinkedList<IpAddressAlias>();
 
-        List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
-        for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
-            IpAddressAlias alias = new IpAddressAlias(true, ipAliasTO.getRouterip(), ipAliasTO.getNetmask(), Long.parseLong(ipAliasTO.getAlias_count()));
+        final List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
+        for (final IpAliasTO ipAliasTO : revokedIpAliasTOs) {
+            final IpAddressAlias alias = new IpAddressAlias(true, ipAliasTO.getRouterip(), ipAliasTO.getNetmask(), Long.parseLong(ipAliasTO.getAlias_count()));
             ipAliases.add(alias);
         }
 
-        List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
-        for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
-            IpAddressAlias alias = new IpAddressAlias(false, ipAliasTO.getRouterip(), ipAliasTO.getNetmask(), Long.parseLong(ipAliasTO.getAlias_count()));
+        final List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
+        for (final IpAliasTO ipAliasTO : activeIpAliasTOs) {
+            final IpAddressAlias alias = new IpAddressAlias(false, ipAliasTO.getRouterip(), ipAliasTO.getNetmask(), Long.parseLong(ipAliasTO.getAlias_count()));
             ipAliases.add(alias);
         }
 
-        IpAliases ipAliasList = new IpAliases(ipAliases);
+        final IpAliases ipAliasList = new IpAliases(ipAliases);
         return generateConfigItems(ipAliasList);
     }
 
-    private static List<ConfigItem> generateConfig(DnsMasqConfigCommand cmd) {
-        LinkedList<DhcpConfigEntry> entries = new LinkedList<DhcpConfigEntry>();
+    private static List<ConfigItem> generateConfig(final DnsMasqConfigCommand cmd) {
+        final LinkedList<DhcpConfigEntry> entries = new LinkedList<DhcpConfigEntry>();
 
-        for (DhcpTO dhcpTo : cmd.getIps()) {
-            DhcpConfigEntry entry = new DhcpConfigEntry(dhcpTo.getRouterIp(), dhcpTo.getGateway(), dhcpTo.getNetmask(), dhcpTo.getStartIpOfSubnet());
+        for (final DhcpTO dhcpTo : cmd.getIps()) {
+            final DhcpConfigEntry entry = new DhcpConfigEntry(dhcpTo.getRouterIp(), dhcpTo.getGateway(), dhcpTo.getNetmask(), dhcpTo.getStartIpOfSubnet());
             entries.add(entry);
         }
 
         return generateConfigItems(new DhcpConfig(entries));
     }
 
-    private static List<ConfigItem> generateConfig(BumpUpPriorityCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
+    private static List<ConfigItem> generateConfig(final BumpUpPriorityCommand cmd) {
+        final LinkedList<ConfigItem> cfg = new LinkedList<>();
         cfg.add(new ScriptConfigItem(VRScripts.RVR_BUMPUP_PRI, null));
         return cfg;
     }
 
 
-    private static List<ConfigItem> generateConfig(VmDataCommand cmd) {
-        VmData vmData = new VmData(cmd.getVmIpAddress(), cmd.getVmData());
+    private static List<ConfigItem> generateConfig(final VmDataCommand cmd) {
+        final VmData vmData = new VmData(cmd.getVmIpAddress(), cmd.getVmData());
 
         return generateConfigItems(vmData);
     }
 
-    private static List<ConfigItem> generateConfig(Site2SiteVpnCfgCommand cmd) {
-        Site2SiteVpn site2siteVpn = new Site2SiteVpn(cmd.getLocalPublicIp(), cmd.getLocalGuestCidr(), cmd.getLocalPublicGateway(), cmd.getPeerGatewayIp(),
+    private static List<ConfigItem> generateConfig(final Site2SiteVpnCfgCommand cmd) {
+        final Site2SiteVpn site2siteVpn = new Site2SiteVpn(cmd.getLocalPublicIp(), cmd.getLocalGuestCidr(), cmd.getLocalPublicGateway(), cmd.getPeerGatewayIp(),
                 cmd.getPeerGuestCidrList(), cmd.getEspPolicy(), cmd.getIkePolicy(), cmd.getIpsecPsk(), cmd.getIkeLifetime(), cmd.getEspLifetime(), cmd.isCreate(), cmd.getDpd(),
                 cmd.isPassive());
         return generateConfigItems(site2siteVpn);
     }
 
 
-    private static List<ConfigItem> generateConfig(SetMonitorServiceCommand cmd) {
-        MonitorService monitorService = new MonitorService(cmd.getConfiguration(), cmd.getAccessDetail(NetworkElementCommand.ROUTER_MONITORING_ENABLE));
+    private static List<ConfigItem> generateConfig(final SetMonitorServiceCommand cmd) {
+        final MonitorService monitorService = new MonitorService(cmd.getConfiguration(), cmd.getAccessDetail(NetworkElementCommand.ROUTER_MONITORING_ENABLE));
         return generateConfigItems(monitorService);
     }
 
-    private static List<ConfigItem> generateConfig(SetupGuestNetworkCommand cmd) {
-        NicTO nic = cmd.getNic();
-        String routerGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
-        String gateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
-        String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
-        String netmask = nic.getNetmask();
-        String domainName = cmd.getNetworkDomain();
+    private static List<ConfigItem> generateConfig(final SetupGuestNetworkCommand cmd) {
+        final NicTO nic = cmd.getNic();
+        final String routerGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
+        final String gateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
+        final String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
+        final String netmask = nic.getNetmask();
+        final String domainName = cmd.getNetworkDomain();
         String dns = cmd.getDefaultDns1();
 
         if (dns == null || dns.isEmpty()) {
             dns = cmd.getDefaultDns2();
         } else {
-            String dns2 = cmd.getDefaultDns2();
+            final String dns2 = cmd.getDefaultDns2();
             if (dns2 != null && !dns2.isEmpty()) {
                 dns += "," + dns2;
             }
         }
 
-        GuestNetwork guestNetwork = new GuestNetwork(cmd.isAdd(), nic.getMac(), "eth" + nic.getDeviceId(), routerGIP, netmask, gateway,
+        final GuestNetwork guestNetwork = new GuestNetwork(cmd.isAdd(), nic.getMac(), "eth" + nic.getDeviceId(), routerGIP, netmask, gateway,
                 cidr, dns, domainName);
 
         return generateConfigItems(guestNetwork);
     }
 
-    private static List<ConfigItem> generateConfig(SetNetworkACLCommand cmd) {
-        String privateGw = cmd.getAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY);
+    private static List<ConfigItem> generateConfig(final SetNetworkACLCommand cmd) {
+        final String privateGw = cmd.getAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY);
 
-        String[][] rules = cmd.generateFwRules();
-        String[] aclRules = rules[0];
-        NicTO nic = cmd.getNic();
-        String dev = "eth" + nic.getDeviceId();
-        String netmask = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
+        final String[][] rules = cmd.generateFwRules();
+        final String[] aclRules = rules[0];
+        final NicTO nic = cmd.getNic();
+        final String dev = "eth" + nic.getDeviceId();
+        final String netmask = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
 
-        List<AclRule> ingressRules = new ArrayList<AclRule>();
-        List<AclRule> egressRules = new ArrayList<AclRule>();
+        final List<AclRule> ingressRules = new ArrayList<AclRule>();
+        final List<AclRule> egressRules = new ArrayList<AclRule>();
 
         for (int i = 0; i < aclRules.length; i++) {
             AclRule aclRule;
-            String[] ruleParts = aclRules[i].split(":");
+            final String[] ruleParts = aclRules[i].split(":");
             switch (ruleParts[1].toLowerCase()) {
             case "icmp":
                 aclRule = new IcmpAclRule(ruleParts[4], "ACCEPT".equals(ruleParts[5]), Integer.parseInt(ruleParts[2]), Integer.parseInt(ruleParts[3]));
@@ -412,14 +412,14 @@ public class ConfigHelper {
             }
         }
 
-        NetworkACL networkACL = new NetworkACL(dev, nic.getMac(), privateGw != null, nic.getIp(), netmask, ingressRules.toArray(new AclRule[ingressRules.size()]),
+        final NetworkACL networkACL = new NetworkACL(dev, nic.getMac(), privateGw != null, nic.getIp(), netmask, ingressRules.toArray(new AclRule[ingressRules.size()]),
                 egressRules.toArray(new AclRule[egressRules.size()]));
 
         return generateConfigItems(networkACL);
     }
 
-    private static List<ConfigItem> generateConfig(SetSourceNatCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
+    private static List<ConfigItem> generateConfig(final SetSourceNatCommand cmd) {
+        final LinkedList<ConfigItem> cfg = new LinkedList<>();
 
         /* FIXME This seems useless as we already pass this info with the ipassoc
          * IpAddressTO pubIP = cmd.getIpAddress();
@@ -435,14 +435,14 @@ public class ConfigHelper {
         return cfg;
     }
 
-    private static List<ConfigItem> generateConfig(SetStaticRouteCommand cmd) {
-        LinkedList<StaticRoute> routes = new LinkedList<>();
+    private static List<ConfigItem> generateConfig(final SetStaticRouteCommand cmd) {
+        final LinkedList<StaticRoute> routes = new LinkedList<>();
 
-        for (StaticRouteProfile profile : cmd.getStaticRoutes()) {
-            String cidr = profile.getCidr();
-            String subnet = NetUtils.getCidrSubNet(cidr);
-            String cidrSize = cidr.split("\\/")[1];
-            boolean keep = profile.getState() == com.cloud.network.vpc.StaticRoute.State.Active || profile.getState() == com.cloud.network.vpc.StaticRoute.State.Add;
+        for (final StaticRouteProfile profile : cmd.getStaticRoutes()) {
+            final String cidr = profile.getCidr();
+            final String subnet = NetUtils.getCidrSubNet(cidr);
+            final String cidrSize = cidr.split("\\/")[1];
+            final boolean keep = profile.getState() == com.cloud.network.vpc.StaticRoute.State.Active || profile.getState() == com.cloud.network.vpc.StaticRoute.State.Add;
 
             routes.add(new StaticRoute(!keep, profile.getIp4Address(), profile.getGateway(), subnet + "/" + cidrSize));
         }
@@ -450,23 +450,23 @@ public class ConfigHelper {
         return generateConfigItems(new StaticRoutes(routes));
     }
 
-    private static List<ConfigItem> generateConfig(IpAssocCommand cmd) {
+    private static List<ConfigItem> generateConfig(final IpAssocCommand cmd) {
         new LinkedList<>();
-        List<IpAddress> ips = new LinkedList<IpAddress>();
+        final List<IpAddress> ips = new LinkedList<IpAddress>();
 
-        for (IpAddressTO ip : cmd.getIpAddresses()) {
-            IpAddress ipAddress = new IpAddress(ip.getPublicIp(), ip.isSourceNat(), ip.isAdd(), ip.isOneToOneNat(), ip.isFirstIP(), ip.getVlanGateway(), ip.getVlanNetmask(),
+        for (final IpAddressTO ip : cmd.getIpAddresses()) {
+            final IpAddress ipAddress = new IpAddress(ip.getPublicIp(), ip.isSourceNat(), ip.isAdd(), ip.isOneToOneNat(), ip.isFirstIP(), ip.getVlanGateway(), ip.getVlanNetmask(),
                     ip.getVifMacAddress(), ip.getNicDevId(), ip.isNewNic());
             ips.add(ipAddress);
         }
 
-        IpAssociation ipAssociation = new IpAssociation(ips.toArray(new IpAddress[ips.size()]));
+        final IpAssociation ipAssociation = new IpAssociation(ips.toArray(new IpAddress[ips.size()]));
 
         return generateConfigItems(ipAssociation);
     }
 
-    private static List<ConfigItem> generateConfigItems(ConfigBase configuration) {
-        List<ConfigItem> cfg = new LinkedList<>();
+    private static List<ConfigItem> generateConfigItems(final ConfigBase configuration) {
+        final List<ConfigItem> cfg = new LinkedList<>();
         String destinationFile;
 
         switch (configuration.getType()) {
@@ -521,10 +521,10 @@ public class ConfigHelper {
             throw new CloudRuntimeException("Unable to process the configuration for " + configuration.getType());
         }
 
-        ConfigItem configFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, destinationFile, gson.toJson(configuration));
+        final ConfigItem configFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, destinationFile, gson.toJson(configuration));
         cfg.add(configFile);
 
-        ConfigItem updateCommand = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, destinationFile);
+        final ConfigItem updateCommand = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, destinationFile);
         cfg.add(updateCommand);
 
         return cfg;
