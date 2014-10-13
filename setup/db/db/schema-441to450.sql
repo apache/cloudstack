@@ -747,6 +747,8 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, storage_motion_supported) VALUES (UUID(), 'XenServer', '6.5.0', 500, 1, 13, 1);
 
+update vlan set vlan_id=concat('vlan://', vlan_id) where vlan_type = "VirtualNetwork" and vlan_id not like "vlan://%";
+
 CREATE TABLE `cloud`.`baremetal_rct` (
   `id` bigint unsigned UNIQUE AUTO_INCREMENT,
   `uuid` varchar(40) UNIQUE NOT NULL,
