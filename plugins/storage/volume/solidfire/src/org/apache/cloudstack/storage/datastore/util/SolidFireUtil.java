@@ -1669,12 +1669,13 @@ public class SolidFireUtil {
                 throw new CloudRuntimeException("Failed on JSON-RPC API call. HTTP error code = " + response.getStatusLine().getStatusCode());
             }
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-
-            String strOutput;
-
-            while ((strOutput = br.readLine()) != null) {
-                sb.append(strOutput);
+            try(BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));) {
+                String strOutput;
+                while ((strOutput = br.readLine()) != null) {
+                    sb.append(strOutput);
+                }
+            }catch (IOException ex) {
+                throw new CloudRuntimeException(ex.getMessage());
             }
         } catch (UnsupportedEncodingException ex) {
             throw new CloudRuntimeException(ex.getMessage());

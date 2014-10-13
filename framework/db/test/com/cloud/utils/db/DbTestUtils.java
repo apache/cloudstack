@@ -32,26 +32,16 @@ public class DbTestUtils {
         if (cleanScript == null) {
             throw new RuntimeException("Unable to clean the database because I can't find " + file);
         }
-
         Connection conn = TransactionLegacy.getStandaloneConnection();
-
         ScriptRunner runner = new ScriptRunner(conn, autoCommit, stopOnError);
-        FileReader reader;
-        try {
-            reader = new FileReader(cleanScript);
+        try(FileReader reader = new FileReader(cleanScript);)
+        {
+           runner.runScript(reader);
+           conn.close();
         } catch (FileNotFoundException e) {
             throw new RuntimeException("Unable to read " + file, e);
-        }
-        try {
-            runner.runScript(reader);
-        } catch (IOException e) {
+        }catch (IOException e) {
             throw new RuntimeException("Unable to read " + file, e);
-        } catch (SQLException e) {
-            throw new RuntimeException("Unable to execute " + file, e);
-        }
-
-        try {
-            conn.close();
         } catch (SQLException e) {
             throw new RuntimeException("Unable to close DB connection", e);
         }
@@ -62,24 +52,15 @@ public class DbTestUtils {
         if (cleanScript == null) {
             throw new RuntimeException("Unable to clean the database because I can't find " + file);
         }
-
         Connection conn = TransactionLegacy.getStandaloneUsageConnection();
-
         ScriptRunner runner = new ScriptRunner(conn, autoCommit, stopOnError);
-        FileReader reader;
-        try {
-            reader = new FileReader(cleanScript);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException("Unable to read " + file, e);
-        }
-        try {
+        try(FileReader reader = new FileReader(cleanScript);) {
             runner.runScript(reader);
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to read " + file, e);
-        } catch (SQLException e) {
-            throw new RuntimeException("Unable to execute " + file, e);
+        } catch (IOException e){
+            throw new RuntimeException("executeUsageScript:Exception:"+e.getMessage(),e);
+        }catch (SQLException e){
+            throw new RuntimeException("executeUsageScript:Exception:"+e.getMessage(),e);
         }
-
         try {
             conn.close();
         } catch (SQLException e) {

@@ -94,11 +94,9 @@ public class NfsSecondaryStorageResourceTest extends TestCase {
         if (file == null) {
             throw new ConfigurationException("Unable to find agent.properties.");
         }
-
         s_logger.info("agent.properties found at " + file.getAbsolutePath());
-
-        try {
-            properties.load(new FileInputStream(file));
+        try(FileInputStream fs = new FileInputStream(file);) {
+            properties.load(fs);
         } catch (final FileNotFoundException ex) {
             throw new CloudRuntimeException("Cannot find the file: " + file.getAbsolutePath(), ex);
         } catch (final IOException ex) {

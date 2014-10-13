@@ -199,10 +199,13 @@ public class NexentaNmsClient {
             if (!isSuccess(status)) {
                 throw new CloudRuntimeException("Failed on JSON-RPC API call. HTTP error code = " + status);
             }
-            BufferedReader buffer = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-            String tmp;
-            while ((tmp = buffer.readLine()) != null) {
-                sb.append(tmp);
+            try(BufferedReader buffer = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));) {
+                String tmp;
+                while ((tmp = buffer.readLine()) != null) {
+                    sb.append(tmp);
+                }
+            }catch (IOException ex) {
+                throw new CloudRuntimeException(ex.getMessage());
             }
         } catch (ClientProtocolException ex) {
             throw new CloudRuntimeException(ex.getMessage());
