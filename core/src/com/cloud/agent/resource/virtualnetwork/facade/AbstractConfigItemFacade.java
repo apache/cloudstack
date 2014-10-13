@@ -19,14 +19,39 @@
 
 package com.cloud.agent.resource.virtualnetwork.facade;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.resource.virtualnetwork.ConfigItem;
+import com.cloud.agent.resource.virtualnetwork.FileConfigItem;
+import com.cloud.agent.resource.virtualnetwork.ScriptConfigItem;
+import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public abstract class AbstractConfigItemFacade {
-    public abstract List<ConfigItem> generateConfig(NetworkElementCommand cmd);
+    protected final static Gson gson;
 
-    public abstract List<ConfigItem> generateConfigItems(ConfigBase configuration);
+    static {
+        gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+    }
+
+    protected String destinationFile;
+
+    protected List<ConfigItem> generateConfigItems(final ConfigBase configuration) {
+        final List<ConfigItem> cfg = new LinkedList<>();
+
+        final ConfigItem configFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, destinationFile, gson.toJson(configuration));
+        cfg.add(configFile);
+
+        final ConfigItem updateCommand = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, destinationFile);
+        cfg.add(updateCommand);
+
+        return cfg;
+    }
+
+    public abstract List<ConfigItem> generateConfig(NetworkElementCommand cmd);
 }

@@ -20,60 +20,60 @@
 package com.cloud.agent.resource.virtualnetwork;
 
 public class VRScripts {
-    protected final static String CONFIG_PERSIST_LOCATION = "/var/cache/cloud/";
-    protected final static String IP_ASSOCIATION_CONFIG = "ip_associations.json";
-    protected final static String GUEST_NETWORK_CONFIG = "guest_network.json";
-    protected final static String NETWORK_ACL_CONFIG = "network_acl.json";
-    protected final static String VM_METADATA_CONFIG = "vm_metadata.json";
-    protected final static String VM_DHCP_CONFIG = "vm_dhcp_entry.json";
-    protected final static String VM_PASSWORD_CONFIG = "vm_password.json";
-    protected static final String FORWARDING_RULES_CONFIG = "forwarding_rules.json";
-    protected static final String FIREWALL_RULES_CONFIG = "firewall_rules.json";
-    protected static final String VPN_USER_LIST_CONFIG = "vpn_user_list.json";
-    protected static final String STATICNAT_RULES_CONFIG = "staticnat_rules.json";
-    protected static final String SITE_2_SITE_VPN_CONFIG = "site_2_site_vpn.json";
-    protected static final String STATIC_ROUTES_CONFIG = "static_routes.json";
-    protected static final String REMOTE_ACCESS_VPN_CONFIG = "remote_access_vpn.json";
-    protected static final String MONITOR_SERVICE_CONFIG = "monitor_service.json";
-    protected static final String DHCP_CONFIG = "dhcp.json";
-    protected static final String IP_ALIAS_CONFIG = "ip_aliases.json";
+    public final static String CONFIG_PERSIST_LOCATION = "/var/cache/cloud/";
+    public final static String IP_ASSOCIATION_CONFIG = "ip_associations.json";
+    public final static String GUEST_NETWORK_CONFIG = "guest_network.json";
+    public final static String NETWORK_ACL_CONFIG = "network_acl.json";
+    public final static String VM_METADATA_CONFIG = "vm_metadata.json";
+    public final static String VM_DHCP_CONFIG = "vm_dhcp_entry.json";
+    public final static String VM_PASSWORD_CONFIG = "vm_password.json";
+    public static final String FORWARDING_RULES_CONFIG = "forwarding_rules.json";
+    public static final String FIREWALL_RULES_CONFIG = "firewall_rules.json";
+    public static final String VPN_USER_LIST_CONFIG = "vpn_user_list.json";
+    public static final String STATICNAT_RULES_CONFIG = "staticnat_rules.json";
+    public static final String SITE_2_SITE_VPN_CONFIG = "site_2_site_vpn.json";
+    public static final String STATIC_ROUTES_CONFIG = "static_routes.json";
+    public static final String REMOTE_ACCESS_VPN_CONFIG = "remote_access_vpn.json";
+    public static final String MONITOR_SERVICE_CONFIG = "monitor_service.json";
+    public static final String DHCP_CONFIG = "dhcp.json";
+    public static final String IP_ALIAS_CONFIG = "ip_aliases.json";
 
-    protected final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
-    protected final static int DEFAULT_EXECUTEINVR_TIMEOUT = 120; //Seconds
+    public final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
+    public final static int DEFAULT_EXECUTEINVR_TIMEOUT = 120; //Seconds
 
     // New scripts for use with chef
-    protected static final String UPDATE_CONFIG = "update_config.py";
+    public static final String UPDATE_CONFIG = "update_config.py";
 
-    protected static final String S2SVPN_CHECK = "checkbatchs2svpn.sh";
-    protected static final String S2SVPN_IPSEC = "ipsectunnel.sh";
-    protected static final String DHCP = "edithosts.sh";
-    protected static final String DNSMASQ_CONFIG = "dnsmasq.sh";
-    protected static final String FIREWALL_EGRESS = "firewall_egress.sh";
-    protected static final String FIREWALL_INGRESS = "firewall_ingress.sh";
-    protected static final String FIREWALL_NAT = "firewall_nat.sh";
-    protected static final String IPALIAS_CREATE = "createIpAlias.sh";
-    protected static final String IPALIAS_DELETE = "deleteIpAlias.sh";
-    protected static final String IPASSOC = "ipassoc.sh";
-    protected static final String LB = "loadbalancer.sh";
-    protected static final String MONITOR_SERVICE = "monitor_service.sh";
-    protected static final String ROUTER_ALERTS = "getRouterAlerts.sh";
-    protected static final String PASSWORD = "savepassword.sh";
-    protected static final String RVR_CHECK = "checkrouter.sh";
-    protected static final String RVR_BUMPUP_PRI = "bumpup_priority.sh";
-    protected static final String VMDATA = "vmdata.py";
-    protected static final String VERSION = "get_template_version.sh";
-    protected static final String VPC_ACL = "vpc_acl.sh";
-    protected static final String VPC_GUEST_NETWORK = "vpc_guestnw.sh";
-    protected static final String VPC_IPASSOC = "vpc_ipassoc.sh";
-    protected static final String VPC_LB = "vpc_loadbalancer.sh";
-    protected static final String VPC_PRIVATEGW = "vpc_privateGateway.sh";
-    protected static final String VPC_PRIVATEGW_ACL = "vpc_privategw_acl.sh";
-    protected static final String VPC_PORTFORWARDING = "vpc_portforwarding.sh";
-    protected static final String VPC_SOURCE_NAT = "vpc_snat.sh";
-    protected static final String VPC_STATIC_NAT = "vpc_staticnat.sh";
-    protected static final String VPC_STATIC_ROUTE = "vpc_staticroute.sh";
-    protected static final String VPN_L2TP = "vpn_l2tp.sh";
+    public static final String S2SVPN_CHECK = "checkbatchs2svpn.sh";
+    public static final String S2SVPN_IPSEC = "ipsectunnel.sh";
+    public static final String DHCP = "edithosts.sh";
+    public static final String DNSMASQ_CONFIG = "dnsmasq.sh";
+    public static final String FIREWALL_EGRESS = "firewall_egress.sh";
+    public static final String FIREWALL_INGRESS = "firewall_ingress.sh";
+    public static final String FIREWALL_NAT = "firewall_nat.sh";
+    public static final String IPALIAS_CREATE = "createipAlias.sh";
+    public static final String IPALIAS_DELETE = "deleteipAlias.sh";
+    public static final String IPASSOC = "ipassoc.sh";
+    public static final String LB = "loadbalancer.sh";
+    public static final String MONITOR_SERVICE = "monitor_service.sh";
+    public static final String ROUTER_ALERTS = "getRouterAlerts.sh";
+    public static final String PASSWORD = "savepassword.sh";
+    public static final String RVR_CHECK = "checkrouter.sh";
+    public static final String RVR_BUMPUP_PRI = "bumpup_priority.sh";
+    public static final String VMDATA = "vmdata.py";
+    public static final String VERSION = "get_template_version.sh";
+    public static final String VPC_ACL = "vpc_acl.sh";
+    public static final String VPC_GUEST_NETWORK = "vpc_guestnw.sh";
+    public static final String VPC_IPASSOC = "vpc_ipassoc.sh";
+    public static final String VPC_LB = "vpc_loadbalancer.sh";
+    public static final String VPC_PRIVATEGW = "vpc_privateGateway.sh";
+    public static final String VPC_PRIVATEGW_ACL = "vpc_privategw_acl.sh";
+    public static final String VPC_PORTFORWARDING = "vpc_portforwarding.sh";
+    public static final String VPC_SOURCE_NAT = "vpc_snat.sh";
+    public static final String VPC_STATIC_NAT = "vpc_staticnat.sh";
+    public static final String VPC_STATIC_ROUTE = "vpc_staticroute.sh";
+    public static final String VPN_L2TP = "vpn_l2tp.sh";
 
-    protected static final String VR_CFG = "vr_cfg.sh";
+    public static final String VR_CFG = "vr_cfg.sh";
 
 }
