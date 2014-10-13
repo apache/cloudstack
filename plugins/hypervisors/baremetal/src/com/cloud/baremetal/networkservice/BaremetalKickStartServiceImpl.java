@@ -30,7 +30,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.configuration.Config;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
@@ -217,11 +216,6 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
 
         if (mgmtNic == null) {
             throw new CloudRuntimeException(String.format("cannot find management nic on virtual router[id:%s]", vr.getId()));
-        }
-
-        String internalServerIp = _configDao.getValue(Config.BaremetalInternalStorageServer.key());
-        if (internalServerIp == null) {
-            throw new CloudRuntimeException(String.format("please specify 'baremetal.internal.storage.server.ip', which is the http server/nfs server storing kickstart files and ISO files, in global setting"));
         }
 
         List<String> tuple =  parseKickstartUrl(profile);
