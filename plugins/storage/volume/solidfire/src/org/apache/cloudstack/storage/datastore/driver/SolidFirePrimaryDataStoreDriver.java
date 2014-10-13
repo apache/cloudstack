@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 import java.text.NumberFormat;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +26,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
@@ -32,7 +34,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
@@ -90,7 +91,11 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public Map<String, String> getCapabilities() {
-        return null;
+        Map<String, String> mapCapabilities = new HashMap<String, String>();
+
+        mapCapabilities.put(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString(), Boolean.TRUE.toString());
+
+        return mapCapabilities;
     }
 
     @Override
@@ -473,28 +478,11 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
-        if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) {
-            // in this situation, we don't want to copy the snapshot anywhere
-
-            CopyCmdAnswer copyCmdAnswer = new CopyCmdAnswer(destData.getTO());
-            CopyCommandResult result = new CopyCommandResult(null, copyCmdAnswer);
-
-            result.setResult(null);
-
-            callback.complete(result);
-
-            return;
-        }
-
         throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
-        if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) {
-            return true;
-        }
-
         return false;
     }
 
@@ -595,6 +583,15 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             SolidFireUtil.deleteSolidFireSnapshot(sfConnection, getSolidFireSnapshotId(snapshotInfo.getId()));
 
             _snapshotDetailsDao.removeDetails(snapshotInfo.getId());
+
+            StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
+
+            // getUsedBytes(StoragePool) will not include the snapshot to delete because it has already been deleted by this point
+            long usedBytes = getUsedBytes(storagePool);
+
+            storagePool.setUsedBytes(usedBytes < 0 ? 0 : usedBytes);
+
+            _storagePoolDao.update(storagePoolId, storagePool);
         }
         catch (Exception ex) {
             s_logger.debug(SolidFireUtil.LOG_PREFIX + "Failed to delete SolidFire snapshot: " + snapshotInfo.getId(), ex);
