@@ -6232,11 +6232,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     // add size of snapshot vdi node, usually this only contains meta data
                     size = size + vdi.getPhysicalUtilisation(conn);
                     // add size of snapshot vdi parent, this contains data
-                    if (parentVDI != null)
+                    if (!isRefNull(parentVDI))
                         size = size + parentVDI.getPhysicalUtilisation(conn).longValue();
                 }
             } catch (Exception e) {
-                s_logger.debug("Exception occurs when calculate " + "snapshot capacity for volumes: " + e.getMessage());
+                s_logger.debug("Exception occurs when calculate snapshot capacity for volumes: due to " + e.toString());
                 continue;
             }
         }
@@ -6248,13 +6248,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     try {
                         String vName = vmr.getNameLabel(conn);
                         if (vName != null && vName.contains(vmName) && vmr.getIsASnapshot(conn)) {
-
                             VDI memoryVDI = vmr.getSuspendVDI(conn);
-                            size = size + memoryVDI.getParent(conn).getPhysicalUtilisation(conn);
-                            size = size + memoryVDI.getPhysicalUtilisation(conn);
+                            if (!isRefNull(memoryVDI)) {
+                                size = size + memoryVDI.getPhysicalUtilisation(conn);
+                                VDI pMemoryVDI = memoryVDI.getParent(conn);
+                                if (!isRefNull(pMemoryVDI)) {
+                                    size = size + pMemoryVDI.getPhysicalUtilisation(conn);
+                                }
+                            }
                         }
                     } catch (Exception e) {
-                        s_logger.debug("Exception occurs when calculate " + "snapshot capacity for memory: " + e.getMessage());
+                        s_logger.debug("Exception occurs when calculate snapshot capacity for memory: due to " + e.toString());
                         continue;
                     }
                 }
