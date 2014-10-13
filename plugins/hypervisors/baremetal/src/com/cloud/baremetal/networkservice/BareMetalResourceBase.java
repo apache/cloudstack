@@ -403,7 +403,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
                 VMInstanceVO vm = vms.get(0);
                 SecurityGroupHttpClient client = new SecurityGroupHttpClient();
                 HashMap<String, Pair<Long, Long>> nwGrpStates = client.sync(vm.getInstanceName(), vm.getId(), vm.getPrivateIpAddress());
-                return new PingRoutingWithNwGroupsCommand(getType(), id, null, nwGrpStates);
+                return new PingRoutingWithNwGroupsCommand(getType(), id, getHostVmStateReport(), nwGrpStates);
             }
         } else {
             return new PingRoutingCommand(getType(), id, getHostVmStateReport());

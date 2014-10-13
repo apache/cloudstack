@@ -27,21 +27,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class XmlObject {
-    private final Logger logger = Logger.getLogger(XmlObject.class.getName());
     private final Map<String, Object> elements = new HashMap<String, Object>();
     private String text;
     private String tag;
 
     XmlObject() {
-    }
-
-    public void removeAllChildren() {
-        elements.clear();
     }
 
     public XmlObject(String tag) {
@@ -105,12 +99,8 @@ public class XmlObject {
         if (e instanceof List) {
             return (List<T>)e;
         }
-
         List lst = new ArrayList(1);
-        if (e != null) {
-            lst.add(e);
-        }
-
+        lst.add(e);
         return lst;
     }
 
@@ -152,8 +142,7 @@ public class XmlObject {
         }
 
         if (!children.isEmpty() && text != null) {
-            logger.info(String.format("element %s cannot have both text[%s] and child elements, set text to null", tag, text));
-            text = null;
+            throw new CloudRuntimeException(String.format("element %s cannot have both text[%s] and child elements", tag, text));
         }
 
         if (!children.isEmpty()) {

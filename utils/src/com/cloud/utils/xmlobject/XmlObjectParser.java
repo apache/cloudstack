@@ -19,19 +19,21 @@
 
 package com.cloud.utils.xmlobject;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Stack;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class XmlObjectParser {
     final private InputStream is;
@@ -107,11 +109,7 @@ public class XmlObjectParser {
     public static XmlObject parseFromString(String xmlString) {
         InputStream stream = new ByteArrayInputStream(xmlString.getBytes());
         XmlObjectParser p = new XmlObjectParser(stream);
-        XmlObject obj = p.parse();
-        if (obj.getText() != null && obj.getText().replaceAll("\\n", "").replaceAll("\\r", "").replaceAll(" ", "").isEmpty()) {
-            obj.setText(null);
-        }
-        return obj;
+        return p.parse();
     }
 
     private XmlObject parse() {
