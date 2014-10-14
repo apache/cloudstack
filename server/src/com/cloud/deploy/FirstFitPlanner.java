@@ -17,6 +17,8 @@
 package com.cloud.deploy;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,9 +46,14 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.gpu.GPU;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -102,9 +109,16 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
     DataStoreManager dataStoreMgr;
     @Inject
     protected ClusterDetailsDao _clusterDetailsDao;
+    @Inject
+    protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    protected HostGpuGroupsDao _hostGpuGroupsDao;
+    @Inject
+    protected HostTagsDao _hostTagsDao;
 
     protected String _allocationAlgorithm = "random";
     protected String _globalDeploymentPlanner = "FirstFitPlanner";
+    protected String[] _implicitHostTags;
 
     @Override
     public List<Long> orderClusters(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
@@ -131,7 +145,6 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
                     clusterList.add(clusterIdSpecified);
                     removeClustersCrossingThreshold(clusterList, avoid, vmProfile, plan);
                 }
-                return clusterList;
             } else {
                 s_logger.debug("The specified cluster cannot be found, returning.");
                 avoid.addCluster(plan.getClusterId());
@@ -152,7 +165,6 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
                         avoid.addPod(plan.getPodId());
                     }
                 }
-                return clusterList;
             } else {
                 s_logger.debug("The specified Pod cannot be found, returning.");
                 avoid.addPod(plan.getPodId());
@@ -164,13 +176,44 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
             boolean applyAllocationAtPods = Boolean.parseBoolean(_configDao.getValue(Config.ApplyAllocationAlgorithmToPods.key()));
             if (applyAllocationAtPods) {
                 //start scan at all pods under this zone.
-                return scanPodsForDestination(vmProfile, plan, avoid);
+                clusterList = scanPodsForDestination(vmProfile, plan, avoid);
             } else {
                 //start scan at clusters under this zone.
-                return scanClustersForDestinationInZoneOrPod(plan.getDataCenterId(), true, vmProfile, plan, avoid);
+                clusterList = scanClustersForDestinationInZoneOrPod(plan.getDataCenterId(), true, vmProfile, plan, avoid);
             }
         }
 
+        if (clusterList != null && !clusterList.isEmpty()) {
+            ServiceOffering offering = vmProfile.getServiceOffering();
+            // In case of non-GPU VMs, protect GPU enabled Hosts and prefer VM deployment on non-GPU Hosts.
+            if ((_serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) == null) && !(_hostGpuGroupsDao.listHostIds().isEmpty())) {
+                int requiredCpu = offering.getCpu() * offering.getSpeed();
+                long requiredRam = offering.getRamSize() * 1024L * 1024L;
+                reorderClustersBasedOnImplicitTags(clusterList, requiredCpu, requiredRam);
+            }
+        }
+        return clusterList;
+    }
+
+    private void reorderClustersBasedOnImplicitTags(List<Long> clusterList, int requiredCpu, long requiredRam) {
+            final HashMap<Long, Long> UniqueTagsInClusterMap = new HashMap<Long, Long>();
+            Long uniqueTags;
+            for (Long clusterId : clusterList) {
+                uniqueTags = (long) 0;
+                List<Long> hostList = _capacityDao.listHostsWithEnoughCapacity(requiredCpu, requiredRam, clusterId, Host.Type.Routing.toString());
+                if (!hostList.isEmpty() && _implicitHostTags.length > 0) {
+                    uniqueTags = new Long(_hostTagsDao.getDistinctImplicitHostTags(hostList, _implicitHostTags).size());
+                }
+                UniqueTagsInClusterMap.put(clusterId, uniqueTags);
+            }
+            Collections.sort(clusterList, new Comparator<Long>() {
+                @Override
+                public int compare(Long o1, Long o2) {
+                    Long t1 = UniqueTagsInClusterMap.get(o1);
+                    Long t2 = UniqueTagsInClusterMap.get(o2);
+                    return t1.compareTo(t2);
+                }
+            });
     }
 
     private List<Long> scanPodsForDestination(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) {
@@ -504,6 +547,10 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
         super.configure(name, params);
         _allocationAlgorithm = _configDao.getValue(Config.VmAllocationAlgorithm.key());
         _globalDeploymentPlanner = _configDao.getValue(Config.VmDeploymentPlanner.key());
+        String configValue;
+        if ((configValue = _configDao.getValue(Config.ImplicitHostTags.key())) != null) {
+            _implicitHostTags = configValue.trim().split("\\s*,\\s*");
+        }
         return true;
     }
 
