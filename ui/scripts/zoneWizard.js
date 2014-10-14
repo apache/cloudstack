@@ -177,11 +177,17 @@
                         },
                         'startip': {
                             edit: true,
-                            label: 'label.start.IP'
+                            label: 'label.start.IP',
+                            validation: {
+                                ipv4: true
+                            }
                         },
                         'endip': {
                             edit: true,
-                            label: 'label.end.IP'
+                            label: 'label.end.IP',
+                            validation: {
+                                ipv4: true
+                            }
                         },
                         'add-rule': {
                             label: 'label.add',
@@ -421,34 +427,48 @@
                     ip4dns1: {
                         label: 'label.ipv4.dns1',
                         validation: {
-                            required: true
+                            required: true,
+                            ipv4: true
                         },
                         desc: 'message.tooltip.dns.1'
                     },
                     ip4dns2: {
                         label: 'label.ipv4.dns2',
-                        desc: 'message.tooltip.dns.2'
+                        desc: 'message.tooltip.dns.2',
+                        validation: {
+                            ipv4: true
+                        }
                     },
 
                     ip6dns1: {
                         label: 'label.ipv6.dns1',
-                        desc: 'message.tooltip.dns.1'
+                        desc: 'message.tooltip.dns.1',
+                        validation: {
+                            ipv6: true
+                        }
                     },
                     ip6dns2: {
                         label: 'label.ipv6.dns2',
-                        desc: 'message.tooltip.dns.2'
-                    },
+                        desc: 'message.tooltip.dns.2',
+                        validation: {
+                            ipv6: true
+                        }
+                   },
 
                     internaldns1: {
                         label: 'label.internal.dns.1',
                         validation: {
-                            required: true
+                            required: true,
+                            ipv4: true
                         },
                         desc: 'message.tooltip.internal.dns.1'
                     },
                     internaldns2: {
                         label: 'label.internal.dns.2',
-                        desc: 'message.tooltip.internal.dns.2'
+                        desc: 'message.tooltip.internal.dns.2',
+                        validation: {
+                            ipv4: true
+                        },
                     },
                     hypervisor: {
                         label: 'label.hypervisor',
@@ -713,13 +733,15 @@
                     reservedSystemStartIp: {
                         label: 'label.start.reserved.system.IP',
                         validation: {
-                            required: true
+                            required: true,
+                            ipv4: true
                         }
                     },
                     reservedSystemEndIp: {
                         label: 'label.end.reserved.system.IP',
                         validation: {
-                            required: false
+                            required: false,
+                            ipv4: true
                         }
                     }
                 }
