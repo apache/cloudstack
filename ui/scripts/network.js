@@ -1865,7 +1865,11 @@
                                 desc: 'message.acquire.ip.nic',
                                 fields: {
                                     ipaddress: {
-                                        label: 'label.ip.address'
+                                        label: 'label.ip.address',
+                                        validation: {
+                                            required: true,
+                                            ipv4: true
+                                        }
                                     }
                                 }
                             },
