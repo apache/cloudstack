@@ -2228,21 +2228,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             VolumeObjectTO volInSpec = getVolumeInSpec(vmSpec, volumeTO);
-
-            if (managed) {
-                String datastoreVolumePath = diskChain[0];
-
-                iqnToPath.put(details.get(DiskTO.IQN), datastoreVolumePath);
-
-                vol.setPath(datastoreVolumePath);
-                volumeTO.setPath(datastoreVolumePath);
-                volInSpec.setPath(datastoreVolumePath);
+            if (volInSpec != null) {
+                if (managed) {
+                    String datastoreVolumePath = diskChain[0];
+                    iqnToPath.put(details.get(DiskTO.IQN), datastoreVolumePath);
+                    vol.setPath(datastoreVolumePath);
+                    volumeTO.setPath(datastoreVolumePath);
+                    volInSpec.setPath(datastoreVolumePath);
+                } else {
+                    volInSpec.setPath(file.getFileBaseName());
+                }
+                volInSpec.setChainInfo(_gson.toJson(diskInfo));
             }
-            else {
-                volInSpec.setPath(file.getFileBaseName());
-            }
-
-            volInSpec.setChainInfo(_gson.toJson(diskInfo));
         }
     }
 

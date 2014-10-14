@@ -782,7 +782,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         _forceHA = Boolean.parseBoolean(value);
 
         value = params.get("time.to.sleep");
-        _timeToSleep = NumbersUtil.parseInt(value, 60) * 1000;
+        _timeToSleep = (long)NumbersUtil.parseInt(value, 60) * 1000;
 
         value = params.get("max.retries");
         _maxRetries = NumbersUtil.parseInt(value, 5);

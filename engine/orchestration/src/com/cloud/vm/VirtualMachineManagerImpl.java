@@ -435,7 +435,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private VirtualMachineGuru getVmGuru(VirtualMachine vm) {
-        return _vmGurus.get(vm.getType());
+        if(vm != null)
+            return _vmGurus.get(vm.getType());
+        return null;
     }
 
     @Override

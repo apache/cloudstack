@@ -426,7 +426,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         s_logger.info("Proccess agent startup answer, agent id = " + startup.getHostId());
 
         setId(startup.getHostId());
-        _pingInterval = startup.getPingInterval() * 1000; // change to ms.
+        _pingInterval = (long)startup.getPingInterval() * 1000; // change to ms.
 
         setLastPingResponseTime();
         scheduleWatch(link, response, _pingInterval, _pingInterval);
@@ -461,7 +461,7 @@ public class Agent implements HandlerFactory, IAgentControl {
 
                     if (cmd instanceof CronCommand) {
                         final CronCommand watch = (CronCommand)cmd;
-                        scheduleWatch(link, request, watch.getInterval() * 1000, watch.getInterval() * 1000);
+                        scheduleWatch(link, request, (long)watch.getInterval() * 1000, watch.getInterval() * 1000);
                         answer = new Answer(cmd, true, null);
                     } else if (cmd instanceof ShutdownCommand) {
                         ShutdownCommand shutdown = (ShutdownCommand)cmd;

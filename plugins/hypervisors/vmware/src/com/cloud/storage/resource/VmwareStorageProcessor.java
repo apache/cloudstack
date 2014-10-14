@@ -562,7 +562,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
             }
 
-            Pair<String, String> result = copyVolumeFromSecStorage(hyperHost, srcVolume.getPath(), new DatastoreMO(context, morDatastore), srcStore.getUrl(), cmd.getWait() * 1000);
+            Pair<String, String> result = copyVolumeFromSecStorage(hyperHost, srcVolume.getPath(), new DatastoreMO(context, morDatastore), srcStore.getUrl(), (long)cmd.getWait() * 1000);
             deleteVolumeDirOnSecondaryStorage(result.first(), srcStore.getUrl());
             VolumeObjectTO newVolume = new VolumeObjectTO();
             newVolume.setPath(result.second());
@@ -1013,7 +1013,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             NfsTO nfsSvr = (NfsTO)imageStore;
-            Ternary<String, Long, Long> result = createTemplateFromSnapshot(template.getPath(), uniqeName, nfsSvr.getUrl(), snapshot.getPath(), template.getId(), cmd.getWait() * 1000);
+            Ternary<String, Long, Long> result = createTemplateFromSnapshot(template.getPath(), uniqeName, nfsSvr.getUrl(), snapshot.getPath(), template.getId(), (long)cmd.getWait() * 1000);
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(result.first());
@@ -2183,7 +2183,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 backedUpSnapshotUuid = backedUpSnapshotUuid.replace(".ovf", "");
             }
             DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
-            restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid, cmd.getWait() * 1000);
+            restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid, (long)cmd.getWait() * 1000);
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(newVolumeName);

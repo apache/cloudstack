@@ -64,6 +64,6 @@ public class RpcServerCallImpl implements RpcServerCall {
             pdu.setSerializedResult(_rpcProvider.getMessageSerializer().serializeTo(returnObject.getClass(), returnObject));
         }
 
-        _rpcProvider.sendRpcPdu(_targetAddress, _sourceAddress, _rpcProvider.getMessageSerializer().serializeTo(RpcCallResponsePdu.class, pdu));
+        _rpcProvider.sendRpcPdu(_sourceAddress,_targetAddress,_rpcProvider.getMessageSerializer().serializeTo(RpcCallResponsePdu.class, pdu));
     }
 }
