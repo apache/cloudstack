@@ -26,7 +26,6 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.resource.virtualnetwork.ConfigItem;
 import com.cloud.agent.resource.virtualnetwork.ScriptConfigItem;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
-import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
 
 public class BumpUpPriorityConfigItem extends AbstractConfigItemFacade {
 
@@ -36,10 +35,5 @@ public class BumpUpPriorityConfigItem extends AbstractConfigItemFacade {
         cfg.add(new ScriptConfigItem(VRScripts.RVR_BUMPUP_PRI, null));
 
         return cfg;
-    }
-
-    @Override
-    protected List<ConfigItem> generateConfigItems(final ConfigBase configuration) {
-        return null;
     }
 }
