@@ -28,7 +28,7 @@ import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
 import com.cloud.agent.resource.virtualnetwork.model.VmDhcpConfig;
 
-public class DhcpEntryConfigItem extends AbstractConfigItemFacade{
+public class DhcpEntryConfigItem extends AbstractConfigItemFacade {
 
     @Override
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {

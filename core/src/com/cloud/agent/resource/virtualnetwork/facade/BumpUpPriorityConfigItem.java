@@ -19,16 +19,23 @@
 
 package com.cloud.agent.resource.virtualnetwork.facade;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.resource.virtualnetwork.ConfigItem;
+import com.cloud.agent.resource.virtualnetwork.ScriptConfigItem;
+import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
 
-public class SetPortForwardingRulusConfigItem extends AbstractConfigItemFacade {
+public class BumpUpPriorityConfigItem extends AbstractConfigItemFacade {
+
     @Override
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {
-        return null;
+        final LinkedList<ConfigItem> cfg = new LinkedList<>();
+        cfg.add(new ScriptConfigItem(VRScripts.RVR_BUMPUP_PRI, null));
+
+        return cfg;
     }
 
     @Override
