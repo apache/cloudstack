@@ -76,24 +76,20 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-
-        Map<String, String> configs = _configDao.getConfiguration(null, params);
-
-        String globalStorageOverprovisioningFactor = configs.get("storage.overprovisioning.factor");
-        _storageOverprovisioningFactor = new BigDecimal(NumbersUtil.parseFloat(globalStorageOverprovisioningFactor, 2.0f));
-
-        _extraBytesPerVolume = 0;
-
-        _rand = new Random(System.currentTimeMillis());
-
-        _dontMatter = Boolean.parseBoolean(configs.get("storage.overwrite.provisioning"));
-
-        String allocationAlgorithm = configs.get("vm.allocation.algorithm");
-        if (allocationAlgorithm != null) {
-            _allocationAlgorithm = allocationAlgorithm;
+        if(_configDao != null) {
+            Map<String, String> configs = _configDao.getConfiguration(null, params);
+            String globalStorageOverprovisioningFactor = configs.get("storage.overprovisioning.factor");
+            _storageOverprovisioningFactor = new BigDecimal(NumbersUtil.parseFloat(globalStorageOverprovisioningFactor, 2.0f));
+            _extraBytesPerVolume = 0;
+            _rand = new Random(System.currentTimeMillis());
+            _dontMatter = Boolean.parseBoolean(configs.get("storage.overwrite.provisioning"));
+            String allocationAlgorithm = configs.get("vm.allocation.algorithm");
+            if (allocationAlgorithm != null) {
+                _allocationAlgorithm = allocationAlgorithm;
+            }
+            return true;
         }
-
-        return true;
+        return false;
     }
 
     protected abstract List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);
