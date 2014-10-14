@@ -1360,6 +1360,14 @@ public enum Config {
             "false",
             "Deploys a VM per zone to manage secondary storage if true, otherwise secondary storage is mounted on management server",
             null),
+    ImplicitHostTags(
+            "Hidden",
+            ManagementServer.class,
+            String.class,
+            "implicit.host.tags",
+            "GPU",
+            "Tag hosts at the time of host disovery based on the host properties/capabilities",
+            null),
     CreatePoolsInPod(
             "Hidden",
             ManagementServer.class,
