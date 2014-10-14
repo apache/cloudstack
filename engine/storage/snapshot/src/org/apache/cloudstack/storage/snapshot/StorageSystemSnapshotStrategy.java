@@ -33,23 +33,35 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.VirtualMachine.State;
 
 @Component
 public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     private static final Logger s_logger = Logger.getLogger(StorageSystemSnapshotStrategy.class);
 
+    @Inject private ClusterDao _clusterDao;
     @Inject private DataStoreManager _dataStoreMgr;
+    @Inject private EntityManager _entityMgr;
+    @Inject private HostDao _hostDao;
     @Inject private SnapshotDao _snapshotDao;
     @Inject private SnapshotDataFactory _snapshotDataFactory;
     @Inject private SnapshotDataStoreDao _snapshotStoreDao;
@@ -121,6 +133,75 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public boolean revertSnapshot(Long snapshotId) {
+        // verify the following:
+        //  if root disk, the VM cannot be running (don't allow this at all for ESX)
+        //  if data disk, the disk cannot be in the attached state
+
+        SnapshotInfo snapshotInfo = _snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+        VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
+        VolumeVO volume = _volumeDao.findById(volumeInfo.getId());
+
+        if (volume.getVolumeType() == Type.DATADISK) {
+            if (volume.getAttached() != null) {
+                throw new CloudRuntimeException("A data disk must be in the detached state in order to perform a revert.");
+            }
+        }
+        else if (volume.getVolumeType() == Type.ROOT) {
+            Long instanceId = volume.getInstanceId();
+            UserVm vm = _entityMgr.findById(UserVm.class, instanceId);
+
+            Long hostId = vm.getHostId();
+            HostVO hostVO = _hostDao.findById(hostId);
+            Long clusterId = hostVO.getClusterId();
+            ClusterVO clusterVO = _clusterDao.findById(clusterId);
+
+            if (clusterVO.getHypervisorType() != HypervisorType.XenServer && clusterVO.getHypervisorType() !=  HypervisorType.KVM) {
+                throw new CloudRuntimeException("Unsupported hypervisor type for root disk revert. Create a template from this disk and use it instead.");
+            }
+
+            if (vm.getState() != State.Stopped) {
+                throw new CloudRuntimeException("A root disk cannot be reverted unless the VM it's attached to is in the stopped state.");
+            }
+        }
+        else {
+            throw new CloudRuntimeException("Unsupported volume type");
+        }
+
+        SnapshotVO snapshotVO = _snapshotDao.acquireInLockTable(snapshotId);
+
+        if (snapshotVO == null) {
+            throw new CloudRuntimeException("Failed to acquire lock on the following snapshot: " + snapshotId);
+        }
+
+        try {
+            volumeInfo.stateTransit(Volume.Event.RevertRequested);
+
+            boolean result = false;
+
+            try {
+                result = snapshotSvr.revertSnapshot(snapshotId);
+            }
+            finally {
+                if (result) {
+                    volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
+                }
+                else {
+                    String msg = "Failed to revert the volume to a snapshot";
+
+                    s_logger.debug(msg);
+
+                    volumeInfo.stateTransit(Volume.Event.OperationFailed);
+
+                    throw new CloudRuntimeException("Failed to revert the volume to a snapshot");
+                }
+            }
+        }
+        finally {
+            if (snapshotVO != null) {
+                _snapshotDao.releaseFromLockTable(snapshotId);
+            }
+        }
+
         return true;
     }
 
@@ -189,9 +270,9 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
         long volumeId = snapshot.getVolumeId();
-        VolumeVO volume = _volumeDao.findById(volumeId);
+        VolumeVO volumeVO = _volumeDao.findById(volumeId);
 
-        long storagePoolId = volume.getPoolId();
+        long storagePoolId = volumeVO.getPoolId();
         DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
 
         Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();

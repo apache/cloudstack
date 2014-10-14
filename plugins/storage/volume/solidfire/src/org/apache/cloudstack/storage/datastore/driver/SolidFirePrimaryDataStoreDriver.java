@@ -609,8 +609,31 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback) {
-        throw new UnsupportedOperationException();
+    public void revertSnapshot(SnapshotInfo snapshotInfo, AsyncCompletionCallback<CommandResult> callback) {
+        String errMsg = null;
+
+        try {
+            VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
+
+            long storagePoolId = volumeInfo.getPoolId();
+            long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
+            long sfSnapshotId = getSolidFireSnapshotId(snapshotInfo.getId());
+
+            SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, _storagePoolDetailsDao);
+
+            SolidFireUtil.rollBackVolumeToSnapshot(sfConnection, sfVolumeId, sfSnapshotId);
+        }
+        catch (Exception ex) {
+            s_logger.debug(SolidFireUtil.LOG_PREFIX + "Failed to take CloudStack snapshot: " + snapshotInfo.getId(), ex);
+
+            errMsg = ex.getMessage();
+        }
+
+        CommandResult result = new CommandResult();
+
+        result.setResult(errMsg);
+
+        callback.complete(result);
     }
 
     @Override

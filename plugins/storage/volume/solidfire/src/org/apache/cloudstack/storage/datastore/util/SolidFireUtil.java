@@ -689,6 +689,20 @@ public class SolidFireUtil {
         executeJsonRpc(sfConnection, strSnapshotToDeleteJson);
     }
 
+    public static void rollBackVolumeToSnapshot(SolidFireConnection sfConnection, long volumeId, long snapshotId) {
+        final Gson gson = new GsonBuilder().create();
+
+        RollbackToInitiate rollbackToInitiate = new RollbackToInitiate(volumeId, snapshotId);
+
+        String strRollbackToInitiateJson = gson.toJson(rollbackToInitiate);
+
+        String strRollbackInitiatedResultJson = executeJsonRpc(sfConnection, strRollbackToInitiateJson);
+
+        RollbackInitiatedResult rollbackInitiatedResult = gson.fromJson(strRollbackInitiatedResultJson, RollbackInitiatedResult.class);
+
+        verifyResult(rollbackInitiatedResult.result, strRollbackInitiatedResultJson, gson);
+    }
+
     public static long createSolidFireClone(SolidFireConnection sfConnection, long lVolumeId, String cloneName) {
         final Gson gson = new GsonBuilder().create();
 
@@ -1294,6 +1308,26 @@ public class SolidFireUtil {
     }
 
     @SuppressWarnings("unused")
+    private static final class RollbackToInitiate {
+        private final String method = "RollbackToSnapshot";
+        private final RollbackToInitiateParams params;
+
+        private RollbackToInitiate(final long lVolumeId, final long lSnapshotId) {
+            params = new RollbackToInitiateParams(lVolumeId, lSnapshotId);
+        }
+
+        private static final class RollbackToInitiateParams {
+            private long volumeID;
+            private long snapshotID;
+
+            private RollbackToInitiateParams(final long lVolumeId, final long lSnapshotId) {
+                volumeID = lVolumeId;
+                snapshotID = lSnapshotId;
+            }
+        }
+    }
+
+    @SuppressWarnings("unused")
     private static final class CloneToCreate {
         private final String method = "CloneVolume";
         private final CloneToCreateParams params;
@@ -1532,6 +1566,15 @@ public class SolidFireUtil {
     }
 
     private static final class SnapshotCreateResult {
+        private Result result;
+
+        private static final class Result {
+            private long snapshotID;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static final class RollbackInitiatedResult {
         private Result result;
 
         private static final class Result {

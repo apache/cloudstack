@@ -38,6 +38,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         Ready("The volume is ready to be used."),
         Migrating("The volume is migrating to other storage pool"),
         Snapshotting("There is a snapshot created on this volume, not backed up to secondary storage yet"),
+        Reverting("Replace the existing volume on a storage system with a snapshot of it"),
         Resizing("The volume is being resized"),
         Expunging("The volume is being expunging"),
         Expunged("The volume is being expunging"),
@@ -85,8 +86,11 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(Expunging, Event.OperationSucceeded, Expunged);
             s_fsm.addTransition(Expunging, Event.OperationFailed, Destroy);
             s_fsm.addTransition(Ready, Event.SnapshotRequested, Snapshotting);
+            s_fsm.addTransition(Ready, Event.RevertRequested, Reverting);
             s_fsm.addTransition(Snapshotting, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Snapshotting, Event.OperationFailed, Ready);
+            s_fsm.addTransition(Reverting, Event.OperationSucceeded, Ready);
+            s_fsm.addTransition(Reverting, Event.OperationFailed, Ready);
             s_fsm.addTransition(Ready, Event.MigrationRequested, Migrating);
             s_fsm.addTransition(Migrating, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Migrating, Event.OperationFailed, Ready);
@@ -111,6 +115,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         UploadRequested,
         MigrationRequested,
         SnapshotRequested,
+        RevertRequested,
         DestroyRequested,
         ExpungingRequested,
         ResizeRequested;
