@@ -1873,7 +1873,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
             pfma = _agentMgr.send(dstHostId, pfmc);
             if (pfma == null || !pfma.getResult()) {
-                String msg = "Unable to prepare for migration due to " + pfma.getDetails();
+                String details = (pfma != null) ? pfma.getDetails() : "null answer returned";
+                String msg = "Unable to prepare for migration due to " + details;
                 pfma = null;
                 throw new AgentUnavailableException(msg, dstHostId);
             }
@@ -1909,7 +1910,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 Answer ma = _agentMgr.send(vm.getLastHostId(), mc);
                 if (ma == null || !ma.getResult()) {
-                    throw new CloudRuntimeException("Unable to migrate due to " + ma.getDetails());
+                    String details = (ma != null) ? ma.getDetails() : "null answer returned";
+                    throw new CloudRuntimeException("Unable to migrate due to " + details);
                 }
             } catch (OperationTimedoutException e) {
                 if (e.isActive()) {
@@ -3263,7 +3265,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
             pfma = _agentMgr.send(dstHostId, pfmc);
             if (pfma == null || !pfma.getResult()) {
-                String msg = "Unable to prepare for migration due to " + pfma.getDetails();
+                String details = (pfma != null) ? pfma.getDetails() : "null answer returned";
+                String msg = "Unable to prepare for migration due to " + details;
                 pfma = null;
                 throw new AgentUnavailableException(msg, dstHostId);
             }
@@ -3296,8 +3299,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 Answer ma = _agentMgr.send(vm.getLastHostId(), mc);
                 if (ma == null || !ma.getResult()) {
-                    s_logger.error("Unable to migrate due to " + ma.getDetails());
-                    throw new CloudRuntimeException("Unable to migrate due to " + ma.getDetails());
+                    String details = (ma != null) ? ma.getDetails() : "null answer returned";
+                    String msg = "Unable to migrate due to " + details;
+                    s_logger.error(msg);
+                    throw new CloudRuntimeException(msg);
                 }
             } catch (OperationTimedoutException e) {
                 if (e.isActive()) {
