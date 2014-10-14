@@ -223,7 +223,7 @@ public class CommandSetupHelper {
 
         String gatewayIp = nic.getGateway();
         if (!nic.isDefaultNic()) {
-            GuestOSVO guestOS = _guestOSDao.findById(vm.getGuestOSId());
+            final GuestOSVO guestOS = _guestOSDao.findById(vm.getGuestOSId());
             if (guestOS == null || !guestOS.getDisplayName().toLowerCase().contains("windows")) {
                 gatewayIp = "0.0.0.0";
             }
@@ -651,7 +651,7 @@ public class CommandSetupHelper {
     }
 
     public void createStaticRouteCommands(final List<StaticRouteProfile> staticRoutes, final VirtualRouter router, final Commands cmds) {
-        SetStaticRouteCommand cmd = new SetStaticRouteCommand(staticRoutes);
+        final SetStaticRouteCommand cmd = new SetStaticRouteCommand(staticRoutes);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
@@ -672,7 +672,7 @@ public class CommandSetupHelper {
         final String cidr;
         final Network network = _networkDao.findById(vpn.getNetworkId());
         if (network == null) {
-            Vpc vpc = _vpcDao.findById(vpn.getVpcId());
+            final Vpc vpc = _vpcDao.findById(vpn.getVpcId());
             cidr = vpc.getCidr();
         } else {
             cidr = network.getCidr();
@@ -778,8 +778,8 @@ public class CommandSetupHelper {
 
                 final String macAddress = vlanMacAddress.get(BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag())));
 
-                final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, false, ipAddr.isSourceNat(), ipAddr.getVlanTag(),
-                        ipAddr.getGateway(), ipAddr.getNetmask(), macAddress, networkRate, ipAddr.isOneToOneNat());
+                final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, false, ipAddr.isSourceNat(), BroadcastDomainType.fromString(ipAddr.getVlanTag()).toString(), ipAddr.getGateway(),
+                        ipAddr.getNetmask(), macAddress, networkRate, ipAddr.isOneToOneNat());
 
                 ip.setTrafficType(network.getTrafficType());
                 ip.setNetworkName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
