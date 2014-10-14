@@ -19,16 +19,32 @@
 
 package com.cloud.agent.resource.virtualnetwork.facade;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.resource.virtualnetwork.ConfigItem;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
 
-public class SetSourceNatConfigItem extends AbstractConfigItemFacade{
+public class SetSourceNatConfigItem extends AbstractConfigItemFacade {
+
     @Override
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {
-        return null;
+        final LinkedList<ConfigItem> cfg = new LinkedList<>();
+
+        /* FIXME This seems useless as we already pass this info with the ipassoc
+         * SetSourceNatCommand command = (SetSourceNatCommand) cmd;
+         * IpAddressTO pubIP = command.getIpAddress();
+         * String dev = "eth" + pubIP.getNicDevId();
+         * String args = "-A";
+         * args += " -l ";
+         * args += pubIP.getPublicIp();
+         * args += " -c ";
+         * args += dev;
+         * cfg.add(new ScriptConfigItem(VRScripts.VPC_SOURCE_NAT, args));
+         */
+
+        return cfg;
     }
 
     @Override

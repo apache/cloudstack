@@ -32,7 +32,7 @@ import com.cloud.agent.resource.virtualnetwork.model.StaticRoutes;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.utils.net.NetUtils;
 
-public class SetStaticRouteConfigItem extends AbstractConfigItemFacade{
+public class SetStaticRouteConfigItem extends AbstractConfigItemFacade {
 
     @Override
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {

@@ -32,7 +32,7 @@ import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 
-public class LoadBalancerConfigItem extends AbstractConfigItemFacade{
+public class LoadBalancerConfigItem extends AbstractConfigItemFacade {
 
     @Override
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {

@@ -19,20 +19,44 @@
 
 package com.cloud.agent.resource.virtualnetwork.facade;
 
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.cloud.agent.api.BumpUpPriorityCommand;
+import com.cloud.agent.api.SetupGuestNetworkCommand;
+import com.cloud.agent.api.routing.CreateIpAliasCommand;
+import com.cloud.agent.api.routing.DeleteIpAliasCommand;
+import com.cloud.agent.api.routing.DhcpEntryCommand;
+import com.cloud.agent.api.routing.DnsMasqConfigCommand;
+import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
+import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetMonitorServiceCommand;
+import com.cloud.agent.api.routing.SetNetworkACLCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
+import com.cloud.agent.api.routing.SetSourceNatCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.SetStaticRouteCommand;
+import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
+import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.resource.virtualnetwork.ConfigItem;
 import com.cloud.agent.resource.virtualnetwork.FileConfigItem;
 import com.cloud.agent.resource.virtualnetwork.ScriptConfigItem;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public abstract class AbstractConfigItemFacade {
+
     protected final static Gson gson;
 
     static {
@@ -40,6 +64,42 @@ public abstract class AbstractConfigItemFacade {
     }
 
     protected String destinationFile;
+
+    private static Hashtable<Class<? extends NetworkElementCommand>, AbstractConfigItemFacade> flyweight = new Hashtable<Class<? extends NetworkElementCommand>, AbstractConfigItemFacade>();
+
+    public AbstractConfigItemFacade() {
+        flyweight.put(SetPortForwardingRulesVpcCommand.class, new SetPortForwardingRulesVpcConfigItem());
+        flyweight.put(SetPortForwardingRulesCommand.class, new SetPortForwardingRulesConfigItem());
+        flyweight.put(SetStaticRouteCommand.class, new SetStaticRouteConfigItem());
+        flyweight.put(SetStaticNatRulesCommand.class, new SetStaticNatRulesConfigItem());
+        flyweight.put(LoadBalancerConfigCommand.class, new LoadBalancerConfigItem());
+        flyweight.put(SavePasswordCommand.class, new SavePasswordConfigItem());
+        flyweight.put(DhcpEntryCommand.class, new DhcpEntryConfigItem());
+        flyweight.put(CreateIpAliasCommand.class, new CreateIpAliasConfigItem());
+        flyweight.put(DnsMasqConfigCommand.class, new DnsMasqConfigItem());
+        flyweight.put(DeleteIpAliasCommand.class, new DeleteIpAliasConfigItem());
+        flyweight.put(VmDataCommand.class, new VmDataConfigItem());
+        flyweight.put(SetFirewallRulesCommand.class, new SetFirewallRulesConfigItem());
+        flyweight.put(BumpUpPriorityCommand.class, new BumpUpPriorityConfigItem());
+        flyweight.put(RemoteAccessVpnCfgCommand.class, new RemoteAccessVpnConfigItem());
+        flyweight.put(VpnUsersCfgCommand.class, new VpnUsersConfigItem());
+        flyweight.put(Site2SiteVpnCfgCommand.class, new Site2SiteVpnConfigItem());
+        flyweight.put(SetMonitorServiceCommand.class, new SetMonitorServiceConfigItem());
+        flyweight.put(SetupGuestNetworkCommand.class, new SetGuestNetworkConfigItem());
+        flyweight.put(SetNetworkACLCommand.class, new SetNetworkAclConfigItem());
+        flyweight.put(SetSourceNatCommand.class, new SetSourceNatConfigItem());
+        flyweight.put(IpAssocCommand.class, new IpAssociationConfigItem());
+    }
+
+    public static AbstractConfigItemFacade getInstance(final Class<? extends NetworkElementCommand> key) {
+        if (!flyweight.containsKey(key)) {
+            throw new CloudRuntimeException("Unable to process the configuration for " + key.getClass().getName());
+        }
+
+        final AbstractConfigItemFacade instance = flyweight.get(key);
+
+        return instance;
+    }
 
     protected List<ConfigItem> generateConfigItems(final ConfigBase configuration) {
         final List<ConfigItem> cfg = new LinkedList<>();
