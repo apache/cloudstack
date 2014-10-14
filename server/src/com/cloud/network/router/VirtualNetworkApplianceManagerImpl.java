@@ -699,11 +699,11 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             s_logger.debug("router.check.interval - " + _routerCheckInterval + " so not scheduling the redundant router checking thread");
         }
 
-        final int _routerAlertsCheckInterval = RouterAlertsCheckInterval.value();
-        if (_routerAlertsCheckInterval > 0) {
-            _checkExecutor.scheduleAtFixedRate(new CheckRouterAlertsTask(), _routerAlertsCheckInterval, _routerAlertsCheckInterval, TimeUnit.SECONDS);
+        final int routerAlertsCheckInterval = RouterAlertsCheckInterval.value();
+        if (routerAlertsCheckInterval > 0) {
+            _checkExecutor.scheduleAtFixedRate(new CheckRouterAlertsTask(), routerAlertsCheckInterval, routerAlertsCheckInterval, TimeUnit.SECONDS);
         } else {
-            s_logger.debug("router.alerts.check.interval - " + _routerAlertsCheckInterval + " so not scheduling the router alerts checking thread");
+            s_logger.debug("router.alerts.check.interval - " + routerAlertsCheckInterval + " so not scheduling the router alerts checking thread");
         }
 
         return true;
