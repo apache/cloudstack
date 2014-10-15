@@ -23,6 +23,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.utils.db.Encrypt;
+
 @Entity
 @Table(name = "usercredentials")
 public class UserCredentialsVO {
@@ -36,6 +38,7 @@ public class UserCredentialsVO {
     @Column(name = "AccessKey")
     private String accessKey;
 
+    @Encrypt
     @Column(name = "SecretKey")
     private String secretKey;
 
