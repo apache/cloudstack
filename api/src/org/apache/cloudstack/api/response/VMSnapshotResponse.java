@@ -184,7 +184,15 @@ public class VMSnapshotResponse extends BaseResponse implements ControlledEntity
         return parentName;
     }
 
-    public String getType() {
+    public String getParent() {
+      return parent;
+    }
+
+    public void setParent(String parent) {
+      this.parent = parent;
+    }
+
+  public String getType() {
         return type;
     }
 

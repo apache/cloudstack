@@ -529,7 +529,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             vmSnapshotResponse.setVirtualMachineid(vm.getUuid());
         }
         if (vmSnapshot.getParent() != null) {
-            vmSnapshotResponse.setParentName(ApiDBUtils.getVMSnapshotById(vmSnapshot.getParent()).getDisplayName());
+            VMSnapshot vmSnapshotParent = ApiDBUtils.getVMSnapshotById(vmSnapshot.getParent());
+            vmSnapshotResponse.setParent(vmSnapshotParent.getUuid());
+            vmSnapshotResponse.setParentName(vmSnapshotParent.getDisplayName());
         }
         vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
