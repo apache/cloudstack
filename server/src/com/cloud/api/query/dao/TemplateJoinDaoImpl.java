@@ -156,8 +156,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         templateResponse.setDomainId(template.getDomainUuid());
         templateResponse.setDomainName(template.getDomainName());
 
-        // If the user is an Admin, add the template download status
-        if (view == ResponseView.Full) {
+        // If the user is an 'Admin' or 'the owner of template', add the template download status
+        if (view == ResponseView.Full ||  template.getAccountId() == CallContext.current().getCallingAccount().getId() ) {
             String templateStatus = getTemplateStatus(template);
             if (templateStatus != null) {
                 templateResponse.setStatus(templateStatus);
