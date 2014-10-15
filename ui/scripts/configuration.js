@@ -475,8 +475,8 @@
                                             });
 
                                             var vGpuMap = {};
-                                            vGpuMap['Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'] = ['passthrough', 'GRID K100', 'GRID K120Q', 'GRID K140Q'];
-                                            vGpuMap['Group of NVIDIA Corporation GK104GL [GRID K2] GPUs'] = ['passthrough', 'GRID K200', 'GRID K220Q', 'GRID K240Q', 'GRID K260Q'];
+                                            vGpuMap['Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'] = ['passthrough', 'GRID K100', 'GRID K120Q', 'GRID K140Q', 'GRID K160Q', 'GRID K180Q'];
+                                            vGpuMap['Group of NVIDIA Corporation GK104GL [GRID K2] GPUs'] = ['passthrough', 'GRID K200', 'GRID K220Q', 'GRID K240Q', 'GRID K260Q', 'GRID K280Q'];
 
                                             args.$select.change(function() {
                                                 var gpu = $(this).val();
@@ -533,6 +533,14 @@
                                                 description: 'GRID K140Q'
                                             });
                                             items.push({
+                                                id: 'GRID K160Q',
+                                                description: 'GRID K160Q'
+                                            });
+                                            items.push({
+                                                id: 'GRID K180Q',
+                                                description: 'GRID K180Q'
+                                            });
+                                            items.push({
                                                 id: 'GRID K200',
                                                 description: 'GRID K200'
                                             });
@@ -547,6 +555,10 @@
                                             items.push({
                                                 id: 'GRID K260Q',
                                                 description: 'GRID K260Q'
+                                            });
+                                            items.push({
+                                                id: 'GRID K280Q',
+                                                description: 'GRID K280Q'
                                             });
                                             args.response.success({
                                                 data: items
