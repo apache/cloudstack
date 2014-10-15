@@ -9484,7 +9484,18 @@
                                  * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
                                  */   
                                 if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
-                                        $.ajax({
+                                    /* 
+                                     * account parameter(account+domainid) and project parameter(projectid) are not allowed to be passed together to listXXXXXXX API. 
+                                     * So, remove account parameter(account+domainid) from data2
+                                     */                                    	
+                                	if ("account" in data2) {
+                                		delete data2.account;
+                                	}
+                                	if ("domainid" in data2) {
+                                		delete data2.domainid;
+                                	}                                	
+                                	
+                                	$.ajax({
                                             url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                             data: data2,
 	                                    async: false,
@@ -10565,13 +10576,11 @@
                                 });
                             },
                             detailView: {
-                                name: 'label.virtual.routers.group.account',
-                                /*
+                                name: 'label.virtual.routers.group.account',                                
                                 viewAll: {
                                     path: '_zone.virtualRouters',
                                     label: 'label.virtual.appliances'
-                                },
-                                */
+                                },                               
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
                                         label: 'label.upgrade.router.newer.template',
