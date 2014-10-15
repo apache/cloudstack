@@ -23,8 +23,7 @@ from marvin.cloudstackAPI import (recoverVirtualMachine,
                                   attachIso,
                                   detachIso)
 from marvin.lib.utils import (cleanup_resources,
-                              validateList,
-                              get_hypervisor_type)
+                              validateList)
 from marvin.lib.base import (Account,
                              ServiceOffering,
                              VirtualMachine,
@@ -261,6 +260,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         testClient = super(TestVMLifeCycle, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.apiclient)
@@ -548,20 +548,21 @@ class TestVMLifeCycle(cloudstackTestCase):
         if len(hosts) < 2:
             self.skipTest("At least two hosts should be present in the zone for migration")
 
-        hypervisor = str(get_hypervisor_type(self.apiclient)).lower()
+        if self.hypervisor.lower() in ["lxc"]:
+            self.skipTest("Migration is not supported on LXC")
 
         # For KVM, two hosts used for migration should  be present in same cluster
         # For XenServer and VMware, migration is possible between hosts belonging to different clusters
         # with the help of XenMotion and Vmotion respectively.
 
-        if hypervisor.lower() in ["kvm","simulator"]:
+        if self.hypervisor.lower() in ["kvm","simulator"]:
             #identify suitable host
             clusters = [h.clusterid for h in hosts]
             #find hosts withe same clusterid
             clusters = [cluster for index, cluster in enumerate(clusters) if clusters.count(cluster) > 1]
 
             if len(clusters) <= 1:
-                self.skipTest("In " + hypervisor.lower() + " Live Migration needs two hosts within same cluster")
+                self.skipTest("In " + self.hypervisor.lower() + " Live Migration needs two hosts within same cluster")
 
             suitable_hosts = [host for host in hosts if host.clusterid == clusters[0]]
         else:
@@ -660,6 +661,9 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 4. The device should be available for use
         # 5. Detach ISO
         # 6. Check the device is properly detached by logging into VM
+
+        if self.hypervisor.lower() in ["lxc"]:
+            self.skipTest("ISOs are not supported on LXC")
 
         iso = Iso.create(
                          self.apiclient,

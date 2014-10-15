@@ -60,6 +60,9 @@ class TestCreateTemplate(cloudstackTestCase):
         testClient = super(TestCreateTemplate, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("Template creation from root volume is not supported in LXC")
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
@@ -208,6 +211,9 @@ class TestTemplates(cloudstackTestCase):
         testClient = super(TestTemplates, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("Template creation from root volume is not supported in LXC")
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
