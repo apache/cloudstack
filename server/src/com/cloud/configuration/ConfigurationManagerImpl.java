@@ -2147,7 +2147,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
             for (Entry<String, String> detailEntry : details.entrySet()) {
-                String value = null;
                 if (detailEntry.getKey().equals(GPU.Keys.pciDevice.toString())) {
                     if (detailEntry.getValue() == null) {
                         throw new InvalidParameterValueException("Please specify a GPU Card.");
@@ -2156,14 +2155,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (detailEntry.getKey().equals(GPU.Keys.vgpuType.toString())) {
                     if (detailEntry.getValue() == null) {
                         throw new InvalidParameterValueException("vGPUType value cannot be null");
-                    }
-                    for (GPU.vGPUType entry : GPU.vGPUType.values()) {
-                        if (detailEntry.getValue().equals(entry.getType())) {
-                            value = entry.getType();
-                        }
-                    }
-                    if (value == null) {
-                        throw new InvalidParameterValueException("Please specify valid vGPU type");
                     }
                 }
                 detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntry.getValue(), true));
