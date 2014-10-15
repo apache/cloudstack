@@ -1638,7 +1638,7 @@
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
                                    
                                     $form.find('[rel=path]').css('display', 'block');                                    
-                                    $form.find('[rel=path]').find(".name").find("label").html("<span class=\"field-required\">*</span>'label.SR.name':");
+                                    $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>'+_l('label.SR.name')+':');
                                    
                                     $form.find('[rel=smbUsername]').hide();
                                     $form.find('[rel=smbPassword]').hide();

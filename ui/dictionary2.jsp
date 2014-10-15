@@ -711,6 +711,7 @@ $.extend(dictionary, {
 'label.start.lb.vm': '<fmt:message key="label.start.lb.vm" />',
 'label.stop.lb.vm': '<fmt:message key="label.stop.lb.vm" />',
 'label.migrate.lb.vm': '<fmt:message key="label.migrate.lb.vm" />',
+'label.migrate.volume': '<fmt:message key="label.migrate.volume" />',
 'label.vpc.virtual.router': '<fmt:message key="label.vpc.virtual.router" />',
 'label.ovs': '<fmt:message key="label.ovs" />',
 'label.gslb.service': '<fmt:message key="label.gslb.service" />',
