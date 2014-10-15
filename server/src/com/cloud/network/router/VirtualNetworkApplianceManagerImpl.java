@@ -170,10 +170,12 @@ import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.StaticNatRule;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
@@ -2651,6 +2653,10 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         //  Fetch firewall Egress rules.
         if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
             firewallRulesEgress.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Firewall, FirewallRule.TrafficType.Egress));
+            if (firewallRulesEgress.isEmpty()) {
+                //create egress default rule for VR
+                createDefaultEgressFirewallRule(firewallRulesEgress, guestNetworkId);
+            }
         }
 
         // Re-apply firewall Egress rules
@@ -2773,6 +2779,30 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
             }
         }
     }
+
+    private void createDefaultEgressFirewallRule(List<FirewallRule> rules, long networkId) {
+        String systemRule = null;
+
+        Boolean defaultEgressPolicy = false;
+        NetworkVO network = _networkDao.findById(networkId);
+        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        defaultEgressPolicy = offering.getEgressDefaultPolicy();
+
+
+        // construct rule when egress policy is true. In true case for VR we default allow rule need to be added
+        if (defaultEgressPolicy) {
+            systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
+
+            List<String> sourceCidr = new ArrayList<String>();
+
+            sourceCidr.add(NetUtils.ALL_CIDRS);
+            FirewallRule rule = new FirewallRuleVO(null, null, null, null, "all", networkId, network.getAccountId(), network.getDomainId(), Purpose.Firewall, sourceCidr,
+                    null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.System);
+
+            rules.add(rule);
+        }
+    }
+
 
     private void removeRevokedIpAliasFromDb(final List<NicIpAliasVO> revokedIpAliasVOs) {
         for (final NicIpAliasVO ipalias : revokedIpAliasVOs) {
