@@ -28,8 +28,12 @@ do_kill = (ARGV.include? 'kill' or ARGV.include? '--kill' or ARGV.include? '-k')
 
 lines = `VBoxManage list vms`
 vms = lines.split(/\n/)
+if vms.nil?
+  vms = []
+end
 vms.each do |vmline|
   vm_info = /\"(.*)\"[^{]*\{(.*)\}/.match(vmline)
+  next if vm_info.nil?
   vm_name = vm_info[1]
   vm_uuid = vm_info[2]
 
