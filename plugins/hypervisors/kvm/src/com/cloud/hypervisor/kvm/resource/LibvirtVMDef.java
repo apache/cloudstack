@@ -173,11 +173,40 @@ public class LibvirtVMDef {
         }
     }
 
+    public static class HyperVEnlightenmentFeatureDef {
+        private final Map<String, String> features = new HashMap<String,String>();
+        public void setRelaxed(boolean on) {
+            String state = on ? "On":"Off";
+            features.put("relaxed", state);
+        }
+        @Override
+        public String toString() {
+            if (features.isEmpty()) {
+                return "";
+            }
+            StringBuilder feaBuilder = new StringBuilder();
+            feaBuilder.append("<hyperv>\n");
+            for (Map.Entry<String, String> e : features.entrySet()) {
+                feaBuilder.append("<");
+                feaBuilder.append(e.getKey());
+                feaBuilder.append(" state='" + e.getValue() + "'");
+                feaBuilder.append("/>\n");
+            }
+            feaBuilder.append("</hyperv>\n");
+            return feaBuilder.toString();
+        }
+    }
+
     public static class FeaturesDef {
         private final List<String> _features = new ArrayList<String>();
 
+        private HyperVEnlightenmentFeatureDef hyperVEnlightenmentFeatureDef = null;
         public void addFeatures(String feature) {
             _features.add(feature);
+        }
+
+        public void addHyperVFeature(HyperVEnlightenmentFeatureDef hyperVEnlightenmentFeatureDef) {
+            this.hyperVEnlightenmentFeatureDef = hyperVEnlightenmentFeatureDef;
         }
 
         @Override
@@ -186,6 +215,12 @@ public class LibvirtVMDef {
             feaBuilder.append("<features>\n");
             for (String feature : _features) {
                 feaBuilder.append("<" + feature + "/>\n");
+            }
+            if (hyperVEnlightenmentFeatureDef != null) {
+                String hpervF = hyperVEnlightenmentFeatureDef.toString();
+                if (hpervF != "") {
+                    feaBuilder.append(hpervF);
+                }
             }
             feaBuilder.append("</features>\n");
             return feaBuilder.toString();
