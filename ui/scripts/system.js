@@ -9394,11 +9394,16 @@
                     label: 'label.select-view',
                     preFilter: function(args) {                    	
                     	//Only clicking ViewAll Link("view all Virtual Routers") in "Virtual Routers group by XXXXXXX" detailView will have "routerGroupByXXXXXXX" included in args.context
-                        if (("routerGroupByZone" in args.context) || ("routerGroupByPod" in args.context) || ("routerGroupByCluster" in args.context) || ("routerGroupByAccount" in args.context)) {
-                        	return ["routerNoGroup"];
-                        }
-                        else {
-                        	return ["routerNoGroup", "routerGroupByZone", "routerGroupByPod", "routerGroupByCluster", "routerGroupByAccount"];
+                        if ("routerGroupByZone" in args.context) {
+                        	return ["routerGroupByZone"]; // read-only (i.e. text "group by Zone") 
+                        } else if ( "routerGroupByPod" in args.context) {
+                        	return ["routerGroupByPod"]; // read-only (i.e. text "group by Pod") 
+                        } else if ("routerGroupByCluster" in args.context) {
+                        	return ["routerGroupByCluster"]; // read-only (i.e. text "group by Cluster") 
+                        } else if ("routerGroupByAccount" in args.context) {
+                        	return ["routerGroupByAccount"]; // read-only (i.e. text "group by Account") 
+                        } else {
+                        	return ["routerNoGroup", "routerGroupByZone", "routerGroupByPod", "routerGroupByCluster", "routerGroupByAccount"]; //editable dropdown 
                         }
                     }
                 },
