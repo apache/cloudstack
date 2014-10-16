@@ -1589,7 +1589,7 @@
 
             sectionPreFilter = args.sectionSelect.preFilter ?
                 args.sectionSelect.preFilter({
-                    context: cloudStack.context
+                    context: $.extend({}, cloudStack.context, args.context)
                 }) : null;
         } else {
             $sectionSelect.hide();
