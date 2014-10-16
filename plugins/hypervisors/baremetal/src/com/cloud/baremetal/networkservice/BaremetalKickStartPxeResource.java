@@ -34,6 +34,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
+import com.cloud.agent.api.baremetal.PrepareKickstartPxeServerCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
