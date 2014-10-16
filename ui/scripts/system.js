@@ -9445,6 +9445,27 @@
                                     // forvpc: false
                                 };
                                 
+                                if (args.context != undefined) {
+	                                if ("routerGroupByZone" in args.context) {
+	                                    $.extend(data2, {
+	                                        zoneid: args.context.routerGroupByZone[0].id
+	                                    })
+	                                } else if ("routerGroupByPod" in args.context) {
+	                                    $.extend(data2, {
+	                                        podid: args.context.routerGroupByPod[0].id
+	                                    })
+	                                } else if ("routerGroupByCluster" in args.context) {
+	                                    $.extend(data2, {
+	                                        clusterid: args.context.routerGroupByCluster[0].id
+	                                    })
+	                                } else if ("routerGroupByAccount" in args.context) {
+	                                    $.extend(data2, {
+	                                    	 account: args.context.routerGroupByAccount[0].name,
+	                                         domainid: args.context.routerGroupByAccount[0].domainid
+	                                    })
+	                                }
+                                }                               
+                                
                                 var routers =[];
                                 $.ajax({
                                     url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
@@ -10078,7 +10099,11 @@
                                 });
                             },
                             detailView: {
-                                name: 'label.virtual.routers.group.zone',
+                                name: 'label.virtual.routers.group.zone',                                
+                                viewAll: {
+                                    path: '_zone.virtualRouters',
+                                    label: 'label.virtual.appliances'
+                                },                                
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
                                         label: 'label.upgrade.router.newer.template',
@@ -10205,7 +10230,11 @@
                                 });
                             },
                             detailView: {
-                                name: 'label.virtual.routers.group.pod',
+                                name: 'label.virtual.routers.group.pod',                                
+                                viewAll: {
+                                    path: '_zone.virtualRouters',
+                                    label: 'label.virtual.appliances'
+                                },                               
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
                                         label: 'label.upgrade.router.newer.template',
@@ -10335,7 +10364,11 @@
                                 });
                             },
                             detailView: {
-                                name: 'label.virtual.routers.group.cluster',
+                                name: 'label.virtual.routers.group.cluster',                               
+                                viewAll: {
+                                    path: '_zone.virtualRouters',
+                                    label: 'label.virtual.appliances'
+                                },                               
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
                                         label: 'label.upgrade.router.newer.template',
@@ -10533,6 +10566,12 @@
                             },
                             detailView: {
                                 name: 'label.virtual.routers.group.account',
+                                /*
+                                viewAll: {
+                                    path: '_zone.virtualRouters',
+                                    label: 'label.virtual.appliances'
+                                },
+                                */
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
                                         label: 'label.upgrade.router.newer.template',
