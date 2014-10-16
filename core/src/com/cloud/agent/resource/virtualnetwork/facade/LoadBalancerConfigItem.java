@@ -25,10 +25,10 @@ import java.util.List;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.resource.virtualnetwork.ConfigItem;
-import com.cloud.agent.resource.virtualnetwork.FileConfigItem;
-import com.cloud.agent.resource.virtualnetwork.ScriptConfigItem;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
+import com.cloud.agent.resource.virtualnetwork.model.LoadBalancerRule;
+import com.cloud.agent.resource.virtualnetwork.model.LoadBalancerRules;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 
@@ -38,67 +38,37 @@ public class LoadBalancerConfigItem extends AbstractConfigItemFacade {
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {
         final LoadBalancerConfigCommand command = (LoadBalancerConfigCommand) cmd;
 
-        final LinkedList<ConfigItem> cfg = new LinkedList<>();
-
-        final String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         final LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
+        final String[] configuration = cfgtr.generateConfiguration(command);
 
-        final String[] config = cfgtr.generateConfiguration(command);
-        final StringBuffer buff = new StringBuffer();
-        for (int i = 0; i < config.length; i++) {
-            buff.append(config[i]);
-            buff.append("\n");
+        String routerIp = command.getNic().getIp();
+        if (command.getVpcId() == null) {
+            routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         }
+
         final String tmpCfgFilePath = "/etc/haproxy/";
         final String tmpCfgFileName = "haproxy.cfg.new." + String.valueOf(System.currentTimeMillis());
-        cfg.add(new FileConfigItem(tmpCfgFilePath, tmpCfgFileName, buff.toString()));
 
-        final String[][] rules = cfgtr.generateFwRules(command);
+        final String[][] allRules = cfgtr.generateFwRules(command);
 
-        final String[] addRules = rules[LoadBalancerConfigurator.ADD];
-        final String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
-        final String[] statRules = rules[LoadBalancerConfigurator.STATS];
+        final String[] addRules = allRules[LoadBalancerConfigurator.ADD];
+        final String[] removeRules = allRules[LoadBalancerConfigurator.REMOVE];
+        final String[] statRules = allRules[LoadBalancerConfigurator.STATS];
 
-        String args = " -f " + tmpCfgFilePath + tmpCfgFileName;
-        StringBuilder sb = new StringBuilder();
-        if (addRules.length > 0) {
-            for (int i = 0; i < addRules.length; i++) {
-                sb.append(addRules[i]).append(',');
-            }
-            args += " -a " + sb.toString();
-        }
+        final LoadBalancerRule loadBalancerRule = new LoadBalancerRule(configuration, tmpCfgFilePath, tmpCfgFileName, addRules, removeRules, statRules, routerIp);
 
-        sb = new StringBuilder();
-        if (removeRules.length > 0) {
-            for (int i = 0; i < removeRules.length; i++) {
-                sb.append(removeRules[i]).append(',');
-            }
+        final List<LoadBalancerRule> rules = new LinkedList<LoadBalancerRule>();
+        rules.add(loadBalancerRule);
 
-            args += " -d " + sb.toString();
-        }
+        final LoadBalancerRules configRules = new LoadBalancerRules(rules);
 
-        sb = new StringBuilder();
-        if (statRules.length > 0) {
-            for (int i = 0; i < statRules.length; i++) {
-                sb.append(statRules[i]).append(',');
-            }
-
-            args += " -s " + sb.toString();
-        }
-
-        if (command.getVpcId() == null) {
-            args = " -i " + routerIp + args;
-            cfg.add(new ScriptConfigItem(VRScripts.LB, args));
-        } else {
-            args = " -i " + command.getNic().getIp() + args;
-            cfg.add(new ScriptConfigItem(VRScripts.VPC_LB, args));
-        }
-
-        return cfg;
+        return generateConfigItems(configRules);
     }
 
     @Override
     protected List<ConfigItem> generateConfigItems(final ConfigBase configuration) {
-        return null;
+        destinationFile = VRScripts.LOAD_BALANCER_CONFIG;
+
+        return super.generateConfigItems(configuration);
     }
 }

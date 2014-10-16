@@ -57,17 +57,13 @@ import com.google.gson.GsonBuilder;
 
 public abstract class AbstractConfigItemFacade {
 
-    protected final static Gson gson;
-
-    static {
-        gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
-    }
-
-    protected String destinationFile;
+    private final static Gson gson;
 
     private static Hashtable<Class<? extends NetworkElementCommand>, AbstractConfigItemFacade> flyweight = new Hashtable<Class<? extends NetworkElementCommand>, AbstractConfigItemFacade>();
 
-    public AbstractConfigItemFacade() {
+    static {
+        gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+
         flyweight.put(SetPortForwardingRulesVpcCommand.class, new SetPortForwardingRulesVpcConfigItem());
         flyweight.put(SetPortForwardingRulesCommand.class, new SetPortForwardingRulesConfigItem());
         flyweight.put(SetStaticRouteCommand.class, new SetStaticRouteConfigItem());
@@ -90,6 +86,8 @@ public abstract class AbstractConfigItemFacade {
         flyweight.put(SetSourceNatCommand.class, new SetSourceNatConfigItem());
         flyweight.put(IpAssocCommand.class, new IpAssociationConfigItem());
     }
+
+    protected String destinationFile;
 
     public static AbstractConfigItemFacade getInstance(final Class<? extends NetworkElementCommand> key) {
         if (!flyweight.containsKey(key)) {
