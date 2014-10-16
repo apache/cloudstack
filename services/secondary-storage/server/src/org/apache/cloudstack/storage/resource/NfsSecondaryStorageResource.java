@@ -962,11 +962,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         List<String> files = new ArrayList<String>();
         if (lFilename.equals("*")) {
             File dir = new File(lDir);
-            for (String file : dir.list()) {
-                if (file.startsWith(".")) {
-                    continue;
+            String [] dir_lst = dir.list();
+            if(dir_lst != null) {
+                for (String file : dir_lst) {
+                    if (file.startsWith(".")) {
+                        continue;
+                    }
+                    files.add(file);
                 }
-                files.add(file);
             }
         } else {
             files.add(lFilename);
@@ -1203,33 +1206,41 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             try {
                 File prvKeyFile = File.createTempFile("prvkey", null);
                 String prvkeyPath = prvKeyFile.getAbsolutePath();
-                BufferedWriter out = new BufferedWriter(new FileWriter(prvKeyFile));
-                out.write(prvKey);
-                out.close();
+                try(BufferedWriter prvt_key_file = new BufferedWriter(new FileWriter(prvKeyFile));) {
+                    prvt_key_file.write(prvKey);
+                }catch (IOException e) {
+                    s_logger.debug("Failed to config ssl: " + e.toString());
+                }
 
                 File pubCertFile = File.createTempFile("pubcert", null);
                 String pubCertFilePath = pubCertFile.getAbsolutePath();
 
-                out = new BufferedWriter(new FileWriter(pubCertFile));
-                out.write(pubCert);
-                out.close();
+                try(BufferedWriter pub_cert_file = new BufferedWriter(new FileWriter(pubCertFile));) {
+                    pub_cert_file.write(pubCert);
+                }catch (IOException e) {
+                    s_logger.debug("Failed to config ssl: " + e.toString());
+                }
 
                 String certChainFilePath = null, rootCACertFilePath = null;
                 File certChainFile = null, rootCACertFile = null;
                 if(certChain != null){
                     certChainFile = File.createTempFile("certchain", null);
                     certChainFilePath = certChainFile.getAbsolutePath();
-                    out = new BufferedWriter(new FileWriter(certChainFile));
-                    out.write(certChain);
-                    out.close();
+                    try(BufferedWriter cert_chain_out = new BufferedWriter(new FileWriter(certChainFile));) {
+                        cert_chain_out.write(certChain);
+                    }catch (IOException e) {
+                        s_logger.debug("Failed to config ssl: " + e.toString());
+                    }
                 }
 
                 if(rootCACert != null){
                     rootCACertFile = File.createTempFile("rootcert", null);
                     rootCACertFilePath = rootCACertFile.getAbsolutePath();
-                    out = new BufferedWriter(new FileWriter(rootCACertFile));
-                    out.write(rootCACert);
-                    out.close();
+                    try(BufferedWriter root_ca_cert_file = new BufferedWriter(new FileWriter(rootCACertFile));) {
+                        root_ca_cert_file.write(rootCACert);
+                    }catch (IOException e) {
+                        s_logger.debug("Failed to config ssl: " + e.toString());
+                    }
                 }
 
                 configureSSL(prvkeyPath, pubCertFilePath, certChainFilePath, rootCACertFilePath);

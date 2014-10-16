@@ -492,8 +492,10 @@ public class ApiXmlDocWriter {
     private static void deleteDir(File dir) {
         if (dir.isDirectory()) {
             String[] children = dir.list();
-            for (int i = 0; i < children.length; i++) {
-                deleteDir(new File(dir, children[i]));
+            if (children != null) {
+                for (int i = 0; i < children.length; i++) {
+                    deleteDir(new File(dir, children[i]));
+                }
             }
         }
         dir.delete();
