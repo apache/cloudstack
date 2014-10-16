@@ -30,19 +30,16 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.configuration.Config;
-
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
-import com.cloud.agent.api.baremetal.PrepareKickstartPxeServerCommand;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand.BootDev;
+import com.cloud.agent.api.baremetal.PrepareKickstartPxeServerCommand;
 import com.cloud.baremetal.database.BaremetalPxeDao;
 import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.baremetal.networkservice.BaremetalPxeManager.BaremetalPxeType;
