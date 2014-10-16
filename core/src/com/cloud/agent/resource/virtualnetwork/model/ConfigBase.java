@@ -37,6 +37,7 @@ public abstract class ConfigBase {
     public static final String REMOTEACCESSVPN = "remoteaccessvpn";
     public static final String MONITORSERVICE = "monitorservice";
     public static final String DHCP_CONFIG = "dhcpconfig";
+    public static final String LOAD_BALANCER = "loadbalancer";
 
     private String type = UNKNOWN;
 
@@ -44,7 +45,7 @@ public abstract class ConfigBase {
         // Empty constructor for (de)serialization
     }
 
-    protected ConfigBase(String type) {
+    protected ConfigBase(final String type) {
         this.type = type;
     }
 
@@ -52,7 +53,7 @@ public abstract class ConfigBase {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(final String type) {
         this.type = type;
     }
 
