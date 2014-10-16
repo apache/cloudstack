@@ -1580,11 +1580,8 @@
                             });
                         },
                         messages: {
-                            confirm: function(args) {
-                                return 'message.instance.scaled.up.confirm';
-                            },
                             notification: function(args) {
-                                return 'label.instance.scaled.up';
+                                return 'label.change.service.offering';  //CLOUDSTACK-7744
                             }
                         },
                         notification: {
