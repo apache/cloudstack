@@ -17,17 +17,27 @@
 // under the License.
 //
 
-package com.cloud.agent.resource.virtualnetwork.facade;
+package com.cloud.agent.resource.virtualnetwork.model;
 
 import java.util.List;
 
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.resource.virtualnetwork.ConfigItem;
+public class LoadBalancerRules extends ConfigBase {
+    List<LoadBalancerRule> rules;
 
-public class SetPortForwardingRulesVpcConfigItem extends SetPortForwardingRulesConfigItem {
+    public LoadBalancerRules() {
+        super(ConfigBase.LOAD_BALANCER);
+    }
 
-    @Override
-    public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {
-        return super.generateConfig(cmd);
+    public LoadBalancerRules(final List<LoadBalancerRule> rules) {
+        super(ConfigBase.LOAD_BALANCER);
+        this.rules = rules;
+    }
+
+    public List<LoadBalancerRule> getRules() {
+        return rules;
+    }
+
+    public void setRules(final List<LoadBalancerRule> rules) {
+        this.rules = rules;
     }
 }
