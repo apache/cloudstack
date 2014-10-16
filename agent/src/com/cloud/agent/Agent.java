@@ -578,9 +578,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         final Object obj = task.get();
         if (obj instanceof Response) {
             if ((System.currentTimeMillis() - _lastPingResponseTime) > _pingInterval * _shell.getPingRetries()) {
-                s_logger.error("Ping Interval has gone past " + _pingInterval * _shell.getPingRetries() + ".  Attempting to reconnect.");
-                final Link link = task.getLink();
-                reconnect(link);
+                s_logger.error("Ping Interval has gone past " + _pingInterval * _shell.getPingRetries() + ". Won't reconnect to mgt server, as connection is still alive");
                 return;
             }
 
