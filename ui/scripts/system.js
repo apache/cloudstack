@@ -9391,7 +9391,16 @@
         subsections: {
             virtualRouters: {
                 sectionSelect: {
-                    label: 'label.select-view'
+                    label: 'label.select-view',
+                    preFilter: function(args) {                    	
+                    	//Only clicking ViewAll Link("view all Virtual Routers") in "Virtual Routers group by XXXXXXX" detailView will have "routerGroupByXXXXXXX" included in args.context
+                        if (("routerGroupByZone" in args.context) || ("routerGroupByPod" in args.context) || ("routerGroupByCluster" in args.context) || ("routerGroupByAccount" in args.context)) {
+                        	return ["routerNoGroup"];
+                        }
+                        else {
+                        	return ["routerNoGroup", "routerGroupByZone", "routerGroupByPod", "routerGroupByCluster", "routerGroupByAccount"];
+                        }
+                    }
                 },
                 sections: {
                     routerNoGroup: {
