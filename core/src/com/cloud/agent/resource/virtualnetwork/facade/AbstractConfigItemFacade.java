@@ -30,6 +30,7 @@ import com.cloud.agent.api.routing.DeleteIpAliasCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.DnsMasqConfigCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
@@ -85,6 +86,7 @@ public abstract class AbstractConfigItemFacade {
         flyweight.put(SetNetworkACLCommand.class, new SetNetworkAclConfigItem());
         flyweight.put(SetSourceNatCommand.class, new SetSourceNatConfigItem());
         flyweight.put(IpAssocCommand.class, new IpAssociationConfigItem());
+        flyweight.put(IpAssocVpcCommand.class, new IpAssociationConfigItem());
     }
 
     protected String destinationFile;
