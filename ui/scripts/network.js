@@ -2275,7 +2275,13 @@
                                         return 'label.enable.vpn';
                                     },
                                     complete: function(args) {
-                                        return _l('message.enabled.vpn') + ' ' + args.remoteaccessvpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.remoteaccessvpn.presharedkey;
+                                        var msg;
+                                        if (args.vpn.state == "Running") {
+                                            msg = _l('message.enabled.vpn') + ' ' + args.remoteaccessvpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.remoteaccessvpn.presharedkey;
+                                        } else {
+                                            msg = "Remote Access VPN configuration has been generated, but it failed to apply. Please check connectivity of the network element, then re-try.";
+                                        }
+                                        return msg;
                                     }
                                 },
                                 notification: {
