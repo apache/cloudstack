@@ -2396,7 +2396,7 @@
                                     	if (args.vpn.state == "Running") {
                                     	    msg = _l('message.enabled.vpn') + ' ' + args.vpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.vpn.presharedkey;                                	
                                     	} else {
-                                    		msg = "VPN configuration has been generated, but it failed to apply. Please check connectivity of the network element, then re-try.";
+                                    		msg = "Remote Access VPN configuration has been generated, but it failed to apply. Please check connectivity of the network element, then re-try.";
                                     	}   
                                         return msg;
                                     }
