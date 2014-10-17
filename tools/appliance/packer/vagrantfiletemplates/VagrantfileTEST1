@@ -1,0 +1,61 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+BUILD_TIMESTAMP={{timestamp}}
+VAGRANTFILE_API_VERSION = "2"
+TIMESTAMP = (((Time.now.getutc).to_i).to_s)
+BOX_NAME = "packer_"+BUILD_TIMESTAMP+"_FEATURE-CENIK123-VPCVRR_virtualbox"
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # All Vagrant configuration is done here. The most common configuration
+  # options are documented and commented below. For a complete reference,
+  # please see the online documentation at vagrantup.com.
+
+  # Every Vagrant virtual environment requires a box to build off of.
+  config.vm.box = BOX_NAME+".box"
+
+ 
+  # Create a public network, which generally matched to bridged network.
+  # Bridged networks make the machine appear as another physical device on
+  # your network.
+   config.vm.network "private_network", ip: "169.254.2.245", adapter: "4"
+   #config.vm.network "private_network", ip: "169.254.2.245", auto_config: false
+   #config.vm.network "forwarded_port", guest: 3922 , host: 2223, host_ip: "196.254.2.245", guest_ip: "169.254.2.214" 
+
+  # If true, then any SSH connections made will enable agent forwarding.
+  # Default value: false
+  #config.ssh.forward_agent = true
+
+  #config.ssh.username = "root"
+ #config.ssh.password = "password"
+ # config.ssh.host = "169.254.2.214"
+  config.ssh.host = "169.254.2.245"
+    config.ssh.port = "3922"
+# config.ssh.port = "2223"
+#  config.ssh.guest_port = "3922"
+
+
+   config.vm.provider "virtualbox" do |vb|
+  #   # Don't boot with headless mode
+     vb.gui = true
+     vb.name = "TVM"+TIMESTAMP
+  #
+  #   # Use VBoxManage to customize the VM. For example to change memory:
+  #   vb.customize ["modifyvm", :id, "--memory", "1024"]
+     vb.customize ["modifyvm", :id, "--nic2", "nat"]
+     vb.customize ["modifyvm", :id, "--nic3", "nat"]     
+     vb.customize ["modifyvm", :id, "--nicpromisc4", "allow-all"]
+  end
+
+#set up changes to code.
+  config.vm.provision "shell" do |s|
+  #set up proc/cmdline changes
+    s.path "provision/proc_cmdline.sh"
+    end
+    #set up bash script changes
+    config.vm.provision "file",source:"./../../../../cloudstack/systemvm/patches/debian/config",
+      destination:"/opt/cloudstack/systemvm/patches/debian"
+    config.vm.provision "file",source:"./../../../../cloudstack/systemvm/patches/debian/vpn",
+      destination:"/opt/cloudstack/systemvm/patches/debian""
+end
+

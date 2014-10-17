@@ -1,0 +1,48 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+TIMESTAMP = (((Time.now.getutc).to_i).to_s)
+BOX_NAME = "packer_1413393659_FEATURE-CENIK123-VPCVRR_virtualbox"
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = BOX_NAME+".box"
+
+ 
+  #	config.vm.network :hostonly, "192.168.56.110", :adapter => 4
+  	config.vm.network "private_network", ip: "169.254.2.214", adapter: "2"
+  # config.vm.network "forwarded_port", guest: 3922 , host: 2223, host_ip: "192.168.56.1", guest_ip: "192.168.56.110"
+    
+  #config.ssh.forward_agent = true
+
+#	config.ssh.username = "vagrant"
+#	config.ssh.password = "vagrant"
+	config.ssh.private_key_path ="./validation/vagrant"
+    config.ssh.host = "169.254.2.214"
+    config.ssh.port = "3922"
+    #Fix "is not a tty" error when /sbin/ip addr flush dev eth 2> /dev/null command is issued
+    config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
+#  config.ssh.guest_port = "3922"
+
+
+  # config.vm.synced_folder "shared", "~/development/cloudstack"
+
+
+  # config.vm.synced_folder "../data", "/vagrant_data"
+
+  
+   config.vm.provider "virtualbox" do |vb|
+     vb.gui = true
+     vb.name = "TVM"+TIMESTAMP
+      vb.customize ["modifyvm", :id, "--memory", "1024"]
+      vb.customize ["modifyvm", :id, "--nic2", "hostonly"]
+      vb.customize ["modifyvm", :id, "--nic3", "nat"]     
+      vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+ #	 vb.customize("post-boot", ["guestcontrol", :id, "exec", "--username", "vagrant", "--password", "vagrant", "touch /home/vagrant/tpp.test"]) 
+  end
+
+   config.vm.provision "shell", path: "./provision/enablevagrant.sh"
+   config.vm.provision "shell", path: "./provision/proc_cmdline.sh"
+   config.vm.provision "shell", path: "./provision/overlay_scripts.sh"   
+
+end

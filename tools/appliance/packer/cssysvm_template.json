@@ -1,0 +1,81 @@
+{
+  "provisioners": [
+    {	
+      "type": "shell","scripts": [
+        "scripts/baseTest.sh"
+
+      ]
+    },
+  {
+      "type":"file",
+      "source":"./../../../../cloudstack/systemvm/patches/debian/config",
+      "destination":"/opt/cloudstack/systemvm/patches/debian"
+  }, 
+ {
+      "type":"file",
+      "source":"./../../../../cloudstack/systemvm/patches/debian/vpn",
+      "destination":"/opt/cloudstack/systemvm/patches/debian"
+},
+    {	
+      "type": "shell",
+      "scripts": [
+        "scripts/postinstall.sh",
+      	"scripts/vagrant.sh",
+        "scripts/cleanup.sh",
+        "scripts/zerodisk.sh"
+      ]
+    }
+
+],
+  "builders": [
+    {
+      "type": "virtualbox-iso",
+      "name": "{{timestamp}}_FEATURE-CENIK123-VPCVRR",
+      "boot_command": [
+        "<esc><wait>",
+        "install <wait>",
+        "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg <wait>",
+	"ignore_loglevel <wait>",
+        "debian-installer=en_US <wait>",
+        "auto <wait>",
+        "locale=en_US <wait>",
+        "kbd-chooser/method=us <wait>",
+        "netcfg/get_hostname=systemvm <wait>",
+        "netcfg/get_domain=apache.org <wait>",
+	"netcfg/choose_interface=auto <wait>",
+        "fb=false <wait>",
+        "debconf/frontend=noninteractive <wait>",
+        "console-setup/ask_detect=false <wait>",
+        "console-keymaps-at/keymap=us <wait>",
+        "keyboard-configuration/xkb-keymap=us <wait>",
+        "<enter><wait>"
+      ],
+      "boot_wait": "10s",
+      "disk_size": 2500,
+      "guest_os_type": "Debian",
+      "http_directory": "http",
+      "iso_checksum": "7339b668a81b417ac023d73739dc6a03",
+      "iso_checksum_type": "md5",
+	"iso_url": "http://ftp.cae.tntech.edu/debian-cd/debian-7.4.0-i386-netinst.iso",
+      "ssh_username": "root",
+      "ssh_password": "password",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "10000s",
+      "guest_additions_mode":"attach",
+      "shutdown_command": "echo 'halt -p' > shutdown.sh; echo 'password'|sudo -S sh 'shutdown.sh'",
+      "virtualbox_version_file": ".vbox_version",
+      "vboxmanage": [
+        ["modifyvm","{{.Name}}","--memory","256"],
+        ["modifyvm","{{.Name}}","--cpus","1"]
+      ]
+   }
+],
+    "post-processors":[
+	{
+	    "type":"vagrant",
+	    "keep_input_artifact":true,
+	    "output":"./vm/output_{{.BuildName}}_{{.Provider}}/packer_{{.BuildName}}_{{.Provider}}.box"
+	}
+]
+
+}

@@ -1,0 +1,6 @@
+/iso/
+/output-*-*/
+/output_*-*/
+
+/vm/
+/packer_cache/

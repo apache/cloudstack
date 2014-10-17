@@ -1,0 +1,240 @@
+Need:
+
+
+      disable_rp_filter=
+      eth0ip=
+      eth1ip=
+      eth2ip=
+      host=
+      gateway=
+      ip6gateway=
+      eth0mask=
+      eth1mask=
+      eth2mask=
+      eth0ip6=
+      eth0ip6prelen=
+      internaldns1=
+      internaldns2=
+      dns1=
+      dns2=
+      ip6dns1=
+      ip6dns2=
+      domain=
+      dnssearchorder=
+      useextdns=
+      mgmtcidr=
+      localgw=
+      template=
+      sshonguest=
+      name=
+      dhcprange=
+      bootproto=
+      type=
+      defaultroute=
+      redundant_router=
+      guestgw=
+      guestbrd=
+      guestcidrsize=
+      router_pr=
+      extra_pubnics=
+      nic_macs=
+      mtu=
+      storageip=
+      storagenetmask=
+      storagecidr=
+      vmpassword=
+      vpccidr=
+      cidrsize=
+      advert_int=
+
+VPC Router
+r59-vm
+
+root=UUID=89eb6b0a-5f5a-47cc-8bd1-371987c5700e ro debian-installer=en_US quiet -- quiet console=hvc0%
+vpccidr=10.20.0.0/22%
+domain=cs2cloud.internal%
+dns1=8.8.8.8%
+dns2=8.8.4.4%
+template=domP%
+name=r-59-VM%
+vmpassword=QvtCqpxN%
+eth0ip=169.254.2.221%
+eth0mask=255.255.0.0%
+type=vpcrouter%
+disable_rp_filter=true
+
+Console Proxy
+v-42-vm
+
+root=UUID=89eb6b0a-5f5a-47cc-8bd1-371987c5700e ro debian-installer=en_US quiet -- quiet console=hvc0%
+template=domP%
+type=consoleproxy%
+host=10.10.10.60%
+port=8250%
+name=v-47-VM%
+premium=true%
+zone=1%
+pod=1%
+guid=Proxy.47%
+proxy_vm=47%
+disable_rp_filter=true%
+vmpassword=QvtCqpxN%
+eth2ip=192.168.2.111%
+eth2mask=255.255.255.192%
+gateway=192.168.2.65%
+eth0ip=169.254.2.244%
+eth0mask=255.255.0.0%
+eth1ip=10.10.10.69%
+eth1mask=255.255.255.0%
+mgmtcidr=10.10.10.0/24%
+localgw=10.10.10.1%
+internaldns1=10.10.10.100%
+internaldns2=10.10.10.100%
+dns1=8.8.8.8%
+dns2=8.8.4.4
+
+Secondary Storage Server
+s-48-VM
+
+root=UUID=89eb6b0a-5f5a-47cc-8bd1-371987c5700e ro debian-installer=en_US quiet -- quiet console=hvc0%
+template=domP%
+type=secstorage%
+host=10.10.10.60%
+port=8250%
+name=s-48-VM%
+zone=1%pod=1%
+guid=s-48-VM%
+resource=com.cloud.storage.resource.PremiumSecondaryStorageResource%
+instance=SecStorage%
+sslcopy=true%
+role=templateProcessor%
+mtu=1500%
+vmpassword=QvtCqpxN%
+eth2ip=192.168.2.112%
+eth2mask=255.255.255.192%
+gateway=192.168.2.65%
+public.network.device=eth2%
+eth0ip=169.254.3.211%
+eth0mask=255.255.0.0%
+eth1ip=10.10.10.63%
+eth1mask=255.255.255.0%
+mgmtcidr=10.10.10.0/24%
+localgw=10.10.10.1%
+private.network.device=eth1%
+eth3ip=10.1.1.62%
+eth3mask=255.255.255.0%
+storageip=10.1.1.62%
+storagenetmask=255.255.255.0%
+storagegateway=10.1.1.1%
+internaldns1=10.10.10.100%
+internaldns2=10.10.10.100%
+dns1=8.8.8.8%
+dns2=8.8.4.4
+
+r-64-VM
+Router(redundant)
+
+root=UUID=89eb6b0a-5f5a-47cc-8bd1-371987c5700e ro debian-installer=en_US quiet -- quiet console=hvc0%
+template=domP%
+name=r-64-VM%
+vmpassword=QvtCqpxN%
+eth2ip=192.168.2.115%
+eth2mask=255.255.255.192%
+gateway=192.168.2.65%
+eth0ip=10.10.10.87%
+eth0mask=255.255.255.0%
+redundant_router=1%
+guestgw=10.10.10.60%
+guestbrd=10.10.10.255%
+guestcidrsize=24%
+router_pr=100%
+dhcprange=10.10.10.1%
+eth1ip=169.254.2.214%
+eth1mask=255.255.0.0%
+type=router%
+disable_rp_filter=true
+
+
+SSH access on Vagrant systemvm boxes built by Packer. How to gain ssh access???
+
+Build a new public Virtual Redundant Network after sandbox system reboot to get rid
+of zombie backup router from first build try.
+
+Verify the Link local address on both master and backup routers on test network and
+get /proc/cmdline parameters from both to add to this file.
+
+Document Packer build procedures and post to community
+
+
+
+
+/etc/init.d/cloud-management stop
+mysql -ppassword -e 'drop database cloud'
+mysql -ppassword -e 'drop database cloud_usage'
+
+cloud-setup-databases cloud:password@localhost --deploy-as=root:password
+rm -rf /var/log/cloud/management/*
+cloud-setup-management
+/etc/init.d/cloud-management start
+
+
+
+
+
+
+
+From Dinko:
+
+
+2:34 https://dev-cp.edisonqa.sgns.net:8080/client/
+2:37 MASTER
+2:37 root@r-223-VM:~# cat /proc/cmdline
+root=UUID=aaf07628-bec0-4f2b-b662-0e78935478ee ro debian-installer=en_US quiet -- quiet console=hvc0%
+template=domP%
+name=r-223-VM%
+vmpassword=3mxSGAZQ%
+eth2ip=207.19.99.29%
+eth2mask=255.255.255.224%
+gateway=207.19.99.1%
+eth0ip=10.1.1.170%
+eth0mask=255.255.255.0%
+redundant_router=1%
+guestgw=10.1.1.1%
+guestbrd=10.1.1.255%
+guestcidrsize=24%
+router_pr=100%
+domain=csa8cloud.internal%
+dhcprange=10.1.1.1%
+eth1ip=169.254.2.186%
+eth1mask=255.255.0.0%
+type=router%
+disable_rp_filter=true%
+dns1=8.8.8.8%
+dns2=8.8.4.4
+
+
+
+2:37 BACKUP
+2:37 root@r-224-VM:~# cat /proc/cmdline
+root=UUID=aaf07628-bec0-4f2b-b662-0e78935478ee ro debian-installer=en_US quiet -- quiet console=hvc0%
+template=domP%
+name=r-224-VM%
+vmpassword=3mxSGAZQ%
+eth2ip=207.19.99.29%
+eth2mask=255.255.255.224%
+gateway=207.19.99.1%
+eth0ip=10.1.1.235%
+eth0mask=255.255.255.0%
+redundant_router=1%
+guestgw=10.1.1.1%
+guestbrd=10.1.1.255%
+guestcidrsize=24%
+router_pr=99%
+domain=csa8cloud.internal%
+dhcprange=10.1.1.1%
+eth1ip=169.254.2.50%
+eth1mask=255.255.0.0%
+type=router%
+disable_rp_filter=true%
+dns1=8.8.8.8%
+dns2=8.8.4.4
