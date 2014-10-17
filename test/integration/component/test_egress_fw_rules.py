@@ -397,7 +397,14 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. login to VM.
         # 3. ping public network.
         # 4. public network should be reachable from the VM.
+        # 5. Reboot the router
+        # 6. Ping public network from VM, it should be reachable
         self.create_vm()
+        self.exec_script_on_user_vm('ping -c 1 www.google.com',
+                                    "| grep -oP \'\d+(?=% packet loss)\'",
+                                    "['0']",
+                                    negative_test=False)
+        self.reboot_Router()
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['0']",
