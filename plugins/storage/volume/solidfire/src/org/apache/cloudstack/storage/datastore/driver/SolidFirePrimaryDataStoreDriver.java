@@ -26,6 +26,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -523,11 +524,27 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             long sfSnapshotId = SolidFireUtil.createSolidFireSnapshot(sfConnection, sfVolumeId, snapshotInfo.getUuid());
 
-            // Now that we have successfully taken a snapshot, update the space usage in the storage_pool table (even
-            // though storage_pool.used_bytes is likely no longer in use).
+            long sfCloneId;
+            String sfCloneIqn;
+
+            try {
+                sfCloneId = SolidFireUtil.createSolidFireClone(sfConnection, sfVolumeId, sfSnapshotId, snapshotInfo.getUuid());
+
+                SolidFireUtil.SolidFireVolume sfClonedVolume = SolidFireUtil.getSolidFireVolume(sfConnection, sfCloneId);
+
+                sfCloneIqn = sfClonedVolume.getIqn();
+            }
+            catch (Exception ex) {
+                SolidFireUtil.deleteSolidFireSnapshot(sfConnection, sfSnapshotId);
+
+                throw ex;
+            }
+
+            // Now that we have successfully taken a snapshot (for the purpose of reverting) and a clone (for the purpose of creating a template
+            // and a volume), update the space usage in the storage_pool table (even though storage_pool.used_bytes is likely no longer in use).
             _storagePoolDao.update(storagePoolId, storagePool);
 
-            updateSnapshotDetails(snapshotInfo.getId(), sfSnapshotId, storagePoolId, sfVolumeSize);
+            updateSnapshotDetails(snapshotInfo.getId(), sfSnapshotId, storagePoolId, sfVolumeSize, sfCloneId, sfCloneIqn);
 
             SnapshotObjectTO snapshotObjectTo = (SnapshotObjectTO)snapshotInfo.getTO();
 
@@ -550,7 +567,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         callback.complete(result);
     }
 
-    private void updateSnapshotDetails(long csSnapshotId, long sfSnapshotId, long storagePoolId, long sfSnapshotSize) {
+    private void updateSnapshotDetails(long csSnapshotId, long sfSnapshotId, long storagePoolId, long sfSnapshotSize, long sfCloneId, String sfCloneIqn) {
         SnapshotDetailsVO accountDetail = new SnapshotDetailsVO(csSnapshotId,
                 SolidFireUtil.SNAPSHOT_ID,
                 String.valueOf(sfSnapshotId),
@@ -571,6 +588,20 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     false);
 
             _snapshotDetailsDao.persist(accountDetail);
+
+            accountDetail = new SnapshotDetailsVO(csSnapshotId,
+                    SolidFireUtil.CLONE_ID,
+                    String.valueOf(sfCloneId),
+                    false);
+
+            _snapshotDetailsDao.persist(accountDetail);
+
+            accountDetail = new SnapshotDetailsVO(csSnapshotId,
+                    DataMotionStrategy.IQN,
+                    sfCloneIqn,
+                    false);
+
+            _snapshotDetailsDao.persist(accountDetail);
     }
 
     // return null for no error message
@@ -581,6 +612,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, _storagePoolDetailsDao);
 
             SolidFireUtil.deleteSolidFireSnapshot(sfConnection, getSolidFireSnapshotId(snapshotInfo.getId()));
+            SolidFireUtil.deleteSolidFireVolume(sfConnection, getSolidFireCloneId(snapshotInfo.getId()));
 
             _snapshotDetailsDao.removeDetails(snapshotInfo.getId());
 
@@ -604,6 +636,12 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     private long getSolidFireSnapshotId(long csSnapshotId) {
         SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(csSnapshotId, SolidFireUtil.SNAPSHOT_ID);
+
+        return Long.parseLong(snapshotDetails.getValue());
+    }
+
+    private long getSolidFireCloneId(long csSnapshotId) {
+        SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(csSnapshotId, SolidFireUtil.CLONE_ID);
 
         return Long.parseLong(snapshotDetails.getValue());
     }

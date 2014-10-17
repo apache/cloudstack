@@ -703,10 +703,10 @@ public class SolidFireUtil {
         verifyResult(rollbackInitiatedResult.result, strRollbackInitiatedResultJson, gson);
     }
 
-    public static long createSolidFireClone(SolidFireConnection sfConnection, long lVolumeId, String cloneName) {
+    public static long createSolidFireClone(SolidFireConnection sfConnection, long lVolumeId, long lSnapshotId, String cloneName) {
         final Gson gson = new GsonBuilder().create();
 
-        CloneToCreate cloneToCreate = new CloneToCreate(lVolumeId, cloneName);
+        CloneToCreate cloneToCreate = new CloneToCreate(lVolumeId, lSnapshotId, cloneName);
 
         String strCloneToCreateJson = gson.toJson(cloneToCreate);
 
@@ -1332,16 +1332,18 @@ public class SolidFireUtil {
         private final String method = "CloneVolume";
         private final CloneToCreateParams params;
 
-        private CloneToCreate(final long lVolumeId, final String cloneName) {
-            params = new CloneToCreateParams(lVolumeId, cloneName);
+        private CloneToCreate(final long lVolumeId, final long lSnapshotId, final String cloneName) {
+            params = new CloneToCreateParams(lVolumeId, lSnapshotId, cloneName);
         }
 
         private static final class CloneToCreateParams {
             private long volumeID;
+            private long snapshotID;
             private String name;
 
-            private CloneToCreateParams(final long lVolumeId, final String cloneName) {
+            private CloneToCreateParams(final long lVolumeId, final long lSnapshotId, final String cloneName) {
                 volumeID = lVolumeId;
+                snapshotID = lSnapshotId;
                 name = cloneName;
             }
         }
