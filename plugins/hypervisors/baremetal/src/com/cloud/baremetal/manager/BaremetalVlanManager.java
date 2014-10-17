@@ -18,6 +18,7 @@
 package com.cloud.baremetal.manager;
 
 import com.cloud.baremetal.networkservice.BaremetalRctResponse;
+import com.cloud.baremetal.networkservice.BaremetalSwitchBackend;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.network.Network;
 import com.cloud.utils.component.Manager;

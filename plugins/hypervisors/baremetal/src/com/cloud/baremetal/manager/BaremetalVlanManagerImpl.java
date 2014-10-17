@@ -48,7 +48,6 @@ import javax.inject.Inject;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -70,11 +69,15 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
     @Inject
     private AccountManager acntMgr;
 
-    private Map<String, BaremetalSwitchBackend> backends = new HashMap<>();
+    private Map<String, BaremetalSwitchBackend> backends;
 
     private class RackPair {
         BaremetalRct.Rack rack;
         BaremetalRct.HostEntry host;
+    }
+
+    public void setBackends(Map<String, BaremetalSwitchBackend> backends) {
+        this.backends = backends;
     }
 
     @Override

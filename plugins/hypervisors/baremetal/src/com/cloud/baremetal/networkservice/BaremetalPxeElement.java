@@ -21,6 +21,7 @@ package com.cloud.baremetal.networkservice;
 import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.baremetal.manager.BaremetalVlanManager;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -139,11 +140,9 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
             }
         }
 
-        /*
         if (dest.getDataCenter().getNetworkType() == DataCenter.NetworkType.Advanced){
             prepareVlan(network, dest);
         }
-        */
 
         return true;
     }
@@ -159,12 +158,10 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
             return false;
         }
 
-        /*
         DataCenterVO dc = zoneDao.findById(vm.getVirtualMachine().getDataCenterId());
         if (dc.getNetworkType() == DataCenter.NetworkType.Advanced) {
             releaseVlan(network, vm);
         }
-        */
         return true;
     }
 

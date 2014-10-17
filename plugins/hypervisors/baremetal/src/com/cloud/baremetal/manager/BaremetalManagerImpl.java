@@ -52,6 +52,8 @@ public class BaremetalManagerImpl extends ManagerBase implements BaremetalManage
 
     @Inject
     protected HostDao _hostDao;
+    @Inject
+    protected VMInstanceDao vmDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -116,6 +118,7 @@ public class BaremetalManagerImpl extends ManagerBase implements BaremetalManage
     public List<Class<?>> getCommands() {
         List<Class<?>> cmds = new ArrayList<Class<?>>();
         cmds.add(AddBaremetalHostCmd.class);
+        cmds.add(BaremetalProvisionDoneNotificationCmd.class);
         return cmds;
     }
 

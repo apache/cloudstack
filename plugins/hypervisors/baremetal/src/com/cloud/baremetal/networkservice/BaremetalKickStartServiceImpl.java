@@ -30,16 +30,17 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.configuration.Config;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand.BootDev;
-import com.cloud.agent.api.baremetal.PrepareKickstartPxeServerCommand;
 import com.cloud.baremetal.database.BaremetalPxeDao;
 import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.baremetal.networkservice.BaremetalPxeManager.BaremetalPxeType;
@@ -223,6 +224,11 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
             throw new CloudRuntimeException(String.format("cannot find management nic on virtual router[id:%s]", vr.getId()));
         }
 
+        String internalServerIp = _configDao.getValue(Config.BaremetalInternalStorageServer.key());
+        if (internalServerIp == null) {
+            throw new CloudRuntimeException(String.format("please specify 'baremetal.internal.storage.server.ip', which is the http server/nfs server storing kickstart files and ISO files, in global setting"));
+        }
+
         List<String> tuple =  parseKickstartUrl(profile);
         String cmd =  String.format("/opt/cloud/bin/prepare_pxe.sh %s %s %s %s %s %s", tuple.get(1), tuple.get(2), profile.getTemplate().getUuid(),
                 String.format("01-%s", nic.getMacAddress().replaceAll(":", "-")).toLowerCase(), tuple.get(0), nic.getMacAddress().toLowerCase());
@@ -232,7 +238,7 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
             throw new CloudRuntimeException(String.format("failed preparing PXE in virtual router[id:%s], because %s", vr.getId(), ret.second()));
         }
 
-        String internalServerIp = "10.223.110.231";
+        //String internalServerIp = "10.223.110.231";
         cmd = String.format("/opt/cloud/bin/baremetal_snat.sh %s %s %s", mgmtNic.getIp4Address(), internalServerIp, mgmtNic.getGateway());
         s_logger.debug(String.format("prepare SNAT on virtual router[ip:%s], cmd: %s", mgmtNic.getIp4Address(), cmd));
         ret = SshHelper.sshExecute(mgmtNic.getIp4Address(), 3922, "root", getSystemVMKeyFile(), null, cmd);

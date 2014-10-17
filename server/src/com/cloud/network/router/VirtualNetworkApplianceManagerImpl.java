@@ -1506,6 +1506,8 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             } else {
                 buf.append(String.format(" baremetalnotificationsecuritykey=%s", user.getSecretKey()));
                 buf.append(String.format(" baremetalnotificationapikey=%s", user.getApiKey()));
+                buf.append(" host=").append(ApiServiceConfiguration.ManagementHostIPAdr.value());
+                buf.append(" port=").append(_configDao.getValue(Config.BaremetalProvisionDoneNotificationPort.key()));
             }
         }
 

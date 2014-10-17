@@ -1631,21 +1631,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 clusterId = c.getId();
             }
         }
-        if (startup instanceof StartupRoutingCommand) {
-            StartupRoutingCommand ssCmd = ((StartupRoutingCommand)startup);
-            List<String> implicitHostTags = ssCmd.getHostTags();
-            if (!implicitHostTags.isEmpty()) {
-                if (hostTags == null) {
-                    hostTags = _hostTagsDao.gethostTags(host.getId());
-                }
-                if (hostTags != null) {
-                    implicitHostTags.removeAll(hostTags);
-                    hostTags.addAll(implicitHostTags);
-                } else {
-                    hostTags = implicitHostTags;
-                }
-            }
-        }
 
         if (startup instanceof StartupRoutingCommand) {
             StartupRoutingCommand ssCmd = ((StartupRoutingCommand)startup);
