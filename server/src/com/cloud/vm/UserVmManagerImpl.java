@@ -2685,6 +2685,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("VM Creation failed. Volume size: " + diskSize + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize
                             + " Min:" + customDiskOfferingMinSize);
                 }
+                size=size+diskSize*(1024*1024*1024);
             }
             size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
         }
