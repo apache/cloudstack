@@ -27,25 +27,24 @@
 # under the License.
 
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
-#set -x
-#exec 3>&0 4>&1 > /var/log/test.log 2>&1
-#start hv_kvp daemon
-[ -f /usr/sbin/hv_kvp_daemon ] && /usr/sbin/hv_kvp_daemon
+#set -n	 uncomment to check syntax		
+set -x	# uncomment to trace
 
-# Fix haproxy directory issue
-mkdir -p /var/lib/haproxy
-
-# Clear boot up flag, it would be created by rc.local after boot up done
-rm -f /var/cache/cloud/boot_up_done
-
-[ -x /sbin/ifup ] || exit 0
-
+#Since we are an init script let the world know and set up utilities.
 . /lib/lsb/init-functions
+
+echo "****************************Start cloud-early-config*******************************"
+exec 3>&0 4>&1 >>/var/log/test.log 2>&1
+echo "++++++++++++++++++++++++++++Redirect complete+++++++++++++++++++++++++++++++++++++"
+#Need this function early so define it here...more definitions
+#to follow after some setup code.
 
 log_it() {
   echo "$(date) $@" >> /var/log/cloud.log
   log_action_msg "$@"
 }
+
+log_it "Initializing cloud-early-config"
 
 init_interfaces_orderby_macs() {
     macs=( $(echo $1 | sed "s/|/ /g") )
@@ -104,12 +103,16 @@ hypervisor() {
 }
 
 get_boot_params() {
+  #/var/cache/cloud/cmdline will hold the boot parameters after we determine
+  #which hypervisor we are using and where to get the parameters.
+
   local EXTRA_MOUNT=/media/extra
   local hyp=$(hypervisor)
   [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
 
   case $hyp in
-     xen-domU|xen-hvm)
+      #Use script baseTest to setup cmdline for VirtualBox.
+     xen-domU|xen-hvm|virtualbox)
           cat /proc/cmdline > /var/cache/cloud/cmdline
           sed -i "s/%/ /g" /var/cache/cloud/cmdline
           ;;
@@ -140,15 +143,15 @@ get_boot_params() {
           cp -f /var/opt/hyperv/.kvp_pool_0 /var/cache/cloud/cmdline
           cat /dev/null > /var/opt/hyperv/.kvp_pool_0
           ;;
-     virtualbox)
+  #   virtualbox)
           # Virtualbox is used to test the virtual router
           # get the commandline from a dmistring  (yes, hacky!)
-          dmidecode | grep cmdline | sed 's/^.*cmdline://' > /var/cache/cloud/cmdline
-          RV=$?
-          if [ $RV -ne 0 ] ; then
-            log_it "Failed to get cmdline from a virtualbox dmi property"
-          fi
-          ;;
+          # dmidecode | grep cmdline | sed 's/^.*cmdline://' > /var/cache/cloud/cmdline
+#          RV=$?
+#          if [ $RV -ne 0 ] ; then
+#            log_it "Failed to get cmdline from a virtualbox dmi property"
+#          fi
+#          ;;
   esac
 
 }
@@ -191,6 +194,11 @@ patch() {
       tar xzf $patchfile -C /
       echo ${newmd5} > ${md5file}
     fi
+    #TODO Understand this better!!!
+    # Patch cloud services.
+    # Is this how the dynamic changes are made to a sysvm?
+    # for VPCRR this will be how a dynamic topology will be implemented?
+
     log_it "Patching  cloud service"
     hyperVisor=$(hypervisor)
     /opt/cloud/bin/patchsystemvm.sh $PATCH_MOUNT $hyperVisor
@@ -207,7 +215,7 @@ patch() {
   if [ -f /mnt/cmdline ]; then
     cat /mnt/cmdline > /var/cache/cloud/cmdline
   fi
-  return 0
+  return
 }
 
 patch_log4j() {
@@ -255,7 +263,7 @@ cat << "EOF" > /usr/local/cloud/systemvm/conf/temp.xml
      </layout>
     </appender>
 
-   <appender name="APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
+   <appender name= "APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
       <param name="Append" value="true"/>
       <param name="Threshold" value="DEBUG"/>
       <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
@@ -327,6 +335,8 @@ cat << "EOF" > /usr/local/cloud/systemvm/conf/temp.xml
 EOF
 mv /usr/local/cloud/systemvm/conf/temp.xml /usr/local/cloud/systemvm/conf/log4j-cloud.xml
 }
+
+
 setup_interface() {
   local intfnum=$1
   local ip=$2
@@ -336,6 +346,9 @@ setup_interface() {
   local intf=eth${intfnum} 
   local bootproto="static"
 
+#Use DHCP (flagged from manager)
+# only if we are not on port 0 (eth0)(guest network) 
+#static address otherwise
 
   if [ "$BOOTPROTO" == "dhcp" ]
   then
@@ -344,7 +357,8 @@ setup_interface() {
        bootproto="dhcp"
     fi
   fi
-
+#if we don't have an address or we are forcing a change set the address
+#either via DHCP or use the static address/mask passed to this function
   if [ "$ip" != "0.0.0.0" -a "$ip" != "" -o "$force" == "force" ]
   then
      echo "iface  $intf inet $bootproto" >> /etc/network/interfaces
@@ -354,16 +368,22 @@ setup_interface() {
        echo "  netmask $mask" >> /etc/network/interfaces
      fi
   fi
-
+#if there was no force above and no ip address shut down the interface
   if [ "$ip" == "0.0.0.0" -o "$ip" == "" ]
   then
       ifconfig $intf down
   fi
-
+# if there was a force shut interface down anyway, if no force, shut it down
+ #TODO fix this code!!!!
+ # 
   if [ "$force" == "force" ]
   then
       ifdown $intf
   else
+    #TODO fix this code
+    #No force and we have an ip address yeah shutdown the interface
+    #If we are using redundant routers then check for an IP address and if
+    # no address wait for an IP address to appear
       ifdown $intf
       if [ "$RROUTER" != "1" -o "$1" != "2" ]
       then
@@ -430,6 +450,8 @@ get_public_vif_list() {
   local vif_list=""
   for i in /sys/class/net/eth*; do
     vif=$(basename $i);
+    #Put only networks on list that are NOT the management network or
+    #the link local.
     if [ "$vif" != "eth0" ] && [ "$vif" != "eth1" ]
     then
       vif_list="$vif_list $vif";
@@ -444,6 +466,7 @@ disable_rpfilter_domR() {
   
   VIF_LIST=$(get_public_vif_list)
   log_it "rpfilter public interfaces :  $VIF_LIST"
+  #Enable/disable reverse path filtering as required on public vif interfaces
   if [ "$DISABLE_RP_FILTER" == "true" ]
   then
       log_it "cloud: disable rp_filter on public interfaces"
@@ -496,6 +519,7 @@ enable_irqbalance() {
 }
 
 disable_hvc() {
+	#disable hvc if not xen
   [ ! -d /proc/xen ] && sed -i 's/^vc/#vc/' /etc/inittab && telinit q
   [  -d /proc/xen ] && sed -i 's/^#vc/vc/' /etc/inittab && telinit q
 }
@@ -553,11 +577,11 @@ enable_rpsrfs() {
 }
 
 setup_common() {
-  init_interfaces $1 $2 $3
-  if [ -n "$ETH0_IP" ]
-  then
-    setup_interface "0" $ETH0_IP $ETH0_MASK $GW
-  fi
+ init_interfaces $1 $2 $3
+ if [ -n "$ETH0_IP" ]
+ then
+ setup_interface "0" $ETH0_IP $ETH0_MASK $GW
+ fi
   if [ -n "$ETH0_IP6" ]
   then
 	  setup_interface_ipv6 "0" $ETH0_IP6 $ETH0_IP6_PRELEN
@@ -657,6 +681,7 @@ setup_dnsmasq() {
 
   [ -z $DHCP_RANGE ] && [ $ETH0_IP ] && DHCP_RANGE=$ETH0_IP
   [ $ETH0_IP6 ] && DHCP_RANGE_IP6=$ETH0_IP6
+  #Default domain name if none is specified
   [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
   #removing the dnsmasq multiple ranges config file.
   rm /etc/dnsmasq.d/multiple_ranges.conf
@@ -664,6 +689,7 @@ setup_dnsmasq() {
   #get the template
   cp /etc/dnsmasq.conf.tmpl /etc/dnsmasq.conf
   
+  #Set defaults  DNS/DHCP for stuff that is not defined 
   if [ -n "$DOMAIN" ]
   then
         #send domain name to dhcp clients
@@ -699,9 +725,9 @@ setup_dnsmasq() {
   else
     sed -i -e "s/^dhcp-range_ip6=.*$//" /etc/dnsmasq.conf
   fi
-
+#Set up an address to listen for DHCP/DNS requests.
   sed -i -e "s/^[#]*listen-address=.*$/listen-address=$LOCAL_ADDRS/" /etc/dnsmasq.conf
-
+#TODO Redundant router gw setup
   if [ "$RROUTER" == "1" ]
   then
     DEFAULT_GW=$GUEST_GW
@@ -780,7 +806,8 @@ setup_sshd(){
   sed -i "/3922/s/eth./$eth/" /etc/iptables/rules
 }
 
-
+#TODO Need to understand why the apache startup differences between public and vpc
+#routers
 setup_vpc_apache2() {
   log_it "Setting up apache web server for VPC"
   chkconfig apache2 off
@@ -806,7 +833,8 @@ rm -f /etc/apache2/sites-available/ipAlias*
 rm -f /etc/apache2/sites-enabled/ipAlias*
 rm -rf /etc/failure_config
 }
-
+#TODO Need to understand why the apache startup differences between public and vpc
+#routers
 setup_apache2() {
   clean_ipalias_config
   log_it "Setting up apache web server"
@@ -889,7 +917,12 @@ setup_redundant_router() {
     then
         (crontab -l; echo -e "SHELL=/bin/bash\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n*/1 * * * * $rrouter_bin_path/check_heartbeat.sh 2>&1 > /dev/null") | crontab
     fi
-    load_modules
+}
+
+setup_vpc_redundant_router() {
+#TODO Indirection for VPC cloud setup 
+  setup_redundant_router
+
 }
 
 setup_aesni() {
@@ -897,13 +930,6 @@ setup_aesni() {
   then
     modprobe aesni_intel
   fi
-}
-
-load_modules() {
-
- #load nf modules for ftp
- modprobe nf_nat_ftp
- modprobe nf_conntrack_ftp
 }
 
 setup_router() {
@@ -914,11 +940,15 @@ setup_router() {
 
   oldmd5=
   [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldmd5=$(md5sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
-  
+  #Do we have a public NIC? If we do start with ETH3
+  #if not start with ETH2 to create EXTRA_PUBNICS number of
+  # you guessed it, public nics!
   if [ -n "$ETH2_IP" ]
   then
+      #Set up guest, link-local and public interfaces for non vpc
+      #these will be the only interfaces (static topology)
       setup_common eth0 eth1 eth2
-      
+      #When we have extra nics assign them starting at eth3 and force 0.0.0.0 ip
       if [ -n "$EXTRA_PUBNICS" ]
       then
         for((i = 3; i < 3 + $EXTRA_PUBNICS; i++))
@@ -927,7 +957,11 @@ setup_router() {
         done
       fi
   else
+    #No public Nic set up guest and link-local 
+    #Using common setup for other system VM functions
+    #storage, proxy, etc.
   	setup_common eth0 eth1
+    #if we have extra nics configure them starting at eth2
       if [ -n "$EXTRA_PUBNICS" ]
       then
         for((i = 2; i < 2 + $EXTRA_PUBNICS; i++))
@@ -936,7 +970,7 @@ setup_router() {
         done
       fi
   fi
-  
+  #Set up a non-VPC redundant router.
   if [ -n "$ETH2_IP" -a "$RROUTER" == "1" ]
   then
     setup_redundant_router
@@ -958,7 +992,8 @@ setup_router() {
       reboot
     fi
   fi
-  
+#TODO Why does setup_aesni only get called in public virtual router not 
+  #vpc router
   setup_aesni
   setup_dnsmasq
   setup_apache2 $ETH0_IP
@@ -980,14 +1015,13 @@ setup_router() {
 #for old templates
   cp /etc/iptables/iptables-router /etc/iptables/rules
   setup_sshd $ETH1_IP "eth1"
-  load_modules
 }
 
 
 
 setup_vpcrouter() {
   log_it "Setting up VPC virtual router system vm"
-
+#Create a hosts if none exists
   if [ -f /etc/hosts ]; then
     grep -q $NAME /etc/hosts || echo "127.0.0.1 $NAME" >> /etc/hosts;
   fi
@@ -998,11 +1032,14 @@ iface lo inet loopback
 EOF
   setup_interface "0" $ETH0_IP $ETH0_MASK $GW
    
+#Setup HOSTNAME and AVAHI Daemon
   echo $NAME > /etc/hostname
   echo 'AVAHI_DAEMON_DETECT_LOCAL=0' > /etc/default/avahi-daemon
   hostname $NAME
   
   #Nameserver
+  #setup DNS for internal and public network(s) if specified
+  #
   sed -i -e "/^nameserver.*$/d" /etc/resolv.conf # remove previous entries
   sed -i -e "/^nameserver.*$/d" /etc/dnsmasq-resolv.conf # remove previous entries
   if [ -n "$internalNS1" ]
@@ -1027,6 +1064,8 @@ EOF
     echo "nameserver $NS2" >> /etc/dnsmasq-resolv.conf
     echo "nameserver $NS2" >> /etc/resolv.conf
   fi
+# set up route to gateway and poke at it to be sure the arp cache
+#is setup
   if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
      if [ "$hyp" == "vmware" ] || [ "$hyp" == "hyperv" ];
@@ -1047,7 +1086,11 @@ EOF
   sudo echo "251 static_route_back" >> /etc/iproute2/rt_tables 2>/dev/null
   sudo ip rule add from $VPCCIDR table static_route 2>/dev/null
   sudo ip rule add from $VPCCIDR table static_route_back 2>/dev/null
-
+#TODO Verify the check on ETH2_IP is needed.
+  if [ -n "$ETH2_IP" -a "$RROUTER" == "1" ]
+  then
+    setup_vpc_redundant_router
+  fi
   setup_vpc_apache2
 
   enable_svc dnsmasq 1
@@ -1070,7 +1113,7 @@ EOF
   sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
   #answer all local domain queries
   sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
-
+#Setup DHCP parameters 
   command -v dhcp_release > /dev/null 2>&1
   no_dhcp_release=$?
   if [ $no_dhcp_release -eq 0 ]
@@ -1080,7 +1123,6 @@ EOF
   else
       echo 0 > /var/cache/cloud/dnsmasq_managed_lease
   fi
-  load_modules
 }
 
 
@@ -1163,7 +1205,6 @@ setup_secstorage() {
   enable_svc dnsmasq 0
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 1
-  rm /etc/logrotate.d/cloud
 }
 
 setup_console_proxy() {
@@ -1190,7 +1231,6 @@ setup_console_proxy() {
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 1
   chkconfig nfs-common off
-  rm /etc/logrotate.d/cloud
 }
 
 setup_elbvm() {
@@ -1312,7 +1352,9 @@ start() {
   return 0
 }
 
-disable_hvc
+#Continue the non-function code here
+
+
 
 parse_cmd_line() {
 CMDLINE=$(cat /var/cache/cloud/cmdline)
@@ -1473,11 +1515,37 @@ done
 [ $ETH0_IP ] && [ $ETH0_IP6 ] && LOCAL_ADDRS="$ETH0_IP,$ETH0_IP6"
 }
 
+#End Function Definitions
+
+#start hv_kvp daemon
+[ -f /usr/sbin/hv_kvp_daemon ] && /usr/sbin/hv_kvp_daemon
+
+log_it "Start cloud-early-config setup"
+
+# Fix haproxy directory issue
+mkdir -p /var/lib/haproxy
+
+
+# Clear boot up flag, it would be created by rc.local after boot up done
+rm -f /var/cache/cloud/boot_up_done
+
+log_it "Check if network is running"
+
+# If network is running just exit
+[ -x /sbin/ifup ] || log_it "Network is running, cloud-early-config exiting" || exit 0
+
+
+log_it "Done function definitions do some setup work"
+#This line was buried between the function definitions.
+
+
+disable_hvc
+
 case "$1" in
-start)
+    start)
 
 	log_action_begin_msg "Executing cloud-early-config"
-        log_it "Executing cloud-early-config"
+        log_it "Executing start in  cloud-early-config"
 	if start; then
 	    log_action_end_msg $?
 	else
@@ -1485,14 +1553,14 @@ start)
 	fi
 	;;
 
-stop)
+    stop)
 	log_action_begin_msg "Stopping cloud-early-config"
         #Override old system's interface setting
         setup_default;
 	log_action_end_msg 0
 	;;
 
-force-reload|restart)
+    force-reload|restart)
 
 	log_warning_msg "Running $0  is deprecated because it may not enable again some interfaces"
 	log_action_begin_msg "Executing cloud-early-config"
@@ -1503,10 +1571,10 @@ force-reload|restart)
 	fi
 	;;
 
-*)
+    *)
 	echo "Usage: /etc/init.d/cloud-early-config {start|stop}"
 	exit 1
 	;;
-esac
 
+esac
 exit 0
