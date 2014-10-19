@@ -32,11 +32,16 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -46,17 +51,38 @@ public class Force10BaremetalSwitchBackend implements BaremetalSwitchBackend {
     private Logger logger = Logger.getLogger(Force10BaremetalSwitchBackend.class);
     public static final String TYPE = "Force10";
 
-    RestTemplate rest = new RestTemplate();
+    private static List<HttpStatus> successHttpStatusCode = new ArrayList<>();
+    {
+        successHttpStatusCode.add(HttpStatus.OK);
+        successHttpStatusCode.add(HttpStatus.ACCEPTED);
+        successHttpStatusCode.add(HttpStatus.CREATED);
+        successHttpStatusCode.add(HttpStatus.NO_CONTENT);
+        successHttpStatusCode.add(HttpStatus.PARTIAL_CONTENT);
+        successHttpStatusCode.add(HttpStatus.RESET_CONTENT);
+        successHttpStatusCode.add(HttpStatus.ALREADY_REPORTED);
+    }
 
-    private String buildLink(String switchIp, Integer vlan) {
+    RestTemplate rest = new RestTemplate();
+    {
+        // fake error handler, we handle error in business logic code
+        rest.setErrorHandler(new ResponseErrorHandler() {
+            @Override
+            public boolean hasError(ClientHttpResponse clientHttpResponse) throws IOException {
+                return false;
+            }
+
+            @Override
+            public void handleError(ClientHttpResponse clientHttpResponse) throws IOException {
+            }
+        });
+    }
+
+    private String buildLink(String switchIp, String path) {
         UriComponentsBuilder builder = UriComponentsBuilder.newInstance();
         builder.scheme("http");
         builder.host(switchIp);
         builder.port(8008);
-        builder.path("/api/running/ftos/interface/vlan");
-        if (vlan != null) {
-            builder.path(vlan.toString());
-        }
+        builder.path(path);
         return builder.build().toUriString();
     }
 
@@ -67,29 +93,36 @@ public class Force10BaremetalSwitchBackend implements BaremetalSwitchBackend {
 
     @Override
     public void prepareVlan(BaremetalVlanStruct struct) {
-        String link = buildLink(struct.getSwitchIp(), struct.getVlan());
+        String link = buildLink(struct.getSwitchIp(), String.format("/api/running/ftos/interface/vlan/%s", struct.getVlan()));
         HttpHeaders headers = createBasicAuthenticationHeader(struct);
         HttpEntity<String> request = new HttpEntity<>(headers);
         ResponseEntity rsp = rest.exchange(link, HttpMethod.GET, request, String.class);
+        logger.debug(String.format("http get: %s", link));
 
         if (rsp.getStatusCode() == HttpStatus.NOT_FOUND) {
             PortInfo port = new PortInfo(struct);
-            XmlObject xml = new XmlObject("vlan").putElement("vlan-id", String.valueOf(struct.getVlan())).putElement("tagged",
-                    new XmlObject(port.interfaceType).putElement("name", port.port)
-            ).putElement("shutdown", "false");
-            request = new HttpEntity<>(xml.toString(), headers);
-            link = buildLink(struct.getSwitchIp(), null);
-            rsp = rest.exchange(link, HttpMethod.GET, request, String.class);
-            if (rsp.getStatusCode() != HttpStatus.OK) {
+            XmlObject xml = new XmlObject("vlan").putElement("vlan-id",
+                    new XmlObject("vlan-id").setText(String.valueOf(struct.getVlan()))).putElement("untagged",
+                    new XmlObject("untagged").putElement(port.interfaceType, new XmlObject(port.interfaceType)
+                            .putElement("name", new XmlObject("name").setText(port.port)))
+            ).putElement("shutdown", new XmlObject("shutdown").setText("false"));
+            request = new HttpEntity<>(xml.dump(), headers);
+            link = buildLink(struct.getSwitchIp(), String.format("/api/running/ftos/interface/"));
+            logger.debug(String.format("http get: %s, body: %s", link, request));
+            rsp = rest.exchange(link, HttpMethod.POST, request, String.class);
+            if (!successHttpStatusCode.contains(rsp.getStatusCode())) {
                 throw new CloudRuntimeException(String.format("unable to create vlan[%s] on force10 switch[ip:%s]. HTTP status code:%s, body dump:%s",
-                        struct.getVlan(), rsp.getStatusCode(), struct.getSwitchIp(), rsp.getBody()));
+                        struct.getVlan(), struct.getSwitchIp(),rsp.getStatusCode(), rsp.getBody()));
+            } else {
+                logger.debug(String.format("successfully programmed vlan[%s] on Force10[ip:%s, port:%s]. http response[status code:%s, body:%s]",
+                        struct.getVlan(), struct.getSwitchIp(), struct.getPort(), rsp.getStatusCode(), rsp.getBody()));
             }
-        } else if (rsp.getStatusCode() == HttpStatus.OK) {
+        } else if (successHttpStatusCode.contains(rsp.getStatusCode())) {
             PortInfo port = new PortInfo(struct);
             XmlObject xml = XmlObjectParser.parseFromString((String)rsp.getBody());
-            List<XmlObject> ports = xml.getAsList("tagged.tengigabitethernet");
-            ports.addAll(xml.<XmlObject>getAsList("tagged.gigabitethernet"));
-            ports.addAll(xml.<XmlObject>getAsList("tagged.fortyGigE"));
+            List<XmlObject> ports = xml.getAsList("untagged.tengigabitethernet");
+            ports.addAll(xml.<XmlObject>getAsList("untagged.gigabitethernet"));
+            ports.addAll(xml.<XmlObject>getAsList("untagged.fortyGigE"));
             for (XmlObject pxml : ports) {
                 XmlObject name = pxml.get("name");
                 if (port.port.equals(name.getText())) {
@@ -98,14 +131,26 @@ public class Force10BaremetalSwitchBackend implements BaremetalSwitchBackend {
                 }
             }
 
-            XmlObject tag = xml.get("tagged");
-            tag.putElement(port.interfaceType, new XmlObject("name").setText(port.port));
-            request = new HttpEntity<>(xml.toString(), headers);
-            link = buildLink(struct.getSwitchIp(), struct.getVlan());
+            xml.removeElement("mtu");
+            xml.setText(null);
+            XmlObject tag = xml.get("untagged");
+            if (tag == null) {
+                tag = new XmlObject("untagged");
+                xml.putElement("untagged", tag);
+            }
+
+            tag.putElement(port.interfaceType, new XmlObject(port.interfaceType)
+                    .putElement("name", new XmlObject("name").setText(port.port)));
+            request = new HttpEntity<>(xml.dump(), headers);
+            link = buildLink(struct.getSwitchIp(), String.format("/api/running/ftos/interface/vlan/%s", struct.getVlan()));
+            logger.debug(String.format("http get: %s, body: %s", link, request));
             rsp = rest.exchange(link, HttpMethod.PUT, request, String.class);
-            if (rsp.getStatusCode() != HttpStatus.NO_CONTENT) {
+            if (!successHttpStatusCode.contains(rsp.getStatusCode())) {
                 throw new CloudRuntimeException(String.format("failed to program vlan[%s] for port[%s] on force10[ip:%s]. http status:%s, body dump:%s",
                         struct.getVlan(), struct.getPort(), struct.getSwitchIp(), rsp.getStatusCode(), rsp.getBody()));
+            } else {
+                logger.debug(String.format("successfully join port[%s] into vlan[%s] on Force10[ip:%s]. http response[status code:%s, body:%s]",
+                        struct.getPort(), struct.getVlan(), struct.getSwitchIp(), rsp.getStatusCode(), rsp.getBody()));
             }
         } else {
             throw new CloudRuntimeException(String.format("force10[ip:%s] returns unexpected error[%s] when http getting %s, body dump:%s",
@@ -115,18 +160,19 @@ public class Force10BaremetalSwitchBackend implements BaremetalSwitchBackend {
 
     @Override
     public void removePortFromVlan(BaremetalVlanStruct struct) {
-        String link = buildLink(struct.getSwitchIp(), struct.getVlan());
+        String link = buildLink(struct.getSwitchIp(), String.format("/api/running/ftos/interface/vlan/%s", struct.getVlan()));
         HttpHeaders headers = createBasicAuthenticationHeader(struct);
         HttpEntity<String> request = new HttpEntity<>(headers);
+        logger.debug(String.format("http get: %s, body: %s", link, request));
         ResponseEntity rsp = rest.exchange(link, HttpMethod.GET, request, String.class);
         if (rsp.getStatusCode() == HttpStatus.NOT_FOUND) {
             logger.debug(String.format("vlan[%s] has been deleted on force10[ip:%s], no need to remove the port[%s] anymore", struct.getVlan(), struct.getSwitchIp(), struct.getPort()));
         } else if (rsp.getStatusCode() == HttpStatus.OK) {
             PortInfo port = new PortInfo(struct);
             XmlObject xml = XmlObjectParser.parseFromString((String)rsp.getBody());
-            List<XmlObject> ports = xml.getAsList("tagged.tengigabitethernet");
-            ports.addAll(xml.<XmlObject>getAsList("tagged.gigabitethernet"));
-            ports.addAll(xml.<XmlObject>getAsList("tagged.fortyGigE"));
+            List<XmlObject> ports = xml.getAsList("untagged.tengigabitethernet");
+            ports.addAll(xml.<XmlObject>getAsList("untagged.gigabitethernet"));
+            ports.addAll(xml.<XmlObject>getAsList("untagged.fortyGigE"));
             List<XmlObject> newPorts = new ArrayList<>();
             boolean needRemove = false;
             for (XmlObject pxml : ports) {
@@ -143,11 +189,19 @@ public class Force10BaremetalSwitchBackend implements BaremetalSwitchBackend {
                 return;
             }
 
-            xml.putElement("tagged", newPorts);
+            xml.setText(null);
+            xml.removeElement("mtu");
+            XmlObject tagged = xml.get("untagged");
+            tagged.removeAllChildren();
+            for (XmlObject p : newPorts) {
+                tagged.putElement(p.getTag(), p);
+            }
 
-            request = new HttpEntity<>(xml.toString(), headers);
+
+            request = new HttpEntity<>(xml.dump(), headers);
+            logger.debug(String.format("http get: %s, body: %s", link, request));
             rsp = rest.exchange(link, HttpMethod.PUT, request, String.class);
-            if (rsp.getStatusCode() != HttpStatus.NO_CONTENT) {
+            if (!successHttpStatusCode.contains(rsp.getStatusCode())) {
                 throw new CloudRuntimeException(String.format("failed to program vlan[%s] for port[%s] on force10[ip:%s]. http status:%s, body dump:%s",
                         struct.getVlan(), struct.getPort(), struct.getSwitchIp(), rsp.getStatusCode(), rsp.getBody()));
             } else {
@@ -166,6 +220,8 @@ public class Force10BaremetalSwitchBackend implements BaremetalSwitchBackend {
         String base64Creds = new String(base64CredsBytes);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", "Basic " + base64Creds);
+        headers.setAccept(Arrays.asList(MediaType.ALL));
+        headers.setContentType(MediaType.valueOf("application/vnd.yang.data+xml"));
         return  headers;
     }
 

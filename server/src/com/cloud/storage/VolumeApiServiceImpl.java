@@ -1230,10 +1230,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // Check that the volume ID is valid
         VolumeInfo volumeToAttach = volFactory.getVolume(volumeId);
-
         // Check that the volume is a data volume
-        if (volumeToAttach == null || !(volumeToAttach.getVolumeType() == Volume.Type.DATADISK)) {
-            throw new InvalidParameterValueException("Please specify a volume with the valid type: " + Volume.Type.DATADISK.toString());
+        if (volumeToAttach == null || !(volumeToAttach.getVolumeType() == Volume.Type.DATADISK || volumeToAttach.getVolumeType() == Volume.Type.ROOT)) {
+            throw new InvalidParameterValueException("Please specify a volume with the valid type: " + Volume.Type.ROOT.toString() + " or " + Volume.Type.DATADISK.toString());
         }
 
         // Check that the volume is not currently attached to any VM
@@ -1516,10 +1515,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
         }
 
-        // Check that the volume is a data volume.
-        // TODO - Disabling root volume detach for now, enable it back in 4.6
-        if (volume.getVolumeType() != Volume.Type.DATADISK) {
-            throw new InvalidParameterValueException("Please specify volume of type " + Volume.Type.DATADISK.toString());
+        // Check that the volume is a data/root volume
+        if (!(volume.getVolumeType() == Volume.Type.ROOT || volume.getVolumeType() == Volume.Type.DATADISK)) {
+            throw new InvalidParameterValueException("Please specify volume of type " + Volume.Type.DATADISK.toString() + " or " + Volume.Type.ROOT.toString());
         }
 
         // Root volume detach is allowed for following hypervisors: Xen/KVM/VmWare
