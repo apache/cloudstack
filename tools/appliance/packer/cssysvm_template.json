@@ -34,7 +34,7 @@
       "boot_command": [
         "<esc><wait>",
         "install <wait>",
-        "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg <wait>",
+        "preseed/url=http://{{.HTTPIP}}:{{ .HTTPPort }}/preseed.cfg <wait>",
 	"ignore_loglevel <wait>",
         "debian-installer=en_US <wait>",
         "auto <wait>",
@@ -42,9 +42,9 @@
         "kbd-chooser/method=us <wait>",
         "netcfg/get_hostname=systemvm <wait>",
         "netcfg/get_domain=apache.org <wait>",
-	"netcfg/choose_interface=auto <wait>",
-        "fb=false <wait>",
+	"fb=false <wait>",
         "debconf/frontend=noninteractive <wait>",
+	"boot_debug=3 <wait>",
         "console-setup/ask_detect=false <wait>",
         "console-keymaps-at/keymap=us <wait>",
         "keyboard-configuration/xkb-keymap=us <wait>",
@@ -66,11 +66,13 @@
       "virtualbox_version_file": ".vbox_version",
       "vboxmanage": [
         ["modifyvm","{{.Name}}","--memory","256"],
-        ["modifyvm","{{.Name}}","--cpus","1"]
+        ["modifyvm","{{.Name}}","--cpus","1"],
+        ["modifyvm","{{.Name}}","--nictype1","Am79C970A"]
+
       ]
    }
 ],
-    "post-processors":[
+    "Post-processors":[
 	{
 	    "type":"vagrant",
 	    "keep_input_artifact":true,
