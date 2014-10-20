@@ -35,6 +35,8 @@ import org.apache.cloudstack.storage.command.DettachAnswer;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -55,6 +57,13 @@ public class SimulatorStorageProcessor implements StorageProcessor {
 
     public SimulatorStorageProcessor(SimulatorManager resource) {
         this.hypervisorResource = resource;
+    }
+
+    @Override
+    public SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand cmd) {
+        s_logger.info("'SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand)' not currently used for SimulatorStorageProcessor");
+
+        return new SnapshotAndCopyAnswer();
     }
 
     @Override

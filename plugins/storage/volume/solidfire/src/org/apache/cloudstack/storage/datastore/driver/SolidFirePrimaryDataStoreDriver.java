@@ -26,7 +26,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -48,6 +47,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.ClusterDetailsVO;
@@ -269,7 +269,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         if (lstSnapshots != null) {
             for (SnapshotVO snapshot : lstSnapshots) {
-                SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshot.getId(), SolidFireUtil.SNAPSHOT_STORAGE_POOL_ID);
+                SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshot.getId(), SolidFireUtil.STORAGE_POOL_ID);
 
                 // if this snapshot belongs to the storagePool that was passed in
                 if (snapshotDetails != null && snapshotDetails.getValue() != null && Long.parseLong(snapshotDetails.getValue()) == storagePool.getId()) {
@@ -554,33 +554,33 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     private void updateSnapshotDetails(long csSnapshotId, long sfNewVolumeId, long storagePoolId, long sfNewVolumeSize, String sfNewVolumeIqn) {
-        SnapshotDetailsVO accountDetail = new SnapshotDetailsVO(csSnapshotId,
+        SnapshotDetailsVO snapshotDetail = new SnapshotDetailsVO(csSnapshotId,
                 SolidFireUtil.VOLUME_ID,
                 String.valueOf(sfNewVolumeId),
                 false);
 
-        _snapshotDetailsDao.persist(accountDetail);
+        _snapshotDetailsDao.persist(snapshotDetail);
 
-        accountDetail = new SnapshotDetailsVO(csSnapshotId,
-                SolidFireUtil.SNAPSHOT_STORAGE_POOL_ID,
+        snapshotDetail = new SnapshotDetailsVO(csSnapshotId,
+                SolidFireUtil.STORAGE_POOL_ID,
                 String.valueOf(storagePoolId),
                 false);
 
-        _snapshotDetailsDao.persist(accountDetail);
+        _snapshotDetailsDao.persist(snapshotDetail);
 
-        accountDetail = new SnapshotDetailsVO(csSnapshotId,
+        snapshotDetail = new SnapshotDetailsVO(csSnapshotId,
                 SolidFireUtil.VOLUME_SIZE,
                 String.valueOf(sfNewVolumeSize),
                 false);
 
-        _snapshotDetailsDao.persist(accountDetail);
+        _snapshotDetailsDao.persist(snapshotDetail);
 
-        accountDetail = new SnapshotDetailsVO(csSnapshotId,
-                DataMotionStrategy.IQN,
+        snapshotDetail = new SnapshotDetailsVO(csSnapshotId,
+                DiskTO.IQN,
                 sfNewVolumeIqn,
                 false);
 
-        _snapshotDetailsDao.persist(accountDetail);
+        _snapshotDetailsDao.persist(snapshotDetail);
     }
 
     // return null for no error message

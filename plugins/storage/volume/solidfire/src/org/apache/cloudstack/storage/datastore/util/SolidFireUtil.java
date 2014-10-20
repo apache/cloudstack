@@ -95,7 +95,7 @@ public class SolidFireUtil {
 
     public static final String VOLUME_SIZE = "sfVolumeSize";
 
-    public static final String SNAPSHOT_STORAGE_POOL_ID = "sfSnapshotStoragePoolId";
+    public static final String STORAGE_POOL_ID = "sfStoragePoolId";
 
     public static final String CHAP_INITIATOR_USERNAME = "chapInitiatorUsername";
     public static final String CHAP_INITIATOR_SECRET = "chapInitiatorSecret";

@@ -26,9 +26,6 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
 
 public interface DataMotionStrategy {
-    // IQN is used by the StorageSystemDataMotionStrategy to create a template from a snapshot or clone that resides on a storage system
-    public static final String IQN = "iqn";
-
     StrategyPriority canHandle(DataObject srcData, DataObject destData);
 
     StrategyPriority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost);

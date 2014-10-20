@@ -44,6 +44,8 @@ import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectAnswer;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
@@ -91,6 +93,67 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
     public XenServerStorageProcessor(CitrixResourceBase resource) {
         hypervisorResource = resource;
+    }
+
+    // if the source SR needs to be attached to, do so
+    // take a snapshot of the source VDI (on the source SR)
+    // create an iSCSI SR based on the new back-end volume
+    // copy the snapshot to the new SR
+    // delete the snapshot
+    // detach the new SR
+    // if we needed to perform an attach to the source SR, detach from it
+    @Override
+    public SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand cmd) {
+        Connection conn = hypervisorResource.getConnection();
+
+        try {
+            SR sourceSr = null;
+
+            Map<String, String> sourceDetails = cmd.getSourceDetails();
+
+            if (sourceDetails != null && sourceDetails.keySet().size() > 0) {
+                String iScsiName = sourceDetails.get(DiskTO.IQN);
+                String storageHost = sourceDetails.get(DiskTO.STORAGE_HOST);
+                String chapInitiatorUsername = sourceDetails.get(DiskTO.CHAP_INITIATOR_USERNAME);
+                String chapInitiatorSecret = sourceDetails.get(DiskTO.CHAP_INITIATOR_SECRET);
+
+                sourceSr = hypervisorResource.getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, false);
+            }
+
+            VDI vdiToSnapshot = VDI.getByUuid(conn, cmd.getUuidOfSourceVdi());
+
+            VDI vdiSnapshot = vdiToSnapshot.snapshot(conn, new HashMap<String, String>());
+
+            Map<String, String> destDetails = cmd.getDestDetails();
+
+            String iScsiName = destDetails.get(DiskTO.IQN);
+            String storageHost = destDetails.get(DiskTO.STORAGE_HOST);
+            String chapInitiatorUsername = destDetails.get(DiskTO.CHAP_INITIATOR_USERNAME);
+            String chapInitiatorSecret = destDetails.get(DiskTO.CHAP_INITIATOR_SECRET);
+
+            SR newSr = hypervisorResource.getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, false);
+
+            VDI vdiCopy = vdiSnapshot.copy(conn, newSr);
+
+            vdiSnapshot.destroy(conn);
+
+            if (sourceSr != null) {
+                hypervisorResource.removeSR(conn, sourceSr);
+            }
+
+            hypervisorResource.removeSR(conn, newSr);
+
+            SnapshotAndCopyAnswer snapshotAndCopyAnswer = new SnapshotAndCopyAnswer();
+
+            snapshotAndCopyAnswer.setPath(vdiCopy.getUuid(conn));
+
+            return snapshotAndCopyAnswer;
+        }
+        catch (Exception ex) {
+            s_logger.warn("Failed to take and copy snapshot: " + ex.toString(), ex);
+
+            return new SnapshotAndCopyAnswer(ex.getMessage());
+        }
     }
 
     @Override
