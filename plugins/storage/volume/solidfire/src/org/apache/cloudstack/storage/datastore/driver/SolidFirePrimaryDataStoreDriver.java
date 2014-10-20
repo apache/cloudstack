@@ -555,7 +555,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     private void updateSnapshotDetails(long csSnapshotId, long sfNewVolumeId, long storagePoolId, long sfNewVolumeSize, String sfNewVolumeIqn) {
         SnapshotDetailsVO snapshotDetail = new SnapshotDetailsVO(csSnapshotId,
-                SolidFireUtil.VOLUME_ID,
+                DiskTO.VOLUME_ID,
                 String.valueOf(sfNewVolumeId),
                 false);
 
@@ -592,7 +592,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         try {
             SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, _storagePoolDetailsDao);
 
-            SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshotId, SolidFireUtil.VOLUME_ID);
+            SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshotId, DiskTO.VOLUME_ID);
 
             long volumeId = Long.parseLong(snapshotDetails.getValue());
 

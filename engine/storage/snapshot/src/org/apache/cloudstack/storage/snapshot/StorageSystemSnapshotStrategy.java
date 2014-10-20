@@ -206,8 +206,11 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                     sourceDetails = getSourceDetails(volumeInfo);
                 }
 
+                HostVO hostVO = getHostId(hostId, volumeVO);
+
                 long storagePoolId = volumeVO.getPoolId();
                 StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
+                DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
 
                 Map<String, String> destDetails = getDestDetails(storagePoolVO, snapshotInfo);
 
@@ -216,10 +219,48 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 SnapshotAndCopyAnswer snapshotAndCopyAnswer = null;
 
                 try {
-                    snapshotAndCopyAnswer = (SnapshotAndCopyAnswer)_agentMgr.send(getHostId(hostId, volumeVO), snapshotAndCopyCommand);
+                    // if sourceDetails != null, we need to connect the host(s) to the volume
+                    if (sourceDetails != null) {
+                        _volService.connectVolumeToHost(volumeInfo, hostVO, dataStore);
+                    }
+
+                    VolumeVO volume = _volumeDao.findById(volumeInfo.getId());
+
+                    // the Folder field is used by connectVolumeToHost(VolumeInfo, Host, DataStore) when that method
+                    // connects the host(s) to the volume
+                    // this Folder change is NOT to be written to the DB; it is only temporarily used here so that
+                    // the connect method can be passed in the expected data and do its work (on the volume that backs
+                    // the snapshot)
+                    volume.setFolder(destDetails.get(DiskTO.VOLUME_ID));
+
+                    _volService.connectVolumeToHost(volumeInfo, hostVO, dataStore);
+
+                    snapshotAndCopyAnswer = (SnapshotAndCopyAnswer)_agentMgr.send(hostVO.getId(), snapshotAndCopyCommand);
                 }
                 catch (Exception e) {
                     throw new CloudRuntimeException(e.getMessage());
+                }
+                finally {
+                    try {
+                        VolumeVO volume = _volumeDao.findById(volumeInfo.getId());
+
+                        // the Folder field is used by disconnectVolumeFromHost(VolumeInfo, Host, DataStore) when that method
+                        // disconnects the host(s) from the volume
+                        // this Folder change is NOT to be written to the DB; it is only temporarily used here so that
+                        // the disconnect method can be passed in the expected data and do its work (on the volume that backs
+                        // the snapshot)
+                        volume.setFolder(destDetails.get(DiskTO.VOLUME_ID));
+
+                        _volService.disconnectVolumeFromHost(volumeInfo, hostVO, dataStore);
+
+                        // if sourceDetails != null, we need to disconnect the host(s) from the volume
+                        if (sourceDetails != null) {
+                            _volService.disconnectVolumeFromHost(volumeInfo, hostVO, dataStore);
+                        }
+                    }
+                    catch (Exception ex) {
+                        s_logger.debug(ex.getMessage(), ex);
+                    }
                 }
 
                 String path = snapshotAndCopyAnswer.getPath(); // for XenServer, this is the VDI's UUID
@@ -283,6 +324,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         long snapshotId = snapshotInfo.getId();
 
+        destDetails.put(DiskTO.VOLUME_ID, getProperty(snapshotId, DiskTO.VOLUME_ID));
         destDetails.put(DiskTO.IQN, getProperty(snapshotId, DiskTO.IQN));
 
         destDetails.put(DiskTO.CHAP_INITIATOR_USERNAME, getProperty(snapshotId, DiskTO.CHAP_INITIATOR_USERNAME));
@@ -303,11 +345,11 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         return null;
     }
 
-    private Long getHostId(Long hostId, VolumeVO volumeVO) {
+    private HostVO getHostId(Long hostId, VolumeVO volumeVO) {
         HostVO hostVO = _hostDao.findById(hostId);
 
         if (hostVO != null) {
-            return hostId;
+            return hostVO;
         }
 
         // pick a host in any XenServer cluster that's in the applicable zone
@@ -327,7 +369,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 if (hosts != null) {
                     for (HostVO host : hosts) {
                         if (host.getResourceState() == ResourceState.Enabled) {
-                            return host.getId();
+                            return host;
                         }
                     }
                 }
