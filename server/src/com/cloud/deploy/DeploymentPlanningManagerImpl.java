@@ -120,6 +120,7 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -982,7 +983,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
         // if all hosts or all pools in the cluster are in avoid set after this
         // pass, then put the cluster in avoid set.
-        boolean avoidAllHosts = true, avoidAllPools = true;
+        boolean avoidAllHosts = true;
+        boolean avoidAllPools = true;
+        boolean avoidAllLocalPools = true;
+        boolean avoidAllSharedPools = true;
 
         List<HostVO> allhostsInCluster =
                 _hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, clusterVO.getId(), clusterVO.getPodId(), clusterVO.getDataCenterId(), null);
@@ -1016,7 +1020,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 for (StoragePoolVO pool : allPoolsInCluster) {
                     if (!allocatorAvoidOutput.shouldAvoid(pool)) {
                         // there's some pool in the cluster that is not yet in avoid set
-                        avoidAllPools = false;
+                        avoidAllSharedPools = false;
                         break;
                     }
                 }
@@ -1030,10 +1034,18 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     if (!allocatorAvoidOutput.shouldAvoid(pool)) {
                         // there's some pool in the cluster that is not yet
                         // in avoid set
-                        avoidAllPools = false;
+                        avoidAllLocalPools = false;
                         break;
                     }
                 }
+            }
+
+            if (vmRequiresSharedStorage && vmRequiresLocalStorege) {
+                avoidAllPools = (avoidAllLocalPools || avoidAllSharedPools) ? true : false;
+            } else if (vmRequiresSharedStorage) {
+                avoidAllPools = avoidAllSharedPools;
+            } else if (vmRequiresLocalStorege) {
+                avoidAllPools = avoidAllLocalPools;
             }
         }
 
