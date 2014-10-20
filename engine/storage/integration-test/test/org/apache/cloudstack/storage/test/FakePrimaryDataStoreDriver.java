@@ -49,7 +49,7 @@ public class FakePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public boolean  grantAccess(DataObject dataObject, Host host, DataStore dataStore) { return false; }
+    public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) { return false; }
 
     @Override
     public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {}

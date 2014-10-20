@@ -245,6 +245,19 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                     }
                 }
 
+                if (snapshotAndCopyAnswer == null || !snapshotAndCopyAnswer.getResult()) {
+                    final String errMsg;
+
+                    if (snapshotAndCopyAnswer != null && snapshotAndCopyAnswer.getDetails() != null && !snapshotAndCopyAnswer.getDetails().isEmpty()) {
+                        errMsg = snapshotAndCopyAnswer.getDetails();
+                    }
+                    else {
+                        errMsg = "Unable to perform host-side operation";
+                    }
+
+                    throw new CloudRuntimeException(errMsg);
+                }
+
                 String path = snapshotAndCopyAnswer.getPath(); // for XenServer, this is the VDI's UUID
 
                 SnapshotDetailsVO snapshotDetail = new SnapshotDetailsVO(snapshotInfo.getId(),
