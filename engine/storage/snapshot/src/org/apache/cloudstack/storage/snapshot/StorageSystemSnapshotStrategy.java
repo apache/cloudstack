@@ -224,16 +224,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                         _volService.grantAccess(volumeInfo, hostVO, dataStore);
                     }
 
-                    VolumeVO volume = _volumeDao.findById(volumeInfo.getId());
-
-                    // the Folder field is used by grantAccess(VolumeInfo, Host, DataStore) when that method
-                    // connects the host(s) to the volume
-                    // this Folder change is NOT to be written to the DB; it is only temporarily used here so that
-                    // the connect method can be passed in the expected data and do its work (on the volume that backs
-                    // the snapshot)
-                    volume.setFolder(destDetails.get(DiskTO.VOLUME_ID));
-
-                    _volService.grantAccess(volumeInfo, hostVO, dataStore);
+                    _volService.grantAccess(snapshotInfo, hostVO, dataStore);
 
                     snapshotAndCopyAnswer = (SnapshotAndCopyAnswer)_agentMgr.send(hostVO.getId(), snapshotAndCopyCommand);
                 }
@@ -242,16 +233,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 }
                 finally {
                     try {
-                        VolumeVO volume = _volumeDao.findById(volumeInfo.getId());
-
-                        // the Folder field is used by revokeAccess(VolumeInfo, Host, DataStore) when that method
-                        // disconnects the host(s) from the volume
-                        // this Folder change is NOT to be written to the DB; it is only temporarily used here so that
-                        // the disconnect method can be passed in the expected data and do its work (on the volume that backs
-                        // the snapshot)
-                        volume.setFolder(destDetails.get(DiskTO.VOLUME_ID));
-
-                        _volService.revokeAccess(volumeInfo, hostVO, dataStore);
+                        _volService.revokeAccess(snapshotInfo, hostVO, dataStore);
 
                         // if sourceDetails != null, we need to disconnect the host(s) from the volume
                         if (sourceDetails != null) {
@@ -324,7 +306,6 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         long snapshotId = snapshotInfo.getId();
 
-        destDetails.put(DiskTO.VOLUME_ID, getProperty(snapshotId, DiskTO.VOLUME_ID));
         destDetails.put(DiskTO.IQN, getProperty(snapshotId, DiskTO.IQN));
 
         destDetails.put(DiskTO.CHAP_INITIATOR_USERNAME, getProperty(snapshotId, DiskTO.CHAP_INITIATOR_USERNAME));

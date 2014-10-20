@@ -128,13 +128,11 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public synchronized boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore)
     {
-        VolumeInfo volumeInfo = (VolumeInfo)dataObject;
-
-        if (volumeInfo == null || host == null || dataStore == null) {
+        if (dataObject == null || host == null || dataStore == null) {
             return false;
         }
 
-        long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
+        long sfVolumeId = getSolidFireVolumeId(dataObject);
         long clusterId = host.getClusterId();
         long storagePoolId = dataStore.getId();
 
@@ -173,13 +171,11 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public synchronized void revokeAccess(DataObject dataObject, Host host, DataStore dataStore)
     {
-        VolumeInfo volumeInfo = (VolumeInfo)dataObject;
-
-        if (volumeInfo == null || host == null || dataStore == null) {
+        if (dataObject == null || host == null || dataStore == null) {
             return;
         }
 
-        long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
+        long sfVolumeId = getSolidFireVolumeId(dataObject);
         long clusterId = host.getClusterId();
         long storagePoolId = dataStore.getId();
 
@@ -199,6 +195,24 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             SolidFireUtil.modifySolidFireVag(sfConnection, sfVag.getId(), hostIqns, volumeIds);
         }
+    }
+
+    private long getSolidFireVolumeId(DataObject dataObject) {
+        if (dataObject.getType() == DataObjectType.VOLUME) {
+            return Long.parseLong(((VolumeInfo)dataObject).getFolder());
+        }
+
+        if (dataObject.getType() == DataObjectType.SNAPSHOT) {
+            SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(dataObject.getId(), SolidFireUtil.VOLUME_ID);
+
+            if (snapshotDetails == null || snapshotDetails.getValue() == null) {
+                throw new CloudRuntimeException("Unable to locate the volume ID associated with the following snapshot ID: " + dataObject.getId());
+            }
+
+            return Long.parseLong(snapshotDetails.getValue());
+        }
+
+        throw new CloudRuntimeException("Invalid DataObjectType (" + dataObject.getType() + ") passed to getSolidFireVolumeId(DataObject)");
     }
 
     private long getDefaultMinIops(long storagePoolId) {
@@ -559,7 +573,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     private void updateSnapshotDetails(long csSnapshotId, long sfNewVolumeId, long storagePoolId, long sfNewVolumeSize, String sfNewVolumeIqn) {
         SnapshotDetailsVO snapshotDetail = new SnapshotDetailsVO(csSnapshotId,
-                DiskTO.VOLUME_ID,
+                SolidFireUtil.VOLUME_ID,
                 String.valueOf(sfNewVolumeId),
                 false);
 
@@ -596,7 +610,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         try {
             SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, _storagePoolDetailsDao);
 
-            SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshotId, DiskTO.VOLUME_ID);
+            SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshotId, SolidFireUtil.VOLUME_ID);
 
             long volumeId = Long.parseLong(snapshotDetails.getValue());
 
