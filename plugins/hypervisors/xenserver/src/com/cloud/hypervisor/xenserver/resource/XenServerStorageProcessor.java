@@ -135,6 +135,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             VDI vdiCopy = vdiSnapshot.copy(conn, newSr);
 
+            String vdiUuid = vdiCopy.getUuid(conn);
+
             vdiSnapshot.destroy(conn);
 
             if (sourceSr != null) {
@@ -145,7 +147,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             SnapshotAndCopyAnswer snapshotAndCopyAnswer = new SnapshotAndCopyAnswer();
 
-            snapshotAndCopyAnswer.setPath(vdiCopy.getUuid(conn));
+            snapshotAndCopyAnswer.setPath(vdiUuid);
 
             return snapshotAndCopyAnswer;
         }
