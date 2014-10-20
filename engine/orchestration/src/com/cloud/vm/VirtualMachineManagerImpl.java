@@ -517,7 +517,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         if (hostId != null) {
-            volumeMgr.disconnectVolumesFromHost(vm.getId(), hostId);
+            volumeMgr.revokeAccess(vm.getId(), hostId);
         }
 
         // Clean up volumes based on the vm's instance id

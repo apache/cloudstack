@@ -126,8 +126,10 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     //     if the ID of volumeInfo in not in the VAG, add it (ModifyVolumeAccessGroup)
     // if the VAG doesn't exist, create it with the IQNs of the hosts and the ID of volumeInfo (CreateVolumeAccessGroup)
     @Override
-    public synchronized boolean connectVolumeToHost(VolumeInfo volumeInfo, Host host, DataStore dataStore)
+    public synchronized boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore)
     {
+        VolumeInfo volumeInfo = (VolumeInfo)dataObject;
+
         if (volumeInfo == null || host == null || dataStore == null) {
             return false;
         }
@@ -169,8 +171,10 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     // if the VAG exists
     //     remove the ID of volumeInfo from the VAG (ModifyVolumeAccessGroup)
     @Override
-    public synchronized void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore)
+    public synchronized void revokeAccess(DataObject dataObject, Host host, DataStore dataStore)
     {
+        VolumeInfo volumeInfo = (VolumeInfo)dataObject;
+
         if (volumeInfo == null || host == null || dataStore == null) {
             return;
         }
