@@ -1,3 +1,9 @@
+cloudstack (4.4.1) unstable; urgency=low
+
+  * Update the version to 4.4.1
+
+ -- Rohit Yadav <rohit.yadav@shapeblue.com> Mon, 20 Oct 2014 15:30:00 +0530
+
 cloudstack (4.4.1-snapshot) unstable; urgency=low
 
   * Update the version to 4.4.1.snapshot
