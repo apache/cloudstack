@@ -454,7 +454,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected boolean _noKvmClock;
     protected String _videoHw;
     protected int _videoRam;
-    protected Pair<Integer,Integer> hostOsVersion;
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
 
@@ -966,7 +965,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String[] kernelVersions = unameKernelVersion.split("[\\.\\-]");
         _kernelVersion = Integer.parseInt(kernelVersions[0]) * 1000 * 1000 + Integer.parseInt(kernelVersions[1]) * 1000 + Integer.parseInt(kernelVersions[2]);
 
-        getOsVersion();
         return true;
     }
 
@@ -3608,24 +3606,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return uuid;
     }
 
-    private void getOsVersion() {
-        String version = Script.runSimpleBashScript("cat /etc/redhat-release | awk '{print $7}'");
-        if (version != null) {
-            String[] versions = version.split(".");
-            if (versions.length == 2) {
-                String major = versions[0];
-                String minor = versions[1];
-                try {
-                    Integer m = Integer.parseInt(major);
-                    Integer min = Integer.parseInt(minor);
-                    hostOsVersion = new Pair<>(m, min);
-                } catch(NumberFormatException e) {
-
-                }
-            }
-        }
-    }
-
     protected LibvirtVMDef createVMFromSpec(VirtualMachineTO vmTO) {
         LibvirtVMDef vm = new LibvirtVMDef();
         vm.setDomainName(vmTO.getName());
@@ -3704,12 +3684,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         features.addFeatures("pae");
         features.addFeatures("apic");
         features.addFeatures("acpi");
-        //for rhel 6.5 and above, hyperv enlightment feature is added
-        if (vmTO.getOs().contains("Windows Server 2008") && hostOsVersion != null && ((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7))) {
-            LibvirtVMDef.HyperVEnlightenmentFeatureDef hyv = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
-            hyv.setRelaxed(true);
-            features.addHyperVFeature(hyv);
-        }
         vm.addComp(features);
 
         TermPolicy term = new TermPolicy();
