@@ -21,6 +21,11 @@ import java.util.Date;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface User extends OwnedBy, InternalIdentity {
+
+    public enum Source {
+        LDAP, UNKNOWN
+    }
+
     public static final long UID_SYSTEM = 1;
     public static final long UID_ADMIN = 2;
 
@@ -76,5 +81,7 @@ public interface User extends OwnedBy, InternalIdentity {
     boolean isRegistered();
 
     boolean isDefault();
+
+    public Source getSource();
 
 }

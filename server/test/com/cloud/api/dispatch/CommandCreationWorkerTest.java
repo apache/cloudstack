@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
+import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import org.apache.cloudstack.context.CallContext;
 import org.junit.Test;
@@ -42,7 +43,7 @@ public class CommandCreationWorkerTest {
         final BaseAsyncCreateCmd asyncCreateCmd = mock(BaseAsyncCreateCmd.class);
         final Map<String, String> params = new HashMap<String, String>();
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
 
         // Execute

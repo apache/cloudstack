@@ -61,4 +61,6 @@ public interface UserAccount extends InternalIdentity {
     boolean isRegistered();
 
     int getLoginAttempts();
+
+    public User.Source getSource();
 }

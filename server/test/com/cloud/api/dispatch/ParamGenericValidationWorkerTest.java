@@ -106,7 +106,7 @@ public class ParamGenericValidationWorkerTest {
         params.put("addedParam", "");
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         // Execute
         try {
@@ -130,7 +130,7 @@ public class ParamGenericValidationWorkerTest {
         params.put(unknownParamKey, "");
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
 
         // Execute
@@ -172,7 +172,7 @@ public class ParamGenericValidationWorkerTest {
         final Account account = mock(Account.class);
         ((FakeCmdWithRoleAdmin)cmd).account = account;
         when(account.getType()).thenReturn(type);
-        User user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        User user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
 
         final Map<String, String> params = new HashMap<String, String>();

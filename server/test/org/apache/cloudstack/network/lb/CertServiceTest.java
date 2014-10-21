@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
+import com.cloud.user.User;
 import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.junit.After;
@@ -60,7 +61,7 @@ public class CertServiceTest {
     @Before
     public void setUp() {
         Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
     }
 

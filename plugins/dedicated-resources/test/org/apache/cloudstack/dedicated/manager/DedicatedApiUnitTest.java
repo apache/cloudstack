@@ -26,8 +26,11 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.user.User;
 import junit.framework.Assert;
 
+import org.apache.cloudstack.dedicated.DedicatedResourceManagerImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -49,9 +52,7 @@ import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.dedicated.DedicatedResourceManagerImpl;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -118,7 +119,7 @@ public class DedicatedApiUnitTest {
         AccountVO account = new AccountVO(accountName, domainId, "networkDomain", Account.ACCOUNT_TYPE_NORMAL, "uuid");
         DomainVO domain = new DomainVO("rootDomain", 5L, 5L, "networkDomain");
 
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         CallContext.register(user, account);
         when(_acctMgr.finalizeOwner((Account)anyObject(), anyString(), anyLong(), anyLong())).thenReturn(account);

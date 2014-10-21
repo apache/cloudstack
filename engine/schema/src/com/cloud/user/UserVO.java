@@ -97,6 +97,10 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Column(name = "default")
     boolean isDefault;
 
+    @Column(name = "source")
+    @Enumerated(value = EnumType.STRING)
+    private Source source;
+
     public UserVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -106,7 +110,7 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public UserVO(long accountId, String username, String password, String firstName, String lastName, String email, String timezone, String uuid) {
+    public UserVO(long accountId, String username, String password, String firstName, String lastName, String email, String timezone, String uuid, Source source) {
         this.accountId = accountId;
         this.username = username;
         this.password = password;
@@ -116,6 +120,7 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.timezone = timezone;
         this.state = State.enabled;
         this.uuid = uuid;
+        this.source = source;
     }
 
     @Override
@@ -268,6 +273,14 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Override
     public boolean isDefault() {
         return isDefault;
+    }
+
+    public Source getSource() {
+        return source;
+    }
+
+    public void setSource(Source source) {
+        this.source = source;
     }
 
 }

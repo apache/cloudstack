@@ -30,6 +30,7 @@ import com.cloud.network.Networks;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -256,6 +257,7 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
         user.setFirstname(BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME);
         user.setLastname(BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME);
         user.setPassword(UUID.randomUUID().toString());
+        user.setSource(User.Source.UNKNOWN);
         user = userDao.persist(user);
 
         String[] keys = acntMgr.createApiKeyAndSecretKey(user.getId());

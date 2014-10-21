@@ -34,6 +34,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.user.User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -164,7 +165,7 @@ public class ImplicitPlannerTest {
         acct.setDomainId(domainId);
         acct.setId(accountId);
 
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, acct);
     }
 
