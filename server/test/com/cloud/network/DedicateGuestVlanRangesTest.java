@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.cloud.user.User;
 import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
@@ -100,7 +101,7 @@ public class DedicateGuestVlanRangesTest {
         when(networkService._accountMgr.getAccount(anyLong())).thenReturn(account);
         when(networkService._accountDao.findActiveAccount(anyString(), anyLong())).thenReturn(account);
 
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         CallContext.register(user, account);
 

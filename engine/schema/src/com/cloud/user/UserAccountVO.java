@@ -20,6 +20,8 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -98,6 +100,10 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
 
     @Column(name = "state", table = "account", insertable = false, updatable = false)
     private String accountState;
+
+    @Column(name = "source")
+    @Enumerated(value = EnumType.STRING)
+    private User.Source source;
 
     public UserAccountVO() {
     }
@@ -280,5 +286,14 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
     @Override
     public int getLoginAttempts() {
         return loginAttempts;
+    }
+
+    @Override
+    public User.Source getSource() {
+        return source;
+    }
+
+    public void setSource(User.Source source) {
+        this.source = source;
     }
 }

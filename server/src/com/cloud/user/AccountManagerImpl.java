@@ -984,6 +984,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return success;
     }
 
+    public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email, final String timezone,
+            String accountName, final short accountType, Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID, final String userUUID) {
+
+        return createUserAccount(userName, password, firstName, lastName, email, timezone, accountName, accountType, domainId, networkDomain, details, accountUUID, userUUID,
+                User.Source.UNKNOWN);
+    }
+
     // ///////////////////////////////////////////////////
     // ////////////// API commands /////////////////////
     // ///////////////////////////////////////////////////
@@ -996,7 +1003,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     })
     public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email,
         final String timezone, String accountName, final short accountType, Long domainId, final String networkDomain, final Map<String, String> details,
-        String accountUUID, final String userUUID) {
+        String accountUUID, final String userUUID, final User.Source source) {
 
         if (accountName == null) {
             accountName = userName;
@@ -1053,7 +1060,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 long accountId = account.getId();
 
                 // create the first user for the account
-                UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone, userUUID);
+                UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone, userUUID, source);
 
                 if (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
                     // set registration token
@@ -1085,8 +1092,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
     public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId,
-        String userUUID) {
-
+                             String userUUID, User.Source source) {
         // default domain to ROOT if not specified
         if (domainId == null) {
             domainId = Domain.ROOT_DOMAIN;
@@ -1114,8 +1120,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
         }
         UserVO user = null;
-        user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone, userUUID);
+        user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone, userUUID, source);
         return user;
+    }
+
+    @Override
+    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId,
+        String userUUID) {
+
+        return createUser(userName, password, firstName,lastName, email, timeZone, accountName, domainId, userUUID, User.Source.UNKNOWN);
     }
 
     @Override
@@ -1960,7 +1973,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         });
     }
 
-    protected UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String userUUID) {
+    protected UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String userUUID,
+                                User.Source source) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
@@ -1979,7 +1993,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (userUUID == null) {
             userUUID =  UUID.randomUUID().toString();
         }
-        UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone, userUUID));
+        UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone, userUUID, source));
         CallContext.current().putContextParameter(User.class, user.getUuid());
         return user;
     }
@@ -2126,10 +2140,21 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Attempting to log in user: " + username + " in domain " + domainId);
         }
+        UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
+        if (userAccount == null) {
+            s_logger.warn("Unable to find an user with username " + username + " in domain " + domainId);
+            return null;
+        }
 
         boolean authenticated = false;
         HashSet<ActionOnFailedAuthentication> actionsOnFailedAuthenticaion = new HashSet<ActionOnFailedAuthentication>();
+        User.Source userSource = userAccount.getSource();
         for (UserAuthenticator authenticator : _userAuthenticators) {
+            if(userSource != User.Source.UNKNOWN) {
+                if(!authenticator.getName().equalsIgnoreCase(userSource.name())){
+                    continue;
+                }
+            }
             Pair<Boolean, ActionOnFailedAuthentication> result = authenticator.authenticate(username, password, domainId, requestParameters);
             if (result.first()) {
                 authenticated = true;
@@ -2142,11 +2167,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         boolean updateIncorrectLoginCount = actionsOnFailedAuthenticaion.contains(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
 
         if (authenticated) {
-            UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
-            if (userAccount == null) {
-                s_logger.warn("Unable to find an authenticated user with username " + username + " in domain " + domainId);
-                return null;
-            }
 
             Domain domain = _domainMgr.getDomain(domainId);
             String domainName = null;
@@ -2172,7 +2192,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 s_logger.debug("Unable to authenticate user with username " + username + " in domain " + domainId);
             }
 
-            UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
             if (userAccount != null) {
                 if (userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString())) {
                     if (!isInternalAccount(userAccount.getId())) {

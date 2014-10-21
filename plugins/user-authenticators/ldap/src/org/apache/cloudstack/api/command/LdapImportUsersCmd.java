@@ -26,6 +26,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -111,14 +112,14 @@ public class LdapImportUsersCmd extends BaseListCmd {
         if (account == null) {
             s_logger.debug("No account exists with name: " + accountName + " creating the account and an user with name: " + user.getUsername() + " in the account");
             _accountService.createUserAccount(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, accountType,
-                    domain.getId(), domain.getNetworkDomain(), details, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+                    domain.getId(), domain.getNetworkDomain(), details, UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
         } else {
 //            check if the user exists. if yes, call update
             UserAccount csuser = _accountService.getActiveUserAccount(user.getUsername(), domain.getId());
             if(csuser == null) {
                 s_logger.debug("No user exists with name: " + user.getUsername() + " creating a user in the account: " + accountName);
                 _accountService.createUser(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, domain.getId(),
-                                           UUID.randomUUID().toString());
+                                           UUID.randomUUID().toString(), User.Source.LDAP);
             } else {
                 s_logger.debug("account with name: " + accountName + " exist and user with name: " + user.getUsername() + " exists in the account. Updating the account.");
                 _accountService.updateUser(csuser.getId(), user.getFirstname(), user.getLastname(), user.getEmail(), null, null, null, null, null);

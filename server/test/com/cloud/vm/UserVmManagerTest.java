@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.cloud.storage.Storage;
+import com.cloud.user.User;
 import com.cloud.event.dao.UsageEventDao;
 import org.junit.Before;
 import org.junit.Test;
@@ -209,7 +210,7 @@ public class UserVmManagerTest {
         when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
         doReturn(VirtualMachine.State.Error).when(_vmMock).getState();
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         CallContext.register(user, account);
         try {
@@ -239,7 +240,7 @@ public class UserVmManagerTest {
         when(_templateMock.getUuid()).thenReturn("e0552266-7060-11e2-bbaa-d55f5db67735");
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         StoragePoolVO storagePool = new StoragePoolVO();
 
@@ -276,7 +277,7 @@ public class UserVmManagerTest {
         when(_templateMock.getUuid()).thenReturn("e0552266-7060-11e2-bbaa-d55f5db67735");
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         StoragePoolVO storagePool = new StoragePoolVO();
 
@@ -321,7 +322,7 @@ public class UserVmManagerTest {
         when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         StoragePoolVO storagePool = new StoragePoolVO();
 
@@ -368,7 +369,7 @@ public class UserVmManagerTest {
         when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         StoragePoolVO storagePool = new StoragePoolVO();
 
@@ -406,7 +407,7 @@ public class UserVmManagerTest {
 
        // UserContext.current().setEventDetails("Vm Id: "+getId());
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
         doReturn(VirtualMachine.State.Running).when(_vmInstance).getState();
 
@@ -450,7 +451,7 @@ public class UserVmManagerTest {
         when(_offeringDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn((ServiceOfferingVO)so1);
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, UUID.randomUUID().toString());
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         try {
             _userVmMgr.upgradeVirtualMachine(cmd);
@@ -492,7 +493,7 @@ public class UserVmManagerTest {
         //when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, UUID.randomUUID().toString());
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         try {
             _userVmMgr.upgradeVirtualMachine(cmd);
@@ -541,7 +542,7 @@ public class UserVmManagerTest {
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, UUID.randomUUID().toString());
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         try {
             _userVmMgr.upgradeVirtualMachine(cmd);
@@ -589,7 +590,7 @@ public class UserVmManagerTest {
 
         // caller is of type 0
         Account caller = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         CallContext.register(user, caller);
         try {
@@ -620,7 +621,7 @@ public class UserVmManagerTest {
 
         // caller is of type 0
         Account caller = new AccountVO("testaccount", 1, "networkdomain", (short)1, UUID.randomUUID().toString());
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         Account oldAccount = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         Account newAccount = new AccountVO("testaccount", 1, "networkdomain", (short)1, UUID.randomUUID().toString());

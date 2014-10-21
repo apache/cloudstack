@@ -27,6 +27,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.user.User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -177,7 +178,7 @@ public class VmwareDatacenterApiUnitTest {
         acct.setAccountName("admin");
         acct.setDomainId(domainId);
 
-        UserVO user1 = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user1 = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         CallContext.register(user1, acct);
 

@@ -27,6 +27,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.user.User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -103,7 +104,7 @@ public class VolumeApiServiceImplTest {
 
         // mock caller context
         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.ACCOUNT_TYPE_NORMAL, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         // mock async context
         AsyncJobExecutionContext context = new AsyncJobExecutionContext();

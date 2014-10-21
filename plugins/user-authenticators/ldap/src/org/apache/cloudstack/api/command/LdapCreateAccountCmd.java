@@ -92,10 +92,10 @@ public class LdapCreateAccountCmd extends BaseCmd {
         Account account = _accountService.getActiveAccountByName(accountName, domainId);
         if (account == null) {
             return _accountService.createUserAccount(username, generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, accountType,
-                    domainId, networkDomain, details, accountUUID, userUUID);
+                    domainId, networkDomain, details, accountUUID, userUUID, User.Source.LDAP);
         } else {
             User newUser = _accountService.createUser(username, generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, domainId,
-                    userUUID);
+                    userUUID, User.Source.LDAP);
             return _accountService.getUserAccountById(newUser.getId());
         }
     }
