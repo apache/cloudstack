@@ -27,6 +27,7 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -367,6 +368,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @DB
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
         boolean needDelegation = false;
+
+        if (cmd instanceof StorageSubSystemCommand) {
+            Boolean fullCloneEnabled = VmwareFullClone.value();
+            StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
+            c.setExecuteInSequence(fullCloneEnabled);
+        }
 
         //NOTE: the hostid can be a hypervisor host, or a ssvm agent. For copycommand, if it's for volume upload, the hypervisor
         //type is empty, so we need to check the format of volume at first.

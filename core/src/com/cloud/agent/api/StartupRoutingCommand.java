@@ -19,7 +19,9 @@
 
 package com.cloud.agent.api;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.host.Host;
@@ -39,6 +41,7 @@ public class StartupRoutingCommand extends StartupCommand {
     String pool;
     HypervisorType hypervisorType;
     Map<String, String> hostDetails; //stuff like host os, cpu capabilities
+    List<String> hostTags = new ArrayList<String>();
     String hypervisorVersion;
     HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
 
@@ -160,6 +163,14 @@ public class StartupRoutingCommand extends StartupCommand {
 
     public void setHypervisorVersion(String hypervisorVersion) {
         this.hypervisorVersion = hypervisorVersion;
+    }
+
+    public List<String> getHostTags() {
+        return hostTags;
+    }
+
+    public void setHostTags(String hostTag) {
+        this.hostTags.add(hostTag);
     }
 
     public  HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetails() {

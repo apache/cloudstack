@@ -36,6 +36,7 @@ import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.Nic;
@@ -680,25 +681,26 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
     }
 
     @Override
-    public boolean postStateTransitionEvent(VirtualMachine.State oldState, VirtualMachine.Event event,
-                                            VirtualMachine.State newState, VirtualMachine vm,
-                                            boolean status, Object opaque) {
-        if (!status) {
-            return false;
-        }
+    public boolean postStateTransitionEvent(StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition, VirtualMachine vm, boolean status, Object opaque) {
+      if (!status) {
+        return false;
+      }
 
-        if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
-            handleVmStateChange((VMInstanceVO)vm);
-        } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
-            handleVmStateChange((VMInstanceVO)vm);
-        } else if (VirtualMachine.State.isVmMigrated(oldState, event, newState)) {
-            handleVmStateChange((VMInstanceVO)vm);
-        }
+      VirtualMachine.State oldState = transition.getCurrentState();
+      VirtualMachine.State newState = transition.getToState();
+      VirtualMachine.Event event = transition.getEvent();
+      if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
+        handleVmStateChange((VMInstanceVO)vm);
+      } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
+        handleVmStateChange((VMInstanceVO)vm);
+      } else if (VirtualMachine.State.isVmMigrated(oldState, event, newState)) {
+        handleVmStateChange((VMInstanceVO)vm);
+      }
 
-        return true;
+      return true;
     }
 
-    private void handleVmStateChange(VMInstanceVO vm) {
+  private void handleVmStateChange(VMInstanceVO vm) {
 
         // get the VPC's impacted with the VM start
         List<Long> vpcIds = _ovsNetworkToplogyGuru.getVpcIdsVmIsPartOf(vm.getId());

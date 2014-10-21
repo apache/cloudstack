@@ -931,7 +931,7 @@ public class NetscalerResource implements ServerResource {
                         " as there are no admin profile to use for creating VPX."));
             }
             String profileName = profiles[0].get_name();
-            ns_obj.set_profile_name(profileName);
+            ns_obj.set_profile_name("ns_nsroot_profile");
 
             // use the first VPX image of the available VPX images on the SDX to create an instance of VPX
             // TODO: should enable the option to choose the template while adding the SDX device in to CloudStack
@@ -959,7 +959,7 @@ public class NetscalerResource implements ServerResource {
             // wait for VPX instance to start-up
             long startTick = System.currentTimeMillis();
             long startWaitMilliSeconds = 600000;
-            while (!newVpx.get_state().equalsIgnoreCase("up") && System.currentTimeMillis() - startTick < startWaitMilliSeconds) {
+            while (!newVpx.get_instance_state().equalsIgnoreCase("up") && System.currentTimeMillis() - startTick < startWaitMilliSeconds) {
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException e) {
@@ -970,7 +970,7 @@ public class NetscalerResource implements ServerResource {
             }
 
             // if vpx instance never came up then error out
-            if (!newVpx.get_state().equalsIgnoreCase("up")) {
+            if (!newVpx.get_instance_state().equalsIgnoreCase("up")) {
                 return new Answer(cmd, new ExecutionException("Failed to start VPX instance " + vpxName + " created on the netscaler SDX device " + _ip));
             }
 
@@ -981,6 +981,8 @@ public class NetscalerResource implements ServerResource {
             while (System.currentTimeMillis() - startTick < nsServiceWaitMilliSeconds) {
                 try {
                     nitro_service _netscalerService = new nitro_service(cmd.getLoadBalancerIP(), "https");
+                    _netscalerService.set_certvalidation(false);
+                    _netscalerService.set_hostnameverification(false);
                     _netscalerService.set_credential(username, password);
                     apiCallResult = _netscalerService.login();
                     if (apiCallResult.errorcode == 0) {

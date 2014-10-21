@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
@@ -770,79 +771,82 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Object opaque) {
-        if (!status) {
-            return false;
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, VirtualMachine vm, boolean status, Object opaque) {
+      if (!status) {
+        return false;
+      }
+      @SuppressWarnings("unchecked")
+      Pair<Long, Long> hosts = (Pair<Long, Long>)opaque;
+      Long oldHostId = hosts.first();
+
+      State oldState = transition.getCurrentState();
+      State newState = transition.getToState();
+      Event event = transition.getEvent();
+      s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event + "vm's original host id: " + vm.getLastHostId() +
+              " new host id: " + vm.getHostId() + " host id before state transition: " + oldHostId);
+
+      if (oldState == State.Starting) {
+        if (newState != State.Running) {
+          releaseVmCapacity(vm, false, false, oldHostId);
         }
-        @SuppressWarnings("unchecked")
-        Pair<Long, Long> hosts = (Pair<Long, Long>)opaque;
-        Long oldHostId = hosts.first();
-
-        s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event + "vm's original host id: " + vm.getLastHostId() +
-            " new host id: " + vm.getHostId() + " host id before state transition: " + oldHostId);
-
-        if (oldState == State.Starting) {
-            if (newState != State.Running) {
-                releaseVmCapacity(vm, false, false, oldHostId);
-            }
-        } else if (oldState == State.Running) {
-            if (event == Event.AgentReportStopped) {
-                releaseVmCapacity(vm, false, true, oldHostId);
-            } else if (event == Event.AgentReportMigrated) {
-                releaseVmCapacity(vm, false, false, oldHostId);
-            }
-        } else if (oldState == State.Migrating) {
-            if (event == Event.AgentReportStopped) {
+      } else if (oldState == State.Running) {
+        if (event == Event.AgentReportStopped) {
+          releaseVmCapacity(vm, false, true, oldHostId);
+        } else if (event == Event.AgentReportMigrated) {
+          releaseVmCapacity(vm, false, false, oldHostId);
+        }
+      } else if (oldState == State.Migrating) {
+        if (event == Event.AgentReportStopped) {
                 /* Release capacity from original host */
-                releaseVmCapacity(vm, false, false, vm.getLastHostId());
-                releaseVmCapacity(vm, false, false, oldHostId);
-            } else if (event == Event.OperationFailed) {
+          releaseVmCapacity(vm, false, false, vm.getLastHostId());
+          releaseVmCapacity(vm, false, false, oldHostId);
+        } else if (event == Event.OperationFailed) {
                 /* Release from dest host */
-                releaseVmCapacity(vm, false, false, oldHostId);
-            } else if (event == Event.OperationSucceeded) {
-                releaseVmCapacity(vm, false, false, vm.getLastHostId());
-            }
-        } else if (oldState == State.Stopping) {
-            if (event == Event.OperationSucceeded) {
-                releaseVmCapacity(vm, false, true, oldHostId);
-            } else if (event == Event.AgentReportStopped) {
-                releaseVmCapacity(vm, false, false, oldHostId);
-            } else if (event == Event.AgentReportMigrated) {
-                releaseVmCapacity(vm, false, false, oldHostId);
-            }
-        } else if (oldState == State.Stopped) {
-            if (event == Event.DestroyRequested || event == Event.ExpungeOperation) {
-                releaseVmCapacity(vm, true, false, vm.getLastHostId());
-            } else if (event == Event.AgentReportMigrated) {
-                releaseVmCapacity(vm, false, false, oldHostId);
-            }
+          releaseVmCapacity(vm, false, false, oldHostId);
+        } else if (event == Event.OperationSucceeded) {
+          releaseVmCapacity(vm, false, false, vm.getLastHostId());
         }
-
-        if ((newState == State.Starting || newState == State.Migrating || event == Event.AgentReportMigrated) && vm.getHostId() != null) {
-            boolean fromLastHost = false;
-            if (vm.getHostId().equals(vm.getLastHostId())) {
-                s_logger.debug("VM starting again on the last host it was stopped on");
-                fromLastHost = true;
-            }
-            allocateVmCapacity(vm, fromLastHost);
+      } else if (oldState == State.Stopping) {
+        if (event == Event.OperationSucceeded) {
+          releaseVmCapacity(vm, false, true, oldHostId);
+        } else if (event == Event.AgentReportStopped) {
+          releaseVmCapacity(vm, false, false, oldHostId);
+        } else if (event == Event.AgentReportMigrated) {
+          releaseVmCapacity(vm, false, false, oldHostId);
         }
-
-        if (newState == State.Stopped) {
-            if (vm.getType() == VirtualMachine.Type.User) {
-
-                UserVmVO userVM = _userVMDao.findById(vm.getId());
-                _userVMDao.loadDetails(userVM);
-                // free the message sent flag if it exists
-                userVM.setDetail(MESSAGE_RESERVED_CAPACITY_FREED_FLAG, "false");
-                _userVMDao.saveDetails(userVM);
-
-            }
+      } else if (oldState == State.Stopped) {
+        if (event == Event.DestroyRequested || event == Event.ExpungeOperation) {
+          releaseVmCapacity(vm, true, false, vm.getLastHostId());
+        } else if (event == Event.AgentReportMigrated) {
+          releaseVmCapacity(vm, false, false, oldHostId);
         }
+      }
 
-        return true;
+      if ((newState == State.Starting || newState == State.Migrating || event == Event.AgentReportMigrated) && vm.getHostId() != null) {
+        boolean fromLastHost = false;
+        if (vm.getHostId().equals(vm.getLastHostId())) {
+          s_logger.debug("VM starting again on the last host it was stopped on");
+          fromLastHost = true;
+        }
+        allocateVmCapacity(vm, fromLastHost);
+      }
+
+      if (newState == State.Stopped) {
+        if (vm.getType() == VirtualMachine.Type.User) {
+
+          UserVmVO userVM = _userVMDao.findById(vm.getId());
+          _userVMDao.loadDetails(userVM);
+          // free the message sent flag if it exists
+          userVM.setDetail(MESSAGE_RESERVED_CAPACITY_FREED_FLAG, "false");
+          _userVMDao.saveDetails(userVM);
+
+        }
+      }
+
+      return true;
     }
 
-    // TODO: Get rid of this case once we've determined that the capacity listeners above have all the changes
+  // TODO: Get rid of this case once we've determined that the capacity listeners above have all the changes
     // create capacity entries if none exist for this server
     private void createCapacityEntry(StartupCommand startup, HostVO server) {
         SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();

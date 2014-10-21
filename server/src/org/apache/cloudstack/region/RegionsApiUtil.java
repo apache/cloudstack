@@ -105,8 +105,12 @@ public class RegionsApiUtil {
                 xstream.aliasField("networkdomain", RegionAccount.class, "networkDomain");
                 xstream.aliasField("id", RegionUser.class, "uuid");
                 xstream.aliasField("accountId", RegionUser.class, "accountUuid");
-                ObjectInputStream in = xstream.createObjectInputStream(is);
-                return (RegionAccount)in.readObject();
+                try(ObjectInputStream in = xstream.createObjectInputStream(is);) {
+                    return (RegionAccount) in.readObject();
+                }catch (IOException e) {
+                    s_logger.error(e.getMessage());
+                    return null;
+                }
             } else {
                 return null;
             }
@@ -143,8 +147,12 @@ public class RegionsApiUtil {
                 xstream.aliasField("id", RegionDomain.class, "uuid");
                 xstream.aliasField("parentdomainid", RegionDomain.class, "parentUuid");
                 xstream.aliasField("networkdomain", DomainVO.class, "networkDomain");
-                ObjectInputStream in = xstream.createObjectInputStream(is);
-                return (RegionDomain)in.readObject();
+                try(ObjectInputStream in = xstream.createObjectInputStream(is);) {
+                    return (RegionDomain) in.readObject();
+                }catch (IOException e) {
+                    s_logger.error(e.getMessage());
+                    return null;
+                }
             } else {
                 return null;
             }

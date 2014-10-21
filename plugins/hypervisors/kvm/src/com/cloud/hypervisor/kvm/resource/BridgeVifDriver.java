@@ -46,6 +46,7 @@ public class BridgeVifDriver extends VifDriverBase {
     private String _modifyVlanPath;
     private String _modifyVxlanPath;
     private String bridgeNameSchema;
+    private Long libvirtVersion;
 
     @Override
     public void configure(Map<String, Object> params) throws ConfigurationException {
@@ -72,6 +73,11 @@ public class BridgeVifDriver extends VifDriverBase {
         _modifyVxlanPath = Script.findScript(networkScriptsDir, "modifyvxlan.sh");
         if (_modifyVxlanPath == null) {
             throw new ConfigurationException("Unable to find modifyvxlan.sh");
+        }
+
+        libvirtVersion = (Long) params.get("libvirtVersion");
+        if (libvirtVersion == null) {
+            libvirtVersion = 0L;
         }
 
         try {
@@ -102,8 +108,12 @@ public class BridgeVifDriver extends VifDriverBase {
             throw new InternalErrorException("Nicira NVP Logicalswitches are not supported by the BridgeVifDriver");
         }
         String trafficLabel = nic.getName();
+        Integer networkRateKBps = 0;
+        if (libvirtVersion > ((10 * 1000 + 10))) {
+            networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
+        }
+
         if (nic.getType() == Networks.TrafficType.Guest) {
-            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
             if ((nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan) && (vNetId != null) && (protocol != null) && (!vNetId.equalsIgnoreCase("untagged")) ||
                     (nic.getBroadcastType() == Networks.BroadcastDomainType.Vxlan)) {
                     if (trafficLabel != null && !trafficLabel.isEmpty()) {
@@ -115,14 +125,19 @@ public class BridgeVifDriver extends VifDriverBase {
                         intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
                     }
             } else {
-                intf.defBridgeNet(_bridges.get("guest"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
+                String brname = "";
+                if (trafficLabel != null && !trafficLabel.isEmpty()) {
+                    brname = trafficLabel;
+                } else {
+                    brname = _bridges.get("guest");
+                }
+                intf.defBridgeNet(brname, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
             }
         } else if (nic.getType() == Networks.TrafficType.Control) {
             /* Make sure the network is still there */
             createControlNetwork();
             intf.defBridgeNet(_bridges.get("linklocal"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter));
         } else if (nic.getType() == Networks.TrafficType.Public) {
-            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
             if ((nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan) && (vNetId != null) && (protocol != null) && (!vNetId.equalsIgnoreCase("untagged")) ||
                     (nic.getBroadcastType() == Networks.BroadcastDomainType.Vxlan)) {
                 if (trafficLabel != null && !trafficLabel.isEmpty()) {

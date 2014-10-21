@@ -16,10 +16,33 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
+import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
+import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.topology.NetworkTopology;
+import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+import org.apache.log4j.Logger;
+import org.cloud.network.router.deployment.RouterDeploymentDefinition;
+import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
+
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -85,31 +108,12 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
-import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
-import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
-import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
-import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
-import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-@Local(value = {NetworkElement.class, FirewallServiceProvider.class,
-        DhcpServiceProvider.class, UserDataServiceProvider.class,
-        StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
-        PortForwardingServiceProvider.class, IpDeployer.class,
-        RemoteAccessVPNServiceProvider.class, NetworkMigrationResponder.class})
-public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider,
-UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
-LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
-NetworkMigrationResponder, AggregatedCommandExecutor {
+@Local(value = { NetworkElement.class, FirewallServiceProvider.class, DhcpServiceProvider.class, UserDataServiceProvider.class, StaticNatServiceProvider.class,
+        LoadBalancingServiceProvider.class, PortForwardingServiceProvider.class, IpDeployer.class, RemoteAccessVPNServiceProvider.class, NetworkMigrationResponder.class })
+public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, UserDataServiceProvider, SourceNatServiceProvider,
+        StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
+        NetworkMigrationResponder, AggregatedCommandExecutor {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     public static final AutoScaleCounterType AutoScaleCounterCpu = new AutoScaleCounterType("cpu");
     public static final AutoScaleCounterType AutoScaleCounterMemory = new AutoScaleCounterType("memory");
@@ -123,6 +127,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     LoadBalancingRulesManager _lbMgr;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
+
     @Inject
     VpcVirtualNetworkApplianceManager _routerMgr;
     @Inject
@@ -150,8 +155,16 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     OvsProviderDao _ovsProviderDao;
     @Inject
     IPAddressDao _ipAddressDao;
+    @Inject
+    DataCenterDao _dcDao;
 
-    protected boolean canHandle(Network network, Service service) {
+    @Inject
+    NetworkTopologyContext networkTopologyContext;
+
+    @Inject
+    protected RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
+
+    protected boolean canHandle(final Network network, final Service service) {
         Long physicalNetworkId = _networkMdl.getPhysicalNetworkId(network);
         if (physicalNetworkId == null) {
             return false;
@@ -181,8 +194,8 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException,
-    ConcurrentOperationException, InsufficientCapacityException {
+    public boolean implement(final Network network, final NetworkOffering offering, final DeployDestination dest, final ReservationContext context)
+            throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
 
         if (offering.isSystemOnly()) {
             return false;
@@ -191,23 +204,24 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
-        List<DomainRouterVO> routers = _routerMgr.deployVirtualRouterInGuestNetwork(network, dest,
-                _accountMgr.getAccount(network.getAccountId()), params,
-                offering.getRedundantRouter());
+        RouterDeploymentDefinition routerDeploymentDefinition = routerDeploymentDefinitionBuilder.create().setGuestNetwork(network).setDeployDestination(dest)
+                .setAccountOwner(_accountMgr.getAccount(network.getAccountId())).setParams(params).setRedundant(offering.getRedundantRouter()).build();
+
+        List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
+
         int routerCounts = 1;
         if (offering.getRedundantRouter()) {
             routerCounts = 2;
         }
-        if ((routers == null) || (routers.size() < routerCounts)) {
-            throw new ResourceUnavailableException("Can't find all necessary running routers!",
-                    DataCenter.class, network.getDataCenterId());
+        if (routers == null || routers.size() < routerCounts) {
+            throw new ResourceUnavailableException("Can't find all necessary running routers!", DataCenter.class, network.getDataCenterId());
         }
 
         return true;
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+    public boolean prepare(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest, final ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (vm.getType() != VirtualMachine.Type.User || vm.getHypervisorType() == HypervisorType.BareMetal) {
             return false;
@@ -225,36 +239,39 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             return false;
         }
 
-        @SuppressWarnings("unchecked")
-        VirtualMachineProfile uservm = vm;
-        List<DomainRouterVO> routers =
-                _routerMgr.deployVirtualRouterInGuestNetwork(network, dest, _accountMgr.getAccount(network.getAccountId()), uservm.getParameters(),
-                        offering.getRedundantRouter());
-        if ((routers == null) || (routers.size() == 0)) {
+        RouterDeploymentDefinition routerDeploymentDefinition = routerDeploymentDefinitionBuilder.create().setGuestNetwork(network).setDeployDestination(dest)
+                .setAccountOwner(_accountMgr.getAccount(network.getAccountId())).setParams(vm.getParameters()).setRedundant(offering.getRedundantRouter()).build();
+
+        List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
+
+        if (routers == null || routers.size() == 0) {
             throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
         }
         return true;
     }
 
     @Override
-    public boolean applyFWRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        if (canHandle(config, Service.Firewall)) {
-            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
+    public boolean applyFWRules(final Network network, final List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        if (canHandle(network, Service.Firewall)) {
+            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " + "router doesn't exist in the network " +
-                        config.getId());
+                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " + "router doesn't exist in the network " + network.getId());
                 return true;
             }
 
             if (rules != null && rules.size() == 1) {
                 // for VR no need to add default egress rule to DENY traffic
-                if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System &&
-                        !_networkMdl.getNetworkEgressDefaultPolicy(config.getId()))
+                if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System
+                        && !_networkMdl.getNetworkEgressDefaultPolicy(network.getId())) {
                     return true;
+                }
             }
 
-            if (!_routerMgr.applyFirewallRules(config, rules, routers)) {
-                throw new CloudRuntimeException("Failed to apply firewall rules in network " + config.getId());
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            if (!networkTopology.applyFirewallRules(network, rules, routers)) {
+                throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
             } else {
                 return true;
             }
@@ -264,19 +281,21 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     /*
-     * This function detects numbers like 12 ,32h ,42m .. etc,. 1) plain
-     * number like 12 2) time or tablesize like 12h, 34m, 45k, 54m , here
-     * last character is non-digit but from known characters .
+     * This function detects numbers like 12 ,32h ,42m .. etc,. 1) plain number
+     * like 12 2) time or tablesize like 12h, 34m, 45k, 54m , here last
+     * character is non-digit but from known characters .
      */
-    private static boolean containsOnlyNumbers(String str, String endChar) {
-        if (str == null)
+    private static boolean containsOnlyNumbers(final String str, final String endChar) {
+        if (str == null) {
             return false;
+        }
 
         String number = str;
         if (endChar != null) {
             boolean matchedEndChar = false;
-            if (str.length() < 2)
-                return false; // atleast one numeric and one char. example:
+            if (str.length() < 2) {
+                return false; // at least one numeric and one char. example:
+            }
             // 3h
             char strEnd = str.toCharArray()[str.length() - 1];
             for (char c : endChar.toCharArray()) {
@@ -286,8 +305,9 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                     break;
                 }
             }
-            if (!matchedEndChar)
+            if (!matchedEndChar) {
                 return false;
+            }
         }
         try {
             Integer.parseInt(number);
@@ -297,7 +317,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         return true;
     }
 
-    public static boolean validateHAProxyLBRule(LoadBalancingRule rule) {
+    public static boolean validateHAProxyLBRule(final LoadBalancingRule rule) {
         String timeEndChar = "dhms";
 
         if (rule.getSourcePortStart() == NetUtils.HAPROXY_STATS_PORT) {
@@ -318,15 +338,17 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 for (Pair<String, String> paramKV : paramsList) {
                     String key = paramKV.first();
                     String value = paramKV.second();
-                    if ("tablesize".equalsIgnoreCase(key))
+                    if ("tablesize".equalsIgnoreCase(key)) {
                         tablesize = value;
-                    if ("expire".equalsIgnoreCase(key))
+                    }
+                    if ("expire".equalsIgnoreCase(key)) {
                         expire = value;
+                    }
                 }
-                if ((expire != null) && !containsOnlyNumbers(expire, timeEndChar)) {
+                if (expire != null && !containsOnlyNumbers(expire, timeEndChar)) {
                     throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: expire is not in timeformat: " + expire);
                 }
-                if ((tablesize != null) && !containsOnlyNumbers(tablesize, "kmg")) {
+                if (tablesize != null && !containsOnlyNumbers(tablesize, "kmg")) {
                     throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: tablesize is not in size format: " + tablesize);
 
                 }
@@ -337,16 +359,18 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 for (Pair<String, String> paramKV : paramsList) {
                     String key = paramKV.first();
                     String value = paramKV.second();
-                    if ("length".equalsIgnoreCase(key))
+                    if ("length".equalsIgnoreCase(key)) {
                         length = value;
-                    if ("holdtime".equalsIgnoreCase(key))
+                    }
+                    if ("holdtime".equalsIgnoreCase(key)) {
                         holdTime = value;
+                    }
                 }
 
-                if ((length != null) && (!containsOnlyNumbers(length, null))) {
+                if (length != null && !containsOnlyNumbers(length, null)) {
                     throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: length is not a number: " + length);
                 }
-                if ((holdTime != null) && (!containsOnlyNumbers(holdTime, timeEndChar) && !containsOnlyNumbers(holdTime, null))) {
+                if (holdTime != null && !containsOnlyNumbers(holdTime, timeEndChar) && !containsOnlyNumbers(holdTime, null)) {
                     throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: holdtime is not in timeformat: " + holdTime);
                 }
             }
@@ -355,7 +379,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean validateLBRule(Network network, LoadBalancingRule rule) {
+    public boolean validateLBRule(final Network network, final LoadBalancingRule rule) {
         List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
         rules.add(rule);
         if (canHandle(network, Service.Lb) && canHandleLbRules(rules)) {
@@ -369,7 +393,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
+    public boolean applyLBRules(final Network network, final List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         if (canHandle(network, Service.Lb)) {
             if (!canHandleLbRules(rules)) {
                 return false;
@@ -381,7 +405,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 return true;
             }
 
-            if (!_routerMgr.applyLoadBalancingRules(network, rules, routers)) {
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            if (!networkTopology.applyLoadBalancingRules(network, rules, routers)) {
                 throw new CloudRuntimeException("Failed to apply load balancing rules in network " + network.getId());
             } else {
                 return true;
@@ -392,7 +419,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException {
+    public String[] applyVpnUsers(final RemoteAccessVpn vpn, final List<? extends VpnUser> users) throws ResourceUnavailableException {
         if (vpn.getNetworkId() == null) {
             return null;
         }
@@ -401,11 +428,14 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         if (canHandle(network, Service.Vpn)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply vpn users on the backend; virtual router" + " doesn't exist in the network " +
-                        network.getId());
+                s_logger.debug("Virtual router elemnt doesn't need to apply vpn users on the backend; virtual router" + " doesn't exist in the network " + network.getId());
                 return null;
             }
-            return _routerMgr.applyVpnUsers(network, users, routers);
+
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            return networkTopology.applyVpnUsers(network, users, routers);
         } else {
             s_logger.debug("Element " + getName() + " doesn't handle applyVpnUsers command");
             return null;
@@ -413,7 +443,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean startVpn(RemoteAccessVpn vpn) throws ResourceUnavailableException {
+    public boolean startVpn(final RemoteAccessVpn vpn) throws ResourceUnavailableException {
         if (vpn.getNetworkId() == null) {
             return false;
         }
@@ -433,7 +463,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean stopVpn(RemoteAccessVpn vpn) throws ResourceUnavailableException {
+    public boolean stopVpn(final RemoteAccessVpn vpn) throws ResourceUnavailableException {
         if (vpn.getNetworkId() == null) {
             return false;
         }
@@ -453,7 +483,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> services) throws ResourceUnavailableException {
+    public boolean applyIps(final Network network, final List<? extends PublicIpAddress> ipAddress, final Set<Service> services) throws ResourceUnavailableException {
         boolean canHandle = true;
         for (Service service : services) {
             if (!canHandle(network, service)) {
@@ -464,12 +494,14 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         if (canHandle) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to associate ip addresses on the backend; virtual " + "router doesn't exist in the network " +
-                        network.getId());
+                s_logger.debug("Virtual router elemnt doesn't need to associate ip addresses on the backend; virtual " + "router doesn't exist in the network " + network.getId());
                 return true;
             }
 
-            return _routerMgr.associatePublicIP(network, ipAddress, routers);
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            return networkTopology.associatePublicIP(network, ipAddress, routers);
         } else {
             return false;
         }
@@ -516,10 +548,8 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 + "For the record, sending 10 domains to MSIE 6 or Firefox 2 works as expected.", false);
         methodList.add(method);
 
-        method =
-                new LbStickinessMethod(StickinessMethodType.AppCookieBased,
-                        "This is App session based sticky method. Define session stickiness on an existing application cookie. "
-                                + "It can be used only for a specific http traffic");
+        method = new LbStickinessMethod(StickinessMethodType.AppCookieBased,
+                "This is App session based sticky method. Define session stickiness on an existing application cookie. " + "It can be used only for a specific http traffic");
         method.addParam("cookie-name", false, "This is the name of the cookie used by the application and which LB will "
                 + "have to learn for each new session. Default value: Auto geneared based on ip", false);
         method.addParam("length", false, "This is the max number of characters that will be memorized and checked in " + "each cookie value. Default value:52", false);
@@ -536,7 +566,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 false,
                 "When this option is specified, haproxy will match on the cookie prefix (or URL parameter prefix). "
                         + "The appsession value is the data following this prefix. Example : appsession ASPSESSIONID len 64 timeout 3h prefix  This will match the cookie ASPSESSIONIDXXXX=XXXXX, the appsession value will be XXXX=XXXXX.",
-                        true);
+                true);
         method.addParam("mode", false, "This option allows to change the URL parser mode. 2 modes are currently supported : - path-parameters "
                 + ": The parser looks for the appsession in the path parameters part (each parameter is separated by a semi-colon), "
                 + "which is convenient for JSESSIONID for example.This is the default mode if the option is not set. - query-string :"
@@ -565,7 +595,8 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         lbCapabilities.put(Capability.SupportedStickinessMethods, getHAProxyStickinessCapability());
         lbCapabilities.put(Capability.LbSchemes, LoadBalancerContainer.Scheme.Public.toString());
 
-        //specifies that LB rules can support autoscaling and the list of counters it supports
+        // specifies that LB rules can support autoscaling and the list of
+        // counters it supports
         AutoScaleCounter counter;
         List<AutoScaleCounter> counterList = new ArrayList<AutoScaleCounter>();
         counter = new AutoScaleCounter(AutoScaleCounterCpu);
@@ -616,23 +647,25 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        if (canHandle(config, Service.StaticNat)) {
-            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
+    public boolean applyStaticNats(final Network network, final List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        if (canHandle(network, Service.StaticNat)) {
+            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply static nat on the backend; virtual " + "router doesn't exist in the network " +
-                        config.getId());
+                s_logger.debug("Virtual router elemnt doesn't need to apply static nat on the backend; virtual " + "router doesn't exist in the network " + network.getId());
                 return true;
             }
 
-            return _routerMgr.applyStaticNats(config, rules, routers);
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            return networkTopology.applyStaticNats(network, rules, routers);
         } else {
             return true;
         }
     }
 
     @Override
-    public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdown(final Network network, final ReservationContext context, final boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
             return true;
@@ -644,7 +677,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 if (!result) {
                     s_logger.warn("Failed to stop virtual router element " + router + ", but would try to process clean up anyway.");
                 }
-                result = (_routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null);
+                result = _routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null;
                 if (!result) {
                     s_logger.warn("Failed to clean up virtual router element " + router);
                 }
@@ -654,23 +687,25 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean destroy(Network config, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroy(final Network config, final ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
             return true;
         }
         boolean result = true;
-        // NOTE that we need to pass caller account to destroyRouter, otherwise it will fail permission check there. Context passed in from deleteNetwork is the network account,
+        // NOTE that we need to pass caller account to destroyRouter, otherwise
+        // it will fail permission check there. Context passed in from
+        // deleteNetwork is the network account,
         // not caller account
         Account callerAccount = _accountMgr.getAccount(context.getCaller().getAccountId());
         for (DomainRouterVO router : routers) {
-            result = result && (_routerMgr.destroyRouter(router.getId(), callerAccount, context.getCaller().getId()) != null);
+            result = result && _routerMgr.destroyRouter(router.getId(), callerAccount, context.getCaller().getId()) != null;
         }
         return result;
     }
 
     @Override
-    public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile vm) throws ResourceUnavailableException {
+    public boolean savePassword(final Network network, final NicProfile nic, final VirtualMachineProfile vm) throws ResourceUnavailableException {
         if (!canHandle(network, null)) {
             return false;
         }
@@ -680,13 +715,16 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             return true;
         }
 
-        @SuppressWarnings("unchecked")
         VirtualMachineProfile uservm = vm;
 
-        // If any router is running then send save password command otherwise save the password in DB
+        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+        // If any router is running then send save password command otherwise
+        // save the password in DB
         for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
-                return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
+                return networkTopology.savePasswordToRouter(network, nic, uservm, routers);
             }
         }
         String password = (String) uservm.getParameter(VirtualMachineProfile.Param.VmPassword);
@@ -699,11 +737,12 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
         userVmVO.setUpdateParameters(true);
         _userVmDao.update(userVmVO.getId(), userVmVO);
+
         return true;
     }
 
     @Override
-    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile vm, String sshPublicKey) throws ResourceUnavailableException {
+    public boolean saveSSHKey(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final String sshPublicKey) throws ResourceUnavailableException {
         if (!canHandle(network, null)) {
             return false;
         }
@@ -713,14 +752,16 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             return true;
         }
 
-        @SuppressWarnings("unchecked")
         VirtualMachineProfile uservm = vm;
 
-        return _routerMgr.saveSSHPublicKeyToRouter(network, nic, uservm, routers, sshPublicKey);
+        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+        return networkTopology.saveSSHPublicKeyToRouter(network, nic, uservm, routers, sshPublicKey);
     }
 
     @Override
-    public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile vm) throws ResourceUnavailableException {
+    public boolean saveUserData(final Network network, final NicProfile nic, final VirtualMachineProfile vm) throws ResourceUnavailableException {
         if (!canHandle(network, null)) {
             return false;
         }
@@ -730,10 +771,12 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             return true;
         }
 
-        @SuppressWarnings("unchecked")
         VirtualMachineProfile uservm = vm;
 
-        return _routerMgr.saveUserDataToRouter(network, nic, uservm, routers);
+        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+        return networkTopology.saveUserDataToRouter(network, nic, uservm, routers);
     }
 
     @Override
@@ -746,7 +789,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public VirtualRouterProvider configure(ConfigureVirtualRouterElementCmd cmd) {
+    public VirtualRouterProvider configure(final ConfigureVirtualRouterElementCmd cmd) {
         VirtualRouterProviderVO element = _vrProviderDao.findById(cmd.getId());
         if (element == null || !(element.getType() == Type.VirtualRouter || element.getType() == Type.VPCVirtualRouter)) {
             s_logger.debug("Can't find Virtual Router element with network service provider id " + cmd.getId());
@@ -760,11 +803,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public OvsProvider configure(ConfigureOvsElementCmd cmd) {
+    public OvsProvider configure(final ConfigureOvsElementCmd cmd) {
         OvsProviderVO element = _ovsProviderDao.findById(cmd.getId());
         if (element == null) {
-            s_logger.debug("Can't find Ovs element with network service provider id "
-                    + cmd.getId());
+            s_logger.debug("Can't find Ovs element with network service provider id " + cmd.getId());
             return null;
         }
 
@@ -775,10 +817,9 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public VirtualRouterProvider addElement(Long nspId, Type providerType) {
+    public VirtualRouterProvider addElement(final Long nspId, final Type providerType) {
         if (!(providerType == Type.VirtualRouter || providerType == Type.VPCVirtualRouter)) {
-            throw new InvalidParameterValueException("Element " + getName() + " supports only providerTypes: " + Type.VirtualRouter.toString() + " and " +
-                    Type.VPCVirtualRouter);
+            throw new InvalidParameterValueException("Element " + getName() + " supports only providerTypes: " + Type.VirtualRouter.toString() + " and " + Type.VPCVirtualRouter);
         }
         VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(nspId, providerType);
         if (element != null) {
@@ -791,16 +832,18 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException {
+    public boolean applyPFRules(final Network network, final List<PortForwardingRule> rules) throws ResourceUnavailableException {
         if (canHandle(network, Service.PortForwarding)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " + "router doesn't exist in the network " +
-                        network.getId());
+                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " + "router doesn't exist in the network " + network.getId());
                 return true;
             }
 
-            if (!_routerMgr.applyFirewallRules(network, rules, routers)) {
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            if (!networkTopology.applyFirewallRules(network, rules, routers)) {
                 throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
             } else {
                 return true;
@@ -811,7 +854,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+    public boolean isReady(final PhysicalNetworkServiceProvider provider) {
         VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), getVirtualRouterProvider());
         if (element == null) {
             return false;
@@ -820,8 +863,8 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
-    ResourceUnavailableException {
+    public boolean shutdownProviderInstances(final PhysicalNetworkServiceProvider provider, final ReservationContext context) throws ConcurrentOperationException,
+            ResourceUnavailableException {
         VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), getVirtualRouterProvider());
         if (element == null) {
             return true;
@@ -831,7 +874,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         List<DomainRouterVO> routers = _routerDao.listByElementId(elementId);
         boolean result = true;
         for (DomainRouterVO router : routers) {
-            result = result && (_routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null);
+            result = result && _routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null;
         }
         _vrProviderDao.remove(elementId);
 
@@ -843,13 +886,13 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         return true;
     }
 
-    public Long getIdByNspId(Long nspId) {
+    public Long getIdByNspId(final Long nspId) {
         VirtualRouterProviderVO vr = _vrProviderDao.findByNspIdAndType(nspId, Type.VirtualRouter);
         return vr.getId();
     }
 
     @Override
-    public VirtualRouterProvider getCreatedElement(long id) {
+    public VirtualRouterProvider getCreatedElement(final long id) {
         VirtualRouterProvider provider = _vrProviderDao.findById(id);
         if (!(provider.getType() == Type.VirtualRouter || provider.getType() == Type.VPCVirtualRouter)) {
             throw new InvalidParameterValueException("Unable to find provider by id");
@@ -858,37 +901,40 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
-    ResourceUnavailableException {
+    public boolean release(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final ReservationContext context) throws ConcurrentOperationException,
+            ResourceUnavailableException {
         return true;
     }
 
     @Override
-    public boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+    public boolean configDhcpSupportForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest,
+            final ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(network, Service.Dhcp)) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
-            @SuppressWarnings("unchecked")
+
             VirtualMachineProfile uservm = vm;
 
             List<DomainRouterVO> routers = getRouters(network, dest);
 
-            if ((routers == null) || (routers.size() == 0)) {
+            if (routers == null || routers.size() == 0) {
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
 
-            return _routerMgr.configDhcpForSubnet(network, nic, uservm, dest, routers);
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            return networkTopology.configDhcpForSubnet(network, nic, uservm, dest, routers);
         }
         return false;
     }
 
     @Override
-    public boolean removeDhcpSupportForSubnet(Network network) throws ResourceUnavailableException {
+    public boolean removeDhcpSupportForSubnet(final Network network) throws ResourceUnavailableException {
         if (canHandle(network, Service.Dhcp)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
-            if ((routers == null) || (routers.size() == 0)) {
+            if (routers == null || routers.size() == 0) {
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
             try {
@@ -901,30 +947,32 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+    public boolean addDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest, final ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(network, Service.Dhcp)) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
 
-            @SuppressWarnings("unchecked")
             VirtualMachineProfile uservm = vm;
 
             List<DomainRouterVO> routers = getRouters(network, dest);
 
-            if ((routers == null) || (routers.size() == 0)) {
+            if (routers == null || routers.size() == 0) {
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
 
-            return _routerMgr.applyDhcpEntry(network, nic, uservm, dest, routers);
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            return networkTopology.applyDhcpEntry(network, nic, uservm, dest, routers);
         }
         return false;
     }
 
     @Override
-    public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+    public boolean addPasswordAndUserdata(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest,
+            final ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(network, Service.UserData)) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
@@ -935,28 +983,29 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 return true;
             }
 
-            @SuppressWarnings("unchecked")
             VirtualMachineProfile uservm = vm;
 
             List<DomainRouterVO> routers = getRouters(network, dest);
 
-            if ((routers == null) || (routers.size() == 0)) {
+            if (routers == null || routers.size() == 0) {
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
 
-            return _routerMgr.applyUserData(network, nic, uservm, dest, routers);
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            return networkTopology.applyUserData(network, nic, uservm, dest, routers);
         }
         return false;
     }
 
-    protected List<DomainRouterVO> getRouters(Network network, DeployDestination dest) {
+    protected List<DomainRouterVO> getRouters(final Network network, final DeployDestination dest) {
         boolean publicNetwork = false;
         if (_networkMdl.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, getProvider())) {
             publicNetwork = true;
         }
-        boolean isPodBased =
-                (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMdl.isSecurityGroupSupportedInNetwork(network)) &&
-                network.getTrafficType() == TrafficType.Guest;
+        boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMdl.isSecurityGroupSupportedInNetwork(network))
+                && network.getTrafficType() == TrafficType.Guest;
 
         List<DomainRouterVO> routers;
 
@@ -967,15 +1016,18 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
                 Long podId = dest.getPod().getId();
                 routers = _routerDao.listByNetworkAndPodAndRole(network.getId(), podId, Role.VIRTUAL_ROUTER);
             } else {
-                // With pod == null, it's network restart case, we would add all router to it
+                // With pod == null, it's network restart case, we would add all
+                // router to it
                 // Ignore DnsBasicZoneUpdate() parameter here
                 routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             }
         }
 
-        // for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when
+        // for Basic zone, add all Running routers - we have to send
+        // Dhcp/vmData/password info to them when
         // network.dns.basiczone.updates is set to "all"
-        // With pod == null, it's network restart case, we already add all routers to it
+        // With pod == null, it's network restart case, we already add all
+        // routers to it
         if (isPodBased && dest.getPod() != null && _routerMgr.getDnsBasicZoneUpdate().equalsIgnoreCase("all")) {
             Long podId = dest.getPod().getId();
             List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(network.getId(), podId, State.Running, Role.VIRTUAL_ROUTER);
@@ -985,7 +1037,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public List<? extends VirtualRouterProvider> searchForVirtualRouterElement(ListVirtualRouterElementsCmd cmd) {
+    public List<? extends VirtualRouterProvider> searchForVirtualRouterElement(final ListVirtualRouterElementsCmd cmd) {
         Long id = cmd.getId();
         Long nspId = cmd.getNspId();
         Boolean enabled = cmd.getEnabled();
@@ -1001,14 +1053,14 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             sc.and(sc.entity().isEnabled(), Op.EQ, enabled);
         }
 
-        //return only VR and VPC VR
+        // return only VR and VPC VR
         sc.and(sc.entity().getType(), Op.IN, VirtualRouterProvider.Type.VPCVirtualRouter, VirtualRouterProvider.Type.VirtualRouter);
 
         return sc.list();
     }
 
     @Override
-    public List<? extends OvsProvider> searchForOvsElement(ListOvsElementsCmd cmd) {
+    public List<? extends OvsProvider> searchForOvsElement(final ListOvsElementsCmd cmd) {
         Long id = cmd.getId();
         Long nspId = cmd.getNspId();
         Boolean enabled = cmd.getEnabled();
@@ -1028,12 +1080,12 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean verifyServicesCombination(Set<Service> services) {
+    public boolean verifyServicesCombination(final Set<Service> services) {
         return true;
     }
 
     @Override
-    public IpDeployer getIpDeployer(Network network) {
+    public IpDeployer getIpDeployer(final Network network) {
         return this;
     }
 
@@ -1042,12 +1094,12 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public List<LoadBalancerTO> updateHealthChecks(Network network, List<LoadBalancingRule> lbrules) {
+    public List<LoadBalancerTO> updateHealthChecks(final Network network, final List<LoadBalancingRule> lbrules) {
         // TODO Auto-generated method stub
         return null;
     }
 
-    private boolean canHandleLbRules(List<LoadBalancingRule> rules) {
+    private boolean canHandleLbRules(final List<LoadBalancingRule> rules) {
         Map<Capability, String> lbCaps = getCapabilities().get(Service.Lb);
         if (!lbCaps.isEmpty()) {
             String schemeCaps = lbCaps.get(Capability.LbSchemes);
@@ -1064,59 +1116,83 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean prepareMigration(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) {
+    public boolean prepareMigration(final NicProfile nic, final Network network, final VirtualMachineProfile vm, final DeployDestination dest, final ReservationContext context) {
         if (nic.getBroadcastType() != Networks.BroadcastDomainType.Pvlan) {
             return true;
         }
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
             assert vm instanceof DomainRouterVO;
-            DomainRouterVO router = (DomainRouterVO)vm.getVirtualMachine();
-            _routerMgr.setupDhcpForPvlan(false, router, router.getHostId(), nic);
+            DomainRouterVO router = (DomainRouterVO) vm.getVirtualMachine();
+
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            try {
+                networkTopology.setupDhcpForPvlan(false, router, router.getHostId(), nic);
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Timed Out", e);
+            }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
-            UserVmVO userVm = (UserVmVO)vm.getVirtualMachine();
+            UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();
             _userVmMgr.setupVmForPvlan(false, userVm.getHostId(), nic);
         }
         return true;
     }
 
     @Override
-    public void rollbackMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst) {
+    public void rollbackMigration(final NicProfile nic, final Network network, final VirtualMachineProfile vm, final ReservationContext src, final ReservationContext dst) {
         if (nic.getBroadcastType() != Networks.BroadcastDomainType.Pvlan) {
             return;
         }
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
             assert vm instanceof DomainRouterVO;
-            DomainRouterVO router = (DomainRouterVO)vm.getVirtualMachine();
-            _routerMgr.setupDhcpForPvlan(true, router, router.getHostId(), nic);
+            DomainRouterVO router = (DomainRouterVO) vm.getVirtualMachine();
+
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            try {
+                networkTopology.setupDhcpForPvlan(true, router, router.getHostId(), nic);
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Timed Out", e);
+            }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
-            UserVmVO userVm = (UserVmVO)vm.getVirtualMachine();
+            UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();
             _userVmMgr.setupVmForPvlan(true, userVm.getHostId(), nic);
         }
     }
 
     @Override
-    public void commitMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst) {
+    public void commitMigration(final NicProfile nic, final Network network, final VirtualMachineProfile vm, final ReservationContext src, final ReservationContext dst) {
         if (nic.getBroadcastType() != Networks.BroadcastDomainType.Pvlan) {
             return;
         }
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
             assert vm instanceof DomainRouterVO;
-            DomainRouterVO router = (DomainRouterVO)vm.getVirtualMachine();
-            _routerMgr.setupDhcpForPvlan(true, router, router.getHostId(), nic);
+            DomainRouterVO router = (DomainRouterVO) vm.getVirtualMachine();
+
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            try {
+                networkTopology.setupDhcpForPvlan(true, router, router.getHostId(), nic);
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Timed Out", e);
+            }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
-            UserVmVO userVm = (UserVmVO)vm.getVirtualMachine();
+            UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();
             _userVmMgr.setupVmForPvlan(true, userVm.getHostId(), nic);
         }
     }
 
     @Override
-    public boolean prepareAggregatedExecution(Network network, DeployDestination dest) throws ResourceUnavailableException {
+    public boolean prepareAggregatedExecution(final Network network, final DeployDestination dest) throws ResourceUnavailableException {
         List<DomainRouterVO> routers = getRouters(network, dest);
 
-        if ((routers == null) || (routers.size() == 0)) {
+        if (routers == null || routers.size() == 0) {
             throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
         }
 
@@ -1124,10 +1200,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean completeAggregatedExecution(Network network, DeployDestination dest) throws ResourceUnavailableException {
+    public boolean completeAggregatedExecution(final Network network, final DeployDestination dest) throws ResourceUnavailableException {
         List<DomainRouterVO> routers = getRouters(network, dest);
 
-        if ((routers == null) || (routers.size() == 0)) {
+        if (routers == null || routers.size() == 0) {
             throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
         }
 
@@ -1135,8 +1211,9 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     }
 
     @Override
-    public boolean cleanupAggregatedExecution(Network network, DeployDestination dest) throws ResourceUnavailableException {
-        // The VR code already cleansup in the Finish routine using finally, lets not waste another command
+    public boolean cleanupAggregatedExecution(final Network network, final DeployDestination dest) throws ResourceUnavailableException {
+        // The VR code already cleansup in the Finish routine using finally,
+        // lets not waste another command
         return true;
     }
 }

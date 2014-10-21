@@ -953,6 +953,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         params.put("libvirt.host.pifs", _pifs);
 
         params.put("libvirt.computing.resource", this);
+        params.put("libvirtVersion", _hypervisorLibvirtVersion);
 
         configureVifDrivers(params);
 
@@ -962,7 +963,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         String unameKernelVersion = Script.runSimpleBashScript("uname -r");
         String[] kernelVersions = unameKernelVersion.split("[\\.\\-]");
-        _kernelVersion = Integer.parseInt(kernelVersions[0]) * 1000 * 1000 + Integer.parseInt(kernelVersions[1]) * 1000 + Integer.parseInt(kernelVersions[2]);
+        _kernelVersion = Integer.parseInt(kernelVersions[0]) * 1000 * 1000 + (long)Integer.parseInt(kernelVersions[1]) * 1000 + Integer.parseInt(kernelVersions[2]);
 
         return true;
     }

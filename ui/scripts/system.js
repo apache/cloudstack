@@ -9391,7 +9391,21 @@
         subsections: {
             virtualRouters: {
                 sectionSelect: {
-                    label: 'label.select-view'
+                    label: 'label.select-view',
+                    preFilter: function(args) {                    	
+                    	//Only clicking ViewAll Link("view all Virtual Routers") in "Virtual Routers group by XXXXXXX" detailView will have "routerGroupByXXXXXXX" included in args.context
+                        if ("routerGroupByZone" in args.context) {
+                        	return ["routerGroupByZone"]; // read-only (i.e. text "group by Zone") 
+                        } else if ( "routerGroupByPod" in args.context) {
+                        	return ["routerGroupByPod"]; // read-only (i.e. text "group by Pod") 
+                        } else if ("routerGroupByCluster" in args.context) {
+                        	return ["routerGroupByCluster"]; // read-only (i.e. text "group by Cluster") 
+                        } else if ("routerGroupByAccount" in args.context) {
+                        	return ["routerGroupByAccount"]; // read-only (i.e. text "group by Account") 
+                        } else {
+                        	return ["routerNoGroup", "routerGroupByZone", "routerGroupByPod", "routerGroupByCluster", "routerGroupByAccount"]; //editable dropdown 
+                        }
+                    }
                 },
                 sections: {
                     routerNoGroup: {
@@ -9445,6 +9459,27 @@
                                     // forvpc: false
                                 };
                                 
+                                if (args.context != undefined) {
+	                                if ("routerGroupByZone" in args.context) {
+	                                    $.extend(data2, {
+	                                        zoneid: args.context.routerGroupByZone[0].id
+	                                    })
+	                                } else if ("routerGroupByPod" in args.context) {
+	                                    $.extend(data2, {
+	                                        podid: args.context.routerGroupByPod[0].id
+	                                    })
+	                                } else if ("routerGroupByCluster" in args.context) {
+	                                    $.extend(data2, {
+	                                        clusterid: args.context.routerGroupByCluster[0].id
+	                                    })
+	                                } else if ("routerGroupByAccount" in args.context) {
+	                                    $.extend(data2, {
+	                                    	 account: args.context.routerGroupByAccount[0].name,
+	                                         domainid: args.context.routerGroupByAccount[0].domainid
+	                                    })
+	                                }
+                                }                               
+                                
                                 var routers =[];
                                 $.ajax({
                                     url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
@@ -9463,7 +9498,18 @@
                                  * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
                                  */   
                                 if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
-                                        $.ajax({
+                                    /* 
+                                     * account parameter(account+domainid) and project parameter(projectid) are not allowed to be passed together to listXXXXXXX API. 
+                                     * So, remove account parameter(account+domainid) from data2
+                                     */                                    	
+                                	if ("account" in data2) {
+                                		delete data2.account;
+                                	}
+                                	if ("domainid" in data2) {
+                                		delete data2.domainid;
+                                	}                                	
+                                	
+                                	$.ajax({
                                             url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                             data: data2,
 	                                    async: false,
@@ -10078,7 +10124,11 @@
                                 });
                             },
                             detailView: {
-                                name: 'label.virtual.routers.group.zone',
+                                name: 'label.virtual.routers.group.zone',                                
+                                viewAll: {
+                                    path: '_zone.virtualRouters',
+                                    label: 'label.virtual.appliances'
+                                },                                
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
                                         label: 'label.upgrade.router.newer.template',
@@ -10205,7 +10255,11 @@
                                 });
                             },
                             detailView: {
-                                name: 'label.virtual.routers.group.pod',
+                                name: 'label.virtual.routers.group.pod',                                
+                                viewAll: {
+                                    path: '_zone.virtualRouters',
+                                    label: 'label.virtual.appliances'
+                                },                               
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
                                         label: 'label.upgrade.router.newer.template',
@@ -10335,7 +10389,11 @@
                                 });
                             },
                             detailView: {
-                                name: 'label.virtual.routers.group.cluster',
+                                name: 'label.virtual.routers.group.cluster',                               
+                                viewAll: {
+                                    path: '_zone.virtualRouters',
+                                    label: 'label.virtual.appliances'
+                                },                               
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
                                         label: 'label.upgrade.router.newer.template',
@@ -10532,7 +10590,11 @@
                                 });
                             },
                             detailView: {
-                                name: 'label.virtual.routers.group.account',
+                                name: 'label.virtual.routers.group.account',                                
+                                viewAll: {
+                                    path: '_zone.virtualRouters',
+                                    label: 'label.virtual.appliances'
+                                },                               
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
                                         label: 'label.upgrade.router.newer.template',
@@ -14179,19 +14241,20 @@
                                     array1.push("&password=" + todb(args.data.vCenterPassword));
                                     
                                     //vSwitch Public Type
-                                    if (args.data.vSwitchPublicType != "")
-                                    array1.push("&publicvswitchtype=" + args.data.vSwitchPublicType);
-                                    
-                                    if (args.data.vSwitchPublicName != "")
-                                    array1.push("&publicvswitchname=" + args.data.vSwitchPublicName);
-                                    
+                                    if (args.$form.find('.form-item[rel=vSwitchPublicType]').css('display') != 'none' && args.data.vSwitchPublicType != "") {
+                                        array1.push("&publicvswitchtype=" + args.data.vSwitchPublicType);
+                                    }
+                                    if (args.$form.find('.form-item[rel=vSwitchPublicName]').css('display') != 'none' && args.data.vSwitchPublicName != "") {
+                                        array1.push("&publicvswitchname=" + args.data.vSwitchPublicName);
+                                    }
                                     
                                     //vSwitch Guest Type
-                                    if (args.data.vSwitchGuestType != "")
-                                    array1.push("&guestvswitchtype=" + args.data.vSwitchGuestType);
-                                    
-                                    if (args.data.vSwitchGuestName != "")
-                                    array1.push("&guestvswitchname=" + args.data.vSwitchGuestName);
+                                    if (args.$form.find('.form-item[rel=vSwitchGuestType]').css('display') != 'none' && args.data.vSwitchGuestType != "") {
+                                        array1.push("&guestvswitchtype=" + args.data.vSwitchGuestType);
+                                    }
+                                    if (args.$form.find('.form-item[rel=vSwitchGuestName]').css('display') != 'none' && args.data.vSwitchGuestName != "") {
+                                        array1.push("&guestvswitchname=" + args.data.vSwitchGuestName);
+                                    }
                                     
                                     //Nexus VSM fields
                                     if (args.$form.find('.form-item[rel=vsmipaddress]').css('display') != 'none' && args.data.vsmipaddress != null && args.data.vsmipaddress.length > 0) {

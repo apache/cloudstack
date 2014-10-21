@@ -2396,7 +2396,7 @@
                                     	if (args.vpn.state == "Running") {
                                     	    msg = _l('message.enabled.vpn') + ' ' + args.vpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.vpn.presharedkey;                                	
                                     	} else {
-                                    		msg = "VPN configuration has been generated, but it failed to apply. Please check connectivity of the network element, then re-try.";
+                                    		msg = "Remote Access VPN configuration has been generated, but it failed to apply. Please check connectivity of the network element, then re-try.";
                                     	}   
                                         return msg;
                                     }
@@ -4354,14 +4354,25 @@
                                                             },
                                                             success: function(data) {
                                                                 loadCurrent++;
+                                                                var vms = data.listvirtualmachinesresponse.virtualmachine;
+                                                                                                                                
+                                                                //if this VM is destroyed, data.listvirtualmachinesresponse.virtualmachine will be undefined for regular-user (CLOUDSTACK-3195)
+                                                                if (vms == undefined) {                                                                	
+                                                                	vms = [{
+                                                                        "id": item.virtualmachineid,
+                                                                        "name": item.virtualmachinename,
+                                                                        "displayname": item.virtualmachinedisplayname
+                                                                	}];                                                                	
+                                                                }                                                               
+                                                                
                                                                 $.extend(item, {
-                                                                    _itemData: $.map(data.listvirtualmachinesresponse.virtualmachine, function(vm) {
+                                                                    _itemData: $.map(vms, function(vm) {
                                                                         return $.extend(vm, {
                                                                             _displayName: '<p>VM: ' + vm.name + '</p>' + '<p>IP: ' + item.vmguestip + '</p>' // Also display attached IP
                                                                         });
                                                                     }),
                                                                     _context: {
-                                                                        instances: data.listvirtualmachinesresponse.virtualmachine
+                                                                        instances: vms
                                                                     }
                                                                 });
 

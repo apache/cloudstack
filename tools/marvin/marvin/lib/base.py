@@ -894,7 +894,7 @@ class Volume:
 
     @classmethod
     def upload(cls, apiclient, services, zoneid=None,
-               account=None, domainid=None, url=None):
+               account=None, domainid=None, url=None, **kwargs):
         """Uploads the volume to specified account"""
 
         cmd = uploadVolume.uploadVolumeCmd()
@@ -910,6 +910,7 @@ class Volume:
             cmd.url = url
         else:
             cmd.url = services["url"]
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
         return Volume(apiclient.uploadVolume(cmd).__dict__)
 
     def wait_for_upload(self, apiclient, timeout=10, interval=60):

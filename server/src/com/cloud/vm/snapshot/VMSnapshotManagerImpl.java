@@ -55,9 +55,11 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.gpu.GPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
@@ -108,6 +110,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
     @Inject
     VMInstanceDao _vmInstanceDao;
+    @Inject ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject VMSnapshotDao _vmSnapshotDao;
     @Inject VolumeDao _volumeDao;
     @Inject AccountDao _accountDao;
@@ -256,6 +259,11 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         UserVmVO userVmVo = _userVMDao.findById(vmId);
         if (userVmVo == null) {
             throw new InvalidParameterValueException("Creating VM snapshot failed due to VM:" + vmId + " is a system VM or does not exist");
+        }
+
+        // VM snapshot with memory is not supported for VGPU Vms
+        if (snapshotMemory && _serviceOfferingDetailsDao.findDetail(userVmVo.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
+            throw new InvalidParameterValueException("VM snapshot with MEMORY is not supported for VGU enabled VMs.");
         }
 
         // check hypervisor capabilities

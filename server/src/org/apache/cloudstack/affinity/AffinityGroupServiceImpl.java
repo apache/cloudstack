@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -439,20 +440,21 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
-        if (!status) {
-            return false;
-        }
-        if ((newState == State.Expunging) || (newState == State.Error)) {
-            // cleanup all affinity groups associations of the Expunged VM
-            SearchCriteria<AffinityGroupVMMapVO> sc = _affinityGroupVMMapDao.createSearchCriteria();
-            sc.addAnd("instanceId", SearchCriteria.Op.EQ, vo.getId());
-            _affinityGroupVMMapDao.expunge(sc);
-        }
-        return true;
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, VirtualMachine vo, boolean status, Object opaque) {
+      if (!status) {
+        return false;
+      }
+      State newState = transition.getToState();
+      if ((newState == State.Expunging) || (newState == State.Error)) {
+        // cleanup all affinity groups associations of the Expunged VM
+        SearchCriteria<AffinityGroupVMMapVO> sc = _affinityGroupVMMapDao.createSearchCriteria();
+        sc.addAnd("instanceId", SearchCriteria.Op.EQ, vo.getId());
+        _affinityGroupVMMapDao.expunge(sc);
+      }
+      return true;
     }
 
-    @Override
+  @Override
     public UserVm updateVMAffinityGroups(Long vmId, List<Long> affinityGroupIds) {
         // Verify input parameters
         UserVmVO vmInstance = _userVmDao.findById(vmId);

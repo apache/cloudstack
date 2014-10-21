@@ -40,6 +40,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
@@ -1279,32 +1280,35 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Object opaque) {
-        if (!status) {
-            return false;
-        }
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, VirtualMachine vm, boolean status, Object opaque) {
+      if (!status) {
+        return false;
+      }
 
-        if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Security Group Mgr: handling start of vm id" + vm.getId());
-            }
-            handleVmStarted((VMInstanceVO)vm);
-        } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Security Group Mgr: handling stop of vm id" + vm.getId());
-            }
-            handleVmStopped((VMInstanceVO)vm);
-        } else if (VirtualMachine.State.isVmMigrated(oldState, event, newState)) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Security Group Mgr: handling migration of vm id" + vm.getId());
-            }
-            handleVmMigrated((VMInstanceVO)vm);
+      State oldState = transition.getCurrentState();
+      State newState = transition.getToState();
+      Event event = transition.getEvent();
+      if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
+        if (s_logger.isTraceEnabled()) {
+          s_logger.trace("Security Group Mgr: handling start of vm id" + vm.getId());
         }
+        handleVmStarted((VMInstanceVO)vm);
+      } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
+        if (s_logger.isTraceEnabled()) {
+          s_logger.trace("Security Group Mgr: handling stop of vm id" + vm.getId());
+        }
+        handleVmStopped((VMInstanceVO)vm);
+      } else if (VirtualMachine.State.isVmMigrated(oldState, event, newState)) {
+        if (s_logger.isTraceEnabled()) {
+          s_logger.trace("Security Group Mgr: handling migration of vm id" + vm.getId());
+        }
+        handleVmMigrated((VMInstanceVO)vm);
+      }
 
-        return true;
+      return true;
     }
 
-    @Override
+  @Override
     public boolean isVmSecurityGroupEnabled(Long vmId) {
         VirtualMachine vm = _vmDao.findByIdIncludingRemoved(vmId);
         List<NicProfile> nics = _networkMgr.getNicProfiles(vm);

@@ -1813,6 +1813,14 @@ public enum Config {
             "Service offering used by secondary storage; if NULL - system offering will be used",
             null),
     HaTag("Advanced", ManagementServer.class, String.class, "ha.tag", null, "HA tag defining that the host marked with this tag can be used for HA purposes only", null),
+    ImplicitHostTags(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "implicit.host.tags",
+            "GPU",
+            "Tag hosts at the time of host disovery based on the host properties/capabilities",
+            null),
     VpcCleanupInterval(
             "Advanced",
             ManagementServer.class,

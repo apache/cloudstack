@@ -498,7 +498,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    private Pair<String, String> copyVolumeFromSecStorage(VmwareHypervisorHost hyperHost, String srcVolumePath, DatastoreMO dsMo, String secStorageUrl) throws Exception {
+    private Pair<String, String> copyVolumeFromSecStorage(VmwareHypervisorHost hyperHost, String srcVolumePath, DatastoreMO dsMo, String secStorageUrl, long wait) throws Exception {
 
         String volumeFolder = null;
         String volumeName = null;
@@ -513,7 +513,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
 
         String newVolume = VmwareHelper.getVCenterSafeUuid();
-        restoreVolumeFromSecStorage(hyperHost, dsMo, newVolume, secStorageUrl, volumeFolder, volumeName);
+        restoreVolumeFromSecStorage(hyperHost, dsMo, newVolume, secStorageUrl, volumeFolder, volumeName, wait);
 
         return new Pair<String, String>(volumeFolder, newVolume);
     }
@@ -558,7 +558,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
             }
 
-            Pair<String, String> result = copyVolumeFromSecStorage(hyperHost, srcVolume.getPath(), new DatastoreMO(context, morDatastore), srcStore.getUrl());
+            Pair<String, String> result = copyVolumeFromSecStorage(hyperHost, srcVolume.getPath(), new DatastoreMO(context, morDatastore), srcStore.getUrl(), (long)cmd.getWait() * 1000);
             deleteVolumeDirOnSecondaryStorage(result.first(), srcStore.getUrl());
             VolumeObjectTO newVolume = new VolumeObjectTO();
             newVolume.setPath(result.second());
@@ -865,7 +865,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private Ternary<String, Long, Long> createTemplateFromSnapshot(String installPath, String templateUniqueName, String secStorageUrl, String snapshotPath,
-            Long templateId) throws Exception {
+            Long templateId, long wait) throws Exception {
         //Snapshot path is decoded in this form: /snapshots/account/volumeId/uuid/uuid
         String backupSSUuid;
         String snapshotFolder;
@@ -905,7 +905,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         try {
             if (new File(snapshotFullOVAName).exists()) {
-                command = new Script(false, "cp", _timeout, s_logger);
+                command = new Script(false, "cp", wait, s_logger);
                 command.add(snapshotFullOVAName);
                 command.add(installFullOVAName);
                 result = command.execute();
@@ -916,7 +916,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
 
                 // untar OVA file at template directory
-                command = new Script("tar", 0, s_logger);
+                command = new Script("tar", wait, s_logger);
                 command.add("--no-same-owner");
                 command.add("-xf", installFullOVAName);
                 command.setWorkDir(installFullPath);
@@ -930,7 +930,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             } else {  // there is no ova file, only ovf originally;
                 if (new File(snapshotFullOvfName).exists()) {
-                    command = new Script(false, "cp", _timeout, s_logger);
+                    command = new Script(false, "cp", wait, s_logger);
                     command.add(snapshotFullOvfName);
                     //command.add(installFullOvfName);
                     command.add(installFullPath);
@@ -960,7 +960,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         }
                     }
                     if (snapshotFullVMDKName != null) {
-                        command = new Script(false, "cp", _timeout, s_logger);
+                        command = new Script(false, "cp", wait, s_logger);
                         command.add(snapshotFullVMDKName);
                         command.add(installFullPath);
                         result = command.execute();
@@ -1009,7 +1009,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             NfsTO nfsSvr = (NfsTO)imageStore;
-            Ternary<String, Long, Long> result = createTemplateFromSnapshot(template.getPath(), uniqeName, nfsSvr.getUrl(), snapshot.getPath(), template.getId());
+            Ternary<String, Long, Long> result = createTemplateFromSnapshot(template.getPath(), uniqeName, nfsSvr.getUrl(), snapshot.getPath(), template.getId(), (long)cmd.getWait() * 1000);
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(result.first());
@@ -2079,7 +2079,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private Long restoreVolumeFromSecStorage(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName, String secStorageUrl, String secStorageDir,
-            String backupName) throws Exception {
+            String backupName, long wait) throws Exception {
 
         String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
         String srcOVAFileName = null;
@@ -2100,7 +2100,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         if (!ovfFile.exists()) {
             srcOVFFileName = getOVFFilePath(srcOVAFileName);
             if (srcOVFFileName == null && ovafile.exists()) {  // volss: ova file exists; o/w can't do tar
-                Script command = new Script("tar", 0, s_logger);
+                Script command = new Script("tar", wait, s_logger);
                 command.add("--no-same-owner");
                 command.add("-xf", srcOVAFileName);
                 command.setWorkDir(secondaryMountPoint + "/" + secStorageDir + "/" + snapshotDir);
@@ -2183,7 +2183,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 backedUpSnapshotUuid = backedUpSnapshotUuid.replace(".ovf", "");
             }
             DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
-            restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid);
+            restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid, (long)cmd.getWait() * 1000);
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(newVolumeName);

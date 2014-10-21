@@ -19,29 +19,31 @@
     P1 tests for Load balancing rules for secondary IP feature, this is an
     enhancement to the Multiple IPs per NIC feature
 
-    Test Plan: https://cwiki.apache.org/confluence/display/CLOUDSTACK/TestPlan+%3AConfiguring+load+balancing+rules+for+VM+nic+secondary+ips
+    Test Plan: https://cwiki.apache.org/confluence/display/CLOUDSTACK/
+    TestPlan+%3AConfiguring+load+balancing+rules+for+VM+nic+secondary+ips
 
     Issue Link: https://issues.apache.org/jira/browse/CLOUDSTACK-4840
 
-    Feature Specifications: https://cwiki.apache.org/confluence/display/CLOUDSTACK/Configuring+load+balancing+rules+for+VM+nic+secondary+ips
+    Feature Specifications: https://cwiki.apache.org/confluence/display/
+    CLOUDSTACK/Configuring+load+balancing+rules+for+VM+nic+secondary+ips
 """
 
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.lib.base import (
-                             Account,
-                             ServiceOffering,
-                             VirtualMachine,
-                             LoadBalancerRule,
-                             NIC,
-                             PublicIPAddress,
-                             Router,
-                             NetworkOffering,
-                             Network,
-                             FireWallRule,
-                             NATRule
-                             )
+    Account,
+    ServiceOffering,
+    VirtualMachine,
+    LoadBalancerRule,
+    NIC,
+    PublicIPAddress,
+    Router,
+    NetworkOffering,
+    Network,
+    FireWallRule,
+    NATRule
+)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
@@ -51,23 +53,25 @@ from marvin.lib.common import (get_domain,
                                )
 
 from marvin.lib.utils import (validateList,
-			                  random_gen,
+                              random_gen,
                               cleanup_resources)
 from marvin.cloudstackAPI import (restartNetwork)
 from marvin.sshClient import SshClient
 from marvin.codes import PASS
 
+
 def IsIpAssignedToLoadBalancerRule(self, lbrule, iplist):
-    """List Load Balancer Rule Instances and verify that IP is present in the list"""
+    """List Load Balancer Rule Instances and verify that
+    IP is present in the list"""
 
     exceptionMessage = ""
     isIpAssignedToLbRule = True
     try:
         lbruleinstances = LoadBalancerRule.listLoadBalancerRuleInstances(
-                                                            self.apiclient,
-                                                            id=lbrule.id,
-                                                            lbvmips=True
-                                                            )
+            self.apiclient,
+            id=lbrule.id,
+            lbvmips=True
+        )
 
         self.assertEqual(validateList(lbruleinstances)[0], PASS,
                          "lbruleinstances list validation failed")
@@ -77,25 +81,28 @@ def IsIpAssignedToLoadBalancerRule(self, lbrule, iplist):
 
         for ip in iplist:
             self.assertTrue(ip in lbruleips,
-                         "IP address in lbruleinstances list not matching\
+                            "IP address in lbruleinstances list not matching\
                           with ips assigned to lb rule")
     except Exception as e:
         isIpAssignedToLbRule = False
         exceptionMessage = e
     return [isIpAssignedToLbRule, exceptionMessage]
 
+
 class TestAssignLBRule(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestAssignLBRule,\
+        cloudstackTestClient = super(TestAssignLBRule,
                                      cls).getClsTestClient()
         cls.api_client = cloudstackTestClient.getApiClient()
 
         cls.testdata = cloudstackTestClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
-        cls.zone = get_zone(cls.api_client, cloudstackTestClient.getZoneForTests())
+        cls.zone = get_zone(
+            cls.api_client,
+            cloudstackTestClient.getZoneForTests())
 
         template = get_template(cls.api_client,
                                 cls.zone.id,
@@ -106,8 +113,8 @@ class TestAssignLBRule(cloudstackTestCase):
         cls._cleanup = []
         try:
             cls.service_offering = ServiceOffering.create(
-                                         cls.api_client,
-                                         cls.testdata["service_offering"])
+                cls.api_client,
+                cls.testdata["service_offering"])
             cls._cleanup.append(cls.service_offering)
         except Exception as e:
             cls.tearDownClass()
@@ -123,19 +130,19 @@ class TestAssignLBRule(cloudstackTestCase):
                                           domainid=self.domain.id)
             self.cleanup.append(self.account)
             self.virtual_machine = VirtualMachine.create(
-                                   self.api_client,
-                                   self.testdata["virtual_machine"],
-                                   accountid=self.account.name,
-                                   domainid=self.account.domainid,
-                                   serviceofferingid=self.service_offering.id,
-                                   mode=self.zone.networktype)
+                self.api_client,
+                self.testdata["virtual_machine"],
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id,
+                mode=self.zone.networktype)
         except Exception as e:
             self.tearDown()
             raise e
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created accounts, domains etc
+            # Clean up, terminate the created accounts, domains etc
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -150,7 +157,7 @@ class TestAssignLBRule(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_01_lb_rule_for_primary_ip(self):
         """Create LB rule for primary IP
 
@@ -165,44 +172,45 @@ class TestAssignLBRule(cloudstackTestCase):
         NIC.addIp(self.apiclient, id=self.virtual_machine.nic[0].id)
 
         public_ip = PublicIPAddress.create(
-                        self.apiclient,
-                        accountid=self.account.name,
-                        zoneid=self.zone.id,
-                        domainid=self.account.domainid,
-                        networkid=self.virtual_machine.nic[0].networkid)
+            self.apiclient,
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            networkid=self.virtual_machine.nic[0].networkid)
 
         lb_rule = LoadBalancerRule.create(
-                                    self.apiclient,
-                                    self.testdata["lbrule"],
-                                    ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.name,
-                                    networkid=self.virtual_machine.nic[0].networkid,
-                                    domainid=self.account.domainid)
+            self.apiclient,
+            self.testdata["lbrule"],
+            ipaddressid=public_ip.ipaddress.id,
+            accountid=self.account.name,
+            networkid=self.virtual_machine.nic[0].networkid,
+            domainid=self.account.domainid)
 
         vmidipmap = [{"vmid": str(self.virtual_machine.id),
                       "vmip": str(self.virtual_machine.nic[0].ipaddress)}]
 
         lb_rule.assign(
-                       self.apiclient,
-                       vmidipmap = vmidipmap
-                      )
+            self.apiclient,
+            vmidipmap=vmidipmap
+        )
 
-        response = IsIpAssignedToLoadBalancerRule(self, lb_rule,
-                                       [self.virtual_machine.nic[0].ipaddress])
+        response = IsIpAssignedToLoadBalancerRule(
+            self, lb_rule, [
+                self.virtual_machine.nic[0].ipaddress])
         self.assertTrue(response[0], response[1])
 
         lbrules = LoadBalancerRule.list(
-                      self.apiclient,
-                      virtualmachineid=self.virtual_machine.id,
-                      listall=True)
+            self.apiclient,
+            virtualmachineid=self.virtual_machine.id,
+            listall=True)
 
         self.assertEqual(validateList(lbrules)[0], PASS,
-                        "lb rules list validation failed")
+                         "lb rules list validation failed")
 
         self.assertEqual(lb_rule.id, lbrules[0].id, "LB rules does not match")
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_02_lb_rule_for_primary_ip(self):
         """Create LB rule for secondary IP
 
@@ -213,47 +221,49 @@ class TestAssignLBRule(cloudstackTestCase):
         # 4. Assign load balancer rule for secondary ip address of VM
         # 5. List and verify that load balancer rule is successfully added"""
 
-        secondaryip = NIC.addIp(self.apiclient, id=self.virtual_machine.nic[0].id)
+        secondaryip = NIC.addIp(
+            self.apiclient,
+            id=self.virtual_machine.nic[0].id)
 
         public_ip = PublicIPAddress.create(
-                        self.apiclient,
-                        accountid=self.account.name,
-                        zoneid=self.zone.id,
-                        domainid=self.account.domainid,
-                        networkid=self.virtual_machine.nic[0].networkid)
+            self.apiclient,
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            networkid=self.virtual_machine.nic[0].networkid)
 
         lb_rule = LoadBalancerRule.create(
-                                    self.apiclient,
-                                    self.testdata["lbrule"],
-                                    ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.name,
-                                    networkid=self.virtual_machine.nic[0].networkid,
-                                    domainid=self.account.domainid)
+            self.apiclient,
+            self.testdata["lbrule"],
+            ipaddressid=public_ip.ipaddress.id,
+            accountid=self.account.name,
+            networkid=self.virtual_machine.nic[0].networkid,
+            domainid=self.account.domainid)
 
         vmidipmap = [{"vmid": str(self.virtual_machine.id),
                       "vmip": str(secondaryip.ipaddress)}]
 
         lb_rule.assign(
-                       self.apiclient,
-                       vmidipmap = vmidipmap
-                      )
+            self.apiclient,
+            vmidipmap=vmidipmap
+        )
 
         response = IsIpAssignedToLoadBalancerRule(self, lb_rule,
-                                       [secondaryip.ipaddress])
+                                                  [secondaryip.ipaddress])
         self.assertTrue(response[0], response[1])
 
         lbrules = LoadBalancerRule.list(
-                      self.apiclient,
-                      virtualmachineid=self.virtual_machine.id,
-                      listall=True)
+            self.apiclient,
+            virtualmachineid=self.virtual_machine.id,
+            listall=True)
 
         self.assertEqual(validateList(lbrules)[0], PASS,
-                        "lb rules list validation failed")
+                         "lb rules list validation failed")
 
         self.assertEqual(lb_rule.id, lbrules[0].id, "LB rules does not match")
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_03_lb_rule_for_primary_and_secondary_ip(self):
         """Create LB rule for primary and secondary IP
 
@@ -261,25 +271,28 @@ class TestAssignLBRule(cloudstackTestCase):
         # 1. Add secondary IP to the VM
         # 2. Associate a public IP for the network
         # 3. Create load balancer rule for this IP
-        # 4. Assign load balancer rule to both primary and secondary ip address of VM
+        # 4. Assign load balancer rule to both primary
+        #    and secondary ip address of VM
         # 5. List and verify that load balancer rule is successfully added"""
 
-        secondaryip = NIC.addIp(self.apiclient, id=self.virtual_machine.nic[0].id)
+        secondaryip = NIC.addIp(
+            self.apiclient,
+            id=self.virtual_machine.nic[0].id)
 
         public_ip = PublicIPAddress.create(
-                        self.apiclient,
-                        accountid=self.account.name,
-                        zoneid=self.zone.id,
-                        domainid=self.account.domainid,
-                        networkid=self.virtual_machine.nic[0].networkid)
+            self.apiclient,
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            networkid=self.virtual_machine.nic[0].networkid)
 
         lb_rule = LoadBalancerRule.create(
-                                    self.apiclient,
-                                    self.testdata["lbrule"],
-                                    ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.name,
-                                    networkid=self.virtual_machine.nic[0].networkid,
-                                    domainid=self.account.domainid)
+            self.apiclient,
+            self.testdata["lbrule"],
+            ipaddressid=public_ip.ipaddress.id,
+            accountid=self.account.name,
+            networkid=self.virtual_machine.nic[0].networkid,
+            domainid=self.account.domainid)
 
         vmidipmap = [{"vmid": str(self.virtual_machine.id),
                       "vmip": str(self.virtual_machine.nic[0].ipaddress)},
@@ -287,26 +300,27 @@ class TestAssignLBRule(cloudstackTestCase):
                       "vmip": str(secondaryip.ipaddress)}]
 
         lb_rule.assign(
-                       self.apiclient,
-                       vmidipmap = vmidipmap
-                      )
+            self.apiclient,
+            vmidipmap=vmidipmap
+        )
 
-        response = IsIpAssignedToLoadBalancerRule(self, lb_rule,
-                                       [self.virtual_machine.nic[0].ipaddress, secondaryip.ipaddress])
+        response = IsIpAssignedToLoadBalancerRule(
+            self, lb_rule, [
+                self.virtual_machine.nic[0].ipaddress, secondaryip.ipaddress])
         self.assertTrue(response[0], response[1])
 
         lbrules = LoadBalancerRule.list(
-                      self.apiclient,
-                      virtualmachineid=self.virtual_machine.id,
-                      listall=True)
+            self.apiclient,
+            virtualmachineid=self.virtual_machine.id,
+            listall=True)
 
         self.assertEqual(validateList(lbrules)[0], PASS,
-                        "lb rules list validation failed")
+                         "lb rules list validation failed")
 
         self.assertEqual(lb_rule.id, lbrules[0].id, "LB rules does not match")
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_04_lb_rule_primary_secondary_multiple_vms(self):
         """Create LB rule for primary and secondary IPs of multiple VMs
 
@@ -314,40 +328,41 @@ class TestAssignLBRule(cloudstackTestCase):
         # 1. Deploy two VMs in same network and add secondary IP for both
         # 2. Associate a public IP for the network
         # 3. Create load balancer rule for this IP
-        # 4. Assign load balancer rule to both primary and secondary ip address of both VMs
+        # 4. Assign load balancer rule to both primary and
+        #    secondary ip address of both VMs
         # 5. List and verify that load balancer rule is successfully added"""
 
         secondaryip_vm1 = NIC.addIp(self.apiclient,
-                                id=self.virtual_machine.nic[0].id
-                               )
+                                    id=self.virtual_machine.nic[0].id
+                                    )
 
         self.virtual_machine2 = VirtualMachine.create(
-                           self.api_client,
-                           self.testdata["virtual_machine"],
-                           accountid=self.account.name,
-                           domainid=self.account.domainid,
-                           serviceofferingid=self.service_offering.id,
-                           mode=self.zone.networktype,
-                           networkids=[self.virtual_machine.nic[0].networkid, ])
+            self.api_client,
+            self.testdata["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            mode=self.zone.networktype,
+            networkids=[self.virtual_machine.nic[0].networkid, ])
 
         secondaryip_vm2 = NIC.addIp(self.apiclient,
                                     id=self.virtual_machine2.nic[0].id
-                                   )
+                                    )
 
         public_ip = PublicIPAddress.create(
-                        self.apiclient,
-                        accountid=self.account.name,
-                        zoneid=self.zone.id,
-                        domainid=self.account.domainid,
-                        networkid=self.virtual_machine.nic[0].networkid)
+            self.apiclient,
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            networkid=self.virtual_machine.nic[0].networkid)
 
         lb_rule = LoadBalancerRule.create(
-                                    self.apiclient,
-                                    self.testdata["lbrule"],
-                                    ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.name,
-                                    networkid=self.virtual_machine.nic[0].networkid,
-                                    domainid=self.account.domainid)
+            self.apiclient,
+            self.testdata["lbrule"],
+            ipaddressid=public_ip.ipaddress.id,
+            accountid=self.account.name,
+            networkid=self.virtual_machine.nic[0].networkid,
+            domainid=self.account.domainid)
 
         vmidipmap = [{"vmid": str(self.virtual_machine.id),
                       "vmip": str(self.virtual_machine.nic[0].ipaddress)},
@@ -359,9 +374,9 @@ class TestAssignLBRule(cloudstackTestCase):
                       "vmip": str(secondaryip_vm2.ipaddress)}]
 
         lb_rule.assign(
-                       self.apiclient,
-                       vmidipmap = vmidipmap
-                      )
+            self.apiclient,
+            vmidipmap=vmidipmap
+        )
 
         iplist = [self.virtual_machine.nic[0].ipaddress,
                   secondaryip_vm1.ipaddress,
@@ -372,37 +387,40 @@ class TestAssignLBRule(cloudstackTestCase):
         self.assertTrue(response[0], response[1])
 
         lbrules = LoadBalancerRule.list(
-                      self.apiclient,
-                      virtualmachineid=self.virtual_machine.id,
-                      listall=True)
+            self.apiclient,
+            virtualmachineid=self.virtual_machine.id,
+            listall=True)
 
         self.assertEqual(validateList(lbrules)[0], PASS,
-                        "lb rules list validation failed")
+                         "lb rules list validation failed")
 
         self.assertEqual(lb_rule.id, lbrules[0].id, "LB rules does not match")
 
         lbrules = LoadBalancerRule.list(
-                      self.apiclient,
-                      virtualmachineid=self.virtual_machine2.id,
-                      listall=True)
+            self.apiclient,
+            virtualmachineid=self.virtual_machine2.id,
+            listall=True)
 
         self.assertEqual(validateList(lbrules)[0], PASS,
-                        "lb rules list validation failed")
+                         "lb rules list validation failed")
 
         self.assertEqual(lb_rule.id, lbrules[0].id, "LB rules does not match")
         return
+
 
 class TestFailureScenarios(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestFailureScenarios,\
+        cloudstackTestClient = super(TestFailureScenarios,
                                      cls).getClsTestClient()
         cls.api_client = cloudstackTestClient.getApiClient()
         cls.testdata = cloudstackTestClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
-        cls.zone = get_zone(cls.api_client, cloudstackTestClient.getZoneForTests())
+        cls.zone = get_zone(
+            cls.api_client,
+            cloudstackTestClient.getZoneForTests())
 
         template = get_template(cls.api_client,
                                 cls.zone.id,
@@ -414,8 +432,8 @@ class TestFailureScenarios(cloudstackTestCase):
 
         try:
             cls.service_offering = ServiceOffering.create(
-                                         cls.api_client,
-                                         cls.testdata["service_offering"])
+                cls.api_client,
+                cls.testdata["service_offering"])
             cls._cleanup.append(cls.service_offering)
         except Exception as e:
             cls.tearDownClass()
@@ -432,12 +450,12 @@ class TestFailureScenarios(cloudstackTestCase):
                                           domainid=self.domain.id)
             self.cleanup.append(self.account)
             self.virtual_machine = VirtualMachine.create(
-                                   self.api_client,
-                                   self.testdata["virtual_machine"],
-                                   accountid=self.account.name,
-                                   domainid=self.account.domainid,
-                                   serviceofferingid=self.service_offering.id,
-                                   mode=self.zone.networktype)
+                self.api_client,
+                self.testdata["virtual_machine"],
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id,
+                mode=self.zone.networktype)
         except Exception as e:
             self.tearDown()
             raise e
@@ -458,7 +476,7 @@ class TestFailureScenarios(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_05_lb_rule_wrong_vm_id(self):
         """Try to assign LB rule to secondary IP by giving wrong vm id
 
@@ -466,35 +484,37 @@ class TestFailureScenarios(cloudstackTestCase):
         # 1. Add secondary IP for VM
         # 2. Associate a public IP for the network
         # 3. Create load balancer rule for this IP
-        # 4. Try to assign load balancer rule for secondary IP of VM by specifying
-             invalid vm id, it should fail"""
+        # 4. Try to assign load balancer rule for
+        #    secondary IP of VM by specifying invalid vm id, it should fail"""
 
-        secondaryip = NIC.addIp(self.apiclient, id=self.virtual_machine.nic[0].id)
+        secondaryip = NIC.addIp(
+            self.apiclient,
+            id=self.virtual_machine.nic[0].id)
 
         public_ip = PublicIPAddress.create(
-                        self.apiclient,
-                        accountid=self.account.name,
-                        zoneid=self.zone.id,
-                        domainid=self.account.domainid,
-                        networkid=self.virtual_machine.nic[0].networkid)
+            self.apiclient,
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            networkid=self.virtual_machine.nic[0].networkid)
 
         lb_rule = LoadBalancerRule.create(
-                                    self.apiclient,
-                                    self.testdata["lbrule"],
-                                    ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.name,
-                                    networkid=self.virtual_machine.nic[0].networkid,
-                                    domainid=self.account.domainid)
+            self.apiclient,
+            self.testdata["lbrule"],
+            ipaddressid=public_ip.ipaddress.id,
+            accountid=self.account.name,
+            networkid=self.virtual_machine.nic[0].networkid,
+            domainid=self.account.domainid)
 
         vmidipmap = [{"vmid": str(self.virtual_machine.id) + random_gen(),
                       "vmip": str(secondaryip.ipaddress)}]
 
         with self.assertRaises(Exception):
             lb_rule.assign(self.apiclient,
-                                    vmidipmap=vmidipmap)
+                           vmidipmap=vmidipmap)
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_06_lb_rule_wrong_vm_ip(self):
         """Try to assign LB rule to secondary IP by giving wrong ip
 
@@ -502,25 +522,27 @@ class TestFailureScenarios(cloudstackTestCase):
         # 1. Add secondary IP for VM
         # 2. Associate a public IP for the network
         # 3. Create load balancer rule for this IP
-        # 4. Try to assign load balancer rule by specifying wrong ip and correct vm id,
-             the task should fail"""
+        # 4. Try to assign load balancer rule by specifying
+        #    wrong ip and correct vm id, the task should fail"""
 
-        secondaryip = NIC.addIp(self.apiclient, id=self.virtual_machine.nic[0].id)
+        secondaryip = NIC.addIp(
+            self.apiclient,
+            id=self.virtual_machine.nic[0].id)
 
         public_ip = PublicIPAddress.create(
-                        self.apiclient,
-                        accountid=self.account.name,
-                        zoneid=self.zone.id,
-                        domainid=self.account.domainid,
-                        networkid=self.virtual_machine.nic[0].networkid)
+            self.apiclient,
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            networkid=self.virtual_machine.nic[0].networkid)
 
         lb_rule = LoadBalancerRule.create(
-                                    self.apiclient,
-                                    self.testdata["lbrule"],
-                                    ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.name,
-                                    networkid=self.virtual_machine.nic[0].networkid,
-                                    domainid=self.account.domainid)
+            self.apiclient,
+            self.testdata["lbrule"],
+            ipaddressid=public_ip.ipaddress.id,
+            accountid=self.account.name,
+            networkid=self.virtual_machine.nic[0].networkid,
+            domainid=self.account.domainid)
 
         vmidipmap = [{"vmid": str(self.virtual_machine.id),
                       "vmip": str(secondaryip.ipaddress) + random_gen()}]
@@ -531,7 +553,7 @@ class TestFailureScenarios(cloudstackTestCase):
         return
 
     @unittest.skip("Failing-WIP")
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_07_lb_rule_used_ip(self):
         """Try to assign secondary IP to lb rule which is already assigned to another
            LB rule
@@ -544,37 +566,39 @@ class TestFailureScenarios(cloudstackTestCase):
         # 5. Try to assign load balancer rule 2 to secondary IP, the operation
              should fail"""
 
-        secondaryip = NIC.addIp(self.apiclient, id=self.virtual_machine.nic[0].id)
+        secondaryip = NIC.addIp(
+            self.apiclient,
+            id=self.virtual_machine.nic[0].id)
 
         public_ip1 = PublicIPAddress.create(
-                        self.apiclient,
-                        accountid=self.account.name,
-                        zoneid=self.zone.id,
-                        domainid=self.account.domainid,
-                        networkid=self.virtual_machine.nic[0].networkid)
+            self.apiclient,
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            networkid=self.virtual_machine.nic[0].networkid)
 
         lb_rule1 = LoadBalancerRule.create(
-                            self.apiclient,
-                            self.testdata["lbrule"],
-                            ipaddressid=public_ip1.ipaddress.id,
-                            accountid=self.account.name,
-                            networkid=self.virtual_machine.nic[0].networkid,
-                            domainid=self.account.domainid)
+            self.apiclient,
+            self.testdata["lbrule"],
+            ipaddressid=public_ip1.ipaddress.id,
+            accountid=self.account.name,
+            networkid=self.virtual_machine.nic[0].networkid,
+            domainid=self.account.domainid)
 
         public_ip2 = PublicIPAddress.create(
-                        self.apiclient,
-                        accountid=self.account.name,
-                        zoneid=self.zone.id,
-                        domainid=self.account.domainid,
-                        networkid=self.virtual_machine.nic[0].networkid)
+            self.apiclient,
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            networkid=self.virtual_machine.nic[0].networkid)
 
         lb_rule2 = LoadBalancerRule.create(
-                            self.apiclient,
-                            self.testdata["lbrule"],
-                            ipaddressid=public_ip2.ipaddress.id,
-                            accountid=self.account.name,
-                            networkid=self.virtual_machine.nic[0].networkid,
-                            domainid=self.account.domainid)
+            self.apiclient,
+            self.testdata["lbrule"],
+            ipaddressid=public_ip2.ipaddress.id,
+            accountid=self.account.name,
+            networkid=self.virtual_machine.nic[0].networkid,
+            domainid=self.account.domainid)
 
         vmidipmap = [{"vmid": str(self.virtual_machine.id),
                       "vmip": str(secondaryip.ipaddress)}]
@@ -589,10 +613,10 @@ class TestFailureScenarios(cloudstackTestCase):
 
         with self.assertRaises(Exception):
             lb_rule2.assign(self.apiclient,
-                                    vmidipmap=vmidipmap)
+                            vmidipmap=vmidipmap)
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_08_lb_rule_remove_used_ip(self):
         """Try to remove secondary IP with load balancer rule configured for it
 
@@ -601,24 +625,27 @@ class TestFailureScenarios(cloudstackTestCase):
         # 2. Associate public IP for the network
         # 3. Create load balancer rule for IP
         # 4. Assign load balancer rule to secondary IP
-        # 5. Try to remove the secondary IP form NIC, the operation should fail"""
+        # 5. Try to remove the secondary IP form NIC,
+             the operation should fail"""
 
-        secondaryip = NIC.addIp(self.apiclient, id=self.virtual_machine.nic[0].id)
+        secondaryip = NIC.addIp(
+            self.apiclient,
+            id=self.virtual_machine.nic[0].id)
 
         public_ip1 = PublicIPAddress.create(
-                        self.apiclient,
-                        accountid=self.account.name,
-                        zoneid=self.zone.id,
-                        domainid=self.account.domainid,
-                        networkid=self.virtual_machine.nic[0].networkid)
+            self.apiclient,
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            networkid=self.virtual_machine.nic[0].networkid)
 
         lb_rule1 = LoadBalancerRule.create(
-                            self.apiclient,
-                            self.testdata["lbrule"],
-                            ipaddressid=public_ip1.ipaddress.id,
-                            accountid=self.account.name,
-                            networkid=self.virtual_machine.nic[0].networkid,
-                            domainid=self.account.domainid)
+            self.apiclient,
+            self.testdata["lbrule"],
+            ipaddressid=public_ip1.ipaddress.id,
+            accountid=self.account.name,
+            networkid=self.virtual_machine.nic[0].networkid,
+            domainid=self.account.domainid)
 
         vmidipmap = [{"vmid": str(self.virtual_machine.id),
                       "vmip": str(secondaryip.ipaddress)}]
@@ -635,17 +662,20 @@ class TestFailureScenarios(cloudstackTestCase):
             NIC.removeIp(self.apiclient, ipaddressid=secondaryip.id)
         return
 
+
 class TestListLBRuleInstances(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestListLBRuleInstances,\
+        cloudstackTestClient = super(TestListLBRuleInstances,
                                      cls).getClsTestClient()
         cls.api_client = cloudstackTestClient.getApiClient()
         cls.testdata = cloudstackTestClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
-        cls.zone = get_zone(cls.api_client, cloudstackTestClient.getZoneForTests())
+        cls.zone = get_zone(
+            cls.api_client,
+            cloudstackTestClient.getZoneForTests())
 
         template = get_template(cls.api_client,
                                 cls.zone.id,
@@ -657,8 +687,8 @@ class TestListLBRuleInstances(cloudstackTestCase):
 
         try:
             cls.service_offering = ServiceOffering.create(
-                                         cls.api_client,
-                                         cls.testdata["service_offering"])
+                cls.api_client,
+                cls.testdata["service_offering"])
             cls._cleanup.append(cls.service_offering)
         except Exception as e:
             cls.tearDownClass()
@@ -675,12 +705,12 @@ class TestListLBRuleInstances(cloudstackTestCase):
                                           domainid=self.domain.id)
             self.cleanup.append(self.account)
             self.virtual_machine = VirtualMachine.create(
-                                   self.api_client,
-                                   self.testdata["virtual_machine"],
-                                   accountid=self.account.name,
-                                   domainid=self.account.domainid,
-                                   serviceofferingid=self.service_offering.id,
-                                   mode=self.zone.networktype)
+                self.api_client,
+                self.testdata["virtual_machine"],
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id,
+                mode=self.zone.networktype)
         except Exception as e:
             self.tearDown()
             raise e
@@ -701,7 +731,7 @@ class TestListLBRuleInstances(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_09_lbvmips_true(self):
         """List load balancer instances by passing lbvmips flag True
 
@@ -711,26 +741,26 @@ class TestListLBRuleInstances(cloudstackTestCase):
         # 3. Create load balancer rule for IP
         # 4. Assign load balancer rule to secondary IP
         # 5. List loadbalancer instances by specifying lbvmips flag as True
-        # 6. List of load balancer instances should contain the secondary IP of VM
-             used to assign lb rule to"""
+        # 6. List of load balancer instances should contain the secondary
+             IP of VM used to assign lb rule to"""
 
         secondaryip = NIC.addIp(self.apiclient,
                                 id=self.virtual_machine.nic[0].id)
 
         public_ip = PublicIPAddress.create(
-                        self.apiclient,
-                        accountid=self.account.name,
-                        zoneid=self.zone.id,
-                        domainid=self.account.domainid,
-                        networkid=self.virtual_machine.nic[0].networkid)
+            self.apiclient,
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            networkid=self.virtual_machine.nic[0].networkid)
 
         lb_rule = LoadBalancerRule.create(
-                                    self.apiclient,
-                                    self.testdata["lbrule"],
-                                    ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.name,
-                                    networkid=self.virtual_machine.nic[0].networkid,
-                                    domainid=self.account.domainid)
+            self.apiclient,
+            self.testdata["lbrule"],
+            ipaddressid=public_ip.ipaddress.id,
+            accountid=self.account.name,
+            networkid=self.virtual_machine.nic[0].networkid,
+            domainid=self.account.domainid)
 
         vmidipmap = [{"vmid": str(self.virtual_machine.id),
                       "vmip": str(secondaryip.ipaddress)}]
@@ -744,21 +774,21 @@ class TestListLBRuleInstances(cloudstackTestCase):
         self.assertTrue(response[0], response[1])
 
         lbruleinstances = LoadBalancerRule.listLoadBalancerRuleInstances(
-                                                            self.apiclient,
-                                                            id=lb_rule.id,
-                                                            lbvmips=True
-                                                            )
+            self.apiclient,
+            id=lb_rule.id,
+            lbvmips=True
+        )
 
         self.assertEqual(validateList(lbruleinstances)[0], PASS,
                          "lbruleinstances list validation failed")
 
-        self.assertEqual(str(lbruleinstances[0].lbvmipaddresses[0]), secondaryip.ipaddress,
-                         "IP address in lbruleinstances list not matching\
+        self.assertEqual(str(lbruleinstances[0].lbvmipaddresses[
+                         0]), secondaryip.ipaddress, "IP address in lbruleinstances list not matching\
                           with secondary ip assigned to lb rule")
 
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_10_lbvmips_false(self):
         """List load balancer instances by passing lbvmips flag False
 
@@ -768,26 +798,27 @@ class TestListLBRuleInstances(cloudstackTestCase):
         # 3. Create load balancer rule for IP
         # 4. Assign load balancer rule to secondary IP
         # 5. List loadbalancer instances by specifying lbvmips flag as False
-        # 6. List of load balancer instances should not list the vm ip addresses to
-             which load balancer rule has been assigned"""
+        # 6. List of load balancer instances should not list\
+             the vm ip addresses to which load balancer rule
+             has been assigned"""
 
         secondaryip = NIC.addIp(self.apiclient,
                                 id=self.virtual_machine.nic[0].id)
 
         public_ip = PublicIPAddress.create(
-                        self.apiclient,
-                        accountid=self.account.name,
-                        zoneid=self.zone.id,
-                        domainid=self.account.domainid,
-                        networkid=self.virtual_machine.nic[0].networkid)
+            self.apiclient,
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            networkid=self.virtual_machine.nic[0].networkid)
 
         lb_rule = LoadBalancerRule.create(
-                                    self.apiclient,
-                                    self.testdata["lbrule"],
-                                    ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.name,
-                                    networkid=self.virtual_machine.nic[0].networkid,
-                                    domainid=self.account.domainid)
+            self.apiclient,
+            self.testdata["lbrule"],
+            ipaddressid=public_ip.ipaddress.id,
+            accountid=self.account.name,
+            networkid=self.virtual_machine.nic[0].networkid,
+            domainid=self.account.domainid)
 
         vmidipmap = [{"vmid": str(self.virtual_machine.id),
                       "vmip": str(secondaryip.ipaddress)}]
@@ -800,31 +831,34 @@ class TestListLBRuleInstances(cloudstackTestCase):
         self.assertTrue(response[0], response[1])
 
         lbruleinstances = LoadBalancerRule.listLoadBalancerRuleInstances(
-                                                            self.apiclient,
-                                                            id=lb_rule.id,
-                                                            lbvmips=False
-                                                            )
+            self.apiclient,
+            id=lb_rule.id,
+            lbvmips=False
+        )
 
         self.assertEqual(validateList(lbruleinstances)[0], PASS,
                          "lbruleinstances list validation failed")
 
         self.assertTrue(lbruleinstances[0].lbvmipaddresses is None,
-                         "IP address in lbruleinstances list not matching\
+                        "IP address in lbruleinstances list not matching\
                           with secondary ip assigned to lb rule")
 
         return
+
 
 class TestLbRuleFunctioning(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestLbRuleFunctioning,\
+        cloudstackTestClient = super(TestLbRuleFunctioning,
                                      cls).getClsTestClient()
         cls.api_client = cloudstackTestClient.getApiClient()
         cls.testdata = cloudstackTestClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
-        cls.zone = get_zone(cls.api_client, cloudstackTestClient.getZoneForTests())
+        cls.zone = get_zone(
+            cls.api_client,
+            cloudstackTestClient.getZoneForTests())
 
         template = get_template(cls.api_client,
                                 cls.zone.id,
@@ -836,8 +870,8 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         try:
             cls.service_offering = ServiceOffering.create(
-                                         cls.api_client,
-                                         cls.testdata["service_offering"])
+                cls.api_client,
+                cls.testdata["service_offering"])
             cls._cleanup.append(cls.service_offering)
         except Exception as e:
             cls.tearDownClass()
@@ -854,43 +888,53 @@ class TestLbRuleFunctioning(cloudstackTestCase):
                                           domainid=self.domain.id)
             self.cleanup.append(self.account)
             self.virtual_machine = VirtualMachine.create(
-                                   self.api_client,
-                                   self.testdata["virtual_machine"],
-                                   accountid=self.account.name,
-                                   domainid=self.account.domainid,
-                                   serviceofferingid=self.service_offering.id,
-                                   mode=self.zone.networktype)
+                self.api_client,
+                self.testdata["virtual_machine"],
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id,
+                mode=self.zone.networktype)
 
             self.secondaryip = NIC.addIp(self.apiclient,
-                                id=self.virtual_machine.nic[0].id)
+                                         id=self.virtual_machine.nic[0].id)
 
             self.public_ip = PublicIPAddress.create(
-                        self.apiclient,
-                        accountid=self.account.name,
-                        zoneid=self.zone.id,
-                        domainid=self.account.domainid,
-                        networkid=self.virtual_machine.nic[0].networkid)
+                self.apiclient,
+                accountid=self.account.name,
+                zoneid=self.zone.id,
+                domainid=self.account.domainid,
+                networkid=self.virtual_machine.nic[0].networkid)
 
-            FireWallRule.create(self.apiclient,ipaddressid=self.public_ip.ipaddress.id,
-                                      protocol='TCP', cidrlist=[self.testdata["fwrule"]["cidr"]],
-                                      startport=self.testdata["fwrule"]["startport"],endport=self.testdata["fwrule"]["endport"])
+            FireWallRule.create(
+                self.apiclient,
+                ipaddressid=self.public_ip.ipaddress.id,
+                protocol='TCP',
+                cidrlist=[
+                    self.testdata["fwrule"]["cidr"]],
+                startport=self.testdata["fwrule"]["startport"],
+                endport=self.testdata["fwrule"]["endport"])
 
-            # To make secondary IP working for VM, we have to configure it on VM
-            # after acquiring it
-            # Hence create NAT rule for public IP and SSH to it using the primary IP of VM
-            # After SSH is successful, configure the secondary IP on VM, delete the NAT rule
-            # and then create LB rule for secondary IP
+            # To make secondary IP working for VM, we have to configure it on
+            # VM after acquiring it
+            # Hence create NAT rule for public IP and SSH to it
+            # using the primary IP of VM
+            # After SSH is successful, configure the secondary IP on VM,
+            # delete the NAT rule and then create LB rule for secondary IP
 
-            nat_rule = NATRule.create(self.apiclient, self.virtual_machine,
-                       self.testdata["natrule"],ipaddressid=self.public_ip.ipaddress.id,
-                       networkid=self.virtual_machine.nic[0].networkid)
+            nat_rule = NATRule.create(
+                self.apiclient,
+                self.virtual_machine,
+                self.testdata["natrule"],
+                ipaddressid=self.public_ip.ipaddress.id,
+                networkid=self.virtual_machine.nic[0].networkid)
 
             sshClient = SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
-                      self.virtual_machine.username,
-                      self.virtual_machine.password
-                      )
-            cmd = "ip addr add {0}/24 broadcast {0} dev eth0".format(self.secondaryip.ipaddress)
+                                  self.testdata['natrule']["publicport"],
+                                  self.virtual_machine.username,
+                                  self.virtual_machine.password
+                                  )
+            cmd = "ip addr add {0}/24 broadcast {0} dev eth0".format(
+                self.secondaryip.ipaddress)
             sshClient.execute(cmd)
             sshClient.execute("ip addr show")
 
@@ -898,12 +942,12 @@ class TestLbRuleFunctioning(cloudstackTestCase):
             nat_rule.delete(self.apiclient)
 
             self.lb_rule = LoadBalancerRule.create(
-                                    self.apiclient,
-                                    self.testdata["lbrule"],
-                                    ipaddressid=self.public_ip.ipaddress.id,
-                                    accountid=self.account.name,
-                                    networkid=self.virtual_machine.nic[0].networkid,
-                                    domainid=self.account.domainid)
+                self.apiclient,
+                self.testdata["lbrule"],
+                ipaddressid=self.public_ip.ipaddress.id,
+                accountid=self.account.name,
+                networkid=self.virtual_machine.nic[0].networkid,
+                domainid=self.account.domainid)
         except Exception as e:
             self.tearDown()
             raise e
@@ -924,7 +968,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_11_ssh_to_secondary_ip(self):
         """SSH to VM using LB rule assigned to secondary IP of VM
 
@@ -939,7 +983,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
                       "vmip": str(self.secondaryip.ipaddress)}]
 
         self.lb_rule.assign(self.apiclient,
-                       vmidipmap=vmidipmap)
+                            vmidipmap=vmidipmap)
 
         iplist = [self.secondaryip.ipaddress]
         response = IsIpAssignedToLoadBalancerRule(self, self.lb_rule, iplist)
@@ -956,7 +1000,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
         return
 
     @unittest.skip("Failing-WIP")
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_12_ssh_to_primary_secondary_ip(self):
         """SSH to VM using LB rule assigned to primary and secondary IP of VM
 
@@ -1002,7 +1046,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
                       )
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_13_delete_lb_rule(self):
         """SSH to VM after deleting LB rule
 
@@ -1019,7 +1063,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
                       "vmip": str(self.secondaryip.ipaddress)}]
 
         self.lb_rule.assign(self.apiclient,
-                       vmidipmap=vmidipmap)
+                            vmidipmap=vmidipmap)
 
         iplist = [self.secondaryip.ipaddress]
         response = IsIpAssignedToLoadBalancerRule(self, self.lb_rule, iplist)
@@ -1044,7 +1088,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
                       )
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_14_remove_lb_rule_secondary_ip(self):
         """ssh to vm after removing secondary ip from load balancer rule
 
@@ -1063,7 +1107,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
                       "vmip": str(self.virtual_machine.nic[0].ipaddress)}]
 
         self.lb_rule.assign(self.apiclient,
-                       vmidipmap=vmidipmap)
+                            vmidipmap=vmidipmap)
 
         iplist = [self.secondaryip.ipaddress,
                   self.virtual_machine.nic[0].ipaddress]
@@ -1095,7 +1139,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
             self.fail("Exception during SSH : %s" % e)
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_15_remove_lb_rule_primary_ip(self):
         """ssh to vm after removing secondary ip from load balancer rule
 
@@ -1110,11 +1154,11 @@ class TestLbRuleFunctioning(cloudstackTestCase):
 
         vmidipmap = [{"vmid": str(self.virtual_machine.id),
                       "vmip": str(self.secondaryip.ipaddress)},
-                    {"vmid": str(self.virtual_machine.id),
+                     {"vmid": str(self.virtual_machine.id),
                       "vmip": str(self.virtual_machine.nic[0].ipaddress)}]
 
         self.lb_rule.assign(self.apiclient,
-                       vmidipmap=vmidipmap)
+                            vmidipmap=vmidipmap)
 
         iplist = [self.secondaryip.ipaddress,
                   self.virtual_machine.nic[0].ipaddress]
@@ -1134,7 +1178,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
                       "vmip": str(self.virtual_machine.nic[0].ipaddress)}]
 
         self.lb_rule.remove(self.apiclient,
-                       vmidipmap=vmidipmap)
+                            vmidipmap=vmidipmap)
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
@@ -1146,7 +1190,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
             self.fail("Exception during SSH : %s" % e)
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_16_delete_vm_from_lb_rule(self):
         """ssh to vm after removing secondary ip from load balancer rule
 
@@ -1157,14 +1201,15 @@ class TestLbRuleFunctioning(cloudstackTestCase):
         # 4. Assign load balancer rule to secondary ip of vm
         # 5. Try to ssh to vm using the public ip, it should succeed
         # 6. Remove the VM from load balancer rule
-        # 7. Try to list the load balancer rules for the VM, list should be empty
+        # 7. Try to list the load balancer rules for the VM,
+        #    list should be empty
         # 8. Try to SSH to VM using the public IP, the opeation should fail"""
 
         vmidipmap = [{"vmid": str(self.virtual_machine.id),
                       "vmip": str(self.secondaryip.ipaddress)}]
 
         self.lb_rule.assign(self.apiclient,
-                       vmidipmap=vmidipmap)
+                            vmidipmap=vmidipmap)
 
         iplist = [self.secondaryip.ipaddress]
         response = IsIpAssignedToLoadBalancerRule(self, self.lb_rule, iplist)
@@ -1182,11 +1227,11 @@ class TestLbRuleFunctioning(cloudstackTestCase):
         self.lb_rule.remove(self.apiclient, vms=[self.virtual_machine])
 
         lbrules = LoadBalancerRule.list(
-                      self.apiclient,
-                      virtualmachineid=self.virtual_machine.id,
-                      listall=True)
+            self.apiclient,
+            virtualmachineid=self.virtual_machine.id,
+            listall=True)
         self.assertTrue(lbrules is None,
-                         "LB rules list should be empty")
+                        "LB rules list should be empty")
 
         with self.assertRaises(Exception):
             SshClient(self.public_ip.ipaddress.ipaddress,
@@ -1196,7 +1241,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
                       )
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_20_destroy_recover_vm(self):
         """Verify LB rules after destroying and recovering VM
 
@@ -1208,14 +1253,13 @@ class TestLbRuleFunctioning(cloudstackTestCase):
         # 5. Try to ssh to vm using the public ip, it should succeed
         # 6. Destroy VM
         # 7 Recover the VM
-        # 8.Try to list the LB rule, it should be present
-        # 9.Try to SSH to VM, it should be successful"""
+        # 8.Try to list the LB rule, it should be present"""
 
         vmidipmap = [{"vmid": str(self.virtual_machine.id),
                       "vmip": str(self.secondaryip.ipaddress)}]
 
         self.lb_rule.assign(self.apiclient,
-                       vmidipmap=vmidipmap)
+                            vmidipmap=vmidipmap)
 
         iplist = [self.secondaryip.ipaddress]
         response = IsIpAssignedToLoadBalancerRule(self, self.lb_rule, iplist)
@@ -1230,36 +1274,26 @@ class TestLbRuleFunctioning(cloudstackTestCase):
         except Exception as e:
             self.fail("Exception during SSH : %s" % e)
 
-        #Destroy VM
+        # Destroy VM
         self.virtual_machine.delete(self.apiclient, expunge=False)
-        #Recover VM
+        # Recover VM
         self.virtual_machine.recover(self.apiclient)
         self.virtual_machine.start(self.apiclient)
 
         lbruleinstances = LoadBalancerRule.listLoadBalancerRuleInstances(
-                                                            self.apiclient,
-                                                            id=self.lb_rule.id,
-                                                            lbvmips=True
-                                                            )
-
+            self.apiclient,
+            id=self.lb_rule.id,
+            lbvmips=True
+        )
         self.assertEqual(validateList(lbruleinstances)[0], PASS,
                          "lbruleinstances list validation failed")
 
-        self.assertEqual(str(lbruleinstances[0].lbvmipaddresses[0]), self.secondaryip.ipaddress,
-                         "IP address in lbruleinstances list not matching\
+        self.assertEqual(str(lbruleinstances[0].lbvmipaddresses[
+                         0]), self.secondaryip.ipaddress, "IP address in lbruleinstances list not matching\
                           with secondary ip assigned to lb rule")
-
-        try:
-            SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['lbrule']["publicport"],
-                      self.virtual_machine.username,
-                      self.virtual_machine.password
-                      )
-        except Exception as e:
-            self.fail("Exception during SSH : %s" % e)
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_21_modify_lb_rule_algorithm(self):
         """Verify LB rule functioning with different algorithm
 
@@ -1308,13 +1342,15 @@ class TestNetworkOperations(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestNetworkOperations,\
+        cloudstackTestClient = super(TestNetworkOperations,
                                      cls).getClsTestClient()
         cls.api_client = cloudstackTestClient.getApiClient()
         cls.testdata = cloudstackTestClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
-        cls.zone = get_zone(cls.api_client, cloudstackTestClient.getZoneForTests())
+        cls.zone = get_zone(
+            cls.api_client,
+            cloudstackTestClient.getZoneForTests())
 
         template = get_template(cls.api_client,
                                 cls.zone.id,
@@ -1326,8 +1362,8 @@ class TestNetworkOperations(cloudstackTestCase):
 
         try:
             cls.service_offering = ServiceOffering.create(
-                                         cls.api_client,
-                                         cls.testdata["service_offering"])
+                cls.api_client,
+                cls.testdata["service_offering"])
             cls._cleanup.append(cls.service_offering)
         except Exception as e:
             cls.tearDownClass()
@@ -1344,42 +1380,52 @@ class TestNetworkOperations(cloudstackTestCase):
                                           domainid=self.domain.id)
             self.cleanup.append(self.account)
             self.virtual_machine = VirtualMachine.create(
-                                   self.api_client,
-                                   self.testdata["virtual_machine"],
-                                   accountid=self.account.name,
-                                   domainid=self.account.domainid,
-                                   serviceofferingid=self.service_offering.id,
-                                   mode=self.zone.networktype)
+                self.api_client,
+                self.testdata["virtual_machine"],
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id,
+                mode=self.zone.networktype)
             self.secondaryip = NIC.addIp(self.apiclient,
-                                id=self.virtual_machine.nic[0].id)
+                                         id=self.virtual_machine.nic[0].id)
 
             self.public_ip = PublicIPAddress.create(
-                        self.apiclient,
-                        accountid=self.account.name,
-                        zoneid=self.zone.id,
-                        domainid=self.account.domainid,
-                        networkid=self.virtual_machine.nic[0].networkid)
+                self.apiclient,
+                accountid=self.account.name,
+                zoneid=self.zone.id,
+                domainid=self.account.domainid,
+                networkid=self.virtual_machine.nic[0].networkid)
 
-            FireWallRule.create(self.apiclient,ipaddressid=self.public_ip.ipaddress.id,
-                                      protocol='TCP', cidrlist=[self.testdata["fwrule"]["cidr"]],
-                                      startport=self.testdata["fwrule"]["startport"],endport=self.testdata["fwrule"]["endport"])
+            FireWallRule.create(
+                self.apiclient,
+                ipaddressid=self.public_ip.ipaddress.id,
+                protocol='TCP',
+                cidrlist=[
+                    self.testdata["fwrule"]["cidr"]],
+                startport=self.testdata["fwrule"]["startport"],
+                endport=self.testdata["fwrule"]["endport"])
 
-            # To make secondary IP working for VM, we have to configure it on VM
-            # after acquiring it
-            # Hence create NAT rule for public IP and SSH to it using the primary IP of VM
-            # After SSH is successful, configure the secondary IP on VM, delete the NAT rule
-            # and then create LB rule for secondary IP
+            # To make secondary IP working for VM, we have to configure it
+            # on VM after acquiring it
+            # Hence create NAT rule for public IP and SSH to it
+            # using the primary IP of VM
+            # After SSH is successful, configure the secondary IP on VM,
+            # delete the NAT rule  and then create LB rule for secondary IP
 
-            nat_rule = NATRule.create(self.apiclient, self.virtual_machine,
-                       self.testdata["natrule"],ipaddressid=self.public_ip.ipaddress.id,
-                       networkid=self.virtual_machine.nic[0].networkid)
+            nat_rule = NATRule.create(
+                self.apiclient,
+                self.virtual_machine,
+                self.testdata["natrule"],
+                ipaddressid=self.public_ip.ipaddress.id,
+                networkid=self.virtual_machine.nic[0].networkid)
 
             sshClient = SshClient(self.public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
-                      self.virtual_machine.username,
-                      self.virtual_machine.password
-                      )
-            cmd = "ip addr add {0}/24 broadcast {0} dev eth0".format(self.secondaryip.ipaddress)
+                                  self.testdata['natrule']["publicport"],
+                                  self.virtual_machine.username,
+                                  self.virtual_machine.password
+                                  )
+            cmd = "ip addr add {0}/24 broadcast {0} dev eth0".format(
+                self.secondaryip.ipaddress)
             sshClient.execute(cmd)
             sshClient.execute("ip addr show")
 
@@ -1387,12 +1433,12 @@ class TestNetworkOperations(cloudstackTestCase):
             nat_rule.delete(self.apiclient)
 
             self.lb_rule = LoadBalancerRule.create(
-                                    self.apiclient,
-                                    self.testdata["lbrule"],
-                                    ipaddressid=self.public_ip.ipaddress.id,
-                                    accountid=self.account.name,
-                                    networkid=self.virtual_machine.nic[0].networkid,
-                                    domainid=self.account.domainid)
+                self.apiclient,
+                self.testdata["lbrule"],
+                ipaddressid=self.public_ip.ipaddress.id,
+                accountid=self.account.name,
+                networkid=self.virtual_machine.nic[0].networkid,
+                domainid=self.account.domainid)
         except Exception as e:
             self.tearDown()
             raise e
@@ -1413,7 +1459,7 @@ class TestNetworkOperations(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_17_restart_router(self):
         """Verify LB rules after restarting router VM
 
@@ -1433,7 +1479,7 @@ class TestNetworkOperations(cloudstackTestCase):
                       "vmip": str(self.virtual_machine.nic[0].ipaddress)}]
 
         self.lb_rule.assign(self.apiclient,
-                       vmidipmap=vmidipmap)
+                            vmidipmap=vmidipmap)
 
         iplist = [self.secondaryip.ipaddress,
                   self.virtual_machine.nic[0].ipaddress]
@@ -1449,13 +1495,25 @@ class TestNetworkOperations(cloudstackTestCase):
         except Exception as e:
             self.fail("Exception during SSH : %s" % e)
 
-        routers = Router.list(self.apiclient, networkid=self.virtual_machine.nic[0].networkid, listall=True)
-        self.assertEqual(validateList(routers)[0], PASS, "routers list validation failed")
+        routers = Router.list(
+            self.apiclient,
+            networkid=self.virtual_machine.nic[0].networkid,
+            listall=True)
+        self.assertEqual(
+            validateList(routers)[0],
+            PASS,
+            "routers list validation failed")
 
         Router.reboot(self.apiclient, id=routers[0].id)
 
-        lbrules = LoadBalancerRule.list(self.apiclient, id=self.lb_rule.id, listll=True)
-        self.assertEqual(validateList(lbrules)[0], PASS, "lbrules list validation failed")
+        lbrules = LoadBalancerRule.list(
+            self.apiclient,
+            id=self.lb_rule.id,
+            listll=True)
+        self.assertEqual(
+            validateList(lbrules)[0],
+            PASS,
+            "lbrules list validation failed")
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
@@ -1467,7 +1525,7 @@ class TestNetworkOperations(cloudstackTestCase):
             self.fail("Exception during SSH : %s" % e)
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_18_restart_network_cleanup_true(self):
         """Verfy LB rules after restarting the network with cleanup flag set to True
 
@@ -1487,7 +1545,7 @@ class TestNetworkOperations(cloudstackTestCase):
                       "vmip": str(self.virtual_machine.nic[0].ipaddress)}]
 
         self.lb_rule.assign(self.apiclient,
-                       vmidipmap=vmidipmap)
+                            vmidipmap=vmidipmap)
 
         iplist = [self.secondaryip.ipaddress,
                   self.virtual_machine.nic[0].ipaddress]
@@ -1508,8 +1566,14 @@ class TestNetworkOperations(cloudstackTestCase):
         cmd.cleanup = True
         self.apiclient.restartNetwork(cmd)
 
-        lbrules = LoadBalancerRule.list(self.apiclient, id=self.lb_rule.id, listll=True)
-        self.assertEqual(validateList(lbrules)[0], PASS, "lbrules list validation failed")
+        lbrules = LoadBalancerRule.list(
+            self.apiclient,
+            id=self.lb_rule.id,
+            listll=True)
+        self.assertEqual(
+            validateList(lbrules)[0],
+            PASS,
+            "lbrules list validation failed")
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
@@ -1521,7 +1585,7 @@ class TestNetworkOperations(cloudstackTestCase):
             self.fail("Exception during SSH : %s" % e)
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_19_restart_network_cleanup_false(self):
         """Verfy LB rules after restarting the network with cleanup flag set to False
 
@@ -1541,7 +1605,7 @@ class TestNetworkOperations(cloudstackTestCase):
                       "vmip": str(self.virtual_machine.nic[0].ipaddress)}]
 
         self.lb_rule.assign(self.apiclient,
-                       vmidipmap=vmidipmap)
+                            vmidipmap=vmidipmap)
 
         iplist = [self.secondaryip.ipaddress,
                   self.virtual_machine.nic[0].ipaddress]
@@ -1562,8 +1626,14 @@ class TestNetworkOperations(cloudstackTestCase):
         cmd.cleanup = False
         self.apiclient.restartNetwork(cmd)
 
-        lbrules = LoadBalancerRule.list(self.apiclient, id=self.lb_rule.id, listll=True)
-        self.assertEqual(validateList(lbrules)[0], PASS, "lbrules list validation failed")
+        lbrules = LoadBalancerRule.list(
+            self.apiclient,
+            id=self.lb_rule.id,
+            listll=True)
+        self.assertEqual(
+            validateList(lbrules)[0],
+            PASS,
+            "lbrules list validation failed")
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
@@ -1575,7 +1645,7 @@ class TestNetworkOperations(cloudstackTestCase):
             self.fail("Exception during SSH : %s" % e)
         return
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_22_network_gc(self):
         """Verify LB rule functioning to secondary IP after network GC
 
@@ -1600,7 +1670,7 @@ class TestNetworkOperations(cloudstackTestCase):
                       "vmip": str(self.virtual_machine.nic[0].ipaddress)}]
 
         self.lb_rule.assign(self.apiclient,
-                       vmidipmap=vmidipmap)
+                            vmidipmap=vmidipmap)
 
         iplist = [self.secondaryip.ipaddress,
                   self.virtual_machine.nic[0].ipaddress]
@@ -1619,9 +1689,12 @@ class TestNetworkOperations(cloudstackTestCase):
         self.virtual_machine.stop(self.apiclient)
 
         wait_for_cleanup(self.apiclient, ["network.gc.wait",
-                                              "network.gc.interval"])
+                                          "network.gc.interval"])
 
-        response = verifyNetworkState(self.api_client, self.virtual_machine.nic[0].networkid, "allocated")
+        response = verifyNetworkState(
+            self.api_client,
+            self.virtual_machine.nic[0].networkid,
+            "allocated")
         exceptionOccured = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
@@ -1629,13 +1702,26 @@ class TestNetworkOperations(cloudstackTestCase):
         if (exceptionOccured or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
 
-        routers = Router.list(self.apiclient, networkid=self.virtual_machine.nic[0].networkid, listall=True)
-        self.assertEqual(validateList(routers)[0], PASS, "routers list validation failed")
-        self.assertEqual(str(routers[0].state).lower(), "stopped", "Router should be in stopped state")
+        routers = Router.list(
+            self.apiclient,
+            networkid=self.virtual_machine.nic[0].networkid,
+            listall=True)
+        self.assertEqual(
+            validateList(routers)[0],
+            PASS,
+            "routers list validation failed")
+        self.assertEqual(
+            str(routers[0].state).lower(),
+            "stopped",
+            "Router should be in stopped state"
+        )
 
         self.virtual_machine.start(self.apiclient)
 
-        response = verifyNetworkState(self.api_client, self.virtual_machine.nic[0].networkid, "implemented")
+        response = verifyNetworkState(
+            self.api_client,
+            self.virtual_machine.nic[0].networkid,
+            "implemented")
         exceptionOccured = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
@@ -1643,9 +1729,18 @@ class TestNetworkOperations(cloudstackTestCase):
         if (exceptionOccured or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
 
-        routers = Router.list(self.apiclient, networkid=self.virtual_machine.nic[0].networkid, listall=True)
-        self.assertEqual(validateList(routers)[0], PASS, "routers list validation failed")
-        self.assertEqual(str(routers[0].state).lower(), "running", "Router should be in running state")
+        routers = Router.list(
+            self.apiclient,
+            networkid=self.virtual_machine.nic[0].networkid,
+            listall=True)
+        self.assertEqual(
+            validateList(routers)[0],
+            PASS,
+            "routers list validation failed")
+        self.assertEqual(
+            str(routers[0].state).lower(),
+            "running",
+            "Router should be in running state")
 
         try:
             SshClient(self.public_ip.ipaddress.ipaddress,
@@ -1657,17 +1752,20 @@ class TestNetworkOperations(cloudstackTestCase):
             self.fail("Exception during SSH : %s" % e)
         return
 
+
 class TestExternalLoadBalancer(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestExternalLoadBalancer,\
+        cloudstackTestClient = super(TestExternalLoadBalancer,
                                      cls).getClsTestClient()
         cls.api_client = cloudstackTestClient.getApiClient()
         cls.testdata = cloudstackTestClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
-        cls.zone = get_zone(cls.api_client, cloudstackTestClient.getZoneForTests())
+        cls.zone = get_zone(
+            cls.api_client,
+            cloudstackTestClient.getZoneForTests())
 
         template = get_template(cls.api_client,
                                 cls.zone.id,
@@ -1678,15 +1776,18 @@ class TestExternalLoadBalancer(cloudstackTestCase):
         cls._cleanup = []
 
         try:
-           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["netscaler_VPX"])
-           cls._cleanup.append(cls.netscaler)
+            cls.netscaler = add_netscaler(
+                cls.api_client,
+                cls.zone.id,
+                cls.testdata["netscaler_VPX"])
+            cls._cleanup.append(cls.netscaler)
         except Exception as e:
             raise unittest.SkipTest("Failed to add netscaler device: %s" % e)
 
         try:
             cls.service_offering = ServiceOffering.create(
-                                         cls.api_client,
-                                         cls.testdata["service_offering"])
+                cls.api_client,
+                cls.testdata["service_offering"])
             cls._cleanup.append(cls.service_offering)
         except Exception as e:
             cls.tearDownClass()
@@ -1722,7 +1823,7 @@ class TestExternalLoadBalancer(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advancedns", "provisioning"], required_hardware="true")
+    @attr(tags=["advancedns", "provisioning"], required_hardware="true")
     def test_23_lb_rule_functioning_with_netscaler(self):
         """Verify LB rule functioning for secondary IP with LB handled
            through Netscaler device
@@ -1738,54 +1839,63 @@ class TestExternalLoadBalancer(cloudstackTestCase):
 
         # Creating Network Offerign with LB as Netscalar
         nwoff_netscaler = NetworkOffering.create(
-                                                 self.apiclient,
-                                                 self.testdata["nw_off_isolated_netscaler"]
-                                                )
+            self.apiclient,
+            self.testdata["nw_off_isolated_netscaler"]
+        )
         # Enable Network offering
         nwoff_netscaler.update(self.apiclient, state='Enabled')
         # Creating a Network Using the Network Offering
         network = Network.create(
-                                 self.apiclient,
-                                 self.testdata["network"],
-                                 accountid=self.account.name,
-                                 domainid=self.domain.id,
-                                 networkofferingid=nwoff_netscaler.id,
-                                 zoneid=self.zone.id
-                                 )
+            self.apiclient,
+            self.testdata["network"],
+            accountid=self.account.name,
+            domainid=self.domain.id,
+            networkofferingid=nwoff_netscaler.id,
+            zoneid=self.zone.id
+        )
 
         self.virtual_machine = VirtualMachine.create(
-                                   self.api_client,
-                                   self.testdata["virtual_machine"],
-                                   accountid=self.account.name,
-                                   domainid=self.account.domainid,
-                                   serviceofferingid=self.service_offering.id,
-                                   mode=self.zone.networktype,
-                                   networkids = [network.id])
+            self.api_client,
+            self.testdata["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            mode=self.zone.networktype,
+            networkids=[network.id])
 
         secondaryip = NIC.addIp(self.apiclient,
                                 id=self.virtual_machine.nic[0].id)
 
         public_ip = PublicIPAddress.create(
-                        self.apiclient,
-                        accountid=self.account.name,
-                        zoneid=self.zone.id,
-                        domainid=self.account.domainid,
-                        networkid=self.virtual_machine.nic[0].networkid)
+            self.apiclient,
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            networkid=self.virtual_machine.nic[0].networkid)
 
-        FireWallRule.create(self.apiclient,ipaddressid=public_ip.ipaddress.id,
-                            protocol='TCP', cidrlist=[self.testdata["fwrule"]["cidr"]],
-                            startport=self.testdata["fwrule"]["startport"],endport=self.testdata["fwrule"]["endport"])
+        FireWallRule.create(
+            self.apiclient,
+            ipaddressid=public_ip.ipaddress.id,
+            protocol='TCP',
+            cidrlist=[
+                self.testdata["fwrule"]["cidr"]],
+            startport=self.testdata["fwrule"]["startport"],
+            endport=self.testdata["fwrule"]["endport"])
 
-        nat_rule = NATRule.create(self.apiclient, self.virtual_machine,
-                       self.testdata["natrule"],ipaddressid=public_ip.ipaddress.id,
-                       networkid=self.virtual_machine.nic[0].networkid)
+        nat_rule = NATRule.create(
+            self.apiclient,
+            self.virtual_machine,
+            self.testdata["natrule"],
+            ipaddressid=public_ip.ipaddress.id,
+            networkid=self.virtual_machine.nic[0].networkid)
 
         sshClient = SshClient(public_ip.ipaddress.ipaddress,
-                      self.testdata['natrule']["publicport"],
-                      self.virtual_machine.username,
-                      self.virtual_machine.password
-                      )
-        cmd = "ip addr add {0}/24 broadcast {0} dev eth0".format(self.secondaryip.ipaddress)
+                              self.testdata['natrule']["publicport"],
+                              self.virtual_machine.username,
+                              self.virtual_machine.password
+                              )
+        cmd = "ip addr add {0}/24 broadcast {0} dev eth0".format(
+            self.secondaryip.ipaddress)
         sshClient.execute(cmd)
         sshClient.execute("ip addr show")
 
@@ -1793,12 +1903,12 @@ class TestExternalLoadBalancer(cloudstackTestCase):
         nat_rule.delete(self.apiclient)
 
         lb_rule = LoadBalancerRule.create(
-                                    self.apiclient,
-                                    self.testdata["lbrule"],
-                                    ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.name,
-                                    networkid=self.virtual_machine.nic[0].networkid,
-                                    domainid=self.account.domainid)
+            self.apiclient,
+            self.testdata["lbrule"],
+            ipaddressid=public_ip.ipaddress.id,
+            accountid=self.account.name,
+            networkid=self.virtual_machine.nic[0].networkid,
+            domainid=self.account.domainid)
 
         vmidipmap = [{"vmid": str(self.virtual_machine.id),
                       "vmip": str(secondaryip.ipaddress)}]

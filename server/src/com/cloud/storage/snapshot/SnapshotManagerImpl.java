@@ -412,33 +412,47 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         // Verify parameters
         SnapshotVO snapshotCheck = _snapshotDao.findById(snapshotId);
+
         if (snapshotCheck == null) {
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
         }
 
         _accountMgr.checkAccess(caller, null, true, snapshotCheck);
+
         SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshotCheck, SnapshotOperation.DELETE);
+
         if (snapshotStrategy == null) {
             s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
+
             return false;
         }
-        SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Image);
 
         try {
             boolean result = snapshotStrategy.deleteSnapshot(snapshotId);
+
             if (result) {
                 if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(), snapshotCheck.getDataCenterId(), snapshotId,
                         snapshotCheck.getName(), null, null, 0L, snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
                 }
-                if (snapshotCheck.getState() != Snapshot.State.Error && snapshotCheck.getState() != Snapshot.State.Destroyed)
-                _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.snapshot);
-                if (snapshotCheck.getState() == Snapshot.State.BackedUp)
-                    _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.secondary_storage, new Long(snapshotStoreRef.getSize()));
+
+                if (snapshotCheck.getState() != Snapshot.State.Error && snapshotCheck.getState() != Snapshot.State.Destroyed) {
+                    _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.snapshot);
+                }
+
+                if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
+                    SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Image);
+
+                    if (snapshotStoreRef != null) {
+                        _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.secondary_storage, new Long(snapshotStoreRef.getSize()));
+                    }
+                }
             }
+
             return result;
         } catch (Exception e) {
             s_logger.debug("Failed to delete snapshot: " + snapshotCheck.getId() + ":" + e.toString());
+
             throw new CloudRuntimeException("Failed to delete snapshot:" + e.toString());
         }
     }

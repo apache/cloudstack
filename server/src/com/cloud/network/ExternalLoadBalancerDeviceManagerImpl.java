@@ -17,6 +17,7 @@
 package com.cloud.network;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -519,8 +520,13 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                                     null, false);
                             String publicIPNetmask = publicIp.getVlanNetmask();
                             String publicIPgateway = publicIp.getVlanGateway();
-                            String publicIPVlanTag = publicIp.getVlanTag();
                             String publicIP = publicIp.getAddress().toString();
+                            String publicIPVlanTag="";
+                            try {
+                                publicIPVlanTag = BroadcastDomainType.getValue(publicIp.getVlanTag());
+                            } catch (URISyntaxException e) {
+                                s_logger.error("Failed to parse public ip vlan tag" + e.getMessage());
+                            }
 
                             String url =
                                 "https://" + lbIP + "?publicinterface=" + publicIf + "&privateinterface=" + privateIf + "&lbdevicededicated=" + dedicatedLb +

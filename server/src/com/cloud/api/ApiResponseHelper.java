@@ -138,6 +138,9 @@ import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
@@ -278,6 +281,7 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.storage.snapshot.SnapshotSchedule;
 import com.cloud.template.VirtualMachineTemplate;
@@ -307,13 +311,13 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     private static final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
+
     @Inject
     private EntityManager _entityMgr;
     @Inject
     private UsageService _usageSvc;
     @Inject
     NetworkModel _ntwkModel;
-
     @Inject
     protected AccountManager _accountMgr;
     @Inject
@@ -322,6 +326,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     ConfigurationManager _configMgr;
     @Inject
     SnapshotDataFactory snapshotfactory;
+    @Inject
+    private VolumeDao _volumeDao;
+    @Inject
+    private DataStoreManager _dataStoreMgr;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -459,10 +467,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         snapshotResponse.setState(snapshot.getState());
 
         SnapshotInfo snapshotInfo = null;
-        if (!(snapshot instanceof SnapshotInfo)) {
-            snapshotInfo = snapshotfactory.getSnapshot(snapshot.getId(), DataStoreRole.Image);
-        } else {
+
+        if (snapshot instanceof SnapshotInfo) {
             snapshotInfo = (SnapshotInfo)snapshot;
+        } else {
+            DataStoreRole dataStoreRole = getDataStoreRole(snapshot);
+
+            snapshotInfo = snapshotfactory.getSnapshot(snapshot.getId(), dataStoreRole);
         }
 
         if (snapshotInfo == null) {
@@ -485,6 +496,25 @@ public class ApiResponseHelper implements ResponseGenerator {
         return snapshotResponse;
     }
 
+    private DataStoreRole getDataStoreRole(Snapshot snapshot) {
+        long volumeId = snapshot.getVolumeId();
+        VolumeVO volumeVO = _volumeDao.findById(volumeId);
+
+        long storagePoolId = volumeVO.getPoolId();
+        DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+
+        Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
+
+        String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
+        Boolean supportsStorageSystemSnapshots = new Boolean(value);
+
+        if (supportsStorageSystemSnapshots) {
+            return DataStoreRole.Primary;
+        }
+
+        return DataStoreRole.Image;
+    }
+
     @Override
     public VMSnapshotResponse createVMSnapshotResponse(VMSnapshot vmSnapshot) {
         VMSnapshotResponse vmSnapshotResponse = new VMSnapshotResponse();
@@ -499,7 +529,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             vmSnapshotResponse.setVirtualMachineid(vm.getUuid());
         }
         if (vmSnapshot.getParent() != null) {
-            vmSnapshotResponse.setParentName(ApiDBUtils.getVMSnapshotById(vmSnapshot.getParent()).getDisplayName());
+            VMSnapshot vmSnapshotParent = ApiDBUtils.getVMSnapshotById(vmSnapshot.getParent());
+            vmSnapshotResponse.setParent(vmSnapshotParent.getUuid());
+            vmSnapshotResponse.setParentName(vmSnapshotParent.getDisplayName());
         }
         vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());

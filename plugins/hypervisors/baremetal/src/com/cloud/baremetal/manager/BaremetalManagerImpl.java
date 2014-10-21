@@ -29,6 +29,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.BaremetalProvisionDoneNotificationCmd;
@@ -81,37 +82,39 @@ public class BaremetalManagerImpl extends ManagerBase implements BaremetalManage
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
-        if (newState != State.Starting && newState != State.Error && newState != State.Expunging) {
-            return true;
-        }
-
-        if (vo.getHypervisorType() != HypervisorType.BareMetal) {
-            return true;
-        }
-
-        HostVO host = _hostDao.findById(vo.getHostId());
-        if (host == null) {
-            s_logger.debug("Skip oldState " + oldState + " to " + "newState " + newState + " transimtion");
-            return true;
-        }
-        _hostDao.loadDetails(host);
-
-        if (newState == State.Starting) {
-            host.setDetail("vmName", vo.getInstanceName());
-            s_logger.debug("Add vmName " + host.getDetail("vmName") + " to host " + host.getId() + " details");
-        } else {
-            if (host.getDetail("vmName") != null && host.getDetail("vmName").equalsIgnoreCase(vo.getInstanceName())) {
-                s_logger.debug("Remove vmName " + host.getDetail("vmName") + " from host " + host.getId() + " details");
-                host.getDetails().remove("vmName");
-            }
-        }
-        _hostDao.saveDetails(host);
-
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, VirtualMachine vo, boolean status, Object opaque) {
+      State newState = transition.getToState();
+      State oldState = transition.getCurrentState();
+      if (newState != State.Starting && newState != State.Error && newState != State.Expunging) {
         return true;
+      }
+
+      if (vo.getHypervisorType() != HypervisorType.BareMetal) {
+        return true;
+      }
+
+      HostVO host = _hostDao.findById(vo.getHostId());
+      if (host == null) {
+        s_logger.debug("Skip oldState " + oldState + " to " + "newState " + newState + " transimtion");
+        return true;
+      }
+      _hostDao.loadDetails(host);
+
+      if (newState == State.Starting) {
+        host.setDetail("vmName", vo.getInstanceName());
+        s_logger.debug("Add vmName " + host.getDetail("vmName") + " to host " + host.getId() + " details");
+      } else {
+        if (host.getDetail("vmName") != null && host.getDetail("vmName").equalsIgnoreCase(vo.getInstanceName())) {
+          s_logger.debug("Remove vmName " + host.getDetail("vmName") + " from host " + host.getId() + " details");
+          host.getDetails().remove("vmName");
+        }
+      }
+      _hostDao.saveDetails(host);
+
+      return true;
     }
 
-    @Override
+  @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmds = new ArrayList<Class<?>>();
         cmds.add(AddBaremetalHostCmd.class);

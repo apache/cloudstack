@@ -434,7 +434,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private VirtualMachineGuru getVmGuru(VirtualMachine vm) {
-        return _vmGurus.get(vm.getType());
+        if(vm != null)
+            return _vmGurus.get(vm.getType());
+        return null;
     }
 
     @Override
@@ -1206,8 +1208,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
 
     protected boolean getExecuteInSequence(HypervisorType hypervisorType) {
-        if (HypervisorType.KVM == hypervisorType || HypervisorType.LXC == hypervisorType) {
+        if (HypervisorType.KVM == hypervisorType || HypervisorType.LXC == hypervisorType || HypervisorType.XenServer == hypervisorType) {
             return false;
+        } else if(HypervisorType.VMware == hypervisorType) {
+            Boolean fullClone = HypervisorGuru.VmwareFullClone.value();
+            return fullClone;
         } else {
             return ExecuteInSequence.value();
         }
@@ -1868,7 +1873,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
             pfma = _agentMgr.send(dstHostId, pfmc);
             if (pfma == null || !pfma.getResult()) {
-                String msg = "Unable to prepare for migration due to " + pfma.getDetails();
+                String details = (pfma != null) ? pfma.getDetails() : "null answer returned";
+                String msg = "Unable to prepare for migration due to " + details;
                 pfma = null;
                 throw new AgentUnavailableException(msg, dstHostId);
             }
@@ -1898,13 +1904,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         boolean migrated = false;
         try {
             boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-            MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, ExecuteInSequence.value());
+            MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, getExecuteInSequence(vm.getHypervisorType()));
             mc.setHostGuid(dest.getHost().getGuid());
 
             try {
                 Answer ma = _agentMgr.send(vm.getLastHostId(), mc);
                 if (ma == null || !ma.getResult()) {
-                    throw new CloudRuntimeException("Unable to migrate due to " + ma.getDetails());
+                    String details = (ma != null) ? ma.getDetails() : "null answer returned";
+                    throw new CloudRuntimeException("Unable to migrate due to " + details);
                 }
             } catch (OperationTimedoutException e) {
                 if (e.isActive()) {
@@ -3258,7 +3265,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
             pfma = _agentMgr.send(dstHostId, pfmc);
             if (pfma == null || !pfma.getResult()) {
-                String msg = "Unable to prepare for migration due to " + pfma.getDetails();
+                String details = (pfma != null) ? pfma.getDetails() : "null answer returned";
+                String msg = "Unable to prepare for migration due to " + details;
                 pfma = null;
                 throw new AgentUnavailableException(msg, dstHostId);
             }
@@ -3285,14 +3293,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         boolean migrated = false;
         try {
             boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-            MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, ExecuteInSequence.value());
+            MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, getExecuteInSequence(vm.getHypervisorType()));
             mc.setHostGuid(dest.getHost().getGuid());
 
             try {
                 Answer ma = _agentMgr.send(vm.getLastHostId(), mc);
                 if (ma == null || !ma.getResult()) {
-                    s_logger.error("Unable to migrate due to " + ma.getDetails());
-                    throw new CloudRuntimeException("Unable to migrate due to " + ma.getDetails());
+                    String details = (ma != null) ? ma.getDetails() : "null answer returned";
+                    String msg = "Unable to migrate due to " + details;
+                    s_logger.error(msg);
+                    throw new CloudRuntimeException(msg);
                 }
             } catch (OperationTimedoutException e) {
                 if (e.isActive()) {
