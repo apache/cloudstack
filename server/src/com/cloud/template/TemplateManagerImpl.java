@@ -1412,29 +1412,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 }
 
                 privateTemplate = _tmpltDao.findById(templateId);
-                if (snapshotId != null) {
-                    //getting the parent volume
-                    long parentVolumeId = _snapshotDao.findById(snapshotId).getVolumeId();
-                    //Volume can be removed
-                    VolumeVO parentVolume = _volumeDao.findByIdIncludingRemoved(parentVolumeId);
-
-                    if (parentVolume != null && parentVolume.getIsoId() != null && parentVolume.getIsoId() != 0) {
-                        privateTemplate.setSourceTemplateId(parentVolume.getIsoId());
-                        _tmpltDao.update(privateTemplate.getId(), privateTemplate);
-                    } else if (parentVolume != null && parentVolume.getTemplateId() != null) {
-                        privateTemplate.setSourceTemplateId(parentVolume.getTemplateId());
-                        _tmpltDao.update(privateTemplate.getId(), privateTemplate);
-                    }
-                } else if (volumeId != null) {
-                    VolumeVO parentVolume = _volumeDao.findById(volumeId);
-                    if (parentVolume.getIsoId() != null && parentVolume.getIsoId() != 0) {
-                        privateTemplate.setSourceTemplateId(parentVolume.getIsoId());
-                        _tmpltDao.update(privateTemplate.getId(), privateTemplate);
-                    } else if (parentVolume.getTemplateId() != null) {
-                        privateTemplate.setSourceTemplateId(parentVolume.getTemplateId());
-                        _tmpltDao.update(privateTemplate.getId(), privateTemplate);
-                    }
-                }
                 TemplateDataStoreVO srcTmpltStore = _tmplStoreDao.findByStoreTemplate(store.getId(), templateId);
                 UsageEventVO usageEvent =
                         new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, privateTemplate.getAccountId(), zoneId, privateTemplate.getId(), privateTemplate.getName(), null,
@@ -1570,8 +1547,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (snapshot == null) {
                 throw new InvalidParameterValueException("Failed to create private template record, unable to find snapshot " + snapshotId);
             }
-
-            volume = _volumeDao.findById(snapshot.getVolumeId());
+            // Volume could be removed so find including removed to record source template id.
+            volume = _volumeDao.findByIdIncludingRemoved(snapshot.getVolumeId());
 
             // check permissions
             _accountMgr.checkAccess(caller, null, true, snapshot);
@@ -1612,15 +1589,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (volume != null) {
             VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
             isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-            if (template != null) {
-                sourceTemplateId = template.getId();
-            } else if (volume.getVolumeType() == Volume.Type.ROOT) { // vm
-                // created
-                // out
-                // of blank
-                // template
-                UserVm userVm = ApiDBUtils.findUserVmById(volume.getInstanceId());
-                sourceTemplateId = userVm.getIsoId();
+            if (volume.getIsoId() != null && volume.getIsoId() != 0) {
+                sourceTemplateId = volume.getIsoId();
+            } else if (volume.getTemplateId() != null) {
+                sourceTemplateId = volume.getTemplateId();
             }
         }
         String templateTag = cmd.getTemplateTag();
