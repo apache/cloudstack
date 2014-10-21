@@ -164,127 +164,128 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             throw new CloudRuntimeException("Failed to acquire lock on the following snapshot: " + snapshotInfo.getId());
         }
 
+        SnapshotResult result = null;
+
         try {
             volumeInfo.stateTransit(Volume.Event.SnapshotRequested);
 
-            SnapshotResult result = null;
+            // tell the storage driver to create a back-end volume (eventually used to create a new SR on and to copy the VM snapshot VDI to)
+            result = snapshotSvr.takeSnapshot(snapshotInfo);
 
-            try {
-                // tell the storage driver to create a back-end volume (eventually used to create a new SR on and to copy the VM snapshot VDI to)
-                result = snapshotSvr.takeSnapshot(snapshotInfo);
+            if (result.isFailed()) {
+                s_logger.debug("Failed to take a snapshot: " + result.getResult());
 
-                if (result.isFailed()) {
-                    s_logger.debug("Failed to take a snapshot: " + result.getResult());
-
-                    throw new CloudRuntimeException(result.getResult());
-                }
-
-                // send a command to XenServer to create a VM snapshot on the applicable SR (get back the VDI UUID of the VM snapshot)
-
-                Map<String, String> sourceDetails = null;
-
-                VolumeVO volumeVO = _volumeDao.findById(volumeInfo.getId());
-
-                Long vmInstanceId = volumeVO.getInstanceId();
-                VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(vmInstanceId);
-
-                Long hostId = null;
-
-                // if the volume to snapshot is associated with a VM
-                if (vmInstanceVO != null) {
-                    hostId = vmInstanceVO.getHostId();
-
-                    // if the VM is not associated with a host
-                    if (hostId == null) {
-                        sourceDetails = getSourceDetails(volumeInfo);
-
-                        hostId = vmInstanceVO.getLastHostId();
-                    }
-                }
-                // volume to snapshot is not associated with a VM (could be a data disk in the detached state)
-                else {
-                    sourceDetails = getSourceDetails(volumeInfo);
-                }
-
-                HostVO hostVO = getHostId(hostId, volumeVO);
-
-                long storagePoolId = volumeVO.getPoolId();
-                StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
-                DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
-
-                Map<String, String> destDetails = getDestDetails(storagePoolVO, snapshotInfo);
-
-                SnapshotAndCopyCommand snapshotAndCopyCommand = new SnapshotAndCopyCommand(volumeInfo.getPath(), sourceDetails, destDetails);
-
-                SnapshotAndCopyAnswer snapshotAndCopyAnswer = null;
-
-                try {
-                    // if sourceDetails != null, we need to connect the host(s) to the volume
-                    if (sourceDetails != null) {
-                        _volService.grantAccess(volumeInfo, hostVO, dataStore);
-                    }
-
-                    _volService.grantAccess(snapshotInfo, hostVO, dataStore);
-
-                    snapshotAndCopyAnswer = (SnapshotAndCopyAnswer)_agentMgr.send(hostVO.getId(), snapshotAndCopyCommand);
-                }
-                catch (Exception e) {
-                    throw new CloudRuntimeException(e.getMessage());
-                }
-                finally {
-                    try {
-                        _volService.revokeAccess(snapshotInfo, hostVO, dataStore);
-
-                        // if sourceDetails != null, we need to disconnect the host(s) from the volume
-                        if (sourceDetails != null) {
-                            _volService.revokeAccess(volumeInfo, hostVO, dataStore);
-                        }
-                    }
-                    catch (Exception ex) {
-                        s_logger.debug(ex.getMessage(), ex);
-                    }
-                }
-
-                if (snapshotAndCopyAnswer == null || !snapshotAndCopyAnswer.getResult()) {
-                    final String errMsg;
-
-                    if (snapshotAndCopyAnswer != null && snapshotAndCopyAnswer.getDetails() != null && !snapshotAndCopyAnswer.getDetails().isEmpty()) {
-                        errMsg = snapshotAndCopyAnswer.getDetails();
-                    }
-                    else {
-                        errMsg = "Unable to perform host-side operation";
-                    }
-
-                    throw new CloudRuntimeException(errMsg);
-                }
-
-                String path = snapshotAndCopyAnswer.getPath(); // for XenServer, this is the VDI's UUID
-
-                SnapshotDetailsVO snapshotDetail = new SnapshotDetailsVO(snapshotInfo.getId(),
-                        DiskTO.PATH,
-                        path,
-                        false);
-
-                _snapshotDetailsDao.persist(snapshotDetail);
-
-                markAsBackedUp((SnapshotObject)result.getSnashot());
+                throw new CloudRuntimeException(result.getResult());
             }
-            finally {
-                if (result != null && result.isSuccess()) {
-                    volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
-                }
-                else {
-                    volumeInfo.stateTransit(Volume.Event.OperationFailed);
-                }
-            }
+
+            // send a command to XenServer to create a VM snapshot on the applicable SR (get back the VDI UUID of the VM snapshot)
+
+            performSnapshotAndCopyOnHostSide(volumeInfo, snapshotInfo);
+
+            markAsBackedUp((SnapshotObject)result.getSnashot());
         }
         finally {
+            if (result != null && result.isSuccess()) {
+                volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
+            }
+            else {
+                volumeInfo.stateTransit(Volume.Event.OperationFailed);
+            }
+
             if (snapshotVO != null) {
                 _snapshotDao.releaseFromLockTable(snapshotInfo.getId());
             }
         }
 
         return snapshotInfo;
+    }
+
+    private void performSnapshotAndCopyOnHostSide(VolumeInfo volumeInfo, SnapshotInfo snapshotInfo) {
+        Map<String, String> sourceDetails = null;
+
+        VolumeVO volumeVO = _volumeDao.findById(volumeInfo.getId());
+
+        Long vmInstanceId = volumeVO.getInstanceId();
+        VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(vmInstanceId);
+
+        Long hostId = null;
+
+        // if the volume to snapshot is associated with a VM
+        if (vmInstanceVO != null) {
+            hostId = vmInstanceVO.getHostId();
+
+            // if the VM is not associated with a host
+            if (hostId == null) {
+                sourceDetails = getSourceDetails(volumeInfo);
+
+                hostId = vmInstanceVO.getLastHostId();
+            }
+        }
+        // volume to snapshot is not associated with a VM (could be a data disk in the detached state)
+        else {
+            sourceDetails = getSourceDetails(volumeInfo);
+        }
+
+        HostVO hostVO = getHostId(hostId, volumeVO);
+
+        long storagePoolId = volumeVO.getPoolId();
+        StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
+        DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+
+        Map<String, String> destDetails = getDestDetails(storagePoolVO, snapshotInfo);
+
+        SnapshotAndCopyCommand snapshotAndCopyCommand = new SnapshotAndCopyCommand(volumeInfo.getPath(), sourceDetails, destDetails);
+
+        SnapshotAndCopyAnswer snapshotAndCopyAnswer = null;
+
+        try {
+            // if sourceDetails != null, we need to connect the host(s) to the volume
+            if (sourceDetails != null) {
+                _volService.grantAccess(volumeInfo, hostVO, dataStore);
+            }
+
+            _volService.grantAccess(snapshotInfo, hostVO, dataStore);
+
+            snapshotAndCopyAnswer = (SnapshotAndCopyAnswer)_agentMgr.send(hostVO.getId(), snapshotAndCopyCommand);
+        }
+        catch (Exception ex) {
+            throw new CloudRuntimeException(ex.getMessage());
+        }
+        finally {
+            try {
+                _volService.revokeAccess(snapshotInfo, hostVO, dataStore);
+
+                // if sourceDetails != null, we need to disconnect the host(s) from the volume
+                if (sourceDetails != null) {
+                    _volService.revokeAccess(volumeInfo, hostVO, dataStore);
+                }
+            }
+            catch (Exception ex) {
+                s_logger.debug(ex.getMessage(), ex);
+            }
+        }
+
+        if (snapshotAndCopyAnswer == null || !snapshotAndCopyAnswer.getResult()) {
+            final String errMsg;
+
+            if (snapshotAndCopyAnswer != null && snapshotAndCopyAnswer.getDetails() != null && !snapshotAndCopyAnswer.getDetails().isEmpty()) {
+                errMsg = snapshotAndCopyAnswer.getDetails();
+            }
+            else {
+                errMsg = "Unable to perform host-side operation";
+            }
+
+            throw new CloudRuntimeException(errMsg);
+        }
+
+        String path = snapshotAndCopyAnswer.getPath(); // for XenServer, this is the VDI's UUID
+
+        SnapshotDetailsVO snapshotDetail = new SnapshotDetailsVO(snapshotInfo.getId(),
+                DiskTO.PATH,
+                path,
+                false);
+
+        _snapshotDetailsDao.persist(snapshotDetail);
     }
 
     private Map<String, String> getSourceDetails(VolumeInfo volumeInfo) {
