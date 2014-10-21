@@ -382,6 +382,11 @@ packages() {
 
   echo "***** getting jre 7 *********"
   chroot .  apt-get --no-install-recommends -q -y install openjdk-7-jre-headless
+
+  chroot . apt-get --no-install-recommends -q -y install python-dev python-pip libpcre3-dev
+
+  # Baremetal tools
+  chroot . pip install flask
 }
 
 
