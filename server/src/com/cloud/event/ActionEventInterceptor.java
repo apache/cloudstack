@@ -44,7 +44,7 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
 
         Object interceptorData = null;
 
-        boolean success = true;
+        boolean success = false;
         try {
             interceptorData = interceptStart(m, target);
 
