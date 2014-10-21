@@ -392,6 +392,10 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
+        if (SnapshotOperation.REVERT.equals(op)) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+
         long volumeId = snapshot.getVolumeId();
         VolumeVO volumeVO = _volumeDao.findById(volumeId);
 
