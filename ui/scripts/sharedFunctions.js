@@ -634,38 +634,62 @@ var addGuestNetworkDialog = {
                 //IPv4 (begin)
                 ip4gateway: {
                     label: 'label.ipv4.gateway',
-                    docID: 'helpGuestNetworkZoneGateway'
+                    docID: 'helpGuestNetworkZoneGateway',
+                    validation: {
+                        ipv4: true
+                    }
                 },
                 ip4Netmask: {
                     label: 'label.ipv4.netmask',
-                    docID: 'helpGuestNetworkZoneNetmask'
+                    docID: 'helpGuestNetworkZoneNetmask',
+                    validation: {
+                        netmask: true
+                    }
                 },
                 startipv4: {
                     label: 'label.ipv4.start.ip',
-                    docID: 'helpGuestNetworkZoneStartIP'
+                    docID: 'helpGuestNetworkZoneStartIP',
+                    validation: {
+                        ipv4: true
+                    }
                 },
                 endipv4: {
                     label: 'label.ipv4.end.ip',
-                    docID: 'helpGuestNetworkZoneEndIP'
+                    docID: 'helpGuestNetworkZoneEndIP',
+                    validation: {
+                        ipv4: true
+                    }
                 },
                 //IPv4 (end)
 
                 //IPv6 (begin)
                 ip6gateway: {
                     label: 'label.ipv6.gateway',
-                    docID: 'helpGuestNetworkZoneGateway'
+                    docID: 'helpGuestNetworkZoneGateway',
+                    validation: {
+                        ipv6: true
+                    }
                 },
                 ip6cidr: {
-                    label: 'label.ipv6.CIDR'
+                    label: 'label.ipv6.CIDR',
+                    validation: {
+                        ipv6cidr: true
+                    }
                 },
                 startipv6: {
                     label: 'label.ipv6.start.ip',
-                    docID: 'helpGuestNetworkZoneStartIP'
+                    docID: 'helpGuestNetworkZoneStartIP',
+                    validation: {
+                        ipv6: true
+                    }
                 },
                 endipv6: {
                     label: 'label.ipv6.end.ip',
-                    docID: 'helpGuestNetworkZoneEndIP'
-                },
+                    docID: 'helpGuestNetworkZoneEndIP',
+                    validation: {
+                        ipv6: true
+                    }
+               },
                 //IPv6 (end)
 
                 networkdomain: {
@@ -2224,3 +2248,48 @@ function strOrFunc(arg, args) {
         return arg(args);
     return arg;
 }
+
+$.validator.addMethod("netmask", function(value, element) {
+    if (this.optional(element) && value.length == 0)
+        return true;
+
+    var valid = [ 255, 254, 252, 248, 240, 224, 192, 128, 0 ];
+    var octets = value.split('.');
+    if (typeof octets == 'undefined' || octets.length != 4) {
+        return false;
+    }
+    var wasAll255 = true;
+    for (index = 0; index < octets.length; index++) {
+        if (octets[index] != Number(octets[index]).toString()) //making sure that "", " ", "00", "0 ","255  ", etc. will not pass
+            return false;
+        wasAll255 = wasAll255 && octets[index] == 255;
+        if ($.inArray(Number(octets[index]), valid) < 0)
+            return false;
+        if (!wasAll255 && index > 0 && Number(octets[index]) != 0 && Number(octets[index - 1]) != 255)
+            return false;
+    }
+
+    return true;
+}, "The specified netmask is invalid.");
+
+$.validator.addMethod("ipv6cidr", function(value, element) {
+    if (this.optional(element) && value.length == 0)
+        return true;
+
+    var parts = value.split('/');
+    if (typeof parts == 'undefined' || parts.length != 2) {
+        return false;
+    }
+
+    if (!$.validator.methods.ipv6.call(this, parts[0], element))
+        return false;
+
+    if (parts[1] != Number(parts[1]).toString()) //making sure that "", " ", "00", "0 ","2  ", etc. will not pass
+        return false;
+
+    if (Number(parts[1]) < 0 || Number(parts[1] > 32))
+        return false;
+
+    return true;
+}, "The specified IPv6 CIDR is invalid.");
+
