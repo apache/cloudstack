@@ -803,7 +803,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
 
-        if (updatedDetails.size() > 0) {
+        if (updatedDetails.size() >= 0) {
             _storagePoolDao.updateDetails(id, updatedDetails);
         }
 
