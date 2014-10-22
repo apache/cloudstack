@@ -55,6 +55,7 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.ConfigurationManager;
@@ -89,6 +90,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 
 public class UserVmManagerTest {
 
@@ -121,6 +123,8 @@ public class UserVmManagerTest {
     @Mock
     VMTemplateDao _templateDao;
     @Mock
+    TemplateDataStoreDao _templateStoreDao;
+    @Mock
     VolumeDao _volsDao;
     @Mock
     RestoreVMCmd _restoreVMCmd;
@@ -134,6 +138,8 @@ public class UserVmManagerTest {
     VMInstanceVO _vmInstance;
     @Mock
     VMTemplateVO _templateMock;
+    @Mock
+    TemplateDataStoreVO _templateDataStoreMock;
     @Mock
     VolumeVO _volumeMock;
     @Mock
@@ -162,6 +168,7 @@ public class UserVmManagerTest {
         _userVmMgr._vmDao = _vmDao;
         _userVmMgr._vmInstanceDao = _vmInstanceDao;
         _userVmMgr._templateDao = _templateDao;
+        _userVmMgr._templateStoreDao = _templateStoreDao;
         _userVmMgr._volsDao = _volsDao;
         _userVmMgr._usageEventDao = _usageEventDao;
         _userVmMgr._itMgr = _itMgr;
@@ -190,6 +197,7 @@ public class UserVmManagerTest {
         List<VMSnapshotVO> mockList = mock(List.class);
         when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(mockList);
         when(mockList.size()).thenReturn(0);
+        when(_templateStoreDao.findByTemplateZoneReady(anyLong(),anyLong())).thenReturn(_templateDataStoreMock);
 
     }
 

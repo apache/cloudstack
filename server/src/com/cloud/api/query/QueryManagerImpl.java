@@ -27,6 +27,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.utils.StringUtils;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -246,6 +248,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     private UserVmDao _userVmDao;
+
+    @Inject
+    private VMInstanceDao _vmInstanceDao;
 
     @Inject
     private SecurityGroupJoinDao _securityGroupJoinDao;
@@ -2576,7 +2581,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (vmId != null) {
-            UserVmVO vmInstance = _userVmDao.findById(vmId);
+            VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
             if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a virtual machine with specified id");
                 ex.addProxyObject(vmId.toString(), "vmId");

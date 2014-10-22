@@ -35,6 +35,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -302,6 +304,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected VMTemplateDetailsDao _templateDetailsDao = null;
     @Inject
     protected VMTemplateZoneDao _templateZoneDao = null;
+    @Inject
+    protected TemplateDataStoreDao _templateStoreDao;
     @Inject
     protected DomainDao _domainDao = null;
     @Inject
@@ -4762,6 +4766,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw ex;
                 }
             }
+            TemplateDataStoreVO tmplStore = _templateStoreDao.findByTemplateZoneReady(template.getId(), vm.getDataCenterId());
+            if (tmplStore == null) {
+                throw new InvalidParameterValueException("Cannot restore the vm as the template " + template.getUuid() + " isn't available in the zone");
+            }
 
             if (needRestart) {
                 try {
@@ -4794,7 +4802,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             // Create Usage event for the newly created volume
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, newVol.getAccountId(), newVol.getDataCenterId(), newVol.getId(), newVol.getName(), newVol.getDiskOfferingId(), templateId, newVol.getSize());
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, newVol.getAccountId(), newVol.getDataCenterId(), newVol.getId(), newVol.getName(), newVol.getDiskOfferingId(), template.getId(), newVol.getSize());
             _usageEventDao.persist(usageEvent);
 
             handleManagedStorage(vm, root);
@@ -4867,7 +4875,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        s_logger.debug("Restore VM " + vmId + " with template " + newTemplateId + " done successfully");
+        s_logger.debug("Restore VM " + vmId + " done successfully");
         return vm;
 
     }
