@@ -825,6 +825,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
                 if (determinedState == Status.Down) {
                     s_logger.error("Host is down: " + host.getId() + "-" + host.getName() + ".  Starting HA on the VMs");
+                    if ((host.getType() != Host.Type.SecondaryStorage) && (host.getType() != Host.Type.ConsoleProxy)) {
+                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host disconnected, " + host.getId(),
+                                "Host is down: " + host.getId() + "-" + host.getName() + ".  Starting HA on the VMs");
+                    }
                     event = Status.Event.HostDown;
                 } else if (determinedState == Status.Up) {
                     /* Got ping response from host, bring it back*/
@@ -857,20 +861,18 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     HostPodVO podVO = _podDao.findById(host.getPodId());
                     String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
                     _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host in ALERT state, " + hostDesc,
-                            "In availability zone " + host.getDataCenterId()
-                            + ", host is in alert state: " + host.getId() + "-" + host.getName());
+                            "In availability zone " + host.getDataCenterId() + ", " + host.getId() + "-" + host.getName()
+                            + " disconnect due to event " + event + ", ms can't determine the host status" );
                 }
             } else {
                 s_logger.debug("The next status of Agent " + host.getId() + " is not Alert, no need to investigate what happened");
             }
         }
-
         handleDisconnectWithoutInvestigation(attache, event, true, true);
         host = _hostDao.findById(hostId); // Maybe the host magically reappeared?
-        if (host != null && (host.getStatus() == Status.Alert || host.getStatus() == Status.Down)) {
+        if (host != null && host.getStatus() == Status.Down) {
             _haMgr.scheduleRestartForVmsOnHost(host, true);
         }
-
         return true;
     }
 
