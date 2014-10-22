@@ -1281,7 +1281,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            int ramMb = (int)(vmSpec.getMinRam() / (1024 * 1024));
+            int ramMb = getReservedMemoryMb(vmSpec);
             long hotaddIncrementSizeInMb;
             long hotaddMemoryLimitInMb;
             long requestedMaxMemoryInMb = vmSpec.getMaxRam() / (1024 * 1024);
