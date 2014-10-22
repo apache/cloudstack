@@ -32,14 +32,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -60,10 +57,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotDetailsDao;
-import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.user.AccountDetailVO;
@@ -81,8 +74,6 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Inject private ClusterDao _clusterDao;
     @Inject private ClusterDetailsDao _clusterDetailsDao;
     @Inject private HostDao _hostDao;
-    @Inject private SnapshotDao _snapshotDao;
-    @Inject private SnapshotDetailsDao _snapshotDetailsDao;
     @Inject private PrimaryDataStoreDao _storagePoolDao;
     @Inject private StoragePoolDetailsDao _storagePoolDetailsDao;
     @Inject private VolumeDao _volumeDao;
@@ -255,25 +246,6 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     long volumeSize = Long.parseLong(volumeDetail.getValue());
 
                     usedSpace += volumeSize;
-                }
-            }
-        }
-
-        List<SnapshotVO> lstSnapshots = _snapshotDao.listAll();
-
-        if (lstSnapshots != null) {
-            for (SnapshotVO snapshot : lstSnapshots) {
-                SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshot.getId(), SolidFireUtil.SNAPSHOT_STORAGE_POOL_ID);
-
-                // if this snapshot belong to the storagePool that was passed in
-                if (snapshotDetails != null && snapshotDetails.getValue() != null && Long.parseLong(snapshotDetails.getValue()) == storagePool.getId()) {
-                    snapshotDetails = _snapshotDetailsDao.findDetail(snapshot.getId(), SolidFireUtil.SNAPSHOT_SIZE);
-
-                    if (snapshotDetails != null && snapshotDetails.getValue() != null) {
-                        long snapshotSize = Long.parseLong(snapshotDetails.getValue());
-
-                        usedSpace += snapshotSize;
-                    }
                 }
             }
         }
@@ -457,9 +429,6 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                 errMsg = ex.getMessage();
             }
-        } else if (dataObject.getType() == DataObjectType.SNAPSHOT) {
-            // should return null when no error message
-            errMsg = deleteSnapshot((SnapshotInfo)dataObject, dataStore.getId());
         } else {
             errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to deleteAsync";
         }
@@ -473,142 +442,17 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
-        if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) {
-            // in this situation, we don't want to copy the snapshot anywhere
-
-            CopyCmdAnswer copyCmdAnswer = new CopyCmdAnswer(destData.getTO());
-            CopyCommandResult result = new CopyCommandResult(null, copyCmdAnswer);
-
-            result.setResult(null);
-
-            callback.complete(result);
-
-            return;
-        }
-
         throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
-        if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) {
-            return true;
-        }
-
         return false;
     }
 
     @Override
     public void takeSnapshot(SnapshotInfo snapshotInfo, AsyncCompletionCallback<CreateCmdResult> callback) {
-        CreateCmdResult result = null;
-
-        try {
-            VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
-            VolumeVO volume = _volumeDao.findById(volumeInfo.getId());
-
-            long sfVolumeId = Long.parseLong(volume.getFolder());
-            long storagePoolId = volume.getPoolId();
-
-            SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, _storagePoolDetailsDao);
-
-            SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getSolidFireVolume(sfConnection, sfVolumeId);
-
-            StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
-
-            long capacityBytes = storagePool.getCapacityBytes();
-            // getUsedBytes(StoragePool) will not include the bytes of the proposed snapshot because
-            // updateSnapshotDetails(long, long, long, long) has not yet been called for this snapshot
-            long usedBytes = getUsedBytes(storagePool);
-            long sfVolumeSize = sfVolume.getTotalSize();
-
-            usedBytes += sfVolumeSize;
-
-            // For taking a snapshot, we need to check to make sure a sufficient amount of space remains in the primary storage.
-            // For the purpose of "charging" these bytes against storage_pool.capacityBytes, we take the full size of the SolidFire volume.
-            // Generally snapshots take up much less space than the size of the volume, but the easiest way to track this space usage
-            // is to take the full size of the volume (you can always increase the amount of bytes you give to the primary storage).
-            if (usedBytes > capacityBytes) {
-                throw new CloudRuntimeException("Insufficient amount of space remains in this primary storage to take a snapshot");
-            }
-
-            storagePool.setUsedBytes(usedBytes);
-
-            long sfSnapshotId = SolidFireUtil.createSolidFireSnapshot(sfConnection, sfVolumeId, snapshotInfo.getUuid());
-
-            // Now that we have successfully taken a snapshot, update the space usage in the storage_pool table (even
-            // though storage_pool.used_bytes is likely no longer in use).
-            _storagePoolDao.update(storagePoolId, storagePool);
-
-            updateSnapshotDetails(snapshotInfo.getId(), sfSnapshotId, storagePoolId, sfVolumeSize);
-
-            SnapshotObjectTO snapshotObjectTo = (SnapshotObjectTO)snapshotInfo.getTO();
-
-            snapshotObjectTo.setPath(String.valueOf(sfSnapshotId));
-
-            CreateObjectAnswer createObjectAnswer = new CreateObjectAnswer(snapshotObjectTo);
-
-            result = new CreateCmdResult(null, createObjectAnswer);
-
-            result.setResult(null);
-        }
-        catch (Exception ex) {
-            s_logger.debug(SolidFireUtil.LOG_PREFIX + "Failed to take CloudStack snapshot: " + snapshotInfo.getId(), ex);
-
-            result = new CreateCmdResult(null, new CreateObjectAnswer(ex.toString()));
-
-            result.setResult(ex.toString());
-        }
-
-        callback.complete(result);
-    }
-
-    private void updateSnapshotDetails(long csSnapshotId, long sfSnapshotId, long storagePoolId, long sfSnapshotSize) {
-        SnapshotDetailsVO accountDetail = new SnapshotDetailsVO(csSnapshotId,
-                SolidFireUtil.SNAPSHOT_ID,
-                String.valueOf(sfSnapshotId),
-                false);
-
-            _snapshotDetailsDao.persist(accountDetail);
-
-            accountDetail = new SnapshotDetailsVO(csSnapshotId,
-                    SolidFireUtil.SNAPSHOT_STORAGE_POOL_ID,
-                    String.valueOf(storagePoolId),
-                    false);
-
-            _snapshotDetailsDao.persist(accountDetail);
-
-            accountDetail = new SnapshotDetailsVO(csSnapshotId,
-                    SolidFireUtil.SNAPSHOT_SIZE,
-                    String.valueOf(sfSnapshotSize),
-                    false);
-
-            _snapshotDetailsDao.persist(accountDetail);
-    }
-
-    // return null for no error message
-    private String deleteSnapshot(SnapshotInfo snapshotInfo, long storagePoolId) {
-        String errMsg = null;
-
-        try {
-            SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, _storagePoolDetailsDao);
-
-            SolidFireUtil.deleteSolidFireSnapshot(sfConnection, getSolidFireSnapshotId(snapshotInfo.getId()));
-
-            _snapshotDetailsDao.removeDetails(snapshotInfo.getId());
-        }
-        catch (Exception ex) {
-            s_logger.debug(SolidFireUtil.LOG_PREFIX + "Failed to delete SolidFire snapshot: " + snapshotInfo.getId(), ex);
-
-            errMsg = ex.getMessage();
-        }
-
-        return errMsg;
-    }
-
-    private long getSolidFireSnapshotId(long csSnapshotId) {
-        SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(csSnapshotId, SolidFireUtil.SNAPSHOT_ID);
-
-        return Long.parseLong(snapshotDetails.getValue());
+        throw new UnsupportedOperationException();
     }
 
     @Override
