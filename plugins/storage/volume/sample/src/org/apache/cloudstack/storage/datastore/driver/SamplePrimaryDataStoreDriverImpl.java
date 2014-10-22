@@ -82,10 +82,10 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     }
 
     @Override
-    public boolean connectVolumeToHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) { return false; }
+    public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) { return false; }
 
     @Override
-    public void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {}
+    public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {}
 
     @Override
     public long getUsedBytes(StoragePool storagePool) {

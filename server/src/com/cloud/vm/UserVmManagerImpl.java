@@ -4905,7 +4905,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // root.getPoolId() should be null if the VM we are detaching the disk from has never been started before
                 DataStore dataStore = root.getPoolId() != null ? _dataStoreMgr.getDataStore(root.getPoolId(), DataStoreRole.Primary) : null;
-                volumeMgr.disconnectVolumeFromHost(volFactory.getVolume(root.getId()), host, dataStore);
+                volumeMgr.revokeAccess(volFactory.getVolume(root.getId()), host, dataStore);
             }
         }
     }

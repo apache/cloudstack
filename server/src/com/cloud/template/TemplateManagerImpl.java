@@ -54,6 +54,7 @@ import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissions
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -1376,12 +1377,20 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new CloudRuntimeException("cannot find an image store for zone " + zoneId);
             }
             AsyncCallFuture<TemplateApiResult> future = null;
+
             if (snapshotId != null) {
-                SnapshotInfo snapInfo = _snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
-                DataStore snapStore = snapInfo.getDataStore();
-                if (snapStore != null) {
-                    store = snapStore; // pick snapshot image store to create template
+                DataStoreRole dataStoreRole = getDataStoreRole(snapshot);
+
+                SnapshotInfo snapInfo = _snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
+
+                if (dataStoreRole == DataStoreRole.Image) {
+                    DataStore snapStore = snapInfo.getDataStore();
+
+                    if (snapStore != null) {
+                        store = snapStore; // pick snapshot image store to create template
+                    }
                 }
+
                 future = _tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store);
             } else if (volumeId != null) {
                 VolumeInfo volInfo = _volFactory.getVolume(volumeId);
@@ -1463,6 +1472,25 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         } else {
             throw new CloudRuntimeException("Failed to create a template");
         }
+    }
+
+    private DataStoreRole getDataStoreRole(Snapshot snapshot) {
+        long volumeId = snapshot.getVolumeId();
+        VolumeVO volumeVO = _volumeDao.findById(volumeId);
+
+        long storagePoolId = volumeVO.getPoolId();
+        DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+
+        Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
+
+        String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
+        Boolean supportsStorageSystemSnapshots = new Boolean(value);
+
+        if (supportsStorageSystemSnapshots) {
+            return DataStoreRole.Primary;
+        }
+
+        return DataStoreRole.Image;
     }
 
     @Override

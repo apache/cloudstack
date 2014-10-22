@@ -1911,7 +1911,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String chapInitiatorUsername = details.get(DiskTO.CHAP_INITIATOR_USERNAME);
         String chapInitiatorSecret = details.get(DiskTO.CHAP_INITIATOR_SECRET);
         String mountpoint = details.get(DiskTO.MOUNT_POINT);
-        String protocoltype=details.get(DiskTO.PROTOCOL_TYPE);
+        String protocoltype = details.get(DiskTO.PROTOCOL_TYPE);
 
         if (StoragePoolType.NetworkFilesystem.toString().equalsIgnoreCase(protocoltype)) {
             String poolid = storageHost + ":" + mountpoint;
@@ -6124,8 +6124,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             VDI vdi = null;
 
             if (cmd.getAttach() && cmd.isManaged()) {
-                SR sr =
-                        getIscsiSR(conn, cmd.get_iScsiName(), cmd.getStorageHost(), cmd.get_iScsiName(), cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword(), true);
+                SR sr = getIscsiSR(conn, cmd.get_iScsiName(), cmd.getStorageHost(), cmd.get_iScsiName(), cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword(), true);
 
                 vdi = getVDIbyUuid(conn, cmd.getVolumePath(), false);
 
