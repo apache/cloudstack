@@ -21,7 +21,6 @@ import java.util.List;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.HostVO;
-import com.cloud.host.Status;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.SecondaryStorageVmVO;
@@ -45,8 +44,6 @@ public interface SecondaryStorageVmManager extends Manager {
     public boolean destroySecStorageVm(long ssVmVmId);
 
     public void onAgentConnect(Long dcId, StartupCommand cmd);
-
-    public void onAgentDisconnect(long agentId, Status state);
 
     public boolean generateFirewallConfiguration(Long agentId);
 
