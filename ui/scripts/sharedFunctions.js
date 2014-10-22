@@ -2293,3 +2293,24 @@ $.validator.addMethod("ipv6cidr", function(value, element) {
     return true;
 }, "The specified IPv6 CIDR is invalid.");
 
+$.validator.addMethod("ipv4cidr", function(value, element) {
+    if (this.optional(element) && value.length == 0)
+        return true;
+
+    var parts = value.split('/');
+    if (typeof parts == 'undefined' || parts.length != 2) {
+        return false;
+    }
+
+    if (!$.validator.methods.ipv4.call(this, parts[0], element))
+        return false;
+
+    if (parts[1] != Number(parts[1]).toString()) //making sure that "", " ", "00", "0 ","2  ", etc. will not pass
+        return false;
+
+    if (Number(parts[1]) < 0 || Number(parts[1] > 32))
+        return false;
+
+    return true;
+}, "The specified IPv4 CIDR is invalid.");
+

@@ -5340,12 +5340,16 @@
                                         label: 'label.super.cidr.for.guest.networks',
                                         docID: 'helpVPCSuperCIDR',
                                         validation: {
-                                            required: true
+                                            required: true,
+                                            ipv4cidr: true
                                         }
                                     },
                                     networkdomain: {
                                         docID: 'helpVPCDomain',
-                                        label: 'label.DNS.domain.for.guest.networks'
+                                        label: 'label.DNS.domain.for.guest.networks',
+                                        validation: {
+                                            ipv4: true
+                                        }
                                     },
                                     publicLoadBalancerProvider: {
                                         label: 'label.public.load.balancer.provider',
