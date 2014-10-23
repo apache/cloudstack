@@ -31,10 +31,24 @@
     {
       "type": "virtualbox-iso",
       "name": "{{timestamp}}_FEATURE-CENIK123-VPCVRR",
+      "boot_wait": "10s",
+      "disk_size": 2500,
+      "guest_os_type": "Debian",
+      "http_directory": "http",
+      "iso_checksum": "7339b668a81b417ac023d73739dc6a03",
+      "iso_checksum_type": "md5",
+      "iso_url": "http://ftp.cae.tntech.edu/debian-cd/debian-7.4.0-i386-netinst.iso",
+      "ssh_username": "root",
+      "ssh_password": "password",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "10000s",
+      "guest_additions_mode":"attach",
+      "shutdown_command": "echo 'halt -p' > shutdown.sh; echo 'password'|sudo -S sh 'shutdown.sh'",
+      "virtualbox_version_file": ".vbox_version",
       "boot_command": [
         "<esc><wait>",
         "install <wait>",
-        "preseed/url=http://{{.HTTPIP}}:{{ .HTTPPort }}/preseed.cfg <wait>",
+        "preseed/url=http://{{.HTTPIP}}:{{.HTTPPort}}/preseed.cfg.txt <wait>",
 	"ignore_loglevel <wait>",
         "debian-installer=en_US <wait>",
         "auto <wait>",
@@ -44,30 +58,16 @@
         "netcfg/get_domain=apache.org <wait>",
 	"fb=false <wait>",
         "debconf/frontend=noninteractive <wait>",
-	"boot_debug=3 <wait>",
+	"boot_debug=2 <wait>",
         "console-setup/ask_detect=false <wait>",
         "console-keymaps-at/keymap=us <wait>",
         "keyboard-configuration/xkb-keymap=us <wait>",
         "<enter><wait>"
       ],
-      "boot_wait": "10s",
-      "disk_size": 2500,
-      "guest_os_type": "Debian",
-      "http_directory": "http",
-      "iso_checksum": "7339b668a81b417ac023d73739dc6a03",
-      "iso_checksum_type": "md5",
-	"iso_url": "http://ftp.cae.tntech.edu/debian-cd/debian-7.4.0-i386-netinst.iso",
-      "ssh_username": "root",
-      "ssh_password": "password",
-      "ssh_port": 22,
-      "ssh_wait_timeout": "10000s",
-      "guest_additions_mode":"attach",
-      "shutdown_command": "echo 'halt -p' > shutdown.sh; echo 'password'|sudo -S sh 'shutdown.sh'",
-      "virtualbox_version_file": ".vbox_version",
-      "vboxmanage": [
+       "vboxmanage": [
         ["modifyvm","{{.Name}}","--memory","256"],
-        ["modifyvm","{{.Name}}","--cpus","1"],
-        ["modifyvm","{{.Name}}","--nictype1","Am79C970A"]
+        ["modifyvm","{{.Name}}","--cpus","1"]
+
 
       ]
    }
