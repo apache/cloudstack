@@ -904,11 +904,6 @@
                                                         hypervisor: args.context.volumes[0].hypervisor
                                                     });
                                                 }
-
-                                                var volumeDrEnabled = false;                                               
-                                                if (isModuleIncluded("dr")) {
-                                                    volumeDrEnabled = cloudStack.dr.sharedFunctions.isVolumeDrEnabled(args.context.volumes[0]);                                                    
-                                                }    
                                                 
                                                 $(['Running', 'Stopped']).each(function() {
                                                     $.ajax({
@@ -919,21 +914,11 @@
                                                         async: false,
                                                         success: function(json) {
                                                             var instanceObjs = json.listvirtualmachinesresponse.virtualmachine;
-                                                            $(instanceObjs).each(function() {
-                                                                if (isModuleIncluded("dr")) {
-                                                                    var vmDrEnabled = cloudStack.dr.sharedFunctions.isVmDrEnabled(this);
-                                                                    if (vmDrEnabled == volumeDrEnabled) {
+                                                            $(instanceObjs).each(function() {                                                                
                                                                 items.push({
                                                                     id: this.id,
                                                                     description: this.displayname ? this.displayname : this.name
-                                                                });
-                                                                    } 
-                                                                } else {
-                                                                    items.push({
-                                                                        id: this.id,
-                                                                        description: this.displayname ? this.displayname : this.name
-                                                                    });
-                                                                }                                                                
+                                                                });                                                                                                                                
                                                             });
                                                         }
                                                     });
