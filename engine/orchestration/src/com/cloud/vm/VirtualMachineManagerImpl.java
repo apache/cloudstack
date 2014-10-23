@@ -629,6 +629,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return true;
             }
 
+            // also check DB to get latest VM state to detect vm update from concurrent process before idle waiting to get an early exit
+            VMInstanceVO instance = _vmDao.findById(vm.getId());
+            if (instance != null && instance.getState() == State.Running) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("VM is already started in DB: " + vm);
+                }
+                return true;
+            }
+
             if (vo.getSecondsTaskIsInactive() > VmOpCancelInterval.value()) {
                 s_logger.warn("The task item for vm " + vm + " has been inactive for " + vo.getSecondsTaskIsInactive());
                 return false;
