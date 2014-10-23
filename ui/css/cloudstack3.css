@@ -6371,6 +6371,12 @@ label.error {
   margin-left: 26px;
 }
 
+.instance-wizard .step.service-offering .custom-size .field label.error {
+  position: relative;
+  top: 0;
+  left: 0;
+}
+
 .instance-wizard .step.service-offering .custom-iops .field input {
   width: 88%;
   margin-left: 26px;
