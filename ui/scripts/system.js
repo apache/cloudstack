@@ -20382,7 +20382,7 @@
     };
     
     //action filters (begin)
-    var zoneActionfilter = function (args) {
+    var zoneActionfilter = cloudStack.actionFilter.zoneActionfilter = function (args) {
         var jsonObj = args.context.item;
         var allowedActions =[ 'enableSwift'];
         
