@@ -3,6 +3,8 @@ package com.cloud.hypervisor.ovm3.object;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.util.List;
+
 public class XmlTestResultTest {
     private static final String NULL = "<nil/>";
 
@@ -88,5 +90,13 @@ public class XmlTestResultTest {
     }
     public void basicLongTest(Long result, Long desired) {
         assertEquals(desired, result);
+    }
+    public Boolean basicListHasString(List<String> list, String x) {
+        for (String y: list) {
+            if (y.matches(x)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

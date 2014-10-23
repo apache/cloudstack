@@ -157,10 +157,11 @@ class Test {
         String agentuser = "oracle";
         String agentpass = "test123";
         Map<String, Host> hosts = new HashMap<String, Host>();
-        hosts.put("ovm-1-local", new Host("localhost", "8898", agentuser, agentpass));
-        hosts.put("ovm-2-local", new Host("localhost", "8899", agentuser, agentpass));
-        hosts.put("ovm-1", new Host("ovm-1", "8899", agentuser, agentpass));
         hosts.put("ovm-2", new Host("ovm-2", "8899", agentuser, agentpass));
+        // hosts.put("192.168.56.101", new Host("192.168.56.101", "8899", agentuser, agentpass));
+        // hosts.put("ovm-1-local", new Host("localhost", "8898", agentuser, agentpass));
+        // hosts.put("ovm-2-local", new Host("localhost", "8899", agentuser, agentpass));
+        hosts.put("ovm-1", new Host("ovm-1", "8899", agentuser, agentpass));
         try {
             List<Connection> connections = agentConnect(hosts);
             hostCount = connections.size();
@@ -171,7 +172,7 @@ class Test {
             } else {
                 throw new Ovm3ResourceException("No hosts found that were up!!!!");
             }
-            Connection c = connections.get(1);
+            Connection c = connections.get(0);
 
             /*
              * needs to be finished and implement ovs + bridge, or do we count
@@ -344,10 +345,22 @@ class Test {
                     pool.takeOwnership(pool.deDash(pool.newUuid("master")), "");
                 }
                 Repository repo = new Repository(c);
-                String mntUuid = repo.newUuid("repo");
+                repo.discoverRepoDb();
+                System.out.println(repo.repoDbs);
+                for (String rid: repo.getRepoDbList()) {
+                    System.out.println(repo.getRepoDb(rid).getMountPoint());
+                    repo.discoverRepo(rid);
+                    System.out.println(rid + ": " + repo.getRepo(rid).getAlias());
+                    System.out.println(repo.getRepo(rid).getRepoVirtualDisks());
+                    System.out.println(repo.getRepo(rid).getRepoVirtualMachines());
+                    System.out.println(repo.getRepo(rid).getRepoISOs());
+                    System.out.println(repo.getRepo(rid).getRepoTemplates());
+                }
+                /*
+                String mntUuid = repo.newUuid("test_repo");
                 String repoUuid = repo.deDash(mntUuid);
                 String remoteHost = "cs-mgmt";
-                String remotePath = "/volumes/cs-data/primary/ovm";
+                String remotePath = "/volumes/cs-data/primary/tovm";
                 String remoteUri = remoteHost+":"+remotePath;
                 String local = "/OVS/Repositories/" + repoUuid;
                 String url = "http://nibbler/~funs/iso";
@@ -370,18 +383,21 @@ class Test {
                         mntUuid,
                         "/nfsmnt");
                 repo.discoverRepoDb();
-                // repo.importIso(iso, isouuid + ".iso", repoUuid, "");
-                // repo.importVirtualDisk(vhd, vmuuid + ".img", repoUuid);
+                System.out.println(repo.getRepoDb());
+                repo.importIso(iso, isouuid + ".iso", repoUuid, "");
+                repo.importVirtualDisk(vhd, vmuuid + ".img", repoUuid);
                 System.out.println(store.storagePluginGetFileSystemInfo(repoUuid, mntUuid, remoteHost, remotePath+"/VirtualMachines").getFreeSize());
                 store.storagePluginUnmountNFS(remoteHost,
                         remotePath+"/VirtualMachines",
                         mntUuid,
                         "/nfsmnt");
+                Thread.sleep(120000);
                 System.out.println(store.storagePluginGetFileSystemInfo(repoUuid, mntUuid, remoteHost, remotePath+"/VirtualMachines").getSize());
                 repo.deleteRepo(repoUuid, true);
                 repo.unmountRepoFs(local);
                 repo.discoverRepoDb();
                 repo.discoverRepo(repoUuid);
+                */
             }
 
             if (checkPool) {

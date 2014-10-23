@@ -1,6 +1,9 @@
 package com.cloud.hypervisor.ovm3.object;
 
+import org.junit.Test;
+
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.xmlrpc.XmlRpcException;
@@ -13,6 +16,7 @@ import org.apache.xmlrpc.util.SAXParsers;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
+/* This is a stub for XML parsing into result sets, it also contains test for Connection */
 public class ConnectionTest extends Connection {
     String result;
 
@@ -43,6 +47,25 @@ public class ConnectionTest extends Connection {
     }
     public String getResult() {
         return  this.result;
+    }
+
+    @Test
+    public void testConnection() {
+        String host = "ovm-1";
+        String user = "admin";
+        String pass = "password";
+        Integer port = 8899;
+        List<?> emptyParams = new ArrayList<Object>();
+        Connection con = new Connection(host, port, user, pass);
+        System.out.println(con.getIp());
+        try {
+            con.callTimeoutInSec("ping", emptyParams, 1);
+//            con.call("ping", emptyParams, 1, false);
+        } catch (XmlRpcException e) {
+            // TODO Auto-generated catch block
+            System.out.println();
+        }
+        Connection con2 = new Connection(host, user, pass);
     }
 }
 
