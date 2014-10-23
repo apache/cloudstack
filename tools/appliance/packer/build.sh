@@ -1,10 +1,29 @@
+#!/bin/bash
+
+btimestamp=$(date +%s)
+echo "Timestamp = $btimestamp"
+bboxname="packer_"$btimestamp"_FEATURE-CENIK123-VPCVRR_virtualbox"
+echo "Virtualbox Name = $bboxname"
+bboxtitle="TVM$btimestamp"
+echo "Virtualbox Title = $bboxtitle"
+boutputfolder="output_"$btimestamp"_FEATURE-CENIK123-VPCRR_virtualbox"
+echo "Output folder = $boutputfolder"
+
+#************************
+#Build the vargrant image for Cloudstack SystemVM's
+#but first put a customized vagrantfile in the timestamped
+#directory
+
+mkdir ./vm/$boutputfolder
+cat <<EOF > ./vm/$boutputfolder/Vagrantfile
+
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
-TIMESTAMP = (((Time.now.getutc).to_i).to_s)
-BOX_NAME = "packer_1413393659_FEATURE-CENIK123-VPCVRR_virtualbox"
+#TIMESTAMP = (((Time.now.getutc).to_i).to_s)
+BOX_NAME = $bboxname
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = BOX_NAME+".box"
 
@@ -18,10 +37,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 #	config.ssh.username = "vagrant"
 #	config.ssh.password = "vagrant"
 	config.ssh.private_key_path ="./validation/vagrant"
-    config.ssh.host = "169.254.2.214"
-    config.ssh.port = "3922"
-    #Fix "is not a tty" error when /sbin/ip addr flush dev eth 2> /dev/null command is issued
-    config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
+        config.ssh.host = "169.254.2.214"
+        config.ssh.port = "3922"
+
+#Fix "is not a tty" error when /sbin/ip addr flush dev eth 2> /dev/null command is issued
+        config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
 #  config.ssh.guest_port = "3922"
 
 
@@ -33,7 +53,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   
    config.vm.provider "virtualbox" do |vb|
      vb.gui = true
-     vb.name = "TVM"+TIMESTAMP
+     vb.name = "$bboxtitle"
       vb.customize ["modifyvm", :id, "--memory", "1024"]
       vb.customize ["modifyvm", :id, "--nic2", "hostonly"]
       vb.customize ["modifyvm", :id, "--nic3", "nat"]     
@@ -44,5 +64,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
    config.vm.provision "shell", path: "./provision/enablevagrant.sh"
    config.vm.provision "shell", path: "./provision/proc_cmdline.sh"
    config.vm.provision "shell", path: "./provision/overlay_scripts.sh"   
+EOF
 
-end
+#************************
+
+
+packer build cssysvm_template.json 2>./log/build{$timestamp}.txt | tee ./log/packerbuild{$timestamp}_vagrant.log
+
+#ok let's bring the systemvm up
+echo"Starting system vm ("$vboxname") in "$boutputfolder "using "$vboxtitle" as a title"
+cd /vm/$boutputfolder/
+vagrant up
+
