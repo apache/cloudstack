@@ -1537,6 +1537,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
 
             hyperType = _volumeDao.getHypervisorType(volumeId);
+            if (HypervisorType.LXC.equals(hyperType)) {
+                throw new InvalidParameterValueException("Template creation is not supported for LXC volume: " + volumeId);
+            }
         } else { // create template from snapshot
             snapshot = _snapshotDao.findById(snapshotId);
             if (snapshot == null) {
