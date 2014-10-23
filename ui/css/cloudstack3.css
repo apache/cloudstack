@@ -10012,13 +10012,17 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 }
 
 .project-dashboard-view .users .system-dashboard li .header {
-  width: 77px;
-  /*+placement:shift 7px 110px;*/
-  position: relative;
-  left: 7px;
-  top: 110px;
-  position: absolute;
-  text-align: center;
+    width: 77px;
+    max-width: 77px;
+    /*+placement:shift 7px 110px;*/
+    position: relative;
+    left: 7px;
+    top: 110px;
+    position: absolute;
+    text-align: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 /**** Info box*/

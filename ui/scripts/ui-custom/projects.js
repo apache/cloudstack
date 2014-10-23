@@ -106,7 +106,8 @@
                                             $.each(item, function(arrayKey, arrayValue) {
                                                 var $arrayElem = $li.find('[data-list-item=' + arrayKey + ']');
 
-                                                $arrayElem.html(_s(arrayValue));
+                                                $arrayElem.text(_s(arrayValue));
+                                                $arrayElem.attr('title', _s(arrayValue));
                                             });
 
                                             $li.attr({
