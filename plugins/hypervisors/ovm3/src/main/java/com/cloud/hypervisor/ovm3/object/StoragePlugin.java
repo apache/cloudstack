@@ -474,6 +474,7 @@ public class StoragePlugin extends OvmObject {
         sd.setState(1);
         ss.setStorageType("FileSys");
         String mountPoint = localPath + File.separator + mntUuid;
+        /* */
         callWrapper("storage_plugin_unmount", this.getPluginType,
             ss.getDetails(), sd.getDetails(), mountPoint, this.active);
         return true;

@@ -57,6 +57,7 @@ class CloudStack(Agent):
             'ovs_dom0_stats': ovsDom0Stats,
             'ovs_domU_stats': ovsDomUStats,
             'get_module_version': getModuleVersion,
+            'get_ovs_version': ovmVersion,
             'ping': ping,
 #            'patch': ovmCsPatch,
 #            'ovs_agent_set_ssl': ovsAgentSetSsl,
@@ -175,12 +176,13 @@ def ovmCsPatch(version="3.2.1"):
     netcom="%s/xen-network-common.sh" % path
     netbr="%s/linuxbridge/ovs-vlan-bridge" % path
     func="setup_bridge_port"
+    # on 3.3.1 this moved to python2.6, but the restart time is already good
     xendConst="/usr/lib64/python2.4/site-packages/xen/xend/XendConstants.py"
     xendRtime="MINIMUM_RESTART_TIME"
-    if version == "":
-        version=ovmVersion()
+    version=ovmVersion()
 
     if version == "3.2.1":
+	print "should not be here"
         if grep(netcom, "_%s" % func) == 3 and grep(netbr, "_%s" % func) < 1:
             _replaceInFile(netbr, func, "_%s" % func, True)
         

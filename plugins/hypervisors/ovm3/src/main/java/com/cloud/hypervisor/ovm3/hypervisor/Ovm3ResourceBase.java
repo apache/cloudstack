@@ -1949,7 +1949,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             Linux host = new Linux(c);
             /* TODO: NFS only for now */
             Map<String, Linux.FileSystem> fsList = host
-                    .getFileSystemList("nfs");
+                    .getFileSystemMap("nfs");
             Linux.FileSystem fs = fsList.get(cmd.getStorageId());
             StoragePlugin store = new StoragePlugin(c);
             String propUuid = store.deDash(cmd.getStorageId());
@@ -2370,9 +2370,9 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         Linux host = new Linux(c);
 
         Map<String, Linux.FileSystem> fsList = host
-                .getFileSystemList(fsUri);
+                .getFileSystemMap(fsUri);
         Linux.FileSystem fs = fsList.get(uuid);
-        if (fs == null || !fs.getMountPoint().equals(mountPoint)) {
+        if (fs == null || !fs.getRemoteDir().equals(mountPoint)) {
             try {
                 StoragePlugin sp = new StoragePlugin(c);
                 sp.storagePluginMountNFS(uri.getHost(), uri.getPath(), uuid,

@@ -66,7 +66,7 @@ public class Linux extends OvmObject {
     private String timeZ;
     private String timeUTC;
     private List<String> mounts = null;
-    private Map<String, FileSystem> fsList = null;
+    private Map<String, FileSystem> fsMap = null;
 
     public Linux(Connection c) {
         setClient(c);
@@ -348,27 +348,23 @@ public class Linux extends OvmObject {
         return false;
     }
 
-    /*
-     * discover_mounted_file_systems, <class 'agent.api.host.linux.Linux'>
-     * argument: self - default: None argument: args - default: None
-     */
-    public Boolean discoverMountedFs() throws Ovm3ResourceException {
-        Object x = callWrapper("discover_mounted_file_systems");
-        if (x == null) {
-            return true;
-        }
-        return false;
-    }
-
-    public Map<String, FileSystem> getFileSystemList(String type) throws Ovm3ResourceException {
-        if (fsList == null) {
+    public Map<String, FileSystem> getFileSystemMap(String type) throws Ovm3ResourceException {
+        if (fsMap == null) {
             this.discoverMountedFs(type);
         }
-        return fsList;
+        return fsMap;
     }
-
-    public void setFileSystemList(Map<String, FileSystem> list) {
-        fsList = list;
+    public FileSystem getFileSystem(String name, String type) throws Ovm3ResourceException {
+        if (getFileSystemMap(type).containsKey(name)) {
+            return getFileSystemMap(type).get(name);
+        }
+        return null;
+    }
+    public void setFileSystemMap(Map<String, FileSystem> map) {
+        fsMap = map;
+    }
+    public List<String> getFileSystemList() {
+        return mounts;
     }
 
     public static class FileSystem {
@@ -378,7 +374,7 @@ public class Linux extends OvmObject {
                 put("Name", null);
                 put("Device", null);
                 put("Host", null);
-                put("Dir", null);
+                put("Remote_dir", null);
                 put("Mount_Point", null);
                 put("Uuid", null);
             }
@@ -399,13 +395,13 @@ public class Linux extends OvmObject {
             return (String) fileSys.put("Uuid", uuid);
         }
 
-        public String getName() {
+        /* public String getName() {
             return (String) fileSys.get("Name");
         }
 
         public String setName(String name) {
             return (String) fileSys.put("Name", name);
-        }
+        } */
 
         public String getDevice() {
             return (String) fileSys.get("Device");
@@ -419,7 +415,7 @@ public class Linux extends OvmObject {
             if (getDevice() != null && getDevice().contains(":")) {
                 String[] spl = getDevice().split(":");
                 setHost(spl[0]);
-                setMountPoint(spl[1]);
+                setRemoteDir(spl[1]);
             } else {
                 return null;
             }
@@ -430,17 +426,13 @@ public class Linux extends OvmObject {
             return (String) fileSys.put("Host", host);
         }
 
-        public String getDir() {
-            return (String) fileSys.get("Dir");
+        public String setRemoteDir(String dir) {
+            return (String) fileSys.put("Remote_dir", dir);
         }
 
-        public String setDir(String dir) {
-            return (String) fileSys.put("Dir", dir);
-        }
-
-        public String getMountPoint() {
+        public String getRemoteDir() {
             if (getHost() != null) {
-                return (String) fileSys.get("Mount_Point");
+                return (String) fileSys.get("Remote_dir");
             }
             return null;
         }
@@ -448,14 +440,18 @@ public class Linux extends OvmObject {
         public String setMountPoint(String pnt) {
             return (String) fileSys.put("Mount_Point", pnt);
         }
+        public String getMountPoint() {
+            return (String) fileSys.get("Mount_Point");
+        }
     }
 
     /* should actually be called "getMountedsFsDevice" or something */
+    /* takes nfs,ext3 etc as parameter it reads from /proc/mounts */
     public Map<String, FileSystem> discoverMountedFs(String type) throws Ovm3ResourceException {
-        this.fsList = new HashMap<String, FileSystem>();
+        this.fsMap = new HashMap<String, FileSystem>();
         Object x = callWrapper("discover_mounted_file_systems", type);
         if (x == null) {
-            return this.fsList;
+            return this.fsMap;
         }
         Document xmlDocument = prepParse((String) x);
         String bpath = "//Discover_Mounted_File_Systems_Result/Filesystem";
@@ -469,11 +465,11 @@ public class Linux extends OvmObject {
             String[] spl = mnt.split("/");
             String uuid = spl[spl.length - 1];
             f.setUuid(uuid);
-            f.setDir(mnt);
-            fsList.put(uuid, f);
+            f.setMountPoint(mnt);
+            fsMap.put(mnt, f);
         }
-        setFileSystemList(fsList);
-        return this.fsList;
+        setFileSystemMap(fsMap);
+        return this.fsMap;
     }
 
     /*
@@ -491,6 +487,7 @@ public class Linux extends OvmObject {
      * self - default: None argument: username - default: None argument:
      * password - default: None
      */
+    /* TODO: in 3.3.x this changed to user, pass, oldpass */
     public Boolean updateAgentPassword(String user, String pass) throws Ovm3ResourceException {
         Object x = callWrapper("update_agent_password", user, pass);
         if (x == null) {
@@ -517,6 +514,9 @@ public class Linux extends OvmObject {
         xmlDocument = prepParse((String) result);
         /* could be more subtle */
         String path = "//Discover_Hardware_Result/NodeInformation";
+        /* we don't care a bout IO/SCSI for now..., we might care about
+         * CPUs later: NodeInformation/CPUInfo/Proc_Info/CPU[@ID=0]
+         */
         hwPhysicalInfo = xmlToMap(path + "/VMM/PhysicalInfo", xmlDocument);
         hwSystemInfo = xmlToMap(path + "/DMTF/System", xmlDocument);
         return true;
@@ -605,5 +605,4 @@ public class Linux extends OvmObject {
     private void setTimeZ(String timeZ) {
         this.timeZ = timeZ;
     }
-
 }
