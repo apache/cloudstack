@@ -1531,12 +1531,7 @@
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
-                                            var jsonObj = json.listvolumesresponse.volume[0];
-                                            
-                                            if (isModuleIncluded("dr")) {
-                                                cloudStack.dr.sharedFunctions.addExtraProperties(jsonObj, "Volume");
-                                            }                                            
-                                            
+                                            var jsonObj = json.listvolumesresponse.volume[0];                                            
                                             args.response.success({
                                                 actionFilter: volumeActionfilter,
                                                 data: jsonObj
